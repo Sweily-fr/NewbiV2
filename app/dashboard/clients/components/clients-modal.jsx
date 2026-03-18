@@ -94,7 +94,7 @@ export default function ClientsModal({
       variables: { workspaceId: finalWorkspaceId, id: client?.id },
       skip: !client?.id || !open, // Ne charger que si on a un client et que le modal est ouvert
       fetchPolicy: "cache-and-network", // Toujours récupérer les dernières données
-    }
+    },
   );
 
   // Utiliser le client complet si disponible, sinon utiliser le client passé en prop
@@ -144,6 +144,7 @@ export default function ClientsModal({
   const [pendingNotes, setPendingNotes] = useState([]);
   const [customFieldValues, setCustomFieldValues] = useState({});
   const [clientContacts, setClientContacts] = useState([]);
+  const [contactErrors, setContactErrors] = useState({});
   const [isReminderDialogOpen, setIsReminderDialogOpen] = useState(false);
   const clientType = watch("type");
   const isInternational = watch("isInternational");
@@ -201,7 +202,7 @@ export default function ClientsModal({
 
   const updatePendingNote = (noteId, newContent) => {
     setPendingNotes((prev) =>
-      prev.map((n) => (n.id === noteId ? { ...n, content: newContent } : n))
+      prev.map((n) => (n.id === noteId ? { ...n, content: newContent } : n)),
     );
   };
 
@@ -462,22 +463,67 @@ export default function ClientsModal({
     }
   };
 
+  // Valider tous les contacts avant soumission
+  const validateAllContacts = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^[\d\s\-+().]{6,20}$/;
+    const allErrors = {};
+    let hasErrors = false;
+
+    clientContacts.forEach((contact) => {
+      const contactErr = {};
+
+      if (!contact.firstName && !contact.lastName) {
+        contactErr.name = "Le prénom ou le nom est requis";
+      }
+
+      if (!contact.email && !contact.phone) {
+        contactErr.contact = "Un email ou un téléphone est requis";
+      }
+
+      if (contact.email && !emailRegex.test(contact.email)) {
+        contactErr.email = "Email invalide";
+      }
+
+      if (contact.phone && !phoneRegex.test(contact.phone)) {
+        contactErr.phone = "Téléphone invalide";
+      }
+
+      if (Object.keys(contactErr).length > 0) {
+        allErrors[contact.id] = contactErr;
+        hasErrors = true;
+      }
+    });
+
+    setContactErrors(allErrors);
+    return hasErrors;
+  };
+
   const onSubmit = async (formData) => {
     try {
       // Validation finale avant soumission
       const hasFormErrors = Object.keys(errors).length > 0;
       const hasCustomErrors = Object.keys(customErrors).length > 0;
+      const hasContactErrors =
+        clientType === "COMPANY" && validateAllContacts();
 
-      if (hasFormErrors || hasCustomErrors) {
+      if (hasFormErrors || hasCustomErrors || hasContactErrors) {
+        const errorMessages = [];
+        if (hasFormErrors) errorMessages.push("des champs du formulaire");
+        if (hasCustomErrors) errorMessages.push("des champs personnalisés");
+        if (hasContactErrors) errorMessages.push("des contacts additionnels");
+
         toast.error(
-          "Veuillez corriger les erreurs avant de soumettre le formulaire"
+          `Veuillez corriger les erreurs dans ${errorMessages.join(" et ")}`,
         );
         return;
       }
 
       // Convertir les champs personnalisés en format attendu par l'API
       const customFieldsArray = Object.entries(customFieldValues)
-        .filter(([_, value]) => value !== undefined && value !== null && value !== "")
+        .filter(
+          ([_, value]) => value !== undefined && value !== null && value !== "",
+        )
         .map(([fieldId, value]) => ({
           fieldId,
           // Convertir les valeurs en string pour l'API (les tableaux sont JSON stringifiés)
@@ -485,7 +531,7 @@ export default function ClientsModal({
         }));
 
       // Préparer les contacts pour l'API (nettoyer les IDs temporaires)
-      const contactsArray = clientContacts.map(contact => ({
+      const contactsArray = clientContacts.map((contact) => ({
         id: contact.id?.startsWith("temp-") ? undefined : contact.id,
         position: contact.position || "",
         firstName: contact.firstName || "",
@@ -529,7 +575,7 @@ export default function ClientsModal({
           } catch (error) {
             console.error(
               "Erreur lors de l'ajout du contact à la liste:",
-              error
+              error,
             );
           }
         }
@@ -571,13 +617,19 @@ export default function ClientsModal({
         });
       }
       setCustomErrors({});
+      setContactErrors({});
       setHasDifferentShipping(false);
       setShowCompanySearch(false);
       setCompanyQuery("");
       setCompanies([]);
     } catch (error) {
-      // La notification d'erreur est déjà gérée par le hook useCreateClient/useUpdateClient
-      // Ne pas afficher de notification supplémentaire ici
+      // Afficher une toast d'erreur précise
+      const message = error.message || "Une erreur est survenue";
+      toast.error(
+        isEditing
+          ? `Impossible de modifier le client : ${message}`
+          : `Impossible de créer le client : ${message}`,
+      );
       // Ne pas fermer le modal en cas d'erreur
     }
   };
@@ -625,8 +677,15 @@ export default function ClientsModal({
                   <div className="space-y-4">
                     {/* Type de client + Localisation côte à côte */}
                     <div className="flex items-start gap-3">
-                      <div className={cn("space-y-2", clientType === "COMPANY" ? "flex-1" : "w-full")}>
-                        <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Type de client *</Label>
+                      <div
+                        className={cn(
+                          "space-y-2",
+                          clientType === "COMPANY" ? "flex-1" : "w-full",
+                        )}
+                      >
+                        <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                          Type de client *
+                        </Label>
                         <Controller
                           name="type"
                           control={control}
@@ -696,8 +755,8 @@ export default function ClientsModal({
 
                     {clientType === "COMPANY" && isInternational && (
                       <p className="text-xs text-muted-foreground">
-                        Pour les entreprises hors France, les champs SIRET
-                        et TVA sont optionnels et sans validation stricte.
+                        Pour les entreprises hors France, les champs SIRET et
+                        TVA sont optionnels et sans validation stricte.
                       </p>
                     )}
 
@@ -710,7 +769,7 @@ export default function ClientsModal({
                         <div
                           className={cn(
                             "flex items-center gap-2.5 px-2.5 h-8 rounded-[9px] transition-[border] duration-[80ms] ease-in-out",
-                            "border border-[#e6e7ea] bg-transparent hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A]"
+                            "border border-[#e6e7ea] bg-transparent hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A]",
                           )}
                         >
                           <Search className="size-3.5 text-muted-foreground shrink-0" />
@@ -776,10 +835,12 @@ export default function ClientsModal({
                               ) : (
                                 <div className="p-4 text-center">
                                   <p className="text-sm text-muted-foreground">
-                                    Aucune entreprise trouvée pour &quot;{companyQuery}&quot;
+                                    Aucune entreprise trouvée pour &quot;
+                                    {companyQuery}&quot;
                                   </p>
                                   <p className="text-xs text-muted-foreground mt-1">
-                                    Essayez avec un nom d&apos;entreprise ou un SIRET
+                                    Essayez avec un nom d&apos;entreprise ou un
+                                    SIRET
                                   </p>
                                 </div>
                               )}
@@ -793,15 +854,18 @@ export default function ClientsModal({
                     {/* Raison sociale uniquement pour les entreprises */}
                     {clientType === "COMPANY" && (
                       <div className="space-y-2">
-                        <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Raison sociale *</Label>
+                        <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                          Raison sociale *
+                        </Label>
                         <Input
                           placeholder="Nom de l'entreprise"
                           className={cn(
-                            errors.name && "border-red-500 hover:border-red-500"
+                            errors.name &&
+                              "border-red-500 hover:border-red-500",
                           )}
                           {...register(
                             "name",
-                            getValidationRules("companyName", true)
+                            getValidationRules("companyName", true),
                           )}
                         />
                         {errors.name && (
@@ -817,12 +881,14 @@ export default function ClientsModal({
                       <div className="grid grid-cols-2 gap-4">
                         {/* Prénom */}
                         <div className="space-y-2">
-                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Prénom *</Label>
+                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                            Prénom *
+                          </Label>
                           <Input
                             placeholder="Prénom"
                             className={cn(
                               errors.firstName &&
-                                "border-red-500 hover:border-red-500"
+                                "border-red-500 hover:border-red-500",
                             )}
                             {...register("firstName", {
                               required: "Le prénom est requis",
@@ -842,12 +908,14 @@ export default function ClientsModal({
 
                         {/* Nom de famille */}
                         <div className="space-y-2">
-                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Nom *</Label>
+                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                            Nom *
+                          </Label>
                           <Input
                             placeholder="Nom"
                             className={cn(
                               errors.lastName &&
-                                "border-red-500 hover:border-red-500"
+                                "border-red-500 hover:border-red-500",
                             )}
                             {...register("lastName", {
                               required: "Le nom est requis",
@@ -869,12 +937,14 @@ export default function ClientsModal({
                       <div className="grid grid-cols-2 gap-4">
                         {/* Contact principal pour entreprises */}
                         <div className="space-y-2">
-                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Contact principal</Label>
+                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                            Contact principal
+                          </Label>
                           <Input
                             placeholder="Nom du contact"
                             className={cn(
                               errors.firstName &&
-                                "border-red-500 hover:border-red-500"
+                                "border-red-500 hover:border-red-500",
                             )}
                             {...register("firstName", {
                               pattern: {
@@ -893,18 +963,21 @@ export default function ClientsModal({
 
                         {/* Email (pour tous les types) */}
                         <div className="space-y-2">
-                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Email *</Label>
+                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                            Email *
+                          </Label>
                           <div className="relative">
-                            <Input type="email"
+                            <Input
+                              type="email"
                               placeholder="contact@entreprise.com"
                               className={cn(
                                 "pr-10",
                                 errors.email &&
-                                  "border-red-500 hover:border-red-500"
+                                  "border-red-500 hover:border-red-500",
                               )}
                               {...register(
                                 "email",
-                                getValidationRules("email", true)
+                                getValidationRules("email", true),
                               )}
                             />
                             <Button
@@ -935,18 +1008,21 @@ export default function ClientsModal({
                     {/* Email pour particuliers (ligne séparée) */}
                     {clientType === "INDIVIDUAL" && (
                       <div className="space-y-2">
-                        <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Email *</Label>
+                        <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                          Email *
+                        </Label>
                         <div className="relative">
-                          <Input type="email"
+                          <Input
+                            type="email"
                             placeholder="client@exemple.com"
                             className={cn(
                               "pr-10",
                               errors.email &&
-                                "border-red-500 hover:border-red-500"
+                                "border-red-500 hover:border-red-500",
                             )}
                             {...register(
                               "email",
-                              getValidationRules("email", true)
+                              getValidationRules("email", true),
                             )}
                           />
                           <Button
@@ -984,11 +1060,11 @@ export default function ClientsModal({
                           className={cn(
                             "border-[#e6e7ea] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] rounded-[9px] transition-[border] duration-[80ms]",
                             errors.address?.street &&
-                              "border-red-500 hover:border-red-500"
+                              "border-red-500 hover:border-red-500",
                           )}
                           {...register(
                             "address.street",
-                            getValidationRules("street", true)
+                            getValidationRules("street", true),
                           )}
                           rows={2}
                         />
@@ -1001,16 +1077,18 @@ export default function ClientsModal({
 
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Ville</Label>
+                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                            Ville
+                          </Label>
                           <Input
                             placeholder="Paris"
                             className={cn(
                               errors.address?.city &&
-                                "border-red-500 hover:border-red-500"
+                                "border-red-500 hover:border-red-500",
                             )}
                             {...register(
                               "address.city",
-                              getValidationRules("city", true)
+                              getValidationRules("city", true),
                             )}
                           />
                           {errors.address?.city && (
@@ -1020,7 +1098,9 @@ export default function ClientsModal({
                           )}
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Code postal</Label>
+                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                            Code postal
+                          </Label>
                           <Input
                             placeholder={
                               isInternational
@@ -1029,11 +1109,11 @@ export default function ClientsModal({
                             }
                             className={cn(
                               errors.address?.postalCode &&
-                                "border-red-500 hover:border-red-500"
+                                "border-red-500 hover:border-red-500",
                             )}
                             {...register(
                               "address.postalCode",
-                              postalCodeValidationRules
+                              postalCodeValidationRules,
                             )}
                           />
                           {errors.address?.postalCode && (
@@ -1045,16 +1125,18 @@ export default function ClientsModal({
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Pays</Label>
+                        <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                          Pays
+                        </Label>
                         <Input
                           placeholder="France"
                           className={cn(
                             errors.address?.country &&
-                              "border-red-500 hover:border-red-500"
+                              "border-red-500 hover:border-red-500",
                           )}
                           {...register(
                             "address.country",
-                            getValidationRules("country", true)
+                            getValidationRules("country", true),
                           )}
                         />
                         {errors.address?.country && (
@@ -1084,17 +1166,22 @@ export default function ClientsModal({
                     {hasDifferentShipping && (
                       <div className="space-y-3 border-l-2 border-gray-200 pl-4">
                         <div className="space-y-2">
-                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Adresse</Label>
+                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                            Adresse
+                          </Label>
                           <Textarea
                             placeholder="123 Rue de la Livraison"
                             className={cn(
                               "border-[#e6e7ea] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] rounded-[9px] transition-[border] duration-[80ms]",
                               errors.shippingAddress?.street &&
-                                "border-red-500 hover:border-red-500"
+                                "border-red-500 hover:border-red-500",
                             )}
                             {...register(
                               "shippingAddress.street",
-                              getValidationRules("street", hasDifferentShipping)
+                              getValidationRules(
+                                "street",
+                                hasDifferentShipping,
+                              ),
                             )}
                             rows={2}
                           />
@@ -1107,16 +1194,21 @@ export default function ClientsModal({
 
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Ville</Label>
+                            <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                              Ville
+                            </Label>
                             <Input
                               placeholder="Paris"
                               className={cn(
                                 errors.shippingAddress?.city &&
-                                  "border-red-500 hover:border-red-500"
+                                  "border-red-500 hover:border-red-500",
                               )}
                               {...register(
                                 "shippingAddress.city",
-                                getValidationRules("city", hasDifferentShipping)
+                                getValidationRules(
+                                  "city",
+                                  hasDifferentShipping,
+                                ),
                               )}
                             />
                             {errors.shippingAddress?.city && (
@@ -1126,7 +1218,9 @@ export default function ClientsModal({
                             )}
                           </div>
                           <div className="space-y-2">
-                            <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Code postal</Label>
+                            <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                              Code postal
+                            </Label>
                             <Input
                               placeholder={
                                 isInternational
@@ -1135,11 +1229,11 @@ export default function ClientsModal({
                               }
                               className={cn(
                                 errors.shippingAddress?.postalCode &&
-                                  "border-red-500 hover:border-red-500"
+                                  "border-red-500 hover:border-red-500",
                               )}
                               {...register(
                                 "shippingAddress.postalCode",
-                                shippingPostalCodeValidationRules
+                                shippingPostalCodeValidationRules,
                               )}
                             />
                             {errors.shippingAddress?.postalCode && (
@@ -1151,19 +1245,21 @@ export default function ClientsModal({
                         </div>
 
                         <div className="space-y-2">
-                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Pays</Label>
+                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                            Pays
+                          </Label>
                           <Input
                             placeholder="France"
                             className={cn(
                               errors.shippingAddress?.country &&
-                                "border-red-500 hover:border-red-500"
+                                "border-red-500 hover:border-red-500",
                             )}
                             {...register(
                               "shippingAddress.country",
                               getValidationRules(
                                 "country",
-                                hasDifferentShipping
-                              )
+                                hasDifferentShipping,
+                              ),
                             )}
                           />
                           {errors.shippingAddress?.country && (
@@ -1197,7 +1293,7 @@ export default function ClientsModal({
                             }
                             className={cn(
                               errors.siret &&
-                                "border-red-500 hover:border-red-500"
+                                "border-red-500 hover:border-red-500",
                             )}
                             {...register("siret", siretValidationRules)}
                           />
@@ -1215,7 +1311,9 @@ export default function ClientsModal({
                         </div>
 
                         <div className="space-y-2">
-                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Numéro de TVA</Label>
+                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                            Numéro de TVA
+                          </Label>
                           <Input
                             placeholder={
                               isInternational
@@ -1224,7 +1322,7 @@ export default function ClientsModal({
                             }
                             className={cn(
                               errors.vatNumber &&
-                                "border-red-500 hover:border-red-500"
+                                "border-red-500 hover:border-red-500",
                             )}
                             {...register("vatNumber", vatValidationRules)}
                           />
@@ -1247,7 +1345,14 @@ export default function ClientsModal({
                     {clientType === "COMPANY" && (
                       <ClientContactsForm
                         contacts={clientContacts}
-                        onChange={setClientContacts}
+                        onChange={(contacts) => {
+                          setClientContacts(contacts);
+                          // Réinitialiser les erreurs de contacts quand l'utilisateur modifie
+                          if (Object.keys(contactErrors).length > 0) {
+                            setContactErrors({});
+                          }
+                        }}
+                        contactErrors={contactErrors}
                       />
                     )}
 
@@ -1294,14 +1399,15 @@ export default function ClientsModal({
                 </div>
               </form>
             </div>
-
           </div>
         ) : (
           // Mode mobile : Onglets (création et édition)
           <Tabs defaultValue="form" className="flex flex-col h-full gap-0">
             {/* DialogTitle caché pour l'accessibilité (Radix exige un DialogTitle) */}
             <VisuallyHidden>
-              <DialogTitle>{client ? "Modifier le client" : "Ajouter un client"}</DialogTitle>
+              <DialogTitle>
+                {client ? "Modifier le client" : "Ajouter un client"}
+              </DialogTitle>
             </VisuallyHidden>
             {/* Header sticky avec X pour fermer — même pattern que devis */}
             <div className="sticky top-0 z-10 bg-background border-b">
@@ -1336,7 +1442,10 @@ export default function ClientsModal({
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="form" className="flex-1 overflow-hidden m-0 flex flex-col min-h-0">
+            <TabsContent
+              value="form"
+              className="flex-1 overflow-hidden m-0 flex flex-col min-h-0"
+            >
               <form
                 onSubmit={handleSubmit(onSubmit)}
                 className="flex flex-col h-full"
@@ -1345,8 +1454,15 @@ export default function ClientsModal({
                   <div className="space-y-4">
                     {/* Type de client + Localisation côte à côte */}
                     <div className="flex items-start gap-3">
-                      <div className={cn("space-y-2", clientType === "COMPANY" ? "flex-1" : "w-full")}>
-                        <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Type de client *</Label>
+                      <div
+                        className={cn(
+                          "space-y-2",
+                          clientType === "COMPANY" ? "flex-1" : "w-full",
+                        )}
+                      >
+                        <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                          Type de client *
+                        </Label>
                         <Controller
                           name="type"
                           control={control}
@@ -1416,8 +1532,8 @@ export default function ClientsModal({
 
                     {clientType === "COMPANY" && isInternational && (
                       <p className="text-xs text-muted-foreground">
-                        Pour les entreprises hors France, les champs SIRET
-                        et TVA sont optionnels et sans validation stricte.
+                        Pour les entreprises hors France, les champs SIRET et
+                        TVA sont optionnels et sans validation stricte.
                       </p>
                     )}
 
@@ -1430,7 +1546,7 @@ export default function ClientsModal({
                         <div
                           className={cn(
                             "flex items-center gap-2.5 px-2.5 h-8 rounded-[9px] transition-[border] duration-[80ms] ease-in-out",
-                            "border border-[#e6e7ea] bg-transparent hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A]"
+                            "border border-[#e6e7ea] bg-transparent hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A]",
                           )}
                         >
                           <Search className="size-3.5 text-muted-foreground shrink-0" />
@@ -1496,10 +1612,12 @@ export default function ClientsModal({
                               ) : (
                                 <div className="p-4 text-center">
                                   <p className="text-sm text-muted-foreground">
-                                    Aucune entreprise trouvée pour &quot;{companyQuery}&quot;
+                                    Aucune entreprise trouvée pour &quot;
+                                    {companyQuery}&quot;
                                   </p>
                                   <p className="text-xs text-muted-foreground mt-1">
-                                    Essayez avec un nom d&apos;entreprise ou un SIRET
+                                    Essayez avec un nom d&apos;entreprise ou un
+                                    SIRET
                                   </p>
                                 </div>
                               )}
@@ -1513,15 +1631,18 @@ export default function ClientsModal({
                     {/* Raison sociale uniquement pour les entreprises */}
                     {clientType === "COMPANY" && (
                       <div className="space-y-2">
-                        <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Raison sociale *</Label>
+                        <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                          Raison sociale *
+                        </Label>
                         <Input
                           placeholder="Nom de l'entreprise"
                           className={cn(
-                            errors.name && "border-red-500 hover:border-red-500"
+                            errors.name &&
+                              "border-red-500 hover:border-red-500",
                           )}
                           {...register(
                             "name",
-                            getValidationRules("companyName", true)
+                            getValidationRules("companyName", true),
                           )}
                         />
                         {errors.name && (
@@ -1537,12 +1658,14 @@ export default function ClientsModal({
                       <div className="grid grid-cols-2 gap-4">
                         {/* Prénom */}
                         <div className="space-y-2">
-                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Prénom *</Label>
+                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                            Prénom *
+                          </Label>
                           <Input
                             placeholder="Prénom"
                             className={cn(
                               errors.firstName &&
-                                "border-red-500 hover:border-red-500"
+                                "border-red-500 hover:border-red-500",
                             )}
                             {...register("firstName", {
                               required: "Le prénom est requis",
@@ -1562,12 +1685,14 @@ export default function ClientsModal({
 
                         {/* Nom de famille */}
                         <div className="space-y-2">
-                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Nom *</Label>
+                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                            Nom *
+                          </Label>
                           <Input
                             placeholder="Nom"
                             className={cn(
                               errors.lastName &&
-                                "border-red-500 hover:border-red-500"
+                                "border-red-500 hover:border-red-500",
                             )}
                             {...register("lastName", {
                               required: "Le nom est requis",
@@ -1589,12 +1714,14 @@ export default function ClientsModal({
                       <div className="grid grid-cols-2 gap-4">
                         {/* Contact principal pour entreprises */}
                         <div className="space-y-2">
-                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Contact principal</Label>
+                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                            Contact principal
+                          </Label>
                           <Input
                             placeholder="Nom du contact"
                             className={cn(
                               errors.firstName &&
-                                "border-red-500 hover:border-red-500"
+                                "border-red-500 hover:border-red-500",
                             )}
                             {...register("firstName", {
                               pattern: {
@@ -1613,18 +1740,21 @@ export default function ClientsModal({
 
                         {/* Email (pour tous les types) */}
                         <div className="space-y-2">
-                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Email *</Label>
+                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                            Email *
+                          </Label>
                           <div className="relative">
-                            <Input type="email"
+                            <Input
+                              type="email"
                               placeholder="contact@entreprise.com"
                               className={cn(
                                 "pr-10",
                                 errors.email &&
-                                  "border-red-500 hover:border-red-500"
+                                  "border-red-500 hover:border-red-500",
                               )}
                               {...register(
                                 "email",
-                                getValidationRules("email", true)
+                                getValidationRules("email", true),
                               )}
                             />
                             <Button
@@ -1655,18 +1785,21 @@ export default function ClientsModal({
                     {/* Email pour particuliers (ligne séparée) */}
                     {clientType === "INDIVIDUAL" && (
                       <div className="space-y-2">
-                        <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Email *</Label>
+                        <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                          Email *
+                        </Label>
                         <div className="relative">
-                          <Input type="email"
+                          <Input
+                            type="email"
                             placeholder="client@exemple.com"
                             className={cn(
                               "pr-10",
                               errors.email &&
-                                "border-red-500 hover:border-red-500"
+                                "border-red-500 hover:border-red-500",
                             )}
                             {...register(
                               "email",
-                              getValidationRules("email", true)
+                              getValidationRules("email", true),
                             )}
                           />
                           <Button
@@ -1704,11 +1837,11 @@ export default function ClientsModal({
                           className={cn(
                             "border-[#e6e7ea] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] rounded-[9px] transition-[border] duration-[80ms]",
                             errors.address?.street &&
-                              "border-red-500 hover:border-red-500"
+                              "border-red-500 hover:border-red-500",
                           )}
                           {...register(
                             "address.street",
-                            getValidationRules("street", true)
+                            getValidationRules("street", true),
                           )}
                           rows={2}
                         />
@@ -1721,16 +1854,18 @@ export default function ClientsModal({
 
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Ville</Label>
+                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                            Ville
+                          </Label>
                           <Input
                             placeholder="Paris"
                             className={cn(
                               errors.address?.city &&
-                                "border-red-500 hover:border-red-500"
+                                "border-red-500 hover:border-red-500",
                             )}
                             {...register(
                               "address.city",
-                              getValidationRules("city", true)
+                              getValidationRules("city", true),
                             )}
                           />
                           {errors.address?.city && (
@@ -1740,7 +1875,9 @@ export default function ClientsModal({
                           )}
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Code postal</Label>
+                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                            Code postal
+                          </Label>
                           <Input
                             placeholder={
                               isInternational
@@ -1749,11 +1886,11 @@ export default function ClientsModal({
                             }
                             className={cn(
                               errors.address?.postalCode &&
-                                "border-red-500 hover:border-red-500"
+                                "border-red-500 hover:border-red-500",
                             )}
                             {...register(
                               "address.postalCode",
-                              postalCodeValidationRules
+                              postalCodeValidationRules,
                             )}
                           />
                           {errors.address?.postalCode && (
@@ -1765,16 +1902,18 @@ export default function ClientsModal({
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Pays</Label>
+                        <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                          Pays
+                        </Label>
                         <Input
                           placeholder="France"
                           className={cn(
                             errors.address?.country &&
-                              "border-red-500 hover:border-red-500"
+                              "border-red-500 hover:border-red-500",
                           )}
                           {...register(
                             "address.country",
-                            getValidationRules("country", true)
+                            getValidationRules("country", true),
                           )}
                         />
                         {errors.address?.country && (
@@ -1804,17 +1943,22 @@ export default function ClientsModal({
                     {hasDifferentShipping && (
                       <div className="space-y-3 border-l-2 border-gray-200 pl-4">
                         <div className="space-y-2">
-                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Adresse</Label>
+                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                            Adresse
+                          </Label>
                           <Textarea
                             placeholder="123 Rue de la Livraison"
                             className={cn(
                               "border-[#e6e7ea] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] rounded-[9px] transition-[border] duration-[80ms]",
                               errors.shippingAddress?.street &&
-                                "border-red-500 hover:border-red-500"
+                                "border-red-500 hover:border-red-500",
                             )}
                             {...register(
                               "shippingAddress.street",
-                              getValidationRules("street", hasDifferentShipping)
+                              getValidationRules(
+                                "street",
+                                hasDifferentShipping,
+                              ),
                             )}
                             rows={2}
                           />
@@ -1827,16 +1971,21 @@ export default function ClientsModal({
 
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Ville</Label>
+                            <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                              Ville
+                            </Label>
                             <Input
                               placeholder="Paris"
                               className={cn(
                                 errors.shippingAddress?.city &&
-                                  "border-red-500 hover:border-red-500"
+                                  "border-red-500 hover:border-red-500",
                               )}
                               {...register(
                                 "shippingAddress.city",
-                                getValidationRules("city", hasDifferentShipping)
+                                getValidationRules(
+                                  "city",
+                                  hasDifferentShipping,
+                                ),
                               )}
                             />
                             {errors.shippingAddress?.city && (
@@ -1846,7 +1995,9 @@ export default function ClientsModal({
                             )}
                           </div>
                           <div className="space-y-2">
-                            <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Code postal</Label>
+                            <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                              Code postal
+                            </Label>
                             <Input
                               placeholder={
                                 isInternational
@@ -1855,11 +2006,11 @@ export default function ClientsModal({
                               }
                               className={cn(
                                 errors.shippingAddress?.postalCode &&
-                                  "border-red-500 hover:border-red-500"
+                                  "border-red-500 hover:border-red-500",
                               )}
                               {...register(
                                 "shippingAddress.postalCode",
-                                shippingPostalCodeValidationRules
+                                shippingPostalCodeValidationRules,
                               )}
                             />
                             {errors.shippingAddress?.postalCode && (
@@ -1871,19 +2022,21 @@ export default function ClientsModal({
                         </div>
 
                         <div className="space-y-2">
-                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Pays</Label>
+                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                            Pays
+                          </Label>
                           <Input
                             placeholder="France"
                             className={cn(
                               errors.shippingAddress?.country &&
-                                "border-red-500 hover:border-red-500"
+                                "border-red-500 hover:border-red-500",
                             )}
                             {...register(
                               "shippingAddress.country",
                               getValidationRules(
                                 "country",
-                                hasDifferentShipping
-                              )
+                                hasDifferentShipping,
+                              ),
                             )}
                           />
                           {errors.shippingAddress?.country && (
@@ -1917,7 +2070,7 @@ export default function ClientsModal({
                             }
                             className={cn(
                               errors.siret &&
-                                "border-red-500 hover:border-red-500"
+                                "border-red-500 hover:border-red-500",
                             )}
                             {...register("siret", siretValidationRules)}
                           />
@@ -1935,7 +2088,9 @@ export default function ClientsModal({
                         </div>
 
                         <div className="space-y-2">
-                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Numéro de TVA</Label>
+                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                            Numéro de TVA
+                          </Label>
                           <Input
                             placeholder={
                               isInternational
@@ -1944,7 +2099,7 @@ export default function ClientsModal({
                             }
                             className={cn(
                               errors.vatNumber &&
-                                "border-red-500 hover:border-red-500"
+                                "border-red-500 hover:border-red-500",
                             )}
                             {...register("vatNumber", vatValidationRules)}
                           />
@@ -1967,7 +2122,13 @@ export default function ClientsModal({
                     {clientType === "COMPANY" && (
                       <ClientContactsForm
                         contacts={clientContacts}
-                        onChange={setClientContacts}
+                        onChange={(contacts) => {
+                          setClientContacts(contacts);
+                          if (Object.keys(contactErrors).length > 0) {
+                            setContactErrors({});
+                          }
+                        }}
+                        contactErrors={contactErrors}
                       />
                     )}
 
@@ -1983,7 +2144,9 @@ export default function ClientsModal({
                 {/* Footer fixed bottom — même pattern que devis */}
                 <div
                   className="fixed bottom-0 left-0 right-0 flex gap-3 px-4 py-3 border-t bg-background"
-                  style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+                  style={{
+                    paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
+                  }}
                 >
                   <Button
                     type="button"

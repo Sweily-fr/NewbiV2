@@ -24,8 +24,14 @@ export default function Component() {
     const calendarError = searchParams.get("calendar_error");
 
     if (calendarConnected) {
-      const providerNames = { google: "Google Calendar", microsoft: "Microsoft Outlook", apple: "Apple Calendar" };
-      toast.success(`${providerNames[calendarConnected] || calendarConnected} connecté avec succès`);
+      const providerNames = {
+        google: "Google Calendar",
+        microsoft: "Microsoft Outlook",
+        apple: "Apple Calendar",
+      };
+      toast.success(
+        `${providerNames[calendarConnected] || calendarConnected} connecté avec succès`,
+      );
       refetch();
       // Clean URL params
       window.history.replaceState({}, "", window.location.pathname);
@@ -36,7 +42,6 @@ export default function Component() {
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, [searchParams, refetch]);
-
 
   // Transformer les événements avec useMemo pour éviter les re-renders inutiles
   const localEvents = useMemo(() => {
@@ -80,7 +85,13 @@ export default function Component() {
         color: event.color || "sky",
         location: event.location,
         type: "MANUAL",
-        emailReminder: event.emailReminder?.enabled ? event.emailReminder : undefined,
+        emailReminder: event.emailReminder?.enabled
+          ? {
+              enabled: true,
+              anticipation: event.emailReminder.anticipation || null,
+              echeance: event.emailReminder.echeance || null,
+            }
+          : undefined,
       };
       await createEvent(input);
     } catch (error) {
@@ -108,7 +119,13 @@ export default function Component() {
         color: updatedEvent.color,
         location: updatedEvent.location,
         type: updatedEvent.type || "MANUAL",
-        emailReminder: updatedEvent.emailReminder,
+        emailReminder: updatedEvent.emailReminder
+          ? {
+              enabled: updatedEvent.emailReminder.enabled,
+              anticipation: updatedEvent.emailReminder.anticipation || null,
+              echeance: updatedEvent.emailReminder.echeance || null,
+            }
+          : undefined,
       });
     } catch (error) {
       console.error("Erreur lors de la mise à jour de l'événement:", error);

@@ -8,6 +8,7 @@ import {
 import { GET_EXPENSES } from "../graphql/queries/expense";
 import { useRequiredWorkspace } from "./useWorkspace";
 import { mapCategoryToEnum } from "@/app/dashboard/outils/transactions/components/transactions/utils/mappers";
+import { formatLocalDate } from "@/src/utils/dateFormatter";
 
 /**
  * Hook pour la gestion des dépenses
@@ -78,7 +79,7 @@ export const useExpense = () => {
             }
           }
           // Fallback vers la date actuelle si invalide ou manquante
-          return new Date().toISOString().split("T")[0];
+          return formatLocalDate();
         })(),
         vendor: transactionData.vendor_name || "",
         vendorVatNumber:
@@ -212,7 +213,7 @@ export const useExpense = () => {
                 processOCR: false, // L'OCR a déjà été fait
               };
 
-              const fileResult = await addExpenseFile({
+              await addExpenseFile({
                 variables: {
                   expenseId: createdExpense.id,
                   input: fileInput,
@@ -238,7 +239,7 @@ export const useExpense = () => {
         } catch (metadataError) {
           console.error(
             "❌ Erreur lors de l'ajout des métadonnées OCR:",
-            metadataError
+            metadataError,
           );
           // On retourne quand même la dépense créée
           return createdExpense;

@@ -232,7 +232,7 @@ export default function FileUploadNew({
         const weightedSpeed =
           speedHistoryRef.current.reduce(
             (sum, speed, i) => sum + speed * weights[i],
-            0
+            0,
           ) / totalWeight;
 
         // Utiliser un mix: 70% moyenne globale + 30% moyenne mobile pour stabilité
@@ -275,7 +275,7 @@ export default function FileUploadNew({
       }));
       sessionStorage.setItem(
         "stripe_redirect_files",
-        JSON.stringify(filesData)
+        JSON.stringify(filesData),
       );
     }
   }, [selectedFiles]);
@@ -336,7 +336,7 @@ export default function FileUploadNew({
         try {
           // Récupérer l'accountId depuis la base de données
           const response = await fetch(
-            `/api/stripe/connect/account?userId=${user.user.id}`
+            `/api/stripe/connect/account?userId=${user.user.id}`,
           );
           const accountData = await response.json();
 
@@ -365,7 +365,7 @@ export default function FileUploadNew({
         } catch (error) {
           console.error(
             "❌ Erreur lors de la vérification automatique:",
-            error
+            error,
           );
         }
       }, 2000);
@@ -504,263 +504,267 @@ export default function FileUploadNew({
 
   return (
     <>
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 h-full min-h-0">
-      {/* Upload Section */}
-      <div className="flex flex-col gap-2 min-h-0">
-        {/* Drop area ou Progress */}
-        {isUploading ? (
-          <div className="border-input flex min-h-60 flex-col items-center justify-center rounded-xl border border-dashed p-4 animate-in fade-in duration-300">
-            <div className="animate-in zoom-in duration-500">
-              <CircularProgress
-                value={Math.round(uploadProgress)}
-                size={160}
-                strokeWidth={12}
-                showLabel
-                labelClassName="text-2xl font-bold"
-                renderLabel={(progress) => `${Math.round(progress)}%`}
-                className="stroke-[#5a50ff]/25"
-                progressClassName="stroke-[#5a50ff] drop-shadow-lg"
-              />
-            </div>
-            <p className="mt-6 text-sm font-medium text-[#5a50ff] animate-pulse">
-              Transfert de fichier en cours...
-            </p>
-            <p className="text-muted-foreground mt-1 text-xs animate-in fade-in duration-700">
-              Veuillez patienter pendant l'envoi de vos fichiers
-            </p>
-            {estimatedTimeLeft > 0 && (
-              <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground/70 animate-in fade-in duration-500">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-1 h-1 rounded-full bg-[#5a50ff] animate-pulse" />
-                  <span>
-                    Temps restant estimé :{" "}
-                    <span className="font-medium text-muted-foreground">
-                      {formatTime(estimatedTimeLeft)}
-                    </span>
-                  </span>
-                </div>
-              </div>
-            )}
-            {/* Bouton d'annulation */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={cancelTransfer}
-              className="mt-4 text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
-            >
-              <XIcon className="w-4 h-4 mr-2" />
-              Annuler le transfert
-            </Button>
-          </div>
-        ) : (
-          <div
-            role="button"
-            onClick={openFileDialog}
-            onDragEnter={handleDragEnter}
-            onDragLeave={handleDragLeave}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-            data-dragging={isDragging || undefined}
-            className="border-input hover:bg-accent/50 data-[dragging=true]:border-[#5a50ff]/60 data-[dragging=true]:bg-[#5a50ff]/[0.02] has-[input:focus]:border-ring has-[input:focus]:ring-ring/50 flex min-h-60 flex-col items-center justify-center rounded-xl border border-dashed p-4 transition-all duration-300 ease-in-out has-disabled:pointer-events-none has-disabled:opacity-50 has-[input:focus]:ring-[3px] cursor-pointer"
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              onChange={handleFileChange}
-              className="sr-only"
-              aria-label="Upload files"
-            />
-
-            <div
-              className={`flex flex-col items-center justify-center text-center transition-all duration-300 ease-in-out ${isDragging ? "scale-[1.02]" : "scale-100"}`}
-            >
-              <div
-                className={`bg-background mb-2 flex size-16 shrink-0 items-center justify-center rounded-full border transition-all duration-300 ease-in-out ${isDragging ? "border-[#5a50ff]/40 bg-[#5a50ff]/5" : ""}`}
-                aria-hidden="true"
-              >
-                <FileUpIcon
-                  className={`size-4 transition-all duration-300 ease-in-out ${isDragging ? "text-[#5a50ff] opacity-100" : "opacity-60"}`}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 h-full min-h-0">
+        {/* Upload Section */}
+        <div className="flex flex-col gap-2 min-h-0">
+          {/* Drop area ou Progress */}
+          {isUploading ? (
+            <div className="border-input flex min-h-60 flex-col items-center justify-center rounded-xl border border-dashed p-4 animate-in fade-in duration-300">
+              <div className="animate-in zoom-in duration-500">
+                <CircularProgress
+                  value={Math.round(uploadProgress)}
+                  size={160}
+                  strokeWidth={12}
+                  showLabel
+                  labelClassName="text-2xl font-bold"
+                  renderLabel={(progress) => `${Math.round(progress)}%`}
+                  className="stroke-[#5a50ff]/25"
+                  progressClassName="stroke-[#5a50ff] drop-shadow-lg"
                 />
               </div>
-              <p
-                className={`mb-1.5 text-sm font-medium transition-all duration-300 ease-in-out ${isDragging ? "text-[#5a50ff]/90" : ""}`}
-              >
-                {isDragging
-                  ? "Déposez vos fichiers ici"
-                  : "Glissez-déposez vos fichiers ou cliquez pour sélectionner"}
+              <p className="mt-6 text-sm font-medium text-[#5a50ff] animate-pulse">
+                Transfert de fichier en cours...
               </p>
-              <p
-                className={`text-muted-foreground mb-2 text-xs transition-opacity duration-300 ${isDragging ? "opacity-50" : "opacity-100"}`}
-              >
-                Taille maximale : 5GB par fichier • Tous formats acceptés
+              <p className="text-muted-foreground mt-1 text-xs animate-in fade-in duration-700">
+                Veuillez patienter pendant l'envoi de vos fichiers
               </p>
-              <div
-                className={`text-muted-foreground/70 flex flex-wrap justify-center gap-1 text-xs transition-opacity duration-300 ${isDragging ? "opacity-30" : "opacity-100"}`}
-              >
-                <span>Tous les fichiers</span>
-                <span>∙</span>
-                <span>Max {maxFiles} fichiers</span>
-                <span>∙</span>
-                <span>Up to {formatFileSize(maxSize)}</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {errors.length > 0 && (
-          <div
-            className="text-destructive flex items-center gap-1 text-xs"
-            role="alert"
-          >
-            <AlertCircleIcon className="size-3 shrink-0" />
-            <span>{errors[0]}</span>
-          </div>
-        )}
-
-        {/* Security Info - Seulement quand pas de fichiers */}
-        {selectedFiles.length === 0 && (
-          <div className="mt-4 pt-4 border-t border-border">
-            <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground">
-              <div className="flex items-center gap-1.5">
-                <svg
-                  className="w-3.5 h-3.5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                  />
-                </svg>
-                <span>Chiffrement SSL</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <svg
-                  className="w-3.5 h-3.5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
-                <span>Suppression auto.</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <svg
-                  className="w-3.5 h-3.5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-                  />
-                </svg>
-                <span>Lien sécurisé</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* File list */}
-        {selectedFiles.length > 0 && (
-          <div className="flex-1 flex flex-col min-h-0">
-            {/* Liste des fichiers avec scroll */}
-            <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-              {selectedFiles.map((fileItem) => (
-                <FileUploadItem
-                  key={fileItem.id}
-                  file={fileItem.file}
-                  isUploading={isUploading}
-                  uploadProgress={uploadProgress}
-                  isCompleted={uploadProgress === 100}
-                  onRemove={() => removeFile(fileItem.id)}
-                />
-              ))}
-            </div>
-
-            {/* Remove all files button + Total size */}
-            {selectedFiles.length > 1 && !isUploading && (
-              <div className="flex-shrink-0 mt-3 pt-3 bg-background border-t">
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <div className="flex items-center gap-4">
-                    <span>{selectedFiles.length} fichiers sélectionnés</span>
+              {estimatedTimeLeft > 0 && (
+                <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground/70 animate-in fade-in duration-500">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-1 h-1 rounded-full bg-[#5a50ff] animate-pulse" />
                     <span>
-                      Total :{" "}
-                      {formatFileSize(
-                        selectedFiles.reduce((acc, f) => acc + f.file.size, 0)
-                      )}
+                      Temps restant estimé :{" "}
+                      <span className="font-medium text-muted-foreground">
+                        {formatTime(estimatedTimeLeft)}
+                      </span>
                     </span>
                   </div>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-red-50"
-                          onClick={clearFiles}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Supprimer tous les fichiers</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                </div>
+              )}
+              {/* Bouton d'annulation */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={cancelTransfer}
+                className="mt-4 text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+              >
+                <XIcon className="w-4 h-4 mr-2" />
+                Annuler le transfert
+              </Button>
+            </div>
+          ) : (
+            <div
+              role="button"
+              onClick={openFileDialog}
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              data-dragging={isDragging || undefined}
+              className="border-input hover:bg-accent/50 data-[dragging=true]:border-[#5a50ff]/60 data-[dragging=true]:bg-[#5a50ff]/[0.02] has-[input:focus]:border-ring has-[input:focus]:ring-ring/50 flex min-h-60 flex-col items-center justify-center rounded-xl border border-dashed p-4 transition-all duration-300 ease-in-out has-disabled:pointer-events-none has-disabled:opacity-50 has-[input:focus]:ring-[3px] cursor-pointer"
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                onChange={handleFileChange}
+                className="sr-only"
+                aria-label="Upload files"
+              />
+
+              <div
+                className={`flex flex-col items-center justify-center text-center transition-all duration-300 ease-in-out ${isDragging ? "scale-[1.02]" : "scale-100"}`}
+              >
+                <div
+                  className={`bg-background mb-2 flex size-16 shrink-0 items-center justify-center rounded-full border transition-all duration-300 ease-in-out ${isDragging ? "border-[#5a50ff]/40 bg-[#5a50ff]/5" : ""}`}
+                  aria-hidden="true"
+                >
+                  <FileUpIcon
+                    className={`size-4 transition-all duration-300 ease-in-out ${isDragging ? "text-[#5a50ff] opacity-100" : "opacity-60"}`}
+                  />
+                </div>
+                <p
+                  className={`mb-1.5 text-sm font-medium transition-all duration-300 ease-in-out ${isDragging ? "text-[#5a50ff]/90" : ""}`}
+                >
+                  {isDragging
+                    ? "Déposez vos fichiers ici"
+                    : "Glissez-déposez vos fichiers ou cliquez pour sélectionner"}
+                </p>
+                <p
+                  className={`text-muted-foreground mb-2 text-xs transition-opacity duration-300 ${isDragging ? "opacity-50" : "opacity-100"}`}
+                >
+                  Taille maximale : 5GB par fichier • Tous formats acceptés
+                </p>
+                <div
+                  className={`text-muted-foreground/70 flex flex-wrap justify-center gap-1 text-xs transition-opacity duration-300 ${isDragging ? "opacity-30" : "opacity-100"}`}
+                >
+                  <span>Tous les fichiers</span>
+                  <span>∙</span>
+                  <span>Max {maxFiles} fichiers</span>
+                  <span>∙</span>
+                  <span>Up to {formatFileSize(maxSize)}</span>
                 </div>
               </div>
-            )}
-          </div>
-        )}
-      </div>
-      {/* Options Panel */}
-      <div className="flex flex-col min-h-0">
-        {/* Header fixe */}
-        <div className="flex items-center justify-between pb-4 flex-shrink-0">
-          <h3 className="text-lg font-medium">Options d'envoi</h3>
-        </div>
-
-        {/* Options scrollables */}
-        <div className="flex-1 overflow-y-auto space-y-6 pr-2 min-h-0">
-          {/* Expiration */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <IconClock className="size-4 text-muted-foreground" />
-              <Label className="text-sm font-normal">Durée de validité</Label>
             </div>
-            <Select
-              value={transferOptions.expiration}
-              onValueChange={(value) => handleOptionChange("expiration", value)}
+          )}
+
+          {errors.length > 0 && (
+            <div
+              className="text-destructive flex items-center gap-1 text-xs"
+              role="alert"
             >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="7 jours" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="24h">24 heures</SelectItem>
-                <SelectItem value="48h">48 heures</SelectItem>
-                <SelectItem value="7d">7 jours</SelectItem>
-                <SelectItem value="30d">30 jours</SelectItem>
-              </SelectContent>
-            </Select>
+              <AlertCircleIcon className="size-3 shrink-0" />
+              <span>{errors[0]}</span>
+            </div>
+          )}
+
+          {/* Security Info - Seulement quand pas de fichiers */}
+          {selectedFiles.length === 0 && (
+            <div className="mt-4 pt-4 border-t border-border">
+              <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1.5">
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    />
+                  </svg>
+                  <span>Chiffrement SSL</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                  <span>Suppression auto.</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                    />
+                  </svg>
+                  <span>Lien sécurisé</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* File list */}
+          {selectedFiles.length > 0 && (
+            <div className="flex-1 flex flex-col min-h-0">
+              {/* Liste des fichiers avec scroll */}
+              <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+                {selectedFiles.map((fileItem) => (
+                  <FileUploadItem
+                    key={fileItem.id}
+                    file={fileItem.file}
+                    isUploading={isUploading}
+                    uploadProgress={uploadProgress}
+                    isCompleted={uploadProgress === 100}
+                    onRemove={() => removeFile(fileItem.id)}
+                  />
+                ))}
+              </div>
+
+              {/* Remove all files button + Total size */}
+              {selectedFiles.length > 1 && !isUploading && (
+                <div className="flex-shrink-0 mt-3 pt-3 bg-background border-t">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <div className="flex items-center gap-4">
+                      <span>{selectedFiles.length} fichiers sélectionnés</span>
+                      <span>
+                        Total :{" "}
+                        {formatFileSize(
+                          selectedFiles.reduce(
+                            (acc, f) => acc + f.file.size,
+                            0,
+                          ),
+                        )}
+                      </span>
+                    </div>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-red-50"
+                            onClick={clearFiles}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Supprimer tous les fichiers</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        {/* Options Panel */}
+        <div className="flex flex-col min-h-0">
+          {/* Header fixe */}
+          <div className="flex items-center justify-between pb-4 flex-shrink-0">
+            <h3 className="text-lg font-medium">Options d'envoi</h3>
           </div>
 
-          <Separator />
+          {/* Options scrollables */}
+          <div className="flex-1 overflow-y-auto space-y-6 pr-2 min-h-0">
+            {/* Expiration */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <IconClock className="size-4 text-muted-foreground" />
+                <Label className="text-sm font-normal">Durée de validité</Label>
+              </div>
+              <Select
+                value={transferOptions.expiration}
+                onValueChange={(value) =>
+                  handleOptionChange("expiration", value)
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="7 jours" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="24h">24 heures</SelectItem>
+                  <SelectItem value="48h">48 heures</SelectItem>
+                  <SelectItem value="7d">7 jours</SelectItem>
+                  <SelectItem value="30d">30 jours</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* Payment */}
+            {/* Separator + Payment — désactivé temporairement, à remettre plus tard
+          <Separator />
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <IconCreditCard className="size-4 text-muted-foreground" />
@@ -822,9 +826,7 @@ export default function FileUploadNew({
                       }
                       onChange={(e) => {
                         const value = e.target.value;
-                        // Permettre seulement les chiffres, points et virgules
                         if (value === "" || /^[0-9]*[.,]?[0-9]*$/.test(value)) {
-                          // Remplacer la virgule par un point pour le parsing
                           const normalizedValue = value.replace(",", ".");
                           handleOptionChange(
                             "paymentAmount",
@@ -841,28 +843,6 @@ export default function FileUploadNew({
                     </span>
                   </div>
                 </div>
-                {/* <div className="space-y-2">
-                  <Label className="text-sm font-normal">Montant</Label>
-                  <div className="relative">
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={transferOptions.paymentAmount}
-                      onChange={(e) =>
-                        handleOptionChange(
-                          "paymentAmount",
-                          parseFloat(e.target.value) || 0
-                        )
-                      }
-                      placeholder="0.00"
-                      className="pr-8"
-                    />
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                      <span className="text-muted-foreground text-sm">€</span>
-                    </div>
-                  </div>
-                </div> */}
                 {stripeConnected && !canReceivePayments && (
                   <Callout type="info" noMargin>
                     <h4 className="text-sm font-medium mb-2">
@@ -891,269 +871,275 @@ export default function FileUploadNew({
           </div>
 
           <Separator />
+          */}
 
-          {/* Notifications */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <IconBell className="size-4 text-muted-foreground" />
-              <Label className="text-sm font-normal">Notifications</Label>
-            </div>
+            <Separator />
 
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label className="text-sm font-normal">
-                  Notifier en cas de téléchargement
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  Recevoir un email lorsqu'un fichier est téléchargé
-                </p>
+            {/* Notifications */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <IconBell className="size-4 text-muted-foreground" />
+                <Label className="text-sm font-normal">Notifications</Label>
               </div>
-              <Switch
-                checked={transferOptions.notifyOnDownload}
-                onCheckedChange={(checked) =>
-                  handleOptionChange("notifyOnDownload", checked)
-                }
-                className="data-[state=checked]:bg-[#5a50ff] scale-75 cursor-pointer"
-              />
-            </div>
 
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label className="text-sm font-normal">
-                  Rappel avant expiration
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  Recevoir un email 2 jours avant l'expiration
-                </p>
-              </div>
-              <Switch
-                checked={transferOptions.notifyBeforeExpiry}
-                onCheckedChange={(checked) =>
-                  handleOptionChange("notifyBeforeExpiry", checked)
-                }
-                className="data-[state=checked]:bg-[#5a50ff] scale-75 cursor-pointer"
-              />
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Protection */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <IconLock className="size-4 text-muted-foreground" />
-              <Label className="text-sm font-normal">Protection</Label>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label className="text-sm font-normal">
-                  Protection par mot de passe
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  Ajouter une couche de sécurité supplémentaire
-                </p>
-              </div>
-              <Switch
-                checked={transferOptions.passwordProtected}
-                onCheckedChange={(checked) =>
-                  handleOptionChange("passwordProtected", checked)
-                }
-                className="data-[state=checked]:bg-[#5a50ff] scale-75 cursor-pointer"
-              />
-            </div>
-
-            {transferOptions.passwordProtected && (
-              <div className="relative">
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Entrez un mot de passe"
-                  value={transferOptions.password}
-                  onChange={(e) =>
-                    handleOptionChange("password", e.target.value)
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label className="text-sm font-normal">
+                    Notifier en cas de téléchargement
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Recevoir un email lorsqu'un fichier est téléchargé
+                  </p>
+                </div>
+                <Switch
+                  checked={transferOptions.notifyOnDownload}
+                  onCheckedChange={(checked) =>
+                    handleOptionChange("notifyOnDownload", checked)
                   }
-                  className="h-9 pr-10"
+                  className="data-[state=checked]:bg-[#5a50ff] scale-75 cursor-pointer"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
-                </button>
               </div>
-            )}
-          </div>
 
-          <Separator />
-
-          {/* Prévisualisation */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <IconEye className="size-4 text-muted-foreground" />
-              <Label className="text-sm font-normal">Prévisualisation</Label>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label className="text-sm font-normal">
-                  Autoriser la prévisualisation
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  Permettre de visualiser les fichiers avant téléchargement
-                </p>
-              </div>
-              <Switch
-                checked={transferOptions.allowPreview}
-                onCheckedChange={(checked) =>
-                  handleOptionChange("allowPreview", checked)
-                }
-                className="data-[state=checked]:bg-[#5a50ff] scale-75 cursor-pointer"
-              />
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Filigrane */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <IconDroplet className="size-4 text-muted-foreground" />
-              <Label className="text-sm font-normal">Filigrane</Label>
-              {watermarkableCount > 0 && (
-                <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                  {watermarkableCount} fichier{watermarkableCount > 1 ? "s" : ""}
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label className="text-sm font-normal">
-                  Appliquer un filigrane
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  Ajouter un filigrane sur les images et PDFs
-                </p>
-              </div>
-              <Switch
-                checked={transferOptions.applyWatermark}
-                onCheckedChange={(checked) => {
-                  handleOptionChange("applyWatermark", checked);
-                  // Désactiver le paiement si filigrane activé
-                  if (checked && transferOptions.requirePayment) {
-                    handleOptionChange("requirePayment", false);
-                    handleOptionChange("paymentAmount", 0);
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label className="text-sm font-normal">
+                    Rappel avant expiration
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Recevoir un email 2 jours avant l'expiration
+                  </p>
+                </div>
+                <Switch
+                  checked={transferOptions.notifyBeforeExpiry}
+                  onCheckedChange={(checked) =>
+                    handleOptionChange("notifyBeforeExpiry", checked)
                   }
-                }}
-                disabled={watermarkableCount === 0}
-                className="data-[state=checked]:bg-[#5a50ff] scale-75 cursor-pointer"
-              />
+                  className="data-[state=checked]:bg-[#5a50ff] scale-75 cursor-pointer"
+                />
+              </div>
             </div>
 
-            {transferOptions.applyWatermark && watermarkableCount > 0 && (
-              <div className="space-y-3 pt-2">
-                <div className="space-y-2">
-                  <Label className="text-xs text-muted-foreground">
-                    Texte du filigrane
-                  </Label>
-                  <Input
-                    type="text"
-                    placeholder="CONFIDENTIEL"
-                    value={transferOptions.watermarkText}
-                    onChange={(e) =>
-                      handleOptionChange("watermarkText", e.target.value)
-                    }
-                    className="h-9"
-                    maxLength={30}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs text-muted-foreground">
-                    Position
-                  </Label>
-                  <Select
-                    value={transferOptions.watermarkPosition}
-                    onValueChange={(value) =>
-                      handleOptionChange("watermarkPosition", value)
-                    }
-                  >
-                    <SelectTrigger className="h-9">
-                      <SelectValue placeholder="Position du filigrane" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="diagonal">
-                        Diagonale (centré)
-                      </SelectItem>
-                      <SelectItem value="center">Centre</SelectItem>
-                      <SelectItem value="bottom-right">Bas droite</SelectItem>
-                      <SelectItem value="tile">Mosaïque (répété)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Le filigrane sera appliqué sur {watermarkableCount} fichier
-                  {watermarkableCount > 1 ? "s" : ""}.
-                </p>
+            <Separator />
+
+            {/* Protection */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <IconLock className="size-4 text-muted-foreground" />
+                <Label className="text-sm font-normal">Protection</Label>
               </div>
-            )}
 
-            {watermarkableCount === 0 && selectedFiles.length > 0 && (
-              <p className="text-xs text-muted-foreground italic">
-                Aucune image ou PDF détecté dans les fichiers sélectionnés.
-              </p>
-            )}
-          </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label className="text-sm font-normal">
+                    Protection par mot de passe
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Ajouter une couche de sécurité supplémentaire
+                  </p>
+                </div>
+                <Switch
+                  checked={transferOptions.passwordProtected}
+                  onCheckedChange={(checked) =>
+                    handleOptionChange("passwordProtected", checked)
+                  }
+                  className="data-[state=checked]:bg-[#5a50ff] scale-75 cursor-pointer"
+                />
+              </div>
 
-          <Separator />
-
-          <div className="space-y-3">
-            <Label className="text-sm font-normal">Message personnalisé</Label>
-            <Textarea
-              placeholder="Ajoutez un message pour le destinataire..."
-              value={transferOptions.customMessage}
-              onChange={(e) =>
-                handleOptionChange("customMessage", e.target.value)
-              }
-              rows={3}
-            />
-          </div>
-        </div>
-
-        {/* Create Transfer Button - Fixe en bas */}
-        <div className="flex justify-end mt-4 pt-4 border-t bg-background flex-shrink-0">
-          <ButtonGroup>
-            <Button
-              onClick={handleCreateTransfer}
-              disabled={isUploading}
-              className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-            >
-              {isUploading ? (
-                <>
-                  <LoaderCircle className="size-4 animate-spin" />
-                  Création en cours...
-                </>
-              ) : (
-                <>Transférer vos fichiers</>
+              {transferOptions.passwordProtected && (
+                <div className="relative">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Entrez un mot de passe"
+                    value={transferOptions.password}
+                    onChange={(e) =>
+                      handleOptionChange("password", e.target.value)
+                    }
+                    className="h-9 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
               )}
-            </Button>
-            <ButtonGroupSeparator />
-            <Button
-              onClick={handleCreateTransfer}
-              disabled={isUploading}
-              size="icon"
-              className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-            >
-              <CloudUpload size={16} aria-hidden="true" />
-            </Button>
-          </ButtonGroup>
+            </div>
+
+            <Separator />
+
+            {/* Prévisualisation */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <IconEye className="size-4 text-muted-foreground" />
+                <Label className="text-sm font-normal">Prévisualisation</Label>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label className="text-sm font-normal">
+                    Autoriser la prévisualisation
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Permettre de visualiser les fichiers avant téléchargement
+                  </p>
+                </div>
+                <Switch
+                  checked={transferOptions.allowPreview}
+                  onCheckedChange={(checked) =>
+                    handleOptionChange("allowPreview", checked)
+                  }
+                  className="data-[state=checked]:bg-[#5a50ff] scale-75 cursor-pointer"
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Filigrane */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <IconDroplet className="size-4 text-muted-foreground" />
+                <Label className="text-sm font-normal">Filigrane</Label>
+                {watermarkableCount > 0 && (
+                  <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                    {watermarkableCount} fichier
+                    {watermarkableCount > 1 ? "s" : ""}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label className="text-sm font-normal">
+                    Appliquer un filigrane
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Ajouter un filigrane sur les images et PDFs
+                  </p>
+                </div>
+                <Switch
+                  checked={transferOptions.applyWatermark}
+                  onCheckedChange={(checked) => {
+                    handleOptionChange("applyWatermark", checked);
+                    // Désactiver le paiement si filigrane activé — désactivé temporairement
+                    // if (checked && transferOptions.requirePayment) {
+                    //   handleOptionChange("requirePayment", false);
+                    //   handleOptionChange("paymentAmount", 0);
+                    // }
+                  }}
+                  disabled={watermarkableCount === 0}
+                  className="data-[state=checked]:bg-[#5a50ff] scale-75 cursor-pointer"
+                />
+              </div>
+
+              {transferOptions.applyWatermark && watermarkableCount > 0 && (
+                <div className="space-y-3 pt-2">
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">
+                      Texte du filigrane
+                    </Label>
+                    <Input
+                      type="text"
+                      placeholder="CONFIDENTIEL"
+                      value={transferOptions.watermarkText}
+                      onChange={(e) =>
+                        handleOptionChange("watermarkText", e.target.value)
+                      }
+                      className="h-9"
+                      maxLength={30}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">
+                      Position
+                    </Label>
+                    <Select
+                      value={transferOptions.watermarkPosition}
+                      onValueChange={(value) =>
+                        handleOptionChange("watermarkPosition", value)
+                      }
+                    >
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="Position du filigrane" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="diagonal">
+                          Diagonale (centré)
+                        </SelectItem>
+                        <SelectItem value="center">Centre</SelectItem>
+                        <SelectItem value="bottom-right">Bas droite</SelectItem>
+                        <SelectItem value="tile">Mosaïque (répété)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Le filigrane sera appliqué sur {watermarkableCount} fichier
+                    {watermarkableCount > 1 ? "s" : ""}.
+                  </p>
+                </div>
+              )}
+
+              {watermarkableCount === 0 && selectedFiles.length > 0 && (
+                <p className="text-xs text-muted-foreground italic">
+                  Aucune image ou PDF détecté dans les fichiers sélectionnés.
+                </p>
+              )}
+            </div>
+
+            <Separator />
+
+            <div className="space-y-3">
+              <Label className="text-sm font-normal">
+                Message personnalisé
+              </Label>
+              <Textarea
+                placeholder="Ajoutez un message pour le destinataire..."
+                value={transferOptions.customMessage}
+                onChange={(e) =>
+                  handleOptionChange("customMessage", e.target.value)
+                }
+                rows={3}
+              />
+            </div>
+          </div>
+
+          {/* Create Transfer Button - Fixe en bas */}
+          <div className="flex justify-end mt-4 pt-4 border-t bg-background flex-shrink-0">
+            <ButtonGroup>
+              <Button
+                onClick={handleCreateTransfer}
+                disabled={isUploading}
+                className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+              >
+                {isUploading ? (
+                  <>
+                    <LoaderCircle className="size-4 animate-spin" />
+                    Création en cours...
+                  </>
+                ) : (
+                  <>Transférer vos fichiers</>
+                )}
+              </Button>
+              <ButtonGroupSeparator />
+              <Button
+                onClick={handleCreateTransfer}
+                disabled={isUploading}
+                size="icon"
+                className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+              >
+                <CloudUpload size={16} aria-hidden="true" />
+              </Button>
+            </ButtonGroup>
+          </div>
         </div>
       </div>
-    </div>
 
       {/* Modal Stripe Connect Onboarding - En dehors du grid */}
       <StripeConnectOnboarding

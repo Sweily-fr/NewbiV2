@@ -57,6 +57,7 @@ import {
   useReconciliationSuggestions,
   useReconcilePurchaseInvoice,
 } from "@/src/hooks/usePurchaseInvoices";
+import { formatLocalDate } from "@/src/utils/dateFormatter";
 
 const STATUS_OPTIONS = [
   { value: "TO_PROCESS", label: "À traiter" },
@@ -69,7 +70,8 @@ const STATUS_OPTIONS = [
 
 const STATUS_BADGE = {
   TO_PROCESS: "bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400",
-  TO_PAY: "bg-orange-50 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400",
+  TO_PAY:
+    "bg-orange-50 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400",
   PENDING: "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400",
   PAID: "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400",
   OVERDUE: "bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400",
@@ -106,15 +108,15 @@ const PAYMENT_METHOD_OPTIONS = [
 ];
 
 const paymentMethodLabels = Object.fromEntries(
-  PAYMENT_METHOD_OPTIONS.map((o) => [o.value, o.label])
+  PAYMENT_METHOD_OPTIONS.map((o) => [o.value, o.label]),
 );
 
 const categoryLabels = Object.fromEntries(
-  CATEGORY_OPTIONS.map((o) => [o.value, o.label])
+  CATEGORY_OPTIONS.map((o) => [o.value, o.label]),
 );
 
 const statusLabels = Object.fromEntries(
-  STATUS_OPTIONS.map((o) => [o.value, o.label])
+  STATUS_OPTIONS.map((o) => [o.value, o.label]),
 );
 
 function formatAmount(amount) {
@@ -173,7 +175,7 @@ export function PurchaseInvoiceDetailDrawer({
   const { markAsPaid, loading: markLoading } = useMarkAsPaid();
   const { reconcile } = useReconcilePurchaseInvoice();
   const { suggestions } = useReconciliationSuggestions(
-    !isCreate && invoice?.id && invoice?.status !== "PAID" ? invoice.id : null
+    !isCreate && invoice?.id && invoice?.status !== "PAID" ? invoice.id : null,
   );
 
   useEffect(() => {
@@ -181,7 +183,7 @@ export function PurchaseInvoiceDetailDrawer({
       const parseDate = (val) => {
         if (!val) return "";
         const d = new Date(val);
-        return isNaN(d.getTime()) ? "" : d.toISOString().split("T")[0];
+        return isNaN(d.getTime()) ? "" : formatLocalDate(d);
       };
       setForm({
         supplierName: invoice.supplierName || "",
@@ -204,7 +206,7 @@ export function PurchaseInvoiceDetailDrawer({
       setForm({
         supplierName: "",
         invoiceNumber: "",
-        issueDate: new Date().toISOString().split("T")[0],
+        issueDate: formatLocalDate(),
         dueDate: "",
         amountHT: "",
         amountTVA: "",
@@ -249,7 +251,9 @@ export function PurchaseInvoiceDetailDrawer({
     const data = {
       supplierName: form.supplierName,
       invoiceNumber: form.invoiceNumber || undefined,
-      issueDate: form.issueDate ? new Date(form.issueDate).toISOString() : new Date().toISOString(),
+      issueDate: form.issueDate
+        ? new Date(form.issueDate).toISOString()
+        : new Date().toISOString(),
       dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : undefined,
       amountHT: parseFloat(form.amountHT) || 0,
       amountTVA: parseFloat(form.amountTVA) || 0,
@@ -285,7 +289,7 @@ export function PurchaseInvoiceDetailDrawer({
     await markAsPaid(
       invoice.id,
       new Date().toISOString(),
-      form.paymentMethod || undefined
+      form.paymentMethod || undefined,
     );
     onSaved?.();
   };
@@ -315,8 +319,8 @@ export function PurchaseInvoiceDetailDrawer({
               {isCreate
                 ? "Nouvelle facture d'achat"
                 : isEditMode
-                ? "Modifier la facture"
-                : "Détail de la facture"}
+                  ? "Modifier la facture"
+                  : "Détail de la facture"}
             </DrawerTitle>
             {!isCreate && invoice?.status && (
               <span
@@ -784,7 +788,7 @@ export function PurchaseInvoiceDetailDrawer({
                               onError={(e) => {
                                 e.target.style.display = "none";
                                 e.target.parentElement.querySelector(
-                                  ".preview-fallback"
+                                  ".preview-fallback",
                                 ).style.display = "flex";
                               }}
                             />

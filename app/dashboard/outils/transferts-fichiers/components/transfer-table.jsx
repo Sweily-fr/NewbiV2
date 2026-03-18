@@ -137,11 +137,11 @@ export default function TransferTable({
     // Filtrer par statut (tab)
     if (activeTab === "active") {
       result = result.filter(
-        (t) => t.status !== "expired" && t.downloadCount === 0
+        (t) => t.status !== "expired" && t.downloadCount === 0,
       );
     } else if (activeTab === "downloaded") {
       result = result.filter(
-        (t) => t.downloadCount > 0 && t.status !== "expired"
+        (t) => t.downloadCount > 0 && t.status !== "expired",
       );
     } else if (activeTab === "expired") {
       result = result.filter((t) => t.status === "expired");
@@ -155,7 +155,7 @@ export default function TransferTable({
         return files.some((file) =>
           (file.originalName || file.fileName || "")
             .toLowerCase()
-            .includes(query)
+            .includes(query),
         );
       });
     }
@@ -287,7 +287,7 @@ export default function TransferTable({
           const now = new Date();
           const isExpired = expirationDate < now;
           const daysLeft = Math.ceil(
-            (expirationDate - now) / (1000 * 60 * 60 * 24)
+            (expirationDate - now) / (1000 * 60 * 60 * 24),
           );
 
           return (
@@ -295,7 +295,7 @@ export default function TransferTable({
               <p
                 className={cn(
                   "text-xs font-normal",
-                  isExpired ? "dark:text-white-400" : "text-foreground"
+                  isExpired ? "dark:text-white-400" : "text-foreground",
                 )}
               >
                 {format(expirationDate, "dd MMM yyyy", { locale: fr })}
@@ -365,7 +365,7 @@ export default function TransferTable({
                   <DropdownMenuItem
                     onClick={() => {
                       navigator.clipboard.writeText(
-                        `${window.location.origin}/transfer/${transfer.shareLink}?key=${transfer.accessKey}`
+                        `${window.location.origin}/transfer/${transfer.shareLink}?key=${transfer.accessKey}`,
                       );
                       toast.success("Lien copié dans le presse-papiers");
                     }}
@@ -391,7 +391,7 @@ export default function TransferTable({
         enableHiding: false,
       },
     ],
-    [session, formatFileSize]
+    [session, formatFileSize],
   );
 
   // Create table instance
@@ -477,13 +477,13 @@ export default function TransferTable({
     setIsDeleting(true);
     try {
       const deletePromises = selectedTransferIds.map((transferId) =>
-        deleteTransfer(transferId)
+        deleteTransfer(transferId),
       );
 
       await Promise.all(deletePromises);
 
       toast.success(
-        `${selectedTransferIds.length} transfert(s) supprimé(s) avec succès`
+        `${selectedTransferIds.length} transfert(s) supprimé(s) avec succès`,
       );
       table.resetRowSelection();
       onRefresh?.();
@@ -532,7 +532,11 @@ export default function TransferTable({
         {/* Search */}
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 h-8 w-full sm:w-[400px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
-            <Search size={16} className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
+            <Search
+              size={16}
+              className="text-muted-foreground/80 shrink-0"
+              aria-hidden="true"
+            />
             <Input
               variant="ghost"
               ref={inputRef}
@@ -578,7 +582,7 @@ export default function TransferTable({
           <TabsList className="h-auto rounded-none bg-transparent p-0 pb-2 w-full justify-start px-4 sm:px-6">
             <TabsTrigger
               value="all"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
               <span>Tous</span>
               <span className="text-xs text-muted-foreground">
@@ -587,7 +591,7 @@ export default function TransferTable({
             </TabsTrigger>
             <TabsTrigger
               value="active"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
               <span>En attente</span>
               <span className="text-xs text-muted-foreground">
@@ -596,7 +600,7 @@ export default function TransferTable({
             </TabsTrigger>
             <TabsTrigger
               value="downloaded"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
               <span>Téléchargés</span>
               <span className="text-xs text-muted-foreground">
@@ -605,7 +609,7 @@ export default function TransferTable({
             </TabsTrigger>
             <TabsTrigger
               value="expired"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
               <span>Expirés</span>
               <span className="text-xs text-muted-foreground">
@@ -634,7 +638,7 @@ export default function TransferTable({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </th>
                   ))}
@@ -675,7 +679,7 @@ export default function TransferTable({
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </td>
                     ))}
@@ -783,7 +787,7 @@ export default function TransferTable({
                       header.column.id === "select" ||
                       header.column.id === "files" ||
                       header.column.id === "status" ||
-                      header.column.id === "actions"
+                      header.column.id === "actions",
                   )
                   .map((header) => (
                     <TableHead
@@ -795,7 +799,7 @@ export default function TransferTable({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   ))}
@@ -817,13 +821,13 @@ export default function TransferTable({
                         cell.column.id === "select" ||
                         cell.column.id === "files" ||
                         cell.column.id === "status" ||
-                        cell.column.id === "actions"
+                        cell.column.id === "actions",
                     )
                     .map((cell) => (
                       <TableCell key={cell.id} className="py-3 px-4 text-sm">
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </TableCell>
                     ))}

@@ -21,9 +21,7 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Separator } from "@/src/components/ui/separator";
 import { Textarea } from "@/src/components/ui/textarea";
-import {
-  Popover as RACPopover,
-} from "react-aria-components";
+import { Popover as RACPopover } from "react-aria-components";
 import {
   Select,
   SelectContent,
@@ -62,6 +60,7 @@ import {
 import {
   formatDateToFrench,
   formatDateTimeToFrench,
+  formatLocalDate,
 } from "@/src/utils/dateFormatter";
 import { findMerchant } from "@/lib/merchants-config";
 import { getCategoryConfig } from "@/lib/category-icons-config";
@@ -299,7 +298,7 @@ export function TransactionDetailDrawer({
     type: "EXPENSE",
     amount: "",
     category: "",
-    date: new Date().toISOString().split("T")[0],
+    date: formatLocalDate(),
     description: "",
     paymentMethod: "CARD",
     vendor: "",
@@ -308,11 +307,11 @@ export function TransactionDetailDrawer({
 
   // Déterminer le mode
   const isCreateMode = isCreating || !transaction;
-  const isBankTransaction = transaction && (
-    transaction.source === "BANK" ||
-    transaction.source === "BANK_TRANSACTION" ||
-    transaction.type === "BANK_TRANSACTION"
-  );
+  const isBankTransaction =
+    transaction &&
+    (transaction.source === "BANK" ||
+      transaction.source === "BANK_TRANSACTION" ||
+      transaction.type === "BANK_TRANSACTION");
   const isManualTransaction = transaction && !isBankTransaction;
 
   // Initialiser le formulaire uniquement quand le drawer s'ouvre (transition false → true)
@@ -328,7 +327,7 @@ export function TransactionDetailDrawer({
         type: "EXPENSE",
         amount: "",
         category: "",
-        date: new Date().toISOString().split("T")[0],
+        date: formatLocalDate(),
         description: "",
         paymentMethod: "CARD",
         vendor: "",
@@ -339,17 +338,17 @@ export function TransactionDetailDrawer({
       setSelectedFile(null);
     } else if (transaction) {
       // Mode visualisation/édition: pré-remplir avec les données
-      let formattedDate = new Date().toISOString().split("T")[0];
+      let formattedDate = formatLocalDate();
       if (transaction.date) {
         if (typeof transaction.date === "object" && transaction.date.$date) {
-          formattedDate = new Date(transaction.date.$date).toISOString().split("T")[0];
+          formattedDate = formatLocalDate(new Date(transaction.date.$date));
         } else if (typeof transaction.date === "string") {
           if (transaction.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
             formattedDate = transaction.date;
           } else {
             const parsedDate = new Date(transaction.date);
             if (!isNaN(parsedDate.getTime())) {
-              formattedDate = parsedDate.toISOString().split("T")[0];
+              formattedDate = formatLocalDate(parsedDate);
             }
           }
         }
@@ -366,7 +365,8 @@ export function TransactionDetailDrawer({
         DIRECT_DEBIT: "TRANSFER",
         SEPA_DEBIT: "TRANSFER",
       };
-      const formPaymentMethod = apiPaymentMethodToForm[transaction.paymentMethod] || "CARD";
+      const formPaymentMethod =
+        apiPaymentMethodToForm[transaction.paymentMethod] || "CARD";
 
       // Mapper le type API vers EXPENSE/INCOME pour le formulaire
       let formType = "EXPENSE";
@@ -396,7 +396,10 @@ export function TransactionDetailDrawer({
             RENT: "loyers_revenus",
             OTHER: "autre_revenu",
           };
-          formCategory = incomeCategoryMap[transaction.category] || categoryApiToForm[transaction.category] || "autre_revenu";
+          formCategory =
+            incomeCategoryMap[transaction.category] ||
+            categoryApiToForm[transaction.category] ||
+            "autre_revenu";
         } else {
           // Catégorie large API pour une dépense (rétro-compatibilité)
           formCategory = categoryApiToForm[transaction.category] || "";
@@ -414,11 +417,14 @@ export function TransactionDetailDrawer({
         receiptImage: transaction.receiptImage || null,
       });
       // Les transactions bancaires s'ouvrent directement en mode édition
-      const txIsBankTransaction = transaction.source === "BANK" ||
+      const txIsBankTransaction =
+        transaction.source === "BANK" ||
         transaction.source === "BANK_TRANSACTION" ||
         transaction.type === "BANK_TRANSACTION";
       setIsEditMode(txIsBankTransaction);
-      setPreviewUrl(transaction.receiptFile?.url || transaction.receiptImage || null);
+      setPreviewUrl(
+        transaction.receiptFile?.url || transaction.receiptImage || null,
+      );
     }
   }, [open, transaction, isCreateMode]);
 
@@ -442,17 +448,25 @@ export function TransactionDetailDrawer({
     // Sinon c'est une catégorie large API → mapper vers une sous-catégorie
     if (transaction.amount > 0) {
       const incomeCategoryMap = {
-        SERVICES: "services", SUBSCRIPTIONS: "abonnements_revenus",
-        SOFTWARE: "licences_revenus", RENT: "loyers_revenus", OTHER: "autre_revenu",
+        SERVICES: "services",
+        SUBSCRIPTIONS: "abonnements_revenus",
+        SOFTWARE: "licences_revenus",
+        RENT: "loyers_revenus",
+        OTHER: "autre_revenu",
       };
-      return incomeCategoryMap[transaction.category] || categoryApiToForm[transaction.category] || "autre_revenu";
+      return (
+        incomeCategoryMap[transaction.category] ||
+        categoryApiToForm[transaction.category] ||
+        "autre_revenu"
+      );
     }
     return categoryApiToForm[transaction.category] || "autre";
   })();
 
   // Gérer le changement de catégorie (mode vue - utilise les mêmes sous-catégories fines)
   const handleViewCategoryChange = async (newCategory) => {
-    const transactionId = transaction?.originalTransaction?.id || transaction?.id;
+    const transactionId =
+      transaction?.originalTransaction?.id || transaction?.id;
     if (!transactionId || newCategory === transaction?.category) return;
 
     try {
@@ -492,7 +506,8 @@ export function TransactionDetailDrawer({
       onOpenChange(false);
     } else if (isEditMode) {
       // Mode édition (manuelle ou bancaire) — envoyer la sous-catégorie fine
-      const transactionId = transaction?.originalTransaction?.id || transaction?.id;
+      const transactionId =
+        transaction?.originalTransaction?.id || transaction?.id;
       const submissionData = {
         ...formData,
         category: formData.category || "OTHER",
@@ -510,7 +525,12 @@ export function TransactionDetailDrawer({
   const handleFileUpload = async (file) => {
     if (!file) return;
 
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "application/pdf",
+    ];
     if (!allowedTypes.includes(file.type)) {
       toast.error("Format non supporté. Utilisez JPG, PNG, WebP ou PDF.");
       return;
@@ -563,7 +583,10 @@ export function TransactionDetailDrawer({
     if (!transaction?.linkedInvoiceId) return;
     setIsUnlinking(true);
     try {
-      const result = await unlinkTransaction(transaction.id, transaction.linkedInvoiceId);
+      const result = await unlinkTransaction(
+        transaction.id,
+        transaction.linkedInvoiceId,
+      );
       if (result.success) {
         toast.success("Facture détachée avec succès");
         onRefresh?.();
@@ -596,7 +619,8 @@ export function TransactionDetailDrawer({
   };
 
   // Utilitaires
-  const hasReceipt = transaction?.hasReceipt ||
+  const hasReceipt =
+    transaction?.hasReceipt ||
     (transaction?.files && transaction.files.length > 0) ||
     !!transaction?.receiptFile?.url ||
     !!previewUrl;
@@ -606,7 +630,9 @@ export function TransactionDetailDrawer({
     if (typeof dateInput === "object" && dateInput.$date) {
       dateInput = dateInput.$date;
     }
-    return includeTime ? formatDateTimeToFrench(dateInput) : formatDateToFrench(dateInput);
+    return includeTime
+      ? formatDateTimeToFrench(dateInput)
+      : formatDateToFrench(dateInput);
   };
 
   const formatAmount = (amount) => {
@@ -620,14 +646,23 @@ export function TransactionDetailDrawer({
     if (isCreateMode) {
       return "Nouvelle transaction";
     }
-    if (transaction?.paymentMethod && transactionTypeLabels[transaction.paymentMethod]) {
+    if (
+      transaction?.paymentMethod &&
+      transactionTypeLabels[transaction.paymentMethod]
+    ) {
       return transactionTypeLabels[transaction.paymentMethod];
     }
     if (transaction?.operationType) {
       const op = transaction.operationType.toLowerCase();
-      if (op.includes("card") || op.includes("carte")) return "Paiement par carte";
+      if (op.includes("card") || op.includes("carte"))
+        return "Paiement par carte";
       if (op.includes("transfer") || op.includes("virement")) return "Virement";
-      if (op.includes("debit") || op.includes("prelevement") || op.includes("prélèvement")) return "Prélèvement";
+      if (
+        op.includes("debit") ||
+        op.includes("prelevement") ||
+        op.includes("prélèvement")
+      )
+        return "Prélèvement";
     }
     if (isBankTransaction) return "Transaction bancaire";
     return "Transaction manuelle";
@@ -637,533 +672,501 @@ export function TransactionDetailDrawer({
   // L'icône doit être réactive aux changements de catégorie en mode création ET édition
   const isEditingForm = isCreateMode || isEditMode;
   const currentCategoryKey = isEditingForm
-    ? (categoryFormToApi[formData.category] || "OTHER")
-    : (transaction?.category || "OTHER");
+    ? categoryFormToApi[formData.category] || "OTHER"
+    : transaction?.category || "OTHER";
   const categoryConfig = getCategoryConfig(currentCategoryKey);
   const CategoryIcon = categoryConfig.icon;
-  const PaymentIcon = paymentMethodIcons[
-    isEditingForm ? formData.paymentMethod : transaction?.paymentMethod
-  ] || CreditCard;
-  const merchant = !isCreateMode ? findMerchant(
-    transaction?.vendor || transaction?.description || transaction?.title
-  ) : null;
+  const PaymentIcon =
+    paymentMethodIcons[
+      isEditingForm ? formData.paymentMethod : transaction?.paymentMethod
+    ] || CreditCard;
+  const merchant = !isCreateMode
+    ? findMerchant(
+        transaction?.vendor || transaction?.description || transaction?.title,
+      )
+    : null;
 
   return (
     <>
-    <Drawer open={open} onOpenChange={onOpenChange} direction="right">
-      <DrawerContent
-        className="w-full h-full md:w-[500px] md:max-w-[500px] md:min-w-[500px] md:h-auto"
-        style={{ width: "100vw", height: "100vh" }}
-      >
-        {/* Portal container for calendar popover (must render inside drawer to avoid vaul dismiss layer) */}
-        <div ref={setCalendarContainer} />
+      <Drawer open={open} onOpenChange={onOpenChange} direction="right">
+        <DrawerContent
+          className="w-full h-full md:w-[500px] md:max-w-[500px] md:min-w-[500px] md:h-auto"
+          style={{ width: "100vw", height: "100vh" }}
+        >
+          {/* Portal container for calendar popover (must render inside drawer to avoid vaul dismiss layer) */}
+          <div ref={setCalendarContainer} />
 
-        {/* Header */}
-        <DrawerHeader className="flex flex-row items-center justify-between px-6 py-4 border-b space-y-0">
-          <div className="flex items-center gap-2">
-            <DrawerTitle className="text-base font-medium">
-              {getDrawerTitle()}
-            </DrawerTitle>
-            {!isCreateMode && isBankTransaction && (
-              <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
-                Bancaire
-              </span>
-            )}
-            {isCreateMode && (
-              <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
-                <Plus className="w-3 h-3" />
-                Nouvelle
-              </span>
-            )}
-          </div>
-          <DrawerClose asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <X className="h-4 w-4" />
-            </Button>
-          </DrawerClose>
-        </DrawerHeader>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-6 space-y-6">
-
-            {/* Mode création ou édition manuelle: Type de transaction */}
-            {isEditingForm && (
-              <>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-normal text-muted-foreground">Type</span>
-                  <Tabs value={formData.type} onValueChange={handleChange("type")}>
-                    <TabsList>
-                      <TabsTrigger value="EXPENSE">Dépense</TabsTrigger>
-                      <TabsTrigger value="INCOME">Revenu</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                </div>
-                <Separator />
-              </>
-            )}
-
-            {/* Montant principal */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div
-                  className="h-10 w-10 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: `${categoryConfig.color}15` }}
-                >
-                  <CategoryIcon
-                    className="h-5 w-5"
-                    style={{ color: categoryConfig.color }}
-                  />
-                </div>
-                <div className="flex-1">
-                  {/* Catégorie */}
-                  {isEditingForm ? (
-                    <div className="mb-1">
-                      <CategorySearchSelect
-                        value={formData.category}
-                        onValueChange={handleChange("category")}
-                        type={formData.type}
-                      />
-                    </div>
-                  ) : (
-                    <div className="mb-1">
-                      <CategorySearchSelect
-                        value={viewCategoryForm}
-                        onValueChange={handleViewCategoryChange}
-                        type={transaction?.amount > 0 ? "INCOME" : "EXPENSE"}
-                      />
-                    </div>
-                  )}
-
-                  {/* Montant */}
-                  {isEditingForm ? (
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={formData.amount}
-                        onChange={(e) => handleChange("amount")(e.target.value)}
-                        className="text-2xl font-medium h-auto py-1 w-32"
-                        placeholder="0.00"
-                      />
-                      <span className="text-2xl font-medium text-muted-foreground">€</span>
-                    </div>
-                  ) : (
-                    <p className="text-2xl font-medium">
-                      {formatAmount(transaction?.amount)}
-                    </p>
-                  )}
-                </div>
-              </div>
+          {/* Header */}
+          <DrawerHeader className="flex flex-row items-center justify-between px-6 py-4 border-b space-y-0">
+            <div className="flex items-center gap-2">
+              <DrawerTitle className="text-base font-medium">
+                {getDrawerTitle()}
+              </DrawerTitle>
+              {!isCreateMode && isBankTransaction && (
+                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
+                  Bancaire
+                </span>
+              )}
+              {isCreateMode && (
+                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
+                  <Plus className="w-3 h-3" />
+                  Nouvelle
+                </span>
+              )}
             </div>
+            <DrawerClose asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <X className="h-4 w-4" />
+              </Button>
+            </DrawerClose>
+          </DrawerHeader>
 
-            <Separator />
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-6 space-y-6">
+              {/* Mode création ou édition manuelle: Type de transaction */}
+              {isEditingForm && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-normal text-muted-foreground">
+                      Type
+                    </span>
+                    <Tabs
+                      value={formData.type}
+                      onValueChange={handleChange("type")}
+                    >
+                      <TabsList>
+                        <TabsTrigger value="EXPENSE">Dépense</TabsTrigger>
+                        <TabsTrigger value="INCOME">Revenu</TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </div>
+                  <Separator />
+                </>
+              )}
 
-            {/* Fournisseur */}
-            <div className="space-y-3">
-              <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                {formData.type === "INCOME" ? "Source du revenu" : "Fournisseur"}
-              </p>
-              {isEditingForm ? (
-                <Input
-                  value={formData.vendor}
-                  onChange={(e) => handleChange("vendor")(e.target.value)}
-                  placeholder={formData.type === "INCOME" ? "Client / Source" : "Nom du fournisseur"}
-                  className="w-full"
-                />
-              ) : (
-                <div className="flex items-center gap-3">
-                  {merchant?.logo ? (
-                    <div className="h-10 w-10 rounded-full overflow-hidden border bg-white flex-shrink-0">
-                      <img
-                        src={merchant.logo}
-                        alt={merchant.name}
-                        className="h-full w-full object-cover"
-                        onError={(e) => {
-                          e.target.style.display = "none";
-                          e.target.parentElement.innerHTML = `<div class="h-full w-full flex items-center justify-center bg-muted"><span class="text-xs font-medium text-muted-foreground">${merchant.name.charAt(0)}</span></div>`;
-                        }}
-                      />
-                    </div>
-                  ) : (
-                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                      <Building2 className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {transaction?.vendor || merchant?.name || transaction?.title || "Fournisseur non spécifié"}
-                    </p>
-                    {transaction?.description && (
-                      <p className="text-xs text-muted-foreground truncate">
-                        {transaction.description}
+              {/* Montant principal */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div
+                    className="h-10 w-10 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: `${categoryConfig.color}15` }}
+                  >
+                    <CategoryIcon
+                      className="h-5 w-5"
+                      style={{ color: categoryConfig.color }}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    {/* Catégorie */}
+                    {isEditingForm ? (
+                      <div className="mb-1">
+                        <CategorySearchSelect
+                          value={formData.category}
+                          onValueChange={handleChange("category")}
+                          type={formData.type}
+                        />
+                      </div>
+                    ) : (
+                      <div className="mb-1">
+                        <CategorySearchSelect
+                          value={viewCategoryForm}
+                          onValueChange={handleViewCategoryChange}
+                          type={transaction?.amount > 0 ? "INCOME" : "EXPENSE"}
+                        />
+                      </div>
+                    )}
+
+                    {/* Montant */}
+                    {isEditingForm ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={formData.amount}
+                          onChange={(e) =>
+                            handleChange("amount")(e.target.value)
+                          }
+                          className="text-2xl font-medium h-auto py-1 w-32"
+                          placeholder="0.00"
+                        />
+                        <span className="text-2xl font-medium text-muted-foreground">
+                          €
+                        </span>
+                      </div>
+                    ) : (
+                      <p className="text-2xl font-medium">
+                        {formatAmount(transaction?.amount)}
                       </p>
                     )}
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
 
-            <Separator />
+              <Separator />
 
-            {/* Informations */}
-            <div className="space-y-4">
-              <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                Informations
-              </p>
-
-              {/* Date */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-normal text-muted-foreground">Date</span>
-                </div>
+              {/* Fournisseur */}
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                  {formData.type === "INCOME"
+                    ? "Source du revenu"
+                    : "Fournisseur"}
+                </p>
                 {isEditingForm ? (
-                  <DatePicker
-                    value={formData.date ? parseDate(formData.date) : null}
-                    onChange={(date) => {
-                      if (date) handleChange("date")(date.toString());
-                    }}
-                    className="w-40"
-                  >
-                    <div className="flex">
-                      <Group className="w-full pointer-events-none">
-                        <DateInput className="pe-9 text-sm" />
-                      </Group>
-                      <RACButton className="z-10 -ms-9 -me-px flex w-9 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground pointer-events-auto">
-                        <CalendarIcon size={16} />
-                      </RACButton>
+                  <Input
+                    value={formData.vendor}
+                    onChange={(e) => handleChange("vendor")(e.target.value)}
+                    placeholder={
+                      formData.type === "INCOME"
+                        ? "Client / Source"
+                        : "Nom du fournisseur"
+                    }
+                    className="w-full"
+                  />
+                ) : (
+                  <div className="flex items-center gap-3">
+                    {merchant?.logo ? (
+                      <div className="h-10 w-10 rounded-full overflow-hidden border bg-white flex-shrink-0">
+                        <img
+                          src={merchant.logo}
+                          alt={merchant.name}
+                          className="h-full w-full object-cover"
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                            e.target.parentElement.innerHTML = `<div class="h-full w-full flex items-center justify-center bg-muted"><span class="text-xs font-medium text-muted-foreground">${merchant.name.charAt(0)}</span></div>`;
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                        <Building2 className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {transaction?.vendor ||
+                          merchant?.name ||
+                          transaction?.title ||
+                          "Fournisseur non spécifié"}
+                      </p>
+                      {transaction?.description && (
+                        <p className="text-xs text-muted-foreground truncate">
+                          {transaction.description}
+                        </p>
+                      )}
                     </div>
-                    <RACPopover
-                      className="z-[100] rounded-lg border bg-background text-popover-foreground shadow-lg outline-hidden"
-                      offset={4}
-                      UNSTABLE_portalContainer={calendarContainer}
-                    >
-                      <Dialog className="max-h-[inherit] overflow-auto p-2">
-                        <Calendar />
-                      </Dialog>
-                    </RACPopover>
-                  </DatePicker>
-                ) : (
-                  <span className="text-sm font-normal">
-                    {formatDate(transaction?.date)}
-                  </span>
+                  </div>
                 )}
               </div>
 
-              {/* Moyen de paiement */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <PaymentIcon className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-normal text-muted-foreground">Paiement</span>
-                </div>
-                {isEditingForm ? (
-                  <Select
-                    value={formData.paymentMethod}
-                    onValueChange={handleChange("paymentMethod")}
-                  >
-                    <SelectTrigger className="w-40">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="CARD">Carte</SelectItem>
-                      <SelectItem value="TRANSFER">Virement</SelectItem>
-                      <SelectItem value="CASH">Espèces</SelectItem>
-                      <SelectItem value="CHECK">Chèque</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <span className="text-sm font-normal">
-                    {paymentMethodLabels[transaction?.paymentMethod] || "Non spécifié"}
-                  </span>
-                )}
-              </div>
+              <Separator />
 
-              {/* Statut (seulement en mode visualisation pour les transactions bancaires) */}
-              {!isCreateMode && isBankTransaction && (
+              {/* Informations */}
+              <div className="space-y-4">
+                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                  Informations
+                </p>
+
+                {/* Date */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Receipt className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-normal text-muted-foreground">Statut</span>
+                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-normal text-muted-foreground">
+                      Date
+                    </span>
                   </div>
-                  {transaction?.status === "PAID" ? (
-                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
-                      <CheckCircle2 className="w-3 h-3" />
-                      {statusLabels[transaction.status] || "Payée"}
-                    </span>
-                  ) : transaction?.status === "PENDING" ? (
-                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20">
-                      <AlertCircle className="w-3 h-3" />
-                      {statusLabels[transaction.status] || "En attente"}
-                    </span>
-                  ) : transaction?.status === "CANCELLED" ? (
-                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400">
-                      <AlertCircle className="w-3 h-3" />
-                      {statusLabels[transaction.status] || "Annulée"}
-                    </span>
+                  {isEditingForm ? (
+                    <DatePicker
+                      value={formData.date ? parseDate(formData.date) : null}
+                      onChange={(date) => {
+                        if (date) handleChange("date")(date.toString());
+                      }}
+                      className="w-40"
+                    >
+                      <div className="flex">
+                        <Group className="w-full pointer-events-none">
+                          <DateInput className="pe-9 text-sm" />
+                        </Group>
+                        <RACButton className="z-10 -ms-9 -me-px flex w-9 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground pointer-events-auto">
+                          <CalendarIcon size={16} />
+                        </RACButton>
+                      </div>
+                      <RACPopover
+                        className="z-[100] rounded-lg border bg-background text-popover-foreground shadow-lg outline-hidden"
+                        offset={4}
+                        UNSTABLE_portalContainer={calendarContainer}
+                      >
+                        <Dialog className="max-h-[inherit] overflow-auto p-2">
+                          <Calendar />
+                        </Dialog>
+                      </RACPopover>
+                    </DatePicker>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
-                      <FileText className="w-3 h-3" />
-                      {statusLabels[transaction?.status] || "Brouillon"}
+                    <span className="text-sm font-normal">
+                      {formatDate(transaction?.date)}
                     </span>
                   )}
                 </div>
-              )}
 
-              {/* Source (Banque) */}
-              {!isCreateMode && isBankTransaction && (
+                {/* Moyen de paiement */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Landmark className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-normal text-muted-foreground">Source</span>
-                  </div>
-                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
-                    <Landmark className="w-3 h-3" />
-                    Banque
-                  </span>
-                </div>
-              )}
-
-              {/* Utilisateur créateur */}
-              {!isCreateMode && transaction?.createdBy && (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-normal text-muted-foreground">Créé par</span>
-                  </div>
-                  <span className="text-sm font-medium">
-                    {transaction.createdBy.name || transaction.createdBy.email || "Utilisateur"}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Description (mode création/édition) */}
-            {isEditingForm && (
-              <>
-                <Separator />
-                <div className="space-y-3">
-                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                    Description
-                  </p>
-                  <Textarea
-                    value={formData.description}
-                    onChange={(e) => handleChange("description")(e.target.value)}
-                    placeholder="Description de la transaction"
-                    rows={3}
-                  />
-                </div>
-              </>
-            )}
-
-            {/* Section Justificatif */}
-            <Separator />
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                  Justificatif
-                </p>
-                {!isCreateMode && (
-                  hasReceipt ? (
-                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
-                      <CheckCircle2 className="w-3 h-3" />
-                      Attaché
+                    <PaymentIcon className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-normal text-muted-foreground">
+                      Paiement
                     </span>
+                  </div>
+                  {isEditingForm ? (
+                    <Select
+                      value={formData.paymentMethod}
+                      onValueChange={handleChange("paymentMethod")}
+                    >
+                      <SelectTrigger className="w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CARD">Carte</SelectItem>
+                        <SelectItem value="TRANSFER">Virement</SelectItem>
+                        <SelectItem value="CASH">Espèces</SelectItem>
+                        <SelectItem value="CHECK">Chèque</SelectItem>
+                      </SelectContent>
+                    </Select>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400">
-                      <AlertCircle className="w-3 h-3" />
-                      Manquant
+                    <span className="text-sm font-normal">
+                      {paymentMethodLabels[transaction?.paymentMethod] ||
+                        "Non spécifié"}
                     </span>
-                  )
+                  )}
+                </div>
+
+                {/* Statut (seulement en mode visualisation pour les transactions bancaires) */}
+                {!isCreateMode && isBankTransaction && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Receipt className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-normal text-muted-foreground">
+                        Statut
+                      </span>
+                    </div>
+                    {transaction?.status === "PAID" ? (
+                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
+                        <CheckCircle2 className="w-3 h-3" />
+                        {statusLabels[transaction.status] || "Payée"}
+                      </span>
+                    ) : transaction?.status === "PENDING" ? (
+                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20">
+                        <AlertCircle className="w-3 h-3" />
+                        {statusLabels[transaction.status] || "En attente"}
+                      </span>
+                    ) : transaction?.status === "CANCELLED" ? (
+                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400">
+                        <AlertCircle className="w-3 h-3" />
+                        {statusLabels[transaction.status] || "Annulée"}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
+                        <FileText className="w-3 h-3" />
+                        {statusLabels[transaction?.status] || "Brouillon"}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Source (Banque) */}
+                {!isCreateMode && isBankTransaction && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Landmark className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-normal text-muted-foreground">
+                        Source
+                      </span>
+                    </div>
+                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
+                      <Landmark className="w-3 h-3" />
+                      Banque
+                    </span>
+                  </div>
+                )}
+
+                {/* Utilisateur créateur */}
+                {!isCreateMode && transaction?.createdBy && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-normal text-muted-foreground">
+                        Créé par
+                      </span>
+                    </div>
+                    <span className="text-sm font-medium">
+                      {transaction.createdBy.name ||
+                        transaction.createdBy.email ||
+                        "Utilisateur"}
+                    </span>
+                  </div>
                 )}
               </div>
 
-              {/* Zone d'upload */}
-              {(isCreateMode || !hasReceipt) && (
-                <div
-                  className={`relative border-1 border-dashed rounded-lg p-6 transition-colors cursor-pointer ${
-                    dragActive
-                      ? "border-[#5A50FF] bg-[#5A50FF]/5"
-                      : "border-muted-foreground/25 hover:border-[#5A50FF]/50 hover:bg-muted/30"
-                  }`}
-                  onDragEnter={handleDrag}
-                  onDragLeave={handleDrag}
-                  onDragOver={handleDrag}
-                  onDrop={handleDrop}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,application/pdf"
-                    className="hidden"
-                    onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
-                    disabled={isUploading}
-                  />
-                  <div className="flex flex-col items-center gap-2 text-center">
-                    {isUploading ? (
-                      <>
-                        <Loader2 className="h-8 w-8 text-[#5A50FF] animate-spin" />
-                        <p className="text-sm font-normal text-muted-foreground">Upload en cours...</p>
-                      </>
-                    ) : (
-                      <>
-                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-                          <Upload className="h-6 w-6 text-muted-foreground" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium">Glissez votre reçu ici</p>
-                          <p className="text-xs text-muted-foreground">
-                            ou cliquez pour sélectionner (JPG, PNG, PDF - max 10 Mo)
-                          </p>
-                        </div>
-                      </>
-                    )}
+              {/* Description (mode création/édition) */}
+              {isEditingForm && (
+                <>
+                  <Separator />
+                  <div className="space-y-3">
+                    <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                      Description
+                    </p>
+                    <Textarea
+                      value={formData.description}
+                      onChange={(e) =>
+                        handleChange("description")(e.target.value)
+                      }
+                      placeholder="Description de la transaction"
+                      rows={3}
+                    />
                   </div>
-                </div>
+                </>
               )}
 
-              {/* Preview du fichier uploadé (mode création) */}
-              {isCreateMode && previewUrl && (
-                <div className="space-y-2">
+              {/* Section Justificatif */}
+              <Separator />
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                    Justificatif
+                  </p>
+                  {!isCreateMode &&
+                    (hasReceipt ? (
+                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
+                        <CheckCircle2 className="w-3 h-3" />
+                        Attaché
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400">
+                        <AlertCircle className="w-3 h-3" />
+                        Manquant
+                      </span>
+                    ))}
+                </div>
+
+                {/* Zone d'upload */}
+                {(isCreateMode || !hasReceipt) && (
                   <div
-                    className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors group cursor-pointer"
-                    onClick={() => openReceiptViewer(previewUrl, selectedFile?.type)}
+                    className={`relative border-1 border-dashed rounded-lg p-6 transition-colors cursor-pointer ${
+                      dragActive
+                        ? "border-[#5A50FF] bg-[#5A50FF]/5"
+                        : "border-muted-foreground/25 hover:border-[#5A50FF]/50 hover:bg-muted/30"
+                    }`}
+                    onDragEnter={handleDrag}
+                    onDragLeave={handleDrag}
+                    onDragOver={handleDrag}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
                   >
-                    <div className="w-10 h-10 rounded overflow-hidden bg-gray-100">
-                      {selectedFile?.type === "application/pdf" ? (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <FileText className="h-5 w-5 text-gray-600" />
-                        </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,application/pdf"
+                      className="hidden"
+                      onChange={(e) =>
+                        e.target.files?.[0] &&
+                        handleFileUpload(e.target.files[0])
+                      }
+                      disabled={isUploading}
+                    />
+                    <div className="flex flex-col items-center gap-2 text-center">
+                      {isUploading ? (
+                        <>
+                          <Loader2 className="h-8 w-8 text-[#5A50FF] animate-spin" />
+                          <p className="text-sm font-normal text-muted-foreground">
+                            Upload en cours...
+                          </p>
+                        </>
                       ) : (
-                        <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                        <>
+                          <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                            <Upload className="h-6 w-6 text-muted-foreground" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">
+                              Glissez votre reçu ici
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              ou cliquez pour sélectionner (JPG, PNG, PDF - max
+                              10 Mo)
+                            </p>
+                          </div>
+                        </>
                       )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-normal truncate">{selectedFile?.name || "Justificatif"}</p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setPreviewUrl(null);
-                        setSelectedFile(null);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Afficher le receiptFile existant */}
-              {!isCreateMode && transaction?.receiptFile?.url && (
-                <div className="space-y-2">
-                  {(() => {
-                    const file = transaction.receiptFile;
-                    const isImage = file.mimetype?.startsWith("image/");
-                    const isPdf = file.mimetype === "application/pdf";
-
-                    const formatFileSize = (bytes) => {
-                      if (!bytes) return "";
-                      if (bytes < 1024) return `${bytes} B`;
-                      if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-                      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-                    };
-
-                    return (
-                      <>
-                        {/* Preview large du justificatif */}
-                        <div
-                          className="relative flex h-48 w-full items-center justify-center overflow-hidden rounded-lg border bg-muted/30 cursor-pointer hover:border-primary transition-colors group"
-                          onClick={() => openReceiptViewer(file.url, file.mimetype)}
-                          role="button"
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              openReceiptViewer(file.url, file.mimetype);
-                            }
-                          }}
-                        >
-                          {isPdf ? (
-                            <iframe
-                              src={file.url}
-                              className="h-full w-full pointer-events-none"
-                              title="Preview du justificatif"
-                            />
-                          ) : isImage ? (
-                            <img
-                              className="h-full w-full object-contain"
-                              src={file.url}
-                              alt={file.filename || "Justificatif"}
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                              <FileText className="h-10 w-10" />
-                              <span className="text-sm">{file.filename || "Justificatif"}</span>
-                            </div>
-                          )}
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                            <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-background rounded-full p-2 shadow-lg border">
-                              <Maximize2 className="h-5 w-5 text-foreground" />
-                            </div>
+                {/* Preview du fichier uploadé (mode création) */}
+                {isCreateMode && previewUrl && (
+                  <div className="space-y-2">
+                    <div
+                      className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors group cursor-pointer"
+                      onClick={() =>
+                        openReceiptViewer(previewUrl, selectedFile?.type)
+                      }
+                    >
+                      <div className="w-10 h-10 rounded overflow-hidden bg-gray-100">
+                        {selectedFile?.type === "application/pdf" ? (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <FileText className="h-5 w-5 text-gray-600" />
                           </div>
-                        </div>
-                        {/* Info fichier + téléchargement */}
-                        <div className="flex items-center gap-3 px-1">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-normal truncate">{file.filename || "Justificatif"}</p>
-                            <span className="text-xs text-muted-foreground">{formatFileSize(file.size)}</span>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            title="Télécharger"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const link = document.createElement("a");
-                              link.href = file.url;
-                              link.download = file.filename || "justificatif";
-                              link.target = "_blank";
-                              document.body.appendChild(link);
-                              link.click();
-                              document.body.removeChild(link);
-                            }}
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-              )}
+                        ) : (
+                          <img
+                            src={previewUrl}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-normal truncate">
+                          {selectedFile?.name || "Justificatif"}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreviewUrl(null);
+                          setSelectedFile(null);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
-              {/* Fichiers existants (ancien système) */}
-              {!isCreateMode && transaction?.files && transaction.files.length > 0 && !transaction?.receiptFile?.url && (
-                <div className="space-y-2">
-                  {transaction.files.map((file, index) => {
-                    const isImage = file.mimetype?.startsWith("image/");
-                    const isPdf = file.mimetype === "application/pdf";
-                    const formatFileSize = (bytes) => {
-                      if (!bytes) return "";
-                      if (bytes < 1024) return `${bytes} B`;
-                      if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-                      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-                    };
+                {/* Afficher le receiptFile existant */}
+                {!isCreateMode && transaction?.receiptFile?.url && (
+                  <div className="space-y-2">
+                    {(() => {
+                      const file = transaction.receiptFile;
+                      const isImage = file.mimetype?.startsWith("image/");
+                      const isPdf = file.mimetype === "application/pdf";
 
-                    return (
-                      <div key={file.id || index} className="space-y-2">
-                        {/* Preview large */}
-                        {(isImage || isPdf) && (
+                      const formatFileSize = (bytes) => {
+                        if (!bytes) return "";
+                        if (bytes < 1024) return `${bytes} B`;
+                        if (bytes < 1024 * 1024)
+                          return `${Math.round(bytes / 1024)} KB`;
+                        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+                      };
+
+                      return (
+                        <>
+                          {/* Preview large du justificatif */}
                           <div
                             className="relative flex h-48 w-full items-center justify-center overflow-hidden rounded-lg border bg-muted/30 cursor-pointer hover:border-primary transition-colors group"
-                            onClick={() => openReceiptViewer(file.url, file.mimetype)}
+                            onClick={() =>
+                              openReceiptViewer(file.url, file.mimetype)
+                            }
                             role="button"
                             tabIndex={0}
                             onKeyDown={(e) => {
@@ -1179,13 +1182,20 @@ export function TransactionDetailDrawer({
                                 className="h-full w-full pointer-events-none"
                                 title="Preview du justificatif"
                               />
-                            ) : (
+                            ) : isImage ? (
                               <img
                                 className="h-full w-full object-contain"
                                 src={file.url}
-                                alt={file.originalFilename || "Justificatif"}
+                                alt={file.filename || "Justificatif"}
                                 loading="lazy"
                               />
+                            ) : (
+                              <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                                <FileText className="h-10 w-10" />
+                                <span className="text-sm">
+                                  {file.filename || "Justificatif"}
+                                </span>
+                              </div>
                             )}
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
                               <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-background rounded-full p-2 shadow-lg border">
@@ -1193,345 +1203,476 @@ export function TransactionDetailDrawer({
                               </div>
                             </div>
                           </div>
-                        )}
-                        {/* Info fichier */}
-                        <div className="flex items-center gap-3 px-1">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-normal truncate">
-                              {file.originalFilename || file.filename || `Fichier ${index + 1}`}
-                            </p>
-                            <span className="text-xs text-muted-foreground">{formatFileSize(file.size)}</span>
+                          {/* Info fichier + téléchargement */}
+                          <div className="flex items-center gap-3 px-1">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-normal truncate">
+                                {file.filename || "Justificatif"}
+                              </p>
+                              <span className="text-xs text-muted-foreground">
+                                {formatFileSize(file.size)}
+                              </span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              title="Télécharger"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const link = document.createElement("a");
+                                link.href = file.url;
+                                link.download = file.filename || "justificatif";
+                                link.target = "_blank";
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                              }}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
                           </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {/* Fichiers existants (ancien système) */}
+                {!isCreateMode &&
+                  transaction?.files &&
+                  transaction.files.length > 0 &&
+                  !transaction?.receiptFile?.url && (
+                    <div className="space-y-2">
+                      {transaction.files.map((file, index) => {
+                        const isImage = file.mimetype?.startsWith("image/");
+                        const isPdf = file.mimetype === "application/pdf";
+                        const formatFileSize = (bytes) => {
+                          if (!bytes) return "";
+                          if (bytes < 1024) return `${bytes} B`;
+                          if (bytes < 1024 * 1024)
+                            return `${Math.round(bytes / 1024)} KB`;
+                          return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+                        };
+
+                        return (
+                          <div key={file.id || index} className="space-y-2">
+                            {/* Preview large */}
+                            {(isImage || isPdf) && (
+                              <div
+                                className="relative flex h-48 w-full items-center justify-center overflow-hidden rounded-lg border bg-muted/30 cursor-pointer hover:border-primary transition-colors group"
+                                onClick={() =>
+                                  openReceiptViewer(file.url, file.mimetype)
+                                }
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    openReceiptViewer(file.url, file.mimetype);
+                                  }
+                                }}
+                              >
+                                {isPdf ? (
+                                  <iframe
+                                    src={file.url}
+                                    className="h-full w-full pointer-events-none"
+                                    title="Preview du justificatif"
+                                  />
+                                ) : (
+                                  <img
+                                    className="h-full w-full object-contain"
+                                    src={file.url}
+                                    alt={
+                                      file.originalFilename || "Justificatif"
+                                    }
+                                    loading="lazy"
+                                  />
+                                )}
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                                  <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-background rounded-full p-2 shadow-lg border">
+                                    <Maximize2 className="h-5 w-5 text-foreground" />
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            {/* Info fichier */}
+                            <div className="flex items-center gap-3 px-1">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-normal truncate">
+                                  {file.originalFilename ||
+                                    file.filename ||
+                                    `Fichier ${index + 1}`}
+                                </p>
+                                <span className="text-xs text-muted-foreground">
+                                  {formatFileSize(file.size)}
+                                </span>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                title="Télécharger"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const link = document.createElement("a");
+                                  link.href = file.url;
+                                  link.download =
+                                    file.originalFilename ||
+                                    file.filename ||
+                                    `fichier-${index + 1}`;
+                                  link.target = "_blank";
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                }}
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+              </div>
+
+              {/* Notes (seulement en visualisation) */}
+              {!isCreateMode &&
+                transaction?.notes &&
+                transaction.notes !== "[EXPENSE]" && (
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                        Notes
+                      </p>
+                      <p className="text-sm font-normal text-foreground">
+                        {transaction.notes}
+                      </p>
+                    </div>
+                  </>
+                )}
+
+              {/* Section Facture liée (seulement si une facture est liée) */}
+              {!isCreateMode && transaction?.linkedInvoice && (
+                <>
+                  <Separator />
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                          Facture liée
+                        </p>
+                      </div>
+                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
+                        <Link2 className="w-3 h-3" />
+                        Rapprochée
+                      </span>
+                    </div>
+
+                    <div className="p-3 border rounded-lg bg-muted/30">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-medium">
+                              Facture{" "}
+                              {transaction.linkedInvoice.number || "N/A"}
+                            </span>
+                            <span
+                              className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium ${
+                                transaction.linkedInvoice.status === "COMPLETED"
+                                  ? "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400"
+                                  : transaction.linkedInvoice.status ===
+                                      "PENDING"
+                                    ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
+                                    : "bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400"
+                              }`}
+                            >
+                              {transaction.linkedInvoice.status ===
+                                "COMPLETED" && (
+                                <CheckCircle2 className="w-3 h-3" />
+                              )}
+                              {transaction.linkedInvoice.status ===
+                                "PENDING" && (
+                                <AlertCircle className="w-3 h-3" />
+                              )}
+                              {transaction.linkedInvoice.status === "COMPLETED"
+                                ? "Payée"
+                                : transaction.linkedInvoice.status === "PENDING"
+                                  ? "En attente"
+                                  : transaction.linkedInvoice.status}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {transaction.linkedInvoice.clientName}
+                          </p>
+                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                            <span>
+                              {formatAmount(transaction.linkedInvoice.totalTTC)}
+                            </span>
+                            {transaction.linkedInvoice.dueDate && (
+                              <>
+                                <span>•</span>
+                                <span>
+                                  Échéance:{" "}
+                                  {formatDate(
+                                    transaction.linkedInvoice.dueDate,
+                                  )}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 flex-shrink-0">
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            title="Télécharger"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const link = document.createElement("a");
-                              link.href = file.url;
-                              link.download = file.originalFilename || file.filename || `fichier-${index + 1}`;
-                              link.target = "_blank";
-                              document.body.appendChild(link);
-                              link.click();
-                              document.body.removeChild(link);
-                            }}
+                            onClick={handleViewLinkedInvoice}
+                            title="Voir la facture"
                           >
-                            <Download className="h-4 w-4" />
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={handleUnlinkInvoice}
+                            disabled={isUnlinking}
+                            title="Détacher la facture"
+                          >
+                            {isUnlinking ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Unlink className="h-4 w-4" />
+                            )}
                           </Button>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+
+                    {/* Date de rapprochement */}
+                    {transaction.reconciliationDate && (
+                      <p className="text-xs text-muted-foreground text-center">
+                        Rapprochée le{" "}
+                        {formatDate(transaction.reconciliationDate)}
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* Indicateur de statut de rapprochement (si pas de facture liée mais statut pertinent) */}
+              {!isCreateMode &&
+                !transaction?.linkedInvoice &&
+                transaction?.reconciliationStatus &&
+                transaction.reconciliationStatus !== "UNMATCHED" && (
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                          Rapprochement
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {transaction.reconciliationStatus === "SUGGESTED" && (
+                          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400">
+                            <AlertCircle className="w-3 h-3" />
+                            Suggestion en attente
+                          </span>
+                        )}
+                        {transaction.reconciliationStatus === "IGNORED" && (
+                          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
+                            Ignorée
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+              {/* Dates de création/modification */}
+              {!isCreateMode && (
+                <>
+                  <Separator />
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-normal text-muted-foreground">
+                        Créée le
+                      </span>
+                      <span className="text-xs font-normal">
+                        {formatDate(transaction?.createdAt, true)}
+                      </span>
+                    </div>
+                    {transaction?.updatedAt &&
+                      transaction.updatedAt !== transaction.createdAt && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-normal text-muted-foreground">
+                            Modifiée le
+                          </span>
+                          <span className="text-xs font-normal">
+                            {formatDate(transaction.updatedAt, true)}
+                          </span>
+                        </div>
+                      )}
+                  </div>
+                </>
               )}
             </div>
-
-            {/* Notes (seulement en visualisation) */}
-            {!isCreateMode && transaction?.notes && transaction.notes !== "[EXPENSE]" && (
-              <>
-                <Separator />
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">Notes</p>
-                  <p className="text-sm font-normal text-foreground">{transaction.notes}</p>
-                </div>
-              </>
-            )}
-
-            {/* Section Facture liée (seulement si une facture est liée) */}
-            {!isCreateMode && transaction?.linkedInvoice && (
-              <>
-                <Separator />
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                        Facture liée
-                      </p>
-                    </div>
-                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
-                      <Link2 className="w-3 h-3" />
-                      Rapprochée
-                    </span>
-                  </div>
-
-                  <div className="p-3 border rounded-lg bg-muted/30">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-medium">
-                            Facture {transaction.linkedInvoice.number || "N/A"}
-                          </span>
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium ${
-                              transaction.linkedInvoice.status === "COMPLETED"
-                                ? "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400"
-                                : transaction.linkedInvoice.status === "PENDING"
-                                  ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
-                                  : "bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400"
-                            }`}
-                          >
-                            {transaction.linkedInvoice.status === "COMPLETED" && (
-                              <CheckCircle2 className="w-3 h-3" />
-                            )}
-                            {transaction.linkedInvoice.status === "PENDING" && (
-                              <AlertCircle className="w-3 h-3" />
-                            )}
-                            {transaction.linkedInvoice.status === "COMPLETED"
-                              ? "Payée"
-                              : transaction.linkedInvoice.status === "PENDING"
-                                ? "En attente"
-                                : transaction.linkedInvoice.status}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {transaction.linkedInvoice.clientName}
-                        </p>
-                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                          <span>{formatAmount(transaction.linkedInvoice.totalTTC)}</span>
-                          {transaction.linkedInvoice.dueDate && (
-                            <>
-                              <span>•</span>
-                              <span>Échéance: {formatDate(transaction.linkedInvoice.dueDate)}</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={handleViewLinkedInvoice}
-                          title="Voir la facture"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={handleUnlinkInvoice}
-                          disabled={isUnlinking}
-                          title="Détacher la facture"
-                        >
-                          {isUnlinking ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Unlink className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Date de rapprochement */}
-                  {transaction.reconciliationDate && (
-                    <p className="text-xs text-muted-foreground text-center">
-                      Rapprochée le {formatDate(transaction.reconciliationDate)}
-                    </p>
-                  )}
-                </div>
-              </>
-            )}
-
-            {/* Indicateur de statut de rapprochement (si pas de facture liée mais statut pertinent) */}
-            {!isCreateMode && !transaction?.linkedInvoice && transaction?.reconciliationStatus &&
-             transaction.reconciliationStatus !== "UNMATCHED" && (
-              <>
-                <Separator />
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                      Rapprochement
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {transaction.reconciliationStatus === "SUGGESTED" && (
-                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400">
-                        <AlertCircle className="w-3 h-3" />
-                        Suggestion en attente
-                      </span>
-                    )}
-                    {transaction.reconciliationStatus === "IGNORED" && (
-                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
-                        Ignorée
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* Dates de création/modification */}
-            {!isCreateMode && (
-              <>
-                <Separator />
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-normal text-muted-foreground">Créée le</span>
-                    <span className="text-xs font-normal">{formatDate(transaction?.createdAt, true)}</span>
-                  </div>
-                  {transaction?.updatedAt && transaction.updatedAt !== transaction.createdAt && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-normal text-muted-foreground">Modifiée le</span>
-                      <span className="text-xs font-normal">{formatDate(transaction.updatedAt, true)}</span>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
           </div>
-        </div>
 
-        {/* Footer */}
-        <DrawerFooter className="border-t px-6 py-4">
-          {isCreateMode ? (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1 font-normal"
-                onClick={() => onOpenChange(false)}
-              >
-                Annuler
-              </Button>
-              <Button
-                className="flex-1 font-normal bg-primary hover:bg-primary/90"
-                onClick={handleSubmit}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Ajouter
-              </Button>
-            </div>
-          ) : isEditMode ? (
-            <div className="flex gap-2">
-              {isManualTransaction && (
+          {/* Footer */}
+          <DrawerFooter className="border-t px-6 py-4">
+            {isCreateMode ? (
+              <div className="flex gap-2">
                 <Button
                   variant="outline"
                   className="flex-1 font-normal"
-                  onClick={() => setIsEditMode(false)}
+                  onClick={() => onOpenChange(false)}
                 >
                   Annuler
                 </Button>
-              )}
-              <Button
-                className="flex-1 font-normal bg-primary hover:bg-primary/90"
-                onClick={handleSubmit}
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Enregistrer
-              </Button>
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1 font-normal"
-                onClick={() => {
-                  // Synchroniser formData.category avec la catégorie actuelle en mode vue
-                  setFormData((prev) => ({ ...prev, category: viewCategoryForm || prev.category }));
-                  setIsEditMode(true);
-                }}
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Modifier
-              </Button>
-              <Button
-                variant="outline"
-                className="flex-1 font-normal text-red-600 hover:text-red-700 hover:bg-red-50"
-                onClick={() => onDelete?.(transaction)}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Supprimer
-              </Button>
-            </div>
-          )}
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
+                <Button
+                  className="flex-1 font-normal bg-primary hover:bg-primary/90"
+                  onClick={handleSubmit}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Ajouter
+                </Button>
+              </div>
+            ) : isEditMode ? (
+              <div className="flex gap-2">
+                {isManualTransaction && (
+                  <Button
+                    variant="outline"
+                    className="flex-1 font-normal"
+                    onClick={() => setIsEditMode(false)}
+                  >
+                    Annuler
+                  </Button>
+                )}
+                <Button
+                  className="flex-1 font-normal bg-primary hover:bg-primary/90"
+                  onClick={handleSubmit}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  Enregistrer
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 font-normal"
+                  onClick={() => {
+                    // Synchroniser formData.category avec la catégorie actuelle en mode vue
+                    setFormData((prev) => ({
+                      ...prev,
+                      category: viewCategoryForm || prev.category,
+                    }));
+                    setIsEditMode(true);
+                  }}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Modifier
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 font-normal text-red-600 hover:text-red-700 hover:bg-red-50"
+                  onClick={() => onDelete?.(transaction)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Supprimer
+                </Button>
+              </div>
+            )}
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
 
-    {/* Viewer plein écran pour le justificatif */}
-    <RadixDialog open={receiptViewerOpen} onOpenChange={setReceiptViewerOpen}>
-      <RadixDialogContent
-        className="max-w-[95vw] max-h-[95vh] w-full h-[90vh] p-0 overflow-hidden flex flex-col sm:max-w-[95vw]"
-        showCloseButton={false}
-      >
-        <VisuallyHidden>
-          <RadixDialogTitle>Justificatif</RadixDialogTitle>
-        </VisuallyHidden>
-        {/* Toolbar */}
-        <div className="flex items-center justify-between px-4 py-2 border-b bg-background/95 backdrop-blur-sm shrink-0">
-          <span className="text-sm font-medium">Justificatif</span>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setReceiptZoom((z) => Math.max(0.25, z - 0.25))}
-              className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent transition-colors"
-              title="Dézoomer"
-            >
-              <ZoomOut size={16} />
-            </button>
-            <span className="text-xs text-muted-foreground w-12 text-center">
-              {Math.round(receiptZoom * 100)}%
-            </span>
-            <button
-              type="button"
-              onClick={() => setReceiptZoom((z) => Math.min(4, z + 0.25))}
-              className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent transition-colors"
-              title="Zoomer"
-            >
-              <ZoomIn size={16} />
-            </button>
-            <div className="w-px h-5 bg-border mx-1" />
-            <button
-              type="button"
-              onClick={() => setReceiptRotation((r) => (r + 90) % 360)}
-              className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent transition-colors"
-              title="Pivoter"
-            >
-              <RotateCw size={16} />
-            </button>
-            <div className="w-px h-5 bg-border mx-1" />
-            <button
-              type="button"
-              onClick={() => setReceiptViewerOpen(false)}
-              className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent transition-colors"
-              title="Fermer"
-            >
-              <X size={16} />
-            </button>
+      {/* Viewer plein écran pour le justificatif */}
+      <RadixDialog open={receiptViewerOpen} onOpenChange={setReceiptViewerOpen}>
+        <RadixDialogContent
+          className="max-w-[95vw] max-h-[95vh] w-full h-[90vh] p-0 overflow-hidden flex flex-col sm:max-w-[95vw]"
+          showCloseButton={false}
+        >
+          <VisuallyHidden>
+            <RadixDialogTitle>Justificatif</RadixDialogTitle>
+          </VisuallyHidden>
+          {/* Toolbar */}
+          <div className="flex items-center justify-between px-4 py-2 border-b bg-background/95 backdrop-blur-sm shrink-0">
+            <span className="text-sm font-medium">Justificatif</span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setReceiptZoom((z) => Math.max(0.25, z - 0.25))}
+                className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent transition-colors"
+                title="Dézoomer"
+              >
+                <ZoomOut size={16} />
+              </button>
+              <span className="text-xs text-muted-foreground w-12 text-center">
+                {Math.round(receiptZoom * 100)}%
+              </span>
+              <button
+                type="button"
+                onClick={() => setReceiptZoom((z) => Math.min(4, z + 0.25))}
+                className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent transition-colors"
+                title="Zoomer"
+              >
+                <ZoomIn size={16} />
+              </button>
+              <div className="w-px h-5 bg-border mx-1" />
+              <button
+                type="button"
+                onClick={() => setReceiptRotation((r) => (r + 90) % 360)}
+                className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent transition-colors"
+                title="Pivoter"
+              >
+                <RotateCw size={16} />
+              </button>
+              <div className="w-px h-5 bg-border mx-1" />
+              <button
+                type="button"
+                onClick={() => setReceiptViewerOpen(false)}
+                className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent transition-colors"
+                title="Fermer"
+              >
+                <X size={16} />
+              </button>
+            </div>
           </div>
-        </div>
-        {/* Document viewer */}
-        <div className="flex-1 overflow-auto bg-muted/30 flex items-center justify-center">
-          {receiptViewerMime === "application/pdf" ? (
-            <iframe
-              src={receiptViewerUrl}
-              className="w-full h-full"
-              title="Justificatif"
-              style={{
-                transform: `scale(${receiptZoom}) rotate(${receiptRotation}deg)`,
-                transformOrigin: "center center",
-              }}
-            />
-          ) : (
-            <img
-              src={receiptViewerUrl}
-              alt="Justificatif"
-              className="max-w-none transition-transform duration-200"
-              style={{
-                transform: `scale(${receiptZoom}) rotate(${receiptRotation}deg)`,
-                transformOrigin: "center center",
-              }}
-              draggable={false}
-            />
-          )}
-        </div>
-      </RadixDialogContent>
-    </RadixDialog>
+          {/* Document viewer */}
+          <div className="flex-1 overflow-auto bg-muted/30 flex items-center justify-center">
+            {receiptViewerMime === "application/pdf" ? (
+              <iframe
+                src={receiptViewerUrl}
+                className="w-full h-full"
+                title="Justificatif"
+                style={{
+                  transform: `scale(${receiptZoom}) rotate(${receiptRotation}deg)`,
+                  transformOrigin: "center center",
+                }}
+              />
+            ) : (
+              <img
+                src={receiptViewerUrl}
+                alt="Justificatif"
+                className="max-w-none transition-transform duration-200"
+                style={{
+                  transform: `scale(${receiptZoom}) rotate(${receiptRotation}deg)`,
+                  transformOrigin: "center center",
+                }}
+                draggable={false}
+              />
+            )}
+          </div>
+        </RadixDialogContent>
+      </RadixDialog>
     </>
   );
 }

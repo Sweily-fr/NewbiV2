@@ -52,9 +52,8 @@ import {
   CommandSeparator,
 } from "@/src/components/ui/command";
 import { cn } from "@/src/lib/utils";
-import {
-  generateInvoicePrefix,
-} from "@/src/utils/invoiceUtils";
+import { generateInvoicePrefix } from "@/src/utils/invoiceUtils";
+import { formatLocalDate } from "@/src/utils/dateFormatter";
 import {
   useLastInvoicePrefix,
   GET_SITUATION_INVOICES_BY_QUOTE_REF,
@@ -141,7 +140,7 @@ export default function InvoiceInfoSection({
       },
       skip: !referenceSearchOpen || !workspaceId,
       fetchPolicy: "cache-and-network",
-    }
+    },
   );
 
   // Debug: afficher les devis reçus
@@ -156,7 +155,7 @@ export default function InvoiceInfoSection({
           fullRef: q.prefix ? `${q.prefix}-${q.number}` : q.number,
           finalTotalTTC: q.finalTotalTTC,
           client: q.client?.name,
-        }))
+        })),
       );
     }
   }, [quotesData]);
@@ -171,7 +170,7 @@ export default function InvoiceInfoSection({
       },
       skip: !referenceSearchOpen || !workspaceId,
       fetchPolicy: "cache-and-network",
-    }
+    },
   );
 
   // State pour stocker le numéro de situation
@@ -188,7 +187,7 @@ export default function InvoiceInfoSection({
 
       if (reference) {
         console.log(
-          `🔍 Recherche des factures de situation pour la référence: ${reference}`
+          `🔍 Recherche des factures de situation pour la référence: ${reference}`,
         );
         fetchSituationInvoices({
           variables: {
@@ -292,7 +291,7 @@ export default function InvoiceInfoSection({
                 country: clientData.address?.country || "",
               },
             },
-            { shouldDirty: true }
+            { shouldDirty: true },
           );
         }
 
@@ -352,7 +351,9 @@ export default function InvoiceInfoSection({
 
         // Pré-remplir le pourcentage restant pour la nouvelle situation (seulement en création)
         if (!data.id && cumulativeProgress > 0) {
-          setValue("globalProgressPercentage", remaining, { shouldDirty: true });
+          setValue("globalProgressPercentage", remaining, {
+            shouldDirty: true,
+          });
         } else if (!data.id) {
           setValue("globalProgressPercentage", 0, { shouldDirty: true });
         }
@@ -367,11 +368,12 @@ export default function InvoiceInfoSection({
           console.log(
             "📋 [SITUATION COPY] Copie des articles de la dernière facture de situation:",
             lastSituationInvoice.items.length,
-            "articles"
+            "articles",
           );
 
           // Pré-remplir avec le pourcentage restant (ou 0 si pas de cumul)
-          const itemProgress = !data.id && cumulativeProgress > 0 ? remaining : 0;
+          const itemProgress =
+            !data.id && cumulativeProgress > 0 ? remaining : 0;
 
           // Copier les articles avec progressPercentage pré-rempli
           const copiedItems = lastSituationInvoice.items.map((item) => ({
@@ -407,7 +409,7 @@ export default function InvoiceInfoSection({
                   country: clientData.address?.country || "",
                 },
               },
-              { shouldDirty: true }
+              { shouldDirty: true },
             );
           }
 
@@ -455,7 +457,7 @@ export default function InvoiceInfoSection({
             setValue(
               "termsAndConditions",
               lastSituationInvoice.termsAndConditions,
-              { shouldDirty: true }
+              { shouldDirty: true },
             );
           }
 
@@ -469,7 +471,7 @@ export default function InvoiceInfoSection({
             setValue(
               "clientPositionRight",
               lastSituationInvoice.clientPositionRight,
-              { shouldDirty: true }
+              { shouldDirty: true },
             );
           }
 
@@ -512,7 +514,7 @@ export default function InvoiceInfoSection({
       const today = new Date();
       const dueDate = new Date(today);
       dueDate.setDate(today.getDate() + 30);
-      setValue("dueDate", dueDate.toISOString().split("T")[0], {
+      setValue("dueDate", formatLocalDate(dueDate), {
         shouldValidate: true,
       });
     }
@@ -541,7 +543,7 @@ export default function InvoiceInfoSection({
   // Set default issue date to today if not already set
   React.useEffect(() => {
     if (!data.issueDate) {
-      const today = new Date().toISOString().split("T")[0];
+      const today = formatLocalDate();
       setValue("issueDate", today, { shouldValidate: true });
     }
   }, [data.issueDate, setValue]);
@@ -629,7 +631,7 @@ export default function InvoiceInfoSection({
                     className={cn(
                       "w-full justify-start font-normal text-left",
                       !data.issueDate && "text-muted-foreground",
-                      errors?.issueDate && "border-red-500"
+                      errors?.issueDate && "border-red-500",
                     )}
                     type="button"
                   >
@@ -678,7 +680,9 @@ export default function InvoiceInfoSection({
             {/* Date d'échéance */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Date d'échéance</Label>
+                <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                  Date d'échéance
+                </Label>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Info className="h-4 w-4 text-muted-foreground cursor-help" />
@@ -707,7 +711,7 @@ export default function InvoiceInfoSection({
                       className={cn(
                         "w-full justify-start font-normal text-left",
                         !data.dueDate && "text-muted-foreground",
-                        errors?.dueDate && "border-red-500"
+                        errors?.dueDate && "border-red-500",
                       )}
                       type="button"
                     >
@@ -752,7 +756,7 @@ export default function InvoiceInfoSection({
                     const issueDate = new Date(data.issueDate || new Date());
                     const dueDate = new Date(issueDate);
                     dueDate.setDate(dueDate.getDate() + days);
-                    setValue("dueDate", dueDate.toISOString().split("T")[0], {
+                    setValue("dueDate", formatLocalDate(dueDate), {
                       shouldDirty: true,
                       shouldValidate: true,
                     });
@@ -808,7 +812,7 @@ export default function InvoiceInfoSection({
                   if (!data.situationReference && !data.id) {
                     const year = new Date().getFullYear();
                     const randomNum = String(
-                      Math.floor(Math.random() * 1000)
+                      Math.floor(Math.random() * 1000),
                     ).padStart(3, "0");
                     const autoRef = `SIT-${year}-${randomNum}`;
                     setValue("situationReference", autoRef, {
@@ -873,9 +877,9 @@ export default function InvoiceInfoSection({
                   className="max-w-[280px] sm:max-w-xs"
                 >
                   <p>
-                    Mention obligatoire pour la facturation électronique (réforme
-                    2026). Indique si la facture concerne une livraison de biens,
-                    une prestation de services, ou les deux.
+                    Mention obligatoire pour la facturation électronique
+                    (réforme 2026). Indique si la facture concerne une livraison
+                    de biens, une prestation de services, ou les deux.
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -963,7 +967,7 @@ export default function InvoiceInfoSection({
                     aria-expanded={referenceSearchOpen}
                     className={cn(
                       "w-full justify-between font-normal",
-                      errors?.situationReference && "border-red-500"
+                      errors?.situationReference && "border-red-500",
                     )}
                     disabled={!canEdit}
                   >
@@ -1062,7 +1066,7 @@ export default function InvoiceInfoSection({
                               setValue(
                                 "situationReference",
                                 referenceSearchTerm,
-                                { shouldDirty: true }
+                                { shouldDirty: true },
                               );
                               setValue("purchaseOrderNumber", "", {
                                 shouldDirty: true,
@@ -1100,7 +1104,7 @@ export default function InvoiceInfoSection({
                                 )
                                   return true;
                                 return ref.totalTTC < ref.contractTotal;
-                              }
+                              },
                             );
 
                           if (availableRefs.length === 0) return null;
@@ -1123,7 +1127,7 @@ export default function InvoiceInfoSection({
                                         setValue(
                                           "situationReference",
                                           ref.reference,
-                                          { shouldDirty: true }
+                                          { shouldDirty: true },
                                         );
                                         setValue("purchaseOrderNumber", "", {
                                           shouldDirty: true,
@@ -1213,12 +1217,12 @@ export default function InvoiceInfoSection({
                                           setValue(
                                             "situationReference",
                                             fullRef,
-                                            { shouldDirty: true }
+                                            { shouldDirty: true },
                                           );
                                           setValue(
                                             "purchaseOrderNumber",
                                             fullRef,
-                                            { shouldDirty: true }
+                                            { shouldDirty: true },
                                           );
                                           setReferenceSearchOpen(false);
                                           setReferenceSearchTerm("");
@@ -1234,7 +1238,7 @@ export default function InvoiceInfoSection({
                                           <div className="text-xs text-muted-foreground truncate">
                                             {quote.client?.name} •{" "}
                                             {formatCurrency(
-                                              quote.finalTotalTTC
+                                              quote.finalTotalTTC,
                                             )}
                                             {invoicedTotal > 0 && (
                                               <>
@@ -1436,7 +1440,7 @@ export default function InvoiceInfoSection({
                                           fullRef,
                                           {
                                             shouldDirty: true,
-                                          }
+                                          },
                                         );
                                         setReferenceSearchOpen(false);
                                         setReferenceSearchTerm("");
@@ -1471,7 +1475,7 @@ export default function InvoiceInfoSection({
                                 setValue(
                                   "purchaseOrderNumber",
                                   referenceSearchTerm,
-                                  { shouldDirty: true }
+                                  { shouldDirty: true },
                                 );
                                 setReferenceSearchOpen(false);
                                 setReferenceSearchTerm("");

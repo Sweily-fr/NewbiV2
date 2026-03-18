@@ -1,15 +1,27 @@
-import { useMutation, useQuery } from '@apollo/client';
-import { CREATE_CLIENT, UPDATE_CLIENT, DELETE_CLIENT, BLOCK_CLIENT, UNBLOCK_CLIENT, ASSIGN_CLIENT_MEMBERS } from '../graphql/mutations/clients';
-import { GET_CLIENTS, GET_CLIENT } from '../graphql/queries/clients';
-import { GET_CLIENT_LISTS } from '../graphql/queries/clientLists';
-import { toast } from '@/src/components/ui/sonner';
-import { useWorkspace } from './useWorkspace';
-import { useErrorHandler } from './useErrorHandler';
+import { useMutation, useQuery } from "@apollo/client";
+import {
+  CREATE_CLIENT,
+  UPDATE_CLIENT,
+  DELETE_CLIENT,
+  BLOCK_CLIENT,
+  UNBLOCK_CLIENT,
+  ASSIGN_CLIENT_MEMBERS,
+} from "../graphql/mutations/clients";
+import { GET_CLIENTS, GET_CLIENT } from "../graphql/queries/clients";
+import { GET_CLIENT_LISTS } from "../graphql/queries/clientLists";
+import { toast } from "@/src/components/ui/sonner";
+import { useWorkspace } from "./useWorkspace";
+import { useErrorHandler } from "./useErrorHandler";
 
-export const useClients = (page = 1, limit = 10, search = '') => {
+export const useClients = (page = 1, limit = 10, search = "") => {
   const { workspaceId, loading: workspaceLoading } = useWorkspace();
-  
-  const { data, loading: queryLoading, error, refetch } = useQuery(GET_CLIENTS, {
+
+  const {
+    data,
+    loading: queryLoading,
+    error,
+    refetch,
+  } = useQuery(GET_CLIENTS, {
     variables: { workspaceId, page, limit, search },
     skip: !workspaceId,
     fetchPolicy: "cache-and-network",
@@ -20,7 +32,8 @@ export const useClients = (page = 1, limit = 10, search = '') => {
     totalItems: data?.clients?.totalItems || 0,
     currentPage: data?.clients?.currentPage || 1,
     totalPages: data?.clients?.totalPages || 1,
-    loading: (workspaceLoading && !workspaceId) || (queryLoading && !data?.clients),
+    loading:
+      (workspaceLoading && !workspaceId) || (queryLoading && !data?.clients),
     error,
     refetch,
   };
@@ -28,70 +41,92 @@ export const useClients = (page = 1, limit = 10, search = '') => {
 
 export const useClient = (id) => {
   const { workspaceId, loading: workspaceLoading } = useWorkspace();
-  
-  const { data, loading: queryLoading, error } = useQuery(GET_CLIENT, {
+
+  const {
+    data,
+    loading: queryLoading,
+    error,
+  } = useQuery(GET_CLIENT, {
     variables: { workspaceId, id },
     skip: !id || !workspaceId,
   });
 
   return {
     client: data?.client,
-    loading: (workspaceLoading && !workspaceId) || (queryLoading && !data?.client),
+    loading:
+      (workspaceLoading && !workspaceId) || (queryLoading && !data?.client),
     error,
   };
 };
 
 export const useCreateClient = () => {
   const { workspaceId } = useWorkspace();
-  const { handleMutationError } = useErrorHandler();
-  
-  const [createClient, { loading, error }] = useMutation(CREATE_CLIENT, {
-    update: (cache, { data: { createClient: newClient } }) => {
-      try {
-        // Lire la query existante
-        const existingClients = cache.readQuery({
-          query: GET_CLIENTS,
-          variables: { workspaceId, page: 1, limit: 10, search: '' }
-        });
 
-        if (existingClients) {
-          // Ajouter le nouveau client au début de la liste
-          cache.writeQuery({
+  const [createClientMutation, { loading, error }] = useMutation(
+    CREATE_CLIENT,
+    {
+      update: (cache, { data: { createClient: newClient } }) => {
+        try {
+          // Lire la query existante
+          const existingClients = cache.readQuery({
             query: GET_CLIENTS,
-            variables: { workspaceId, page: 1, limit: 10, search: '' },
-            data: {
-              clients: {
-                ...existingClients.clients,
-                items: [newClient, ...existingClients.clients.items],
-                totalItems: existingClients.clients.totalItems + 1
-              }
-            }
+            variables: { workspaceId, page: 1, limit: 10, search: "" },
           });
+
+          if (existingClients) {
+            // Ajouter le nouveau client au début de la liste
+            cache.writeQuery({
+              query: GET_CLIENTS,
+              variables: { workspaceId, page: 1, limit: 10, search: "" },
+              data: {
+                clients: {
+                  ...existingClients.clients,
+                  items: [newClient, ...existingClients.clients.items],
+                  totalItems: existingClients.clients.totalItems + 1,
+                },
+              },
+            });
+          }
+        } catch {
+          // Si la query n'existe pas dans le cache, on l'ignore
         }
-      } catch {
-        // Si la query n'existe pas dans le cache, on l'ignore
-      }
+      },
+      refetchQueries: [{ query: GET_CLIENT_LISTS, variables: { workspaceId } }],
+      awaitRefetchQueries: false,
+      onCompleted: () => {
+        toast.success("Client créé avec succès");
+      },
+      onError: (error) => {
+        // Extraire le message d'erreur GraphQL pour l'afficher en description du toast
+        const serverMessage = error.graphQLErrors?.[0]?.message;
+        handleMutationError(error, "create", "client", {
+          ...(serverMessage && { description: serverMessage }),
+        });
+      },
     },
-    refetchQueries: [
-      { query: GET_CLIENT_LISTS, variables: { workspaceId } }
-    ],
-    awaitRefetchQueries: false,
-    onCompleted: () => {
-      toast.success('Client créé avec succès');
-    },
-    onError: (error) => {
-      // Extraire le message d'erreur GraphQL pour l'afficher en description du toast
-      const serverMessage = error.graphQLErrors?.[0]?.message;
-      handleMutationError(error, 'create', 'client', {
-        ...(serverMessage && { description: serverMessage }),
-      });
-    },
-  });
+  );
 
   return {
     createClient: async (input) => {
-      const result = await createClient({ variables: { workspaceId, input } });
-      return result?.data?.createClient;
+      try {
+        const result = await createClientMutation({
+          variables: { workspaceId, input },
+        });
+        if (result?.data?.createClient) {
+          toast.success("Client créé avec succès");
+        }
+        return result?.data?.createClient;
+      } catch (error) {
+        // Extraire l'erreur GraphQL pour la propager avec les bonnes infos
+        const graphQLError = error.graphQLErrors?.[0];
+        if (graphQLError) {
+          const enhancedError = new Error(graphQLError.message);
+          enhancedError.extensions = graphQLError.extensions;
+          enhancedError.code = graphQLError.extensions?.code;
+          throw enhancedError;
+        }
+        throw error;
+      }
     },
     loading,
     error,
@@ -100,59 +135,78 @@ export const useCreateClient = () => {
 
 export const useUpdateClient = () => {
   const { workspaceId } = useWorkspace();
-  const { handleMutationError } = useErrorHandler();
-  
-  const [updateClient, { loading, error }] = useMutation(UPDATE_CLIENT, {
-    update: (cache, { data: { updateClient: updatedClient } }) => {
-      // Mettre à jour le client dans le cache GET_CLIENT
-      cache.writeQuery({
-        query: GET_CLIENT,
-        variables: { workspaceId, id: updatedClient.id },
-        data: { client: updatedClient }
-      });
 
-      // Mettre à jour le client dans la liste GET_CLIENTS
-      try {
-        const existingClients = cache.readQuery({
-          query: GET_CLIENTS,
-          variables: { workspaceId, page: 1, limit: 10, search: '' }
+  const [updateClientMutation, { loading, error }] = useMutation(
+    UPDATE_CLIENT,
+    {
+      update: (cache, { data: { updateClient: updatedClient } }) => {
+        // Mettre à jour le client dans le cache GET_CLIENT
+        cache.writeQuery({
+          query: GET_CLIENT,
+          variables: { workspaceId, id: updatedClient.id },
+          data: { client: updatedClient },
         });
 
-        if (existingClients) {
-          const updatedItems = existingClients.clients.items.map(client =>
-            client.id === updatedClient.id ? updatedClient : client
-          );
-
-          cache.writeQuery({
+        // Mettre à jour le client dans la liste GET_CLIENTS
+        try {
+          const existingClients = cache.readQuery({
             query: GET_CLIENTS,
-            variables: { workspaceId, page: 1, limit: 10, search: '' },
-            data: {
-              clients: {
-                ...existingClients.clients,
-                items: updatedItems
-              }
-            }
+            variables: { workspaceId, page: 1, limit: 10, search: "" },
           });
+
+          if (existingClients) {
+            const updatedItems = existingClients.clients.items.map((client) =>
+              client.id === updatedClient.id ? updatedClient : client,
+            );
+
+            cache.writeQuery({
+              query: GET_CLIENTS,
+              variables: { workspaceId, page: 1, limit: 10, search: "" },
+              data: {
+                clients: {
+                  ...existingClients.clients,
+                  items: updatedItems,
+                },
+              },
+            });
+          }
+        } catch {
+          // Si la query n'existe pas dans le cache, on l'ignore
         }
-      } catch {
-        // Si la query n'existe pas dans le cache, on l'ignore
-      }
+      },
+      onCompleted: () => {
+        toast.success("Client modifié avec succès");
+      },
+      onError: (error) => {
+        const serverMessage = error.graphQLErrors?.[0]?.message;
+        handleMutationError(error, "update", "client", {
+          ...(serverMessage && { description: serverMessage }),
+        });
+      },
     },
-    onCompleted: () => {
-      toast.success('Client modifié avec succès');
-    },
-    onError: (error) => {
-      const serverMessage = error.graphQLErrors?.[0]?.message;
-      handleMutationError(error, 'update', 'client', {
-        ...(serverMessage && { description: serverMessage }),
-      });
-    },
-  });
+  );
 
   return {
     updateClient: async (id, input) => {
-      const result = await updateClient({ variables: { workspaceId, id, input } });
-      return result?.data?.updateClient;
+      try {
+        const result = await updateClientMutation({
+          variables: { workspaceId, id, input },
+        });
+        if (result?.data?.updateClient) {
+          toast.success("Client modifié avec succès");
+        }
+        return result?.data?.updateClient;
+      } catch (error) {
+        // Extraire l'erreur GraphQL pour la propager avec les bonnes infos
+        const graphQLError = error.graphQLErrors?.[0];
+        if (graphQLError) {
+          const enhancedError = new Error(graphQLError.message);
+          enhancedError.extensions = graphQLError.extensions;
+          enhancedError.code = graphQLError.extensions?.code;
+          throw enhancedError;
+        }
+        throw error;
+      }
     },
     loading,
     error,
@@ -162,7 +216,7 @@ export const useUpdateClient = () => {
 export const useDeleteClient = () => {
   const { workspaceId } = useWorkspace();
   const { handleMutationError } = useErrorHandler();
-  
+
   const [deleteClient, { loading, error }] = useMutation(DELETE_CLIENT, {
     context: { skipErrorToast: true },
     update: (cache, { data, errors }, { variables: { id } }) => {
@@ -170,29 +224,31 @@ export const useDeleteClient = () => {
       if (!data?.deleteClient || errors?.length > 0) return;
       // Supprimer le client du cache GET_CLIENT
       cache.evict({
-        id: cache.identify({ __typename: 'Client', id })
+        id: cache.identify({ __typename: "Client", id }),
       });
 
       // Supprimer le client de la liste GET_CLIENTS
       try {
         const existingClients = cache.readQuery({
           query: GET_CLIENTS,
-          variables: { workspaceId, page: 1, limit: 10, search: '' }
+          variables: { workspaceId, page: 1, limit: 10, search: "" },
         });
 
         if (existingClients) {
-          const filteredItems = existingClients.clients.items.filter(client => client.id !== id);
+          const filteredItems = existingClients.clients.items.filter(
+            (client) => client.id !== id,
+          );
 
           cache.writeQuery({
             query: GET_CLIENTS,
-            variables: { workspaceId, page: 1, limit: 10, search: '' },
+            variables: { workspaceId, page: 1, limit: 10, search: "" },
             data: {
               clients: {
                 ...existingClients.clients,
                 items: filteredItems,
-                totalItems: existingClients.clients.totalItems - 1
-              }
-            }
+                totalItems: existingClients.clients.totalItems - 1,
+              },
+            },
           });
         }
       } catch {
@@ -203,10 +259,10 @@ export const useDeleteClient = () => {
       cache.gc();
     },
     onCompleted: () => {
-      toast.success('Client supprimé avec succès');
+      toast.success("Client supprimé avec succès");
     },
     onError: (error) => {
-      handleMutationError(error, 'delete', 'client');
+      handleMutationError(error, "delete", "client");
     },
   });
 
@@ -223,19 +279,23 @@ export const useBlockClient = () => {
 
   const [blockClient, { loading, error }] = useMutation(BLOCK_CLIENT, {
     refetchQueries: [
-      { query: GET_CLIENTS, variables: { workspaceId, page: 1, limit: 10, search: '' } },
+      {
+        query: GET_CLIENTS,
+        variables: { workspaceId, page: 1, limit: 10, search: "" },
+      },
     ],
     awaitRefetchQueries: false,
     onCompleted: () => {
-      toast.success('Contact bloqué');
+      toast.success("Contact bloqué");
     },
     onError: (error) => {
-      handleMutationError(error, 'block', 'client');
+      handleMutationError(error, "block", "client");
     },
   });
 
   return {
-    blockClient: (id, reason) => blockClient({ variables: { workspaceId, id, reason } }),
+    blockClient: (id, reason) =>
+      blockClient({ variables: { workspaceId, id, reason } }),
     loading,
     error,
   };
@@ -247,14 +307,17 @@ export const useUnblockClient = () => {
 
   const [unblockClient, { loading, error }] = useMutation(UNBLOCK_CLIENT, {
     refetchQueries: [
-      { query: GET_CLIENTS, variables: { workspaceId, page: 1, limit: 10, search: '' } },
+      {
+        query: GET_CLIENTS,
+        variables: { workspaceId, page: 1, limit: 10, search: "" },
+      },
     ],
     awaitRefetchQueries: false,
     onCompleted: () => {
-      toast.success('Contact débloqué');
+      toast.success("Contact débloqué");
     },
     onError: (error) => {
-      handleMutationError(error, 'unblock', 'client');
+      handleMutationError(error, "unblock", "client");
     },
   });
 
@@ -269,21 +332,28 @@ export const useAssignClientMembers = () => {
   const { workspaceId } = useWorkspace();
   const { handleMutationError } = useErrorHandler();
 
-  const [assignClientMembers, { loading, error }] = useMutation(ASSIGN_CLIENT_MEMBERS, {
-    refetchQueries: [
-      { query: GET_CLIENTS, variables: { workspaceId, page: 1, limit: 10, search: '' } },
-    ],
-    awaitRefetchQueries: false,
-    onCompleted: () => {
-      toast.success('Membres assignés');
+  const [assignClientMembers, { loading, error }] = useMutation(
+    ASSIGN_CLIENT_MEMBERS,
+    {
+      refetchQueries: [
+        {
+          query: GET_CLIENTS,
+          variables: { workspaceId, page: 1, limit: 10, search: "" },
+        },
+      ],
+      awaitRefetchQueries: false,
+      onCompleted: () => {
+        toast.success("Membres assignés");
+      },
+      onError: (error) => {
+        handleMutationError(error, "assign", "client");
+      },
     },
-    onError: (error) => {
-      handleMutationError(error, 'assign', 'client');
-    },
-  });
+  );
 
   return {
-    assignClientMembers: (id, memberIds) => assignClientMembers({ variables: { workspaceId, id, memberIds } }),
+    assignClientMembers: (id, memberIds) =>
+      assignClientMembers({ variables: { workspaceId, id, memberIds } }),
     loading,
     error,
   };

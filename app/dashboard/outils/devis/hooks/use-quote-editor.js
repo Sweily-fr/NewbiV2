@@ -17,6 +17,7 @@ import {
   useCheckQuoteNumber,
 } from "@/src/graphql/quoteQueries";
 import { useQuoteNumber } from "./use-quote-number";
+import { formatLocalDate } from "@/src/utils/dateFormatter";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
@@ -26,7 +27,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
   // Auth hook pour récupérer les données utilisateur
   const { session } = useUser();
-  
+
   // Error handler
   const { handleError } = useErrorHandler();
   const [validationErrors, setValidationErrors] = useState({});
@@ -110,27 +111,43 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
   // Watch all form data for auto-save
   const formData = watch();
-  
+
   // Watch items array to detect deep changes in real-time
   const watchedItems = useWatch({ control: form.control, name: "items" });
   const watchedShipping = useWatch({ control: form.control, name: "shipping" });
   const watchedDiscount = useWatch({ control: form.control, name: "discount" });
-  const watchedDiscountType = useWatch({ control: form.control, name: "discountType" });
-  const watchedCustomFields = useWatch({ control: form.control, name: "customFields" });
+  const watchedDiscountType = useWatch({
+    control: form.control,
+    name: "discountType",
+  });
+  const watchedCustomFields = useWatch({
+    control: form.control,
+    name: "customFields",
+  });
   const watchedClient = useWatch({ control: form.control, name: "client" });
   const watchedPrefix = useWatch({ control: form.control, name: "prefix" });
   const watchedNumber = useWatch({ control: form.control, name: "number" });
-  const watchedIssueDate = useWatch({ control: form.control, name: "issueDate" });
-  const watchedValidUntil = useWatch({ control: form.control, name: "validUntil" });
-  
+  const watchedIssueDate = useWatch({
+    control: form.control,
+    name: "issueDate",
+  });
+  const watchedValidUntil = useWatch({
+    control: form.control,
+    name: "validUntil",
+  });
+
   // Créer une valeur stable pour détecter les changements dans les items
-  const itemsData = useMemo(() => JSON.stringify(watchedItems || []), [watchedItems]);
-  
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const itemsData = useMemo(
+    () => JSON.stringify(watchedItems || []),
+    [watchedItems],
+  );
+
   // Re-valider quand le client change (avec debounce)
   useEffect(() => {
     // Ne pas valider si le formulaire n'est pas encore initialisé
     if (!isFormInitialized) return;
-    
+
     // Debounce de 500ms
     const timeoutId = setTimeout(() => {
       setValidationErrors((prevErrors) => {
@@ -138,7 +155,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
           // Vérifier si le client est valide
           const client = watchedClient;
           const clientErrors = [];
-          
+
           // Vérifier le nom selon le type de client
           if (client.type === "COMPANY") {
             // Pour les entreprises, vérifier le champ name
@@ -148,15 +165,15 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
           } else {
             // Pour les particuliers, vérifier firstName ET lastName, ou name
             const hasName = client.name && client.name.trim() !== "";
-            const hasFirstAndLastName = 
-              (client.firstName && client.firstName.trim() !== "") || 
+            const hasFirstAndLastName =
+              (client.firstName && client.firstName.trim() !== "") ||
               (client.lastName && client.lastName.trim() !== "");
-            
+
             if (!hasName && !hasFirstAndLastName) {
               clientErrors.push("nom manquant");
             }
           }
-          
+
           // Validation de l'email
           if (!client.email || client.email.trim() === "") {
             clientErrors.push("email manquant");
@@ -164,16 +181,23 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
             // Vérifier le format de l'email
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(client.email.trim())) {
-              clientErrors.push("email invalide (format attendu: nom@exemple.com)");
+              clientErrors.push(
+                "email invalide (format attendu: nom@exemple.com)",
+              );
             }
           }
-          
+
           // Validation de l'adresse
-          if (!client.address?.street || client.address.street.trim() === "") clientErrors.push("adresse (rue) manquante");
-          if (!client.address?.city || client.address.city.trim() === "") clientErrors.push("ville manquante");
-          
+          if (!client.address?.street || client.address.street.trim() === "")
+            clientErrors.push("adresse (rue) manquante");
+          if (!client.address?.city || client.address.city.trim() === "")
+            clientErrors.push("ville manquante");
+
           // Validation du code postal
-          if (!client.address?.postalCode || client.address.postalCode.trim() === "") {
+          if (
+            !client.address?.postalCode ||
+            client.address.postalCode.trim() === ""
+          ) {
             clientErrors.push("code postal manquant");
           } else {
             // Vérifier le format du code postal (5 chiffres pour la France)
@@ -182,30 +206,35 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
               clientErrors.push("code postal invalide (5 chiffres attendus)");
             }
           }
-          
-          if (!client.address?.country || client.address.country.trim() === "") clientErrors.push("pays manquant");
-          
+
+          if (!client.address?.country || client.address.country.trim() === "")
+            clientErrors.push("pays manquant");
+
           // Validations spécifiques aux entreprises
           if (client.type === "COMPANY") {
             // Validation du SIREN/SIRET
             if (!client.siret || client.siret.trim() === "") {
-              clientErrors.push("numéro de SIREN/SIRET manquant (obligatoire pour les entreprises)");
+              clientErrors.push(
+                "numéro de SIREN/SIRET manquant (obligatoire pour les entreprises)",
+              );
             } else {
               // Vérifier le format du SIREN (9 chiffres) ou SIRET (14 chiffres)
               const siretRegex = /^\d{9}$|^\d{14}$/;
               if (!siretRegex.test(client.siret.trim())) {
-                clientErrors.push("numéro de SIREN/SIRET invalide (9 ou 14 chiffres attendus)");
+                clientErrors.push(
+                  "numéro de SIREN/SIRET invalide (9 ou 14 chiffres attendus)",
+                );
               }
             }
-            
           }
-          
+
           // Construire le nom d'affichage du client
-          const displayName = client.name || 
-            (client.firstName || client.lastName 
-              ? `${client.firstName || ''} ${client.lastName || ''}`.trim() 
-              : 'Sans nom');
-          
+          const displayName =
+            client.name ||
+            (client.firstName || client.lastName
+              ? `${client.firstName || ""} ${client.lastName || ""}`.trim()
+              : "Sans nom");
+
           // Si le client est valide, supprimer l'erreur
           if (clientErrors.length === 0) {
             if (prevErrors.client) {
@@ -219,8 +248,8 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
               ...prevErrors,
               client: {
                 message: `Le client "${displayName}" a des informations incomplètes:\n${clientErrors.join(", ")}`,
-                canEdit: true
-              }
+                canEdit: true,
+              },
             };
           }
         } else {
@@ -231,11 +260,11 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
             return newErrors;
           }
         }
-        
+
         return prevErrors;
       });
     }, 500); // Attendre 500ms après avoir arrêté de taper
-    
+
     // Cleanup : annuler le timeout si l'utilisateur retape avant les 500ms
     return () => clearTimeout(timeoutId);
   }, [watchedClient, isFormInitialized]);
@@ -244,7 +273,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
   useEffect(() => {
     // Ne pas valider si le formulaire n'est pas encore initialisé
     if (!isFormInitialized) return;
-    
+
     // Debounce de 500ms
     const timeoutId = setTimeout(() => {
       setValidationErrors((prevErrors) => {
@@ -290,7 +319,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
   useEffect(() => {
     // Ne pas valider si le formulaire n'est pas encore initialisé
     if (!isFormInitialized) return;
-    
+
     // Debounce de 500ms
     const timeoutId = setTimeout(async () => {
       const number = watchedNumber || "";
@@ -322,7 +351,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
       try {
         // Vérifier si le numéro existe déjà (avec le préfixe)
-        const prefix = watch('prefix');
+        const prefix = watch("prefix");
         const { exists } = await checkQuoteNumber(number, prefix, quoteId);
 
         if (exists) {
@@ -345,7 +374,10 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
           });
         }
       } catch (error) {
-        console.error("Erreur lors de la validation du numéro de devis:", error);
+        console.error(
+          "Erreur lors de la validation du numéro de devis:",
+          error,
+        );
       }
     }, 500);
 
@@ -356,7 +388,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
   useEffect(() => {
     // Ne pas valider si le formulaire n'est pas encore initialisé
     if (!isFormInitialized) return;
-    
+
     setValidationErrors((prevErrors) => {
       if (prevErrors.companyInfo) {
         if (formData.companyInfo?.name && formData.companyInfo?.email) {
@@ -373,13 +405,13 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
   useEffect(() => {
     // Ne pas valider si le formulaire n'est pas encore initialisé
     if (!isFormInitialized) return;
-    
+
     // Debounce de 500ms
     const timeoutId = setTimeout(() => {
       setValidationErrors((prevErrors) => {
         let hasError = false;
         let errorMessage = "";
-        
+
         if (!watchedIssueDate) {
           hasError = true;
           errorMessage = "La date d'émission est obligatoire";
@@ -387,20 +419,21 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
           const issueDate = new Date(watchedIssueDate);
           const today = new Date();
           today.setHours(0, 0, 0, 0);
-          
+
           if (issueDate < today) {
             hasError = true;
-            errorMessage = "La date d'émission ne peut pas être antérieure à aujourd'hui";
+            errorMessage =
+              "La date d'émission ne peut pas être antérieure à aujourd'hui";
           }
         }
-        
+
         if (hasError) {
           return {
             ...prevErrors,
             issueDate: {
               message: errorMessage,
-              canEdit: true
-            }
+              canEdit: true,
+            },
           };
         } else {
           if (prevErrors.issueDate) {
@@ -409,11 +442,11 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
             return newErrors;
           }
         }
-        
+
         return prevErrors;
       });
     }, 500);
-    
+
     return () => clearTimeout(timeoutId);
   }, [watchedIssueDate, isFormInitialized]);
 
@@ -421,36 +454,37 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
   useEffect(() => {
     // Ne pas valider si le formulaire n'est pas encore initialisé
     if (!isFormInitialized) return;
-    
+
     // Debounce de 500ms
     const timeoutId = setTimeout(() => {
       setValidationErrors((prevErrors) => {
         if (watchedValidUntil && watchedIssueDate) {
           const issueDate = new Date(watchedIssueDate);
           const validUntilDate = new Date(watchedValidUntil);
-          
+
           if (validUntilDate < issueDate) {
             return {
               ...prevErrors,
               validUntil: {
-                message: "La date de validité ne peut pas être antérieure à la date d'émission",
-                canEdit: true
-              }
+                message:
+                  "La date de validité ne peut pas être antérieure à la date d'émission",
+                canEdit: true,
+              },
             };
           }
         }
-        
+
         // Pas d'erreur, supprimer si elle existe
         if (prevErrors.validUntil) {
           const newErrors = { ...prevErrors };
           delete newErrors.validUntil;
           return newErrors;
         }
-        
+
         return prevErrors;
       });
     }, 500);
-    
+
     return () => clearTimeout(timeoutId);
   }, [watchedValidUntil, watchedIssueDate, isFormInitialized]);
 
@@ -458,79 +492,89 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
   useEffect(() => {
     // Ne pas valider si le formulaire n'est pas encore initialisé
     if (!isFormInitialized) return;
-    
+
     // Debounce de 500ms - la validation se déclenche 500ms après avoir arrêté de taper
     const timeoutId = setTimeout(() => {
       setValidationErrors((prevErrors) => {
-      // Valider les articles si on a des articles
-      if (watchedItems && watchedItems.length > 0) {
-        const invalidItems = [];
-        const itemsWithErrors = [];
-        
-        watchedItems.forEach((item, index) => {
-          const itemErrors = [];
-          const fields = [];
-          
-          if (!item.description || item.description.trim() === "") {
-            itemErrors.push("description");
-            fields.push("description");
-          }
-          if (!item.quantity || item.quantity <= 0) {
-            itemErrors.push("quantity");
-            fields.push("quantity");
-          }
-          if (item.unitPrice === undefined || item.unitPrice === null || item.unitPrice < 0) {
-            itemErrors.push("unitPrice");
-            fields.push("unitPrice");
-          }
-          
-          // Vérifier le texte d'exonération de TVA si la TVA est à 0% (sauf en auto-liquidation)
-          const vatRate = parseFloat(item.vatRate) || 0;
-          if (vatRate === 0 && !formData.isReverseCharge) {
-            const vatExemptionText = item.vatExemptionText;
-            if (!vatExemptionText || vatExemptionText.trim() === "" || vatExemptionText === "none") {
-              itemErrors.push("texte d'exonération de TVA requis (TVA à 0%)");
-              fields.push("vatExemptionText");
+        // Valider les articles si on a des articles
+        if (watchedItems && watchedItems.length > 0) {
+          const invalidItems = [];
+          const itemsWithErrors = [];
+
+          watchedItems.forEach((item, index) => {
+            const itemErrors = [];
+            const fields = [];
+
+            if (!item.description || item.description.trim() === "") {
+              itemErrors.push("description");
+              fields.push("description");
             }
+            if (!item.quantity || item.quantity <= 0) {
+              itemErrors.push("quantity");
+              fields.push("quantity");
+            }
+            if (
+              item.unitPrice === undefined ||
+              item.unitPrice === null ||
+              item.unitPrice < 0
+            ) {
+              itemErrors.push("unitPrice");
+              fields.push("unitPrice");
+            }
+
+            // Vérifier le texte d'exonération de TVA si la TVA est à 0% (sauf en auto-liquidation)
+            const vatRate = parseFloat(item.vatRate) || 0;
+            if (vatRate === 0 && !formData.isReverseCharge) {
+              const vatExemptionText = item.vatExemptionText;
+              if (
+                !vatExemptionText ||
+                vatExemptionText.trim() === "" ||
+                vatExemptionText === "none"
+              ) {
+                itemErrors.push("texte d'exonération de TVA requis (TVA à 0%)");
+                fields.push("vatExemptionText");
+              }
+            }
+
+            if (itemErrors.length > 0) {
+              invalidItems.push(
+                `Article ${index + 1}: ${itemErrors.join(", ")}`,
+              );
+              itemsWithErrors.push({ index, fields });
+            }
+          });
+
+          // Si tous les articles sont valides, supprimer l'erreur
+          if (invalidItems.length === 0) {
+            if (prevErrors.items) {
+              const newErrors = { ...prevErrors };
+              delete newErrors.items;
+              return newErrors;
+            }
+          } else {
+            // Il y a des erreurs, les afficher
+            return {
+              ...prevErrors,
+              items: {
+                message: `Certains articles sont incomplets:\n${invalidItems.join("\n")}`,
+                canEdit: false,
+                details: itemsWithErrors,
+              },
+            };
           }
-          
-          if (itemErrors.length > 0) {
-            invalidItems.push(`Article ${index + 1}: ${itemErrors.join(", ")}`);
-            itemsWithErrors.push({ index, fields });
-          }
-        });
-        
-        // Si tous les articles sont valides, supprimer l'erreur
-        if (invalidItems.length === 0) {
+        } else {
+          // Pas d'articles, supprimer l'erreur si elle existe
           if (prevErrors.items) {
             const newErrors = { ...prevErrors };
             delete newErrors.items;
             return newErrors;
           }
-        } else {
-          // Il y a des erreurs, les afficher
-          return {
-            ...prevErrors,
-            items: {
-              message: `Certains articles sont incomplets:\n${invalidItems.join("\n")}`,
-              canEdit: false,
-              details: itemsWithErrors
-            }
-          };
         }
-      } else {
-        // Pas d'articles, supprimer l'erreur si elle existe
-        if (prevErrors.items) {
-          const newErrors = { ...prevErrors };
-          delete newErrors.items;
-          return newErrors;
-        }
-      }
-      
-      return prevErrors;
+
+        return prevErrors;
       });
     }, 500); // Attendre 500ms après avoir arrêté de taper
-    
+
     // Cleanup : annuler le timeout si l'utilisateur retape avant les 500ms
     return () => clearTimeout(timeoutId);
   }, [watchedItems, formData.isReverseCharge, isFormInitialized]);
@@ -547,31 +591,31 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
               ...prevErrors,
               discount: {
                 message: "La remise ne peut pas dépasser 100%",
-                canEdit: true
-              }
+                canEdit: true,
+              },
             };
           } else if (watchedDiscount < 0) {
             return {
               ...prevErrors,
               discount: {
                 message: "La remise ne peut pas être négative",
-                canEdit: true
-              }
+                canEdit: true,
+              },
             };
           }
         }
-        
+
         // Supprimer l'erreur si la remise est valide
         if (prevErrors.discount) {
           const newErrors = { ...prevErrors };
           delete newErrors.discount;
           return newErrors;
         }
-        
+
         return prevErrors;
       });
     }, 500);
-    
+
     return () => clearTimeout(timeoutId);
   }, [watchedDiscount, watchedDiscountType, isFormInitialized]);
 
@@ -579,47 +623,60 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
   useEffect(() => {
     // Ne pas valider si le formulaire n'est pas encore initialisé
     if (!isFormInitialized) return;
-    
+
     // Debounce de 500ms
     const timeoutId = setTimeout(() => {
       setValidationErrors((prevErrors) => {
         if (watchedShipping?.billShipping) {
           const shippingErrors = [];
           const shippingAddr = watchedShipping?.shippingAddress || {};
-          
+
           if (!shippingAddr.fullName || shippingAddr.fullName.trim() === "") {
             shippingErrors.push("nom complet manquant");
-          } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())) {
+          } else if (
+            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())
+          ) {
             shippingErrors.push("nom complet invalide");
           }
-          
+
           if (!shippingAddr.street || shippingAddr.street.trim() === "") {
             shippingErrors.push("adresse manquante");
           } else if (shippingAddr.street.trim().length < 5) {
             shippingErrors.push("adresse trop courte");
           }
-          
-          if (!shippingAddr.postalCode || shippingAddr.postalCode.trim() === "") {
+
+          if (
+            !shippingAddr.postalCode ||
+            shippingAddr.postalCode.trim() === ""
+          ) {
             shippingErrors.push("code postal manquant");
           } else if (!/^\d{5}$/.test(shippingAddr.postalCode.trim())) {
             shippingErrors.push("code postal invalide");
           }
-          
+
           if (!shippingAddr.city || shippingAddr.city.trim() === "") {
             shippingErrors.push("ville manquante");
-          } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())) {
+          } else if (
+            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())
+          ) {
             shippingErrors.push("ville invalide");
           }
-          
+
           if (!shippingAddr.country || shippingAddr.country.trim() === "") {
             shippingErrors.push("pays manquant");
           }
-          
+
           const shippingCost = watchedShipping?.shippingAmountHT;
-          if (shippingCost === undefined || shippingCost === null || shippingCost === "" || isNaN(parseFloat(shippingCost)) || parseFloat(shippingCost) < 0) {
+          if (
+            shippingCost === undefined ||
+            shippingCost === null ||
+            shippingCost === "" ||
+            isNaN(parseFloat(shippingCost)) ||
+            parseFloat(shippingCost) < 0
+          ) {
             shippingErrors.push("coût de livraison invalide");
           }
-          
+
           if (shippingErrors.length === 0) {
             if (prevErrors.shipping) {
               const newErrors = { ...prevErrors };
@@ -631,8 +688,8 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
               ...prevErrors,
               shipping: {
                 message: `Informations de livraison incomplètes:\n${shippingErrors.join(", ")}`,
-                canEdit: true
-              }
+                canEdit: true,
+              },
             };
           }
         } else {
@@ -643,11 +700,11 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
             return newErrors;
           }
         }
-        
+
         return prevErrors;
       });
     }, 500);
-    
+
     return () => clearTimeout(timeoutId);
   }, [watchedShipping, isFormInitialized]);
 
@@ -655,30 +712,32 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
   useEffect(() => {
     // Ne pas valider si le formulaire n'est pas encore initialisé
     if (!isFormInitialized) return;
-    
+
     // Debounce de 500ms
     const timeoutId = setTimeout(() => {
       setValidationErrors((prevErrors) => {
         if (watchedCustomFields && watchedCustomFields.length > 0) {
           const invalidCustomFields = [];
           const customFieldsWithErrors = [];
-          
+
           watchedCustomFields.forEach((field, index) => {
             const fieldErrors = [];
-            
+
             if (!field.name || field.name.trim() === "") {
               fieldErrors.push("nom du champ manquant");
             }
             if (!field.value || field.value.trim() === "") {
               fieldErrors.push("valeur manquante");
             }
-            
+
             if (fieldErrors.length > 0) {
-              invalidCustomFields.push(`Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`);
+              invalidCustomFields.push(
+                `Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`,
+              );
               customFieldsWithErrors.push({ index, errors: fieldErrors });
             }
           });
-          
+
           if (invalidCustomFields.length === 0) {
             if (prevErrors.customFields) {
               const newErrors = { ...prevErrors };
@@ -691,8 +750,8 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
               customFields: {
                 message: `Certains champs personnalisés sont incomplets:\n${invalidCustomFields.join("\n")}`,
                 canEdit: false,
-                details: customFieldsWithErrors
-              }
+                details: customFieldsWithErrors,
+              },
             };
           }
         } else {
@@ -703,11 +762,11 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
             return newErrors;
           }
         }
-        
+
         return prevErrors;
       });
     }, 500);
-    
+
     return () => clearTimeout(timeoutId);
   }, [watchedCustomFields, isFormInitialized]);
 
@@ -733,7 +792,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
         setIsFormInitialized(true);
       }, 100);
     }
-  }, [existingQuote, mode, reset]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [existingQuote, mode, reset]);
 
   // Set next quote number for new quotes and draft editing
   useEffect(() => {
@@ -742,21 +801,43 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     const isDraftEdit = mode === "edit" && existingQuote?.status === "DRAFT";
     if (mode !== "create" && !isDraftEdit) return;
 
-    const formattedNumber = String(nextQuoteNumber).padStart(4, '0');
+    const formattedNumber = String(nextQuoteNumber).padStart(4, "0");
     const currentNumber = getValues("number");
 
     if (hasDocumentsForPrefix) {
-      setValue("number", formattedNumber, { shouldValidate: false, shouldDirty: false });
-    } else if (!currentNumber || currentNumber.startsWith("DRAFT-") || currentNumber === "0001") {
-      // Charger l'organisation pour récupérer le numéro de départ personnalisé
-      getActiveOrganization().then((org) => {
-        const startNumber = org?.quoteStartNumber || formattedNumber;
-        setValue("number", startNumber, { shouldValidate: false, shouldDirty: false });
-      }).catch(() => {
-        setValue("number", formattedNumber, { shouldValidate: false, shouldDirty: false });
+      setValue("number", formattedNumber, {
+        shouldValidate: false,
+        shouldDirty: false,
       });
+    } else if (
+      !currentNumber ||
+      currentNumber.startsWith("DRAFT-") ||
+      currentNumber === "0001"
+    ) {
+      // Charger l'organisation pour récupérer le numéro de départ personnalisé
+      getActiveOrganization()
+        .then((org) => {
+          const startNumber = org?.quoteStartNumber || formattedNumber;
+          setValue("number", startNumber, {
+            shouldValidate: false,
+            shouldDirty: false,
+          });
+        })
+        .catch(() => {
+          setValue("number", formattedNumber, {
+            shouldValidate: false,
+            shouldDirty: false,
+          });
+        });
     }
-  }, [mode, isFormInitialized, nextQuoteNumber, numberLoading, hasDocumentsForPrefix, existingQuote?.status]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [
+    mode,
+    isFormInitialized,
+    nextQuoteNumber,
+    numberLoading,
+    hasDocumentsForPrefix,
+    existingQuote?.status,
+  ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Effet pour charger les données d'organisation au démarrage
   useEffect(() => {
@@ -776,9 +857,18 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
             setValue("companyInfo.vatNumber", organization.vatNumber || "");
             setValue("companyInfo.rcs", organization.rcs || "");
             setValue("companyInfo.companyStatus", organization.legalForm || "");
-            setValue("companyInfo.capitalSocial", organization.capitalSocial || "");
-            setValue("companyInfo.vatPaymentCondition", organization.fiscalRegime || "");
-            setValue("companyInfo.transactionCategory", organization.activityCategory || "");
+            setValue(
+              "companyInfo.capitalSocial",
+              organization.capitalSocial || "",
+            );
+            setValue(
+              "companyInfo.vatPaymentCondition",
+              organization.fiscalRegime || "",
+            );
+            setValue(
+              "companyInfo.transactionCategory",
+              organization.activityCategory || "",
+            );
 
             // Gérer l'adresse de l'entreprise à partir des champs séparés de l'organisation
             setValue("companyInfo.address", {
@@ -792,15 +882,21 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
             // Couleurs spécifiques aux devis avec fallback vers les couleurs globales
             setValue(
               "appearance.textColor",
-              organization.quoteTextColor || organization.documentTextColor || "#000000"
+              organization.quoteTextColor ||
+                organization.documentTextColor ||
+                "#000000",
             );
             setValue(
               "appearance.headerTextColor",
-              organization.quoteHeaderTextColor || organization.documentHeaderTextColor || "#ffffff"
+              organization.quoteHeaderTextColor ||
+                organization.documentHeaderTextColor ||
+                "#ffffff",
             );
             setValue(
               "appearance.headerBgColor",
-              organization.quoteHeaderBgColor || organization.documentHeaderBgColor || "#5b50FF"
+              organization.quoteHeaderBgColor ||
+                organization.documentHeaderBgColor ||
+                "#5b50FF",
             );
 
             // Mettre à jour les notes et conditions
@@ -808,19 +904,19 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
               "headerNotes",
               organization.quoteHeaderNotes ||
                 organization.documentHeaderNotes ||
-                ""
+                "",
             );
             setValue(
               "footerNotes",
               organization.quoteFooterNotes ||
                 organization.documentFooterNotes ||
-                ""
+                "",
             );
             setValue(
               "termsAndConditions",
               organization.quoteTermsAndConditions ||
                 organization.documentTermsAndConditions ||
-                ""
+                "",
             );
 
             // Charger showBankDetails depuis l'organisation
@@ -831,7 +927,11 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
               bic: organization.bankBic || "",
             });
             // Synchroniser les bankDetails au niveau top-level (utilisé par la preview)
-            if (organization.bankIban || organization.bankBic || organization.bankName) {
+            if (
+              organization.bankIban ||
+              organization.bankBic ||
+              organization.bankName
+            ) {
               setValue("bankDetails", {
                 iban: organization.bankIban || "",
                 bic: organization.bankBic || "",
@@ -840,32 +940,55 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
             }
 
             // Charger la position du client depuis l'organisation
-            setValue("clientPositionRight", organization.quoteClientPositionRight || false);
+            setValue(
+              "clientPositionRight",
+              organization.quoteClientPositionRight || false,
+            );
 
             // Charger le préfixe depuis l'organisation
             if (organization.quotePrefix) {
-              setValue("prefix", organization.quotePrefix, { shouldDirty: false });
+              setValue("prefix", organization.quotePrefix, {
+                shouldDirty: false,
+              });
             }
 
             // Le numéro est géré par le useEffect nextQuoteNumber (plus haut)
             // qui prend en compte hasDocumentsForPrefix et quoteStartNumber
 
             // Synchroniser les champs plats pour CompanyInfoSettingsSection dans la vue paramètres
-            setValue("companyName", organization.companyName || "", { shouldDirty: false });
-            setValue("companyEmail", organization.companyEmail || "", { shouldDirty: false });
-            setValue("companyPhone", organization.companyPhone || "", { shouldDirty: false });
-            setValue("website", organization.website || "", { shouldDirty: false });
-            setValue("addressStreet", organization.addressStreet || "", { shouldDirty: false });
-            setValue("addressCity", organization.addressCity || "", { shouldDirty: false });
-            setValue("addressZipCode", organization.addressZipCode || "", { shouldDirty: false });
-            setValue("addressCountry", organization.addressCountry || "France", { shouldDirty: false });
+            setValue("companyName", organization.companyName || "", {
+              shouldDirty: false,
+            });
+            setValue("companyEmail", organization.companyEmail || "", {
+              shouldDirty: false,
+            });
+            setValue("companyPhone", organization.companyPhone || "", {
+              shouldDirty: false,
+            });
+            setValue("website", organization.website || "", {
+              shouldDirty: false,
+            });
+            setValue("addressStreet", organization.addressStreet || "", {
+              shouldDirty: false,
+            });
+            setValue("addressCity", organization.addressCity || "", {
+              shouldDirty: false,
+            });
+            setValue("addressZipCode", organization.addressZipCode || "", {
+              shouldDirty: false,
+            });
+            setValue(
+              "addressCountry",
+              organization.addressCountry || "France",
+              { shouldDirty: false },
+            );
 
             // Marquer le formulaire comme initialisé après un court délai pour s'assurer que tous les setValue sont terminés
             setTimeout(() => {
               setIsFormInitialized(true);
             }, 100);
           }
-        } catch (error) {
+        } catch {
           // Error silently ignored
         }
       };
@@ -880,30 +1003,52 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
       const companyInfo = formData.companyInfo;
       if (companyInfo) {
         setValue("companyName", companyInfo.name || "", { shouldDirty: false });
-        setValue("companyEmail", companyInfo.email || "", { shouldDirty: false });
-        setValue("companyPhone", companyInfo.phone || "", { shouldDirty: false });
+        setValue("companyEmail", companyInfo.email || "", {
+          shouldDirty: false,
+        });
+        setValue("companyPhone", companyInfo.phone || "", {
+          shouldDirty: false,
+        });
         setValue("website", companyInfo.website || "", { shouldDirty: false });
         if (typeof companyInfo.address === "object" && companyInfo.address) {
-          setValue("addressStreet", companyInfo.address.street || "", { shouldDirty: false });
-          setValue("addressCity", companyInfo.address.city || "", { shouldDirty: false });
-          setValue("addressZipCode", companyInfo.address.postalCode || "", { shouldDirty: false });
-          setValue("addressCountry", companyInfo.address.country || "France", { shouldDirty: false });
-        } else if (typeof companyInfo.address === "string" && companyInfo.address) {
+          setValue("addressStreet", companyInfo.address.street || "", {
+            shouldDirty: false,
+          });
+          setValue("addressCity", companyInfo.address.city || "", {
+            shouldDirty: false,
+          });
+          setValue("addressZipCode", companyInfo.address.postalCode || "", {
+            shouldDirty: false,
+          });
+          setValue("addressCountry", companyInfo.address.country || "France", {
+            shouldDirty: false,
+          });
+        } else if (
+          typeof companyInfo.address === "string" &&
+          companyInfo.address
+        ) {
           // L'adresse est stockée comme une chaîne formatée (street\npostalCode city\ncountry)
-          const lines = companyInfo.address.split("\n").map(l => l.trim()).filter(Boolean);
-          if (lines.length >= 1) setValue("addressStreet", lines[0], { shouldDirty: false });
+          const lines = companyInfo.address
+            .split("\n")
+            .map((l) => l.trim())
+            .filter(Boolean);
+          if (lines.length >= 1)
+            setValue("addressStreet", lines[0], { shouldDirty: false });
           if (lines.length >= 2) {
             // Ligne 2 peut être "75001 Paris" ou juste "Paris"
             const cityLine = lines[1];
             const postalMatch = cityLine.match(/^(\d{4,5})\s+(.+)$/);
             if (postalMatch) {
-              setValue("addressZipCode", postalMatch[1], { shouldDirty: false });
+              setValue("addressZipCode", postalMatch[1], {
+                shouldDirty: false,
+              });
               setValue("addressCity", postalMatch[2], { shouldDirty: false });
             } else {
               setValue("addressCity", cityLine, { shouldDirty: false });
             }
           }
-          if (lines.length >= 3) setValue("addressCountry", lines[2], { shouldDirty: false });
+          if (lines.length >= 3)
+            setValue("addressCountry", lines[2], { shouldDirty: false });
           else setValue("addressCountry", "France", { shouldDirty: false });
         }
       }
@@ -938,7 +1083,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
     if (issueDate < today) {
       toast.error(
-        "La date d'émission ne peut pas être antérieure à la date actuelle"
+        "La date d'émission ne peut pas être antérieure à la date actuelle",
       );
       return false;
     }
@@ -950,7 +1095,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
       // Vérifier que la date de validité n'est pas antérieure à la date d'émission
       if (validUntilDate < issueDate) {
         toast.error(
-          "La date de validité ne peut pas être antérieure à la date d'émission"
+          "La date de validité ne peut pas être antérieure à la date d'émission",
         );
         return false;
       }
@@ -987,26 +1132,29 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
         // Validation complète pour le brouillon
         const errors = {};
-        
+
         // Validation du client
         if (!currentFormData.client || !currentFormData.client.id) {
           errors.client = {
             message: "Veuillez sélectionner un client",
-            canEdit: false
+            canEdit: false,
           };
         }
-        
+
         // Validation des informations entreprise
-        if (!currentFormData.companyInfo?.name || !currentFormData.companyInfo?.email) {
+        if (
+          !currentFormData.companyInfo?.name ||
+          !currentFormData.companyInfo?.email
+        ) {
           errors.companyInfo = {
             message: "Les informations de l'entreprise sont incomplètes",
-            canEdit: false
+            canEdit: false,
           };
         }
-        
+
         // Validation des informations du devis (dates)
         const quoteInfoErrors = [];
-        
+
         // Vérifier la date d'émission
         if (!currentFormData.issueDate) {
           quoteInfoErrors.push("date d'émission manquante");
@@ -1014,43 +1162,47 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
           const issueDate = new Date(currentFormData.issueDate);
           const today = new Date();
           today.setHours(0, 0, 0, 0);
-          
+
           if (issueDate < today) {
-            quoteInfoErrors.push("la date d'émission ne peut pas être antérieure à aujourd'hui");
+            quoteInfoErrors.push(
+              "la date d'émission ne peut pas être antérieure à aujourd'hui",
+            );
           }
-          
+
           // Vérifier la date de validité
           if (currentFormData.validUntil) {
             const validUntilDate = new Date(currentFormData.validUntil);
-            
+
             if (validUntilDate < issueDate) {
-              quoteInfoErrors.push("la date de validité ne peut pas être antérieure à la date d'émission");
+              quoteInfoErrors.push(
+                "la date de validité ne peut pas être antérieure à la date d'émission",
+              );
             }
           }
         }
-        
+
         if (quoteInfoErrors.length > 0) {
           errors.quoteInfo = {
             message: `Informations du devis invalides:\n${quoteInfoErrors.join(", ")}`,
-            canEdit: false
+            canEdit: false,
           };
         }
-        
+
         // Validation des articles
         if (!currentFormData.items || currentFormData.items.length === 0) {
           errors.items = {
             message: "Veuillez ajouter au moins un article au devis",
-            canEdit: false
+            canEdit: false,
           };
         } else {
           // Vérifier que chaque article a les champs requis
           const invalidItems = [];
           const itemsWithErrors = [];
-          
+
           currentFormData.items.forEach((item, index) => {
             const itemErrors = [];
             const fields = [];
-            
+
             if (!item.description || item.description.trim() === "") {
               itemErrors.push("description");
               fields.push("description");
@@ -1060,138 +1212,166 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
               fields.push("quantity");
             }
             const priceValue = item.unitPrice;
-            const isInvalid = priceValue === undefined || 
-                             priceValue === null || 
-                             priceValue === "" || 
-                             isNaN(parseFloat(priceValue)) ||
-                             parseFloat(priceValue) < 0;
+            const isInvalid =
+              priceValue === undefined ||
+              priceValue === null ||
+              priceValue === "" ||
+              isNaN(parseFloat(priceValue)) ||
+              parseFloat(priceValue) < 0;
 
             if (isInvalid) {
               itemErrors.push("prix unitaire invalide");
               fields.push("unitPrice");
             }
-            
+
             // Vérifier le texte d'exonération de TVA si la TVA est à 0% (sauf en auto-liquidation)
             const vatRate = parseFloat(item.vatRate) || 0;
             if (vatRate === 0 && !formData.isReverseCharge) {
               const vatExemptionText = item.vatExemptionText;
-              if (!vatExemptionText || vatExemptionText.trim() === "" || vatExemptionText === "none") {
+              if (
+                !vatExemptionText ||
+                vatExemptionText.trim() === "" ||
+                vatExemptionText === "none"
+              ) {
                 itemErrors.push("texte d'exonération de TVA requis (TVA à 0%)");
                 fields.push("vatExemptionText");
               }
             }
-            
+
             if (itemErrors.length > 0) {
-              invalidItems.push(`Article ${index + 1}: ${itemErrors.join(", ")}`);
+              invalidItems.push(
+                `Article ${index + 1}: ${itemErrors.join(", ")}`,
+              );
               itemsWithErrors.push({ index, fields });
             }
           });
-          
+
           if (invalidItems.length > 0) {
             errors.items = {
               message: `Certains articles sont incomplets:\n${invalidItems.join("\n")}`,
               canEdit: false,
-              details: itemsWithErrors
+              details: itemsWithErrors,
             };
           }
         }
-        
+
         // Validation de la remise globale
-        if (currentFormData.discountType === "PERCENTAGE" && currentFormData.discount > 100) {
+        if (
+          currentFormData.discountType === "PERCENTAGE" &&
+          currentFormData.discount > 100
+        ) {
           errors.discount = {
             message: "La remise ne peut pas dépasser 100%",
-            canEdit: false
+            canEdit: false,
           };
         }
-        
+
         // Validation de la livraison si activée
         if (currentFormData.shipping?.billShipping) {
           const shippingErrors = [];
           const shippingAddr = currentFormData.shipping?.shippingAddress || {};
-          
+
           // Validation du nom complet
           if (!shippingAddr.fullName || shippingAddr.fullName.trim() === "") {
             shippingErrors.push("nom complet manquant");
-          } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())) {
+          } else if (
+            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())
+          ) {
             shippingErrors.push("nom complet invalide");
           }
-          
+
           // Validation de l'adresse
           if (!shippingAddr.street || shippingAddr.street.trim() === "") {
             shippingErrors.push("adresse manquante");
           } else if (shippingAddr.street.trim().length < 5) {
             shippingErrors.push("adresse trop courte");
           }
-          
+
           // Validation du code postal
-          if (!shippingAddr.postalCode || shippingAddr.postalCode.trim() === "") {
+          if (
+            !shippingAddr.postalCode ||
+            shippingAddr.postalCode.trim() === ""
+          ) {
             shippingErrors.push("code postal manquant");
           } else if (!/^\d{5}$/.test(shippingAddr.postalCode.trim())) {
             shippingErrors.push("code postal invalide (5 chiffres requis)");
           }
-          
+
           // Validation de la ville
           if (!shippingAddr.city || shippingAddr.city.trim() === "") {
             shippingErrors.push("ville manquante");
-          } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())) {
+          } else if (
+            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())
+          ) {
             shippingErrors.push("ville invalide");
           }
-          
+
           // Validation du pays
           if (!shippingAddr.country || shippingAddr.country.trim() === "") {
             shippingErrors.push("pays manquant");
           }
-          
+
           // Validation du coût de livraison
           const shippingCost = currentFormData.shipping?.shippingAmountHT;
-          if (shippingCost === undefined || shippingCost === null || shippingCost === "" || isNaN(parseFloat(shippingCost)) || parseFloat(shippingCost) < 0) {
+          if (
+            shippingCost === undefined ||
+            shippingCost === null ||
+            shippingCost === "" ||
+            isNaN(parseFloat(shippingCost)) ||
+            parseFloat(shippingCost) < 0
+          ) {
             shippingErrors.push("coût de livraison invalide (doit être >= 0€)");
           }
-          
+
           if (shippingErrors.length > 0) {
             errors.shipping = {
               message: `Les informations de livraison sont incomplètes ou invalides:\n${shippingErrors.join(", ")}`,
-              canEdit: false
+              canEdit: false,
             };
           }
         }
-        
+
         // Validation des champs personnalisés
-        if (currentFormData.customFields && currentFormData.customFields.length > 0) {
+        if (
+          currentFormData.customFields &&
+          currentFormData.customFields.length > 0
+        ) {
           const invalidCustomFields = [];
           const customFieldsWithErrors = [];
-          
+
           currentFormData.customFields.forEach((field, index) => {
             const fieldErrors = [];
-            
+
             if (!field.name || field.name.trim() === "") {
               fieldErrors.push("nom du champ manquant");
             }
             if (!field.value || field.value.trim() === "") {
               fieldErrors.push("valeur manquante");
             }
-            
+
             if (fieldErrors.length > 0) {
-              invalidCustomFields.push(`Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`);
+              invalidCustomFields.push(
+                `Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`,
+              );
               customFieldsWithErrors.push({ index, errors: fieldErrors });
             }
           });
-          
+
           if (invalidCustomFields.length > 0) {
             errors.customFields = {
               message: `Certains champs personnalisés sont incomplets:\n${invalidCustomFields.join("\n")}`,
               canEdit: false,
-              details: customFieldsWithErrors
+              details: customFieldsWithErrors,
             };
           }
         }
-        
+
         if (Object.keys(errors).length > 0) {
           setValidationErrors(errors);
           setSaving(false);
           return false;
         }
-        
+
         // Réinitialiser les erreurs si la validation passe
         setValidationErrors({});
 
@@ -1199,7 +1379,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
           currentFormData,
           existingQuote?.status,
           session,
-          existingQuote
+          existingQuote,
         );
         input.status = "DRAFT";
 
@@ -1212,7 +1392,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
             if (result.number) {
               setValue("number", result.number);
             }
-            
+
             if (!isAutoSave) {
               toast.success("Brouillon sauvegardé");
               router.push("/dashboard/outils/devis");
@@ -1228,7 +1408,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
         }
       } catch (error) {
         if (!isAutoSave) {
-          handleError(error, 'quote');
+          handleError(error, "quote");
         }
         return false;
       } finally {
@@ -1248,7 +1428,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
       router,
       session,
       handleError,
-    ]
+    ],
   );
 
   // Submit function (for final quote creation)
@@ -1260,26 +1440,29 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
         // Validation complète pour la soumission
         const errors = {};
-        
+
         // Validation du client
         if (!currentFormData.client || !currentFormData.client.id) {
           errors.client = {
             message: "Veuillez sélectionner un client",
-            canEdit: false
+            canEdit: false,
           };
         }
-        
+
         // Validation des informations entreprise
-        if (!currentFormData.companyInfo?.name || !currentFormData.companyInfo?.email) {
+        if (
+          !currentFormData.companyInfo?.name ||
+          !currentFormData.companyInfo?.email
+        ) {
           errors.companyInfo = {
             message: "Les informations de l'entreprise sont incomplètes",
-            canEdit: false
+            canEdit: false,
           };
         }
-        
+
         // Validation des informations du devis (dates)
         const quoteInfoErrors = [];
-        
+
         // Vérifier la date d'émission
         if (!currentFormData.issueDate) {
           quoteInfoErrors.push("date d'émission manquante");
@@ -1287,43 +1470,47 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
           const issueDate = new Date(currentFormData.issueDate);
           const today = new Date();
           today.setHours(0, 0, 0, 0);
-          
+
           if (issueDate < today) {
-            quoteInfoErrors.push("la date d'émission ne peut pas être antérieure à aujourd'hui");
+            quoteInfoErrors.push(
+              "la date d'émission ne peut pas être antérieure à aujourd'hui",
+            );
           }
-          
+
           // Vérifier la date de validité
           if (currentFormData.validUntil) {
             const validUntilDate = new Date(currentFormData.validUntil);
-            
+
             if (validUntilDate < issueDate) {
-              quoteInfoErrors.push("la date de validité ne peut pas être antérieure à la date d'émission");
+              quoteInfoErrors.push(
+                "la date de validité ne peut pas être antérieure à la date d'émission",
+              );
             }
           }
         }
-        
+
         if (quoteInfoErrors.length > 0) {
           errors.quoteInfo = {
             message: `Informations du devis invalides:\n${quoteInfoErrors.join(", ")}`,
-            canEdit: false
+            canEdit: false,
           };
         }
-        
+
         // Validation des articles
         if (!currentFormData.items || currentFormData.items.length === 0) {
           errors.items = {
             message: "Veuillez ajouter au moins un article au devis",
-            canEdit: false
+            canEdit: false,
           };
         } else {
           // Vérifier que chaque article a les champs requis
           const invalidItems = [];
           const itemsWithErrors = [];
-          
+
           currentFormData.items.forEach((item, index) => {
             const itemErrors = [];
             const fields = [];
-            
+
             if (!item.description || item.description.trim() === "") {
               itemErrors.push("description");
               fields.push("description");
@@ -1333,139 +1520,167 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
               fields.push("quantity");
             }
             const priceValue = item.unitPrice;
-            const isInvalid = priceValue === undefined || 
-                             priceValue === null || 
-                             priceValue === "" || 
-                             isNaN(parseFloat(priceValue)) ||
-                             parseFloat(priceValue) < 0;
+            const isInvalid =
+              priceValue === undefined ||
+              priceValue === null ||
+              priceValue === "" ||
+              isNaN(parseFloat(priceValue)) ||
+              parseFloat(priceValue) < 0;
 
             if (isInvalid) {
               itemErrors.push("prix unitaire invalide");
               fields.push("unitPrice");
             }
-            
+
             // Vérifier le texte d'exonération de TVA si la TVA est à 0% (sauf en auto-liquidation)
             const vatRate = parseFloat(item.vatRate) || 0;
             if (vatRate === 0 && !formData.isReverseCharge) {
               const vatExemptionText = item.vatExemptionText;
-              if (!vatExemptionText || vatExemptionText.trim() === "" || vatExemptionText === "none") {
+              if (
+                !vatExemptionText ||
+                vatExemptionText.trim() === "" ||
+                vatExemptionText === "none"
+              ) {
                 itemErrors.push("texte d'exonération de TVA requis (TVA à 0%)");
                 fields.push("vatExemptionText");
               }
             }
-            
+
             if (itemErrors.length > 0) {
-              invalidItems.push(`Article ${index + 1}: ${itemErrors.join(", ")}`);
+              invalidItems.push(
+                `Article ${index + 1}: ${itemErrors.join(", ")}`,
+              );
               itemsWithErrors.push({ index, fields });
             }
           });
-          
+
           if (invalidItems.length > 0) {
             errors.items = {
               message: `Certains articles sont incomplets:\n${invalidItems.join("\n")}`,
               canEdit: false,
-              details: itemsWithErrors
+              details: itemsWithErrors,
             };
           }
         }
-        
+
         // Validation de la remise globale
-        if (currentFormData.discountType === "PERCENTAGE" && currentFormData.discount > 100) {
+        if (
+          currentFormData.discountType === "PERCENTAGE" &&
+          currentFormData.discount > 100
+        ) {
           errors.discount = {
             message: "La remise ne peut pas dépasser 100%",
-            canEdit: false
+            canEdit: false,
           };
         }
-        
+
         // Validation de la livraison si activée
         if (currentFormData.shipping?.billShipping) {
           const shippingErrors = [];
           const shippingAddr = currentFormData.shipping?.shippingAddress || {};
-          
+
           // Validation du nom complet
           if (!shippingAddr.fullName || shippingAddr.fullName.trim() === "") {
             shippingErrors.push("nom complet manquant");
-          } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())) {
+          } else if (
+            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())
+          ) {
             shippingErrors.push("nom complet invalide");
           }
-          
+
           // Validation de l'adresse
           if (!shippingAddr.street || shippingAddr.street.trim() === "") {
             shippingErrors.push("adresse manquante");
           } else if (shippingAddr.street.trim().length < 5) {
             shippingErrors.push("adresse trop courte");
           }
-          
+
           // Validation du code postal
-          if (!shippingAddr.postalCode || shippingAddr.postalCode.trim() === "") {
+          if (
+            !shippingAddr.postalCode ||
+            shippingAddr.postalCode.trim() === ""
+          ) {
             shippingErrors.push("code postal manquant");
           } else if (!/^\d{5}$/.test(shippingAddr.postalCode.trim())) {
             shippingErrors.push("code postal invalide (5 chiffres requis)");
           }
-          
+
           // Validation de la ville
           if (!shippingAddr.city || shippingAddr.city.trim() === "") {
             shippingErrors.push("ville manquante");
-          } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())) {
+          } else if (
+            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())
+          ) {
             shippingErrors.push("ville invalide");
           }
-          
+
           // Validation du pays
           if (!shippingAddr.country || shippingAddr.country.trim() === "") {
             shippingErrors.push("pays manquant");
           }
-          
+
           // Validation du coût de livraison
           const shippingCost = currentFormData.shipping?.shippingAmountHT;
-          if (shippingCost === undefined || shippingCost === null || shippingCost === "" || isNaN(parseFloat(shippingCost)) || parseFloat(shippingCost) < 0) {
+          if (
+            shippingCost === undefined ||
+            shippingCost === null ||
+            shippingCost === "" ||
+            isNaN(parseFloat(shippingCost)) ||
+            parseFloat(shippingCost) < 0
+          ) {
             shippingErrors.push("coût de livraison invalide (doit être >= 0€)");
           }
-          
+
           if (shippingErrors.length > 0) {
             errors.shipping = {
               message: `Les informations de livraison sont incomplètes ou invalides:\n${shippingErrors.join(", ")}`,
-              canEdit: false
+              canEdit: false,
             };
           }
         }
-        
+
         // Validation des champs personnalisés
-        if (currentFormData.customFields && currentFormData.customFields.length > 0) {
+        if (
+          currentFormData.customFields &&
+          currentFormData.customFields.length > 0
+        ) {
           const invalidCustomFields = [];
           const customFieldsWithErrors = [];
-          
+
           currentFormData.customFields.forEach((field, index) => {
             const fieldErrors = [];
-            
+
             if (!field.name || field.name.trim() === "") {
               fieldErrors.push("nom du champ manquant");
             }
             if (!field.value || field.value.trim() === "") {
               fieldErrors.push("valeur manquante");
             }
-            
+
             if (fieldErrors.length > 0) {
-              invalidCustomFields.push(`Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`);
+              invalidCustomFields.push(
+                `Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`,
+              );
               customFieldsWithErrors.push({ index, errors: fieldErrors });
             }
           });
-          
+
           if (invalidCustomFields.length > 0) {
             errors.customFields = {
               message: `Certains champs personnalisés sont incomplets:\n${invalidCustomFields.join("\n")}`,
               canEdit: false,
-              details: customFieldsWithErrors
+              details: customFieldsWithErrors,
             };
           }
         }
-        
+
         if (Object.keys(errors).length > 0) {
           setValidationErrors(errors);
           toast.error("Veuillez corriger les erreurs avant de créer le devis");
           setSaving(false);
           return;
         }
-        
+
         // Réinitialiser les erreurs si la validation passe
         setValidationErrors({});
 
@@ -1473,7 +1688,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
           currentFormData,
           existingQuote?.status,
           session,
-          existingQuote
+          existingQuote,
         );
         input.status = "PENDING";
 
@@ -1489,13 +1704,13 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
           if (result.number) {
             setValue("number", result.number);
           }
-          
+
           toast.success(
             existingQuote?.id
               ? "Devis mis à jour avec succès"
-              : "Devis créé avec succès"
+              : "Devis créé avec succès",
           );
-          
+
           // Retourner les données du devis pour permettre l'envoi par email
           return {
             success: true,
@@ -1506,7 +1721,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
           };
         }
       } catch (error) {
-        handleError(error, 'quote');
+        handleError(error, "quote");
         return { success: false };
       } finally {
         setSaving(false);
@@ -1521,7 +1736,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
       router,
       session,
       handleError,
-    ]
+    ],
   );
 
   // Cleanup on unmount - DISABLED (auto-save removed)
@@ -1548,7 +1763,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
         });
       }
     },
-    [setValue, getValues]
+    [setValue, getValues],
   );
 
   // Fonction pour sauvegarder les paramètres dans l'organisation
@@ -1568,9 +1783,18 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
         quoteTermsAndConditions: currentFormData.termsAndConditions || "",
         showBankDetails: currentFormData.showBankDetails || false,
         // Coordonnées bancaires
-        bankIban: currentFormData.bankDetails?.iban || currentFormData.companyInfo?.bankDetails?.iban || "",
-        bankBic: currentFormData.bankDetails?.bic || currentFormData.companyInfo?.bankDetails?.bic || "",
-        bankName: currentFormData.bankDetails?.bankName || currentFormData.companyInfo?.bankDetails?.bankName || "",
+        bankIban:
+          currentFormData.bankDetails?.iban ||
+          currentFormData.companyInfo?.bankDetails?.iban ||
+          "",
+        bankBic:
+          currentFormData.bankDetails?.bic ||
+          currentFormData.companyInfo?.bankDetails?.bic ||
+          "",
+        bankName:
+          currentFormData.bankDetails?.bankName ||
+          currentFormData.companyInfo?.bankDetails?.bankName ||
+          "",
         quoteClientPositionRight: currentFormData.clientPositionRight || false,
         // Informations de l'entreprise
         companyName: currentFormData.companyName || "",
@@ -1638,22 +1862,22 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
     // Organization settings
     saveSettingsToOrganization,
-    
+
     // Resource existence
     quote: existingQuote,
-    error: loadingQuote ? null : (!existingQuote && mode !== "create"),
+    error: loadingQuote ? null : !existingQuote && mode !== "create",
   };
 }
 
 // Helper functions
 function getInitialFormData(mode, initialData, session) {
-  const today = new Date().toISOString().split("T")[0];
+  const today = formatLocalDate();
 
   // Utiliser la valeur validUntil existante si elle est disponible
   // sinon définir une date par défaut (aujourd'hui + 30 jours)
   const validUntil =
     initialData?.validUntil ||
-    new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+    formatLocalDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
 
   const baseData = {
     // Informations du devis
@@ -1748,7 +1972,7 @@ function getInitialFormData(mode, initialData, session) {
           : userCompany.address
             ? `${userCompany.address.street || ""}, ${userCompany.address.city || ""}, ${userCompany.address.country || ""}`.replace(
                 /^,\s*|,\s*$/g,
-                ""
+                "",
               )
             : "",
       // Coordonnées bancaires directement dans companyInfo
@@ -1780,6 +2004,7 @@ function getInitialFormData(mode, initialData, session) {
 }
 
 function transformQuoteToFormData(quote) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const transformDate = (dateValue, fieldName) => {
     if (dateValue === null || dateValue === undefined) {
       return "";
@@ -1844,7 +2069,7 @@ function transformQuoteToFormData(quote) {
           dateObj = new Date(
             dateValue.year,
             dateValue.month - 1,
-            dateValue.day
+            dateValue.day,
           );
         }
         // Format avec getTime()
@@ -1873,7 +2098,7 @@ function transformQuoteToFormData(quote) {
       const result = `${year}-${month}-${day}`;
 
       return result;
-    } catch (error) {
+    } catch {
       return "";
     }
   };
@@ -1908,7 +2133,8 @@ function transformQuoteToFormData(quote) {
           email: quote.client.email,
           phone: quote.client.phone,
           address: quote.client.address,
-          hasDifferentShippingAddress: quote.client.hasDifferentShippingAddress || false,
+          hasDifferentShippingAddress:
+            quote.client.hasDifferentShippingAddress || false,
           shippingAddress: quote.client.shippingAddress || null,
           ...(quote.client.type === "COMPANY"
             ? {
@@ -2032,7 +2258,7 @@ function transformQuoteToFormData(quote) {
           headerTextColor: "#ffffff",
           headerBgColor: "#5b50FF",
         },
-    
+
     // Auto-liquidation
     isReverseCharge: quote.isReverseCharge || false,
 
@@ -2063,7 +2289,7 @@ function transformFormDataToInput(
   formData,
   previousStatus = null,
   session = null,
-  existingQuote = null // Ajouter existingQuote comme paramètre
+  existingQuote = null, // Ajouter existingQuote comme paramètre
 ) {
   const cleanClient = formData.client
     ? {
@@ -2114,6 +2340,7 @@ function transformFormDataToInput(
   const companyInfo = formData.companyInfo || sessionCompany;
 
   // Si aucune information d'entreprise n'est disponible, utiliser des valeurs par défaut temporaires
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const cleanCompanyInfo = {
     name: companyInfo?.name || "Mon Entreprise",
     email: companyInfo?.email || session?.user?.email || "",
@@ -2156,24 +2383,24 @@ function transformFormDataToInput(
 
   let issueDate = formData.issueDate;
   if (previousStatus === "DRAFT" && formData.status === "PENDING") {
-    issueDate = new Date().toISOString().split("T")[0];
+    issueDate = formatLocalDate();
   }
 
   // S'assurer qu'on a toujours une date d'émission valide
   if (!issueDate) {
-    issueDate = new Date().toISOString().split("T")[0];
+    issueDate = formatLocalDate();
   } else {
     // S'assurer que la date est au bon format
     try {
       const d = new Date(issueDate);
       if (isNaN(d.getTime())) {
-        issueDate = new Date().toISOString().split("T")[0];
+        issueDate = formatLocalDate();
       } else {
         // Reformater pour s'assurer du format YYYY-MM-DD
-        issueDate = d.toISOString().split("T")[0];
+        issueDate = formatLocalDate(d);
       }
-    } catch (e) {
-      issueDate = new Date().toISOString().split("T")[0];
+    } catch {
+      issueDate = formatLocalDate();
     }
   }
 
@@ -2181,7 +2408,7 @@ function transformFormDataToInput(
     dateValue,
     fieldName,
     fallbackDate = null,
-    existingQuoteParam = null
+    existingQuoteParam = null,
   ) => {
     // Fonction pour créer une date sans l'heure
     const createDateWithoutTime = (date) => {
@@ -2255,7 +2482,7 @@ function transformFormDataToInput(
           formData.validUntil,
           "validUntil",
           null,
-          existingQuote
+          existingQuote,
         );
       }
     } else {
@@ -2263,10 +2490,10 @@ function transformFormDataToInput(
         formData.validUntil,
         "validUntil",
         null,
-        existingQuote
+        existingQuote,
       );
     }
-  } catch (e) {
+  } catch {
     validUntilDate = new Date(issueDate);
     validUntilDate.setDate(validUntilDate.getDate() + 30); // 30 jours par défaut
   }
@@ -2286,7 +2513,7 @@ function transformFormDataToInput(
         return null;
       }
       return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    } catch (e) {
+    } catch {
       return null;
     }
   };
@@ -2297,6 +2524,7 @@ function transformFormDataToInput(
 
   // Vérifier que les dates sont valides avant de les utiliser
   if (!issueDateForComparison || !validUntilDateNoTime) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const errorMessage =
       `❌ Erreur: Date invalide détectée - ` +
       `issueDate: ${issueDate} (${typeof issueDate}), ` +
@@ -2309,8 +2537,8 @@ function transformFormDataToInput(
 
     return {
       ...formData,
-      issueDate: today.toISOString().split("T")[0],
-      validUntil: defaultValidUntil.toISOString().split("T")[0],
+      issueDate: formatLocalDate(today),
+      validUntil: formatLocalDate(defaultValidUntil),
       status: formData.status || "DRAFT",
     };
   }
@@ -2342,7 +2570,7 @@ function transformFormDataToInput(
       const day = String(d.getDate()).padStart(2, "0");
 
       return `${year}-${month}-${day}`;
-    } catch (e) {
+    } catch {
       return null;
     }
   };
@@ -2410,7 +2638,7 @@ function transformFormDataToInput(
           // Auto-liquidation : si isReverseCharge = true, utiliser "Auto-liquidation" comme texte d'exonération
           itemData.vatExemptionText = formData.isReverseCharge
             ? "Auto-liquidation"
-            : (item.vatExemptionText || "");
+            : item.vatExemptionText || "";
         }
 
         return itemData;

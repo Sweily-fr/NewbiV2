@@ -288,7 +288,10 @@ function buildCustomFieldColumn(field) {
   };
 }
 
-export default function TableProduct({ handleAddProduct, hideHeaderButtons = false }) {
+export default function TableProduct({
+  handleAddProduct,
+  hideHeaderButtons = false,
+}) {
   const id = useId();
   const { workspaceId } = useWorkspace();
   const { fields: customFields } = useProductCustomFields(workspaceId);
@@ -296,11 +299,11 @@ export default function TableProduct({ handleAddProduct, hideHeaderButtons = fal
   // Stable key for active custom fields to prevent infinite re-renders
   const activeCustomFields = useMemo(
     () => customFields.filter((f) => f.isActive),
-    [customFields]
+    [customFields],
   );
   const cfKey = useMemo(
     () => activeCustomFields.map((f) => f.id).join(","),
-    [activeCustomFields]
+    [activeCustomFields],
   );
 
   // Build columns dynamically: base + custom fields + actions
@@ -352,8 +355,12 @@ export default function TableProduct({ handleAddProduct, hideHeaderButtons = fal
     refetch,
   } = useProducts(1, 100, ""); // Récupère 100 produits max (pagination côté client)
 
-  const { deleteProduct: deleteProductMain } = useDeleteProduct({ showToast: false });
-  const { deleteProduct: deleteProductSingle } = useDeleteProduct({ showToast: true });
+  const { deleteProduct: deleteProductMain } = useDeleteProduct({
+    showToast: false,
+  });
+  const { deleteProduct: deleteProductSingle } = useDeleteProduct({
+    showToast: true,
+  });
 
   // Filtrage local des produits
   const filteredProducts = useMemo(() => {
@@ -379,13 +386,15 @@ export default function TableProduct({ handleAddProduct, hideHeaderButtons = fal
     const count = selectedRows.length;
     try {
       await Promise.all(
-        selectedRows.map((row) => deleteProductMain(row.original.id))
+        selectedRows.map((row) => deleteProductMain(row.original.id)),
       );
       table.resetRowSelection();
       await refetch();
-      toast.success(`${count} produit${count > 1 ? 's' : ''} supprimé${count > 1 ? 's' : ''} avec succès`);
+      toast.success(
+        `${count} produit${count > 1 ? "s" : ""} supprimé${count > 1 ? "s" : ""} avec succès`,
+      );
     } catch (error) {
-      toast.error('Erreur lors de la suppression des produits');
+      toast.error("Erreur lors de la suppression des produits");
     }
   };
 
@@ -508,7 +517,11 @@ export default function TableProduct({ handleAddProduct, hideHeaderButtons = fal
           {/* Search + Filtres à gauche */}
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2 h-8 w-full sm:w-[400px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
-              <Search size={16} className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
+              <Search
+                size={16}
+                className="text-muted-foreground/80 shrink-0"
+                aria-hidden="true"
+              />
               <Input
                 variant="ghost"
                 id={`${id}-input`}
@@ -542,7 +555,7 @@ export default function TableProduct({ handleAddProduct, hideHeaderButtons = fal
               uniqueCategories={uniqueCategoryValues}
               table={table}
               customFieldNames={Object.fromEntries(
-                activeCustomFields.map((f) => [`cf_${f.id}`, f.name])
+                activeCustomFields.map((f) => [`cf_${f.id}`, f.name]),
               )}
             />
           </div>
@@ -560,39 +573,39 @@ export default function TableProduct({ handleAddProduct, hideHeaderButtons = fal
                   >
                     <TrashIcon className="mr-2 h-4 w-4" />
                     Supprimer ({table.getSelectedRowModel().rows.length})
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
-                  <div
-                    className="flex size-9 shrink-0 items-center justify-center rounded-full border"
-                    aria-hidden="true"
-                  >
-                    <CircleAlertIcon className="opacity-80" size={16} />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
+                    <div
+                      className="flex size-9 shrink-0 items-center justify-center rounded-full border"
+                      aria-hidden="true"
+                    >
+                      <CircleAlertIcon className="opacity-80" size={16} />
+                    </div>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Êtes-vous absolument sûr ?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Cette action ne peut pas être annulée. Cela supprimera
+                        définitivement {table.getSelectedRowModel().rows.length}{" "}
+                        produit(s) sélectionné(s).
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
                   </div>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      Êtes-vous absolument sûr ?
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Cette action ne peut pas être annulée. Cela supprimera
-                      définitivement {table.getSelectedRowModel().rows.length}{" "}
-                      produit(s) sélectionné(s).
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                </div>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDeleteRows}
-                    className="text-white"
-                  >
-                    Supprimer
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteRows}
+                      className="text-white"
+                    >
+                      Supprimer
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
         </div>
 
@@ -612,7 +625,7 @@ export default function TableProduct({ handleAddProduct, hideHeaderButtons = fal
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </th>
                   ))}
@@ -620,68 +633,65 @@ export default function TableProduct({ handleAddProduct, hideHeaderButtons = fal
               ))}
             </thead>
             <tbody>
-                {loading ? (
-                  Array.from({ length: pagination.pageSize }).map((_, index) => (
-                    <tr key={`skeleton-${index}`} className="border-b">
-                      {columns.map((col, colIndex, arr) => (
-                        <td
-                          key={`skeleton-${index}-${colIndex}`}
-                          className={`p-2 align-middle text-sm ${colIndex === 0 ? "pl-4 sm:pl-6" : ""} ${colIndex === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                        >
-                          <Skeleton className="h-4 w-24" />
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                ) : table.getRowModel().rows?.length ? (
-                  table.getRowModel().rows.map((row) => (
-                    <tr
-                      key={row.id}
-                      data-state={row.getIsSelected() && "selected"}
-                      className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
-                    >
-                      {row.getVisibleCells().map((cell, index, arr) => (
-                        <td
-                          key={cell.id}
-                          style={{ width: cell.column.getSize() }}
-                          className={`p-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                ) : error ? (
-                  <tr>
-                    <td
-                      colSpan={columns.length}
-                      className="h-24 text-center p-2 text-red-500"
-                    >
-                      <div className="flex flex-col items-center gap-2">
-                        <span>Erreur lors du chargement des produits</span>
-                        <button
-                          onClick={handleRefresh}
-                          className="text-blue-600 hover:text-blue-800 underline"
-                        >
-                          Réessayer
-                        </button>
-                      </div>
-                    </td>
+              {loading ? (
+                Array.from({ length: pagination.pageSize }).map((_, index) => (
+                  <tr key={`skeleton-${index}`} className="border-b">
+                    {columns.map((col, colIndex, arr) => (
+                      <td
+                        key={`skeleton-${index}-${colIndex}`}
+                        className={`p-2 align-middle text-sm ${colIndex === 0 ? "pl-4 sm:pl-6" : ""} ${colIndex === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                      >
+                        <Skeleton className="h-4 w-24" />
+                      </td>
+                    ))}
                   </tr>
-                ) : (
-                  <tr>
-                    <td
-                      colSpan={columns.length}
-                      className="h-24 text-center p-2"
-                    >
-                      Aucun produit trouvé.
-                    </td>
+                ))
+              ) : table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <tr
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
+                  >
+                    {row.getVisibleCells().map((cell, index, arr) => (
+                      <td
+                        key={cell.id}
+                        style={{ width: cell.column.getSize() }}
+                        className={`p-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </td>
+                    ))}
                   </tr>
-                )}
-              </tbody>
+                ))
+              ) : error ? (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    className="h-24 text-center p-2 text-red-500"
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      <span>Erreur lors du chargement des produits</span>
+                      <button
+                        onClick={handleRefresh}
+                        className="text-blue-600 hover:text-blue-800 underline"
+                      >
+                        Réessayer
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                <tr>
+                  <td colSpan={columns.length} className="h-24 text-center p-2">
+                    Aucun produit trouvé.
+                  </td>
+                </tr>
+              )}
+            </tbody>
           </table>
         </div>
 
@@ -703,7 +713,9 @@ export default function TableProduct({ handleAddProduct, hideHeaderButtons = fal
                 }}
               >
                 <SelectTrigger className="h-7 w-[70px] text-xs">
-                  <SelectValue placeholder={table.getState().pagination.pageSize} />
+                  <SelectValue
+                    placeholder={table.getState().pagination.pageSize}
+                  />
                 </SelectTrigger>
                 <SelectContent side="top">
                   {[10, 20, 30, 40, 50].map((pageSize) => (
@@ -802,13 +814,15 @@ export default function TableProduct({ handleAddProduct, hideHeaderButtons = fal
                 onClick={() => {
                   // Trigger the delete dialog
                   const deleteButton = document.querySelector(
-                    "[data-mobile-delete-trigger-product]"
+                    "[data-mobile-delete-trigger-product]",
                   );
                   if (deleteButton) deleteButton.click();
                 }}
               >
                 <TrashIcon className="h-4 w-4" />
-                <span className="hidden sm:inline ml-1">({table.getSelectedRowModel().rows.length})</span>
+                <span className="hidden sm:inline ml-1">
+                  ({table.getSelectedRowModel().rows.length})
+                </span>
               </Button>
             )}
           </div>
@@ -847,7 +861,7 @@ export default function TableProduct({ handleAddProduct, hideHeaderButtons = fal
                           htmlFor={`mobile-${id}-${i}`}
                           className="flex grow justify-between gap-2 font-normal"
                         >
-                          {value}{" "}
+                          {value || "Aucune catégorie"}{" "}
                           <span className="text-muted-foreground ms-2 text-xs">
                             {categoryCounts.get(value)}
                           </span>
@@ -861,8 +875,8 @@ export default function TableProduct({ handleAddProduct, hideHeaderButtons = fal
 
             {/* Import/Export buttons for mobile */}
             <ProductImportDialog onImportComplete={refetch} />
-            <ProductExportButton 
-              products={allProducts} 
+            <ProductExportButton
+              products={allProducts}
               selectedRows={table.getSelectedRowModel().rows}
             />
           </div>
@@ -883,7 +897,7 @@ export default function TableProduct({ handleAddProduct, hideHeaderButtons = fal
                         header.column.id === "select" ||
                         header.column.id === "name" ||
                         header.column.id === "category" ||
-                        header.column.id === "actions"
+                        header.column.id === "actions",
                     )
                     .map((header) => (
                       <TableHead
@@ -894,7 +908,7 @@ export default function TableProduct({ handleAddProduct, hideHeaderButtons = fal
                           ? null
                           : flexRender(
                               header.column.columnDef.header,
-                              header.getContext()
+                              header.getContext(),
                             )}
                       </TableHead>
                     ))}
@@ -916,13 +930,16 @@ export default function TableProduct({ handleAddProduct, hideHeaderButtons = fal
                           cell.column.id === "select" ||
                           cell.column.id === "name" ||
                           cell.column.id === "category" ||
-                          cell.column.id === "actions"
+                          cell.column.id === "actions",
                       )
                       .map((cell) => (
-                        <TableCell key={cell.id} className="py-3 px-3 sm:px-4 text-xs sm:text-sm">
+                        <TableCell
+                          key={cell.id}
+                          className="py-3 px-3 sm:px-4 text-xs sm:text-sm"
+                        >
                           {flexRender(
                             cell.column.columnDef.cell,
-                            cell.getContext()
+                            cell.getContext(),
                           )}
                         </TableCell>
                       ))}
@@ -1121,7 +1138,6 @@ function CatalogSkeleton() {
             </div>
           </div>
         </div>
-
       </div>
 
       {/* Pagination Skeleton - Style identique à Transactions */}

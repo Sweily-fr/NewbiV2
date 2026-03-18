@@ -115,6 +115,7 @@ export const PURCHASE_ORDER_FRAGMENT = gql`
     showBankDetails
     clientPositionRight
     isReverseCharge
+    operationType
     createdBy {
       id
       email
@@ -310,7 +311,10 @@ export const GET_NEXT_PURCHASE_ORDER_NUMBER = gql`
 // ==================== MUTATIONS ====================
 
 export const CREATE_PURCHASE_ORDER = gql`
-  mutation CreatePurchaseOrder($workspaceId: ID!, $input: CreatePurchaseOrderInput!) {
+  mutation CreatePurchaseOrder(
+    $workspaceId: ID!
+    $input: CreatePurchaseOrderInput!
+  ) {
     createPurchaseOrder(workspaceId: $workspaceId, input: $input) {
       ...PurchaseOrderFragment
     }
@@ -319,7 +323,11 @@ export const CREATE_PURCHASE_ORDER = gql`
 `;
 
 export const UPDATE_PURCHASE_ORDER = gql`
-  mutation UpdatePurchaseOrder($id: ID!, $workspaceId: ID!, $input: UpdatePurchaseOrderInput!) {
+  mutation UpdatePurchaseOrder(
+    $id: ID!
+    $workspaceId: ID!
+    $input: UpdatePurchaseOrderInput!
+  ) {
     updatePurchaseOrder(id: $id, workspaceId: $workspaceId, input: $input) {
       ...PurchaseOrderFragment
     }
@@ -334,8 +342,16 @@ export const DELETE_PURCHASE_ORDER = gql`
 `;
 
 export const CHANGE_PURCHASE_ORDER_STATUS = gql`
-  mutation ChangePurchaseOrderStatus($id: ID!, $workspaceId: ID!, $status: PurchaseOrderStatus!) {
-    changePurchaseOrderStatus(id: $id, workspaceId: $workspaceId, status: $status) {
+  mutation ChangePurchaseOrderStatus(
+    $id: ID!
+    $workspaceId: ID!
+    $status: PurchaseOrderStatus!
+  ) {
+    changePurchaseOrderStatus(
+      id: $id
+      workspaceId: $workspaceId
+      status: $status
+    ) {
       ...PurchaseOrderFragment
     }
   }
@@ -395,7 +411,7 @@ export const useLastPurchaseOrderPrefix = () => {
       loading,
       error,
     }),
-    [data, loading, error]
+    [data, loading, error],
   );
 };
 
@@ -409,20 +425,26 @@ export const usePurchaseOrders = (filters = {}) => {
   const [page, setPage] = useState(1);
   const limit = 50;
 
-  const { data, loading, error, fetchMore, refetch } = useQuery(GET_PURCHASE_ORDERS, {
-    variables: {
-      workspaceId,
-      ...filters,
-      page,
-      limit,
+  const { data, loading, error, fetchMore, refetch } = useQuery(
+    GET_PURCHASE_ORDERS,
+    {
+      variables: {
+        workspaceId,
+        ...filters,
+        page,
+        limit,
+      },
+      skip: !workspaceId,
+      fetchPolicy: "cache-and-network",
+      nextFetchPolicy: "cache-first",
+      errorPolicy: "all",
     },
-    skip: !workspaceId,
-    fetchPolicy: "cache-and-network",
-    nextFetchPolicy: "cache-first",
-    errorPolicy: "all",
-  });
+  );
 
-  const purchaseOrders = useMemo(() => data?.purchaseOrders?.purchaseOrders || [], [data]);
+  const purchaseOrders = useMemo(
+    () => data?.purchaseOrders?.purchaseOrders || [],
+    [data],
+  );
   const totalCount = data?.purchaseOrders?.totalCount || 0;
   const hasNextPage = data?.purchaseOrders?.hasNextPage || false;
 
@@ -457,7 +479,8 @@ export const usePurchaseOrders = (filters = {}) => {
     purchaseOrders,
     totalCount,
     hasNextPage,
-    loading: (workspaceLoading && !workspaceId) || (loading && !purchaseOrders.length),
+    loading:
+      (workspaceLoading && !workspaceId) || (loading && !purchaseOrders.length),
     error: error || workspaceError,
     loadMore,
     refetch,
@@ -482,7 +505,8 @@ export const usePurchaseOrder = (id) => {
 
   return {
     purchaseOrder: data?.purchaseOrder,
-    loading: (workspaceLoading && !workspaceId) || (loading && !data?.purchaseOrder),
+    loading:
+      (workspaceLoading && !workspaceId) || (loading && !data?.purchaseOrder),
     error: error || workspaceError,
     refetch,
   };
@@ -506,7 +530,8 @@ export const usePurchaseOrderStats = () => {
   return {
     stats: data?.purchaseOrderStats,
     loading:
-      (workspaceLoading && !workspaceId) || (loading && !data?.purchaseOrderStats),
+      (workspaceLoading && !workspaceId) ||
+      (loading && !data?.purchaseOrderStats),
     error: error || workspaceError,
     refetch,
   };
@@ -530,8 +555,18 @@ export function useNextPurchaseOrderNumber(prefix, options = {}) {
 }
 
 const CHECK_PURCHASE_ORDER_NUMBER_EXISTS = gql`
-  query CheckPurchaseOrderNumberExists($workspaceId: ID!, $number: String!, $prefix: String!, $excludeId: ID) {
-    checkPurchaseOrderNumberExists(workspaceId: $workspaceId, number: $number, prefix: $prefix, excludeId: $excludeId)
+  query CheckPurchaseOrderNumberExists(
+    $workspaceId: ID!
+    $number: String!
+    $prefix: String!
+    $excludeId: ID
+  ) {
+    checkPurchaseOrderNumberExists(
+      workspaceId: $workspaceId
+      number: $number
+      prefix: $prefix
+      excludeId: $excludeId
+    )
   }
 `;
 
@@ -565,12 +600,12 @@ export const useCheckPurchaseOrderNumber = () => {
       } catch (error) {
         console.error(
           "Erreur lors de la vérification du numéro de bon de commande:",
-          error
+          error,
         );
         return { exists: false, purchaseOrder: null };
       }
     },
-    [workspaceId, client]
+    [workspaceId, client],
   );
 
   return { checkPurchaseOrderNumber };
@@ -628,7 +663,9 @@ export const useUpdatePurchaseOrder = () => {
     },
     onError: (error) => {
       console.error("Erreur lors de la mise à jour du bon de commande:", error);
-      toast.error(error.message || "Erreur lors de la mise à jour du bon de commande");
+      toast.error(
+        error.message || "Erreur lors de la mise à jour du bon de commande",
+      );
     },
   });
 
@@ -654,7 +691,9 @@ export const useDeletePurchaseOrder = () => {
   const [deleteMutation, { loading }] = useMutation(DELETE_PURCHASE_ORDER, {
     onError: (error) => {
       console.error("Erreur lors de la suppression du bon de commande:", error);
-      toast.error(error.message || "Erreur lors de la suppression du bon de commande");
+      toast.error(
+        error.message || "Erreur lors de la suppression du bon de commande",
+      );
     },
   });
 
@@ -680,22 +719,25 @@ export const useChangePurchaseOrderStatus = () => {
   const { workspaceId } = useRequiredWorkspace();
   const client = useApolloClient();
 
-  const [changeStatusMutation, { loading }] = useMutation(CHANGE_PURCHASE_ORDER_STATUS, {
-    onCompleted: (data) => {
-      client.writeQuery({
-        query: GET_PURCHASE_ORDER,
-        variables: { workspaceId, id: data.changePurchaseOrderStatus.id },
-        data: { purchaseOrder: data.changePurchaseOrderStatus },
-      });
-      client.refetchQueries({
-        include: [GET_PURCHASE_ORDER_STATS],
-      });
+  const [changeStatusMutation, { loading }] = useMutation(
+    CHANGE_PURCHASE_ORDER_STATUS,
+    {
+      onCompleted: (data) => {
+        client.writeQuery({
+          query: GET_PURCHASE_ORDER,
+          variables: { workspaceId, id: data.changePurchaseOrderStatus.id },
+          data: { purchaseOrder: data.changePurchaseOrderStatus },
+        });
+        client.refetchQueries({
+          include: [GET_PURCHASE_ORDER_STATS],
+        });
+      },
+      onError: (error) => {
+        console.error("Erreur lors du changement de statut:", error);
+        toast.error(error.message || "Erreur lors du changement de statut");
+      },
     },
-    onError: (error) => {
-      console.error("Erreur lors du changement de statut:", error);
-      toast.error(error.message || "Erreur lors du changement de statut");
-    },
-  });
+  );
 
   const changeStatus = async (id, status) => {
     try {
@@ -716,30 +758,40 @@ export const useConvertQuoteToPurchaseOrder = () => {
   const { workspaceId } = useRequiredWorkspace();
   const client = useApolloClient();
 
-  const [convertMutation, { loading }] = useMutation(CONVERT_QUOTE_TO_PURCHASE_ORDER, {
-    onCompleted: () => {
-      client.refetchQueries({
-        include: [
-          GET_PURCHASE_ORDERS,
-          GET_PURCHASE_ORDER_STATS,
-          "GetQuotes",
-          "GetQuoteStats",
-        ],
-      });
+  const [convertMutation, { loading }] = useMutation(
+    CONVERT_QUOTE_TO_PURCHASE_ORDER,
+    {
+      onCompleted: () => {
+        client.refetchQueries({
+          include: [
+            GET_PURCHASE_ORDERS,
+            GET_PURCHASE_ORDER_STATS,
+            "GetQuotes",
+            "GetQuoteStats",
+          ],
+        });
+      },
+      onError: (error) => {
+        console.error("Erreur lors de la conversion:", error);
+        console.error("Détails networkError:", error.networkError?.result);
+        console.error("Détails graphQLErrors:", error.graphQLErrors);
+        toast.error(
+          error.message || "Erreur lors de la conversion en bon de commande",
+        );
+      },
     },
-    onError: (error) => {
-      console.error("Erreur lors de la conversion:", error);
-      console.error("Détails networkError:", error.networkError?.result);
-      console.error("Détails graphQLErrors:", error.graphQLErrors);
-      toast.error(error.message || "Erreur lors de la conversion en bon de commande");
-    },
-  });
+  );
 
   const convertToPurchaseOrder = async (quoteId) => {
     if (!workspaceId) {
       throw new Error("Aucun workspace sélectionné");
     }
-    console.log("DEBUG convertToPurchaseOrder - quoteId:", quoteId, "workspaceId:", workspaceId);
+    console.log(
+      "DEBUG convertToPurchaseOrder - quoteId:",
+      quoteId,
+      "workspaceId:",
+      workspaceId,
+    );
     try {
       const result = await convertMutation({
         variables: { quoteId, workspaceId },
@@ -758,22 +810,25 @@ export const useConvertPurchaseOrderToInvoice = () => {
   const { workspaceId } = useRequiredWorkspace();
   const client = useApolloClient();
 
-  const [convertMutation, { loading }] = useMutation(CONVERT_PURCHASE_ORDER_TO_INVOICE, {
-    onCompleted: () => {
-      client.refetchQueries({
-        include: [
-          GET_PURCHASE_ORDERS,
-          GET_PURCHASE_ORDER_STATS,
-          "GetInvoices",
-          "GetInvoiceStats",
-        ],
-      });
+  const [convertMutation, { loading }] = useMutation(
+    CONVERT_PURCHASE_ORDER_TO_INVOICE,
+    {
+      onCompleted: () => {
+        client.refetchQueries({
+          include: [
+            GET_PURCHASE_ORDERS,
+            GET_PURCHASE_ORDER_STATS,
+            "GetInvoices",
+            "GetInvoiceStats",
+          ],
+        });
+      },
+      onError: (error) => {
+        console.error("Erreur lors de la conversion:", error);
+        toast.error(error.message || "Erreur lors de la conversion en facture");
+      },
     },
-    onError: (error) => {
-      console.error("Erreur lors de la conversion:", error);
-      toast.error(error.message || "Erreur lors de la conversion en facture");
-    },
-  });
+  );
 
   const convertToInvoice = async (id) => {
     if (!workspaceId) {
@@ -901,7 +956,10 @@ export const GET_PURCHASE_ORDER_TEMPLATES = gql`
 `;
 
 export const SAVE_PURCHASE_ORDER_AS_TEMPLATE = gql`
-  mutation SavePurchaseOrderAsTemplate($input: SavePurchaseOrderAsTemplateInput!, $workspaceId: ID) {
+  mutation SavePurchaseOrderAsTemplate(
+    $input: SavePurchaseOrderAsTemplateInput!
+    $workspaceId: ID
+  ) {
     savePurchaseOrderAsTemplate(input: $input, workspaceId: $workspaceId) {
       id
       name
@@ -921,12 +979,15 @@ export const DELETE_PURCHASE_ORDER_TEMPLATE = gql`
 export const usePurchaseOrderTemplates = () => {
   const { workspaceId } = useRequiredWorkspace();
 
-  const { data, loading, error, refetch } = useQuery(GET_PURCHASE_ORDER_TEMPLATES, {
-    variables: { workspaceId },
-    skip: !workspaceId,
-    fetchPolicy: "cache-and-network",
-    errorPolicy: "all",
-  });
+  const { data, loading, error, refetch } = useQuery(
+    GET_PURCHASE_ORDER_TEMPLATES,
+    {
+      variables: { workspaceId },
+      skip: !workspaceId,
+      fetchPolicy: "cache-and-network",
+      errorPolicy: "all",
+    },
+  );
 
   return useMemo(
     () => ({
@@ -935,15 +996,18 @@ export const usePurchaseOrderTemplates = () => {
       error,
       refetch,
     }),
-    [data?.purchaseOrderTemplates, loading, error, refetch]
+    [data?.purchaseOrderTemplates, loading, error, refetch],
   );
 };
 
 // Couleurs pour les statuts
 export const PURCHASE_ORDER_STATUS_COLORS = {
   [PURCHASE_ORDER_STATUS.DRAFT]: "bg-gray-100 text-gray-700 border-gray-200",
-  [PURCHASE_ORDER_STATUS.CONFIRMED]: "bg-blue-100 text-blue-700 border-blue-200",
-  [PURCHASE_ORDER_STATUS.IN_PROGRESS]: "bg-amber-100 text-amber-700 border-amber-200",
-  [PURCHASE_ORDER_STATUS.DELIVERED]: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  [PURCHASE_ORDER_STATUS.CONFIRMED]:
+    "bg-blue-100 text-blue-700 border-blue-200",
+  [PURCHASE_ORDER_STATUS.IN_PROGRESS]:
+    "bg-amber-100 text-amber-700 border-amber-200",
+  [PURCHASE_ORDER_STATUS.DELIVERED]:
+    "bg-emerald-100 text-emerald-700 border-emerald-200",
   [PURCHASE_ORDER_STATUS.CANCELED]: "bg-red-100 text-red-700 border-red-200",
 };

@@ -13,9 +13,10 @@ import {
 } from "@/src/lib/organization-client";
 import { generateInvoicePrefix } from "@/src/utils/invoiceUtils";
 import { useInvoiceNumber } from "../hooks/use-invoice-number";
+import { useSession } from "@/src/lib/auth-client";
 
 // Données de démonstration pour la preview
-const getDemoInvoiceData = (formData, organization) => {
+const getDemoInvoiceData = (formData, organization, userName) => {
   // Récupérer les paramètres depuis le formulaire
   const invoiceSettings = formData?.invoiceSettings || {};
   const bankDetails = formData?.bankDetails || {};
@@ -55,17 +56,35 @@ const getDemoInvoiceData = (formData, organization) => {
       type: "company",
     },
     companyInfo: {
-      name: formData?.companyName || organization?.companyName || "Votre Entreprise",
-      email: formData?.companyEmail || organization?.companyEmail || "contact@entreprise.fr",
-      phone: formData?.companyPhone || organization?.companyPhone || "+33 1 23 45 67 89",
+      name:
+        formData?.companyName ||
+        organization?.companyName ||
+        "Votre Entreprise",
+      email:
+        formData?.companyEmail ||
+        organization?.companyEmail ||
+        "contact@entreprise.fr",
+      phone:
+        formData?.companyPhone ||
+        organization?.companyPhone ||
+        "+33 1 23 45 67 89",
       address: {
-        street: formData?.addressStreet || organization?.addressStreet || "1 Rue de la République",
-        postalCode: formData?.addressZipCode || organization?.addressZipCode || "75001",
+        street:
+          formData?.addressStreet ||
+          organization?.addressStreet ||
+          "1 Rue de la République",
+        postalCode:
+          formData?.addressZipCode || organization?.addressZipCode || "75001",
         city: formData?.addressCity || organization?.addressCity || "Paris",
-        country: formData?.addressCountry || organization?.addressCountry || "France",
+        country:
+          formData?.addressCountry || organization?.addressCountry || "France",
       },
       siret: organization?.siret || "98765432109876",
       vatNumber: organization?.vatNumber || "FR98765432109",
+      transactionCategory:
+        organization?.activityCategory ||
+        organization?.transactionCategory ||
+        "",
       logo: organization?.logo || null,
       bankDetails: {
         iban: bankDetails?.iban || "",
@@ -121,6 +140,9 @@ const getDemoInvoiceData = (formData, organization) => {
     },
     // Position du client dans le PDF
     clientPositionRight: clientPositionRight,
+    // Nom du bénéficiaire (pour auto-entrepreneurs)
+    beneficiaryNameType: formData?.beneficiaryNameType || "companyName",
+    userName: userName || "",
   };
 };
 
@@ -131,7 +153,9 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
   const [isLoading, setIsLoading] = useState(true);
   const [initialValues, setInitialValues] = useState(null);
   const [currentPrefix, setCurrentPrefix] = useState("");
-  const { validateInvoiceNumber, hasDocumentsForPrefix } = useInvoiceNumber(currentPrefix);
+  const { validateInvoiceNumber, hasDocumentsForPrefix } =
+    useInvoiceNumber(currentPrefix);
+  const { data: session } = useSession();
 
   // Charger les données de l'organisation dès l'ouverture
   useEffect(() => {
@@ -178,13 +202,29 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
               org?.documentTermsAndConditions ||
               "",
             showBankDetails: org?.showBankDetails || false,
-            primaryColor: org?.invoiceHeaderBgColor || org?.documentHeaderBgColor || "#5b4fff",
+            primaryColor:
+              org?.invoiceHeaderBgColor ||
+              org?.documentHeaderBgColor ||
+              "#5b4fff",
             clientPositionRight: org?.invoiceClientPositionRight || false,
+            // Nom du bénéficiaire (pour auto-entrepreneurs, défaut: fullName)
+            beneficiaryNameType:
+              org?.beneficiaryNameType ||
+              (org?.legalForm === "Auto-entrepreneur"
+                ? "fullName"
+                : "companyName"),
             // IMPORTANT: Initialiser appearance pour que InvoiceSettingsView puisse modifier les couleurs
             appearance: {
-              textColor: org?.invoiceTextColor || org?.documentTextColor || "#000000",
-              headerTextColor: org?.invoiceHeaderTextColor || org?.documentHeaderTextColor || "#FFFFFF",
-              headerBgColor: org?.invoiceHeaderBgColor || org?.documentHeaderBgColor || "#5b4fff",
+              textColor:
+                org?.invoiceTextColor || org?.documentTextColor || "#000000",
+              headerTextColor:
+                org?.invoiceHeaderTextColor ||
+                org?.documentHeaderTextColor ||
+                "#FFFFFF",
+              headerBgColor:
+                org?.invoiceHeaderBgColor ||
+                org?.documentHeaderBgColor ||
+                "#5b4fff",
             },
           };
 
@@ -227,6 +267,7 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
       termsAndConditions: "",
       showBankDetails: false,
       clientPositionRight: false,
+      beneficiaryNameType: "companyName",
       primaryColor: "#5b4fff",
       appearance: {
         textColor: "#000000",
@@ -323,6 +364,9 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
         bankBic: formValues.bankDetails?.bic || "",
         bankName: formValues.bankDetails?.bankName || "",
         showBankDetails: formValues.showBankDetails,
+
+        // Nom du bénéficiaire
+        beneficiaryNameType: formValues.beneficiaryNameType || "companyName",
       };
 
       await updateOrganization(organization.id, updateData);
@@ -331,16 +375,32 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
       onOpenChange(false);
     } catch (error) {
       console.error("❌ Erreur lors de l'enregistrement:", error);
-      toast.error(error.message || "Erreur lors de l'enregistrement des paramètres");
+      toast.error(
+        error.message || "Erreur lors de l'enregistrement des paramètres",
+      );
     } finally {
       setIsSaving(false);
     }
   };
 
+  // Watcher direct (sans debounce) pour les champs qui doivent mettre à jour la preview instantanément
+  const liveBeneficiaryNameType = form.watch("beneficiaryNameType");
+
   if (!open) return null;
 
   const demoData = debouncedFormData
-    ? getDemoInvoiceData(debouncedFormData, organization)
+    ? {
+        ...getDemoInvoiceData(
+          debouncedFormData,
+          organization,
+          session?.user?.name,
+        ),
+        // Écraser avec la valeur live (pas debounced) pour réactivité immédiate du switch
+        beneficiaryNameType:
+          liveBeneficiaryNameType ||
+          debouncedFormData?.beneficiaryNameType ||
+          "companyName",
+      }
     : null;
 
   return (
