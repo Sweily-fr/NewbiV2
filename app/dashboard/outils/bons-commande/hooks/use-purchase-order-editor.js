@@ -859,10 +859,10 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
   // Les informations de l'entreprise sont gérées par l'organisation active
   // passée en prop depuis le composant parent
 
-  // Synchroniser les champs plats pour CompanyInfoSettingsSection en mode édition
+  // Synchroniser les champs plats pour CompanyInfoSettingsSection
   useEffect(() => {
-    if (isFormInitialized && mode !== "create") {
-      const companyInfo = getValues("companyInfo");
+    if (isFormInitialized) {
+      const companyInfo = formData.companyInfo;
       if (companyInfo) {
         setValue("companyName", companyInfo.name || "", { shouldDirty: false });
         setValue("companyEmail", companyInfo.email || "", { shouldDirty: false });
@@ -876,7 +876,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
         }
       }
     }
-  }, [isFormInitialized, mode, setValue, getValues]);
+  }, [isFormInitialized, formData.companyInfo, setValue]);
 
   // Pre-fill from Quote conversion (via sessionStorage)
   useEffect(() => {

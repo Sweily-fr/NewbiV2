@@ -236,7 +236,30 @@ export default function ModernQuoteEditor({
     const v = form.getValues();
     return {
       client: v.client,
-      companyInfo: v.companyInfo,
+      companyInfo: {
+        name: organization?.companyName || "",
+        address: {
+          street: organization?.addressStreet || "",
+          city: organization?.addressCity || "",
+          postalCode: organization?.addressZipCode || "",
+          country: organization?.addressCountry || "",
+        },
+        email: organization?.companyEmail || "",
+        phone: organization?.companyPhone || "",
+        siret: organization?.siret || "",
+        vatNumber: organization?.vatNumber || "",
+        rcs: organization?.rcs || "",
+        legalForm: organization?.legalForm || "",
+        capitalSocial: organization?.capitalSocial || "",
+        fiscalRegime: organization?.fiscalRegime || "",
+        website: organization?.website || "",
+        logo: organization?.logo || "",
+        bankDetails: {
+          iban: organization?.bankIban || "",
+          bic: organization?.bankBic || "",
+          bankName: organization?.bankName || "",
+        },
+      },
       number: v.number,
       issueDate: v.issueDate,
       validUntil: v.validUntil,
@@ -267,6 +290,7 @@ export default function ModernQuoteEditor({
     shipping: { billShipping: false, shippingAddress: null, shippingAmountHT: 0, shippingVatRate: 20 },
     retenueGarantie: 0,
     escompte: 0,
+    operationType: null,
   });
 
   // Handler pour appliquer un modèle au formulaire
@@ -312,6 +336,7 @@ export default function ModernQuoteEditor({
       shipping: template.shipping ?? { billShipping: false, shippingAddress: null, shippingAmountHT: 0, shippingVatRate: 20 },
       retenueGarantie: template.retenueGarantie ?? 0,
       escompte: template.escompte ?? 0,
+      operationType: template.operationType ?? null,
     }, { keepDefaultValues: false });
 
     toast.success(`Modèle "${template.name}" appliqué`);

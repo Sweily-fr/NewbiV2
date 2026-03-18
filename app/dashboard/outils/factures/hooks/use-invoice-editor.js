@@ -1034,7 +1034,7 @@ export function useInvoiceEditor({
   // Synchroniser les champs plats pour CompanyInfoSettingsSection dans la vue paramètres
   useEffect(() => {
     if (isFormInitialized) {
-      const companyInfo = getValues("companyInfo");
+      const companyInfo = formData.companyInfo;
       if (companyInfo) {
         setValue("companyName", companyInfo.name || "", { shouldDirty: false });
         setValue("companyEmail", companyInfo.email || "", { shouldDirty: false });
@@ -1048,7 +1048,7 @@ export function useInvoiceEditor({
         }
       }
     }
-  }, [isFormInitialized, setValue, getValues]);
+  }, [isFormInitialized, formData.companyInfo, setValue]);
 
   // Pre-fill items from Kanban conversion (via sessionStorage)
   useEffect(() => {

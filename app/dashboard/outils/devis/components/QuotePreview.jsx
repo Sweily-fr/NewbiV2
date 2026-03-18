@@ -167,6 +167,11 @@ export default function QuotePreview({ data = {}, className = "", status }) {
                 {formatDate(data.validityDate) ||
                   formatDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000))}
               </p>
+              {data.operationType && (
+                <p style={{ margin: "2px 0" }}>
+                  Nature: {data.operationType === "LB" ? "Livraison de biens" : data.operationType === "PS" ? "Prestation de services" : data.operationType === "LBPS" ? "Mixte - Biens et services" : data.operationType}
+                </p>
+              )}
               {data.purchaseOrderNumber && (
                 <p style={{ margin: "2px 0" }}>
                   Référence: {data.purchaseOrderNumber}
