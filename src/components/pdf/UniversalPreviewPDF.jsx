@@ -692,25 +692,6 @@ const UniversalPreviewPDF = ({
                     </span>
                   </div>
                 )}
-                {data.operationType && (
-                  <div
-                    className="flex justify-end"
-                    style={{ fontSize: "10px" }}
-                  >
-                    <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
-                      Nature:
-                    </span>
-                    <span className="dark:text-[#0A0A0A]">
-                      {data.operationType === "LB"
-                        ? "Livraison de biens"
-                        : data.operationType === "PS"
-                          ? "Prestation de services"
-                          : data.operationType === "LBPS"
-                            ? "Mixte - Biens et services"
-                            : data.operationType}
-                    </span>
-                  </div>
-                )}
                 {isCreditNote && data.originalInvoice && (
                   <div
                     className="flex justify-end"
