@@ -16,16 +16,12 @@ import {
 export const useActivityNotifications = (options = {}) => {
   const { limit = 50, offset = 0, unreadOnly = false } = options;
   const { workspaceId } = useWorkspace();
-  // Récupérer les notifications avec polling fallback
-  const {
-    data,
-    loading,
-    error,
-    refetch,
-  } = useQuery(GET_NOTIFICATIONS, {
+  // Récupérer les notifications avec polling fallback (30s si pas de WebSocket)
+  const { data, loading, error, refetch } = useQuery(GET_NOTIFICATIONS, {
     variables: { workspaceId, limit, offset, unreadOnly },
     skip: !workspaceId,
     fetchPolicy: "cache-and-network",
+    pollInterval: 30000,
   });
 
   // Récupérer le nombre de notifications non lues
@@ -35,7 +31,8 @@ export const useActivityNotifications = (options = {}) => {
       variables: { workspaceId },
       skip: !workspaceId,
       fetchPolicy: "cache-and-network",
-    }
+      pollInterval: 30000,
+    },
   );
 
   // Mutation pour marquer une notification comme lue
@@ -53,7 +50,7 @@ export const useActivityNotifications = (options = {}) => {
     {
       variables: { workspaceId },
       skip: !workspaceId,
-    }
+    },
   );
 
   // Rafraîchir quand une nouvelle notification arrive via WebSocket
@@ -78,7 +75,7 @@ export const useActivityNotifications = (options = {}) => {
         console.error("Erreur lors du marquage de la notification:", err);
       }
     },
-    [markAsReadMutation, refetch, refetchUnreadCount]
+    [markAsReadMutation, refetch, refetchUnreadCount],
   );
 
   // Marquer toutes les notifications comme lues
@@ -107,13 +104,16 @@ export const useActivityNotifications = (options = {}) => {
         console.error("Erreur lors de la suppression de la notification:", err);
       }
     },
-    [deleteNotificationMutation, refetch, refetchUnreadCount]
+    [deleteNotificationMutation, refetch, refetchUnreadCount],
   );
 
   return {
     notifications: data?.getNotifications?.notifications || [],
     totalCount: data?.getNotifications?.totalCount || 0,
-    unreadCount: unreadCountData?.getUnreadNotificationsCount || data?.getNotifications?.unreadCount || 0,
+    unreadCount:
+      unreadCountData?.getUnreadNotificationsCount ||
+      data?.getNotifications?.unreadCount ||
+      0,
     loading,
     error,
     refetch,

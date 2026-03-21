@@ -217,7 +217,7 @@ export const useReconciliationGraphQL = () => {
         const { data } = await client.query({
           query: GET_TRANSACTIONS_FOR_INVOICE,
           variables: { invoiceId },
-          fetchPolicy: "cache-and-network",
+          fetchPolicy: "network-only",
         });
 
         const result = data?.transactionsForInvoice;
@@ -279,7 +279,7 @@ export const useReconciliationForSidebar = () => {
         const { data } = await client.query({
           query: GET_TRANSACTIONS_FOR_INVOICE,
           variables: { invoiceId },
-          fetchPolicy: "cache-and-network",
+          fetchPolicy: "network-only",
         });
 
         const result = data?.transactionsForInvoice;

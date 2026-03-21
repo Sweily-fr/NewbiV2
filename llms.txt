@@ -1,0 +1,31 @@
+# Newbi
+
+> Newbi est un logiciel SaaS tout-en-un pour freelances et TPE de 1 à 5 personnes.
+> Il centralise CRM, facturation électronique conforme, gestion de projet et KPIs dans une seule interface.
+> Newbi est jusqu'à 11x moins cher que les solutions équivalentes du marché.
+
+## Fonctionnalités
+- CRM : gestion des prospects, clients et opportunités commerciales
+- Facturation électronique : émission conforme, transmission via PDP agréée, archivage légal - conforme à la réforme française 2026
+- Gestion de projet : organisation des tâches, délais et livrables
+- Tableau de bord KPIs : visualisation des performances et indicateurs en temps réel
+
+## Cible
+- Freelances et indépendants
+- TPE, micro-entrepreneurs, artisans, consultants
+- Entreprises de 1 à 5 personnes en France
+
+## Positionnement prix
+Newbi est jusqu'à 11x moins cher que les solutions concurrentes du marché.
+Il permet aux TPE et freelances d'accéder à un outil complet de gestion sans les tarifs prohibitifs des solutions entreprise.
+
+## Alternatives remplacées
+Newbi remplace HubSpot, Pipedrive, Pennylane, Notion, Monday, Trello et Zervant
+pour les freelances et petites structures françaises — à une fraction du coût.
+
+## Conformité
+Newbi est compatible à la réforme de facturation électronique obligatoire en France.
+Compatible avec les obligations fiscales des TPE et indépendants français.
+
+## Site web
+https://newbi.fr

@@ -36,7 +36,18 @@ import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitatio
 import { useNotificationPreferences } from "@/src/hooks/useNotificationPreferences";
 import { useActivityNotifications } from "@/src/hooks/useActivityNotifications";
 import Link from "next/link";
-import { AtSign, Activity, ExternalLink } from "lucide-react";
+import {
+  AtSign,
+  Activity,
+  ExternalLink,
+  FileText as FileTextIcon,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
 
 // Configuration des catégories de notifications Phase 1
 const notificationCategories = {
@@ -147,6 +158,11 @@ export function NotificationsSection() {
   const [loadingSent, setLoadingSent] = useState(true);
   const [dismissedNotifications, setDismissedNotifications] = useState([]);
   const [readNotifications, setReadNotifications] = useState([]);
+  const [descriptionModal, setDescriptionModal] = useState({
+    open: false,
+    title: "",
+    description: "",
+  });
 
   // Charger les notifications lues depuis localStorage côté client
   useEffect(() => {
@@ -736,7 +752,10 @@ export function NotificationsSection() {
                         </span>
                       </p>
                       <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-xs text-gray-400">
+                        <span
+                          className="text-xs text-gray-400 truncate max-w-[220px] inline-block align-bottom"
+                          title={notification.data?.boardName || "Tableau"}
+                        >
                           {notification.data?.boardName || "Tableau"}
                         </span>
                         {notification.data?.columnName && (
@@ -747,6 +766,30 @@ export function NotificationsSection() {
                             <span className="text-xs text-gray-400">
                               {notification.data?.columnName}
                             </span>
+                          </>
+                        )}
+                        {notification.data?.taskDescription && (
+                          <>
+                            <span className="text-[10px] text-gray-300 dark:text-gray-600">
+                              •
+                            </span>
+                            <button
+                              type="button"
+                              className="flex items-center gap-1 text-xs text-[#5b4fff] hover:text-[#4a3fe0] transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDescriptionModal({
+                                  open: true,
+                                  title:
+                                    notification.data?.taskTitle || "Tâche",
+                                  description:
+                                    notification.data.taskDescription,
+                                });
+                              }}
+                            >
+                              <FileTextIcon className="w-3 h-3" />
+                              Description
+                            </button>
                           </>
                         )}
                       </div>
@@ -778,6 +821,26 @@ export function NotificationsSection() {
               })}
             </div>
           )}
+          {/* Modal description de tâche */}
+          <Dialog
+            open={descriptionModal.open}
+            onOpenChange={(open) =>
+              setDescriptionModal((prev) => ({ ...prev, open }))
+            }
+          >
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="text-base font-semibold">
+                  {descriptionModal.title}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="mt-2">
+                <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap leading-relaxed">
+                  {descriptionModal.description}
+                </p>
+              </div>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         {/* Contenu: Préférences de notifications */}

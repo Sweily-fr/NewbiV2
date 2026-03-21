@@ -590,7 +590,7 @@ export const useCheckPurchaseOrderNumber = () => {
             prefix: poPrefix || "",
             excludeId: excludeId || undefined,
           },
-          fetchPolicy: "cache-and-network",
+          fetchPolicy: "network-only",
         });
 
         return {

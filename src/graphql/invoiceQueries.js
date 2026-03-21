@@ -503,8 +503,18 @@ export const DELETE_LINKED_INVOICE = gql`
 `;
 
 export const CHECK_INVOICE_NUMBER_EXISTS = gql`
-  query CheckInvoiceNumberExists($workspaceId: ID!, $number: String!, $prefix: String!, $excludeId: ID) {
-    checkInvoiceNumberExists(workspaceId: $workspaceId, number: $number, prefix: $prefix, excludeId: $excludeId)
+  query CheckInvoiceNumberExists(
+    $workspaceId: ID!
+    $number: String!
+    $prefix: String!
+    $excludeId: ID
+  ) {
+    checkInvoiceNumberExists(
+      workspaceId: $workspaceId
+      number: $number
+      prefix: $prefix
+      excludeId: $excludeId
+    )
   }
 `;
 
@@ -554,7 +564,7 @@ export const useInvoices = () => {
           ...acc,
           [id]: value,
         }),
-        {}
+        {},
       ),
     },
     fetchPolicy: "cache-and-network",
@@ -579,7 +589,7 @@ export const useInvoices = () => {
               ...acc,
               [id]: value,
             }),
-            {}
+            {},
           ),
         },
         updateQuery: (prev, { fetchMoreResult }) => {
@@ -623,7 +633,7 @@ export const useInvoices = () => {
         limit: pagination.pageSize,
       });
     },
-    [workspaceId, pagination.pageIndex, pagination.pageSize, refetch]
+    [workspaceId, pagination.pageIndex, pagination.pageSize, refetch],
   );
 
   // Valeurs de retour optimisées
@@ -660,7 +670,7 @@ export const useInvoices = () => {
       filters,
       loadMore,
       optimizedRefetch,
-    ]
+    ],
   );
 };
 
@@ -698,7 +708,7 @@ export const useInvoice = (id) => {
       workspaceError,
       queryError,
       refetch,
-    ]
+    ],
   );
 };
 
@@ -736,7 +746,7 @@ export const useInvoiceStats = () => {
       workspaceError,
       queryError,
       refetch,
-    ]
+    ],
   );
 };
 
@@ -773,7 +783,7 @@ export const useLastInvoicePrefix = () => {
       loading,
       error,
     }),
-    [data, loading, error]
+    [data, loading, error],
   );
 };
 
@@ -782,7 +792,10 @@ export const useCreateInvoice = () => {
   const { workspaceId } = useRequiredWorkspace();
 
   const [createInvoiceMutation, { loading }] = useMutation(CREATE_INVOICE, {
-    refetchQueries: [{ query: GET_INVOICES, variables: { workspaceId } }, { query: GET_INVOICE_STATS, variables: { workspaceId } }],
+    refetchQueries: [
+      { query: GET_INVOICES, variables: { workspaceId } },
+      { query: GET_INVOICE_STATS, variables: { workspaceId } },
+    ],
     awaitRefetchQueries: true,
     // onError désactivé - les erreurs sont gérées dans les composants appelants
   });
@@ -809,7 +822,8 @@ export const useCreateInvoice = () => {
     } catch (error) {
       // Préserver les détails de validation depuis les erreurs GraphQL
       if (!error.validationDetails && error.graphQLErrors?.length > 0) {
-        error.validationDetails = error.graphQLErrors[0].extensions?.details || null;
+        error.validationDetails =
+          error.graphQLErrors[0].extensions?.details || null;
       }
       // Re-lancer l'erreur pour qu'elle soit capturée par le composant
       throw error;
@@ -864,7 +878,7 @@ export const useUpdateInvoice = () => {
       if (!result.data || !result.data.updateInvoice) {
         console.error("Update failed - no data returned:", result);
         throw new Error(
-          "La mise à jour de la facture a échoué - aucune donnée retournée"
+          "La mise à jour de la facture a échoué - aucune donnée retournée",
         );
       }
 
@@ -872,7 +886,8 @@ export const useUpdateInvoice = () => {
     } catch (error) {
       // Préserver les détails de validation depuis les erreurs GraphQL
       if (!error.validationDetails && error.graphQLErrors?.length > 0) {
-        error.validationDetails = error.graphQLErrors[0].extensions?.details || null;
+        error.validationDetails =
+          error.graphQLErrors[0].extensions?.details || null;
       }
       throw error;
     }
@@ -1021,7 +1036,7 @@ export const useChangeInvoiceStatus = () => {
         // Toast désactivé ici - géré dans les composants appelants
         console.error("Erreur lors du changement de statut:", error);
       },
-    }
+    },
   );
 
   const changeStatus = async (id, status) => {
@@ -1055,7 +1070,7 @@ export const useCreateLinkedInvoice = () => {
   const { workspaceId } = useRequiredWorkspace();
 
   const [createLinkedInvoiceMutation, { loading }] = useMutation(
-    CREATE_LINKED_INVOICE
+    CREATE_LINKED_INVOICE,
   );
 
   const createLinkedInvoice = async (quoteId, amount, isDeposit) => {
@@ -1108,7 +1123,7 @@ export const useCreateLinkedInvoice = () => {
         } catch (refetchError) {
           console.warn(
             "Erreur lors du rafraîchissement des données:",
-            refetchError
+            refetchError,
           );
           // Ne pas faire échouer toute l'opération pour une erreur de refetch
         }
@@ -1122,7 +1137,9 @@ export const useCreateLinkedInvoice = () => {
       if (
         error.graphQLErrors &&
         error.graphQLErrors.some(
-          (e) => e.extensions?.code === "COMPANY_INFO_INCOMPLETE" || e.code === "COMPANY_INFO_INCOMPLETE"
+          (e) =>
+            e.extensions?.code === "COMPANY_INFO_INCOMPLETE" ||
+            e.code === "COMPANY_INFO_INCOMPLETE",
         )
       ) {
         toast.error("Informations d'entreprise incomplètes", {
@@ -1153,7 +1170,7 @@ export const useDeleteLinkedInvoice = () => {
       onError: (error) => {
         console.error(
           "Erreur lors de la suppression de la facture liée:",
-          error
+          error,
         );
         toast.error("Erreur lors de la suppression de la facture liée", {
           description: error.message || "Une erreur inattendue s'est produite",
@@ -1168,7 +1185,7 @@ export const useDeleteLinkedInvoice = () => {
           cache.gc();
         }
       },
-    }
+    },
   );
 
   const deleteLinkedInvoice = async (invoiceId) => {
@@ -1254,7 +1271,10 @@ export const GET_INVOICE_TEMPLATES = gql`
 `;
 
 export const SAVE_INVOICE_AS_TEMPLATE = gql`
-  mutation SaveInvoiceAsTemplate($input: SaveInvoiceAsTemplateInput!, $workspaceId: ID) {
+  mutation SaveInvoiceAsTemplate(
+    $input: SaveInvoiceAsTemplateInput!
+    $workspaceId: ID
+  ) {
     saveInvoiceAsTemplate(input: $input, workspaceId: $workspaceId) {
       id
       name
@@ -1288,7 +1308,7 @@ export const useInvoiceTemplates = () => {
       error,
       refetch,
     }),
-    [data?.invoiceTemplates, loading, error, refetch]
+    [data?.invoiceTemplates, loading, error, refetch],
   );
 };
 
@@ -1349,7 +1369,8 @@ export const CLIENT_TYPE_LABELS = {
 export const INVOICE_STATUS_COLORS = {
   [INVOICE_STATUS.DRAFT]: "bg-gray-100 text-gray-700 border-gray-200",
   [INVOICE_STATUS.PENDING]: "bg-amber-100 text-amber-700 border-amber-200",
-  [INVOICE_STATUS.COMPLETED]: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  [INVOICE_STATUS.COMPLETED]:
+    "bg-emerald-100 text-emerald-700 border-emerald-200",
   [INVOICE_STATUS.CANCELED]: "bg-red-100 text-red-700 border-red-200",
 };
 
@@ -1373,7 +1394,7 @@ export const useCheckInvoiceNumber = () => {
             prefix: invoicePrefix || "",
             excludeId: excludeId || undefined,
           },
-          fetchPolicy: "cache-and-network",
+          fetchPolicy: "network-only",
         });
 
         return {
@@ -1385,7 +1406,7 @@ export const useCheckInvoiceNumber = () => {
         return { exists: false, invoice: null };
       }
     },
-    [workspaceId, client]
+    [workspaceId, client],
   );
 
   return { checkInvoiceNumber };
