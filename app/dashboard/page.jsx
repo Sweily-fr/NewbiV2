@@ -1,7 +1,11 @@
 "use client";
 
 import Head from "next/head";
-import { Avatar, AvatarImage, AvatarFallback } from "@/src/components/ui/avatar";
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+} from "@/src/components/ui/avatar";
 import { ChartAreaInteractive } from "@/src/components/chart-area-interactive";
 import { ChartRadarGridCircle } from "@/src/components/chart-radar-grid-circle";
 import { ChartBarMultiple } from "@/src/components/ui/bar-charts";
@@ -68,14 +72,14 @@ import { IncomeCategoryChart } from "@/app/dashboard/components/income-category-
 
 import { DashboardSkeleton } from "@/src/components/dashboard-skeleton";
 import { useDashboardData } from "@/src/hooks/useDashboardData";
+import { useQuery } from "@apollo/client";
+import { GET_TREASURY_CHART } from "@/src/graphql/queries/dashboardAggregation";
 import { useState, useEffect, useMemo, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
 import { ProSubscriptionOverlay } from "@/src/components/pro-subscription-overlay";
 import { BankSyncOverlay } from "@/src/components/bank-sync-overlay";
 import {
-  processIncomeForCharts,
-  processExpensesWithBankForCharts,
   getIncomeChartConfig,
   getExpenseChartConfig,
 } from "@/src/utils/chartDataProcessors";
@@ -86,34 +90,64 @@ import { InvoicesToPayCard } from "@/app/dashboard/components/invoices-to-pay-ca
 function DashboardContent() {
   const { session } = useUser();
   const { checkAndUpdateAccountStatus, refetchStatus } = useStripeConnect(
-    session?.user?.id
+    session?.user?.id,
   );
 
-  // Utilisation du hook de cache intelligent pour les données du dashboard
+  const { workspaceId } = useWorkspace();
+
+  // État pour le filtre de compte bancaire
+  const [selectedAccountId, setSelectedAccountId] = useState("all");
+
+  // Dashboard utilise skipTransactions=true : les graphiques font leurs propres queries backend.
+  // Le summary (totalIncome, totalExpenses, bankBalance) est pré-calculé côté serveur.
   const {
-    expenses,
     invoices,
     paidInvoices,
     paidExpenses,
     totalIncome,
     totalExpenses,
-    transactions,
     bankAccounts,
     bankBalance,
     isLoading,
-    isInitialized,
     invoicesLoading,
     accountsLoading,
     transactionsLoading,
     formatCurrency,
     refreshData,
     cacheInfo,
-  } = useDashboardData();
+  } = useDashboardData({
+    skipTransactions: true,
+    accountId: selectedAccountId,
+  });
 
-  const { workspaceId } = useWorkspace();
+  // Query pour les graphiques Entrées/Sorties (courbes d'aire sur 365 jours)
+  const { data: flowChartData, loading: flowChartLoading } = useQuery(
+    GET_TREASURY_CHART,
+    {
+      variables: {
+        workspaceId,
+        period: { preset: "365d" },
+        accountId: selectedAccountId === "all" ? null : selectedAccountId,
+      },
+      fetchPolicy: "cache-and-network",
+      skip: !workspaceId,
+    },
+  );
 
-  // État pour le filtre de compte bancaire
-  const [selectedAccountId, setSelectedAccountId] = useState("all");
+  const incomeChartData = useMemo(() => {
+    const points = flowChartData?.dashboardTreasuryChart?.dataPoints || [];
+    return points.map((d) => ({ date: d.date, desktop: d.income, mobile: 0 }));
+  }, [flowChartData]);
+
+  const expenseChartData = useMemo(() => {
+    const points = flowChartData?.dashboardTreasuryChart?.dataPoints || [];
+    return points.map((d) => ({
+      date: d.date,
+      desktop: d.expenses,
+      mobile: 0,
+    }));
+  }, [flowChartData]);
+
   const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
 
   // État pour l'overlay de synchronisation bancaire
@@ -136,7 +170,7 @@ function DashboardContent() {
     if (isFromBridge && workspaceId) {
       hasHandledBridgeReturn.current = true;
       console.log(
-        "🏦 Retour de Bridge détecté, synchronisation des comptes..."
+        "🏦 Retour de Bridge détecté, synchronisation des comptes...",
       );
 
       // Afficher l'overlay de chargement immédiatement
@@ -192,7 +226,7 @@ function DashboardContent() {
     if (isFromStripe && session?.user?.id) {
       hasHandledStripeReturn.current = true;
       console.log(
-        "🔄 Retour de Stripe détecté sur dashboard, vérification du statut..."
+        "🔄 Retour de Stripe détecté sur dashboard, vérification du statut...",
       );
 
       const timer = setTimeout(async () => {
@@ -207,14 +241,14 @@ function DashboardContent() {
           if (shouldOpenSettings) {
             // Déclencher l'ouverture du modal settings
             console.log(
-              "🔧 Ouverture du modal settings sur la section sécurité"
+              "🔧 Ouverture du modal settings sur la section sécurité",
             );
 
             // Dispatch d'un event pour ouvrir le modal settings
             window.dispatchEvent(
               new CustomEvent("openSettingsModal", {
                 detail: { section: "securite" },
-              })
+              }),
             );
           }
 
@@ -224,7 +258,7 @@ function DashboardContent() {
         } catch (error) {
           console.error(
             "❌ Erreur lors de la vérification automatique:",
-            error
+            error,
           );
         }
       }, 2000);
@@ -233,97 +267,25 @@ function DashboardContent() {
     }
   }, [session?.user?.id, checkAndUpdateAccountStatus, refetchStatus]);
 
-  // Filtrage des données par compte bancaire sélectionné
-  const filteredTransactions = useMemo(() => {
-    if (selectedAccountId === "all") return transactions || [];
-    const account = (bankAccounts || []).find(
-      (a) => a.id === selectedAccountId || a.externalId === selectedAccountId
-    );
-    if (!account) return transactions || [];
-    return (transactions || []).filter(
-      (tx) =>
-        tx.fromAccount === account.externalId ||
-        tx.fromAccount === account.id
-    );
-  }, [transactions, selectedAccountId, bankAccounts]);
-
+  // Filtrage local des comptes bancaires pour l'affichage
   const filteredBankAccounts = useMemo(() => {
     if (selectedAccountId === "all") return bankAccounts || [];
     return (bankAccounts || []).filter(
-      (a) => a.id === selectedAccountId || a.externalId === selectedAccountId
+      (a) => a.id === selectedAccountId || a.externalId === selectedAccountId,
     );
   }, [bankAccounts, selectedAccountId]);
-
-  const filteredBalance = useMemo(() => {
-    if (selectedAccountId === "all") return bankBalance;
-    const account = (bankAccounts || []).find(
-      (a) => a.id === selectedAccountId || a.externalId === selectedAccountId
-    );
-    return account?.balance?.current ?? 0;
-  }, [selectedAccountId, bankAccounts, bankBalance]);
-
-  const filteredTotalIncome = useMemo(() => {
-    if (selectedAccountId === "all") return totalIncome;
-    return filteredTransactions
-      .filter((tx) => tx.amount > 0)
-      .reduce((sum, tx) => sum + tx.amount, 0);
-  }, [selectedAccountId, totalIncome, filteredTransactions]);
-
-  const filteredTotalExpenses = useMemo(() => {
-    if (selectedAccountId === "all") return totalExpenses;
-    return Math.abs(
-      filteredTransactions
-        .filter((tx) => tx.amount < 0)
-        .reduce((sum, tx) => sum + tx.amount, 0)
-    );
-  }, [selectedAccountId, totalExpenses, filteredTransactions]);
-
-  const filteredPaidExpenses = useMemo(() => {
-    if (selectedAccountId === "all") return paidExpenses || [];
-    // Les paidExpenses n'ont pas de fromAccount, on les retourne telles quelles
-    // Le filtrage principal se fait via filteredTransactions pour les graphiques
-    return paidExpenses || [];
-  }, [selectedAccountId, paidExpenses]);
 
   const selectedAccountLabel = useMemo(() => {
     if (selectedAccountId === "all") return "Tous les comptes";
     const account = (bankAccounts || []).find(
-      (a) => a.id === selectedAccountId || a.externalId === selectedAccountId
+      (a) => a.id === selectedAccountId || a.externalId === selectedAccountId,
     );
     if (!account) return "Tous les comptes";
-    const name = account.name || account.institutionName || account.bankName || "Compte";
+    const name =
+      account.name || account.institutionName || account.bankName || "Compte";
     const lastIban = account.iban ? ` ···${account.iban.slice(-4)}` : "";
     return `${name}${lastIban}`;
   }, [selectedAccountId, bankAccounts]);
-
-  // Données pour les graphiques (incluant les transactions bancaires filtrées)
-  const incomeChartData = useMemo(
-    () => processIncomeForCharts(paidInvoices || [], filteredTransactions),
-    [paidInvoices, filteredTransactions]
-  );
-  const expenseChartData = useMemo(
-    () =>
-      processExpensesWithBankForCharts(filteredPaidExpenses, filteredTransactions),
-    [filteredPaidExpenses, filteredTransactions]
-  );
-
-  // Debug: vérifier les données des graphiques entrées/sorties
-  console.warn("📊 [DASHBOARD] Chart data debug:", {
-    filteredTransactionsCount: filteredTransactions.length,
-    incomeDataPoints: incomeChartData.length,
-    incomeNonZero: incomeChartData.filter(d => d.desktop > 0).length,
-    incomeTotalDesktop: incomeChartData.reduce((sum, d) => sum + (d.desktop || 0), 0),
-    expenseDataPoints: expenseChartData.length,
-    expenseNonZero: expenseChartData.filter(d => d.desktop > 0).length,
-    expenseTotalDesktop: expenseChartData.reduce((sum, d) => sum + (d.desktop || 0), 0),
-    sampleIncomeData: incomeChartData.filter(d => d.desktop > 0).slice(0, 3),
-    sampleExpenseData: expenseChartData.filter(d => d.desktop > 0).slice(0, 3),
-    sampleTransactions: filteredTransactions.slice(0, 3).map(t => ({
-      amount: t.amount,
-      date: t.date,
-      description: t.description?.substring(0, 30),
-    })),
-  });
 
   // Utiliser les configurations importées
   const incomeChartConfig = getIncomeChartConfig();
@@ -331,8 +293,7 @@ function DashboardContent() {
 
   // Loading states par section
   const cardsLoading = accountsLoading || transactionsLoading;
-  const chartsLoading = transactionsLoading;
-  const categoryChartsLoading = transactionsLoading;
+  const chartsLoading = flowChartLoading;
 
   const balanceChartConfig = {
     visitors: {
@@ -364,19 +325,24 @@ function DashboardContent() {
           <h1 className="text-2xl font-semibold">
             Bonjour {session?.user?.name},
           </h1>
-          {process.env.NODE_ENV === "development" &&
-            cacheInfo?.lastUpdate && (
-              <p className="text-xs text-gray-500 mt-1">
-                Données mises à jour :{" "}
-                {cacheInfo.lastUpdate.toLocaleTimeString()}
-                {cacheInfo.isFromCache && " (cache)"}
-              </p>
-            )}
+          {process.env.NODE_ENV === "development" && cacheInfo?.lastUpdate && (
+            <p className="text-xs text-gray-500 mt-1">
+              Données mises à jour : {cacheInfo.lastUpdate.toLocaleTimeString()}
+              {cacheInfo.isFromCache && " (cache)"}
+            </p>
+          )}
           {/* Filtre de compte bancaire ou bouton connecter */}
           {(bankAccounts || []).length > 0 ? (
-            <Popover open={accountPopoverOpen} onOpenChange={setAccountPopoverOpen}>
+            <Popover
+              open={accountPopoverOpen}
+              onOpenChange={setAccountPopoverOpen}
+            >
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 font-medium">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 font-medium"
+                >
                   <Landmark className="size-3.5" />
                   <span className="truncate max-w-[150px]">
                     {selectedAccountLabel}
@@ -384,7 +350,11 @@ function DashboardContent() {
                   <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-80 rounded-xl border shadow-md p-1" align="end" sideOffset={8}>
+              <PopoverContent
+                className="w-80 rounded-xl border shadow-md p-1"
+                align="end"
+                sideOffset={8}
+              >
                 <Command>
                   <CommandList>
                     <CommandEmpty>Aucun compte trouvé.</CommandEmpty>
@@ -397,16 +367,26 @@ function DashboardContent() {
                         }}
                         className={cn(
                           "gap-2 p-2 rounded-lg cursor-pointer",
-                          selectedAccountId === "all" && "bg-accent"
+                          selectedAccountId === "all" && "bg-accent",
                         )}
                       >
                         <Landmark className="size-4 text-muted-foreground flex-shrink-0" />
-                        <span className="flex-1 text-[13px] font-normal truncate">Tous les comptes</span>
+                        <span className="flex-1 text-[13px] font-normal truncate">
+                          Tous les comptes
+                        </span>
                       </CommandItem>
                       {(bankAccounts || []).map((account) => {
-                        const accountName = account.name || account.institutionName || account.bankName || "Compte";
-                        const lastIban = account.iban ? ` ···${account.iban.slice(-4)}` : "";
-                        const isSelected = selectedAccountId === account.id || selectedAccountId === account.externalId;
+                        const accountName =
+                          account.name ||
+                          account.institutionName ||
+                          account.bankName ||
+                          "Compte";
+                        const lastIban = account.iban
+                          ? ` ···${account.iban.slice(-4)}`
+                          : "";
+                        const isSelected =
+                          selectedAccountId === account.id ||
+                          selectedAccountId === account.externalId;
                         return (
                           <CommandItem
                             key={account.id}
@@ -417,7 +397,7 @@ function DashboardContent() {
                             }}
                             className={cn(
                               "gap-2 p-2 rounded-lg cursor-pointer",
-                              isSelected && "bg-accent"
+                              isSelected && "bg-accent",
                             )}
                           >
                             {account.institutionLogo ? (
@@ -437,7 +417,10 @@ function DashboardContent() {
                               </div>
                             )}
                             <div className="flex flex-col min-w-0 flex-1">
-                              <span className="truncate text-[13px] font-normal">{accountName}{lastIban}</span>
+                              <span className="truncate text-[13px] font-normal">
+                                {accountName}
+                                {lastIban}
+                              </span>
                               {account.balance?.current != null && (
                                 <span className="text-[10px] text-muted-foreground">
                                   {formatCurrency(account.balance.current)}
@@ -555,15 +538,16 @@ function DashboardContent() {
             className="shadow-xs w-full md:w-1/2"
             expenses={paidExpenses}
             invoices={paidInvoices}
-            totalIncome={filteredTotalIncome}
-            totalExpenses={filteredTotalExpenses}
+            totalIncome={totalIncome}
+            totalExpenses={totalExpenses}
             bankAccounts={filteredBankAccounts}
-            bankBalance={filteredBalance}
+            bankBalance={bankBalance}
             isLoading={cardsLoading}
           />
           <RecentTransactionsCard
             className="shadow-xs w-full md:w-1/2"
-            transactions={filteredTransactions}
+            workspaceId={workspaceId}
+            accountId={selectedAccountId}
             limit={5}
             isLoading={transactionsLoading}
           />
@@ -571,17 +555,19 @@ function DashboardContent() {
         {/* Graphique de trésorerie - Pleine largeur (MODE BANCAIRE PUR) */}
         <div className="w-full">
           <TreasuryChart
-            bankTransactions={filteredTransactions}
+            workspaceId={workspaceId}
+            accountId={selectedAccountId}
             className="shadow-xs"
-            initialBalance={filteredBalance || 0}
-            isLoading={chartsLoading}
+            isLoading={cardsLoading}
           />
         </div>
         <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
           <ChartAreaInteractive
             title="Entrées"
             computeDescription={(filtered) =>
-              formatCurrency(filtered.reduce((sum, d) => sum + (d.desktop || 0), 0))
+              formatCurrency(
+                filtered.reduce((sum, d) => sum + (d.desktop || 0), 0),
+              )
             }
             height="200px"
             className="shadow-xs w-full md:w-1/2"
@@ -593,7 +579,9 @@ function DashboardContent() {
           <ChartAreaInteractive
             title="Sorties"
             computeDescription={(filtered) =>
-              formatCurrency(filtered.reduce((sum, d) => sum + (d.desktop || 0), 0))
+              formatCurrency(
+                filtered.reduce((sum, d) => sum + (d.desktop || 0), 0),
+              )
             }
             height="200px"
             className="shadow-xs w-full md:w-1/2"
@@ -606,21 +594,25 @@ function DashboardContent() {
 
         {/* Factures à encaisser / à payer */}
         <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
-          <InvoicesToCollectCard className="shadow-xs w-full md:w-1/2" invoices={invoices} isLoading={invoicesLoading} />
+          <InvoicesToCollectCard
+            className="shadow-xs w-full md:w-1/2"
+            invoices={invoices}
+            isLoading={invoicesLoading}
+          />
           <InvoicesToPayCard className="shadow-xs w-full md:w-1/2" />
         </div>
 
         {/* Graphiques de répartition par catégorie (MODE BANCAIRE PUR) */}
         <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
           <IncomeCategoryChart
-            bankTransactions={filteredTransactions}
+            workspaceId={workspaceId}
+            accountId={selectedAccountId}
             className="shadow-xs w-full md:w-1/2"
-            isLoading={categoryChartsLoading}
           />
           <ExpenseCategoryChart
-            bankTransactions={filteredTransactions}
+            workspaceId={workspaceId}
+            accountId={selectedAccountId}
             className="shadow-xs w-full md:w-1/2"
-            isLoading={categoryChartsLoading}
           />
         </div>
       </div>

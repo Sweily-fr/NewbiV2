@@ -401,7 +401,6 @@ export const useLastPurchaseOrderPrefix = () => {
   const { data, loading, error } = useQuery(GET_LAST_PURCHASE_ORDER_PREFIX, {
     variables: { workspaceId },
     skip: !workspaceId,
-    fetchPolicy: "cache-and-network",
     errorPolicy: "all",
   });
 
@@ -435,9 +434,8 @@ export const usePurchaseOrders = (filters = {}) => {
         limit,
       },
       skip: !workspaceId,
-      fetchPolicy: "cache-and-network",
-      nextFetchPolicy: "cache-first",
       errorPolicy: "all",
+      fetchPolicy: "cache-and-network",
     },
   );
 
@@ -499,7 +497,6 @@ export const usePurchaseOrder = (id) => {
   const { data, loading, error, refetch } = useQuery(GET_PURCHASE_ORDER, {
     variables: { workspaceId, id },
     skip: !id || !workspaceId,
-    fetchPolicy: "cache-and-network",
     errorPolicy: "all",
   });
 
@@ -523,7 +520,6 @@ export const usePurchaseOrderStats = () => {
   const { data, loading, error, refetch } = useQuery(GET_PURCHASE_ORDER_STATS, {
     variables: { workspaceId },
     skip: !workspaceId,
-    fetchPolicy: "cache-and-network",
     errorPolicy: "all",
   });
 
@@ -657,9 +653,6 @@ export const useUpdatePurchaseOrder = () => {
         variables: { workspaceId, id: data.updatePurchaseOrder.id },
         data: { purchaseOrder: data.updatePurchaseOrder },
       });
-      client.refetchQueries({
-        include: [GET_PURCHASE_ORDER_STATS],
-      });
     },
     onError: (error) => {
       console.error("Erreur lors de la mise à jour du bon de commande:", error);
@@ -727,9 +720,6 @@ export const useChangePurchaseOrderStatus = () => {
           query: GET_PURCHASE_ORDER,
           variables: { workspaceId, id: data.changePurchaseOrderStatus.id },
           data: { purchaseOrder: data.changePurchaseOrderStatus },
-        });
-        client.refetchQueries({
-          include: [GET_PURCHASE_ORDER_STATS],
         });
       },
       onError: (error) => {
@@ -984,7 +974,6 @@ export const usePurchaseOrderTemplates = () => {
     {
       variables: { workspaceId },
       skip: !workspaceId,
-      fetchPolicy: "cache-and-network",
       errorPolicy: "all",
     },
   );

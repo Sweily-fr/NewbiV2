@@ -22,7 +22,6 @@ export function useEInvoicingSettings() {
   const { data, loading, error, refetch } = useQuery(GET_EINVOICING_SETTINGS, {
     variables: { workspaceId },
     skip: !workspaceId,
-    fetchPolicy: "cache-and-network",
   });
 
   return {
@@ -49,7 +48,6 @@ export function useEInvoicingStats() {
   const { data, loading, error, refetch } = useQuery(GET_EINVOICING_STATS, {
     variables: { workspaceId },
     skip: !workspaceId,
-    fetchPolicy: "cache-and-network",
   });
 
   return {
@@ -84,7 +82,7 @@ export function useToggleEInvoicing() {
       refetchQueries: [
         { query: GET_EINVOICING_SETTINGS, variables: { workspaceId } },
       ],
-    }
+    },
   );
 
   const [disableMutation, { loading: disabling }] = useMutation(
@@ -93,7 +91,7 @@ export function useToggleEInvoicing() {
       refetchQueries: [
         { query: GET_EINVOICING_SETTINGS, variables: { workspaceId } },
       ],
-    }
+    },
   );
 
   const enable = async (environment = "sandbox") => {

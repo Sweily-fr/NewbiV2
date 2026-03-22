@@ -3,8 +3,9 @@
 import { ChevronRight, CalendarIcon, ArrowLeft } from "lucide-react";
 import { Label, Pie, PieChart } from "recharts";
 import { useMemo, useState } from "react";
+import { useQuery } from "@apollo/client";
+import { GET_CATEGORY_AGGREGATION } from "@/src/graphql/queries/dashboardAggregation";
 import { useIsMobile } from "@/src/hooks/use-mobile";
-import { aggregateByCategory } from "@/lib/bank-categories-config";
 
 import {
   Card,
@@ -46,11 +47,7 @@ const baseChartConfig = {
   },
 };
 
-export function ExpenseCategoryChart({
-  bankTransactions = [],
-  className,
-  isLoading = false,
-}) {
+export function ExpenseCategoryChart({ workspaceId, accountId, className }) {
   const isMobile = useIsMobile();
   const [timeRange, setTimeRange] = useState("cumul-year"); // 30d, 90d, 365d, custom, cumul-year
   const [customStartDate, setCustomStartDate] = useState("");
@@ -60,8 +57,40 @@ export function ExpenseCategoryChart({
   const [tempEndDate, setTempEndDate] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  // Calcul centralisé des dates de période
-  const computedDates = useMemo(() => {
+  // Build period variable for the GraphQL query
+  const period =
+    timeRange === "custom"
+      ? {
+          startDate: customStartDate || undefined,
+          endDate: customEndDate || undefined,
+        }
+      : { preset: timeRange };
+
+  const { data, loading: queryLoading } = useQuery(GET_CATEGORY_AGGREGATION, {
+    variables: {
+      workspaceId,
+      type: "expense",
+      period,
+      accountId: accountId === "all" ? null : accountId,
+    },
+    fetchPolicy: "cache-and-network",
+    skip: !workspaceId,
+  });
+
+  const isLoading = queryLoading;
+
+  const chartData = useMemo(() => {
+    const categories = data?.dashboardCategoryAggregation?.categories || [];
+    return categories.map((c) => ({
+      category: c.name,
+      amount: c.amount,
+      label: c.name,
+      fill: c.color,
+    }));
+  }, [data]);
+
+  // dateRange for display in the pie center (computed locally from timeRange)
+  const dateRange = useMemo(() => {
     const now = new Date();
     let startDate, endDate;
 
@@ -95,50 +124,19 @@ export function ExpenseCategoryChart({
       }
     }
 
-    return { startDate, endDate };
+    return {
+      start: startDate.toLocaleDateString("fr-FR", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }),
+      end: endDate.toLocaleDateString("fr-FR", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }),
+    };
   }, [timeRange, customStartDate, customEndDate]);
-
-  const dateRange = useMemo(() => ({
-    start: computedDates.startDate.toLocaleDateString("fr-FR", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    }),
-    end: computedDates.endDate.toLocaleDateString("fr-FR", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    }),
-  }), [computedDates]);
-
-  // Calculer les données du graphique par catégorie (MODE BANCAIRE PUR)
-  const chartData = useMemo(() => {
-    const { startDate, endDate } = computedDates;
-
-    // Filtrer les transactions bancaires négatives (sorties) dans la période
-    const expenseTransactions = bankTransactions.filter((transaction) => {
-      if (transaction.amount >= 0) return false;
-
-      const rawDate =
-        transaction.date || transaction.processedAt || transaction.createdAt;
-      if (!rawDate) return false;
-
-      const transactionDate = new Date(rawDate);
-      if (isNaN(transactionDate.getTime())) return false;
-
-      return transactionDate >= startDate && transactionDate <= endDate;
-    });
-
-    // Agréger par catégorie en utilisant la fonction de bank-categories-config
-    const categoryData = aggregateByCategory(expenseTransactions, false);
-
-    return categoryData.map((cat) => ({
-      category: cat.name,
-      amount: Math.round(cat.amount * 100) / 100,
-      label: cat.name,
-      fill: cat.color,
-    }));
-  }, [bankTransactions, computedDates]);
 
   // Générer le chartConfig dynamiquement à partir des données réelles
   const chartConfig = useMemo(() => {
@@ -152,11 +150,8 @@ export function ExpenseCategoryChart({
     return config;
   }, [chartData]);
 
-  // Calculer le total et la catégorie principale
-  const totalAmount = useMemo(() => {
-    return chartData.reduce((sum, item) => sum + item.amount, 0);
-  }, [chartData]);
-
+  // Total from backend
+  const totalAmount = data?.dashboardCategoryAggregation?.total || 0;
 
   // Formater le montant en euros
   const formatCurrency = (amount) => {
@@ -189,7 +184,13 @@ export function ExpenseCategoryChart({
   };
 
   const timeRangeDropdown = (
-    <DropdownMenu open={dropdownOpen} onOpenChange={(open) => { setDropdownOpen(open); if (!open) setShowCustomView(false); }}>
+    <DropdownMenu
+      open={dropdownOpen}
+      onOpenChange={(open) => {
+        setDropdownOpen(open);
+        if (!open) setShowCustomView(false);
+      }}
+    >
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
@@ -204,42 +205,64 @@ export function ExpenseCategoryChart({
           />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="rounded-xl w-80" align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
+      <DropdownMenuContent
+        className="rounded-xl w-80"
+        align="end"
+        onCloseAutoFocus={(e) => e.preventDefault()}
+      >
         {!showCustomView ? (
           <>
             <DropdownMenuItem
               className="rounded-lg text-sm"
-              onSelect={() => { setTimeRange("cumul-month"); setDropdownOpen(false); }}
+              onSelect={() => {
+                setTimeRange("cumul-month");
+                setDropdownOpen(false);
+              }}
             >
               Cumul mensuel
             </DropdownMenuItem>
             <DropdownMenuItem
               className="rounded-lg text-sm"
-              onSelect={() => { setTimeRange("cumul-quarter"); setDropdownOpen(false); }}
+              onSelect={() => {
+                setTimeRange("cumul-quarter");
+                setDropdownOpen(false);
+              }}
             >
               Cumul trimestriel
             </DropdownMenuItem>
             <DropdownMenuItem
               className="rounded-lg text-sm"
-              onSelect={() => { setTimeRange("cumul-year"); setDropdownOpen(false); }}
+              onSelect={() => {
+                setTimeRange("cumul-year");
+                setDropdownOpen(false);
+              }}
             >
               Cumul annuel
             </DropdownMenuItem>
             <DropdownMenuItem
               className="rounded-lg text-sm"
-              onSelect={() => { setTimeRange("30d"); setDropdownOpen(false); }}
+              onSelect={() => {
+                setTimeRange("30d");
+                setDropdownOpen(false);
+              }}
             >
               30 derniers jours
             </DropdownMenuItem>
             <DropdownMenuItem
               className="rounded-lg text-sm"
-              onSelect={() => { setTimeRange("90d"); setDropdownOpen(false); }}
+              onSelect={() => {
+                setTimeRange("90d");
+                setDropdownOpen(false);
+              }}
             >
               3 derniers mois
             </DropdownMenuItem>
             <DropdownMenuItem
               className="rounded-lg text-sm"
-              onSelect={() => { setTimeRange("365d"); setDropdownOpen(false); }}
+              onSelect={() => {
+                setTimeRange("365d");
+                setDropdownOpen(false);
+              }}
             >
               12 derniers mois
             </DropdownMenuItem>
@@ -258,94 +281,103 @@ export function ExpenseCategoryChart({
           </>
         ) : (
           <I18nProvider locale="fr-FR">
-          <div
-            onKeyDown={(e) => { if (e.key !== 'Escape') e.stopPropagation(); }}
-            onPointerDown={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center px-1 py-1 border-b">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-[#7A7A7A]"
-                onClick={() => setShowCustomView(false)}
-              >
-                <ArrowLeft size={16} />
-              </Button>
-            </div>
-            <div className="grid grid-cols-2 gap-2 px-2 pt-2">
-              <div className="min-w-0 space-y-1.5">
-                <FormLabel className="text-sm font-medium">Début</FormLabel>
-                <DatePicker
-                  value={tempStartDate ? parseDate(tempStartDate) : null}
-                  onChange={(date) => { if (date) setTempStartDate(date.toString()); }}
+            <div
+              onKeyDown={(e) => {
+                if (e.key !== "Escape") e.stopPropagation();
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center px-1 py-1 border-b">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-[#7A7A7A]"
+                  onClick={() => setShowCustomView(false)}
                 >
-                  <div className="flex">
-                    <Group className="w-full min-w-0">
-                      <DateInput className="pe-9 text-sm" />
-                    </Group>
-                    <RACButton className="z-10 -ms-9 -me-px flex w-9 shrink-0 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground data-focus-visible:border-ring data-focus-visible:ring-[3px] data-focus-visible:ring-ring/50">
-                      <CalendarIcon size={14} />
-                    </RACButton>
-                  </div>
-                  <RACPopover
-                    className="z-50 rounded-lg border bg-background text-popover-foreground shadow-lg outline-hidden data-entering:animate-in data-exiting:animate-out data-[entering]:fade-in-0 data-[entering]:zoom-in-95 data-[exiting]:fade-out-0 data-[exiting]:zoom-out-95"
-                    offset={4}
-                  >
-                    <Dialog className="max-h-[inherit] overflow-auto p-2">
-                      <Calendar />
-                    </Dialog>
-                  </RACPopover>
-                </DatePicker>
+                  <ArrowLeft size={16} />
+                </Button>
               </div>
-              <div className="min-w-0 space-y-1.5">
-                <FormLabel className="text-sm font-medium">Fin</FormLabel>
-                <DatePicker
-                  value={tempEndDate ? parseDate(tempEndDate) : null}
-                  onChange={(date) => { if (date) setTempEndDate(date.toString()); }}
+              <div className="grid grid-cols-2 gap-2 px-2 pt-2">
+                <div className="min-w-0 space-y-1.5">
+                  <FormLabel className="text-sm font-medium">Début</FormLabel>
+                  <DatePicker
+                    value={tempStartDate ? parseDate(tempStartDate) : null}
+                    onChange={(date) => {
+                      if (date) setTempStartDate(date.toString());
+                    }}
+                  >
+                    <div className="flex">
+                      <Group className="w-full min-w-0">
+                        <DateInput className="pe-9 text-sm" />
+                      </Group>
+                      <RACButton className="z-10 -ms-9 -me-px flex w-9 shrink-0 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground data-focus-visible:border-ring data-focus-visible:ring-[3px] data-focus-visible:ring-ring/50">
+                        <CalendarIcon size={14} />
+                      </RACButton>
+                    </div>
+                    <RACPopover
+                      className="z-50 rounded-lg border bg-background text-popover-foreground shadow-lg outline-hidden data-entering:animate-in data-exiting:animate-out data-[entering]:fade-in-0 data-[entering]:zoom-in-95 data-[exiting]:fade-out-0 data-[exiting]:zoom-out-95"
+                      offset={4}
+                    >
+                      <Dialog className="max-h-[inherit] overflow-auto p-2">
+                        <Calendar />
+                      </Dialog>
+                    </RACPopover>
+                  </DatePicker>
+                </div>
+                <div className="min-w-0 space-y-1.5">
+                  <FormLabel className="text-sm font-medium">Fin</FormLabel>
+                  <DatePicker
+                    value={tempEndDate ? parseDate(tempEndDate) : null}
+                    onChange={(date) => {
+                      if (date) setTempEndDate(date.toString());
+                    }}
+                  >
+                    <div className="flex">
+                      <Group className="w-full min-w-0">
+                        <DateInput className="pe-9 text-sm" />
+                      </Group>
+                      <RACButton className="z-10 -ms-9 -me-px flex w-9 shrink-0 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground data-focus-visible:border-ring data-focus-visible:ring-[3px] data-focus-visible:ring-ring/50">
+                        <CalendarIcon size={14} />
+                      </RACButton>
+                    </div>
+                    <RACPopover
+                      className="z-50 rounded-lg border bg-background text-popover-foreground shadow-lg outline-hidden data-entering:animate-in data-exiting:animate-out data-[entering]:fade-in-0 data-[entering]:zoom-in-95 data-[exiting]:fade-out-0 data-[exiting]:zoom-out-95"
+                      offset={4}
+                    >
+                      <Dialog className="max-h-[inherit] overflow-auto p-2">
+                        <Calendar />
+                      </Dialog>
+                    </RACPopover>
+                  </DatePicker>
+                </div>
+              </div>
+              <div className="flex gap-2 mt-3 px-2 pb-2 justify-end">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-sm font-normal"
+                  onClick={() => {
+                    setShowCustomView(false);
+                    setDropdownOpen(false);
+                  }}
                 >
-                  <div className="flex">
-                    <Group className="w-full min-w-0">
-                      <DateInput className="pe-9 text-sm" />
-                    </Group>
-                    <RACButton className="z-10 -ms-9 -me-px flex w-9 shrink-0 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground data-focus-visible:border-ring data-focus-visible:ring-[3px] data-focus-visible:ring-ring/50">
-                      <CalendarIcon size={14} />
-                    </RACButton>
-                  </div>
-                  <RACPopover
-                    className="z-50 rounded-lg border bg-background text-popover-foreground shadow-lg outline-hidden data-entering:animate-in data-exiting:animate-out data-[entering]:fade-in-0 data-[entering]:zoom-in-95 data-[exiting]:fade-out-0 data-[exiting]:zoom-out-95"
-                    offset={4}
-                  >
-                    <Dialog className="max-h-[inherit] overflow-auto p-2">
-                      <Calendar />
-                    </Dialog>
-                  </RACPopover>
-                </DatePicker>
+                  Annuler
+                </Button>
+                <Button
+                  size="sm"
+                  className="h-8 text-sm font-normal"
+                  onClick={() => {
+                    setCustomStartDate(tempStartDate);
+                    setCustomEndDate(tempEndDate);
+                    setTimeRange("custom");
+                    setShowCustomView(false);
+                    setDropdownOpen(false);
+                  }}
+                >
+                  Appliquer
+                </Button>
               </div>
             </div>
-            <div className="flex gap-2 mt-3 px-2 pb-2 justify-end">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 text-sm font-normal"
-                onClick={() => { setShowCustomView(false); setDropdownOpen(false); }}
-              >
-                Annuler
-              </Button>
-              <Button
-                size="sm"
-                className="h-8 text-sm font-normal"
-                onClick={() => {
-                  setCustomStartDate(tempStartDate);
-                  setCustomEndDate(tempEndDate);
-                  setTimeRange("custom");
-                  setShowCustomView(false);
-                  setDropdownOpen(false);
-                }}
-              >
-                Appliquer
-              </Button>
-            </div>
-          </div>
           </I18nProvider>
         )}
       </DropdownMenuContent>
@@ -506,7 +538,7 @@ export function ExpenseCategoryChart({
             <div className="flex-1 space-y-3">
               {chartData.slice(0, 5).map((item, index) => {
                 const percentage = ((item.amount / totalAmount) * 100).toFixed(
-                  1
+                  1,
                 );
                 return (
                   <div key={item.category} className="flex items-center gap-3">

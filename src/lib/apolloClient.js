@@ -119,7 +119,9 @@ if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
     expireJWT: () => {
       _cachedJWT = "expired.invalid.token";
       _jwtExpiresAt = Date.now() + 5 * 60 * 1000; // Le cache croit qu'il est valide
-      console.log("[DEBUG] JWT remplacé par un token invalide. La prochaine requête GraphQL déclenchera le flow de retry.");
+      console.log(
+        "[DEBUG] JWT remplacé par un token invalide. La prochaine requête GraphQL déclenchera le flow de retry.",
+      );
     },
     // Vide le cache JWT → la prochaine requête ira chercher un nouveau JWT
     clearJWT: () => {
@@ -130,7 +132,9 @@ if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
     status: () => {
       console.log({
         hasJWT: !!_cachedJWT,
-        expiresAt: _jwtExpiresAt ? new Date(_jwtExpiresAt).toISOString() : "none",
+        expiresAt: _jwtExpiresAt
+          ? new Date(_jwtExpiresAt).toISOString()
+          : "none",
         isExpired: _jwtExpiresAt ? Date.now() > _jwtExpiresAt : true,
         isRedirecting,
         isRetryingAuth,
@@ -152,7 +156,7 @@ const uploadLink = createUploadLink({
 
 // ==================== WEBSOCKET LINK ====================
 // WebSocket ne peut pas envoyer de cookies — on utilise le même JWT on-demand
-let wsClient = null;
+let _wsClient = null;
 
 const wsLink =
   typeof window !== "undefined"
@@ -181,7 +185,8 @@ const wsLink =
     : null;
 
 if (wsLink && typeof window !== "undefined") {
-  wsClient = wsLink.subscriptionClient;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _wsClient = wsLink.subscriptionClient;
 }
 
 // ==================== AUTH LINK ====================
@@ -199,9 +204,7 @@ const authLink = setContext(async (_, { headers }) => {
   }
 
   const organizationId = _workspaceReady ? _confirmedOrgId : null;
-  const userRole = _workspaceReady
-    ? localStorage.getItem("user_role")
-    : null;
+  const userRole = _workspaceReady ? localStorage.getItem("user_role") : null;
 
   if (organizationId) {
     requestHeaders["x-organization-id"] = organizationId;
@@ -286,7 +289,7 @@ const errorLink = onError(
                 observer.error(graphQLErrors[0]);
                 // Vider la file d'attente avec erreur
                 _pendingRetryQueue.forEach((pending) =>
-                  pending.observer.error(graphQLErrors[0])
+                  pending.observer.error(graphQLErrors[0]),
                 );
                 _pendingRetryQueue = [];
                 return;
@@ -314,7 +317,8 @@ const errorLink = onError(
               const queue = [..._pendingRetryQueue];
               _pendingRetryQueue = [];
               queue.forEach((pending) => {
-                const pendingHeaders = pending.operation.getContext().headers || {};
+                const pendingHeaders =
+                  pending.operation.getContext().headers || {};
                 pending.operation.setContext({
                   headers: {
                     ...pendingHeaders,
@@ -333,7 +337,7 @@ const errorLink = onError(
               observer.error(graphQLErrors[0]);
               // Propager l'erreur aux operations en attente
               _pendingRetryQueue.forEach((pending) =>
-                pending.observer.error(graphQLErrors[0])
+                pending.observer.error(graphQLErrors[0]),
               );
               _pendingRetryQueue = [];
             })
@@ -372,7 +376,7 @@ const errorLink = onError(
         toast.warning(userMessage, { duration: 4000 });
       }
     }
-  }
+  },
 );
 
 // ==================== CACHE ====================
@@ -381,11 +385,13 @@ const cache = new InMemoryCache({
     Board: {
       fields: {
         tasks: {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           merge(existing = [], incoming) {
             return incoming;
           },
         },
         columns: {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           merge(existing = [], incoming) {
             return incoming;
           },
@@ -395,6 +401,7 @@ const cache = new InMemoryCache({
     Column: {
       fields: {
         tasks: {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           merge(existing = [], incoming) {
             return incoming;
           },
@@ -416,7 +423,7 @@ const splitLink =
           );
         },
         wsLink,
-        from([authLink, errorLink, uploadLink])
+        from([authLink, errorLink, uploadLink]),
       )
     : from([authLink, errorLink, uploadLink]);
 
@@ -426,11 +433,11 @@ export const apolloClient = new ApolloClient({
   cache,
   defaultOptions: {
     watchQuery: {
-      fetchPolicy: "cache-and-network",
+      fetchPolicy: "cache-first",
       errorPolicy: "all",
     },
     query: {
-      fetchPolicy: "cache-and-network",
+      fetchPolicy: "cache-first",
       errorPolicy: "all",
     },
     mutate: {

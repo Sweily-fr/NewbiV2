@@ -36,7 +36,6 @@ export function CommunitySidebar({ open, onOpenChange }) {
   // Récupérer les statistiques
   const { data: statsData } = useQuery(GET_COMMUNITY_SUGGESTION_STATS, {
     skip: !open,
-    fetchPolicy: "cache-and-network",
   });
 
   const stats = statsData?.getCommunitySuggestionStats || {

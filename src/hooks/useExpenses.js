@@ -15,7 +15,7 @@ import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
  */
 export const useExpenses = (filters = {}) => {
   const { workspaceId } = useRequiredWorkspace();
-  
+
   const {
     data,
     loading: queryLoading,
@@ -48,7 +48,7 @@ export const useExpenses = (filters = {}) => {
  */
 export const useExpenseStats = (dateRange = {}) => {
   const { workspaceId } = useRequiredWorkspace();
-  
+
   const {
     data,
     loading: queryLoading,
@@ -58,7 +58,6 @@ export const useExpenseStats = (dateRange = {}) => {
       workspaceId,
       ...dateRange,
     },
-    fetchPolicy: "cache-and-network",
     skip: !workspaceId,
   });
 
@@ -74,7 +73,7 @@ export const useExpenseStats = (dateRange = {}) => {
  */
 export const useDeleteExpense = () => {
   const { workspaceId } = useRequiredWorkspace();
-  
+
   const [deleteExpenseMutation, { loading }] = useMutation(DELETE_EXPENSE, {
     refetchQueries: [
       {
@@ -93,18 +92,19 @@ export const useDeleteExpense = () => {
 
       if (result.data?.deleteExpense?.success) {
         toast.success(
-          result.data.deleteExpense.message || "Dépense supprimée avec succès"
+          result.data.deleteExpense.message || "Dépense supprimée avec succès",
         );
         return { success: true };
       } else {
         throw new Error(
-          result.data?.deleteExpense?.message || "Erreur lors de la suppression"
+          result.data?.deleteExpense?.message ||
+            "Erreur lors de la suppression",
         );
       }
     } catch (error) {
       console.error("Erreur de suppression des dépenses:", error);
       toast.error(
-        error.message || "Erreur lors de la suppression de la dépense"
+        error.message || "Erreur lors de la suppression de la dépense",
       );
       return { success: false, error };
     }
@@ -121,7 +121,7 @@ export const useDeleteExpense = () => {
  */
 export const useCreateExpense = () => {
   const { workspaceId } = useRequiredWorkspace();
-  
+
   const [createExpenseMutation, { loading }] = useMutation(CREATE_EXPENSE, {
     refetchQueries: [
       {
@@ -175,7 +175,7 @@ export const useCreateExpense = () => {
  */
 export const useDeleteMultipleExpenses = () => {
   const { workspaceId } = useRequiredWorkspace();
-  
+
   const [deleteMultipleExpensesMutation, { loading }] = useMutation(
     DELETE_MULTIPLE_EXPENSES,
     {
@@ -186,7 +186,7 @@ export const useDeleteMultipleExpenses = () => {
         },
       ],
       awaitRefetchQueries: false,
-    }
+    },
   );
 
   const deleteMultipleExpenses = async (ids) => {
@@ -202,13 +202,13 @@ export const useDeleteMultipleExpenses = () => {
 
         if (success) {
           toast.success(
-            message || `${deletedCount} dépense(s) supprimée(s) avec succès`
+            message || `${deletedCount} dépense(s) supprimée(s) avec succès`,
           );
         } else {
           // Afficher un message d'avertissement si certaines suppressions ont échoué
           if (deletedCount > 0 && failedCount > 0) {
             toast.warning(
-              `${deletedCount} dépense(s) supprimée(s), ${failedCount} échec(s)`
+              `${deletedCount} dépense(s) supprimée(s), ${failedCount} échec(s)`,
             );
           } else if (failedCount > 0) {
             toast.error(`Aucune dépense supprimée. ${failedCount} échec(s)`);
@@ -227,7 +227,7 @@ export const useDeleteMultipleExpenses = () => {
     } catch (error) {
       console.error("Erreur suppression multiple dépenses:", error);
       toast.error(
-        error.message || "Erreur lors de la suppression des dépenses"
+        error.message || "Erreur lors de la suppression des dépenses",
       );
       return { success: false, error };
     }
@@ -243,17 +243,7 @@ export const useDeleteMultipleExpenses = () => {
  * Hook pour mettre à jour une dépense
  */
 export const useUpdateExpense = () => {
-  const { workspaceId } = useRequiredWorkspace();
-  
-  const [updateExpenseMutation, { loading }] = useMutation(UPDATE_EXPENSE, {
-    refetchQueries: [
-      {
-        query: GET_EXPENSES,
-        variables: { workspaceId, page: 1, limit: 50 },
-      },
-    ],
-    awaitRefetchQueries: false,
-  });
+  const [updateExpenseMutation, { loading }] = useMutation(UPDATE_EXPENSE);
 
   const updateExpense = async (id, input) => {
     try {
@@ -267,7 +257,7 @@ export const useUpdateExpense = () => {
       } else {
         console.error(
           "❌ Pas de données dans result.data.updateExpense:",
-          result.data
+          result.data,
         );
         throw new Error("Erreur lors de la modification");
       }
@@ -276,7 +266,7 @@ export const useUpdateExpense = () => {
       console.error("Détails de l'erreur:", error.graphQLErrors);
       console.error("Erreur réseau:", error.networkError);
       toast.error(
-        error.message || "Erreur lors de la modification de la dépense"
+        error.message || "Erreur lors de la modification de la dépense",
       );
       return { success: false, error };
     }
@@ -294,10 +284,8 @@ export const useUpdateExpense = () => {
 export const useAddExpenseFile = () => {
   const { workspaceId } = useRequiredWorkspace();
   const [addExpenseFileMutation, { loading }] = useMutation(ADD_EXPENSE_FILE, {
-    refetchQueries: [
-      { query: GET_EXPENSES, variables: { workspaceId } },
-      { query: GET_EXPENSE_STATS, variables: { workspaceId } },
-    ],
+    refetchQueries: [{ query: GET_EXPENSE_STATS, variables: { workspaceId } }],
+    awaitRefetchQueries: false,
   });
 
   const addExpenseFile = async (expenseId, fileInput) => {
@@ -319,7 +307,7 @@ export const useAddExpenseFile = () => {
       // Si result.data est null mais qu'il n'y a pas d'erreur, considérer comme un succès
       if (result.data === null && !result.errors) {
         console.log(
-          "⚠️ [ADD FILE MUTATION] Result.data est null mais pas d'erreur - considéré comme succès"
+          "⚠️ [ADD FILE MUTATION] Result.data est null mais pas d'erreur - considéré comme succès",
         );
         return { success: true, expense: null };
       }
@@ -327,12 +315,12 @@ export const useAddExpenseFile = () => {
       if (result.data?.addExpenseFile) {
         console.log(
           "✅ [ADD FILE MUTATION] Succès:",
-          result.data.addExpenseFile
+          result.data.addExpenseFile,
         );
         return { success: true, expense: result.data.addExpenseFile };
       } else {
         console.error(
-          "❌ [ADD FILE MUTATION] Pas de données dans result.data.addExpenseFile"
+          "❌ [ADD FILE MUTATION] Pas de données dans result.data.addExpenseFile",
         );
         throw new Error("Erreur lors de l'ajout du fichier");
       }
@@ -340,11 +328,11 @@ export const useAddExpenseFile = () => {
       console.error("❌ [ADD FILE MUTATION] Erreur:", error);
       console.error(
         "❌ [ADD FILE MUTATION] GraphQL Errors:",
-        error.graphQLErrors
+        error.graphQLErrors,
       );
       console.error(
         "❌ [ADD FILE MUTATION] Network Error:",
-        error.networkError
+        error.networkError,
       );
       return { success: false, error };
     }

@@ -325,6 +325,7 @@ export function useCreditNotes(filters = {}) {
       ...filters,
     },
     skip: !workspaceId,
+    fetchPolicy: "cache-and-network",
   });
 
   return {
@@ -406,16 +407,8 @@ export function useCreateCreditNote() {
 export function useUpdateCreditNote() {
   const { workspaceId } = useWorkspace();
 
-  const [updateCreditNoteMutation, { loading, error }] = useMutation(
-    UPDATE_CREDIT_NOTE,
-    {
-      refetchQueries: [
-        "GetCreditNotesByInvoice", // Rafraîchir la liste des avoirs de la facture
-        "GetCreditNoteStats", // Rafraîchir les statistiques
-      ],
-      awaitRefetchQueries: true,
-    },
-  );
+  const [updateCreditNoteMutation, { loading, error }] =
+    useMutation(UPDATE_CREDIT_NOTE);
 
   const updateCreditNote = async (id, input) => {
     const { data } = await updateCreditNoteMutation({

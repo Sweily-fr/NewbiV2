@@ -1,10 +1,10 @@
-import { useMutation, useQuery } from '@apollo/client';
+import { useMutation, useQuery } from "@apollo/client";
 import {
   GET_CLIENT_LISTS,
   GET_CLIENT_LIST,
   GET_CLIENTS_IN_LIST,
-  GET_CLIENT_LISTS_BY_CLIENT
-} from '@/src/graphql/queries/clientLists';
+  GET_CLIENT_LISTS_BY_CLIENT,
+} from "@/src/graphql/queries/clientLists";
 import {
   CREATE_CLIENT_LIST,
   UPDATE_CLIENT_LIST,
@@ -14,42 +14,49 @@ import {
   ADD_CLIENTS_TO_LIST,
   REMOVE_CLIENTS_FROM_LIST,
   ADD_CLIENT_TO_LISTS,
-  REMOVE_CLIENT_FROM_LISTS
-} from '@/src/graphql/mutations/clientLists';
+  REMOVE_CLIENT_FROM_LISTS,
+} from "@/src/graphql/mutations/clientLists";
 
 export const useClientLists = (workspaceId) => {
   const { data, loading, error, refetch } = useQuery(GET_CLIENT_LISTS, {
     variables: { workspaceId },
-    skip: !workspaceId
+    skip: !workspaceId,
+    fetchPolicy: "cache-and-network",
   });
 
   return {
     lists: data?.clientLists || [],
     loading,
     error,
-    refetch
+    refetch,
   };
 };
 
 export const useClientList = (workspaceId, listId) => {
   const { data, loading, error, refetch } = useQuery(GET_CLIENT_LIST, {
     variables: { workspaceId, id: listId },
-    skip: !workspaceId || !listId
+    skip: !workspaceId || !listId,
   });
 
   return {
     list: data?.clientList,
     loading,
     error,
-    refetch
+    refetch,
   };
 };
 
-export const useClientsInList = (workspaceId, listId, page = 1, limit = 10, search = '') => {
+export const useClientsInList = (
+  workspaceId,
+  listId,
+  page = 1,
+  limit = 10,
+  search = "",
+) => {
   const { data, loading, error, refetch } = useQuery(GET_CLIENTS_IN_LIST, {
     variables: { workspaceId, listId, page, limit, search },
     skip: !workspaceId || !listId,
-    fetchPolicy: "cache-and-network"
+    fetchPolicy: "cache-and-network",
   });
 
   return {
@@ -59,7 +66,7 @@ export const useClientsInList = (workspaceId, listId, page = 1, limit = 10, sear
     totalPages: data?.clientsInList?.totalPages || 1,
     loading,
     error,
-    refetch
+    refetch,
   };
 };
 
@@ -71,16 +78,18 @@ export const useCreateClientList = () => {
       try {
         const { data } = await createList({
           variables: { workspaceId, input },
-          refetchQueries: [{ query: GET_CLIENT_LISTS, variables: { workspaceId } }],
+          refetchQueries: [
+            { query: GET_CLIENT_LISTS, variables: { workspaceId } },
+          ],
         });
         return data.createClientList;
       } catch (err) {
-        console.error('Erreur lors de la création de la liste:', err);
+        console.error("Erreur lors de la création de la liste:", err);
         throw err;
       }
     },
     loading,
-    error
+    error,
   };
 };
 
@@ -92,16 +101,15 @@ export const useUpdateClientList = () => {
       try {
         const { data } = await updateList({
           variables: { workspaceId, id, input },
-          refetchQueries: [{ query: GET_CLIENT_LISTS, variables: { workspaceId } }],
         });
         return data.updateClientList;
       } catch (err) {
-        console.error('Erreur lors de la mise à jour de la liste:', err);
+        console.error("Erreur lors de la mise à jour de la liste:", err);
         throw err;
       }
     },
     loading,
-    error
+    error,
   };
 };
 
@@ -113,16 +121,18 @@ export const useDeleteClientList = () => {
       try {
         const { data } = await deleteList({
           variables: { workspaceId, id },
-          refetchQueries: [{ query: GET_CLIENT_LISTS, variables: { workspaceId } }],
+          refetchQueries: [
+            { query: GET_CLIENT_LISTS, variables: { workspaceId } },
+          ],
         });
         return data.deleteClientList;
       } catch (err) {
-        console.error('Erreur lors de la suppression de la liste:', err);
+        console.error("Erreur lors de la suppression de la liste:", err);
         throw err;
       }
     },
     loading,
-    error
+    error,
   };
 };
 
@@ -136,22 +146,27 @@ export const useAddClientToList = () => {
           variables: { workspaceId, listId, clientId },
           refetchQueries: [
             { query: GET_CLIENT_LISTS, variables: { workspaceId } },
-            { query: GET_CLIENT_LISTS_BY_CLIENT, variables: { workspaceId, clientId } },
+            {
+              query: GET_CLIENT_LISTS_BY_CLIENT,
+              variables: { workspaceId, clientId },
+            },
           ],
         });
         return data.addClientToList;
       } catch (err) {
-        console.error('Erreur lors de l\'ajout du client à la liste:', err);
+        console.error("Erreur lors de l'ajout du client à la liste:", err);
         throw err;
       }
     },
     loading,
-    error
+    error,
   };
 };
 
 export const useRemoveClientFromList = () => {
-  const [removeClient, { loading, error }] = useMutation(REMOVE_CLIENT_FROM_LIST);
+  const [removeClient, { loading, error }] = useMutation(
+    REMOVE_CLIENT_FROM_LIST,
+  );
 
   return {
     removeClient: async (workspaceId, listId, clientId) => {
@@ -160,17 +175,23 @@ export const useRemoveClientFromList = () => {
           variables: { workspaceId, listId, clientId },
           refetchQueries: [
             { query: GET_CLIENT_LISTS, variables: { workspaceId } },
-            { query: GET_CLIENT_LISTS_BY_CLIENT, variables: { workspaceId, clientId } },
+            {
+              query: GET_CLIENT_LISTS_BY_CLIENT,
+              variables: { workspaceId, clientId },
+            },
           ],
         });
         return data.removeClientFromList;
       } catch (err) {
-        console.error('Erreur lors de la suppression du client de la liste:', err);
+        console.error(
+          "Erreur lors de la suppression du client de la liste:",
+          err,
+        );
         throw err;
       }
     },
     loading,
-    error
+    error,
   };
 };
 
@@ -182,37 +203,46 @@ export const useAddClientsToList = () => {
       try {
         const { data } = await addClients({
           variables: { workspaceId, listId, clientIds },
-          refetchQueries: [{ query: GET_CLIENT_LISTS, variables: { workspaceId } }],
+          refetchQueries: [
+            { query: GET_CLIENT_LISTS, variables: { workspaceId } },
+          ],
         });
         return data.addClientsToList;
       } catch (err) {
-        console.error('Erreur lors de l\'ajout des clients à la liste:', err);
+        console.error("Erreur lors de l'ajout des clients à la liste:", err);
         throw err;
       }
     },
     loading,
-    error
+    error,
   };
 };
 
 export const useRemoveClientsFromList = () => {
-  const [removeClients, { loading, error }] = useMutation(REMOVE_CLIENTS_FROM_LIST);
+  const [removeClients, { loading, error }] = useMutation(
+    REMOVE_CLIENTS_FROM_LIST,
+  );
 
   return {
     removeClients: async (workspaceId, listId, clientIds) => {
       try {
         const { data } = await removeClients({
           variables: { workspaceId, listId, clientIds },
-          refetchQueries: [{ query: GET_CLIENT_LISTS, variables: { workspaceId } }],
+          refetchQueries: [
+            { query: GET_CLIENT_LISTS, variables: { workspaceId } },
+          ],
         });
         return data.removeClientsFromList;
       } catch (err) {
-        console.error('Erreur lors de la suppression des clients de la liste:', err);
+        console.error(
+          "Erreur lors de la suppression des clients de la liste:",
+          err,
+        );
         throw err;
       }
     },
     loading,
-    error
+    error,
   };
 };
 
@@ -226,22 +256,27 @@ export const useAddClientToLists = () => {
           variables: { workspaceId, clientId, listIds },
           refetchQueries: [
             { query: GET_CLIENT_LISTS, variables: { workspaceId } },
-            { query: GET_CLIENT_LISTS_BY_CLIENT, variables: { workspaceId, clientId } },
+            {
+              query: GET_CLIENT_LISTS_BY_CLIENT,
+              variables: { workspaceId, clientId },
+            },
           ],
         });
         return data.addClientToLists;
       } catch (err) {
-        console.error('Erreur lors de l\'ajout du client aux listes:', err);
+        console.error("Erreur lors de l'ajout du client aux listes:", err);
         throw err;
       }
     },
     loading,
-    error
+    error,
   };
 };
 
 export const useRemoveClientFromLists = () => {
-  const [removeFromLists, { loading, error }] = useMutation(REMOVE_CLIENT_FROM_LISTS);
+  const [removeFromLists, { loading, error }] = useMutation(
+    REMOVE_CLIENT_FROM_LISTS,
+  );
 
   return {
     removeFromLists: async (workspaceId, clientId, listIds) => {
@@ -250,31 +285,39 @@ export const useRemoveClientFromLists = () => {
           variables: { workspaceId, clientId, listIds },
           refetchQueries: [
             { query: GET_CLIENT_LISTS, variables: { workspaceId } },
-            { query: GET_CLIENT_LISTS_BY_CLIENT, variables: { workspaceId, clientId } },
+            {
+              query: GET_CLIENT_LISTS_BY_CLIENT,
+              variables: { workspaceId, clientId },
+            },
           ],
         });
         return data.removeClientFromLists;
       } catch (err) {
-        console.error('Erreur lors de la suppression du client des listes:', err);
+        console.error(
+          "Erreur lors de la suppression du client des listes:",
+          err,
+        );
         throw err;
       }
     },
     loading,
-    error
+    error,
   };
 };
 
 export const useClientListsByClient = (workspaceId, clientId) => {
-  const { data, loading, error, refetch } = useQuery(GET_CLIENT_LISTS_BY_CLIENT, {
-    variables: { workspaceId, clientId },
-    skip: !workspaceId || !clientId,
-    fetchPolicy: "cache-and-network"
-  });
+  const { data, loading, error, refetch } = useQuery(
+    GET_CLIENT_LISTS_BY_CLIENT,
+    {
+      variables: { workspaceId, clientId },
+      skip: !workspaceId || !clientId,
+    },
+  );
 
   return {
     lists: data?.clientListsByClient || [],
     loading,
     error,
-    refetch
+    refetch,
   };
 };

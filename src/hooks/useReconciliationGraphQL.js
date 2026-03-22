@@ -22,7 +22,6 @@ export const useReconciliationSuggestions = () => {
     GET_RECONCILIATION_SUGGESTIONS,
     {
       variables: { workspaceId },
-      fetchPolicy: "cache-and-network",
       skip: !workspaceId || workspaceLoading,
       pollInterval: 60000, // Rafraîchir toutes les 60 secondes (au lieu de 30)
       errorPolicy: "all",
@@ -51,7 +50,6 @@ export const useTransactionsForInvoice = (invoiceId) => {
     {
       variables: { invoiceId },
       skip: !invoiceId,
-      fetchPolicy: "cache-and-network",
     },
   );
 

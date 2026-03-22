@@ -1,27 +1,32 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import { useDebouncedValue } from '@/src/hooks/useDebouncedValue';
-import { useQuery } from '@apollo/client';
-import { GET_COMMUNITY_SUGGESTIONS } from '../../graphql/queries/communitySuggestion';
-import { SuggestionCard } from './suggestion-card';
-import { SuggestionSkeleton } from './suggestion-skeleton';
-import { EmptyState } from './empty-state';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { Input } from '../../components/ui/input';
-import { CheckCircle2, Search, Filter } from 'lucide-react';
+import { useState, useMemo } from "react";
+import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
+import { useQuery } from "@apollo/client";
+import { GET_COMMUNITY_SUGGESTIONS } from "../../graphql/queries/communitySuggestion";
+import { SuggestionCard } from "./suggestion-card";
+import { SuggestionSkeleton } from "./suggestion-skeleton";
+import { EmptyState } from "./empty-state";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
+import { Input } from "../../components/ui/input";
+import { CheckCircle2, Search, Filter } from "lucide-react";
 
 export function ValidatedTab() {
-  const [filter, setFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [filter, setFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
 
   const { data, loading, refetch } = useQuery(GET_COMMUNITY_SUGGESTIONS, {
     variables: {
-      status: 'validated',
-      sortBy: 'recent'
+      status: "validated",
+      sortBy: "recent",
     },
-    fetchPolicy: 'cache-and-network'
   });
 
   const suggestions = data?.getCommunitySuggestions || [];
@@ -31,16 +36,17 @@ export function ValidatedTab() {
     let filtered = suggestions;
 
     // Filtre par type
-    if (filter !== 'all') {
-      filtered = filtered.filter(s => s.type === filter);
+    if (filter !== "all") {
+      filtered = filtered.filter((s) => s.type === filter);
     }
 
     // Filtre par recherche
     if (debouncedSearchQuery.trim()) {
       const query = debouncedSearchQuery.toLowerCase();
-      filtered = filtered.filter(s =>
-        s.title.toLowerCase().includes(query) ||
-        s.description.toLowerCase().includes(query)
+      filtered = filtered.filter(
+        (s) =>
+          s.title.toLowerCase().includes(query) ||
+          s.description.toLowerCase().includes(query),
       );
     }
 
@@ -85,9 +91,10 @@ export function ValidatedTab() {
         {/* Filtre et compteur */}
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm text-muted-foreground">
-            {filteredSuggestions.length} {filteredSuggestions.length > 1 ? 'résultats' : 'résultat'}
+            {filteredSuggestions.length}{" "}
+            {filteredSuggestions.length > 1 ? "résultats" : "résultat"}
           </p>
-          
+
           <Select value={filter} onValueChange={setFilter}>
             <SelectTrigger className="w-[180px]">
               <Filter className="h-4 w-4 mr-2" />

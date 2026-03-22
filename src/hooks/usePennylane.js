@@ -23,7 +23,6 @@ export const usePennylane = (organizationId) => {
   } = useQuery(MY_PENNYLANE_ACCOUNT, {
     skip: !organizationId,
     errorPolicy: "all",
-    fetchPolicy: "cache-and-network",
   });
 
   // Mutations
@@ -58,7 +57,7 @@ export const usePennylane = (organizationId) => {
         setIsLoading(false);
       }
     },
-    [testConnectionMutation]
+    [testConnectionMutation],
   );
 
   // Connecter Pennylane
@@ -86,7 +85,7 @@ export const usePennylane = (organizationId) => {
         setIsLoading(false);
       }
     },
-    [connectMutation, refetchStatus]
+    [connectMutation, refetchStatus],
   );
 
   // Déconnecter Pennylane
@@ -133,7 +132,7 @@ export const usePennylane = (organizationId) => {
         return { success: false, message: err.message };
       }
     },
-    [updateAutoSyncMutation, refetchStatus]
+    [updateAutoSyncMutation, refetchStatus],
   );
 
   // Sync une facture
@@ -151,7 +150,7 @@ export const usePennylane = (organizationId) => {
         return { success: false, message: err.message };
       }
     },
-    [syncInvoiceMutation]
+    [syncInvoiceMutation],
   );
 
   // Sync une dépense
@@ -169,7 +168,7 @@ export const usePennylane = (organizationId) => {
         return { success: false, message: err.message };
       }
     },
-    [syncExpenseMutation]
+    [syncExpenseMutation],
   );
 
   // Sync complète

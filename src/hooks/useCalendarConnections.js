@@ -1,9 +1,11 @@
 import { useQuery, useMutation } from "@apollo/client";
-import { GET_CALENDAR_CONNECTIONS, GET_AVAILABLE_CALENDARS } from "@/src/graphql/queries/calendarConnection";
+import {
+  GET_CALENDAR_CONNECTIONS,
+  GET_AVAILABLE_CALENDARS,
+} from "@/src/graphql/queries/calendarConnection";
 import {
   CONNECT_APPLE_CALENDAR,
   DISCONNECT_CALENDAR,
-  UPDATE_SELECTED_CALENDARS,
   SYNC_CALENDAR,
   SYNC_ALL_CALENDARS,
   PUSH_EVENT_TO_CALENDAR,
@@ -52,10 +54,16 @@ export const useAvailableCalendars = (connectionId, options = {}) => {
  * Hook pour connecter un calendrier Apple
  */
 export const useConnectAppleCalendar = () => {
-  const [connectMutation, { loading, error }] = useMutation(CONNECT_APPLE_CALENDAR, {
-    refetchQueries: [{ query: GET_CALENDAR_CONNECTIONS }, { query: GET_EVENTS }],
-    awaitRefetchQueries: true,
-  });
+  const [connectMutation, { loading, error }] = useMutation(
+    CONNECT_APPLE_CALENDAR,
+    {
+      refetchQueries: [
+        { query: GET_CALENDAR_CONNECTIONS },
+        { query: GET_EVENTS },
+      ],
+      awaitRefetchQueries: true,
+    },
+  );
 
   const connectApple = async (input) => {
     try {
@@ -64,7 +72,9 @@ export const useConnectAppleCalendar = () => {
         toast.success("Calendrier Apple connecté avec succès");
         return result.data.connectAppleCalendar.connection;
       } else {
-        toast.error(result.data?.connectAppleCalendar?.message || "Erreur de connexion");
+        toast.error(
+          result.data?.connectAppleCalendar?.message || "Erreur de connexion",
+        );
         return null;
       }
     } catch (err) {
@@ -81,10 +91,16 @@ export const useConnectAppleCalendar = () => {
  * Hook pour déconnecter un calendrier
  */
 export const useDisconnectCalendar = () => {
-  const [disconnectMutation, { loading, error }] = useMutation(DISCONNECT_CALENDAR, {
-    refetchQueries: [{ query: GET_CALENDAR_CONNECTIONS }, { query: GET_EVENTS }],
-    awaitRefetchQueries: true,
-  });
+  const [disconnectMutation, { loading, error }] = useMutation(
+    DISCONNECT_CALENDAR,
+    {
+      refetchQueries: [
+        { query: GET_CALENDAR_CONNECTIONS },
+        { query: GET_EVENTS },
+      ],
+      awaitRefetchQueries: true,
+    },
+  );
 
   const disconnect = async (connectionId) => {
     try {
@@ -93,7 +109,9 @@ export const useDisconnectCalendar = () => {
         toast.success("Calendrier déconnecté");
         return true;
       } else {
-        toast.error(result.data?.disconnectCalendar?.message || "Erreur de déconnexion");
+        toast.error(
+          result.data?.disconnectCalendar?.message || "Erreur de déconnexion",
+        );
         return false;
       }
     } catch (err) {
@@ -111,7 +129,11 @@ export const useDisconnectCalendar = () => {
  */
 export const useSyncCalendar = () => {
   const [syncMutation, { loading, error }] = useMutation(SYNC_CALENDAR, {
-    refetchQueries: [{ query: GET_CALENDAR_CONNECTIONS }, { query: GET_EVENTS }],
+    refetchQueries: [
+      { query: GET_CALENDAR_CONNECTIONS },
+      { query: GET_EVENTS },
+    ],
+    awaitRefetchQueries: false,
   });
 
   const sync = async (connectionId) => {
@@ -121,7 +143,9 @@ export const useSyncCalendar = () => {
         toast.success(result.data.syncCalendar.message);
         return true;
       } else {
-        toast.error(result.data?.syncCalendar?.message || "Erreur de synchronisation");
+        toast.error(
+          result.data?.syncCalendar?.message || "Erreur de synchronisation",
+        );
         return false;
       }
     } catch (err) {
@@ -138,9 +162,16 @@ export const useSyncCalendar = () => {
  * Hook pour synchroniser tous les calendriers
  */
 export const useSyncAllCalendars = () => {
-  const [syncAllMutation, { loading, error }] = useMutation(SYNC_ALL_CALENDARS, {
-    refetchQueries: [{ query: GET_CALENDAR_CONNECTIONS }, { query: GET_EVENTS }],
-  });
+  const [syncAllMutation, { loading, error }] = useMutation(
+    SYNC_ALL_CALENDARS,
+    {
+      refetchQueries: [
+        { query: GET_CALENDAR_CONNECTIONS },
+        { query: GET_EVENTS },
+      ],
+      awaitRefetchQueries: false,
+    },
+  );
 
   const syncAll = async () => {
     try {
@@ -149,7 +180,9 @@ export const useSyncAllCalendars = () => {
         toast.success(result.data.syncAllCalendars.message);
         return true;
       } else {
-        toast.error(result.data?.syncAllCalendars?.message || "Erreur de synchronisation");
+        toast.error(
+          result.data?.syncAllCalendars?.message || "Erreur de synchronisation",
+        );
         return false;
       }
     } catch (err) {
@@ -166,9 +199,12 @@ export const useSyncAllCalendars = () => {
  * Hook pour envoyer un événement vers un calendrier externe
  */
 export const usePushEventToCalendar = () => {
-  const [pushMutation, { loading, error }] = useMutation(PUSH_EVENT_TO_CALENDAR, {
-    refetchQueries: [{ query: GET_EVENTS }],
-  });
+  const [pushMutation, { loading, error }] = useMutation(
+    PUSH_EVENT_TO_CALENDAR,
+    {
+      refetchQueries: [{ query: GET_EVENTS }],
+    },
+  );
 
   const pushEvent = async (eventId, connectionId) => {
     try {
@@ -179,7 +215,9 @@ export const usePushEventToCalendar = () => {
         toast.success(result.data.pushEventToCalendar.message);
         return true;
       } else {
-        toast.error(result.data?.pushEventToCalendar?.message || "Erreur d'envoi");
+        toast.error(
+          result.data?.pushEventToCalendar?.message || "Erreur d'envoi",
+        );
         return false;
       }
     } catch (err) {
@@ -209,7 +247,9 @@ export const useUpdateAutoSync = () => {
         toast.success(result.data.updateAutoSync.message);
         return true;
       } else {
-        toast.error(result.data?.updateAutoSync?.message || "Erreur de mise à jour");
+        toast.error(
+          result.data?.updateAutoSync?.message || "Erreur de mise à jour",
+        );
         return false;
       }
     } catch (err) {

@@ -57,9 +57,7 @@ function fillMissingMonths(monthlyRevenue, allMonths) {
   for (const m of monthlyRevenue) {
     dataMap[m.month] = m;
   }
-  return allMonths.map((month) =>
-    dataMap[month] || { month, ...EMPTY_MONTH }
-  );
+  return allMonths.map((month) => dataMap[month] || { month, ...EMPTY_MONTH });
 }
 
 /**
@@ -75,8 +73,8 @@ function fillMissingCollectionMonths(monthlyCollection, allMonths) {
   for (const m of monthlyCollection) {
     dataMap[m.month] = m;
   }
-  return allMonths.map((month) =>
-    dataMap[month] || { month, ...EMPTY_COLLECTION_MONTH }
+  return allMonths.map(
+    (month) => dataMap[month] || { month, ...EMPTY_COLLECTION_MONTH },
   );
 }
 
@@ -96,7 +94,6 @@ export const useFinancialAnalytics = (startDate, endDate, options = {}) => {
       status: options.status?.length > 0 ? options.status : undefined,
     },
     skip: !workspaceId || !startDate || !endDate,
-    fetchPolicy: "cache-and-network",
   });
 
   const analyticsData = useMemo(() => {
@@ -113,7 +110,7 @@ export const useFinancialAnalytics = (startDate, endDate, options = {}) => {
             ...raw.collection,
             monthlyCollection: fillMissingCollectionMonths(
               raw.collection.monthlyCollection,
-              allMonths
+              allMonths,
             ),
           }
         : raw.collection,

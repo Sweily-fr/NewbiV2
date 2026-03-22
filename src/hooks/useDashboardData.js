@@ -6,25 +6,29 @@ import {
   GET_BANKING_ACCOUNTS,
   GET_TRANSACTIONS,
 } from "@/src/graphql/queries/banking";
+import { GET_DASHBOARD_SUMMARY } from "@/src/graphql/queries/dashboardAggregation";
 
 // Durée de validité du cache (5 minutes)
 const CACHE_TTL = 5 * 60 * 1000;
-
-// Clé pour stocker le timestamp du dernier fetch
 const CACHE_KEY = "dashboard_last_fetch";
 
 /**
- * Hook pour les données du dashboard utilisant GraphQL
- * Utilise cache-first pour éviter les rechargements inutiles
- * Rafraîchit automatiquement après CACHE_TTL
+ * Hook pour les données du dashboard.
+ *
+ * @param {Object} options
+ * @param {boolean} options.skipTransactions - Si true, ne charge pas les transactions brutes.
+ *   Le dashboard utilise ce mode car les graphiques font leurs propres queries backend.
+ *   Les pages analytics et transactions gardent skipTransactions=false (défaut).
+ * @param {string} options.accountId - Filtre optionnel par compte bancaire (pour le summary backend).
  */
-export function useDashboardData() {
-  // Récupérer le workspaceId actuel
+export function useDashboardData({
+  skipTransactions = false,
+  accountId = null,
+} = {}) {
   const { workspaceId } = useRequiredWorkspace();
   const lastFetchRef = useRef(null);
   const hasInitialFetch = useRef(false);
 
-  // Vérifier si le cache est encore valide
   const isCacheValid = useCallback(() => {
     if (typeof window === "undefined") return false;
     const lastFetch = localStorage.getItem(`${CACHE_KEY}_${workspaceId}`);
@@ -32,25 +36,24 @@ export function useDashboardData() {
     return Date.now() - parseInt(lastFetch, 10) < CACHE_TTL;
   }, [workspaceId]);
 
-  // Marquer le cache comme mis à jour
   const updateCacheTimestamp = useCallback(() => {
     if (typeof window !== "undefined" && workspaceId) {
       localStorage.setItem(
         `${CACHE_KEY}_${workspaceId}`,
-        Date.now().toString()
+        Date.now().toString(),
       );
       lastFetchRef.current = Date.now();
     }
   }, [workspaceId]);
 
-  // Hook GraphQL pour les factures
+  // Factures (toujours chargées)
   const {
     invoices,
     loading: invoicesLoading,
     refetch: refetchInvoices,
   } = useInvoices();
 
-  // Hook GraphQL pour les comptes bancaires - cache-first
+  // Comptes bancaires (toujours chargés - pour le sélecteur de compte)
   const {
     data: accountsData,
     loading: accountsLoading,
@@ -62,79 +65,87 @@ export function useDashboardData() {
     skip: !workspaceId,
   });
 
-  // Hook GraphQL pour les transactions
+  // Summary backend (stats pré-calculées) — utilisé quand skipTransactions=true
+  const {
+    data: summaryData,
+    loading: summaryLoading,
+    refetch: refetchSummary,
+  } = useQuery(GET_DASHBOARD_SUMMARY, {
+    variables: {
+      workspaceId,
+      accountId: accountId === "all" ? null : accountId,
+    },
+    fetchPolicy: "cache-and-network",
+    skip: !workspaceId || !skipTransactions,
+  });
+
+  // Transactions brutes — skippé sur le dashboard (graphiques font leurs propres queries)
   const {
     data: transactionsData,
     loading: bankLoading,
-    error: transactionsError,
     refetch: refetchBankTransactions,
   } = useQuery(GET_TRANSACTIONS, {
-    variables: { workspaceId, limit: 500 },
+    variables: { workspaceId, limit: 0 },
     fetchPolicy: "cache-and-network",
-    skip: !workspaceId,
+    skip: !workspaceId || skipTransactions,
   });
 
-  // Log des erreurs GraphQL pour les transactions
-  if (transactionsError) {
-    console.error("❌ [Dashboard] Erreur GET_TRANSACTIONS:", transactionsError.message);
-    if (transactionsError.graphQLErrors?.length > 0) {
-      transactionsError.graphQLErrors.forEach((err, i) => {
-        console.error(`  GraphQL Error ${i}:`, err.message, err.extensions);
-      });
-    }
-  }
-
-  // Rafraîchir les données si le cache est expiré (une seule fois au montage)
+  // Premier chargement
   useEffect(() => {
     if (!workspaceId || hasInitialFetch.current) return;
-
     hasInitialFetch.current = true;
-
-    // Marquer le timestamp au premier chargement
-    if (!isCacheValid()) {
-      updateCacheTimestamp();
-    }
+    if (!isCacheValid()) updateCacheTimestamp();
   }, [workspaceId, isCacheValid, updateCacheTimestamp]);
 
-  // Extraire les données
   const bankAccounts = accountsData?.bankingAccounts || [];
   const bankTransactions = transactionsData?.transactions || [];
 
-  // Debug supprimé — console.warn dans la phase render causait du bruit en production
-
-  // Calculer le solde total
+  // Si skipTransactions, les stats viennent du backend
   const bankBalance = useMemo(() => {
+    if (skipTransactions && summaryData?.dashboardSummary) {
+      return summaryData.dashboardSummary.bankBalance;
+    }
     return bankAccounts.reduce(
       (sum, account) => sum + (account.balance?.current || 0),
-      0
+      0,
     );
-  }, [bankAccounts]);
+  }, [skipTransactions, summaryData, bankAccounts]);
 
-  // Traiter et calculer les données
   const processedData = useMemo(() => {
-    // Filtrer les factures payées
-    const paidInvoices = (invoices || []).filter(
-      (invoice) => invoice.status === "COMPLETED"
-    );
+    if (skipTransactions) {
+      const summary = summaryData?.dashboardSummary;
+      return {
+        expenses: [],
+        invoices: invoices || [],
+        paidInvoices: (invoices || []).filter((i) => i.status === "COMPLETED"),
+        paidExpenses: [],
+        bankTransactions: [],
+        bankIncome: [],
+        bankExpenses: [],
+        bankAccounts,
+        bankBalance,
+        totalIncome: summary?.totalIncome ?? 0,
+        totalExpenses: summary?.totalExpenses ?? 0,
+        transactions: [],
+        hasBankData: (summary?.transactionCount ?? 0) > 0,
+      };
+    }
 
-    // Séparer les transactions en entrées et sorties
+    const paidInvoices = (invoices || []).filter(
+      (i) => i.status === "COMPLETED",
+    );
     const bankIncome = bankTransactions.filter((t) => t.amount > 0);
     const bankExpensesFiltered = bankTransactions.filter((t) => t.amount < 0);
-
-    // Les dépenses payées sont maintenant les transactions avec montant négatif
-    const paidExpenses = bankExpensesFiltered;
-
-    // Totaux basés sur les transactions bancaires
     const totalIncome = bankIncome.reduce((sum, t) => sum + (t.amount || 0), 0);
     const totalExpenses = Math.abs(
-      bankExpensesFiltered.reduce((sum, t) => sum + (t.amount || 0), 0)
+      bankExpensesFiltered.reduce((sum, t) => sum + (t.amount || 0), 0),
     );
 
     return {
       expenses: bankTransactions,
       invoices: invoices || [],
       paidInvoices,
-      paidExpenses,
+      paidExpenses: bankExpensesFiltered,
       bankTransactions,
       bankIncome,
       bankExpenses: bankExpensesFiltered,
@@ -145,24 +156,33 @@ export function useDashboardData() {
       transactions: bankTransactions,
       hasBankData: bankTransactions.length > 0,
     };
-  }, [invoices, bankTransactions, bankAccounts, bankBalance]);
+  }, [
+    skipTransactions,
+    summaryData,
+    invoices,
+    bankTransactions,
+    bankAccounts,
+    bankBalance,
+  ]);
 
-  // Fonction pour forcer le rafraîchissement
   const refreshData = useCallback(async () => {
-    await Promise.all([
-      refetchInvoices?.(),
-      refetchBankAccounts?.(),
-      refetchBankTransactions?.(),
-    ]);
+    const promises = [refetchInvoices?.(), refetchBankAccounts?.()];
+    if (skipTransactions) {
+      promises.push(refetchSummary?.());
+    } else {
+      promises.push(refetchBankTransactions?.());
+    }
+    await Promise.all(promises);
     updateCacheTimestamp();
   }, [
     refetchInvoices,
     refetchBankAccounts,
+    refetchSummary,
     refetchBankTransactions,
+    skipTransactions,
     updateCacheTimestamp,
   ]);
 
-  // Fonction pour invalider le cache
   const invalidateCache = useCallback(() => {
     if (typeof window !== "undefined" && workspaceId) {
       localStorage.removeItem(`${CACHE_KEY}_${workspaceId}`);
@@ -170,33 +190,26 @@ export function useDashboardData() {
     refreshData();
   }, [workspaceId, refreshData]);
 
-  const isLoading = invoicesLoading || bankLoading || accountsLoading;
+  const isLoading =
+    invoicesLoading ||
+    accountsLoading ||
+    (skipTransactions ? summaryLoading : bankLoading);
 
-  // Calculer si les données viennent du cache
   const isFromCache = useMemo(() => {
     return isCacheValid() && !isLoading;
   }, [isCacheValid, isLoading]);
 
   return {
-    // Données
     ...processedData,
-
-    // États de chargement
     isLoading,
     isInitialized: !isLoading,
-    // États de chargement individuels pour le rendu progressif
     invoicesLoading,
     accountsLoading,
-    // Considérer "loading" tant que la query n'a pas retourné de données réelles
-    // (skip: !workspaceId fait que bankLoading=false avant auth, mais pas de data)
-    // On reste en loading tant que transactionsData n'existe pas, même s'il y a une erreur
-    transactionsLoading: bankLoading || !transactionsData,
-
-    // Fonctions de gestion
+    transactionsLoading: skipTransactions
+      ? summaryLoading
+      : bankLoading || !transactionsData,
     refreshData,
     invalidateCache,
-
-    // Métadonnées
     cacheInfo: {
       lastUpdate: lastFetchRef.current
         ? new Date(lastFetchRef.current)
@@ -205,8 +218,6 @@ export function useDashboardData() {
       cacheKey: `${CACHE_KEY}_${workspaceId}`,
       ttl: CACHE_TTL,
     },
-
-    // Fonction utilitaire pour formater les devises
     formatCurrency: (amount) => {
       return new Intl.NumberFormat("fr-FR", {
         style: "currency",

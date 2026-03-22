@@ -11,9 +11,6 @@ export const useNotificationPreferences = () => {
   // Récupérer les préférences
   const { data, loading, error, refetch } = useQuery(
     GET_NOTIFICATION_PREFERENCES,
-    {
-      fetchPolicy: "cache-and-network",
-    }
   );
 
   // Mutation pour mettre à jour les préférences
@@ -24,22 +21,22 @@ export const useNotificationPreferences = () => {
         if (data.updateNotificationPreferences.success) {
           toast.success(
             data.updateNotificationPreferences.message ||
-              "Préférences de notifications enregistrées"
+              "Préférences de notifications enregistrées",
           );
           refetch();
         } else {
           toast.error(
             data.updateNotificationPreferences.message ||
-              "Erreur lors de la sauvegarde"
+              "Erreur lors de la sauvegarde",
           );
         }
       },
       onError: (error) => {
         toast.error(
-          error.message || "Erreur lors de la sauvegarde des préférences"
+          error.message || "Erreur lors de la sauvegarde des préférences",
         );
       },
-    }
+    },
   );
 
   // Fonction pour mettre à jour une préférence spécifique
@@ -59,7 +56,7 @@ export const useNotificationPreferences = () => {
         console.error("Erreur lors de la mise à jour de la préférence:", error);
       }
     },
-    [updatePreferencesMutation]
+    [updatePreferencesMutation],
   );
 
   // Fonction pour mettre à jour toutes les préférences
@@ -75,7 +72,7 @@ export const useNotificationPreferences = () => {
         console.error("Erreur lors de la mise à jour des préférences:", error);
       }
     },
-    [updatePreferencesMutation]
+    [updatePreferencesMutation],
   );
 
   return {

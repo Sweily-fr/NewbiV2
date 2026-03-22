@@ -1,18 +1,16 @@
 import { useState, useCallback } from "react";
-import { useQuery, useMutation, useApolloClient } from "@apollo/client";
+import { useQuery, useMutation } from "@apollo/client";
 import {
   MY_STRIPE_CONNECT_ACCOUNT,
   CREATE_STRIPE_CONNECT_ACCOUNT,
   GENERATE_STRIPE_ONBOARDING_LINK,
   GENERATE_STRIPE_DASHBOARD_LINK,
-  CHECK_STRIPE_CONNECT_ACCOUNT_STATUS,
   DISCONNECT_STRIPE_ACCOUNT,
 } from "@/src/graphql/mutations/stripe";
 
 export const useStripeConnect = (organizationId) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const apolloClient = useApolloClient();
 
   // Query pour récupérer le compte Stripe de l'organisation
   const {
@@ -22,7 +20,6 @@ export const useStripeConnect = (organizationId) => {
   } = useQuery(MY_STRIPE_CONNECT_ACCOUNT, {
     skip: !organizationId,
     errorPolicy: "all",
-    fetchPolicy: "cache-and-network",
   });
 
   // Note: Le cache est maintenant vidé globalement lors de la déconnexion dans nav-user.jsx
@@ -31,12 +28,11 @@ export const useStripeConnect = (organizationId) => {
   const [createStripeAccount] = useMutation(CREATE_STRIPE_CONNECT_ACCOUNT);
   const [generateOnboardingLink] = useMutation(GENERATE_STRIPE_ONBOARDING_LINK);
   const [generateDashboardLink] = useMutation(GENERATE_STRIPE_DASHBOARD_LINK);
-  const [checkAccountStatus] = useMutation(CHECK_STRIPE_CONNECT_ACCOUNT_STATUS);
   const [disconnectAccount] = useMutation(DISCONNECT_STRIPE_ACCOUNT);
 
   // Fonction pour connecter Stripe
   const connectStripe = useCallback(
-    async (userEmail) => {
+    async (/* userEmail */) => {
       setIsLoading(true);
       setError(null);
 
@@ -53,7 +49,7 @@ export const useStripeConnect = (organizationId) => {
           if (!accountData.createStripeConnectAccount.success) {
             throw new Error(
               accountData.createStripeConnectAccount.message ||
-                "Erreur lors de la création du compte Stripe"
+                "Erreur lors de la création du compte Stripe",
             );
           }
 
@@ -81,7 +77,7 @@ export const useStripeConnect = (organizationId) => {
         if (!linkData.generateStripeOnboardingLink.success) {
           throw new Error(
             linkData.generateStripeOnboardingLink.message ||
-              "Erreur lors de la génération du lien Stripe"
+              "Erreur lors de la génération du lien Stripe",
           );
         }
 
@@ -89,7 +85,7 @@ export const useStripeConnect = (organizationId) => {
         if (linkData.generateStripeOnboardingLink.url) {
           console.log(
             "🚀 Redirection vers Stripe:",
-            linkData.generateStripeOnboardingLink.url
+            linkData.generateStripeOnboardingLink.url,
           );
           window.location.href = linkData.generateStripeOnboardingLink.url;
         }
@@ -105,7 +101,7 @@ export const useStripeConnect = (organizationId) => {
       stripeStatusData,
       createStripeAccount,
       generateOnboardingLink,
-    ]
+    ],
   );
 
   // Fonction pour déconnecter Stripe
@@ -123,7 +119,7 @@ export const useStripeConnect = (organizationId) => {
 
       if (!data.disconnectStripe.success) {
         throw new Error(
-          data.disconnectStripe.message || "Erreur lors de la déconnexion"
+          data.disconnectStripe.message || "Erreur lors de la déconnexion",
         );
       }
 
@@ -169,7 +165,7 @@ export const useStripeConnect = (organizationId) => {
         } catch (err) {
           console.error(
             "Erreur lors de la génération du lien d'onboarding:",
-            err
+            err,
           );
         }
       } else {
@@ -182,14 +178,14 @@ export const useStripeConnect = (organizationId) => {
           if (dashboardData.generateStripeDashboardLink.success) {
             window.open(
               dashboardData.generateStripeDashboardLink.url,
-              "_blank"
+              "_blank",
             );
             return;
           }
         } catch (err) {
           console.error(
             "Erreur lors de la génération du lien de dashboard:",
-            err
+            err,
           );
         }
       }

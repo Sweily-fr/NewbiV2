@@ -24,7 +24,6 @@ export const useClients = (page = 1, limit = 10, search = "") => {
   } = useQuery(GET_CLIENTS, {
     variables: { workspaceId, page, limit, search },
     skip: !workspaceId,
-    fetchPolicy: "cache-and-network",
   });
 
   return {

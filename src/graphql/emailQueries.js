@@ -1,4 +1,4 @@
-import { gql, useMutation, useQuery } from '@apollo/client';
+import { gql, useMutation, useQuery } from "@apollo/client";
 
 // Query pour récupérer les paramètres email
 export const GET_EMAIL_SETTINGS = gql`
@@ -48,9 +48,7 @@ export const UPDATE_EMAIL_SETTINGS = gql`
 
 // Hook pour récupérer les paramètres email
 export function useEmailSettings() {
-  return useQuery(GET_EMAIL_SETTINGS, {
-    fetchPolicy: 'cache-and-network',
-  });
+  return useQuery(GET_EMAIL_SETTINGS);
 }
 
 // Hook pour mettre à jour les paramètres email

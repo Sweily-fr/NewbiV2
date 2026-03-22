@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useSubscription, gql } from "@apollo/client";
-import { useEffect, useRef, useCallback } from "react";
+import { useQuery, useMutation, useSubscription } from "@apollo/client";
+import { useEffect, useRef } from "react";
 import { GET_EVENTS, GET_EVENT } from "@/src/graphql/queries/event";
 import {
   CREATE_EVENT,
@@ -26,7 +26,8 @@ export const useEvents = (options = {}) => {
     workspaceId,
   } = options;
 
-  const { workspaceId: contextWorkspaceId, loading: workspaceLoading } = useWorkspace();
+  const { workspaceId: contextWorkspaceId, loading: workspaceLoading } =
+    useWorkspace();
   const { data: sessionData } = useSession();
   const userId = sessionData?.user?.id;
   const finalWorkspaceId = workspaceId || contextWorkspaceId;
@@ -41,10 +42,16 @@ export const useEvents = (options = {}) => {
     includeExternalCalendars: true,
   };
 
-  const { data, loading: queryLoading, error, refetch } = useQuery(GET_EVENTS, {
+  const {
+    data,
+    loading: queryLoading,
+    error,
+    refetch,
+  } = useQuery(GET_EVENTS, {
     variables: queryVariables,
     skip: skip || !finalWorkspaceId,
     errorPolicy: "all",
+    fetchPolicy: "cache-and-network",
   });
 
   // Real-time calendar sync via GraphQL subscription
@@ -57,7 +64,7 @@ export const useEvents = (options = {}) => {
     {
       variables: { userId },
       skip: !userId,
-    }
+    },
   );
 
   useEffect(() => {
@@ -84,10 +91,16 @@ export const useEvents = (options = {}) => {
  */
 export const useEvent = (id, options = {}) => {
   const { skip = false, workspaceId } = options;
-  const { workspaceId: contextWorkspaceId, loading: workspaceLoading } = useWorkspace();
+  const { workspaceId: contextWorkspaceId, loading: workspaceLoading } =
+    useWorkspace();
   const finalWorkspaceId = workspaceId || contextWorkspaceId;
 
-  const { data, loading: queryLoading, error, refetch } = useQuery(GET_EVENT, {
+  const {
+    data,
+    loading: queryLoading,
+    error,
+    refetch,
+  } = useQuery(GET_EVENT, {
     variables: { id, workspaceId: finalWorkspaceId },
     skip: skip || !id || !finalWorkspaceId,
     errorPolicy: "all",
@@ -108,7 +121,7 @@ export const useEvent = (id, options = {}) => {
  */
 export const useCreateEvent = () => {
   const { workspaceId } = useWorkspace();
-  
+
   const [createEventMutation, { loading, error }] = useMutation(CREATE_EVENT, {
     refetchQueries: ["GetEvents"],
     awaitRefetchQueries: true,
@@ -126,7 +139,7 @@ export const useCreateEvent = () => {
       } else {
         toast.error(
           result.data?.createEvent?.message ||
-            "Erreur lors de la création de l'événement"
+            "Erreur lors de la création de l'événement",
         );
         return null;
       }
@@ -149,7 +162,7 @@ export const useCreateEvent = () => {
  */
 export const useUpdateEvent = () => {
   const { workspaceId } = useWorkspace();
-  
+
   const [updateEventMutation, { loading, error }] = useMutation(UPDATE_EVENT, {
     refetchQueries: ["GetEvents"],
     awaitRefetchQueries: true,
@@ -167,7 +180,7 @@ export const useUpdateEvent = () => {
       } else {
         toast.error(
           result.data?.updateEvent?.message ||
-            "Erreur lors de la mise à jour de l'événement"
+            "Erreur lors de la mise à jour de l'événement",
         );
         return null;
       }
@@ -190,7 +203,7 @@ export const useUpdateEvent = () => {
  */
 export const useDeleteEvent = () => {
   const { workspaceId } = useWorkspace();
-  
+
   const [deleteEventMutation, { loading, error }] = useMutation(DELETE_EVENT, {
     refetchQueries: ["GetEvents"],
     awaitRefetchQueries: true,
@@ -208,7 +221,7 @@ export const useDeleteEvent = () => {
       } else {
         toast.error(
           result.data?.deleteEvent?.message ||
-            "Erreur lors de la suppression de l'événement"
+            "Erreur lors de la suppression de l'événement",
         );
         return false;
       }
@@ -231,13 +244,13 @@ export const useDeleteEvent = () => {
  */
 export const useSyncInvoiceEvents = () => {
   const { workspaceId } = useWorkspace();
-  
+
   const [syncInvoiceEventsMutation, { loading, error }] = useMutation(
     SYNC_INVOICE_EVENTS,
     {
       refetchQueries: ["GetEvents"],
       awaitRefetchQueries: true,
-    }
+    },
   );
 
   const syncInvoiceEvents = async (customWorkspaceId) => {
@@ -254,7 +267,7 @@ export const useSyncInvoiceEvents = () => {
       } else {
         toast.error(
           result.data?.syncInvoiceEvents?.message ||
-            "Erreur lors de la synchronisation"
+            "Erreur lors de la synchronisation",
         );
         return [];
       }

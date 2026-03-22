@@ -12,7 +12,7 @@ export const useProducts = (
   page = 1,
   limit = 50,
   search = "",
-  category = ""
+  category = "",
 ) => {
   const {
     workspaceId,
@@ -27,8 +27,8 @@ export const useProducts = (
     refetch,
   } = useQuery(GET_PRODUCTS, {
     variables: { workspaceId, page, limit, search, category },
-    fetchPolicy: "cache-first",
-    nextFetchPolicy: "cache-first",
+    fetchPolicy: "cache-and-network",
+    nextFetchPolicy: "cache-and-network",
     notifyOnNetworkStatusChange: false,
     errorPolicy: "all",
     skip: !workspaceId,

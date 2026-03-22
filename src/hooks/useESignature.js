@@ -20,7 +20,6 @@ export function useDocumentSignatureStatus(documentType, documentId) {
     {
       variables: { documentType, documentId },
       skip: !documentType || !documentId,
-      fetchPolicy: "cache-and-network",
     },
   );
 
@@ -64,7 +63,6 @@ export function useDocumentSignatureStatus(documentType, documentId) {
 export function useSignatureRequests(filters = {}) {
   const { data, loading, error, refetch } = useQuery(GET_SIGNATURE_REQUESTS, {
     variables: filters,
-    fetchPolicy: "cache-and-network",
   });
 
   return {

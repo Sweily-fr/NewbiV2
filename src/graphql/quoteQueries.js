@@ -463,9 +463,8 @@ export const useQuotes = (filters = {}) => {
       limit,
     },
     skip: !workspaceId,
-    fetchPolicy: "cache-and-network",
-    nextFetchPolicy: "cache-first",
     errorPolicy: "all",
+    fetchPolicy: "cache-and-network",
   });
 
   const quotes = useMemo(() => data?.quotes?.quotes || [], [data]);
@@ -521,7 +520,6 @@ export const useQuote = (id) => {
   const { data, loading, error, refetch } = useQuery(GET_QUOTE, {
     variables: { workspaceId, id },
     skip: !id || !workspaceId,
-    fetchPolicy: "cache-and-network",
     errorPolicy: "all",
   });
 
@@ -544,7 +542,6 @@ export const useQuoteStats = () => {
   const { data, loading, error, refetch } = useQuery(GET_QUOTE_STATS, {
     variables: { workspaceId },
     skip: !workspaceId,
-    fetchPolicy: "cache-and-network",
     errorPolicy: "all",
   });
 
@@ -564,7 +561,6 @@ export const useLastQuotePrefix = () => {
   const { data, loading, error } = useQuery(GET_LAST_QUOTE_PREFIX, {
     variables: { workspaceId },
     skip: !workspaceId,
-    fetchPolicy: "cache-and-network", // Toujours récupérer la dernière valeur
     errorPolicy: "all",
   });
 
@@ -641,10 +637,6 @@ export const useUpdateQuote = () => {
         query: GET_QUOTE,
         variables: { id: data.updateQuote.id },
         data: { quote: data.updateQuote },
-      });
-      // Invalider les statistiques
-      client.refetchQueries({
-        include: [GET_QUOTE_STATS],
       });
     },
     onError: (error) => {
@@ -739,10 +731,6 @@ export const useChangeQuoteStatus = () => {
         query: GET_QUOTE,
         variables: { id: data.changeQuoteStatus.id },
         data: { quote: data.changeQuoteStatus },
-      });
-      // Invalider les statistiques
-      client.refetchQueries({
-        include: [GET_QUOTE_STATS],
       });
     },
     onError: (error) => {
@@ -989,7 +977,6 @@ export const useQuoteTemplates = () => {
   const { data, loading, error, refetch } = useQuery(GET_QUOTE_TEMPLATES, {
     variables: { workspaceId },
     skip: !workspaceId,
-    fetchPolicy: "cache-and-network",
     errorPolicy: "all",
   });
 
