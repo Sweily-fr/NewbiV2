@@ -3,7 +3,16 @@
 import { useTheme } from "next-themes";
 import { Toaster as Sonner, toast as sonnerToast } from "sonner";
 import { Button } from "@/src/components/ui/button";
-import { XIcon, CircleCheck, AlertCircleIcon, InfoIcon, LoaderCircle } from "lucide-react";
+import {
+  XIcon,
+  CircleCheck,
+  AlertCircleIcon,
+  InfoIcon,
+  LoaderCircle,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 
 // Composant de notification de succès
@@ -41,40 +50,130 @@ const SuccessToast = ({ message, isMobile }) => (
   </div>
 );
 
-// Composant de notification d'erreur
-const ErrorToast = ({ message, isMobile }) => (
-  <div
-    className={`max-w-[400px] shadow-lg ${isMobile ? "rounded-2xl px-4 py-4" : "rounded-lg px-4 py-3"}`}
-    style={{ backgroundColor: "#202020" }}
-  >
-    <div className="flex gap-2 items-center">
-      <p
-        className={`grow ${isMobile ? "text-sm" : "text-sm"}`}
-        style={{ color: "#ffffff" }}
-      >
-        <AlertCircleIcon
-          className="me-3 -mt-0.5 inline-flex text-red-500"
-          size={isMobile ? 18 : 16}
-          aria-hidden="true"
-        />
-        {message}
-      </p>
-      <Button
-        variant="ghost"
-        className="group -my-1.5 -me-2 size-8 shrink-0 p-0 hover:bg-transparent"
-        aria-label="Fermer la notification"
-        onClick={() => sonnerToast.dismiss()}
-      >
-        <XIcon
-          size={16}
-          className="opacity-60 transition-opacity group-hover:opacity-100"
-          aria-hidden="true"
+// Composant de notification d'erreur avec détails techniques optionnels
+const ErrorToast = ({ message, isMobile, details }) => {
+  const [showDetails, setShowDetails] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyDetails = (e) => {
+    e.stopPropagation();
+    if (!details) return;
+    const text = [
+      details.operation && `Opération: ${details.operation}`,
+      details.errorCode && `Code: ${details.errorCode}`,
+      details.rawMessage && `Message: ${details.rawMessage}`,
+    ]
+      .filter(Boolean)
+      .join("\n");
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <div
+      className={`max-w-[400px] shadow-lg ${isMobile ? "rounded-2xl px-4 py-4" : "rounded-lg px-4 py-3"}`}
+      style={{ backgroundColor: "#202020" }}
+    >
+      <div className="flex gap-2 items-center">
+        <p
+          className={`grow ${isMobile ? "text-sm" : "text-sm"}`}
           style={{ color: "#ffffff" }}
-        />
-      </Button>
+        >
+          <AlertCircleIcon
+            className="me-3 -mt-0.5 inline-flex text-red-500"
+            size={isMobile ? 18 : 16}
+            aria-hidden="true"
+          />
+          {message}
+        </p>
+        <div className="flex items-center gap-0.5 shrink-0">
+          {details && (
+            <Button
+              variant="ghost"
+              className="group -my-1.5 size-8 shrink-0 p-0 hover:bg-transparent"
+              aria-label="Voir les détails"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowDetails(!showDetails);
+              }}
+            >
+              {showDetails ? (
+                <ChevronUp
+                  size={14}
+                  className="opacity-60 transition-opacity group-hover:opacity-100"
+                  style={{ color: "#ffffff" }}
+                />
+              ) : (
+                <ChevronDown
+                  size={14}
+                  className="opacity-60 transition-opacity group-hover:opacity-100"
+                  style={{ color: "#ffffff" }}
+                />
+              )}
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            className="group -my-1.5 -me-2 size-8 shrink-0 p-0 hover:bg-transparent"
+            aria-label="Fermer la notification"
+            onClick={() => sonnerToast.dismiss()}
+          >
+            <XIcon
+              size={16}
+              className="opacity-60 transition-opacity group-hover:opacity-100"
+              aria-hidden="true"
+              style={{ color: "#ffffff" }}
+            />
+          </Button>
+        </div>
+      </div>
+      {details && showDetails && (
+        <div className="mt-2 pt-2 border-t border-white/10">
+          <div className="flex items-center justify-between mb-1">
+            <span
+              className="text-[10px] font-medium uppercase tracking-wider"
+              style={{ color: "#888" }}
+            >
+              Détails techniques
+            </span>
+            <Button
+              variant="ghost"
+              className="h-5 px-1.5 py-0 hover:bg-white/10 rounded"
+              onClick={handleCopyDetails}
+            >
+              <Copy size={10} style={{ color: "#888" }} />
+              <span className="ml-1 text-[10px]" style={{ color: "#888" }}>
+                {copied ? "Copié" : "Copier"}
+              </span>
+            </Button>
+          </div>
+          <div
+            className="space-y-0.5 text-xs font-mono"
+            style={{ color: "#aaa" }}
+          >
+            {details.operation && (
+              <p>
+                Opération:{" "}
+                <span style={{ color: "#f59e0b" }}>{details.operation}</span>
+              </p>
+            )}
+            {details.errorCode && (
+              <p>
+                Code:{" "}
+                <span style={{ color: "#ef4444" }}>{details.errorCode}</span>
+              </p>
+            )}
+            {details.rawMessage && (
+              <p className="break-all">Message: {details.rawMessage}</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
-  </div>
-);
+  );
+};
 
 // Composant de notification d'information
 const InfoToast = ({ message, isMobile }) => (
@@ -143,10 +242,17 @@ const toast = {
     sonnerToast.custom(() => (
       <SuccessToast message={message} isMobile={checkIsMobile()} />
     )),
-  error: (message) =>
-    sonnerToast.custom(() => (
-      <ErrorToast message={message} isMobile={checkIsMobile()} />
-    )),
+  error: (message, options) =>
+    sonnerToast.custom(
+      () => (
+        <ErrorToast
+          message={message}
+          isMobile={checkIsMobile()}
+          details={options?.details}
+        />
+      ),
+      options,
+    ),
   info: (message) =>
     sonnerToast.custom(() => (
       <InfoToast message={message} isMobile={checkIsMobile()} />
@@ -158,7 +264,7 @@ const toast = {
   loading: (message) =>
     sonnerToast.custom(
       () => <LoadingToast message={message} isMobile={checkIsMobile()} />,
-      { duration: Infinity }
+      { duration: Infinity },
     ),
   // Conserver les méthodes originales de sonner si nécessaire
   dismiss: sonnerToast.dismiss,

@@ -257,7 +257,25 @@ const errorLink = onError(
 
           if (!skipErrorToast && !isBoardNotFound && !isMutation) {
             const userMessage = getErrorMessage(errorWithCode, "generic");
-            toast.error(userMessage, { duration: 4000 });
+            const operationName = operation.operationName || "inconnue";
+
+            // Log détaillé dans la console pour le debug
+            console.error(
+              `[GraphQL Error] Opération: ${operationName}`,
+              `\n  Code: ${errorCode || "N/A"}`,
+              `\n  Message: ${message}`,
+              `\n  Variables:`,
+              operation.variables,
+            );
+
+            toast.error(userMessage, {
+              duration: 6000,
+              details: {
+                operation: operationName,
+                errorCode: errorCode || null,
+                rawMessage: message,
+              },
+            });
           }
         }
       });
@@ -367,13 +385,33 @@ const errorLink = onError(
 
       const userMessage = getErrorMessage(networkError, "network");
 
+      const networkOperationName = operation.operationName || "inconnue";
+
+      // Log détaillé dans la console pour le debug
+      console.error(
+        `[Network Error] Opération: ${networkOperationName}`,
+        `\n  Message: ${msg}`,
+        `\n  Status: ${networkError.statusCode || "N/A"}`,
+      );
+
       if (msg === "Failed to fetch") {
         toast.error(userMessage, {
           duration: 5000,
-          description: "Vérifiez votre connexion internet et réessayez",
+          details: {
+            operation: networkOperationName,
+            errorCode: `HTTP ${networkError.statusCode || "?"}`,
+            rawMessage: msg,
+          },
         });
       } else {
-        toast.warning(userMessage, { duration: 4000 });
+        toast.error(userMessage, {
+          duration: 4000,
+          details: {
+            operation: networkOperationName,
+            errorCode: `HTTP ${networkError.statusCode || "?"}`,
+            rawMessage: msg,
+          },
+        });
       }
     }
   },
