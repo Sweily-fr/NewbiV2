@@ -351,7 +351,7 @@ export const PAYMENT_METHOD_LABELS = {
 export function useImportedInvoices(workspaceId, options = {}) {
   // Limite élevée pour charger toutes les factures (pagination côté client)
   const { page = 1, limit = 1000, filters = {} } = options;
-  
+
   const { data, loading, error, refetch } = useQuery(GET_IMPORTED_INVOICES, {
     variables: { workspaceId, page, limit, filters },
     skip: !workspaceId,
@@ -383,10 +383,13 @@ export function useImportedInvoice(id) {
 }
 
 export function useImportedInvoiceStats(workspaceId) {
-  const { data, loading, error, refetch } = useQuery(GET_IMPORTED_INVOICE_STATS, {
-    variables: { workspaceId },
-    skip: !workspaceId,
-  });
+  const { data, loading, error, refetch } = useQuery(
+    GET_IMPORTED_INVOICE_STATS,
+    {
+      variables: { workspaceId },
+      skip: !workspaceId,
+    },
+  );
 
   return {
     stats: data?.importedInvoiceStats,
@@ -402,51 +405,74 @@ export function useImportInvoice() {
 }
 
 export function useBatchImportInvoices() {
-  const [batchImportInvoices, { loading, error }] = useMutation(BATCH_IMPORT_INVOICES);
+  const [batchImportInvoices, { loading, error }] = useMutation(
+    BATCH_IMPORT_INVOICES,
+  );
   return { batchImportInvoices, loading, error };
 }
 
-const IMPORTED_INVOICE_REFETCH = ["GetImportedInvoices", "GetImportedInvoiceStats"];
+const IMPORTED_INVOICE_REFETCH = [
+  "GetImportedInvoices",
+  "GetImportedInvoiceStats",
+];
 
 export function useUpdateImportedInvoice() {
-  const [updateImportedInvoice, { loading, error }] = useMutation(UPDATE_IMPORTED_INVOICE, {
-    refetchQueries: IMPORTED_INVOICE_REFETCH,
-  });
+  const [updateImportedInvoice, { loading, error }] = useMutation(
+    UPDATE_IMPORTED_INVOICE,
+    {
+      refetchQueries: IMPORTED_INVOICE_REFETCH,
+    },
+  );
   return { updateImportedInvoice, loading, error };
 }
 
 export function useValidateImportedInvoice() {
-  const [validateImportedInvoice, { loading, error }] = useMutation(VALIDATE_IMPORTED_INVOICE, {
-    refetchQueries: IMPORTED_INVOICE_REFETCH,
-  });
+  const [validateImportedInvoice, { loading, error }] = useMutation(
+    VALIDATE_IMPORTED_INVOICE,
+    {
+      refetchQueries: IMPORTED_INVOICE_REFETCH,
+    },
+  );
   return { validateImportedInvoice, loading, error };
 }
 
 export function useRejectImportedInvoice() {
-  const [rejectImportedInvoice, { loading, error }] = useMutation(REJECT_IMPORTED_INVOICE, {
-    refetchQueries: IMPORTED_INVOICE_REFETCH,
-  });
+  const [rejectImportedInvoice, { loading, error }] = useMutation(
+    REJECT_IMPORTED_INVOICE,
+    {
+      refetchQueries: IMPORTED_INVOICE_REFETCH,
+    },
+  );
   return { rejectImportedInvoice, loading, error };
 }
 
 export function useArchiveImportedInvoice() {
-  const [archiveImportedInvoice, { loading, error }] = useMutation(ARCHIVE_IMPORTED_INVOICE, {
-    refetchQueries: IMPORTED_INVOICE_REFETCH,
-  });
+  const [archiveImportedInvoice, { loading, error }] = useMutation(
+    ARCHIVE_IMPORTED_INVOICE,
+    {
+      refetchQueries: IMPORTED_INVOICE_REFETCH,
+    },
+  );
   return { archiveImportedInvoice, loading, error };
 }
 
 export function useDeleteImportedInvoice() {
-  const [deleteImportedInvoice, { loading, error }] = useMutation(DELETE_IMPORTED_INVOICE, {
-    refetchQueries: IMPORTED_INVOICE_REFETCH,
-  });
+  const [deleteImportedInvoice, { loading, error }] = useMutation(
+    DELETE_IMPORTED_INVOICE,
+    {
+      refetchQueries: IMPORTED_INVOICE_REFETCH,
+    },
+  );
   return { deleteImportedInvoice, loading, error };
 }
 
 export function useDeleteImportedInvoices() {
-  const [deleteImportedInvoices, { loading, error }] = useMutation(DELETE_IMPORTED_INVOICES, {
-    refetchQueries: IMPORTED_INVOICE_REFETCH,
-  });
+  const [deleteImportedInvoices, { loading, error }] = useMutation(
+    DELETE_IMPORTED_INVOICES,
+    {
+      refetchQueries: IMPORTED_INVOICE_REFETCH,
+    },
+  );
   return { deleteImportedInvoices, loading, error };
 }
 
@@ -454,7 +480,6 @@ export function useUserOcrQuota(workspaceId) {
   const { data, loading, error, refetch } = useQuery(GET_USER_OCR_QUOTA, {
     variables: { workspaceId },
     skip: !workspaceId,
-    fetchPolicy: "cache-and-network",
   });
 
   return {
@@ -480,7 +505,9 @@ export function useOcrUsageStats(workspaceId) {
 }
 
 export function usePurchaseExtraOcrImports() {
-  const [purchaseExtraOcrImports, { loading, error }] = useMutation(PURCHASE_EXTRA_OCR_IMPORTS);
+  const [purchaseExtraOcrImports, { loading, error }] = useMutation(
+    PURCHASE_EXTRA_OCR_IMPORTS,
+  );
   return { purchaseExtraOcrImports, loading, error };
 }
 
@@ -519,7 +546,7 @@ const CONVERSION_REFETCH = [
 export function useConvertImportedInvoice() {
   const [convertImportedInvoice, { loading, error }] = useMutation(
     CONVERT_IMPORTED_INVOICE,
-    { refetchQueries: CONVERSION_REFETCH }
+    { refetchQueries: CONVERSION_REFETCH },
   );
   return { convertImportedInvoice, loading, error };
 }
@@ -527,7 +554,7 @@ export function useConvertImportedInvoice() {
 export function useConvertImportedInvoices() {
   const [convertImportedInvoices, { loading, error }] = useMutation(
     CONVERT_IMPORTED_INVOICES,
-    { refetchQueries: CONVERSION_REFETCH }
+    { refetchQueries: CONVERSION_REFETCH },
   );
   return { convertImportedInvoices, loading, error };
 }

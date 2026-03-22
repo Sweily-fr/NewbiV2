@@ -24,7 +24,6 @@ export function IdeasTab() {
       status: "pending",
       sortBy,
     },
-    fetchPolicy: "cache-and-network",
   });
 
   const suggestions = data?.getCommunitySuggestions || [];

@@ -36,7 +36,18 @@ import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitatio
 import { useNotificationPreferences } from "@/src/hooks/useNotificationPreferences";
 import { useActivityNotifications } from "@/src/hooks/useActivityNotifications";
 import Link from "next/link";
-import { AtSign, Activity, ExternalLink } from "lucide-react";
+import {
+  AtSign,
+  Activity,
+  ExternalLink,
+  FileText as FileTextIcon,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
 
 // Configuration des catégories de notifications Phase 1
 const notificationCategories = {
@@ -147,6 +158,11 @@ export function NotificationsSection() {
   const [loadingSent, setLoadingSent] = useState(true);
   const [dismissedNotifications, setDismissedNotifications] = useState([]);
   const [readNotifications, setReadNotifications] = useState([]);
+  const [descriptionModal, setDescriptionModal] = useState({
+    open: false,
+    title: "",
+    description: "",
+  });
 
   // Charger les notifications lues depuis localStorage côté client
   useEffect(() => {
@@ -187,7 +203,7 @@ export function NotificationsSection() {
         if (error) {
           console.error(
             "Erreur lors de la récupération des invitations:",
-            error
+            error,
           );
           setInvitations([]);
         } else {
@@ -204,7 +220,7 @@ export function NotificationsSection() {
                 // Silently fail, keep original data
               }
               return inv;
-            })
+            }),
           );
           setInvitations(enriched);
         }
@@ -232,14 +248,14 @@ export function NotificationsSection() {
         } else {
           console.error(
             "Erreur lors de la récupération des invitations envoyées:",
-            result.error
+            result.error,
           );
           setSentInvitations([]);
         }
       } catch (error) {
         console.error(
           "Erreur lors de la récupération des invitations envoyées:",
-          error
+          error,
         );
         setSentInvitations([]);
       } finally {
@@ -256,7 +272,7 @@ export function NotificationsSection() {
     return (
       invitations?.filter(
         (inv) =>
-          inv.status === "pending" && !dismissedNotifications.includes(inv.id)
+          inv.status === "pending" && !dismissedNotifications.includes(inv.id),
       ) || []
     );
   }, [invitations, dismissedNotifications]);
@@ -264,7 +280,7 @@ export function NotificationsSection() {
   // Compter les invitations non lues
   const unreadInvitationsCount = useMemo(() => {
     return pendingInvitations.filter(
-      (inv) => !readNotifications.includes(inv.id)
+      (inv) => !readNotifications.includes(inv.id),
     ).length;
   }, [pendingInvitations, readNotifications]);
 
@@ -319,7 +335,7 @@ export function NotificationsSection() {
   // Vérifier si une notification est lue
   const isRead = useCallback(
     (invitationId) => readNotifications.includes(invitationId),
-    [readNotifications]
+    [readNotifications],
   );
 
   const refetchInvitations = async () => {
@@ -342,7 +358,7 @@ export function NotificationsSection() {
               // Silently fail
             }
             return inv;
-          })
+          }),
         );
         setInvitations(enriched);
       }
@@ -360,7 +376,7 @@ export function NotificationsSection() {
     } catch (error) {
       console.error(
         "Erreur lors du rafraîchissement des invitations envoyées:",
-        error
+        error,
       );
     }
   }, [listInvitations]);
@@ -379,7 +395,11 @@ export function NotificationsSection() {
       const result = await response.json();
 
       if (!response.ok) {
-        toast.error(result.details || result.error || "Erreur lors de l'acceptation de l'invitation");
+        toast.error(
+          result.details ||
+            result.error ||
+            "Erreur lors de l'acceptation de l'invitation",
+        );
         console.error("Erreur acceptation:", result);
       } else {
         toast.success("Invitation acceptée !");
@@ -407,7 +427,11 @@ export function NotificationsSection() {
       const result = await response.json();
 
       if (!response.ok) {
-        toast.error(result.details || result.error || "Erreur lors du refus de l'invitation");
+        toast.error(
+          result.details ||
+            result.error ||
+            "Erreur lors du refus de l'invitation",
+        );
         console.error("Erreur refus:", result);
       } else {
         toast.success("Invitation refusée");
@@ -536,7 +560,9 @@ export function NotificationsSection() {
                 <Mail className="h-5 w-5 text-gray-400" />
               </div>
               <p className="text-sm font-medium mb-0.5">Aucune invitation</p>
-              <p className="text-xs text-gray-400">Vous n'avez pas d'invitation en attente.</p>
+              <p className="text-xs text-gray-400">
+                Vous n'avez pas d'invitation en attente.
+              </p>
             </div>
           ) : (
             <div>
@@ -544,7 +570,9 @@ export function NotificationsSection() {
                 const initial = invitation.organizationName
                   ? invitation.organizationName.charAt(0).toUpperCase()
                   : "O";
-                const isExpired = invitation.expiresAt && new Date(invitation.expiresAt) < new Date();
+                const isExpired =
+                  invitation.expiresAt &&
+                  new Date(invitation.expiresAt) < new Date();
                 const unread = !isExpired && !isRead(invitation.id);
                 const isLast = index === pendingInvitations.length - 1;
 
@@ -556,7 +584,9 @@ export function NotificationsSection() {
                   >
                     {/* Avatar */}
                     <div className="relative flex-shrink-0">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-medium ${isExpired ? "bg-gray-100 dark:bg-[#2c2c2c] text-gray-400" : "bg-[#5b4fff]/10 text-[#5b4fff]"}`}>
+                      <div
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-medium ${isExpired ? "bg-gray-100 dark:bg-[#2c2c2c] text-gray-400" : "bg-[#5b4fff]/10 text-[#5b4fff]"}`}
+                      >
                         {initial}
                       </div>
                       {unread && (
@@ -566,22 +596,36 @@ export function NotificationsSection() {
 
                     {/* Contenu */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm truncate">
-                        <span className="font-normal text-gray-500 dark:text-gray-400">Rejoindre</span>{" "}
-                        <span className="font-medium">{invitation.organizationName}</span>
+                      <p className="text-sm truncate max-w-[600px]">
+                        <span className="font-normal text-gray-500 dark:text-gray-400">
+                          Rejoindre
+                        </span>{" "}
+                        <span className="font-medium">
+                          {invitation.organizationName}
+                        </span>
                       </p>
                       <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-xs text-gray-400 capitalize">{invitation.role}</span>
+                        <span className="text-xs text-gray-400 capitalize">
+                          {invitation.role}
+                        </span>
                         {invitation.inviterEmail && (
                           <>
-                            <span className="text-[10px] text-gray-300 dark:text-gray-600">•</span>
-                            <span className="text-xs text-gray-400 truncate">{invitation.inviterEmail}</span>
+                            <span className="text-[10px] text-gray-300 dark:text-gray-600">
+                              •
+                            </span>
+                            <span className="text-xs text-gray-400 truncate">
+                              {invitation.inviterEmail}
+                            </span>
                           </>
                         )}
                         {isExpired && (
                           <>
-                            <span className="text-[10px] text-gray-300 dark:text-gray-600">•</span>
-                            <span className="text-xs text-red-400">Expirée</span>
+                            <span className="text-[10px] text-gray-300 dark:text-gray-600">
+                              •
+                            </span>
+                            <span className="text-xs text-red-400">
+                              Expirée
+                            </span>
                           </>
                         )}
                       </div>
@@ -602,14 +646,18 @@ export function NotificationsSection() {
                           <Button
                             size="sm"
                             type="button"
-                            onClick={(e) => handleAcceptInvitation(e, invitation.id)}
+                            onClick={(e) =>
+                              handleAcceptInvitation(e, invitation.id)
+                            }
                             className="bg-[#5b4fff] text-white hover:bg-[#4a40ee] cursor-pointer h-7 px-2.5 text-xs"
                           >
                             Accepter
                           </Button>
                           <button
                             type="button"
-                            onClick={(e) => handleRejectInvitation(e, invitation.id)}
+                            onClick={(e) =>
+                              handleRejectInvitation(e, invitation.id)
+                            }
                             className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors px-1"
                           >
                             <XIcon className="w-3.5 h-3.5" />
@@ -648,7 +696,9 @@ export function NotificationsSection() {
                 <Activity className="h-5 w-5 text-gray-400" />
               </div>
               <p className="text-sm font-medium mb-0.5">Aucune activité</p>
-              <p className="text-xs text-gray-400">Les assignations et mentions apparaîtront ici.</p>
+              <p className="text-xs text-gray-400">
+                Les assignations et mentions apparaîtront ici.
+              </p>
             </div>
           ) : (
             <div>
@@ -664,7 +714,8 @@ export function NotificationsSection() {
                     className={`group flex items-center gap-3 hover:bg-[#f9f9f9] dark:hover:bg-[#1a1a1a] hover:rounded-lg cursor-pointer transition-all duration-75 ${!isLast ? "border-b border-[#eeeff1] dark:border-[#232323]" : ""}`}
                     style={{ padding: "12px 16px 12px 12px" }}
                     onClick={() => {
-                      if (!notification.read) markActivityAsRead(notification.id);
+                      if (!notification.read)
+                        markActivityAsRead(notification.id);
                     }}
                   >
                     {/* Avatar */}
@@ -687,19 +738,58 @@ export function NotificationsSection() {
 
                     {/* Contenu */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm truncate">
-                        <span className="font-medium">{notification.data?.actorName || "Quelqu'un"}</span>{" "}
-                        <span className="font-normal text-gray-500 dark:text-gray-400">
-                          {notification.type === "MENTION" ? "vous a mentionné sur" : "vous a assigné à"}
+                      <p className="text-sm truncate max-w-[600px]">
+                        <span className="font-medium">
+                          {notification.data?.actorName || "Quelqu'un"}
                         </span>{" "}
-                        <span className="font-medium">{notification.data?.taskTitle || "une tâche"}</span>
+                        <span className="font-normal text-gray-500 dark:text-gray-400">
+                          {notification.type === "MENTION"
+                            ? "vous a mentionné sur"
+                            : "vous a assigné à"}
+                        </span>{" "}
+                        <span className="font-medium">
+                          {notification.data?.taskTitle || "une tâche"}
+                        </span>
                       </p>
                       <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-xs text-gray-400">{notification.data?.boardName || "Tableau"}</span>
+                        <span
+                          className="text-xs text-gray-400 truncate max-w-[220px] inline-block align-bottom"
+                          title={notification.data?.boardName || "Tableau"}
+                        >
+                          {notification.data?.boardName || "Tableau"}
+                        </span>
                         {notification.data?.columnName && (
                           <>
-                            <span className="text-[10px] text-gray-300 dark:text-gray-600">•</span>
-                            <span className="text-xs text-gray-400">{notification.data?.columnName}</span>
+                            <span className="text-[10px] text-gray-300 dark:text-gray-600">
+                              •
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {notification.data?.columnName}
+                            </span>
+                          </>
+                        )}
+                        {notification.data?.taskDescription && (
+                          <>
+                            <span className="text-[10px] text-gray-300 dark:text-gray-600">
+                              •
+                            </span>
+                            <button
+                              type="button"
+                              className="flex items-center gap-1 text-xs text-[#5b4fff] hover:text-[#4a3fe0] transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDescriptionModal({
+                                  open: true,
+                                  title:
+                                    notification.data?.taskTitle || "Tâche",
+                                  description:
+                                    notification.data.taskDescription,
+                                });
+                              }}
+                            >
+                              <FileTextIcon className="w-3 h-3" />
+                              Description
+                            </button>
                           </>
                         )}
                       </div>
@@ -717,10 +807,13 @@ export function NotificationsSection() {
                         </Link>
                       )}
                       <span className="text-xs text-gray-400">
-                        {new Date(notification.createdAt).toLocaleDateString("fr-FR", {
-                          day: "numeric",
-                          month: "short",
-                        })}
+                        {new Date(notification.createdAt).toLocaleDateString(
+                          "fr-FR",
+                          {
+                            day: "numeric",
+                            month: "short",
+                          },
+                        )}
                       </span>
                     </div>
                   </div>
@@ -728,6 +821,26 @@ export function NotificationsSection() {
               })}
             </div>
           )}
+          {/* Modal description de tâche */}
+          <Dialog
+            open={descriptionModal.open}
+            onOpenChange={(open) =>
+              setDescriptionModal((prev) => ({ ...prev, open }))
+            }
+          >
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="text-base font-semibold">
+                  {descriptionModal.title}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="mt-2">
+                <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap leading-relaxed">
+                  {descriptionModal.description}
+                </p>
+              </div>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         {/* Contenu: Préférences de notifications */}
@@ -795,7 +908,7 @@ export function NotificationsSection() {
                                       updateNotificationPreference(
                                         notif.key,
                                         "email",
-                                        checked
+                                        checked,
                                       )
                                     }
                                     className="scale-75 data-[state=checked]:!bg-[#5b4eff]"
@@ -814,7 +927,7 @@ export function NotificationsSection() {
                                       updateNotificationPreference(
                                         notif.key,
                                         "push",
-                                        checked
+                                        checked,
                                       )
                                     }
                                     className="scale-75 data-[state=checked]:!bg-[#5b4eff]"
@@ -832,7 +945,7 @@ export function NotificationsSection() {
                       )}
                     </div>
                   );
-                }
+                },
               )}
             </div>
           )}

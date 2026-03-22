@@ -52,9 +52,7 @@ export const UPDATE_INVOICE_REMINDER_SETTINGS = gql`
 
 // Hook pour récupérer les paramètres
 export function useInvoiceReminderSettings() {
-  return useQuery(GET_INVOICE_REMINDER_SETTINGS, {
-    fetchPolicy: "cache-and-network",
-  });
+  return useQuery(GET_INVOICE_REMINDER_SETTINGS);
 }
 
 // Hook pour mettre à jour les paramètres

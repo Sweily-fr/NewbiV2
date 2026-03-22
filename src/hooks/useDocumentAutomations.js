@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useLazyQuery, gql } from '@apollo/client';
+import { useMutation, useQuery, useLazyQuery, gql } from "@apollo/client";
 
 // Queries
 const GET_DOCUMENT_AUTOMATIONS = gql`
@@ -76,8 +76,16 @@ const GET_DOCUMENT_AUTOMATION = gql`
 `;
 
 const GET_DOCUMENT_AUTOMATION_LOGS = gql`
-  query GetDocumentAutomationLogs($workspaceId: ID!, $automationId: ID, $limit: Int) {
-    documentAutomationLogs(workspaceId: $workspaceId, automationId: $automationId, limit: $limit) {
+  query GetDocumentAutomationLogs(
+    $workspaceId: ID!
+    $automationId: ID
+    $limit: Int
+  ) {
+    documentAutomationLogs(
+      workspaceId: $workspaceId
+      automationId: $automationId
+      limit: $limit
+    ) {
       id
       automationId
       sourceDocumentType
@@ -97,7 +105,10 @@ const GET_DOCUMENT_AUTOMATION_LOGS = gql`
 
 // Mutations
 const CREATE_DOCUMENT_AUTOMATION = gql`
-  mutation CreateDocumentAutomation($workspaceId: ID!, $input: CreateDocumentAutomationInput!) {
+  mutation CreateDocumentAutomation(
+    $workspaceId: ID!
+    $input: CreateDocumentAutomationInput!
+  ) {
     createDocumentAutomation(workspaceId: $workspaceId, input: $input) {
       id
       name
@@ -131,8 +142,16 @@ const CREATE_DOCUMENT_AUTOMATION = gql`
 `;
 
 const UPDATE_DOCUMENT_AUTOMATION = gql`
-  mutation UpdateDocumentAutomation($workspaceId: ID!, $id: ID!, $input: UpdateDocumentAutomationInput!) {
-    updateDocumentAutomation(workspaceId: $workspaceId, id: $id, input: $input) {
+  mutation UpdateDocumentAutomation(
+    $workspaceId: ID!
+    $id: ID!
+    $input: UpdateDocumentAutomationInput!
+  ) {
+    updateDocumentAutomation(
+      workspaceId: $workspaceId
+      id: $id
+      input: $input
+    ) {
       id
       name
       description
@@ -206,7 +225,10 @@ const RUN_DOCUMENT_AUTOMATION = gql`
 
 export const GET_AUTOMATION_PROGRESS = gql`
   query GetAutomationProgress($workspaceId: ID!, $automationId: ID!) {
-    documentAutomationProgress(workspaceId: $workspaceId, automationId: $automationId) {
+    documentAutomationProgress(
+      workspaceId: $workspaceId
+      automationId: $automationId
+    ) {
       current
       total
     }
@@ -215,7 +237,10 @@ export const GET_AUTOMATION_PROGRESS = gql`
 
 const GET_DOCUMENTS_FOR_AUTOMATION = gql`
   query GetDocumentsForAutomation($workspaceId: ID!, $automationId: ID!) {
-    documentsForAutomation(workspaceId: $workspaceId, automationId: $automationId) {
+    documentsForAutomation(
+      workspaceId: $workspaceId
+      automationId: $automationId
+    ) {
       documentId
       documentType
       documentNumber
@@ -277,10 +302,13 @@ export const useDocumentAutomation = (workspaceId, id) => {
 };
 
 export const useDocumentAutomationLogs = (workspaceId, automationId, limit) => {
-  const { data, loading, error, refetch } = useQuery(GET_DOCUMENT_AUTOMATION_LOGS, {
-    variables: { workspaceId, automationId, limit },
-    skip: !workspaceId,
-  });
+  const { data, loading, error, refetch } = useQuery(
+    GET_DOCUMENT_AUTOMATION_LOGS,
+    {
+      variables: { workspaceId, automationId, limit },
+      skip: !workspaceId,
+    },
+  );
 
   return {
     logs: data?.documentAutomationLogs || [],
@@ -291,18 +319,22 @@ export const useDocumentAutomationLogs = (workspaceId, automationId, limit) => {
 };
 
 export const useCreateDocumentAutomation = () => {
-  const [createAutomation, { loading, error }] = useMutation(CREATE_DOCUMENT_AUTOMATION);
+  const [createAutomation, { loading, error }] = useMutation(
+    CREATE_DOCUMENT_AUTOMATION,
+  );
 
   return {
     createAutomation: async (workspaceId, input) => {
       try {
         const { data } = await createAutomation({
           variables: { workspaceId, input },
-          refetchQueries: [{ query: GET_DOCUMENT_AUTOMATIONS, variables: { workspaceId } }],
+          refetchQueries: [
+            { query: GET_DOCUMENT_AUTOMATIONS, variables: { workspaceId } },
+          ],
         });
         return data.createDocumentAutomation;
       } catch (err) {
-        console.error('Erreur lors de la création de l\'automatisation:', err);
+        console.error("Erreur lors de la création de l'automatisation:", err);
         throw err;
       }
     },
@@ -312,18 +344,25 @@ export const useCreateDocumentAutomation = () => {
 };
 
 export const useUpdateDocumentAutomation = () => {
-  const [updateAutomation, { loading, error }] = useMutation(UPDATE_DOCUMENT_AUTOMATION);
+  const [updateAutomation, { loading, error }] = useMutation(
+    UPDATE_DOCUMENT_AUTOMATION,
+  );
 
   return {
     updateAutomation: async (workspaceId, id, input) => {
       try {
         const { data } = await updateAutomation({
           variables: { workspaceId, id, input },
-          refetchQueries: [{ query: GET_DOCUMENT_AUTOMATIONS, variables: { workspaceId } }],
+          refetchQueries: [
+            { query: GET_DOCUMENT_AUTOMATIONS, variables: { workspaceId } },
+          ],
         });
         return data.updateDocumentAutomation;
       } catch (err) {
-        console.error('Erreur lors de la mise à jour de l\'automatisation:', err);
+        console.error(
+          "Erreur lors de la mise à jour de l'automatisation:",
+          err,
+        );
         throw err;
       }
     },
@@ -333,18 +372,25 @@ export const useUpdateDocumentAutomation = () => {
 };
 
 export const useDeleteDocumentAutomation = () => {
-  const [deleteAutomation, { loading, error }] = useMutation(DELETE_DOCUMENT_AUTOMATION);
+  const [deleteAutomation, { loading, error }] = useMutation(
+    DELETE_DOCUMENT_AUTOMATION,
+  );
 
   return {
     deleteAutomation: async (workspaceId, id) => {
       try {
         const { data } = await deleteAutomation({
           variables: { workspaceId, id },
-          refetchQueries: [{ query: GET_DOCUMENT_AUTOMATIONS, variables: { workspaceId } }],
+          refetchQueries: [
+            { query: GET_DOCUMENT_AUTOMATIONS, variables: { workspaceId } },
+          ],
         });
         return data.deleteDocumentAutomation;
       } catch (err) {
-        console.error('Erreur lors de la suppression de l\'automatisation:', err);
+        console.error(
+          "Erreur lors de la suppression de l'automatisation:",
+          err,
+        );
         throw err;
       }
     },
@@ -354,18 +400,22 @@ export const useDeleteDocumentAutomation = () => {
 };
 
 export const useToggleDocumentAutomation = () => {
-  const [toggleAutomation, { loading, error }] = useMutation(TOGGLE_DOCUMENT_AUTOMATION);
+  const [toggleAutomation, { loading, error }] = useMutation(
+    TOGGLE_DOCUMENT_AUTOMATION,
+  );
 
   return {
     toggleAutomation: async (workspaceId, id) => {
       try {
         const { data } = await toggleAutomation({
           variables: { workspaceId, id },
-          refetchQueries: [{ query: GET_DOCUMENT_AUTOMATIONS, variables: { workspaceId } }],
+          refetchQueries: [
+            { query: GET_DOCUMENT_AUTOMATIONS, variables: { workspaceId } },
+          ],
         });
         return data.toggleDocumentAutomation;
       } catch (err) {
-        console.error('Erreur lors du basculement de l\'automatisation:', err);
+        console.error("Erreur lors du basculement de l'automatisation:", err);
         throw err;
       }
     },
@@ -375,7 +425,9 @@ export const useToggleDocumentAutomation = () => {
 };
 
 export const useTestDocumentAutomation = () => {
-  const [testAutomation, { loading, error }] = useMutation(TEST_DOCUMENT_AUTOMATION);
+  const [testAutomation, { loading, error }] = useMutation(
+    TEST_DOCUMENT_AUTOMATION,
+  );
 
   return {
     testAutomation: async (workspaceId, id) => {
@@ -385,7 +437,7 @@ export const useTestDocumentAutomation = () => {
         });
         return data.testDocumentAutomation;
       } catch (err) {
-        console.error('Erreur lors du test de l\'automatisation:', err);
+        console.error("Erreur lors du test de l'automatisation:", err);
         throw err;
       }
     },
@@ -395,18 +447,22 @@ export const useTestDocumentAutomation = () => {
 };
 
 export const useRunDocumentAutomation = () => {
-  const [runMutation, { loading, error }] = useMutation(RUN_DOCUMENT_AUTOMATION);
+  const [runMutation, { loading, error }] = useMutation(
+    RUN_DOCUMENT_AUTOMATION,
+  );
 
   return {
     runAutomation: async (workspaceId, id) => {
       try {
         const { data } = await runMutation({
           variables: { workspaceId, id },
-          refetchQueries: [{ query: GET_DOCUMENT_AUTOMATIONS, variables: { workspaceId } }],
+          refetchQueries: [
+            { query: GET_DOCUMENT_AUTOMATIONS, variables: { workspaceId } },
+          ],
         });
         return data.runDocumentAutomation;
       } catch (err) {
-        console.error('Erreur lors de l\'exécution de l\'automatisation:', err);
+        console.error("Erreur lors de l'exécution de l'automatisation:", err);
         throw err;
       }
     },
@@ -416,9 +472,9 @@ export const useRunDocumentAutomation = () => {
 };
 
 export const useDocumentsForAutomation = () => {
-  const [fetchDocuments, { loading, error }] = useLazyQuery(GET_DOCUMENTS_FOR_AUTOMATION, {
-    fetchPolicy: "cache-and-network",
-  });
+  const [fetchDocuments, { loading, error }] = useLazyQuery(
+    GET_DOCUMENTS_FOR_AUTOMATION,
+  );
 
   return {
     fetchDocuments: async (workspaceId, automationId) => {
@@ -433,12 +489,26 @@ export const useDocumentsForAutomation = () => {
 };
 
 export const useProcessAutomationDocument = () => {
-  const [processMutation, { loading, error }] = useMutation(PROCESS_AUTOMATION_DOCUMENT);
+  const [processMutation, { loading, error }] = useMutation(
+    PROCESS_AUTOMATION_DOCUMENT,
+  );
 
   return {
-    processDocument: async (workspaceId, automationId, documentId, documentType, pdfBase64) => {
+    processDocument: async (
+      workspaceId,
+      automationId,
+      documentId,
+      documentType,
+      pdfBase64,
+    ) => {
       const { data } = await processMutation({
-        variables: { workspaceId, automationId, documentId, documentType, pdfBase64 },
+        variables: {
+          workspaceId,
+          automationId,
+          documentId,
+          documentType,
+          pdfBase64,
+        },
       });
       return data?.processAutomationDocument;
     },

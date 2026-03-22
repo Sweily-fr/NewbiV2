@@ -87,9 +87,7 @@ import {
 } from "@/src/components/ui/table";
 
 import { useQuotes } from "@/src/graphql/quoteQueries";
-import {
-  QUOTE_STATUS_LABELS,
-} from "@/src/graphql/quoteQueries";
+import { QUOTE_STATUS_LABELS } from "@/src/graphql/quoteQueries";
 import { useImportedQuotes } from "@/src/graphql/importedQuoteQueries";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useQuoteTable } from "../hooks/use-quote-table";
@@ -106,11 +104,17 @@ import { SignatureDialog } from "@/src/components/esignature/signature-dialog";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { getPlanLimits } from "@/src/lib/plan-limits";
 
-export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImport, onImportTriggered }) {
+export default function QuoteTable({
+  handleNewQuote,
+  quoteIdToOpen,
+  triggerImport,
+  onImportTriggered,
+}) {
   const inputRef = useRef(null);
   const { quotes, loading, error, refetch } = useQuotes();
   const { workspaceId } = useRequiredWorkspace();
-  const { importedQuotes, refetch: refetchImported } = useImportedQuotes(workspaceId);
+  const { importedQuotes, refetch: refetchImported } =
+    useImportedQuotes(workspaceId);
   const { canCreate, canExport } = usePermissions();
   const { subscription } = useSubscription();
   const planLimits = getPlanLimits(subscription?.plan);
@@ -228,7 +232,9 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
     if (!hasMoreMobile || isLoadingMoreMobile) return;
     setIsLoadingMoreMobile(true);
     setTimeout(() => {
-      setVisibleMobileCount((prev) => Math.min(prev + 20, allMobileRows.length));
+      setVisibleMobileCount((prev) =>
+        Math.min(prev + 20, allMobileRows.length),
+      );
       setIsLoadingMoreMobile(false);
     }, 300);
   }, [hasMoreMobile, isLoadingMoreMobile, allMobileRows.length]);
@@ -237,8 +243,10 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
     const sentinel = mobileSentinelRef.current;
     if (!sentinel) return;
     const observer = new IntersectionObserver(
-      (entries) => { if (entries[0].isIntersecting) loadMoreMobile(); },
-      { rootMargin: "200px" }
+      (entries) => {
+        if (entries[0].isIntersecting) loadMoreMobile();
+      },
+      { rootMargin: "200px" },
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
@@ -303,7 +311,11 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
         {/* Search + Filtres à gauche */}
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 h-8 w-full sm:w-[400px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
-            <Search size={16} className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
+            <Search
+              size={16}
+              className="text-muted-foreground/80 shrink-0"
+              aria-hidden="true"
+            />
             <Input
               variant="ghost"
               ref={inputRef}
@@ -387,7 +399,7 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
           <TabsList className="h-auto rounded-none bg-transparent p-0 pb-2 w-full justify-start px-4 sm:px-6">
             <TabsTrigger
               value="all"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
               <span>Tous les devis</span>
               <span className="text-xs text-muted-foreground">
@@ -396,7 +408,7 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
             </TabsTrigger>
             <TabsTrigger
               value="draft"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
               <span>Brouillons</span>
               <span className="text-xs text-muted-foreground">
@@ -405,7 +417,7 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
             </TabsTrigger>
             <TabsTrigger
               value="sent"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
               <span>Envoyés</span>
               <span className="text-xs text-muted-foreground">
@@ -414,7 +426,7 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
             </TabsTrigger>
             <TabsTrigger
               value="accepted"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
               <span>Acceptés</span>
               <span className="text-xs text-muted-foreground">
@@ -426,14 +438,22 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
       </div>
 
       {/* Mobile Toolbar */}
-      <div className={cn("md:hidden flex-shrink-0 transition-shadow", isMobileScrolled && "shadow-xs")}>
+      <div
+        className={cn(
+          "md:hidden flex-shrink-0 transition-shadow",
+          isMobileScrolled && "shadow-xs",
+        )}
+      >
         {/* Search + Filter */}
         <div className="px-4 pb-3">
           <div className="flex items-center gap-2">
             <div className="flex-1 relative">
               <Input
                 ref={inputRef}
-                className={cn("peer w-full ps-9", Boolean(globalFilter) && "pe-9")}
+                className={cn(
+                  "peer w-full ps-9",
+                  Boolean(globalFilter) && "pe-9",
+                )}
                 value={globalFilter ?? ""}
                 onChange={(e) => setGlobalFilter(e.target.value)}
                 placeholder="Rechercher..."
@@ -476,11 +496,16 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
               </PopoverTrigger>
               <PopoverContent align="end">
                 <div className="p-4">
-                  <h4 className="font-medium leading-none mb-3">Filtrer par statut</h4>
+                  <h4 className="font-medium leading-none mb-3">
+                    Filtrer par statut
+                  </h4>
                   <div className="space-y-2">
                     {Object.entries(QUOTE_STATUS_LABELS).map(
                       ([status, label]) => (
-                        <div key={status} className="flex items-center space-x-2">
+                        <div
+                          key={status}
+                          className="flex items-center space-x-2"
+                        >
                           <Checkbox
                             id={`mobile-${status}`}
                             checked={statusFilter.includes(status)}
@@ -488,15 +513,20 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
                               if (checked) {
                                 setStatusFilter([...statusFilter, status]);
                               } else {
-                                setStatusFilter(statusFilter.filter((s) => s !== status));
+                                setStatusFilter(
+                                  statusFilter.filter((s) => s !== status),
+                                );
                               }
                             }}
                           />
-                          <Label htmlFor={`mobile-${status}`} className="text-sm font-normal">
+                          <Label
+                            htmlFor={`mobile-${status}`}
+                            className="text-sm font-normal"
+                          >
                             {label}
                           </Label>
                         </div>
-                      )
+                      ),
                     )}
                   </div>
                   {statusFilter.length > 0 && (
@@ -529,17 +559,19 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
                     "whitespace-nowrap text-xs h-8 px-3 transition-all duration-200",
                     activeTab === tab.id
                       ? "bg-gray-100 text-foreground dark:bg-gray-800"
-                      : "bg-gray-50 text-muted-foreground dark:bg-gray-900"
+                      : "bg-gray-50 text-muted-foreground dark:bg-gray-900",
                   )}
                 >
                   {tab.label}
                   {count != null && count > 0 && (
-                    <span className={cn(
-                      "ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-medium transition-colors duration-200",
-                      activeTab === tab.id
-                        ? "bg-foreground/10 text-foreground"
-                        : "bg-foreground/5 text-muted-foreground"
-                    )}>
+                    <span
+                      className={cn(
+                        "ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-medium transition-colors duration-200",
+                        activeTab === tab.id
+                          ? "bg-foreground/10 text-foreground"
+                          : "bg-foreground/5 text-muted-foreground",
+                      )}
+                    >
                       {count}
                     </span>
                   )}
@@ -568,7 +600,7 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </th>
                   ))}
@@ -584,18 +616,30 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
               {loading ? (
                 Array.from({ length: 8 }).map((_, i) => (
                   <tr key={`skeleton-${i}`} className="border-b">
-                    <td className="p-2 pl-4 sm:pl-6"><div className="h-4 w-4 rounded bg-muted animate-pulse" /></td>
+                    <td className="p-2 pl-4 sm:pl-6">
+                      <div className="h-4 w-4 rounded bg-muted animate-pulse" />
+                    </td>
                     <td className="p-2">
                       <div className="flex items-center gap-3">
                         <div className="h-8 w-8 rounded-full bg-muted animate-pulse flex-shrink-0" />
                         <div className="h-4 w-[140px] rounded bg-muted animate-pulse" />
                       </div>
                     </td>
-                    <td className="p-2"><div className="h-4 w-[70px] rounded bg-muted animate-pulse" /></td>
-                    <td className="p-2"><div className="h-4 w-[70px] rounded bg-muted animate-pulse" /></td>
-                    <td className="p-2"><div className="h-5 w-[70px] rounded-full bg-muted animate-pulse" /></td>
-                    <td className="p-2"><div className="h-4 w-[80px] rounded bg-muted animate-pulse" /></td>
-                    <td className="p-2 pr-4 sm:pr-6"><div className="h-7 w-7 rounded bg-muted animate-pulse" /></td>
+                    <td className="p-2">
+                      <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2">
+                      <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2">
+                      <div className="h-5 w-[70px] rounded-full bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2">
+                      <div className="h-4 w-[80px] rounded bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2 pr-4 sm:pr-6">
+                      <div className="h-7 w-7 rounded bg-muted animate-pulse" />
+                    </td>
                   </tr>
                 ))
               ) : table.getRowModel().rows?.length ? (
@@ -633,7 +677,7 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </td>
                     ))}
@@ -660,7 +704,9 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
         onScroll={handleMobileScroll}
         className="md:hidden overflow-y-auto overflow-x-auto flex-1 min-h-0"
       >
-        <div className={`transition-opacity duration-150 ${isMobileTransitioning ? "opacity-0" : "opacity-100"}`}>
+        <div
+          className={`transition-opacity duration-150 ${isMobileTransitioning ? "opacity-0" : "opacity-100"}`}
+        >
           <Table className="w-full">
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -674,7 +720,7 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
                         header.column.id === "select" ||
                         header.column.id === "client" ||
                         header.column.id === "finalTotalTTC" ||
-                        header.column.id === "actions"
+                        header.column.id === "actions",
                     )
                     .map((header) => (
                       <TableHead
@@ -686,7 +732,7 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
                           ? null
                           : flexRender(
                               header.column.columnDef.header,
-                              header.getContext()
+                              header.getContext(),
                             )}
                       </TableHead>
                     ))}
@@ -708,7 +754,8 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
                           e.target.closest('[role="checkbox"]') ||
                           e.target.closest("[data-actions-cell]") ||
                           e.target.closest('[role="menu"]')
-                        ) return;
+                        )
+                          return;
                         setQuoteToOpen(row.original);
                       }}
                     >
@@ -719,33 +766,44 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
                             cell.column.id === "select" ||
                             cell.column.id === "client" ||
                             cell.column.id === "finalTotalTTC" ||
-                            cell.column.id === "actions"
+                            cell.column.id === "actions",
                         )
                         .map((cell) => (
-                          <TableCell key={cell.id} className="py-3 px-4 text-sm">
+                          <TableCell
+                            key={cell.id}
+                            className="py-3 px-4 text-sm"
+                          >
                             {flexRender(
                               cell.column.columnDef.cell,
-                              cell.getContext()
+                              cell.getContext(),
                             )}
                           </TableCell>
                         ))}
                     </TableRow>
                   ))}
-                  {isLoadingMoreMobile && (
+                  {isLoadingMoreMobile &&
                     Array.from({ length: 3 }).map((_, i) => (
-                      <TableRow key={`mobile-skeleton-${i}`} className="border-b border-border">
-                        <TableCell className="py-3 px-4"><Skeleton className="h-4 w-4" /></TableCell>
+                      <TableRow
+                        key={`mobile-skeleton-${i}`}
+                        className="border-b border-border"
+                      >
+                        <TableCell className="py-3 px-4">
+                          <Skeleton className="h-4 w-4" />
+                        </TableCell>
                         <TableCell className="py-3 px-4">
                           <div className="flex items-center gap-3">
                             <Skeleton className="h-8 w-8 rounded-full" />
                             <Skeleton className="h-4 w-[100px]" />
                           </div>
                         </TableCell>
-                        <TableCell className="py-3 px-4"><Skeleton className="h-4 w-[60px]" /></TableCell>
-                        <TableCell className="py-3 px-4"><Skeleton className="h-7 w-7" /></TableCell>
+                        <TableCell className="py-3 px-4">
+                          <Skeleton className="h-4 w-[60px]" />
+                        </TableCell>
+                        <TableCell className="py-3 px-4">
+                          <Skeleton className="h-7 w-7" />
+                        </TableCell>
                       </TableRow>
-                    ))
-                  )}
+                    ))}
                   {hasMoreMobile && (
                     <TableRow>
                       <TableCell colSpan={4} className="p-0">
@@ -756,16 +814,25 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
                 </>
               ) : loading ? (
                 Array.from({ length: 6 }).map((_, i) => (
-                  <TableRow key={`skeleton-${i}`} className="border-b border-border">
-                    <TableCell className="py-3 px-4"><Skeleton className="h-4 w-4" /></TableCell>
+                  <TableRow
+                    key={`skeleton-${i}`}
+                    className="border-b border-border"
+                  >
+                    <TableCell className="py-3 px-4">
+                      <Skeleton className="h-4 w-4" />
+                    </TableCell>
                     <TableCell className="py-3 px-4">
                       <div className="flex items-center gap-3">
                         <Skeleton className="h-8 w-8 rounded-full" />
                         <Skeleton className="h-4 w-[100px]" />
                       </div>
                     </TableCell>
-                    <TableCell className="py-3 px-4"><Skeleton className="h-4 w-[60px]" /></TableCell>
-                    <TableCell className="py-3 px-4"><Skeleton className="h-7 w-7" /></TableCell>
+                    <TableCell className="py-3 px-4">
+                      <Skeleton className="h-4 w-[60px]" />
+                    </TableCell>
+                    <TableCell className="py-3 px-4">
+                      <Skeleton className="h-7 w-7" />
+                    </TableCell>
                   </TableRow>
                 ))
               ) : (
@@ -921,16 +988,31 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
           documentNumber={`${sendEmailQuote.prefix || "D"}-${sendEmailQuote.number}`}
           clientName={sendEmailQuote.client?.name}
           clientEmail={sendEmailQuote.client?.email}
-          totalAmount={new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(sendEmailQuote.finalTotalTTC || sendEmailQuote.totalTTC || 0)}
+          totalAmount={new Intl.NumberFormat("fr-FR", {
+            style: "currency",
+            currency: "EUR",
+          }).format(
+            sendEmailQuote.finalTotalTTC || sendEmailQuote.totalTTC || 0,
+          )}
           companyName={sendEmailQuote.companyInfo?.name}
-          issueDate={sendEmailQuote.issueDate ? (() => {
-            try {
-              const d = typeof sendEmailQuote.issueDate === "string" && /^\d+$/.test(sendEmailQuote.issueDate)
-                ? new Date(parseInt(sendEmailQuote.issueDate, 10))
-                : new Date(sendEmailQuote.issueDate);
-              return isNaN(d.getTime()) ? null : d.toLocaleDateString("fr-FR");
-            } catch { return null; }
-          })() : null}
+          issueDate={
+            sendEmailQuote.issueDate
+              ? (() => {
+                  try {
+                    const d =
+                      typeof sendEmailQuote.issueDate === "string" &&
+                      /^\d+$/.test(sendEmailQuote.issueDate)
+                        ? new Date(parseInt(sendEmailQuote.issueDate, 10))
+                        : new Date(sendEmailQuote.issueDate);
+                    return isNaN(d.getTime())
+                      ? null
+                      : d.toLocaleDateString("fr-FR");
+                  } catch {
+                    return null;
+                  }
+                })()
+              : null
+          }
           onSent={() => setSendEmailQuote(null)}
         />
       )}
@@ -941,7 +1023,9 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
           quoteId={templateQuote.id}
           quoteNumber={`${templateQuote.prefix || "D"}-${templateQuote.number}`}
           open={!!templateQuote}
-          onOpenChange={(open) => { if (!open) setTemplateQuote(null); }}
+          onOpenChange={(open) => {
+            if (!open) setTemplateQuote(null);
+          }}
         />
       )}
 

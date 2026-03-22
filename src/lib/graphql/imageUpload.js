@@ -7,8 +7,16 @@ import { apolloClient } from "../apolloClient";
 
 // Mutations GraphQL
 export const UPLOAD_SIGNATURE_IMAGE = gql`
-  mutation UploadSignatureImage($file: Upload!, $imageType: String!, $signatureId: String!) {
-    uploadSignatureImage(file: $file, imageType: $imageType, signatureId: $signatureId) {
+  mutation UploadSignatureImage(
+    $file: Upload!
+    $imageType: String!
+    $signatureId: String!
+  ) {
+    uploadSignatureImage(
+      file: $file
+      imageType: $imageType
+      signatureId: $signatureId
+    ) {
       success
       key
       url
@@ -62,7 +70,12 @@ export class CloudflareImageService {
    * @param {function} onProgress - Callback pour le progrès (optionnel)
    * @returns {Promise<{success: boolean, key: string, url: string}>}
    */
-  static async uploadImage(file, imageType = "imgProfil", signatureId, onProgress = null) {
+  static async uploadImage(
+    file,
+    imageType = "imgProfil",
+    signatureId,
+    onProgress = null,
+  ) {
     try {
       // Validation côté client
       if (!file) {
@@ -70,12 +83,14 @@ export class CloudflareImageService {
       }
 
       if (!signatureId) {
-        throw new Error("signatureId est requis pour l'upload d'images de signature");
+        throw new Error(
+          "signatureId est requis pour l'upload d'images de signature",
+        );
       }
 
       if (!["imgProfil", "logoReseau"].includes(imageType)) {
         throw new Error(
-          'Type d\'image invalide. Utilisez "imgProfil" ou "logoReseau"'
+          'Type d\'image invalide. Utilisez "imgProfil" ou "logoReseau"',
         );
       }
 
@@ -89,7 +104,7 @@ export class CloudflareImageService {
       ];
       if (!validTypes.includes(file.type)) {
         throw new Error(
-          "Format d'image non supporté. Utilisez JPG, PNG, GIF ou WebP"
+          "Format d'image non supporté. Utilisez JPG, PNG, GIF ou WebP",
         );
       }
 
@@ -128,13 +143,13 @@ export class CloudflareImageService {
 
       if (!data || !data.uploadSignatureImage) {
         throw new Error(
-          "Réponse GraphQL invalide - uploadSignatureImage est null"
+          "Réponse GraphQL invalide - uploadSignatureImage est null",
         );
       }
 
       if (!data.uploadSignatureImage.success) {
         throw new Error(
-          data.uploadSignatureImage.message || "Erreur lors de l'upload"
+          data.uploadSignatureImage.message || "Erreur lors de l'upload",
         );
       }
 
@@ -165,12 +180,11 @@ export class CloudflareImageService {
       const { data } = await apolloClient.query({
         query: GET_IMAGE_URL,
         variables: { key },
-        fetchPolicy: "cache-and-network",
       });
 
       if (!data.getImageUrl.success) {
         throw new Error(
-          data.getImageUrl.message || "Erreur lors de la récupération de l'URL"
+          data.getImageUrl.message || "Erreur lors de la récupération de l'URL",
         );
       }
 
@@ -182,7 +196,7 @@ export class CloudflareImageService {
     } catch (error) {
       console.error("Erreur récupération URL:", error);
       throw new Error(
-        error.message || "Erreur lors de la récupération de l'image"
+        error.message || "Erreur lors de la récupération de l'image",
       );
     }
   }
@@ -205,7 +219,7 @@ export class CloudflareImageService {
 
       if (!data.deleteSignatureImage.success) {
         throw new Error(
-          data.deleteSignatureImage.message || "Erreur lors de la suppression"
+          data.deleteSignatureImage.message || "Erreur lors de la suppression",
         );
       }
 
@@ -216,7 +230,7 @@ export class CloudflareImageService {
     } catch (error) {
       console.error("Erreur suppression image:", error);
       throw new Error(
-        error.message || "Erreur lors de la suppression de l'image"
+        error.message || "Erreur lors de la suppression de l'image",
       );
     }
   }
@@ -241,7 +255,7 @@ export class CloudflareImageService {
       if (!data.generateSignedImageUrl.success) {
         throw new Error(
           data.generateSignedImageUrl.message ||
-            "Erreur lors de la génération de l'URL"
+            "Erreur lors de la génération de l'URL",
         );
       }
 
@@ -253,7 +267,7 @@ export class CloudflareImageService {
     } catch (error) {
       console.error("Erreur génération URL signée:", error);
       throw new Error(
-        error.message || "Erreur lors de la génération de l'URL signée"
+        error.message || "Erreur lors de la génération de l'URL signée",
       );
     }
   }

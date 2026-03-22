@@ -16,16 +16,18 @@ import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 export const useTreasuryForecastData = (startDate, endDate, accountId) => {
   const { workspaceId } = useRequiredWorkspace();
 
-  const { data, loading, error, refetch } = useQuery(GET_TREASURY_FORECAST_DATA, {
-    variables: {
-      workspaceId,
-      startDate,
-      endDate,
-      accountId: accountId || undefined,
+  const { data, loading, error, refetch } = useQuery(
+    GET_TREASURY_FORECAST_DATA,
+    {
+      variables: {
+        workspaceId,
+        startDate,
+        endDate,
+        accountId: accountId || undefined,
+      },
+      skip: !workspaceId || !startDate || !endDate,
     },
-    skip: !workspaceId || !startDate || !endDate,
-    fetchPolicy: "cache-and-network",
-  });
+  );
 
   return {
     forecastData: data?.treasuryForecastData || null,
@@ -48,7 +50,6 @@ export const useTreasuryForecasts = (startMonth, endMonth) => {
       endMonth,
     },
     skip: !workspaceId || !startMonth || !endMonth,
-    fetchPolicy: "cache-and-network",
   });
 
   return {
@@ -121,7 +122,9 @@ export const useDeleteTreasuryForecast = () => {
       }
       throw new Error("Erreur lors de la suppression");
     } catch (error) {
-      toast.error(error.message || "Erreur lors de la suppression de la prévision");
+      toast.error(
+        error.message || "Erreur lors de la suppression de la prévision",
+      );
       return { success: false, error };
     }
   };

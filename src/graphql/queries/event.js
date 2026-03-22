@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 export const GET_EVENTS = gql`
   query GetEvents(
@@ -57,6 +57,7 @@ export const GET_EVENTS = gql`
         emailReminder {
           enabled
           anticipation
+          echeance
           sentAt
           status
           scheduledFor
@@ -97,6 +98,7 @@ export const GET_EVENT = gql`
         emailReminder {
           enabled
           anticipation
+          echeance
           sentAt
           status
           scheduledFor

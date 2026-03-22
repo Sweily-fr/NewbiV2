@@ -1,8 +1,18 @@
 import { gql } from "@apollo/client";
 
 export const GET_NOTIFICATIONS = gql`
-  query GetNotifications($workspaceId: ID!, $limit: Int, $offset: Int, $unreadOnly: Boolean) {
-    getNotifications(workspaceId: $workspaceId, limit: $limit, offset: $offset, unreadOnly: $unreadOnly) {
+  query GetNotifications(
+    $workspaceId: ID!
+    $limit: Int
+    $offset: Int
+    $unreadOnly: Boolean
+  ) {
+    getNotifications(
+      workspaceId: $workspaceId
+      limit: $limit
+      offset: $offset
+      unreadOnly: $unreadOnly
+    ) {
       notifications {
         id
         userId
@@ -77,6 +87,7 @@ export const NOTIFICATION_RECEIVED_SUBSCRIPTION = gql`
       data {
         taskId
         taskTitle
+        taskDescription
         boardId
         boardName
         columnName

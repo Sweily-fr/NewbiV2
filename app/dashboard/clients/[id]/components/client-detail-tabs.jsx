@@ -22,8 +22,7 @@ import ClientQuotesTab from "./client-quotes-tab";
 import ClientPurchaseOrdersTab from "./client-purchase-orders-tab";
 
 const tabTriggerClass =
-  "relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]";
-
+  "relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]";
 
 export default function ClientDetailTabs({
   client,
@@ -36,7 +35,13 @@ export default function ClientDetailTabs({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const validTabs = ["activity", "notes", "invoices", "quotes", "purchaseorders"];
+  const validTabs = [
+    "activity",
+    "notes",
+    "invoices",
+    "quotes",
+    "purchaseorders",
+  ];
   const tabParam = searchParams.get("tab");
   const activeTab = validTabs.includes(tabParam) ? tabParam : "activity";
 
@@ -53,23 +58,27 @@ export default function ClientDetailTabs({
 
   const clientInvoicesCount = useMemo(
     () => invoices.filter((inv) => inv.client?.id === client.id).length,
-    [invoices, client.id]
+    [invoices, client.id],
   );
 
   const clientQuotesCount = useMemo(
     () => quotes.filter((q) => q.client?.id === client.id).length,
-    [quotes, client.id]
+    [quotes, client.id],
   );
 
   const clientPurchaseOrdersCount = useMemo(
     () => purchaseOrders.filter((po) => po.client?.id === client.id).length,
-    [purchaseOrders, client.id]
+    [purchaseOrders, client.id],
   );
 
   const notesCount = client?.notes?.length || 0;
 
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 min-h-0 client-detail-tabs">
+    <Tabs
+      value={activeTab}
+      onValueChange={setActiveTab}
+      className="flex flex-col flex-1 min-h-0 client-detail-tabs"
+    >
       <style>{`
         .client-detail-tabs [data-slot="tabs-trigger"][data-state="active"] {
           text-shadow: 0.015em 0 currentColor, -0.015em 0 currentColor;
@@ -156,7 +165,10 @@ export default function ClientDetailTabs({
         value="purchaseorders"
         className="flex-1 min-h-0 mt-0 overflow-auto data-[state=inactive]:hidden"
       >
-        <ClientPurchaseOrdersTab purchaseOrders={purchaseOrders} clientId={client.id} />
+        <ClientPurchaseOrdersTab
+          purchaseOrders={purchaseOrders}
+          clientId={client.id}
+        />
       </TabsContent>
     </Tabs>
   );

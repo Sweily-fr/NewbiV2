@@ -29,6 +29,7 @@ import { useRouter } from "next/navigation";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDFDownloaderWithFacturX";
+import { formatLocalDate } from "@/src/utils/dateFormatter";
 
 export default function InvoiceMobileFullscreen({
   isOpen,
@@ -40,7 +41,7 @@ export default function InvoiceMobileFullscreen({
   const { canCreate } = usePermissions();
   const [canCreateCreditNote, setCanCreateCreditNote] = useState(false);
   const [previousSituationInvoices, setPreviousSituationInvoices] = useState(
-    []
+    [],
   );
   const { markAsPaid, loading: markingAsPaid } = useMarkInvoiceAsPaid();
   const { changeStatus, loading: changingStatus } = useChangeInvoiceStatus();
@@ -57,18 +58,18 @@ export default function InvoiceMobileFullscreen({
 
   // Fetch credit notes for this invoice
   const { creditNotes, loading: loadingCreditNotes } = useCreditNotesByInvoice(
-    initialInvoice?.id
+    initialInvoice?.id,
   );
 
   // Récupérer les données complètes de la facture
   const { invoice: fullInvoice, loading: loadingFullInvoice } = useInvoice(
-    initialInvoice?.id
+    initialInvoice?.id,
   );
 
   // Query pour récupérer les factures de situation précédentes
   const [fetchSituationInvoices, { data: situationData }] = useLazyQuery(
     GET_SITUATION_INVOICES_BY_QUOTE_REF,
-    { fetchPolicy: "cache-and-network" }
+    { fetchPolicy: "cache-and-network" },
   );
 
   // Récupérer les factures de situation précédentes quand c'est une facture de situation
@@ -111,7 +112,7 @@ export default function InvoiceMobileFullscreen({
         .filter(
           (inv) =>
             inv.id !== invoice.id &&
-            (inv.situationNumber || 0) < currentSituationNumber
+            (inv.situationNumber || 0) < currentSituationNumber,
         )
         .sort((a, b) => (a.situationNumber || 0) - (b.situationNumber || 0));
 
@@ -156,7 +157,7 @@ export default function InvoiceMobileFullscreen({
 
   const handleMarkAsPaid = async () => {
     try {
-      const today = new Date().toISOString().split("T")[0];
+      const today = formatLocalDate();
       await markAsPaid(invoice.id, today);
       toast.success("Facture marquée comme payée");
       if (onRefetch) onRefetch();
@@ -197,7 +198,7 @@ export default function InvoiceMobileFullscreen({
   // Vérifier si la facture a atteint sa limite d'avoirs
   const creditNoteLimitReached = hasReachedCreditNoteLimit(
     invoice,
-    creditNotes
+    creditNotes,
   );
 
   const isLoading = markingAsPaid || changingStatus || loadingFullInvoice;

@@ -12,6 +12,7 @@ import { Separator } from "@/src/components/ui/separator";
 import EnhancedInvoiceForm from "./components/enhanced-invoice-form";
 import InvoicePreview from "./components/invoice-preview";
 import { toast } from "@/src/components/ui/sonner";
+import { formatLocalDate } from "@/src/utils/dateFormatter";
 
 // Test data for invoice
 const INITIAL_INVOICE_DATA = {
@@ -19,7 +20,7 @@ const INITIAL_INVOICE_DATA = {
   number: null,
   status: "DRAFT",
   type: "INVOICE",
-  issueDate: new Date().toISOString().split("T")[0],
+  issueDate: formatLocalDate(),
   dueDate: null,
   executionDate: null,
   purchaseOrderNumber: "",

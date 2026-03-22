@@ -2,20 +2,17 @@
 
 import { useFormContext } from "react-hook-form";
 import React, { useEffect, useState, useRef } from "react";
-import {
-  Settings,
-  AlignLeft,
-  AlignRight,
-  Check,
-  Info,
-} from "lucide-react";
+import { Settings, AlignLeft, AlignRight, Check, Info } from "lucide-react";
 import { useInvoiceNumber } from "../hooks/use-invoice-number";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
-import { getCurrentMonthYear, generateInvoicePrefix } from "@/src/utils/invoiceUtils";
+import {
+  getCurrentMonthYear,
+  generateInvoicePrefix,
+} from "@/src/utils/invoiceUtils";
 import { documentSuggestions } from "@/src/utils/document-suggestions";
 import { SuggestionDropdown } from "@/src/components/ui/suggestion-dropdown";
 import {
@@ -42,6 +39,7 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { BankDetailsDialog } from "@/src/components/bank-details-dialog";
 import CompanyInfoSettingsSection from "@/src/components/settings/company-info-settings-section";
+import { Switch } from "@/src/components/ui/switch";
 
 // Fonction de validation de l'IBAN
 const validateIBAN = (value) => {
@@ -212,7 +210,7 @@ export default function InvoiceSettingsView({
     return () => {
       window.removeEventListener(
         "organizationUpdated",
-        handleOrganizationUpdated
+        handleOrganizationUpdated,
       );
     };
   }, [setValue]);
@@ -272,29 +270,29 @@ export default function InvoiceSettingsView({
     if (initialValuesRef.current) {
       setValue(
         "appearance.textColor",
-        initialValuesRef.current.textColor || "#000000"
+        initialValuesRef.current.textColor || "#000000",
       );
       setValue(
         "appearance.headerTextColor",
-        initialValuesRef.current.headerTextColor || "#ffffff"
+        initialValuesRef.current.headerTextColor || "#ffffff",
       );
       setValue(
         "appearance.headerBgColor",
-        initialValuesRef.current.headerBgColor || "#5b50FF"
+        initialValuesRef.current.headerBgColor || "#5b50FF",
       );
       setValue("headerNotes", initialValuesRef.current.headerNotes || "");
       setValue("footerNotes", initialValuesRef.current.footerNotes || "");
       setValue(
         "termsAndConditions",
-        initialValuesRef.current.termsAndConditions || ""
+        initialValuesRef.current.termsAndConditions || "",
       );
       setValue(
         "showBankDetails",
-        initialValuesRef.current.showBankDetails || false
+        initialValuesRef.current.showBankDetails || false,
       );
       setValue(
         "clientPositionRight",
-        initialValuesRef.current.clientPositionRight || false
+        initialValuesRef.current.clientPositionRight || false,
       );
     }
     setShowConfirmDialog(false);
@@ -473,7 +471,7 @@ export default function InvoiceSettingsView({
                         if (currentNumber && validateInvoiceNumberExists) {
                           await validateInvoiceNumberExists(
                             currentNumber,
-                            e.target.value
+                            e.target.value,
                           );
                         }
                       }}
@@ -525,32 +523,50 @@ export default function InvoiceSettingsView({
                       disabled={!isFirstInvoice}
                       readOnly={!isFirstInvoice}
                       tabIndex={isFirstInvoice ? 0 : -1}
-                      onFocus={isFirstInvoice ? undefined : (e) => e.target.blur()}
-                      onChange={isFirstInvoice ? (e) => {
-                        const val = e.target.value.replace(/[^0-9]/g, "");
-                        setValue("number", val, { shouldValidate: false });
-                        if (numberDuplicateError) setNumberDuplicateError(null);
-                      } : () => {}}
-                      onBlur={isFirstInvoice ? async (e) => {
-                        if (validateInvoiceNumberExists && e.target.value) {
-                          const result = await validateInvoiceNumberExists(
-                            e.target.value,
-                            data.prefix
-                          );
-                          if (result?.exists) {
-                            setNumberDuplicateError(
-                              `Le numéro ${data.prefix}${e.target.value} existe déjà.`
-                            );
-                          } else {
-                            setNumberDuplicateError(null);
-                          }
-                        }
-                      } : undefined}
-                      className={isFirstInvoice
-                        ? numberDuplicateError
-                          ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
-                          : ""
-                        : "bg-muted/50 cursor-not-allowed select-none"
+                      onFocus={
+                        isFirstInvoice ? undefined : (e) => e.target.blur()
+                      }
+                      onChange={
+                        isFirstInvoice
+                          ? (e) => {
+                              const val = e.target.value.replace(/[^0-9]/g, "");
+                              setValue("number", val, {
+                                shouldValidate: false,
+                              });
+                              if (numberDuplicateError)
+                                setNumberDuplicateError(null);
+                            }
+                          : () => {}
+                      }
+                      onBlur={
+                        isFirstInvoice
+                          ? async (e) => {
+                              if (
+                                validateInvoiceNumberExists &&
+                                e.target.value
+                              ) {
+                                const result =
+                                  await validateInvoiceNumberExists(
+                                    e.target.value,
+                                    data.prefix,
+                                  );
+                                if (result?.exists) {
+                                  setNumberDuplicateError(
+                                    `Le numéro ${data.prefix}${e.target.value} existe déjà.`,
+                                  );
+                                } else {
+                                  setNumberDuplicateError(null);
+                                }
+                              }
+                            }
+                          : undefined
+                      }
+                      className={
+                        isFirstInvoice
+                          ? numberDuplicateError
+                            ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
+                            : ""
+                          : "bg-muted/50 cursor-not-allowed select-none"
                       }
                     />
                     {numberDuplicateError && (
@@ -561,8 +577,7 @@ export default function InvoiceSettingsView({
                     <p className="text-xs text-muted-foreground">
                       {isFirstInvoice
                         ? "Nouveau préfixe — vous pouvez choisir le numéro de départ."
-                        : "Numéro attribué automatiquement de manière séquentielle."
-                      }
+                        : "Numéro attribué automatiquement de manière séquentielle."}
                     </p>
                   </div>
                 </div>
@@ -690,6 +705,45 @@ export default function InvoiceSettingsView({
                         pour faciliter les paiements de vos clients.
                       </AlertDescription>
                     </Alert>
+                  </div>
+                )}
+
+              {/* Choix du nom du bénéficiaire pour les auto-entrepreneurs */}
+              {data.showBankDetails &&
+                organization?.legalForm === "Auto-entrepreneur" && (
+                  <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    <div className="grid gap-1.5 leading-none">
+                      <Label
+                        htmlFor="beneficiary-name-type"
+                        className="text-sm font-light leading-none"
+                      >
+                        Nom du bénéficiaire
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        {data.beneficiaryNameType === "fullName"
+                          ? "Nom complet affiché sur la facture"
+                          : "Nom d'entreprise affiché sur la facture"}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {data.beneficiaryNameType === "fullName"
+                          ? "Nom complet"
+                          : "Nom d'entreprise"}
+                      </span>
+                      <Switch
+                        id="beneficiary-name-type"
+                        checked={data.beneficiaryNameType === "fullName"}
+                        onCheckedChange={(checked) => {
+                          setValue(
+                            "beneficiaryNameType",
+                            checked ? "fullName" : "companyName",
+                            { shouldDirty: true },
+                          );
+                        }}
+                        disabled={!canEdit}
+                      />
+                    </div>
                   </div>
                 )}
             </CardContent>
@@ -1015,10 +1069,7 @@ export default function InvoiceSettingsView({
             >
               Continuer l'édition
             </Button>
-            <Button
-              variant="danger"
-              onClick={handleConfirmCancel}
-            >
+            <Button variant="danger" onClick={handleConfirmCancel}>
               Quitter sans sauvegarder
             </Button>
           </AlertDialogFooter>

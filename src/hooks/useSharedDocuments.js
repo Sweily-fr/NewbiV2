@@ -408,7 +408,7 @@ export function useSharedDocuments(filter = {}) {
   const minSize = filter.minSize;
   const maxSize = filter.maxSize;
 
-  const { data, loading, error, refetch, fetchMore, networkStatus } = useQuery(
+  const { data, loading, error, refetch, fetchMore } = useQuery(
     GET_SHARED_DOCUMENTS,
     {
       variables: {
@@ -429,9 +429,8 @@ export function useSharedDocuments(filter = {}) {
         sortOrder,
       },
       skip: !workspaceId,
-      fetchPolicy: "cache-and-network",
       notifyOnNetworkStatusChange: true,
-    }
+    },
   );
 
   // Chargement initial (pas de données en cache)
@@ -485,7 +484,6 @@ export function useSharedFolders() {
   const { data, loading, error, refetch } = useQuery(GET_SHARED_FOLDERS, {
     variables: { workspaceId },
     skip: !workspaceId,
-    fetchPolicy: "cache-and-network",
     notifyOnNetworkStatusChange: true,
   });
 
@@ -508,7 +506,6 @@ export function useSharedDocumentsStats() {
   const { data, loading, refetch } = useQuery(GET_SHARED_DOCUMENTS_STATS, {
     variables: { workspaceId },
     skip: !workspaceId,
-    fetchPolicy: "cache-and-network",
   });
 
   return {
@@ -547,7 +544,12 @@ export function useUploadSharedDocument() {
         refetchQueries: [
           {
             query: GET_SHARED_DOCUMENTS,
-            variables: { workspaceId, filter: {}, limit: DOCUMENTS_PER_PAGE, offset: 0 },
+            variables: {
+              workspaceId,
+              filter: {},
+              limit: DOCUMENTS_PER_PAGE,
+              offset: 0,
+            },
           },
           { query: GET_SHARED_FOLDERS, variables: { workspaceId } },
           { query: GET_SHARED_DOCUMENTS_STATS, variables: { workspaceId } },
@@ -559,7 +561,7 @@ export function useUploadSharedDocument() {
         return result.data.uploadSharedDocument.document;
       } else {
         throw new Error(
-          result.data?.uploadSharedDocument?.message || "Erreur upload"
+          result.data?.uploadSharedDocument?.message || "Erreur upload",
         );
       }
     } catch (error) {
@@ -597,13 +599,13 @@ export function useMoveSharedDocuments() {
       if (result.data?.moveSharedDocuments?.success) {
         if (!silent) {
           toast.success(
-            `${result.data.moveSharedDocuments.movedCount} document(s) déplacé(s)`
+            `${result.data.moveSharedDocuments.movedCount} document(s) déplacé(s)`,
           );
         }
         return true;
       } else {
         throw new Error(
-          result.data?.moveSharedDocuments?.message || "Erreur déplacement"
+          result.data?.moveSharedDocuments?.message || "Erreur déplacement",
         );
       }
     } catch (error) {
@@ -643,7 +645,7 @@ export function useBulkUpdateTags() {
         return true;
       } else {
         throw new Error(
-          result.data?.bulkUpdateTags?.message || "Erreur mise à jour des tags"
+          result.data?.bulkUpdateTags?.message || "Erreur mise à jour des tags",
         );
       }
     } catch (error) {
@@ -667,7 +669,12 @@ export function useDeleteSharedDocuments() {
         refetchQueries: [
           {
             query: GET_SHARED_DOCUMENTS,
-            variables: { workspaceId, filter: {}, limit: DOCUMENTS_PER_PAGE, offset: 0 },
+            variables: {
+              workspaceId,
+              filter: {},
+              limit: DOCUMENTS_PER_PAGE,
+              offset: 0,
+            },
           },
           { query: GET_SHARED_FOLDERS, variables: { workspaceId } },
           { query: GET_SHARED_DOCUMENTS_STATS, variables: { workspaceId } },
@@ -680,7 +687,7 @@ export function useDeleteSharedDocuments() {
         return true;
       } else {
         throw new Error(
-          result.data?.deleteSharedDocuments?.message || "Erreur suppression"
+          result.data?.deleteSharedDocuments?.message || "Erreur suppression",
         );
       }
     } catch (error) {
@@ -714,7 +721,7 @@ export function useCreateSharedFolder() {
         return result.data.createSharedFolder.folder;
       } else {
         throw new Error(
-          result.data?.createSharedFolder?.message || "Erreur création"
+          result.data?.createSharedFolder?.message || "Erreur création",
         );
       }
     } catch (error) {
@@ -753,7 +760,7 @@ export function useCreateDefaultFolders() {
 
     setIsCreating(true);
     const foldersToCreate = DEFAULT_SHARED_FOLDERS.filter(
-      (folder) => !existingFolderNames.includes(folder.name)
+      (folder) => !existingFolderNames.includes(folder.name),
     );
 
     if (foldersToCreate.length === 0) {
@@ -805,7 +812,12 @@ export function useDeleteSharedFolder() {
           { query: GET_SHARED_FOLDERS, variables: { workspaceId } },
           {
             query: GET_SHARED_DOCUMENTS,
-            variables: { workspaceId, filter: {}, limit: DOCUMENTS_PER_PAGE, offset: 0 },
+            variables: {
+              workspaceId,
+              filter: {},
+              limit: DOCUMENTS_PER_PAGE,
+              offset: 0,
+            },
           },
           { query: GET_SHARED_DOCUMENTS_STATS, variables: { workspaceId } },
           { query: GET_TRASH_ITEMS, variables: { workspaceId } },
@@ -817,7 +829,7 @@ export function useDeleteSharedFolder() {
         return true;
       } else {
         throw new Error(
-          result.data?.deleteSharedFolder?.message || "Erreur suppression"
+          result.data?.deleteSharedFolder?.message || "Erreur suppression",
         );
       }
     } catch (error) {
@@ -857,11 +869,14 @@ export function useUpdateFolderVisibility() {
         return result.data.updateFolderVisibility.folder;
       } else {
         throw new Error(
-          result.data?.updateFolderVisibility?.message || "Erreur mise à jour visibilité"
+          result.data?.updateFolderVisibility?.message ||
+            "Erreur mise à jour visibilité",
         );
       }
     } catch (error) {
-      toast.error(error.message || "Erreur lors de la mise à jour de la visibilité");
+      toast.error(
+        error.message || "Erreur lors de la mise à jour de la visibilité",
+      );
       throw error;
     }
   };
@@ -885,7 +900,12 @@ export function useRenameSharedDocument() {
         refetchQueries: [
           {
             query: GET_SHARED_DOCUMENTS,
-            variables: { workspaceId, filter: {}, limit: DOCUMENTS_PER_PAGE, offset: 0 },
+            variables: {
+              workspaceId,
+              filter: {},
+              limit: DOCUMENTS_PER_PAGE,
+              offset: 0,
+            },
           },
         ],
       });
@@ -895,7 +915,7 @@ export function useRenameSharedDocument() {
         return result.data.updateSharedDocument.document;
       } else {
         throw new Error(
-          result.data?.updateSharedDocument?.message || "Erreur renommage"
+          result.data?.updateSharedDocument?.message || "Erreur renommage",
         );
       }
     } catch (error) {
@@ -930,7 +950,7 @@ export function useRenameSharedFolder() {
         return result.data.updateSharedFolder.folder;
       } else {
         throw new Error(
-          result.data?.updateSharedFolder?.message || "Erreur renommage"
+          result.data?.updateSharedFolder?.message || "Erreur renommage",
         );
       }
     } catch (error) {
@@ -967,7 +987,7 @@ export function useUpdateSharedDocument() {
         return result.data.updateSharedDocument.document;
       } else {
         throw new Error(
-          result.data?.updateSharedDocument?.message || "Erreur mise à jour"
+          result.data?.updateSharedDocument?.message || "Erreur mise à jour",
         );
       }
     } catch (error) {
@@ -1009,7 +1029,7 @@ export function useMoveSharedFolder() {
         return result.data.updateSharedFolder.folder;
       } else {
         throw new Error(
-          result.data?.updateSharedFolder?.message || "Erreur déplacement"
+          result.data?.updateSharedFolder?.message || "Erreur déplacement",
         );
       }
     } catch (error) {
@@ -1044,7 +1064,7 @@ export function useDownloadFile() {
         `${apiUrl}/api/shared-documents/download-file/${doc.id}?workspaceId=${workspaceId}`,
         {
           credentials: "include",
-        }
+        },
       );
 
       if (!response.ok) {
@@ -1107,7 +1127,7 @@ export function useDownloadFolder() {
         {
           method: "GET",
           credentials: "include",
-        }
+        },
       );
 
       if (!response.ok) {
@@ -1153,7 +1173,11 @@ export function useDownloadSelection() {
   const { workspaceId } = useWorkspace();
   const [loading, setLoading] = React.useState(false);
 
-  const downloadSelection = async ({ folderIds = [], documentIds = [], excludedFolderIds = [] } = {}) => {
+  const downloadSelection = async ({
+    folderIds = [],
+    documentIds = [],
+    excludedFolderIds = [],
+  } = {}) => {
     if (!workspaceId) {
       toast.error("Paramètres manquants");
       return;
@@ -1174,7 +1198,12 @@ export function useDownloadSelection() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ folderIds, documentIds, excludedFolderIds, workspaceId }),
+        body: JSON.stringify({
+          folderIds,
+          documentIds,
+          excludedFolderIds,
+          workspaceId,
+        }),
       });
 
       if (!response.ok) {
@@ -1219,7 +1248,10 @@ export function useSelectionInfo() {
   const [loading, setLoading] = React.useState(false);
   const [data, setData] = React.useState(null);
 
-  const fetchSelectionInfo = async ({ folderIds = [], documentIds = [] } = {}) => {
+  const fetchSelectionInfo = async ({
+    folderIds = [],
+    documentIds = [],
+  } = {}) => {
     if (!workspaceId) return null;
 
     setLoading(true);
@@ -1265,7 +1297,6 @@ export function useTrashItems() {
   const { data, loading, error, refetch } = useQuery(GET_TRASH_ITEMS, {
     variables: { workspaceId },
     skip: !workspaceId,
-    fetchPolicy: "cache-and-network",
     notifyOnNetworkStatusChange: true,
   });
 
@@ -1304,7 +1335,12 @@ export function useRestoreFromTrash() {
           { query: GET_TRASH_ITEMS, variables: { workspaceId } },
           {
             query: GET_SHARED_DOCUMENTS,
-            variables: { workspaceId, filter: {}, limit: DOCUMENTS_PER_PAGE, offset: 0 },
+            variables: {
+              workspaceId,
+              filter: {},
+              limit: DOCUMENTS_PER_PAGE,
+              offset: 0,
+            },
           },
           { query: GET_SHARED_FOLDERS, variables: { workspaceId } },
           { query: GET_SHARED_DOCUMENTS_STATS, variables: { workspaceId } },
@@ -1312,15 +1348,17 @@ export function useRestoreFromTrash() {
       });
 
       if (result.data?.restoreFromTrash?.success) {
-        const { restoredDocuments, restoredFolders } = result.data.restoreFromTrash;
+        const { restoredDocuments, restoredFolders } =
+          result.data.restoreFromTrash;
         const parts = [];
-        if (restoredDocuments > 0) parts.push(`${restoredDocuments} document(s)`);
+        if (restoredDocuments > 0)
+          parts.push(`${restoredDocuments} document(s)`);
         if (restoredFolders > 0) parts.push(`${restoredFolders} dossier(s)`);
         toast.success(`${parts.join(" et ")} restauré(s)`);
         return true;
       } else {
         throw new Error(
-          result.data?.restoreFromTrash?.message || "Erreur restauration"
+          result.data?.restoreFromTrash?.message || "Erreur restauration",
         );
       }
     } catch (error) {
@@ -1354,7 +1392,7 @@ export function useEmptyTrash() {
         return true;
       } else {
         throw new Error(
-          result.data?.emptyTrash?.message || "Erreur vidage corbeille"
+          result.data?.emptyTrash?.message || "Erreur vidage corbeille",
         );
       }
     } catch (error) {
@@ -1371,7 +1409,9 @@ export function useEmptyTrash() {
  */
 export function usePermanentlyDeleteDocuments() {
   const { workspaceId } = useWorkspace();
-  const [deleteMutation, { loading }] = useMutation(PERMANENTLY_DELETE_DOCUMENTS);
+  const [deleteMutation, { loading }] = useMutation(
+    PERMANENTLY_DELETE_DOCUMENTS,
+  );
 
   const permanentlyDelete = async (ids) => {
     try {
@@ -1388,7 +1428,8 @@ export function usePermanentlyDeleteDocuments() {
         return true;
       } else {
         throw new Error(
-          result.data?.permanentlyDeleteDocuments?.message || "Erreur suppression"
+          result.data?.permanentlyDeleteDocuments?.message ||
+            "Erreur suppression",
         );
       }
     } catch (error) {
@@ -1423,7 +1464,8 @@ export function usePermanentlyDeleteFolders() {
         return true;
       } else {
         throw new Error(
-          result.data?.permanentlyDeleteFolders?.message || "Erreur suppression"
+          result.data?.permanentlyDeleteFolders?.message ||
+            "Erreur suppression",
         );
       }
     } catch (error) {

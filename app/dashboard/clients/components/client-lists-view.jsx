@@ -1,28 +1,46 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-import { toast } from '@/src/components/ui/sonner';
-import { Button } from '@/src/components/ui/button';
-import { Badge } from '@/src/components/ui/badge';
-import { Edit2, Trash2, Users, MoreHorizontal, ChevronFirstIcon, ChevronLastIcon, ChevronLeftIcon, ChevronRightIcon, List } from 'lucide-react';
-import { Empty, EmptyMedia, EmptyHeader, EmptyTitle, EmptyDescription, EmptyContent } from '@/src/components/ui/empty';
+import React, { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "@/src/components/ui/sonner";
+import { Button } from "@/src/components/ui/button";
+import { Badge } from "@/src/components/ui/badge";
+import { Checkbox } from "@/src/components/ui/checkbox";
+import {
+  Edit2,
+  Trash2,
+  Users,
+  MoreHorizontal,
+  ChevronFirstIcon,
+  ChevronLastIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  List,
+} from "lucide-react";
+import {
+  Empty,
+  EmptyMedia,
+  EmptyHeader,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
+} from "@/src/components/ui/empty";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/src/components/ui/tooltip';
-import EditListDialog from './edit-list-dialog';
-import DeleteListDialog from './delete-list-dialog';
-import ListClientsView from './list-clients-view';
-import { useDeleteClientList } from '@/src/hooks/useClientLists';
+} from "@/src/components/ui/tooltip";
+import EditListDialog from "./edit-list-dialog";
+import DeleteListDialog from "./delete-list-dialog";
+import ListClientsView from "./list-clients-view";
+import { useDeleteClientList } from "@/src/hooks/useClientLists";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/src/components/ui/dropdown-menu';
+} from "@/src/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,19 +51,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/src/components/ui/alert-dialog';
+} from "@/src/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/src/components/ui/select';
+} from "@/src/components/ui/select";
 import {
   Pagination,
   PaginationContent,
   PaginationItem,
-} from '@/src/components/ui/pagination';
+} from "@/src/components/ui/pagination";
 import {
   useReactTable,
   getCoreRowModel,
@@ -53,9 +71,18 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   flexRender,
-} from '@tanstack/react-table';
+} from "@tanstack/react-table";
 
-export default function ClientListsView({ workspaceId, lists, onListsUpdated, selectedList: initialSelectedList, onSelectListChange, globalFilter = '', onCreateList, onViewingListChange }) {
+export default function ClientListsView({
+  workspaceId,
+  lists,
+  onListsUpdated,
+  selectedList: initialSelectedList,
+  onSelectListChange,
+  globalFilter = "",
+  onCreateList,
+  onViewingListChange,
+}) {
   const router = useRouter();
   const [selectedList, setSelectedList] = useState(initialSelectedList || null);
   const [editingList, setEditingList] = useState(null);
@@ -80,7 +107,7 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
       setDeletingList(null);
       onListsUpdated();
     } catch (error) {
-      console.error('Erreur lors de la suppression:', error);
+      console.error("Erreur lors de la suppression:", error);
     }
   };
 
@@ -93,32 +120,23 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
   const columns = useMemo(
     () => [
       {
-        id: 'select',
+        id: "select",
         header: ({ table }) => {
-          const checkboxRef = React.useRef(null);
-          React.useEffect(() => {
-            if (checkboxRef.current) {
-              checkboxRef.current.indeterminate = table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected();
-            }
-          }, [table.getIsSomeRowsSelected(), table.getIsAllRowsSelected()]);
+          const allSelected = table.getIsAllRowsSelected();
+          const someSelected = table.getIsSomeRowsSelected();
           return (
-            <input
-              ref={checkboxRef}
-              type="checkbox"
-              checked={table.getIsAllRowsSelected()}
-              onChange={table.getToggleAllRowsSelectedHandler()}
-              className="cursor-pointer"
-              role="checkbox"
+            <Checkbox
+              checked={allSelected || (someSelected && "indeterminate")}
+              onCheckedChange={(value) => table.toggleAllRowsSelected(!!value)}
+              aria-label="Sélectionner tout"
             />
           );
         },
         cell: ({ row }) => (
-          <input
-            type="checkbox"
+          <Checkbox
             checked={row.getIsSelected()}
-            onChange={row.getToggleSelectedHandler()}
-            className="cursor-pointer"
-            role="checkbox"
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Sélectionner la ligne"
           />
         ),
         size: 40,
@@ -126,8 +144,8 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
         enableHiding: false,
       },
       {
-        accessorKey: 'name',
-        header: 'Nom',
+        accessorKey: "name",
+        header: "Nom",
         size: 300,
         cell: (info) => {
           const list = info.row.original;
@@ -148,12 +166,13 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
         },
       },
       {
-        accessorKey: 'description',
-        header: 'Description',
+        accessorKey: "description",
+        header: "Description",
         size: 300,
         cell: (info) => {
           const description = info.getValue();
-          if (!description) return <span className="text-muted-foreground">-</span>;
+          if (!description)
+            return <span className="text-muted-foreground">-</span>;
           return (
             <TooltipProvider>
               <Tooltip>
@@ -171,8 +190,8 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
         },
       },
       {
-        accessorKey: 'clientCount',
-        header: 'Contacts',
+        accessorKey: "clientCount",
+        header: "Contacts",
         size: 150,
         cell: (info) => (
           <Badge variant="secondary" className="gap-1 font-normal w-fit">
@@ -182,8 +201,8 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
         ),
       },
       {
-        id: 'actions',
-        header: 'Actions',
+        id: "actions",
+        header: "Actions",
         size: 100,
         cell: (info) => {
           const list = info.row.original;
@@ -218,7 +237,7 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
         },
       },
     ],
-    []
+    [],
   );
 
   // Créer la table avec React Table
@@ -235,14 +254,19 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
     },
     onRowSelectionChange: setRowSelection,
     globalFilterFn: (row, columnId, filterValue) => {
-      const name = row.original.name?.toLowerCase() || '';
-      const description = row.original.description?.toLowerCase() || '';
-      return name.includes(filterValue.toLowerCase()) || description.includes(filterValue.toLowerCase());
+      const name = row.original.name?.toLowerCase() || "";
+      const description = row.original.description?.toLowerCase() || "";
+      return (
+        name.includes(filterValue.toLowerCase()) ||
+        description.includes(filterValue.toLowerCase())
+      );
     },
   });
 
   // Récupérer les lignes sélectionnées
-  const selectedRowsData = table.getSelectedRowModel().rows.map(row => row.original);
+  const selectedRowsData = table
+    .getSelectedRowModel()
+    .rows.map((row) => row.original);
 
   if (selectedList) {
     return (
@@ -260,7 +284,10 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
       {/* Bulk actions */}
       {selectedRowsData.length > 0 && (
         <div className="flex items-center justify-end px-4 sm:px-6 py-2 flex-shrink-0">
-          <AlertDialog open={isDeleteMultipleOpen} onOpenChange={setIsDeleteMultipleOpen}>
+          <AlertDialog
+            open={isDeleteMultipleOpen}
+            onOpenChange={setIsDeleteMultipleOpen}
+          >
             <AlertDialogTrigger asChild>
               <Button variant="destructive">
                 <Trash2 className="mr-2 h-4 w-4" />
@@ -271,8 +298,8 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
               <AlertDialogHeader>
                 <AlertDialogTitle>Supprimer les listes</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Êtes-vous sûr de vouloir supprimer {selectedRowsData.length} liste(s) ?
-                  Cette action est irréversible.
+                  Êtes-vous sûr de vouloir supprimer {selectedRowsData.length}{" "}
+                  liste(s) ? Cette action est irréversible.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -312,13 +339,22 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
       {lists?.length === 0 && !globalFilter ? (
         <div className="flex-1 flex items-center justify-center">
           <Empty>
-            <EmptyMedia variant="icon"><List /></EmptyMedia>
+            <EmptyMedia variant="icon">
+              <List />
+            </EmptyMedia>
             <EmptyHeader className="max-w-md">
               <EmptyTitle>Commencez votre organisation</EmptyTitle>
-              <EmptyDescription>Créez votre première liste pour organiser vos contacts par catégories ou segments.</EmptyDescription>
+              <EmptyDescription>
+                Créez votre première liste pour organiser vos contacts par
+                catégories ou segments.
+              </EmptyDescription>
             </EmptyHeader>
             <EmptyContent>
-              <Button variant="outline" onClick={onCreateList} className="font-normal">
+              <Button
+                variant="outline"
+                onClick={onCreateList}
+                className="font-normal"
+              >
                 Créer votre première liste
               </Button>
             </EmptyContent>
@@ -342,7 +378,7 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
                           ? null
                           : flexRender(
                               header.column.columnDef.header,
-                              header.getContext()
+                              header.getContext(),
                             )}
                       </th>
                     ))}
@@ -364,15 +400,23 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
                       className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
                       onClick={(e) => {
                         // Ne pas naviguer si on clique sur la checkbox ou les actions
-                        const isCheckbox = e.target.closest('[role="checkbox"]');
+                        const isCheckbox =
+                          e.target.closest('[role="checkbox"]');
                         const isButton = e.target.closest('[role="button"]');
-                        const isActionsCell = e.target.closest('[data-actions-cell="true"]');
-                        const isInput = e.target.closest('input');
-                        
-                        if (isCheckbox || isButton || isActionsCell || isInput) {
+                        const isActionsCell = e.target.closest(
+                          '[data-actions-cell="true"]',
+                        );
+                        const isInput = e.target.closest("input");
+
+                        if (
+                          isCheckbox ||
+                          isButton ||
+                          isActionsCell ||
+                          isInput
+                        ) {
                           return;
                         }
-                        
+
                         // Afficher les clients de la liste
                         setSelectedList(row.original);
                         if (onSelectListChange) {
@@ -385,11 +429,13 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
                           key={cell.id}
                           style={{ width: cell.column.getSize() }}
                           className={`p-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                          data-actions-cell={cell.column.id === 'actions' ? "true" : undefined}
+                          data-actions-cell={
+                            cell.column.id === "actions" ? "true" : undefined
+                          }
                         >
                           {flexRender(
                             cell.column.columnDef.cell,
-                            cell.getContext()
+                            cell.getContext(),
                           )}
                         </td>
                       ))}

@@ -34,11 +34,11 @@ export default function ProductFilters({
   // Gérer le toggle d'une catégorie
   const toggleCategory = (category) => {
     const newCategories = selectedCategories.includes(category)
-      ? selectedCategories.filter(c => c !== category)
+      ? selectedCategories.filter((c) => c !== category)
       : [...selectedCategories, category];
-    
+
     setSelectedCategories(newCategories);
-    
+
     // Mettre à jour le filtre de la table
     table
       .getColumn("category")
@@ -46,12 +46,14 @@ export default function ProductFilters({
   };
 
   // Tout sélectionner / tout désélectionner les catégories
-  const allCategoriesSelected = selectedCategories.length === uniqueCategories.length && uniqueCategories.length > 0;
-  
+  const allCategoriesSelected =
+    selectedCategories.length === uniqueCategories.length &&
+    uniqueCategories.length > 0;
+
   const toggleAllCategories = () => {
     const newCategories = allCategoriesSelected ? [] : [...uniqueCategories];
     setSelectedCategories(newCategories);
-    
+
     // Mettre à jour le filtre de la table
     table
       .getColumn("category")
@@ -64,17 +66,17 @@ export default function ProductFilters({
     .getAllColumns()
     .filter(
       (column) =>
-        typeof column.accessorFn !== "undefined" &&
-        column.getCanHide()
+        typeof column.accessorFn !== "undefined" && column.getCanHide(),
     );
 
   // Calculer le nombre de colonnes visibles
   const visibleColumnsCount = hideableColumns.filter((column) =>
-    column.getIsVisible()
+    column.getIsVisible(),
   ).length;
 
   // Vérifier si toutes les colonnes sont visibles
-  const allColumnsVisible = hideableColumns.length > 0 &&
+  const allColumnsVisible =
+    hideableColumns.length > 0 &&
     hideableColumns.every((column) => column.getIsVisible());
 
   // Traductions des colonnes (standards + custom fields)
@@ -134,7 +136,7 @@ export default function ProductFilters({
             {uniqueCategories.length > 0 ? (
               <>
                 {/* Checkbox Tout sélectionner */}
-                <div 
+                <div
                   className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
                   onClick={toggleAllCategories}
                 >
@@ -155,7 +157,7 @@ export default function ProductFilters({
                       checked={selectedCategories.includes(category)}
                       className="mr-2 pointer-events-none"
                     />
-                    <span>{category}</span>
+                    <span>{category || "Aucune catégorie"}</span>
                   </div>
                 ))}
               </>
@@ -179,7 +181,7 @@ export default function ProductFilters({
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="w-[250px] max-h-[400px] overflow-y-auto">
             {/* Checkbox Tout sélectionner */}
-            <div 
+            <div
               className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
               onClick={() => {
                 table.toggleAllColumnsVisible(!allColumnsVisible);
@@ -192,7 +194,7 @@ export default function ProductFilters({
               <span>Tout sélectionner</span>
             </div>
             <DropdownMenuSeparator />
-            
+
             {hideableColumns.map((column) => (
               <div
                 key={column.id}

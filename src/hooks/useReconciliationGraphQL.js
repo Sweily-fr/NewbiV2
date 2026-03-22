@@ -22,7 +22,6 @@ export const useReconciliationSuggestions = () => {
     GET_RECONCILIATION_SUGGESTIONS,
     {
       variables: { workspaceId },
-      fetchPolicy: "cache-and-network",
       skip: !workspaceId || workspaceLoading,
       pollInterval: 60000, // Rafraîchir toutes les 60 secondes (au lieu de 30)
       errorPolicy: "all",
@@ -51,7 +50,6 @@ export const useTransactionsForInvoice = (invoiceId) => {
     {
       variables: { invoiceId },
       skip: !invoiceId,
-      fetchPolicy: "cache-and-network",
     },
   );
 
@@ -217,7 +215,7 @@ export const useReconciliationGraphQL = () => {
         const { data } = await client.query({
           query: GET_TRANSACTIONS_FOR_INVOICE,
           variables: { invoiceId },
-          fetchPolicy: "cache-and-network",
+          fetchPolicy: "network-only",
         });
 
         const result = data?.transactionsForInvoice;
@@ -279,7 +277,7 @@ export const useReconciliationForSidebar = () => {
         const { data } = await client.query({
           query: GET_TRANSACTIONS_FOR_INVOICE,
           variables: { invoiceId },
-          fetchPolicy: "cache-and-network",
+          fetchPolicy: "network-only",
         });
 
         const result = data?.transactionsForInvoice;

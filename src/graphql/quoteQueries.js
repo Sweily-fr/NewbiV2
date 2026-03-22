@@ -347,8 +347,17 @@ export const GET_QUOTE_BY_NUMBER = gql`
 
 // Query pour rechercher les devis (pour la sélection de référence)
 export const SEARCH_QUOTES_FOR_REFERENCE = gql`
-  query SearchQuotesForReference($workspaceId: ID!, $search: String, $limit: Int) {
-    quotes(workspaceId: $workspaceId, search: $search, limit: $limit, status: COMPLETED) {
+  query SearchQuotesForReference(
+    $workspaceId: ID!
+    $search: String
+    $limit: Int
+  ) {
+    quotes(
+      workspaceId: $workspaceId
+      search: $search
+      limit: $limit
+      status: COMPLETED
+    ) {
       quotes {
         id
         prefix
@@ -454,9 +463,8 @@ export const useQuotes = (filters = {}) => {
       limit,
     },
     skip: !workspaceId,
-    fetchPolicy: "cache-and-network",
-    nextFetchPolicy: "cache-first",
     errorPolicy: "all",
+    fetchPolicy: "cache-and-network",
   });
 
   const quotes = useMemo(() => data?.quotes?.quotes || [], [data]);
@@ -512,7 +520,6 @@ export const useQuote = (id) => {
   const { data, loading, error, refetch } = useQuery(GET_QUOTE, {
     variables: { workspaceId, id },
     skip: !id || !workspaceId,
-    fetchPolicy: "cache-and-network",
     errorPolicy: "all",
   });
 
@@ -535,7 +542,6 @@ export const useQuoteStats = () => {
   const { data, loading, error, refetch } = useQuery(GET_QUOTE_STATS, {
     variables: { workspaceId },
     skip: !workspaceId,
-    fetchPolicy: "cache-and-network",
     errorPolicy: "all",
   });
 
@@ -555,7 +561,6 @@ export const useLastQuotePrefix = () => {
   const { data, loading, error } = useQuery(GET_LAST_QUOTE_PREFIX, {
     variables: { workspaceId },
     skip: !workspaceId,
-    fetchPolicy: "cache-and-network", // Toujours récupérer la dernière valeur
     errorPolicy: "all",
   });
 
@@ -565,7 +570,7 @@ export const useLastQuotePrefix = () => {
       loading,
       error,
     }),
-    [data, loading, error]
+    [data, loading, error],
   );
 };
 
@@ -592,7 +597,10 @@ export const useCreateQuote = () => {
   const { handleMutationError } = useErrorHandler();
 
   const [createQuoteMutation, { loading }] = useMutation(CREATE_QUOTE, {
-    refetchQueries: [{ query: GET_QUOTES, variables: { workspaceId } }, { query: GET_QUOTE_STATS, variables: { workspaceId } }],
+    refetchQueries: [
+      { query: GET_QUOTES, variables: { workspaceId } },
+      { query: GET_QUOTE_STATS, variables: { workspaceId } },
+    ],
     awaitRefetchQueries: true,
     onError: (error) => {
       handleMutationError(error, "create", "quote");
@@ -629,10 +637,6 @@ export const useUpdateQuote = () => {
         query: GET_QUOTE,
         variables: { id: data.updateQuote.id },
         data: { quote: data.updateQuote },
-      });
-      // Invalider les statistiques
-      client.refetchQueries({
-        include: [GET_QUOTE_STATS],
       });
     },
     onError: (error) => {
@@ -728,10 +732,6 @@ export const useChangeQuoteStatus = () => {
         variables: { id: data.changeQuoteStatus.id },
         data: { quote: data.changeQuoteStatus },
       });
-      // Invalider les statistiques
-      client.refetchQueries({
-        include: [GET_QUOTE_STATS],
-      });
     },
     onError: (error) => {
       console.error("Erreur lors du changement de statut:", error);
@@ -796,8 +796,18 @@ export const useConvertQuoteToInvoice = () => {
 };
 
 const CHECK_QUOTE_NUMBER_EXISTS = gql`
-  query CheckQuoteNumberExists($workspaceId: ID!, $number: String!, $prefix: String!, $excludeId: ID) {
-    checkQuoteNumberExists(workspaceId: $workspaceId, number: $number, prefix: $prefix, excludeId: $excludeId)
+  query CheckQuoteNumberExists(
+    $workspaceId: ID!
+    $number: String!
+    $prefix: String!
+    $excludeId: ID
+  ) {
+    checkQuoteNumberExists(
+      workspaceId: $workspaceId
+      number: $number
+      prefix: $prefix
+      excludeId: $excludeId
+    )
   }
 `;
 
@@ -821,7 +831,7 @@ export const useCheckQuoteNumber = () => {
             prefix: quotePrefix || "",
             excludeId: excludeId || undefined,
           },
-          fetchPolicy: "cache-and-network",
+          fetchPolicy: "network-only",
         });
 
         return {
@@ -831,12 +841,12 @@ export const useCheckQuoteNumber = () => {
       } catch (error) {
         console.error(
           "Erreur lors de la vérification du numéro de devis:",
-          error
+          error,
         );
         return { exists: false, quote: null };
       }
     },
-    [workspaceId, client]
+    [workspaceId, client],
   );
 
   return { checkQuoteNumber };
@@ -941,7 +951,10 @@ export const GET_QUOTE_TEMPLATES = gql`
 `;
 
 export const SAVE_QUOTE_AS_TEMPLATE = gql`
-  mutation SaveQuoteAsTemplate($input: SaveQuoteAsTemplateInput!, $workspaceId: ID) {
+  mutation SaveQuoteAsTemplate(
+    $input: SaveQuoteAsTemplateInput!
+    $workspaceId: ID
+  ) {
     saveQuoteAsTemplate(input: $input, workspaceId: $workspaceId) {
       id
       name
@@ -964,7 +977,6 @@ export const useQuoteTemplates = () => {
   const { data, loading, error, refetch } = useQuery(GET_QUOTE_TEMPLATES, {
     variables: { workspaceId },
     skip: !workspaceId,
-    fetchPolicy: "cache-and-network",
     errorPolicy: "all",
   });
 
@@ -975,7 +987,7 @@ export const useQuoteTemplates = () => {
       error,
       refetch,
     }),
-    [data?.quoteTemplates, loading, error, refetch]
+    [data?.quoteTemplates, loading, error, refetch],
   );
 };
 
@@ -983,6 +995,7 @@ export const useQuoteTemplates = () => {
 export const QUOTE_STATUS_COLORS = {
   [QUOTE_STATUS.DRAFT]: "bg-gray-100 text-gray-700 border-gray-200",
   [QUOTE_STATUS.PENDING]: "bg-amber-100 text-amber-700 border-amber-200",
-  [QUOTE_STATUS.COMPLETED]: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  [QUOTE_STATUS.COMPLETED]:
+    "bg-emerald-100 text-emerald-700 border-emerald-200",
   [QUOTE_STATUS.CANCELED]: "bg-red-100 text-red-700 border-red-200",
 };

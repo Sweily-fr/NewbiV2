@@ -1,30 +1,34 @@
-import { useMutation } from '@apollo/client';
-import { CREATE_CLIENT, UPDATE_CLIENT, DELETE_CLIENT } from '../graphql/mutations/clients';
-import { GET_CLIENTS, GET_CLIENT } from '../graphql/queries/clients';
-import { toast } from '@/src/components/ui/sonner';
-import { useWorkspace } from './useWorkspace';
-import { useErrorHandler } from './useErrorHandler';
-import { 
-  useOptimizedListQuery, 
-  useOptimizedFormQuery 
-} from './useOptimizedQuery';
-import { optimizedMutate, invalidateCache } from '@/src/lib/cache-utils';
-import { useApolloClient } from '@apollo/client';
+import { useMutation } from "@apollo/client";
+import {
+  CREATE_CLIENT,
+  UPDATE_CLIENT,
+  DELETE_CLIENT,
+} from "../graphql/mutations/clients";
+import { GET_CLIENTS, GET_CLIENT } from "../graphql/queries/clients";
+import { toast } from "@/src/components/ui/sonner";
+import { useWorkspace } from "./useWorkspace";
+import { useErrorHandler } from "./useErrorHandler";
+import {
+  useOptimizedListQuery,
+  useOptimizedFormQuery,
+} from "./useOptimizedQuery";
+import { optimizedMutate, invalidateCache } from "@/src/lib/cache-utils";
+import { useApolloClient } from "@apollo/client";
 
 /**
  * Hook optimisé pour récupérer la liste des clients avec cache intelligent
  * Utilise cache-first avec mise à jour en arrière-plan pour les performances
  */
-export const useClientsOptimized = (page = 1, limit = 10, search = '') => {
+export const useClientsOptimized = (page = 1, limit = 10, search = "") => {
   const { workspaceId } = useWorkspace();
-  
+
   const { data, loading, error, refetch, _cacheInfo } = useOptimizedListQuery(
-    GET_CLIENTS, 
+    GET_CLIENTS,
     {
       variables: { workspaceId, page, limit, search },
       skip: !workspaceId,
       // Politique optimisée automatiquement appliquée pour les listes
-    }
+    },
   );
 
   return {
@@ -47,14 +51,14 @@ export const useClientsOptimized = (page = 1, limit = 10, search = '') => {
  */
 export const useClientOptimized = (id) => {
   const { workspaceId } = useWorkspace();
-  
+
   const { data, loading, error, _cacheInfo } = useOptimizedFormQuery(
-    GET_CLIENT, 
+    GET_CLIENT,
     {
       variables: { workspaceId, id },
       skip: !id || !workspaceId,
       // Cache agressif pour les formulaires
-    }
+    },
   );
 
   return {
@@ -72,41 +76,41 @@ export const useCreateClientOptimized = () => {
   const { workspaceId } = useWorkspace();
   const { handleMutationError } = useErrorHandler();
   const apolloClient = useApolloClient();
-  
+
   const createClient = async (input) => {
     try {
       const result = await optimizedMutate(apolloClient, CREATE_CLIENT, {
         variables: { workspaceId, input },
-        
+
         // Réponse optimiste pour UX instantanée
         optimisticResponse: {
           createClient: {
-            __typename: 'Client',
+            __typename: "Client",
             id: `temp-${Date.now()}`, // ID temporaire
             ...input,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-          }
+          },
         },
-        
+
         // Invalider les caches liés après succès
-        invalidateQueries: ['getClients'],
-        
+        invalidateQueries: ["getClients"],
+
         // Mise à jour manuelle du cache pour performance
         update: (cache, { data: { createClient: newClient } }) => {
           try {
             // Lire toutes les variantes possibles de GET_CLIENTS en cache
             const cacheKeys = [
-              { workspaceId, page: 1, limit: 10, search: '' },
-              { workspaceId, page: 1, limit: 20, search: '' },
-              { workspaceId, page: 1, limit: 50, search: '' },
+              { workspaceId, page: 1, limit: 10, search: "" },
+              { workspaceId, page: 1, limit: 20, search: "" },
+              { workspaceId, page: 1, limit: 50, search: "" },
             ];
-            
-            cacheKeys.forEach(variables => {
+
+            cacheKeys.forEach((variables) => {
               try {
                 const existingClients = cache.readQuery({
                   query: GET_CLIENTS,
-                  variables
+                  variables,
                 });
 
                 if (existingClients) {
@@ -117,9 +121,9 @@ export const useCreateClientOptimized = () => {
                       clients: {
                         ...existingClients.clients,
                         items: [newClient, ...existingClients.clients.items],
-                        totalItems: existingClients.clients.totalItems + 1
-                      }
-                    }
+                        totalItems: existingClients.clients.totalItems + 1,
+                      },
+                    },
                   });
                 }
               } catch {
@@ -127,18 +131,18 @@ export const useCreateClientOptimized = () => {
               }
             });
           } catch (error) {
-            console.warn('⚠️ Erreur mise à jour cache CREATE_CLIENT:', error);
+            console.warn("⚠️ Erreur mise à jour cache CREATE_CLIENT:", error);
           }
         },
       });
 
-      toast.success('Client créé avec succès', {
-        description: `${input.name} a été ajouté à vos clients`
+      toast.success("Client créé avec succès", {
+        description: `${input.name} a été ajouté à vos clients`,
       });
-      
+
       return result;
     } catch (error) {
-      handleMutationError(error, 'create', 'client');
+      handleMutationError(error, "create", "client");
       throw error;
     }
   };
@@ -156,24 +160,26 @@ export const useUpdateClientOptimized = () => {
   const { workspaceId } = useWorkspace();
   const { handleMutationError } = useErrorHandler();
   const apolloClient = useApolloClient();
-  
-  const [updateClientMutation, { loading, error }] = useMutation(UPDATE_CLIENT);
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_updateClientMutation, { loading, error }] =
+    useMutation(UPDATE_CLIENT);
 
   const updateClient = async (id, input) => {
     try {
       const result = await optimizedMutate(apolloClient, UPDATE_CLIENT, {
         variables: { workspaceId, id, input },
-        
+
         // Réponse optimiste
         optimisticResponse: {
           updateClient: {
-            __typename: 'Client',
+            __typename: "Client",
             id,
             ...input,
             updatedAt: new Date().toISOString(),
-          }
+          },
         },
-        
+
         // Mise à jour intelligente du cache
         update: (cache, { data: { updateClient: updatedClient } }) => {
           try {
@@ -181,26 +187,27 @@ export const useUpdateClientOptimized = () => {
             cache.writeQuery({
               query: GET_CLIENT,
               variables: { workspaceId, id: updatedClient.id },
-              data: { client: updatedClient }
+              data: { client: updatedClient },
             });
 
             // Mettre à jour dans toutes les listes en cache
             const cacheKeys = [
-              { workspaceId, page: 1, limit: 10, search: '' },
-              { workspaceId, page: 1, limit: 20, search: '' },
-              { workspaceId, page: 1, limit: 50, search: '' },
+              { workspaceId, page: 1, limit: 10, search: "" },
+              { workspaceId, page: 1, limit: 20, search: "" },
+              { workspaceId, page: 1, limit: 50, search: "" },
             ];
-            
-            cacheKeys.forEach(variables => {
+
+            cacheKeys.forEach((variables) => {
               try {
                 const existingClients = cache.readQuery({
                   query: GET_CLIENTS,
-                  variables
+                  variables,
                 });
 
                 if (existingClients) {
-                  const updatedItems = existingClients.clients.items.map(client =>
-                    client.id === updatedClient.id ? updatedClient : client
+                  const updatedItems = existingClients.clients.items.map(
+                    (client) =>
+                      client.id === updatedClient.id ? updatedClient : client,
                   );
 
                   cache.writeQuery({
@@ -209,9 +216,9 @@ export const useUpdateClientOptimized = () => {
                     data: {
                       clients: {
                         ...existingClients.clients,
-                        items: updatedItems
-                      }
-                    }
+                        items: updatedItems,
+                      },
+                    },
                   });
                 }
               } catch {
@@ -219,18 +226,18 @@ export const useUpdateClientOptimized = () => {
               }
             });
           } catch (error) {
-            console.warn('⚠️ Erreur mise à jour cache UPDATE_CLIENT:', error);
+            console.warn("⚠️ Erreur mise à jour cache UPDATE_CLIENT:", error);
           }
         },
       });
 
-      toast.success('Client modifié avec succès', {
-        description: `Les informations de ${input.name || 'ce client'} ont été mises à jour`
+      toast.success("Client modifié avec succès", {
+        description: `Les informations de ${input.name || "ce client"} ont été mises à jour`,
       });
-      
+
       return result;
     } catch (error) {
-      handleMutationError(error, 'update', 'client');
+      handleMutationError(error, "update", "client");
       throw error;
     }
   };
@@ -249,39 +256,41 @@ export const useDeleteClientOptimized = () => {
   const { workspaceId } = useWorkspace();
   const { handleMutationError } = useErrorHandler();
   const apolloClient = useApolloClient();
-  
-  const [deleteClientMutation, { loading, error }] = useMutation(DELETE_CLIENT);
 
-  const deleteClient = async (id, clientName = 'ce client') => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_deleteClientMutation, { loading, error }] =
+    useMutation(DELETE_CLIENT);
+
+  const deleteClient = async (id, clientName = "ce client") => {
     try {
       const result = await optimizedMutate(apolloClient, DELETE_CLIENT, {
         variables: { workspaceId, id },
-        
+
         // Mise à jour immédiate du cache
         update: (cache) => {
           try {
             // Supprimer le client du cache individuel
             cache.evict({
-              id: cache.identify({ __typename: 'Client', id })
+              id: cache.identify({ __typename: "Client", id }),
             });
 
             // Supprimer de toutes les listes en cache
             const cacheKeys = [
-              { workspaceId, page: 1, limit: 10, search: '' },
-              { workspaceId, page: 1, limit: 20, search: '' },
-              { workspaceId, page: 1, limit: 50, search: '' },
+              { workspaceId, page: 1, limit: 10, search: "" },
+              { workspaceId, page: 1, limit: 20, search: "" },
+              { workspaceId, page: 1, limit: 50, search: "" },
             ];
-            
-            cacheKeys.forEach(variables => {
+
+            cacheKeys.forEach((variables) => {
               try {
                 const existingClients = cache.readQuery({
                   query: GET_CLIENTS,
-                  variables
+                  variables,
                 });
 
                 if (existingClients) {
                   const filteredItems = existingClients.clients.items.filter(
-                    client => client.id !== id
+                    (client) => client.id !== id,
                   );
 
                   cache.writeQuery({
@@ -291,9 +300,9 @@ export const useDeleteClientOptimized = () => {
                       clients: {
                         ...existingClients.clients,
                         items: filteredItems,
-                        totalItems: existingClients.clients.totalItems - 1
-                      }
-                    }
+                        totalItems: existingClients.clients.totalItems - 1,
+                      },
+                    },
                   });
                 }
               } catch {
@@ -304,18 +313,18 @@ export const useDeleteClientOptimized = () => {
             // Nettoyer les références orphelines
             cache.gc();
           } catch (error) {
-            console.warn('⚠️ Erreur mise à jour cache DELETE_CLIENT:', error);
+            console.warn("⚠️ Erreur mise à jour cache DELETE_CLIENT:", error);
           }
         },
       });
 
-      toast.success('Client supprimé avec succès', {
-        description: `${clientName} a été retiré de vos clients`
+      toast.success("Client supprimé avec succès", {
+        description: `${clientName} a été retiré de vos clients`,
       });
-      
+
       return result;
     } catch (error) {
-      handleMutationError(error, 'delete', 'client');
+      handleMutationError(error, "delete", "client");
       throw error;
     }
   };
@@ -341,11 +350,10 @@ export const usePreloadClients = () => {
       // Précharger la première page des clients
       await apolloClient.query({
         query: GET_CLIENTS,
-        variables: { workspaceId, page: 1, limit: 20, search: '' },
-        fetchPolicy: "cache-and-network",
-        errorPolicy: 'ignore',
+        variables: { workspaceId, page: 1, limit: 20, search: "" },
+        errorPolicy: "ignore",
       });
-    } catch (error) {
+    } catch {
       // Preload error silently ignored
     }
   };
@@ -360,8 +368,8 @@ export const useClientCache = () => {
   const apolloClient = useApolloClient();
 
   const clearClientCache = () => {
-    invalidateCache(apolloClient, ['getClients', 'getClient']);
-    toast.info('Cache des clients vidé');
+    invalidateCache(apolloClient, ["getClients", "getClient"]);
+    toast.info("Cache des clients vidé");
   };
 
   const refreshClients = async () => {
@@ -369,9 +377,9 @@ export const useClientCache = () => {
       await apolloClient.refetchQueries({
         include: [GET_CLIENTS, GET_CLIENT],
       });
-      toast.success('Données clients actualisées');
-    } catch (error) {
-      toast.error('Erreur lors de l\'actualisation');
+      toast.success("Données clients actualisées");
+    } catch {
+      toast.error("Erreur lors de l'actualisation");
     }
   };
 

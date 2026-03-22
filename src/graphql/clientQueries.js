@@ -1,10 +1,5 @@
 import { gql } from "@apollo/client";
-import {
-  useQuery,
-  useMutation,
-  useLazyQuery,
-  useApolloClient,
-} from "@apollo/client";
+import { useQuery, useMutation, useLazyQuery } from "@apollo/client";
 import { useMemo, useCallback } from "react";
 import { toast } from "@/src/components/ui/sonner";
 import { useWorkspace } from "../hooks/useWorkspace";
@@ -282,8 +277,8 @@ export const useClients = (options = {}) => {
   const { data, loading, error, refetch, fetchMore } = useQuery(GET_CLIENTS, {
     variables: { workspaceId, page, limit, search },
     skip: !workspaceId,
-    fetchPolicy: "cache-first",
-    nextFetchPolicy: "cache-first",
+    fetchPolicy: "cache-and-network",
+    nextFetchPolicy: "cache-and-network",
     errorPolicy: "all",
     notifyOnNetworkStatusChange: true,
   });
@@ -387,7 +382,7 @@ export const useCreateClient = (providedWorkspaceId) => {
         }
       },
       errorPolicy: "all",
-    }
+    },
   );
 
   const createClient = useCallback(
@@ -405,7 +400,7 @@ export const useCreateClient = (providedWorkspaceId) => {
         throw err;
       }
     },
-    [createClientMutation, workspaceId]
+    [createClientMutation, workspaceId],
   );
 
   return {
@@ -425,7 +420,7 @@ export const useSearchCompaniesByName = () => {
         console.error("Erreur lors de la recherche d'entreprises:", error);
         toast.error("Erreur lors de la recherche d'entreprises");
       },
-    }
+    },
   );
 
   const search = useCallback(
@@ -440,7 +435,7 @@ export const useSearchCompaniesByName = () => {
         return [];
       }
     },
-    [searchCompanies]
+    [searchCompanies],
   );
 
   return { search, loading, error };
@@ -452,7 +447,7 @@ export const useSearchCompanyBySiret = () => {
     SEARCH_COMPANY_BY_SIRET,
     {
       errorPolicy: "all",
-    }
+    },
   );
 
   const search = useCallback(
@@ -465,11 +460,11 @@ export const useSearchCompanyBySiret = () => {
       } catch (error) {
         console.error("Erreur lors de la recherche:", error);
         throw new Error(
-          "Impossible de récupérer les détails de l'entreprise. Veuillez réessayer."
+          "Impossible de récupérer les détails de l'entreprise. Veuillez réessayer.",
         );
       }
     },
-    [searchCompany]
+    [searchCompany],
   );
 
   return { search, loading, error };
@@ -479,7 +474,6 @@ export const useSearchCompanyBySiret = () => {
 export const useUpdateClient = (providedWorkspaceId, options = {}) => {
   const { workspaceId: contextWorkspaceId } = useWorkspace();
   const workspaceId = providedWorkspaceId || contextWorkspaceId;
-  const client = useApolloClient();
   const { showToast = true } = options;
 
   const [updateClientMutation, { loading }] = useMutation(UPDATE_CLIENT, {
@@ -500,7 +494,7 @@ export const useUpdateClient = (providedWorkspaceId, options = {}) => {
 
         if (existingClients) {
           const updatedItems = existingClients.clients.items.map((client) =>
-            client.id === updatedClient.id ? updatedClient : client
+            client.id === updatedClient.id ? updatedClient : client,
           );
 
           cache.writeQuery({
@@ -549,10 +543,9 @@ export const useUpdateClient = (providedWorkspaceId, options = {}) => {
 export const useDeleteClient = (providedWorkspaceId) => {
   const { workspaceId: contextWorkspaceId } = useWorkspace();
   const workspaceId = providedWorkspaceId || contextWorkspaceId;
-  const client = useApolloClient();
 
   const [deleteClientMutation, { loading }] = useMutation(DELETE_CLIENT, {
-    update: (cache, { data }, { variables: { id } }) => {
+    update: (cache, _result, { variables: { id } }) => {
       // Supprimer le client du cache GET_CLIENT
       cache.evict({
         id: cache.identify({ __typename: "Client", id }),
@@ -567,7 +560,7 @@ export const useDeleteClient = (providedWorkspaceId) => {
 
         if (existingClients) {
           const filteredItems = existingClients.clients.items.filter(
-            (client) => client.id !== id
+            (client) => client.id !== id,
           );
 
           cache.writeQuery({

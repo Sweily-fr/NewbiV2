@@ -17,11 +17,8 @@ import {
   BULK_DELETE_PURCHASE_INVOICES,
   BULK_CATEGORIZE_PURCHASE_INVOICES,
   RECONCILE_PURCHASE_INVOICE,
-  UNRECONCILE_PURCHASE_INVOICE,
   CREATE_SUPPLIER,
-  UPDATE_SUPPLIER,
   DELETE_SUPPLIER,
-  MERGE_SUPPLIERS,
   SYNC_PURCHASE_INVOICES_FROM_SUPERPDP,
   ACKNOWLEDGE_PURCHASE_INVOICE_EINVOICE,
 } from "../graphql/mutations/purchaseInvoices";
@@ -38,8 +35,8 @@ export const usePurchaseInvoices = (filters = {}) => {
       limit: 50,
       ...filters,
     },
-    fetchPolicy: "cache-and-network",
     skip: !workspaceId,
+    fetchPolicy: "cache-and-network",
   });
 
   return {
@@ -58,7 +55,6 @@ export const usePurchaseInvoice = (id) => {
   const { data, loading, error, refetch } = useQuery(GET_PURCHASE_INVOICE, {
     variables: { id },
     skip: !id,
-    fetchPolicy: "cache-and-network",
   });
 
   return {
@@ -72,11 +68,13 @@ export const usePurchaseInvoice = (id) => {
 export const usePurchaseInvoiceStats = () => {
   const { workspaceId } = useRequiredWorkspace();
 
-  const { data, loading, error, refetch } = useQuery(GET_PURCHASE_INVOICE_STATS, {
-    variables: { workspaceId },
-    fetchPolicy: "cache-and-network",
-    skip: !workspaceId,
-  });
+  const { data, loading, error, refetch } = useQuery(
+    GET_PURCHASE_INVOICE_STATS,
+    {
+      variables: { workspaceId },
+      skip: !workspaceId,
+    },
+  );
 
   return {
     stats: data?.purchaseInvoiceStats || {
@@ -100,12 +98,16 @@ export const useCreatePurchaseInvoice = () => {
 
   const [createMutation, { loading }] = useMutation(CREATE_PURCHASE_INVOICE, {
     refetchQueries: [
-      { query: GET_PURCHASE_INVOICES, variables: { workspaceId, page: 1, limit: 50 } },
+      {
+        query: GET_PURCHASE_INVOICES,
+        variables: { workspaceId, page: 1, limit: 50 },
+      },
       { query: GET_PURCHASE_INVOICE_STATS, variables: { workspaceId } },
     ],
     awaitRefetchQueries: false,
     onCompleted: () => toast.success("Facture d'achat créée"),
-    onError: (error) => toast.error(error.message || "Erreur lors de la création"),
+    onError: (error) =>
+      toast.error(error.message || "Erreur lors de la création"),
   });
 
   const createInvoice = async (input) => {
@@ -123,12 +125,12 @@ export const useUpdatePurchaseInvoice = () => {
 
   const [updateMutation, { loading }] = useMutation(UPDATE_PURCHASE_INVOICE, {
     refetchQueries: [
-      { query: GET_PURCHASE_INVOICES, variables: { workspaceId, page: 1, limit: 50 } },
       { query: GET_PURCHASE_INVOICE_STATS, variables: { workspaceId } },
     ],
     awaitRefetchQueries: false,
     onCompleted: () => toast.success("Facture mise à jour"),
-    onError: (error) => toast.error(error.message || "Erreur lors de la mise à jour"),
+    onError: (error) =>
+      toast.error(error.message || "Erreur lors de la mise à jour"),
   });
 
   const updateInvoice = async (id, input) => {
@@ -144,7 +146,10 @@ export const useDeletePurchaseInvoice = () => {
 
   const [deleteMutation, { loading }] = useMutation(DELETE_PURCHASE_INVOICE, {
     refetchQueries: [
-      { query: GET_PURCHASE_INVOICES, variables: { workspaceId, page: 1, limit: 50 } },
+      {
+        query: GET_PURCHASE_INVOICES,
+        variables: { workspaceId, page: 1, limit: 50 },
+      },
       { query: GET_PURCHASE_INVOICE_STATS, variables: { workspaceId } },
     ],
     awaitRefetchQueries: false,
@@ -168,14 +173,7 @@ export const useDeletePurchaseInvoice = () => {
 };
 
 export const useAddPurchaseInvoiceFile = () => {
-  const { workspaceId } = useRequiredWorkspace();
-
-  const [addFileMutation, { loading }] = useMutation(ADD_PURCHASE_INVOICE_FILE, {
-    refetchQueries: [
-      { query: GET_PURCHASE_INVOICES, variables: { workspaceId, page: 1, limit: 50 } },
-    ],
-    awaitRefetchQueries: false,
-  });
+  const [addFileMutation, { loading }] = useMutation(ADD_PURCHASE_INVOICE_FILE);
 
   const addFile = async (purchaseInvoiceId, input) => {
     try {
@@ -193,7 +191,9 @@ export const useAddPurchaseInvoiceFile = () => {
 };
 
 export const useRemovePurchaseInvoiceFile = () => {
-  const [removeFileMutation, { loading }] = useMutation(REMOVE_PURCHASE_INVOICE_FILE);
+  const [removeFileMutation, { loading }] = useMutation(
+    REMOVE_PURCHASE_INVOICE_FILE,
+  );
 
   const removeFile = async (purchaseInvoiceId, fileId) => {
     try {
@@ -212,18 +212,22 @@ export const useRemovePurchaseInvoiceFile = () => {
 export const useMarkAsPaid = () => {
   const { workspaceId } = useRequiredWorkspace();
 
-  const [markMutation, { loading }] = useMutation(MARK_PURCHASE_INVOICE_AS_PAID, {
-    refetchQueries: [
-      { query: GET_PURCHASE_INVOICES, variables: { workspaceId, page: 1, limit: 50 } },
-      { query: GET_PURCHASE_INVOICE_STATS, variables: { workspaceId } },
-    ],
-    awaitRefetchQueries: false,
-    onCompleted: () => toast.success("Facture marquée comme payée"),
-    onError: (error) => toast.error(error.message || "Erreur"),
-  });
+  const [markMutation, { loading }] = useMutation(
+    MARK_PURCHASE_INVOICE_AS_PAID,
+    {
+      refetchQueries: [
+        { query: GET_PURCHASE_INVOICE_STATS, variables: { workspaceId } },
+      ],
+      awaitRefetchQueries: false,
+      onCompleted: () => toast.success("Facture marquée comme payée"),
+      onError: (error) => toast.error(error.message || "Erreur"),
+    },
+  );
 
   const markAsPaid = async (id, paymentDate, paymentMethod) => {
-    const result = await markMutation({ variables: { id, paymentDate, paymentMethod } });
+    const result = await markMutation({
+      variables: { id, paymentDate, paymentMethod },
+    });
     return result?.data?.markPurchaseInvoiceAsPaid;
   };
 
@@ -233,15 +237,22 @@ export const useMarkAsPaid = () => {
 export const useBulkUpdateStatus = () => {
   const { workspaceId } = useRequiredWorkspace();
 
-  const [bulkMutation, { loading }] = useMutation(BULK_UPDATE_PURCHASE_INVOICE_STATUS, {
-    refetchQueries: [
-      { query: GET_PURCHASE_INVOICES, variables: { workspaceId, page: 1, limit: 50 } },
-      { query: GET_PURCHASE_INVOICE_STATS, variables: { workspaceId } },
-    ],
-    awaitRefetchQueries: false,
-    onCompleted: (data) => toast.success(data.bulkUpdatePurchaseInvoiceStatus.message),
-    onError: (error) => toast.error(error.message || "Erreur"),
-  });
+  const [bulkMutation, { loading }] = useMutation(
+    BULK_UPDATE_PURCHASE_INVOICE_STATUS,
+    {
+      refetchQueries: [
+        {
+          query: GET_PURCHASE_INVOICES,
+          variables: { workspaceId, page: 1, limit: 50 },
+        },
+        { query: GET_PURCHASE_INVOICE_STATS, variables: { workspaceId } },
+      ],
+      awaitRefetchQueries: false,
+      onCompleted: (data) =>
+        toast.success(data.bulkUpdatePurchaseInvoiceStatus.message),
+      onError: (error) => toast.error(error.message || "Erreur"),
+    },
+  );
 
   const bulkUpdateStatus = async (ids, status) => {
     const result = await bulkMutation({ variables: { ids, status } });
@@ -254,15 +265,22 @@ export const useBulkUpdateStatus = () => {
 export const useBulkDelete = () => {
   const { workspaceId } = useRequiredWorkspace();
 
-  const [bulkMutation, { loading }] = useMutation(BULK_DELETE_PURCHASE_INVOICES, {
-    refetchQueries: [
-      { query: GET_PURCHASE_INVOICES, variables: { workspaceId, page: 1, limit: 50 } },
-      { query: GET_PURCHASE_INVOICE_STATS, variables: { workspaceId } },
-    ],
-    awaitRefetchQueries: false,
-    onCompleted: (data) => toast.success(data.bulkDeletePurchaseInvoices.message),
-    onError: (error) => toast.error(error.message || "Erreur"),
-  });
+  const [bulkMutation, { loading }] = useMutation(
+    BULK_DELETE_PURCHASE_INVOICES,
+    {
+      refetchQueries: [
+        {
+          query: GET_PURCHASE_INVOICES,
+          variables: { workspaceId, page: 1, limit: 50 },
+        },
+        { query: GET_PURCHASE_INVOICE_STATS, variables: { workspaceId } },
+      ],
+      awaitRefetchQueries: false,
+      onCompleted: (data) =>
+        toast.success(data.bulkDeletePurchaseInvoices.message),
+      onError: (error) => toast.error(error.message || "Erreur"),
+    },
+  );
 
   const bulkDelete = async (ids) => {
     const result = await bulkMutation({ variables: { ids } });
@@ -275,14 +293,21 @@ export const useBulkDelete = () => {
 export const useBulkCategorize = () => {
   const { workspaceId } = useRequiredWorkspace();
 
-  const [bulkMutation, { loading }] = useMutation(BULK_CATEGORIZE_PURCHASE_INVOICES, {
-    refetchQueries: [
-      { query: GET_PURCHASE_INVOICES, variables: { workspaceId, page: 1, limit: 50 } },
-    ],
-    awaitRefetchQueries: false,
-    onCompleted: (data) => toast.success(data.bulkCategorizePurchaseInvoices.message),
-    onError: (error) => toast.error(error.message || "Erreur"),
-  });
+  const [bulkMutation, { loading }] = useMutation(
+    BULK_CATEGORIZE_PURCHASE_INVOICES,
+    {
+      refetchQueries: [
+        {
+          query: GET_PURCHASE_INVOICES,
+          variables: { workspaceId, page: 1, limit: 50 },
+        },
+      ],
+      awaitRefetchQueries: false,
+      onCompleted: (data) =>
+        toast.success(data.bulkCategorizePurchaseInvoices.message),
+      onError: (error) => toast.error(error.message || "Erreur"),
+    },
+  );
 
   const bulkCategorize = async (ids, category) => {
     const result = await bulkMutation({ variables: { ids, category } });
@@ -295,17 +320,23 @@ export const useBulkCategorize = () => {
 export const useReconcilePurchaseInvoice = () => {
   const { workspaceId } = useRequiredWorkspace();
 
-  const [reconcileMutation, { loading }] = useMutation(RECONCILE_PURCHASE_INVOICE, {
-    refetchQueries: [
-      { query: GET_PURCHASE_INVOICES, variables: { workspaceId, page: 1, limit: 50 } },
-      { query: GET_PURCHASE_INVOICE_STATS, variables: { workspaceId } },
-    ],
-    onCompleted: () => toast.success("Rapprochement effectué"),
-    onError: (error) => toast.error(error.message || "Erreur de rapprochement"),
-  });
+  const [reconcileMutation, { loading }] = useMutation(
+    RECONCILE_PURCHASE_INVOICE,
+    {
+      refetchQueries: [
+        { query: GET_PURCHASE_INVOICE_STATS, variables: { workspaceId } },
+      ],
+      awaitRefetchQueries: false,
+      onCompleted: () => toast.success("Rapprochement effectué"),
+      onError: (error) =>
+        toast.error(error.message || "Erreur de rapprochement"),
+    },
+  );
 
   const reconcile = async (purchaseInvoiceId, transactionIds) => {
-    const result = await reconcileMutation({ variables: { purchaseInvoiceId, transactionIds } });
+    const result = await reconcileMutation({
+      variables: { purchaseInvoiceId, transactionIds },
+    });
     return result?.data?.reconcilePurchaseInvoice;
   };
 
@@ -313,11 +344,13 @@ export const useReconcilePurchaseInvoice = () => {
 };
 
 export const useReconciliationSuggestions = (purchaseInvoiceId) => {
-  const { data, loading, refetch } = useQuery(GET_PURCHASE_INVOICE_RECONCILIATION_MATCHES, {
-    variables: { purchaseInvoiceId },
-    skip: !purchaseInvoiceId,
-    fetchPolicy: "cache-and-network",
-  });
+  const { data, loading, refetch } = useQuery(
+    GET_PURCHASE_INVOICE_RECONCILIATION_MATCHES,
+    {
+      variables: { purchaseInvoiceId },
+      skip: !purchaseInvoiceId,
+    },
+  );
 
   return {
     suggestions: data?.purchaseInvoiceReconciliationMatches || [],
@@ -333,8 +366,8 @@ export const useSuppliers = (search = "") => {
 
   const { data, loading, error, refetch } = useQuery(GET_SUPPLIERS, {
     variables: { workspaceId, page: 1, limit: 200, search },
-    fetchPolicy: "cache-and-network",
     skip: !workspaceId,
+    fetchPolicy: "cache-and-network",
   });
 
   return {
@@ -351,7 +384,10 @@ export const useCreateSupplier = () => {
 
   const [createMutation, { loading }] = useMutation(CREATE_SUPPLIER, {
     refetchQueries: [
-      { query: GET_SUPPLIERS, variables: { workspaceId, page: 1, limit: 200, search: "" } },
+      {
+        query: GET_SUPPLIERS,
+        variables: { workspaceId, page: 1, limit: 200, search: "" },
+      },
     ],
     awaitRefetchQueries: false,
     onCompleted: () => toast.success("Fournisseur créé"),
@@ -373,7 +409,10 @@ export const useDeleteSupplier = () => {
 
   const [deleteMutation, { loading }] = useMutation(DELETE_SUPPLIER, {
     refetchQueries: [
-      { query: GET_SUPPLIERS, variables: { workspaceId, page: 1, limit: 200, search: "" } },
+      {
+        query: GET_SUPPLIERS,
+        variables: { workspaceId, page: 1, limit: 200, search: "" },
+      },
     ],
     awaitRefetchQueries: false,
   });
@@ -402,13 +441,19 @@ export const useDeleteSupplier = () => {
 export const useSyncPurchaseInvoicesFromSuperPdp = () => {
   const { workspaceId } = useRequiredWorkspace();
 
-  const [syncMutation, { loading }] = useMutation(SYNC_PURCHASE_INVOICES_FROM_SUPERPDP, {
-    refetchQueries: [
-      { query: GET_PURCHASE_INVOICES, variables: { workspaceId, page: 1, limit: 200 } },
-      { query: GET_PURCHASE_INVOICE_STATS, variables: { workspaceId } },
-    ],
-    awaitRefetchQueries: true,
-  });
+  const [syncMutation, { loading }] = useMutation(
+    SYNC_PURCHASE_INVOICES_FROM_SUPERPDP,
+    {
+      refetchQueries: [
+        {
+          query: GET_PURCHASE_INVOICES,
+          variables: { workspaceId, page: 1, limit: 200 },
+        },
+        { query: GET_PURCHASE_INVOICE_STATS, variables: { workspaceId } },
+      ],
+      awaitRefetchQueries: true,
+    },
+  );
 
   const syncFromSuperPdp = async (since) => {
     try {
@@ -420,7 +465,9 @@ export const useSyncPurchaseInvoicesFromSuperPdp = () => {
 
       if (data?.success) {
         if (data.imported > 0) {
-          toast.success(`${data.imported} facture(s) importée(s) depuis SuperPDP`);
+          toast.success(
+            `${data.imported} facture(s) importée(s) depuis SuperPDP`,
+          );
         } else {
           toast.info("Aucune nouvelle facture à importer");
         }
@@ -439,7 +486,9 @@ export const useSyncPurchaseInvoicesFromSuperPdp = () => {
 };
 
 export const useAcknowledgePurchaseInvoiceEInvoice = () => {
-  const [acknowledgeMutation, { loading }] = useMutation(ACKNOWLEDGE_PURCHASE_INVOICE_EINVOICE);
+  const [acknowledgeMutation, { loading }] = useMutation(
+    ACKNOWLEDGE_PURCHASE_INVOICE_EINVOICE,
+  );
 
   const acknowledge = async (id) => {
     try {

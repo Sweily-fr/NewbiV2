@@ -12,7 +12,6 @@ export function useInstalledApps(organizationId) {
   const { data, loading, error, refetch } = useQuery(GET_INSTALLED_APPS, {
     variables: { organizationId },
     skip: !organizationId,
-    fetchPolicy: "cache-and-network",
   });
 
   const [installAppMutation, { loading: installLoading }] = useMutation(
@@ -25,7 +24,7 @@ export function useInstalledApps(organizationId) {
         toast.error(error.message || "Erreur lors de l'installation");
       },
       refetchQueries: ["GetInstalledApps"],
-    }
+    },
   );
 
   const [uninstallAppMutation, { loading: uninstallLoading }] = useMutation(
@@ -38,11 +37,11 @@ export function useInstalledApps(organizationId) {
         toast.error(error.message || "Erreur lors de la désinstallation");
       },
       refetchQueries: ["GetInstalledApps"],
-    }
+    },
   );
 
   const installedAppIds = (data?.getInstalledApps || []).map(
-    (app) => app.appId
+    (app) => app.appId,
   );
 
   const isInstalled = (appId) => installedAppIds.includes(appId);

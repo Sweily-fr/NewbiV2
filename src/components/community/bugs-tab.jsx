@@ -1,24 +1,29 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useQuery } from '@apollo/client';
-import { GET_COMMUNITY_SUGGESTIONS } from '../../graphql/queries/communitySuggestion';
-import { SuggestionCard } from './suggestion-card';
-import { SuggestionSkeleton } from './suggestion-skeleton';
-import { EmptyState } from './empty-state';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { Bug } from 'lucide-react';
+import { useState } from "react";
+import { useQuery } from "@apollo/client";
+import { GET_COMMUNITY_SUGGESTIONS } from "../../graphql/queries/communitySuggestion";
+import { SuggestionCard } from "./suggestion-card";
+import { SuggestionSkeleton } from "./suggestion-skeleton";
+import { EmptyState } from "./empty-state";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
+import { Bug } from "lucide-react";
 
 export function BugsTab() {
-  const [sortBy, setSortBy] = useState('recent');
+  const [sortBy, setSortBy] = useState("recent");
 
   const { data, loading, refetch } = useQuery(GET_COMMUNITY_SUGGESTIONS, {
     variables: {
-      type: 'bug',
-      status: 'pending',
-      sortBy
+      type: "bug",
+      status: "pending",
+      sortBy,
     },
-    fetchPolicy: 'cache-and-network'
   });
 
   const suggestions = data?.getCommunitySuggestions || [];
@@ -49,7 +54,8 @@ export function BugsTab() {
       <div className="sticky top-0 bg-background z-10 pt-2 pb-4 border-b mb-4">
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            {suggestions.length} {suggestions.length > 1 ? 'problèmes' : 'problème'}
+            {suggestions.length}{" "}
+            {suggestions.length > 1 ? "problèmes" : "problème"}
           </p>
           <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className="w-[180px]">

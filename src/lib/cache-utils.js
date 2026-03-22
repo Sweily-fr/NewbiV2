@@ -12,13 +12,11 @@ export const CACHE_POLICIES = {
 
   // Données critiques (listes factures, clients) — cache + réseau pour fraîcheur
   CRITICAL: {
-    fetchPolicy: "cache-and-network",
     nextFetchPolicy: "cache-first",
   },
 
   // Données en temps réel (transactions, notifications) — toujours du réseau
   REALTIME: {
-    fetchPolicy: "cache-and-network",
     nextFetchPolicy: "network-only",
   },
 
@@ -30,50 +28,54 @@ export const CACHE_POLICIES = {
 };
 
 // Configuration optimisée par type de composant
-export const getOptimizedPolicy = (dataType, context = 'default') => {
+export const getOptimizedPolicy = (dataType, context = "default") => {
   const policies = {
     // Données d'organisation (peu fréquentes)
     organization: CACHE_POLICIES.STATIC,
-    
+
     // Listes de données (factures, devis, clients)
-    lists: context === 'table' ? CACHE_POLICIES.CRITICAL : CACHE_POLICIES.STATIC,
-    
+    lists:
+      context === "table" ? CACHE_POLICIES.CRITICAL : CACHE_POLICIES.STATIC,
+
     // Données de formulaire (lecture fréquente)
     forms: CACHE_POLICIES.STATIC,
-    
+
     // Statistiques et dashboards
     stats: CACHE_POLICIES.CRITICAL,
-    
+
     // Paramètres utilisateur
     settings: CACHE_POLICIES.STATIC,
-    
+
     // Données de session
     session: CACHE_POLICIES.CRITICAL,
   };
-  
+
   return policies[dataType] || CACHE_POLICIES.STATIC;
 };
 
 // Fonction pour invalider le cache de manière sélective
 export const invalidateCache = (apolloClient, patterns = []) => {
   const cache = apolloClient.cache;
-  
-  patterns.forEach(pattern => {
+
+  patterns.forEach((pattern) => {
     try {
       // Invalider les requêtes correspondant au pattern
-      cache.evict({ 
+      cache.evict({
         fieldName: pattern,
-        broadcast: false 
+        broadcast: false,
       });
     } catch (error) {
-      console.warn(`⚠️ Impossible d'invalider le cache pour ${pattern}:`, error);
+      console.warn(
+        `⚠️ Impossible d'invalider le cache pour ${pattern}:`,
+        error,
+      );
     }
   });
-  
+
   // Nettoyer les références orphelines
   cache.gc();
-  
-  console.log('🧹 Cache invalidé pour:', patterns);
+
+  console.log("🧹 Cache invalidé pour:", patterns);
 };
 
 // Fonction pour précharger des données critiques
@@ -87,12 +89,12 @@ export const preloadCriticalData = async (apolloClient, queries = []) => {
         errorPolicy: "ignore", // Ignorer les erreurs de préchargement
       });
     } catch (error) {
-      console.warn('⚠️ Erreur préchargement:', error);
+      console.warn("⚠️ Erreur préchargement:", error);
     }
   });
-  
+
   await Promise.allSettled(preloadPromises);
-  console.log('🚀 Données critiques préchargées');
+  console.log("🚀 Données critiques préchargées");
 };
 
 // Fonction pour optimiser les mutations avec mise à jour du cache
@@ -100,31 +102,32 @@ export const optimizedMutate = async (apolloClient, mutation, options = {}) => {
   const {
     variables,
     optimisticResponse,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     updateQueries = [],
     invalidateQueries = [],
     refetchQueries = [],
     ...otherOptions
   } = options;
-  
+
   try {
     const result = await apolloClient.mutate({
       mutation,
       variables,
       optimisticResponse,
-      refetchQueries: refetchQueries.map(query => ({ query, variables })),
+      refetchQueries: refetchQueries.map((query) => ({ query, variables })),
       awaitRefetchQueries: false, // Optimisation performance
       errorPolicy: "all",
       ...otherOptions,
     });
-    
+
     // Invalider les caches spécifiés
     if (invalidateQueries.length > 0) {
       invalidateCache(apolloClient, invalidateQueries);
     }
-    
+
     return result;
   } catch (error) {
-    console.error('❌ Erreur mutation optimisée:', error);
+    console.error("❌ Erreur mutation optimisée:", error);
     throw error;
   }
 };
@@ -140,20 +143,20 @@ export const useCacheStats = (apolloClient) => {
         size: JSON.stringify(data).length,
         sizeKB: Math.round(JSON.stringify(data).length / 1024),
       };
-    } catch (error) {
+    } catch {
       return { entries: 0, size: 0, sizeKB: 0 };
     }
   };
-  
+
   const clearCache = () => {
     try {
       apolloClient.cache.reset();
-      console.log('🧹 Cache Apollo complètement vidé');
+      console.log("🧹 Cache Apollo complètement vidé");
     } catch (error) {
-      console.error('❌ Erreur vidage cache:', error);
+      console.error("❌ Erreur vidage cache:", error);
     }
   };
-  
+
   return {
     getCacheSize,
     clearCache,
@@ -161,6 +164,7 @@ export const useCacheStats = (apolloClient) => {
 };
 
 // Configuration pour les requêtes paginées
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const getPaginationPolicy = (fieldName) => ({
   keyArgs: ["workspaceId", "filters"],
   merge(existing = { items: [], totalCount: 0 }, incoming) {

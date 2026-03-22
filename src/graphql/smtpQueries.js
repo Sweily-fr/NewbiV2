@@ -1,4 +1,4 @@
-import { gql, useMutation, useQuery } from '@apollo/client';
+import { gql, useMutation, useQuery } from "@apollo/client";
 
 // Query pour récupérer les paramètres SMTP
 export const GET_SMTP_SETTINGS = gql`
@@ -57,9 +57,7 @@ export const TEST_SMTP_CONNECTION = gql`
 
 // Hook pour récupérer les paramètres SMTP
 export function useSmtpSettings() {
-  return useQuery(GET_SMTP_SETTINGS, {
-    fetchPolicy: 'cache-and-network',
-  });
+  return useQuery(GET_SMTP_SETTINGS);
 }
 
 // Hook pour mettre à jour les paramètres SMTP

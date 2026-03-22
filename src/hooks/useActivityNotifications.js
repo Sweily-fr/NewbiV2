@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useSubscription } from "@apollo/client";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import {
   GET_NOTIFICATIONS,
@@ -12,30 +12,30 @@ import {
 
 /**
  * Hook pour gérer les notifications d'activité (assignation de tâches, etc.)
+ * La subscription WebSocket gère le temps réel.
+ * Le polling (60s) s'active uniquement en fallback si le WebSocket échoue.
  */
 export const useActivityNotifications = (options = {}) => {
   const { limit = 50, offset = 0, unreadOnly = false } = options;
   const { workspaceId } = useWorkspace();
-  // Récupérer les notifications avec polling fallback
-  const {
-    data,
-    loading,
-    error,
-    refetch,
-  } = useQuery(GET_NOTIFICATIONS, {
+  const [wsConnected, setWsConnected] = useState(true);
+
+  // Pas de polling si WebSocket connecté, fallback 60s sinon
+  const fallbackPollInterval = wsConnected ? 0 : 60000;
+
+  const { data, loading, error, refetch } = useQuery(GET_NOTIFICATIONS, {
     variables: { workspaceId, limit, offset, unreadOnly },
     skip: !workspaceId,
-    fetchPolicy: "cache-and-network",
+    pollInterval: fallbackPollInterval,
   });
 
-  // Récupérer le nombre de notifications non lues
   const { data: unreadCountData, refetch: refetchUnreadCount } = useQuery(
     GET_UNREAD_NOTIFICATIONS_COUNT,
     {
       variables: { workspaceId },
       skip: !workspaceId,
-      fetchPolicy: "cache-and-network",
-    }
+      pollInterval: fallbackPollInterval,
+    },
   );
 
   // Mutation pour marquer une notification comme lue
@@ -47,17 +47,20 @@ export const useActivityNotifications = (options = {}) => {
   // Mutation pour supprimer une notification
   const [deleteNotificationMutation] = useMutation(DELETE_NOTIFICATION);
 
-  // Subscription pour les nouvelles notifications en temps réel (fallback si WebSocket fonctionne)
+  // Subscription temps réel — si elle échoue, on active le polling fallback
   const { data: subscriptionData } = useSubscription(
     NOTIFICATION_RECEIVED_SUBSCRIPTION,
     {
       variables: { workspaceId },
       skip: !workspaceId,
-    }
+      onError: () => setWsConnected(false),
+      onData: () => {
+        if (!wsConnected) setWsConnected(true);
+      },
+    },
   );
 
   // Rafraîchir quand une nouvelle notification arrive via WebSocket
-  // Un seul refetch suffit — pas besoin d'un 2ème effect sur le count
   useEffect(() => {
     if (subscriptionData?.notificationReceived) {
       refetch();
@@ -78,7 +81,7 @@ export const useActivityNotifications = (options = {}) => {
         console.error("Erreur lors du marquage de la notification:", err);
       }
     },
-    [markAsReadMutation, refetch, refetchUnreadCount]
+    [markAsReadMutation, refetch, refetchUnreadCount],
   );
 
   // Marquer toutes les notifications comme lues
@@ -107,13 +110,16 @@ export const useActivityNotifications = (options = {}) => {
         console.error("Erreur lors de la suppression de la notification:", err);
       }
     },
-    [deleteNotificationMutation, refetch, refetchUnreadCount]
+    [deleteNotificationMutation, refetch, refetchUnreadCount],
   );
 
   return {
     notifications: data?.getNotifications?.notifications || [],
     totalCount: data?.getNotifications?.totalCount || 0,
-    unreadCount: unreadCountData?.getUnreadNotificationsCount || data?.getNotifications?.unreadCount || 0,
+    unreadCount:
+      unreadCountData?.getUnreadNotificationsCount ||
+      data?.getNotifications?.unreadCount ||
+      0,
     loading,
     error,
     refetch,
