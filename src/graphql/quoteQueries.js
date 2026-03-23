@@ -140,6 +140,8 @@ export const QUOTE_FRAGMENT = gql`
       emailSentAt
       emailOpenedAt
       emailOpenCount
+      emailClickedAt
+      emailClickCount
     }
   }
 `;
@@ -229,6 +231,8 @@ export const QUOTE_LIST_FRAGMENT = gql`
       emailSentAt
       emailOpenedAt
       emailOpenCount
+      emailClickedAt
+      emailClickCount
     }
   }
 `;

@@ -84,6 +84,8 @@ export const EMAIL_TRACKING_UPDATED_SUBSCRIPTION = gql`
         emailSentAt
         emailOpenedAt
         emailOpenCount
+        emailClickedAt
+        emailClickCount
       }
     }
   }

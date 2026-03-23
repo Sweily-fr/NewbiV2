@@ -133,6 +133,8 @@ export const INVOICE_FRAGMENT = gql`
       emailSentAt
       emailOpenedAt
       emailOpenCount
+      emailClickedAt
+      emailClickCount
     }
   }
 `;
@@ -198,6 +200,8 @@ export const INVOICE_LIST_FRAGMENT = gql`
       emailSentAt
       emailOpenedAt
       emailOpenCount
+      emailClickedAt
+      emailClickCount
     }
     createdAt
     updatedAt
