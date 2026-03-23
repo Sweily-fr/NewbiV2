@@ -139,6 +139,8 @@ export const PURCHASE_ORDER_FRAGMENT = gql`
       emailSentAt
       emailOpenedAt
       emailOpenCount
+      emailClickedAt
+      emailClickCount
     }
   }
 `;
@@ -230,6 +232,8 @@ export const PURCHASE_ORDER_LIST_FRAGMENT = gql`
       emailSentAt
       emailOpenedAt
       emailOpenCount
+      emailClickedAt
+      emailClickCount
     }
   }
 `;
