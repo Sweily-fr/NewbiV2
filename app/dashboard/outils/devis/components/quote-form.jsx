@@ -121,7 +121,8 @@ function ProductSearchCombobox({
         description: selectedProduct.label,
         quantity: 1,
         unitPrice: selectedProduct.price,
-        taxRate: selectedProduct.vatRate !== undefined ? selectedProduct.vatRate : 20,
+        taxRate:
+          selectedProduct.vatRate !== undefined ? selectedProduct.vatRate : 20,
         productId: selectedProduct.value,
         unit: selectedProduct.unit || "unité",
       });
@@ -145,7 +146,7 @@ function ProductSearchCombobox({
           disabled={disabled}
           className={cn(
             "bg-background hover:bg-background border-input w-full justify-between px-3 font-normal outline-offset-0 outline-none focus-visible:outline-[3px] h-10",
-            className
+            className,
           )}
         >
           <span className={cn("truncate text-left", "text-muted-foreground")}>
@@ -158,12 +159,12 @@ function ProductSearchCombobox({
           />
         </Button>
       </PopoverTrigger>
-      <PopoverContent 
-        className="p-0" 
-        align="start" 
+      <PopoverContent
+        className="p-0"
+        align="start"
         sideOffset={4}
-        style={{ 
-          width: 'calc(var(--radix-popover-trigger-width) + 12rem)'
+        style={{
+          width: "calc(var(--radix-popover-trigger-width) + 12rem)",
         }}
       >
         <Command>
@@ -236,7 +237,7 @@ export default function QuoteForm({
     (field, value) => {
       setValue(field, value, { shouldValidate: true, shouldDirty: true });
     },
-    [setValue]
+    [setValue],
   );
 
   const updateNestedField = useCallback(
@@ -247,7 +248,7 @@ export default function QuoteForm({
         shouldDirty: true,
       });
     },
-    [setValue, getValues]
+    [setValue, getValues],
   );
 
   const addItem = useCallback(
@@ -264,7 +265,7 @@ export default function QuoteForm({
       };
       append(newItem);
     },
-    [append]
+    [append],
   );
 
   const updateItem = useCallback(
@@ -288,14 +289,14 @@ export default function QuoteForm({
 
       update(index, updatedItem);
     },
-    [items, update]
+    [items, update],
   );
 
   const removeItem = useCallback(
     (index) => {
       remove(index);
     },
-    [remove]
+    [remove],
   );
 
   const formatCurrency = (amount) => {
@@ -338,7 +339,11 @@ export default function QuoteForm({
       data.items &&
       data.items.length > 0 &&
       data.items.every(
-        (item) => item.description && item.quantity && item.unitPrice != null && item.unitPrice !== ""
+        (item) =>
+          item.description &&
+          item.quantity &&
+          item.unitPrice != null &&
+          item.unitPrice !== "",
       )
     );
   };
@@ -453,7 +458,7 @@ export default function QuoteForm({
                               className={cn(
                                 "w-full justify-start text-left font-normal",
                                 !data.issueDate && "text-muted-foreground",
-                                errors?.issueDate && "border-destructive"
+                                errors?.issueDate && "border-destructive",
                               )}
                               disabled={!canEdit}
                             >
@@ -474,7 +479,10 @@ export default function QuoteForm({
                                   : undefined
                               }
                               onSelect={(date) =>
-                                updateField("issueDate", date?.toISOString())
+                                updateField(
+                                  "issueDate",
+                                  date ? format(date, "yyyy-MM-dd") : undefined,
+                                )
                               }
                               initialFocus
                             />
@@ -498,7 +506,7 @@ export default function QuoteForm({
                               className={cn(
                                 "w-full justify-start text-left font-normal",
                                 !data.validUntil && "text-muted-foreground",
-                                errors?.validUntil && "border-destructive"
+                                errors?.validUntil && "border-destructive",
                               )}
                               disabled={!canEdit}
                             >
@@ -519,7 +527,10 @@ export default function QuoteForm({
                                   : undefined
                               }
                               onSelect={(date) =>
-                                updateField("validUntil", date?.toISOString())
+                                updateField(
+                                  "validUntil",
+                                  date ? format(date, "yyyy-MM-dd") : undefined,
+                                )
                               }
                               initialFocus
                             />
@@ -656,7 +667,8 @@ export default function QuoteForm({
                                   {item.quantity || 1} ×{" "}
                                   {formatCurrency(item.unitPrice || 0)} ={" "}
                                   {formatCurrency(
-                                    (item.quantity || 1) * (item.unitPrice || 0)
+                                    (item.quantity || 1) *
+                                      (item.unitPrice || 0),
                                   )}
                                 </div>
                               </div>
@@ -685,7 +697,7 @@ export default function QuoteForm({
                                     updateItem(
                                       index,
                                       "description",
-                                      e.target.value
+                                      e.target.value,
                                     )
                                   }
                                   disabled={!canEdit}
@@ -712,7 +724,7 @@ export default function QuoteForm({
                                     updateItem(
                                       index,
                                       "quantity",
-                                      parseFloat(e.target.value) || 0
+                                      parseFloat(e.target.value) || 0,
                                     )
                                   }
                                   disabled={!canEdit}
@@ -740,7 +752,7 @@ export default function QuoteForm({
                                     updateItem(
                                       index,
                                       "unitPrice",
-                                      parseFloat(e.target.value) || 0
+                                      parseFloat(e.target.value) || 0,
                                     )
                                   }
                                   disabled={!canEdit}
@@ -756,7 +768,7 @@ export default function QuoteForm({
                                     updateItem(
                                       index,
                                       "taxRate",
-                                      parseFloat(value)
+                                      parseFloat(value),
                                     )
                                   }
                                   disabled={!canEdit}

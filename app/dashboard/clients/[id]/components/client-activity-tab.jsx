@@ -64,7 +64,10 @@ function isThisWeek(date) {
 
 function isThisMonth(date) {
   const now = new Date();
-  return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+  return (
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear()
+  );
 }
 
 function getPeriodLabel(dateString) {
@@ -118,7 +121,9 @@ export default function ClientActivityTab({ client }) {
   const [isQuoteSidebarOpen, setIsQuoteSidebarOpen] = useState(false);
 
   const allActivities = useMemo(() => {
-    const activities = [...(client?.activity || [])].filter((a) => a.type !== "note_added");
+    const activities = [...(client?.activity || [])].filter(
+      (a) => a.type !== "note_added" && a.type !== "automation_executed",
+    );
     const notes = (client?.notes || []).map((note) => ({
       id: note.id,
       type: "note_added",
@@ -139,12 +144,22 @@ export default function ClientActivityTab({ client }) {
     if (filterType) {
       items = items.filter((item) => {
         if (filterType === "invoice")
-          return item.type.startsWith("invoice") || item.type === "credit_note_created";
+          return (
+            item.type.startsWith("invoice") ||
+            item.type === "credit_note_created"
+          );
         if (filterType === "quote") return item.type.startsWith("quote");
-        if (filterType === "email") return item.type === "document_email_sent" || item.type === "crm_email_sent";
+        if (filterType === "email")
+          return (
+            item.type === "document_email_sent" ||
+            item.type === "crm_email_sent"
+          );
         if (filterType === "note") return item.type.startsWith("note");
         if (filterType === "reminder")
-          return item.type === "reminder_created" || item.type === "invoice_reminder_sent";
+          return (
+            item.type === "reminder_created" ||
+            item.type === "invoice_reminder_sent"
+          );
         return true;
       });
     }
@@ -197,7 +212,8 @@ export default function ClientActivityTab({ client }) {
     }
   };
 
-  const activeFilterLabel = FILTER_TYPES.find((f) => f.value === filterType)?.label || "Filtres";
+  const activeFilterLabel =
+    FILTER_TYPES.find((f) => f.value === filterType)?.label || "Filtres";
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
@@ -238,7 +254,9 @@ export default function ClientActivityTab({ client }) {
               <div key={year}>
                 {/* Year header */}
                 <div className="px-4 sm:px-6 pt-5 pb-1">
-                  <span className="text-base text-muted-foreground font-light">{year}</span>
+                  <span className="text-base text-muted-foreground font-light">
+                    {year}
+                  </span>
                 </div>
 
                 {periods.map(({ name, items }) => {
@@ -252,9 +270,7 @@ export default function ClientActivityTab({ client }) {
                         onClick={() => togglePeriod(periodKey)}
                         className="flex items-center gap-3 w-full px-4 sm:px-6 py-2 cursor-pointer"
                       >
-                        <span
-                          className="inline-flex items-center text-xs font-medium whitespace-nowrap rounded-md px-3 py-1 bg-[#f8f9fa] dark:bg-[#1a1a1a] text-[#505154] dark:text-muted-foreground shadow-[inset_0_0_0_1px_#eeeff1] dark:shadow-[inset_0_0_0_1px_#232323]"
-                        >
+                        <span className="inline-flex items-center text-xs font-medium whitespace-nowrap rounded-md px-3 py-1 bg-[#f8f9fa] dark:bg-[#1a1a1a] text-[#505154] dark:text-muted-foreground shadow-[inset_0_0_0_1px_#eeeff1] dark:shadow-[inset_0_0_0_1px_#232323]">
                           {name}
                         </span>
                         <div className="flex-1 h-px bg-[#f8f9fa] dark:bg-[#232323]" />
@@ -287,13 +303,25 @@ export default function ClientActivityTab({ client }) {
                               : item.userName || "Système";
                             // Ne pas afficher la description séparément quand elle est déjà dans le texte d'action
                             const typesWithActionText = [
-                              "created", "updated", "invoice_created", "invoice_status_changed",
-                              "quote_created", "quote_status_changed", "credit_note_created",
-                              "note_added", "note_updated", "note_deleted",
-                              "document_email_sent", "invoice_reminder_sent", "reminder_created",
-                              "crm_email_sent", "blocked", "unblocked",
+                              "created",
+                              "updated",
+                              "invoice_created",
+                              "invoice_status_changed",
+                              "quote_created",
+                              "quote_status_changed",
+                              "credit_note_created",
+                              "note_added",
+                              "note_updated",
+                              "note_deleted",
+                              "document_email_sent",
+                              "invoice_reminder_sent",
+                              "reminder_created",
+                              "crm_email_sent",
+                              "blocked",
+                              "unblocked",
                             ];
-                            const hideDescription = typesWithActionText.includes(item.type);
+                            const hideDescription =
+                              typesWithActionText.includes(item.type);
 
                             return (
                               <div
@@ -335,27 +363,34 @@ export default function ClientActivityTab({ client }) {
                                   </div>
 
                                   {/* Note card */}
-                                  {item.type === "note_added" && item.description && (
-                                    <div className="mt-2 rounded-lg border border-[#eeeff1] dark:border-[#232323] p-3">
-                                      {/<[a-z][\s\S]*>/i.test(item.description) ? (
-                                        <div
-                                          className="text-sm text-[#1a1a1a] dark:text-foreground line-clamp-4 leading-relaxed [&_b]:font-bold [&_i]:italic [&_u]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-[#eeeff1] dark:border-[#232323] [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground [&_pre]:bg-[#f8f9fa] [&_pre]:rounded [&_pre]:px-2 [&_pre]:py-1 [&_pre]:font-mono [&_pre]:text-xs [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-[#5a50ff] [&_a]:underline [&_[data-mention-id]]:bg-[#5a50ff]/10 [&_[data-mention-id]]:text-[#5a50ff] [&_[data-mention-id]]:rounded [&_[data-mention-id]]:px-1.5 [&_[data-mention-id]]:py-0.5 [&_[data-mention-id]]:text-xs [&_[data-mention-id]]:font-medium"
-                                          dangerouslySetInnerHTML={{ __html: item.description }}
-                                        />
-                                      ) : (
-                                        <p className="text-sm text-[#1a1a1a] dark:text-foreground whitespace-pre-wrap line-clamp-4 leading-relaxed">
-                                          {item.description}
-                                        </p>
-                                      )}
-                                    </div>
-                                  )}
+                                  {item.type === "note_added" &&
+                                    item.description && (
+                                      <div className="mt-2 rounded-lg border border-[#eeeff1] dark:border-[#232323] p-3">
+                                        {/<[a-z][\s\S]*>/i.test(
+                                          item.description,
+                                        ) ? (
+                                          <div
+                                            className="text-sm text-[#1a1a1a] dark:text-foreground line-clamp-4 leading-relaxed [&_b]:font-bold [&_i]:italic [&_u]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-[#eeeff1] dark:border-[#232323] [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground [&_pre]:bg-[#f8f9fa] [&_pre]:rounded [&_pre]:px-2 [&_pre]:py-1 [&_pre]:font-mono [&_pre]:text-xs [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-[#5a50ff] [&_a]:underline [&_[data-mention-id]]:bg-[#5a50ff]/10 [&_[data-mention-id]]:text-[#5a50ff] [&_[data-mention-id]]:rounded [&_[data-mention-id]]:px-1.5 [&_[data-mention-id]]:py-0.5 [&_[data-mention-id]]:text-xs [&_[data-mention-id]]:font-medium"
+                                            dangerouslySetInnerHTML={{
+                                              __html: item.description,
+                                            }}
+                                          />
+                                        ) : (
+                                          <p className="text-sm text-[#1a1a1a] dark:text-foreground whitespace-pre-wrap line-clamp-4 leading-relaxed">
+                                            {item.description}
+                                          </p>
+                                        )}
+                                      </div>
+                                    )}
 
                                   {/* Description for non-note types (sauf quand déjà dans le texte d'action) */}
-                                  {item.type !== "note_added" && !hideDescription && item.description && (
-                                    <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                                      {item.description}
-                                    </p>
-                                  )}
+                                  {item.type !== "note_added" &&
+                                    !hideDescription &&
+                                    item.description && (
+                                      <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                                        {item.description}
+                                      </p>
+                                    )}
 
                                   {/* Document link */}
                                   {meta.documentType &&
@@ -364,7 +399,10 @@ export default function ClientActivityTab({ client }) {
                                       <button
                                         className="mt-1.5 text-sm text-[#5a50ff] hover:underline flex items-center gap-1 cursor-pointer"
                                         onClick={() =>
-                                          handleViewDocument(meta.documentType, meta.documentId)
+                                          handleViewDocument(
+                                            meta.documentType,
+                                            meta.documentId,
+                                          )
                                         }
                                       >
                                         {meta.documentType === "invoice"
@@ -380,9 +418,13 @@ export default function ClientActivityTab({ client }) {
                                       {meta.eventTitle}
                                       {meta.eventDate && (
                                         <span className="text-xs ml-2">
-                                          {format(new Date(meta.eventDate), "d MMM yyyy 'à' HH:mm", {
-                                            locale: fr,
-                                          })}
+                                          {format(
+                                            new Date(meta.eventDate),
+                                            "d MMM yyyy 'à' HH:mm",
+                                            {
+                                              locale: fr,
+                                            },
+                                          )}
                                         </span>
                                       )}
                                     </p>

@@ -1,8 +1,11 @@
-import { gql, useMutation } from "@apollo/client";
+import { gql, useMutation, useSubscription } from "@apollo/client";
 
 // Mutation pour envoyer une facture par email
 export const SEND_INVOICE_EMAIL = gql`
-  mutation SendInvoiceEmail($workspaceId: ID!, $input: SendDocumentEmailInput!) {
+  mutation SendInvoiceEmail(
+    $workspaceId: ID!
+    $input: SendDocumentEmailInput!
+  ) {
     sendInvoiceEmail(workspaceId: $workspaceId, input: $input) {
       success
       messageId
@@ -24,7 +27,10 @@ export const SEND_QUOTE_EMAIL = gql`
 
 // Mutation pour envoyer un avoir par email
 export const SEND_CREDIT_NOTE_EMAIL = gql`
-  mutation SendCreditNoteEmail($workspaceId: ID!, $input: SendDocumentEmailInput!) {
+  mutation SendCreditNoteEmail(
+    $workspaceId: ID!
+    $input: SendDocumentEmailInput!
+  ) {
     sendCreditNoteEmail(workspaceId: $workspaceId, input: $input) {
       success
       messageId
@@ -50,7 +56,10 @@ export function useSendCreditNoteEmail() {
 
 // Mutation pour envoyer un bon de commande par email
 export const SEND_PURCHASE_ORDER_EMAIL = gql`
-  mutation SendPurchaseOrderEmail($workspaceId: ID!, $input: SendDocumentEmailInput!) {
+  mutation SendPurchaseOrderEmail(
+    $workspaceId: ID!
+    $input: SendDocumentEmailInput!
+  ) {
     sendPurchaseOrderEmail(workspaceId: $workspaceId, input: $input) {
       success
       messageId
@@ -62,4 +71,33 @@ export const SEND_PURCHASE_ORDER_EMAIL = gql`
 // Hook pour envoyer un bon de commande par email
 export function useSendPurchaseOrderEmail() {
   return useMutation(SEND_PURCHASE_ORDER_EMAIL);
+}
+
+// Subscription pour le tracking d'ouverture d'email en temps réel
+export const EMAIL_TRACKING_UPDATED_SUBSCRIPTION = gql`
+  subscription EmailTrackingUpdated($workspaceId: ID!) {
+    emailTrackingUpdated(workspaceId: $workspaceId) {
+      documentId
+      documentType
+      workspaceId
+      emailTracking {
+        emailSentAt
+        emailOpenedAt
+        emailOpenCount
+      }
+    }
+  }
+`;
+
+// Hook pour écouter les mises à jour de tracking en temps réel
+export function useEmailTrackingSubscription({ workspaceId, onUpdate }) {
+  return useSubscription(EMAIL_TRACKING_UPDATED_SUBSCRIPTION, {
+    variables: { workspaceId },
+    skip: !workspaceId,
+    onData: ({ data }) => {
+      if (data?.data?.emailTrackingUpdated) {
+        onUpdate?.(data.data.emailTrackingUpdated);
+      }
+    },
+  });
 }

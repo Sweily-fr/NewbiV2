@@ -9,8 +9,18 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/src/components/ui/chart";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/src/components/ui/card";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/src/components/ui/chart";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -63,22 +73,29 @@ export function AnalyticsTreasuryBalanceChart({
       return isNaN(d.getTime()) ? null : d;
     };
 
+    const toLocalDateKey = (d) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const dy = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${dy}`;
+    };
+
     const dailyMovements = [];
     for (let i = 0; i <= daysDiff; i++) {
       const date = new Date(startDate);
       date.setDate(date.getDate() + i);
-      const dateStr = date.toISOString().split("T")[0];
+      const dateStr = toLocalDateKey(date);
 
       const dayTx = bankTransactions.filter((t) => {
         const tDate = getTransactionDate(t);
-        return tDate && tDate.toISOString().split("T")[0] === dateStr;
+        return tDate && toLocalDateKey(tDate) === dateStr;
       });
 
       const dayIncome = dayTx
         .filter((t) => t.amount > 0)
         .reduce((sum, t) => sum + t.amount, 0);
       const dayExpenses = Math.abs(
-        dayTx.filter((t) => t.amount < 0).reduce((sum, t) => sum + t.amount, 0)
+        dayTx.filter((t) => t.amount < 0).reduce((sum, t) => sum + t.amount, 0),
       );
 
       dailyMovements.push({
@@ -100,19 +117,30 @@ export function AnalyticsTreasuryBalanceChart({
 
   const treasuryConsumption = useMemo(() => {
     if (treasuryData.length === 0) return 0;
-    return treasuryData[treasuryData.length - 1].treasury - treasuryData[0].treasury;
+    return (
+      treasuryData[treasuryData.length - 1].treasury - treasuryData[0].treasury
+    );
   }, [treasuryData]);
 
-  const hasNonZeroData = treasuryData.some((d) => d.income > 0 || d.expenses > 0);
+  const hasNonZeroData = treasuryData.some(
+    (d) => d.income > 0 || d.expenses > 0,
+  );
   const chartMountKey = hasNonZeroData ? "has-data" : "no-data";
 
-  const timeRangeLabel = { "30d": "Dernier mois", "90d": "Derniers 3 mois", "365d": "Dernière année" }[timeRange] || "Derniers 3 mois";
+  const timeRangeLabel =
+    {
+      "30d": "Dernier mois",
+      "90d": "Derniers 3 mois",
+      "365d": "Dernière année",
+    }[timeRange] || "Derniers 3 mois";
 
   if (loading) {
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Solde de trésorerie</CardTitle>
+          <CardTitle className="text-sm font-medium">
+            Solde de trésorerie
+          </CardTitle>
         </CardHeader>
         <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
           <Skeleton className="min-h-[200px] w-full" />
@@ -125,7 +153,9 @@ export function AnalyticsTreasuryBalanceChart({
     <Card className="shadow-xs flex flex-col min-h-0 py-4">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div>
-          <CardTitle className="text-sm font-medium">Solde de trésorerie</CardTitle>
+          <CardTitle className="text-sm font-medium">
+            Solde de trésorerie
+          </CardTitle>
           <CardDescription className="text-xs mt-1">
             Évolution du solde{" "}
             <span
@@ -140,11 +170,7 @@ export function AnalyticsTreasuryBalanceChart({
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 text-xs"
-            >
+            <Button variant="outline" size="sm" className="h-8 text-xs">
               {timeRangeLabel}
               <ChevronRight
                 className="-me-1 opacity-60 rotate-90"
@@ -154,101 +180,134 @@ export function AnalyticsTreasuryBalanceChart({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="rounded-xl">
-            <DropdownMenuItem className="rounded-lg text-xs" onClick={() => setTimeRange("365d")}>
+            <DropdownMenuItem
+              className="rounded-lg text-xs"
+              onClick={() => setTimeRange("365d")}
+            >
               Dernière année
             </DropdownMenuItem>
-            <DropdownMenuItem className="rounded-lg text-xs" onClick={() => setTimeRange("90d")}>
+            <DropdownMenuItem
+              className="rounded-lg text-xs"
+              onClick={() => setTimeRange("90d")}
+            >
               Derniers 3 mois
             </DropdownMenuItem>
-            <DropdownMenuItem className="rounded-lg text-xs" onClick={() => setTimeRange("30d")}>
+            <DropdownMenuItem
+              className="rounded-lg text-xs"
+              onClick={() => setTimeRange("30d")}
+            >
               Dernier mois
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </CardHeader>
       <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
-      <ChartContainer
-        key={chartMountKey}
-        config={chartConfig}
-        className="h-[300px] w-full"
-      >
-        <ComposedChart
-          data={treasuryData}
-          margin={{ left: 12, right: 12, top: 12, bottom: 12 }}
+        <ChartContainer
+          key={chartMountKey}
+          config={chartConfig}
+          className="h-[300px] w-full"
         >
-          <defs>
-            <linearGradient id="fillTreasuryAnalytics" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="var(--color-treasury)" stopOpacity={0.8} />
-              <stop offset="95%" stopColor="var(--color-treasury)" stopOpacity={0.1} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid vertical={false} strokeDasharray="3 3" />
-          <XAxis
-            dataKey="date"
-            tickLine={false}
-            axisLine={false}
-            tickMargin={8}
-            minTickGap={32}
-            tickFormatter={(value) => {
-              const date = new Date(value);
-              return date.toLocaleDateString("fr-FR", {
-                month: "short",
-                day: "numeric",
-              });
-            }}
-          />
-          <YAxis
-            tick={({ y, payload }) => (
-              <text
-                x={0}
-                y={y}
-                textAnchor="start"
-                dominantBaseline="middle"
-                fontSize={11}
-                className="fill-muted-foreground"
+          <ComposedChart
+            data={treasuryData}
+            margin={{ left: 12, right: 12, top: 12, bottom: 12 }}
+          >
+            <defs>
+              <linearGradient
+                id="fillTreasuryAnalytics"
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
               >
-                {Math.abs(payload.value) >= 1000000
-                  ? `${(payload.value / 1000000).toFixed(1)}M`
-                  : Math.abs(payload.value) >= 1000
-                    ? `${(payload.value / 1000).toFixed(0)}k`
-                    : `${payload.value.toFixed(0)}€`}
-              </text>
-            )}
-            tickLine={false}
-            axisLine={false}
-            width={35}
-          />
-          <ChartTooltip
-            content={
-              <ChartTooltipContent
-                className="w-[200px]"
-                nameKey="month"
-                labelFormatter={(value) => value}
-                formatter={(value, name) => (
-                  <div className="flex items-center justify-between gap-2 w-full">
-                    <span className="text-xs text-muted-foreground">
-                      {chartConfig[name]?.label || name}
-                    </span>
-                    <span className="text-xs font-medium">
-                      {formatCurrency(value)}
-                    </span>
-                  </div>
-                )}
-              />
-            }
-          />
-          <Bar dataKey="income" fill="var(--color-income)" radius={[4, 4, 0, 0]} barSize={26} />
-          <Bar dataKey="expenses" fill="var(--color-expenses)" radius={[4, 4, 0, 0]} barSize={26} />
-          <Area
-            dataKey="treasury"
-            type="monotone"
-            fill="url(#fillTreasuryAnalytics)"
-            fillOpacity={0.4}
-            stroke="var(--color-treasury)"
-            strokeWidth={2}
-          />
-        </ComposedChart>
-      </ChartContainer>
+                <stop
+                  offset="5%"
+                  stopColor="var(--color-treasury)"
+                  stopOpacity={0.8}
+                />
+                <stop
+                  offset="95%"
+                  stopColor="var(--color-treasury)"
+                  stopOpacity={0.1}
+                />
+              </linearGradient>
+            </defs>
+            <CartesianGrid vertical={false} strokeDasharray="3 3" />
+            <XAxis
+              dataKey="date"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              minTickGap={32}
+              tickFormatter={(value) => {
+                const date = new Date(value);
+                return date.toLocaleDateString("fr-FR", {
+                  month: "short",
+                  day: "numeric",
+                });
+              }}
+            />
+            <YAxis
+              tick={({ y, payload }) => (
+                <text
+                  x={0}
+                  y={y}
+                  textAnchor="start"
+                  dominantBaseline="middle"
+                  fontSize={11}
+                  className="fill-muted-foreground"
+                >
+                  {Math.abs(payload.value) >= 1000000
+                    ? `${(payload.value / 1000000).toFixed(1)}M`
+                    : Math.abs(payload.value) >= 1000
+                      ? `${(payload.value / 1000).toFixed(0)}k`
+                      : `${payload.value.toFixed(0)}€`}
+                </text>
+              )}
+              tickLine={false}
+              axisLine={false}
+              width={35}
+            />
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  className="w-[200px]"
+                  nameKey="month"
+                  labelFormatter={(value) => value}
+                  formatter={(value, name) => (
+                    <div className="flex items-center justify-between gap-2 w-full">
+                      <span className="text-xs text-muted-foreground">
+                        {chartConfig[name]?.label || name}
+                      </span>
+                      <span className="text-xs font-medium">
+                        {formatCurrency(value)}
+                      </span>
+                    </div>
+                  )}
+                />
+              }
+            />
+            <Bar
+              dataKey="income"
+              fill="var(--color-income)"
+              radius={[4, 4, 0, 0]}
+              barSize={26}
+            />
+            <Bar
+              dataKey="expenses"
+              fill="var(--color-expenses)"
+              radius={[4, 4, 0, 0]}
+              barSize={26}
+            />
+            <Area
+              dataKey="treasury"
+              type="monotone"
+              fill="url(#fillTreasuryAnalytics)"
+              fillOpacity={0.4}
+              stroke="var(--color-treasury)"
+              strokeWidth={2}
+            />
+          </ComposedChart>
+        </ChartContainer>
       </CardContent>
     </Card>
   );

@@ -10,7 +10,14 @@ import {
 } from "@tanstack/react-table";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Button } from "@/src/components/ui/button";
-import { ArrowUpDown, FileText, Clock, CheckCircle, XCircle } from "lucide-react";
+import {
+  ArrowUpDown,
+  FileText,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Mail,
+} from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
   QUOTE_STATUS_LABELS,
@@ -18,6 +25,7 @@ import {
 } from "@/src/graphql/quoteQueries";
 import { formatDate, isDateExpired } from "../utils/date-utils";
 import QuoteRowActions from "../components/quote-row-actions";
+import { EmailTrackingStatus } from "@/src/components/email-tracking-status";
 import { toast } from "@/src/components/ui/sonner";
 
 // Custom filter functions
@@ -99,9 +107,9 @@ const formatDateForSearch = (dateValue) => {
     ].filter(
       (value, index, self) =>
         // Supprimer les doublons et valeurs vides
-        value && self.indexOf(value) === index
+        value && self.indexOf(value) === index,
     );
-  } catch (error) {
+  } catch {
     return [];
   }
 };
@@ -125,7 +133,7 @@ const formatAmountForSearch = (amount) => {
     Math.floor(numAmount).toString(), // Partie entière (ex: "1234")
     numAmount.toString(), // Représentation brute
   ].filter(
-    (value, index, self) => value && self.indexOf(value) === index // Supprimer les doublons
+    (value, index, self) => value && self.indexOf(value) === index, // Supprimer les doublons
   );
 };
 
@@ -169,13 +177,15 @@ const clientFilterFn = (row, columnId, filterValue) => {
 // Date filter function
 const dateFilterFn = (row, columnId, filterValue) => {
   if (!filterValue?.from && !filterValue?.to) return true;
-  
+
   const issueDate = row.original.issueDate;
   if (!issueDate) return false;
-  
-  const date = new Date(typeof issueDate === 'string' ? parseInt(issueDate) : issueDate);
+
+  const date = new Date(
+    typeof issueDate === "string" ? parseInt(issueDate) : issueDate,
+  );
   date.setHours(0, 0, 0, 0);
-  
+
   if (filterValue.from && filterValue.to) {
     const from = new Date(filterValue.from);
     from.setHours(0, 0, 0, 0);
@@ -194,7 +204,14 @@ const dateFilterFn = (row, columnId, filterValue) => {
   return true;
 };
 
-export function useQuoteTable({ data = [], onRefetch, onSendEmail, onSaveAsTemplate, onRequestSignature, onOpenSidebar }) {
+export function useQuoteTable({
+  data = [],
+  onRefetch,
+  onSendEmail,
+  onSaveAsTemplate,
+  onRequestSignature,
+  onOpenSidebar,
+}) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState([]);
   const [clientFilter, setClientFilter] = useState([]);
@@ -289,8 +306,8 @@ export function useQuoteTable({ data = [], onRefetch, onSendEmail, onSaveAsTempl
           const clientName = client?.name || "Non défini";
           return (
             <div>
-              <div 
-                className="font-normal max-w-[100px] md:max-w-none truncate" 
+              <div
+                className="font-normal max-w-[100px] md:max-w-none truncate"
                 title={clientName}
               >
                 {client?.name || (
@@ -300,9 +317,7 @@ export function useQuoteTable({ data = [], onRefetch, onSendEmail, onSaveAsTempl
                 )}
               </div>
               <div className="text-xs text-muted-foreground truncate max-w-[100px] md:max-w-none">
-                {quote.number || (
-                  <span className="italic">Brouillon</span>
-                )}
+                {quote.number || <span className="italic">Brouillon</span>}
               </div>
             </div>
           );
@@ -320,7 +335,7 @@ export function useQuoteTable({ data = [], onRefetch, onSendEmail, onSaveAsTempl
                 column.toggleSorting(column.getIsSorted() === "asc")
               }
             >
-              Date d'émission
+              Date d&apos;émission
               <ArrowUpDown className="ml-2 h-4 w-4" />
             </div>
           </div>
@@ -376,7 +391,7 @@ export function useQuoteTable({ data = [], onRefetch, onSendEmail, onSaveAsTempl
             // Si formatDate retourne "-", la date est invalide
             if (formattedDate === "-") {
               throw new Error(
-                `Format de date non supporté: ${dateValue} (${typeof dateValue})`
+                `Format de date non supporté: ${dateValue} (${typeof dateValue})`,
               );
             }
 
@@ -405,7 +420,7 @@ export function useQuoteTable({ data = [], onRefetch, onSendEmail, onSaveAsTempl
                   typeof dateValue === "number" || /^\d+$/.test(dateValue)
                     ? parseInt(dateValue, 10)
                     : "N/A",
-              }
+              },
             );
 
             return (
@@ -441,27 +456,32 @@ export function useQuoteTable({ data = [], onRefetch, onSendEmail, onSaveAsTempl
               case "DRAFT":
                 return {
                   icon: <FileText className="w-3 h-3" />,
-                  className: "bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400",
+                  className:
+                    "bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400",
                 };
               case "PENDING":
                 return {
                   icon: <Clock className="w-3 h-3" />,
-                  className: "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400",
+                  className:
+                    "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400",
                 };
               case "COMPLETED":
                 return {
                   icon: <CheckCircle className="w-3 h-3" />,
-                  className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400",
+                  className:
+                    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400",
                 };
               case "CANCELED":
                 return {
                   icon: <XCircle className="w-3 h-3" />,
-                  className: "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400",
+                  className:
+                    "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400",
                 };
               default:
                 return {
                   icon: <FileText className="w-3 h-3" />,
-                  className: "bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400",
+                  className:
+                    "bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400",
                 };
             }
           };
@@ -472,7 +492,7 @@ export function useQuoteTable({ data = [], onRefetch, onSendEmail, onSaveAsTempl
             <span
               className={cn(
                 "inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium",
-                config.className
+                config.className,
               )}
             >
               {config.icon}
@@ -482,6 +502,27 @@ export function useQuoteTable({ data = [], onRefetch, onSendEmail, onSaveAsTempl
         },
         size: 100,
         filterFn: statusFilterFn,
+      },
+      {
+        id: "emailTracking",
+        header: () => (
+          <div className="flex items-center justify-center font-normal">
+            <Mail className="h-4 w-4" />
+          </div>
+        ),
+        meta: {
+          label: "Email",
+        },
+        cell: ({ row }) => {
+          const emailTracking = row.original.emailTracking;
+          return (
+            <div className="flex justify-center">
+              <EmailTrackingStatus emailTracking={emailTracking} />
+            </div>
+          );
+        },
+        size: 50,
+        enableSorting: false,
       },
       {
         accessorKey: "finalTotalTTC",
@@ -501,26 +542,29 @@ export function useQuoteTable({ data = [], onRefetch, onSendEmail, onSaveAsTempl
         cell: ({ row }) => {
           const quote = row.original;
           const escompteValue = parseFloat(quote.escompte) || 0;
-          
+
           // Utiliser finalTotalTTC comme base (après remise mais avant escompte)
           let amount = quote.finalTotalTTC;
-          
+
           // Afficher "-" si undefined/null
-          if (amount === undefined || amount === null || isNaN(amount)) return "-";
-          
+          if (amount === undefined || amount === null || isNaN(amount))
+            return "-";
+
           // Appliquer uniquement l'escompte pour afficher le Total TTC
           if (escompteValue > 0) {
             // Utiliser finalTotalHT et finalTotalVAT (après remise)
-            const totalHT = quote.finalTotalHT || (quote.totalHT || 0);
-            const totalVAT = quote.finalTotalVAT || (quote.totalVAT || 0);
-            
+            const totalHT = quote.finalTotalHT || quote.totalHT || 0;
+            const totalVAT = quote.finalTotalVAT || quote.totalVAT || 0;
+
             // Appliquer l'escompte sur HT
             const escompteAmount = (totalHT * escompteValue) / 100;
             const htAfterEscompte = totalHT - escompteAmount;
-            const tvaAfterEscompte = quote.isReverseCharge ? 0 : (htAfterEscompte / totalHT) * totalVAT;
+            const tvaAfterEscompte = quote.isReverseCharge
+              ? 0
+              : (htAfterEscompte / totalHT) * totalVAT;
             amount = htAfterEscompte + tvaAfterEscompte;
           }
-          
+
           return (
             <div className="font-normal">
               {new Intl.NumberFormat("fr-FR", {
@@ -535,12 +579,27 @@ export function useQuoteTable({ data = [], onRefetch, onSendEmail, onSaveAsTempl
       {
         id: "actions",
         header: () => <div className="text-right font-normal">Actions</div>,
-        cell: ({ row }) => <QuoteRowActions row={row} onRefetch={onRefetch} onSendEmail={onSendEmail} onSaveAsTemplate={onSaveAsTemplate} onRequestSignature={onRequestSignature} onOpenSidebar={onOpenSidebar} />,
+        cell: ({ row }) => (
+          <QuoteRowActions
+            row={row}
+            onRefetch={onRefetch}
+            onSendEmail={onSendEmail}
+            onSaveAsTemplate={onSaveAsTemplate}
+            onRequestSignature={onRequestSignature}
+            onOpenSidebar={onOpenSidebar}
+          />
+        ),
         size: 60,
         enableHiding: false,
       },
     ],
-    [onRefetch, onSendEmail, onSaveAsTemplate, onRequestSignature, onOpenSidebar]
+    [
+      onRefetch,
+      onSendEmail,
+      onSaveAsTemplate,
+      onRequestSignature,
+      onOpenSidebar,
+    ],
   );
 
   // Log des données pour débogage
@@ -549,22 +608,19 @@ export function useQuoteTable({ data = [], onRefetch, onSendEmail, onSaveAsTempl
       // Afficher les 3 premiers devis pour inspection
       const sampleQuotes = data.slice(0, 3);
 
-      sampleQuotes.forEach((quote, index) => {
+      sampleQuotes.forEach((quote) => {
         // Tester la conversion de la date
         if (quote.validUntil) {
           try {
-            let date;
-
             // Gérer les différents formats de date
             if (
               typeof quote.validUntil === "number" ||
               /^\d+$/.test(quote.validUntil)
             ) {
-              date = new Date(parseInt(quote.validUntil, 10));
+              new Date(parseInt(quote.validUntil, 10));
             } else {
-              date = new Date(quote.validUntil);
+              new Date(quote.validUntil);
             }
-
           } catch {
             // Date conversion error - silently handled
           }
@@ -599,8 +655,12 @@ export function useQuoteTable({ data = [], onRefetch, onSendEmail, onSaveAsTempl
     state: {
       globalFilter,
       columnFilters: [
-        ...(statusFilter.length > 0 ? [{ id: "status", value: statusFilter }] : []),
-        ...(clientFilter.length > 0 ? [{ id: "client", value: clientFilter }] : []),
+        ...(statusFilter.length > 0
+          ? [{ id: "status", value: statusFilter }]
+          : []),
+        ...(clientFilter.length > 0
+          ? [{ id: "client", value: clientFilter }]
+          : []),
         ...(dateFilter ? [{ id: "issueDate", value: dateFilter }] : []),
       ],
     },
@@ -624,7 +684,7 @@ export function useQuoteTable({ data = [], onRefetch, onSendEmail, onSaveAsTempl
   // Handle bulk delete - optimized with batching
   const handleDeleteSelected = async () => {
     const draftQuotes = selectedRows.filter(
-      (quote) => quote.status === "DRAFT"
+      (quote) => quote.status === "DRAFT",
     );
 
     if (draftQuotes.length === 0) {
@@ -634,7 +694,7 @@ export function useQuoteTable({ data = [], onRefetch, onSendEmail, onSaveAsTempl
 
     if (draftQuotes.length < selectedRows.length) {
       toast.warning(
-        `${selectedRows.length - draftQuotes.length} devis ignoré(s) (non brouillon)`
+        `${selectedRows.length - draftQuotes.length} devis ignoré(s) (non brouillon)`,
       );
     }
 
@@ -645,9 +705,9 @@ export function useQuoteTable({ data = [], onRefetch, onSendEmail, onSaveAsTempl
       try {
         // Les notifications individuelles sont désactivées dans le hook GraphQL
         await Promise.all(batch.map((quote) => deleteQuote(quote.id)));
-      } catch (error) {
+      } catch {
         toast.error(
-          `Erreur lors de la suppression du lot ${i / BATCH_SIZE + 1}`
+          `Erreur lors de la suppression du lot ${i / BATCH_SIZE + 1}`,
         );
       }
     }

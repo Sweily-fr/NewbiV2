@@ -139,7 +139,7 @@ export function PurchaseInvoiceUploadDrawer({
     e.stopPropagation();
     setDragActive(false);
     const droppedFiles = Array.from(e.dataTransfer.files).filter((f) =>
-      ACCEPTED_TYPES.includes(f.type)
+      ACCEPTED_TYPES.includes(f.type),
     );
     if (droppedFiles.length > 0) {
       setFiles((prev) => [...prev, ...droppedFiles]);
@@ -148,7 +148,7 @@ export function PurchaseInvoiceUploadDrawer({
 
   const handleFileSelect = (e) => {
     const selected = Array.from(e.target.files || []).filter((f) =>
-      ACCEPTED_TYPES.includes(f.type)
+      ACCEPTED_TYPES.includes(f.type),
     );
     if (selected.length > 0) {
       setFiles((prev) => [...prev, ...selected]);
@@ -213,19 +213,36 @@ export function PurchaseInvoiceUploadDrawer({
         }
         // Try ISO parse
         const d = new Date(dateStr);
-        if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+        if (!isNaN(d.getTime())) {
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, "0");
+          const day = String(d.getDate()).padStart(2, "0");
+          return `${y}-${m}-${day}`;
+        }
         return dateStr;
       };
 
       setEditableData({
         supplierName:
-          td.vendor_name || td.supplier_name || f.vendor_name || f.supplier_name || "",
+          td.vendor_name ||
+          td.supplier_name ||
+          f.vendor_name ||
+          f.supplier_name ||
+          "",
         invoiceNumber:
-          td.document_number || td.invoice_number || f.invoice_number || f.document_number || "",
-        issueDate:
-          toDateInput(td.transaction_date || td.invoice_date || f.invoice_date || f.date || ""),
-        dueDate:
-          toDateInput(td.due_date || f.due_date || ""),
+          td.document_number ||
+          td.invoice_number ||
+          f.invoice_number ||
+          f.document_number ||
+          "",
+        issueDate: toDateInput(
+          td.transaction_date ||
+            td.invoice_date ||
+            f.invoice_date ||
+            f.date ||
+            "",
+        ),
+        dueDate: toDateInput(td.due_date || f.due_date || ""),
         amountHT:
           td.amount_ht?.toString() ||
           totals.total_ht?.toString() ||
@@ -245,7 +262,11 @@ export function PurchaseInvoiceUploadDrawer({
           f.total_ttc?.toString() ||
           f.amount_ttc?.toString() ||
           "",
-        category: VALID_CATEGORIES.has(td.category) ? td.category : VALID_CATEGORIES.has(f.category) ? f.category : "OTHER",
+        category: VALID_CATEGORIES.has(td.category)
+          ? td.category
+          : VALID_CATEGORIES.has(f.category)
+            ? f.category
+            : "OTHER",
         status: "TO_PROCESS",
         paymentMethod: "",
       });
@@ -261,11 +282,15 @@ export function PurchaseInvoiceUploadDrawer({
     const frMatch = dateStr.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
     if (frMatch) {
       const [, day, month, year] = frMatch;
-      return new Date(`${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}T00:00:00.000Z`).toISOString();
+      return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
     }
     // Handle ISO or other standard formats
     const d = new Date(dateStr);
-    return isNaN(d.getTime()) ? null : d.toISOString();
+    if (isNaN(d.getTime())) return null;
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const dy = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${dy}`;
   };
 
   const handleCreate = async () => {
@@ -277,7 +302,9 @@ export function PurchaseInvoiceUploadDrawer({
       const invoice = await createInvoice({
         supplierName: editableData.supplierName,
         invoiceNumber: editableData.invoiceNumber || undefined,
-        issueDate: normalizeDate(editableData.issueDate) || new Date().toISOString(),
+        issueDate:
+          normalizeDate(editableData.issueDate) ||
+          new Date().toLocaleDateString("sv-SE"),
         dueDate: normalizeDate(editableData.dueDate) || undefined,
         amountHT: parseFloat(editableData.amountHT) || 0,
         amountTVA: parseFloat(editableData.amountTVA) || 0,
@@ -372,8 +399,8 @@ export function PurchaseInvoiceUploadDrawer({
               {currentStep === "upload"
                 ? "Importer une facture"
                 : currentStep === "review"
-                ? "Vérifier les données"
-                : "Importation terminée"}
+                  ? "Vérifier les données"
+                  : "Importation terminée"}
             </DrawerTitle>
             {currentStep === "review" && (
               <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
@@ -740,7 +767,7 @@ export function PurchaseInvoiceUploadDrawer({
                               onClick={() =>
                                 window.open(
                                   r.metadata.documentUrl || blobUrl,
-                                  "_blank"
+                                  "_blank",
                                 )
                               }
                             >
@@ -854,9 +881,7 @@ export function PurchaseInvoiceUploadDrawer({
               <Button
                 className="flex-1 font-normal bg-primary hover:bg-primary/90"
                 onClick={handleCreate}
-                disabled={
-                  !editableData.supplierName || !editableData.amountTTC
-                }
+                disabled={!editableData.supplierName || !editableData.amountTTC}
               >
                 Créer la facture
               </Button>

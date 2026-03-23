@@ -1,6 +1,14 @@
 "use client";
 
-import { useState, useMemo, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from "react";
+import {
+  useState,
+  useMemo,
+  useRef,
+  useCallback,
+  useEffect,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import { UserAvatar } from "@/src/components/ui/user-avatar";
 import { Button } from "@/src/components/ui/button";
 import { Send, Loader2 } from "lucide-react";
@@ -30,7 +38,10 @@ function MentionDropdown({ members, query, onSelect }) {
     const q = query.toLowerCase();
     return members.filter((m) => {
       const displayName = m.name || m.email || "";
-      return displayName.toLowerCase().includes(q) || (m.email || "").toLowerCase().includes(q);
+      return (
+        displayName.toLowerCase().includes(q) ||
+        (m.email || "").toLowerCase().includes(q)
+      );
     });
   }, [members, query]);
 
@@ -74,7 +85,9 @@ function MentionDropdown({ members, query, onSelect }) {
             onSelect(member);
           }}
           className={`flex items-center gap-2.5 w-full px-3 py-2 text-left text-sm transition-colors cursor-pointer ${
-            index === selectedIndex ? "bg-[#f8f9fa] dark:bg-[#303030]" : "hover:bg-[#f8f9fa] dark:hover:bg-[#303030]"
+            index === selectedIndex
+              ? "bg-[#f8f9fa] dark:bg-[#303030]"
+              : "hover:bg-[#f8f9fa] dark:hover:bg-[#303030]"
           }`}
         >
           <UserAvatar
@@ -105,8 +118,20 @@ function MentionDropdown({ members, query, onSelect }) {
  * Includes a built-in send button.
  */
 export const MentionCommentInput = forwardRef(function MentionCommentInput(
-  { members = [], onSubmit, placeholder = "Ajouter un commentaire...", disabled = false, loading = false, onDrop, onPaste, onDragOver, onDragLeave, isDragOver = false, children },
-  ref
+  {
+    members = [],
+    onSubmit,
+    placeholder = "Ajouter un commentaire...",
+    disabled = false,
+    loading = false,
+    onDrop,
+    onPaste,
+    onDragOver,
+    onDragLeave,
+    isDragOver = false,
+    children,
+  },
+  ref,
 ) {
   const editorRef = useRef(null);
   const [isEmpty, setIsEmpty] = useState(true);
@@ -129,58 +154,68 @@ export const MentionCommentInput = forwardRef(function MentionCommentInput(
     }
   }, []);
 
-  const insertMention = useCallback((member) => {
-    if (!member) {
-      setMentionState(null);
-      return;
-    }
-
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return;
-
-    const range = selection.getRangeAt(0);
-    const node = range.startContainer;
-
-    if (node.nodeType === Node.TEXT_NODE) {
-      const textBefore = node.textContent.substring(0, range.startOffset);
-      const match = textBefore.match(/(?:^|\s)@(\w*)$/);
-      if (match) {
-        const atStart = textBefore.length - match[0].length;
-        const keepSpace = match[0].startsWith(" ") ? 1 : 0;
-
-        const deleteRange = document.createRange();
-        deleteRange.setStart(node, atStart + keepSpace);
-        deleteRange.setEnd(node, range.startOffset);
-        deleteRange.deleteContents();
-
-        const displayName = member.name || member.email;
-        const mentionSpan = document.createElement("span");
-        mentionSpan.contentEditable = "false";
-        mentionSpan.className = "inline-flex items-center gap-1 bg-[#5a50ff]/10 text-[#5a50ff] rounded px-1.5 py-0.5 text-xs font-medium mx-0.5 align-baseline";
-        mentionSpan.dataset.mentionId = member.id;
-        mentionSpan.dataset.mentionName = displayName;
-        mentionSpan.textContent = `@${displayName}`;
-
-        const currentRange = window.getSelection().getRangeAt(0);
-        currentRange.insertNode(mentionSpan);
-
-        const space = document.createTextNode("\u00A0");
-        mentionSpan.parentNode.insertBefore(space, mentionSpan.nextSibling);
-
-        const newRange = document.createRange();
-        newRange.setStartAfter(space);
-        newRange.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(newRange);
+  const insertMention = useCallback(
+    (member) => {
+      if (!member) {
+        setMentionState(null);
+        return;
       }
-    }
 
-    setMentionState(null);
-    checkEmpty();
-  }, [checkEmpty]);
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) return;
+
+      const range = selection.getRangeAt(0);
+      const node = range.startContainer;
+
+      if (node.nodeType === Node.TEXT_NODE) {
+        const textBefore = node.textContent.substring(0, range.startOffset);
+        const match = textBefore.match(/(?:^|\s)@(\w*)$/);
+        if (match) {
+          const atStart = textBefore.length - match[0].length;
+          const keepSpace = match[0].startsWith(" ") ? 1 : 0;
+
+          const deleteRange = document.createRange();
+          deleteRange.setStart(node, atStart + keepSpace);
+          deleteRange.setEnd(node, range.startOffset);
+          deleteRange.deleteContents();
+
+          const displayName = member.name || member.email;
+          const mentionSpan = document.createElement("span");
+          mentionSpan.contentEditable = "false";
+          mentionSpan.className =
+            "inline-flex items-center gap-1 bg-[#5a50ff]/10 text-[#5a50ff] rounded px-1.5 py-0.5 text-xs font-medium mx-0.5 align-baseline";
+          mentionSpan.dataset.mentionId = member.id;
+          mentionSpan.dataset.mentionName = displayName;
+          mentionSpan.textContent = `@${displayName}`;
+
+          const currentRange = window.getSelection().getRangeAt(0);
+          currentRange.insertNode(mentionSpan);
+
+          const space = document.createTextNode("\u00A0");
+          mentionSpan.parentNode.insertBefore(space, mentionSpan.nextSibling);
+
+          const newRange = document.createRange();
+          newRange.setStartAfter(space);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+        }
+      }
+
+      setMentionState(null);
+      checkEmpty();
+    },
+    [checkEmpty],
+  );
 
   const handleKeyDown = (e) => {
-    if (mentionState && (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Enter" || e.key === "Escape")) {
+    if (
+      mentionState &&
+      (e.key === "ArrowDown" ||
+        e.key === "ArrowUp" ||
+        e.key === "Enter" ||
+        e.key === "Escape")
+    ) {
       return;
     }
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
@@ -218,9 +253,13 @@ export const MentionCommentInput = forwardRef(function MentionCommentInput(
   }, [disabled, onSubmit]);
 
   // Expose submit to parent via ref
-  useImperativeHandle(ref, () => ({
-    submit: handleSubmit,
-  }), [handleSubmit]);
+  useImperativeHandle(
+    ref,
+    () => ({
+      submit: handleSubmit,
+    }),
+    [handleSubmit],
+  );
 
   return (
     <div className="relative">
@@ -234,7 +273,7 @@ export const MentionCommentInput = forwardRef(function MentionCommentInput(
       )}
 
       <div
-        className={`relative transition-all ${isDragOver ? 'ring-2 ring-primary ring-offset-2 rounded-md' : ''}`}
+        className={`relative transition-all ${isDragOver ? "ring-2 ring-primary ring-offset-2 rounded-md" : ""}`}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         onDrop={onDrop}
@@ -258,7 +297,7 @@ export const MentionCommentInput = forwardRef(function MentionCommentInput(
             }}
             onKeyDown={handleKeyDown}
             onPaste={onPaste}
-            className="w-full text-sm text-foreground focus:outline-none min-h-[56px] [&_[data-mention-id]]:bg-[#5a50ff]/10 [&_[data-mention-id]]:text-[#5a50ff] [&_[data-mention-id]]:rounded [&_[data-mention-id]]:px-1.5 [&_[data-mention-id]]:py-0.5 [&_[data-mention-id]]:text-xs [&_[data-mention-id]]:font-medium"
+            className="w-full text-sm text-foreground focus:outline-none min-h-[56px] max-h-[200px] overflow-y-auto [&_[data-mention-id]]:bg-[#5a50ff]/10 [&_[data-mention-id]]:text-[#5a50ff] [&_[data-mention-id]]:rounded [&_[data-mention-id]]:px-1.5 [&_[data-mention-id]]:py-0.5 [&_[data-mention-id]]:text-xs [&_[data-mention-id]]:font-medium"
           />
           {isDragOver && (
             <div className="absolute inset-0 bg-primary/10 rounded-md flex items-center justify-center pointer-events-none">

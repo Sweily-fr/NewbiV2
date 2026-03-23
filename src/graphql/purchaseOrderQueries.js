@@ -135,6 +135,11 @@ export const PURCHASE_ORDER_FRAGMENT = gql`
       status
       finalTotalTTC
     }
+    emailTracking {
+      emailSentAt
+      emailOpenedAt
+      emailOpenCount
+    }
   }
 `;
 
@@ -220,6 +225,11 @@ export const PURCHASE_ORDER_LIST_FRAGMENT = gql`
       number
       status
       finalTotalTTC
+    }
+    emailTracking {
+      emailSentAt
+      emailOpenedAt
+      emailOpenCount
     }
   }
 `;

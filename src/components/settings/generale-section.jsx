@@ -15,12 +15,16 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { useFormContext } from "react-hook-form";
+import { useMutation } from "@apollo/client";
+import { UPDATE_COMPANY_LOGO } from "@/src/graphql/mutations/user";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
 import {
   sanitizeInput,
   VALIDATION_PATTERNS,
   detectInjectionAttempt,
 } from "@/src/lib/validation";
 import { Callout } from "@/src/components/ui/callout";
+import { toast } from "@/src/components/ui/sonner";
 
 const COUNTRIES = [
   { value: "France", label: "France" },
@@ -52,12 +56,17 @@ export function GeneraleSection({
     formState: { errors },
   } = useFormContext();
 
+  const { workspaceId } = useWorkspace();
+  const [updateCompanyLogo] = useMutation(UPDATE_COMPANY_LOGO);
   const logoContainerRef = useRef(null);
 
   // Surveiller les valeurs du formulaire pour détecter les changements
   const watchedValues = watch();
 
-  const logoUrl = watchedValues.logo || organization?.logo || null;
+  const logoUrl =
+    watchedValues.logo !== undefined
+      ? watchedValues.logo
+      : organization?.logo || null;
   const selectedCountry =
     watchedValues.address?.country || organization?.addressCountry || "France";
 
@@ -80,7 +89,7 @@ export function GeneraleSection({
             onError: (error) => {
               console.error("❌ Erreur sauvegarde automatique logo:", error);
             },
-          }
+          },
         );
       } catch (error) {
         console.error("❌ Erreur lors de la sauvegarde automatique:", error);
@@ -98,14 +107,15 @@ export function GeneraleSection({
       <div>
         <h2 className="text-lg font-medium mb-1 hidden md:block">Générale</h2>
         <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
-        
+
         {/* Message d'information si pas de permissions */}
         {!canManageOrgSettings && (
           <div className="mt-4">
             <Callout type="warning" noMargin>
               <p>
-                Vous n'avez pas la permission de modifier les paramètres de l'organisation. 
-                Seuls les <strong>owners</strong> et <strong>admins</strong> peuvent effectuer ces modifications.
+                Vous n'avez pas la permission de modifier les paramètres de
+                l'organisation. Seuls les <strong>owners</strong> et{" "}
+                <strong>admins</strong> peuvent effectuer ces modifications.
               </p>
             </Callout>
           </div>
@@ -136,7 +146,10 @@ export function GeneraleSection({
                   size="sm"
                   disabled={!canManageOrgSettings}
                   onClick={() => {
-                    const input = logoContainerRef.current?.querySelector('input[type="file"]');
+                    const input =
+                      logoContainerRef.current?.querySelector(
+                        'input[type="file"]',
+                      );
                     if (input) input.click();
                   }}
                 >
@@ -149,7 +162,29 @@ export function GeneraleSection({
                     variant="outline"
                     size="icon"
                     disabled={!canManageOrgSettings}
-                    onClick={() => handleLogoChange(null)}
+                    onClick={async () => {
+                      try {
+                        // 1. Mettre à jour le formulaire local
+                        handleLogoChange(null);
+
+                        // 2. Supprimer via GraphQL (supprime de R2 + met à jour la BDD)
+                        if (workspaceId) {
+                          await updateCompanyLogo({
+                            variables: { logoUrl: null, workspaceId },
+                          });
+                        }
+
+                        // 3. Refetch pour synchroniser la session
+                        if (refetchOrganization) {
+                          await refetchOrganization();
+                        }
+
+                        toast.success("Logo supprimé avec succès");
+                      } catch (error) {
+                        console.error("❌ Erreur suppression logo:", error);
+                        toast.error("Erreur lors de la suppression du logo");
+                      }
+                    }}
                   >
                     <Trash2 className="h-4 w-4 text-red-500" />
                   </Button>
@@ -305,7 +340,10 @@ export function GeneraleSection({
 
             {/* Adresse complète */}
             <div className="space-y-2">
-              <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55" htmlFor="address">
+              <Label
+                className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                htmlFor="address"
+              >
                 Adresse <span className="text-red-500 ml-1">*</span>
               </Label>
               <Input
@@ -337,7 +375,10 @@ export function GeneraleSection({
             {/* Ville et Code postal */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55" htmlFor="city">
+                <Label
+                  className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                  htmlFor="city"
+                >
                   Ville <span className="text-red-500 ml-1">*</span>
                 </Label>
                 <Input
@@ -367,7 +408,10 @@ export function GeneraleSection({
               </div>
 
               <div className="space-y-2">
-                <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55" htmlFor="postalCode">
+                <Label
+                  className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                  htmlFor="postalCode"
+                >
                   Code postal <span className="text-red-500 ml-1">*</span>
                 </Label>
                 <Input
@@ -399,7 +443,10 @@ export function GeneraleSection({
 
             {/* Pays */}
             <div className="space-y-2">
-              <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55" htmlFor="country">
+              <Label
+                className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                htmlFor="country"
+              >
                 Pays <span className="text-red-500 ml-1">*</span>
               </Label>
               <Select

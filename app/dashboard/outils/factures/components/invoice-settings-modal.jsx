@@ -38,8 +38,10 @@ const getDemoInvoiceData = (formData, organization, userName) => {
     invoiceNumber,
     prefix,
     number,
-    issueDate: new Date().toISOString(),
-    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    issueDate: new Date().toLocaleDateString("sv-SE"),
+    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(
+      "sv-SE",
+    ),
     status: "PAID",
     client: {
       name: "Client Exemple SARL",

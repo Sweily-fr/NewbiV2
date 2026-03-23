@@ -8,12 +8,23 @@ import {
   MOVE_TASK,
   ADD_COMMENT,
   GET_BOARD,
+  START_TIMER,
 } from "@/src/graphql/kanbanQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 
 const UPLOAD_TASK_IMAGE = gql`
-  mutation UploadTaskImage($taskId: ID!, $file: Upload!, $imageType: String, $workspaceId: ID) {
-    uploadTaskImage(taskId: $taskId, file: $file, imageType: $imageType, workspaceId: $workspaceId) {
+  mutation UploadTaskImage(
+    $taskId: ID!
+    $file: Upload!
+    $imageType: String
+    $workspaceId: ID
+  ) {
+    uploadTaskImage(
+      taskId: $taskId
+      file: $file
+      imageType: $imageType
+      workspaceId: $workspaceId
+    ) {
       success
       image {
         id
@@ -57,14 +68,14 @@ export const useKanbanTasks = (boardId, board) => {
   const [selectedColumnId, setSelectedColumnId] = useState(null);
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
   const [isEditTaskOpen, setIsEditTaskOpen] = useState(false);
-  
+
   // Ref pour éviter les mises à jour en boucle
   const lastUpdateRef = useRef(null);
 
   // Extraire uniquement la tâche en cours d'édition du board (évite de dépendre de board?.tasks entier)
   const editingTaskFromBoard = useMemo(() => {
     if (!isEditTaskOpen || !editingTask?.id || !board?.tasks) return null;
-    return board.tasks.find(t => t.id === editingTask.id) || null;
+    return board.tasks.find((t) => t.id === editingTask.id) || null;
   }, [board?.tasks, editingTask?.id, isEditTaskOpen]);
 
   // Synchroniser taskForm avec les données temps réel (commentaires, activité)
@@ -74,8 +85,10 @@ export const useKanbanTasks = (boardId, board) => {
 
     // Créer une clé de comparaison incluant le contenu des commentaires (userName, userImage)
     const getCommentsKey = (comments) => {
-      if (!comments || comments.length === 0) return '';
-      return comments.map(c => `${c.id}-${c.userName}-${c.userImage}`).join('|');
+      if (!comments || comments.length === 0) return "";
+      return comments
+        .map((c) => `${c.id}-${c.userName}-${c.userImage}`)
+        .join("|");
     };
 
     const updatedCommentsKey = getCommentsKey(editingTaskFromBoard.comments);
@@ -90,18 +103,22 @@ export const useKanbanTasks = (boardId, board) => {
     if (currentCommentsKey !== updatedCommentsKey) {
       lastUpdateRef.current = updateKey;
 
-      setTaskForm(prev => ({
+      setTaskForm((prev) => ({
         ...prev,
         comments: editingTaskFromBoard.comments || [],
         activity: editingTaskFromBoard.activity || [],
-        updatedAt: editingTaskFromBoard.updatedAt
+        updatedAt: editingTaskFromBoard.updatedAt,
       }));
     }
   }, [editingTaskFromBoard, taskForm.comments]);
 
+  // Ref pour savoir si le timer local tournait lors de la création
+  const timerWasRunningRef = useRef(false);
+
   // Task mutations
   const [addComment] = useMutation(ADD_COMMENT);
   const [uploadTaskImageMutation] = useMutation(UPLOAD_TASK_IMAGE);
+  const [startTimerMutation] = useMutation(START_TIMER);
 
   const [createTask, { loading: createTaskLoading }] = useMutation(
     CREATE_TASK,
@@ -117,7 +134,7 @@ export const useKanbanTasks = (boardId, board) => {
           if (cacheData?.board) {
             // Vérifier que la tâche n'existe pas déjà dans le cache
             const taskExists = (cacheData.board.tasks || []).some(
-              (t) => t.id === newTask.id
+              (t) => t.id === newTask.id,
             );
             if (!taskExists) {
               cache.writeQuery({
@@ -138,20 +155,26 @@ export const useKanbanTasks = (boardId, board) => {
       },
       onCompleted: async (data) => {
         // Si des commentaires sont en attente, les créer maintenant
-        if (taskForm.pendingComments && taskForm.pendingComments.length > 0 && data?.createTask?.id) {
+        if (
+          taskForm.pendingComments &&
+          taskForm.pendingComments.length > 0 &&
+          data?.createTask?.id
+        ) {
           try {
             for (const comment of taskForm.pendingComments) {
               await addComment({
                 variables: {
                   taskId: data.createTask.id,
                   input: { content: comment.content },
-                  workspaceId
+                  workspaceId,
                 },
               });
             }
           } catch (error) {
             console.error("Erreur lors de l'ajout des commentaires:", error);
-            toast.error("Tâche créée mais erreur lors de l'ajout des commentaires");
+            toast.error(
+              "Tâche créée mais erreur lors de l'ajout des commentaires",
+            );
           }
         }
 
@@ -163,15 +186,29 @@ export const useKanbanTasks = (boardId, board) => {
                 variables: {
                   taskId: data.createTask.id,
                   file,
-                  imageType: 'description',
-                  workspaceId
-                }
+                  imageType: "description",
+                  workspaceId,
+                },
               });
             }
           } catch (error) {
             console.error("Erreur upload fichiers:", error);
-            toast.error("Tâche créée mais erreur lors de l'upload des fichiers");
+            toast.error(
+              "Tâche créée mais erreur lors de l'upload des fichiers",
+            );
           }
+        }
+
+        // Si le timer local tournait, lancer le timer serveur sur la tâche créée
+        if (timerWasRunningRef.current && data?.createTask?.id) {
+          try {
+            await startTimerMutation({
+              variables: { taskId: data.createTask.id, workspaceId },
+            });
+          } catch (error) {
+            console.error("Erreur démarrage timer:", error);
+          }
+          timerWasRunningRef.current = false;
         }
 
         setTaskForm(initialTaskForm);
@@ -181,7 +218,7 @@ export const useKanbanTasks = (boardId, board) => {
       onError: () => {
         toast.error("Erreur lors de la création de la tâche");
       },
-    }
+    },
   );
 
   const [updateTask, { loading: updateTaskLoading }] = useMutation(
@@ -197,7 +234,7 @@ export const useKanbanTasks = (boardId, board) => {
       onError: () => {
         toast.error("Erreur lors de la modification de la tâche");
       },
-    }
+    },
   );
 
   const [deleteTask, { loading: deleteTaskLoading }] = useMutation(
@@ -210,7 +247,7 @@ export const useKanbanTasks = (boardId, board) => {
       onError: () => {
         toast.error("Erreur lors de la suppression de la tâche");
       },
-    }
+    },
   );
 
   const [moveTask] = useMutation(MOVE_TASK, {
@@ -271,7 +308,7 @@ export const useKanbanTasks = (boardId, board) => {
   const getNextAvailableColor = (existingTags) => {
     const usedColors = new Set(existingTags.map((tag) => tag.bg));
     const availableColor = tagColorPalette.find(
-      (color) => !usedColors.has(color.bg)
+      (color) => !usedColors.has(color.bg),
     );
     return (
       availableColor || {
@@ -290,7 +327,7 @@ export const useKanbanTasks = (boardId, board) => {
     // Check if tag already exists in the current task
     if (
       taskForm.tags.some(
-        (tag) => tag.name.toLowerCase() === newTagName.toLowerCase()
+        (tag) => tag.name.toLowerCase() === newTagName.toLowerCase(),
       )
     ) {
       toast.error("Ce tag existe déjà dans cette tâche");
@@ -302,7 +339,7 @@ export const useKanbanTasks = (boardId, board) => {
 
     // Check if tag exists in the board with different casing
     const existingTag = boardTags.find(
-      (tag) => tag.name.toLowerCase() === newTagName.toLowerCase()
+      (tag) => tag.name.toLowerCase() === newTagName.toLowerCase(),
     );
 
     if (existingTag) {
@@ -347,10 +384,10 @@ export const useKanbanTasks = (boardId, board) => {
         ...prev,
         checklist: [
           ...prev.checklist,
-          { 
+          {
             id: `temp-${Date.now()}-${Math.random()}`, // ID temporaire unique
-            text: taskForm.newChecklistItem.trim(), 
-            completed: false 
+            text: taskForm.newChecklistItem.trim(),
+            completed: false,
           },
         ],
         newChecklistItem: "",
@@ -415,7 +452,7 @@ export const useKanbanTasks = (boardId, board) => {
       const existingTag = allBoardTags.find(
         (t) =>
           t.name.toLowerCase() === normalizedTagName &&
-          (t.bg !== tag.bg || t.text !== tag.text || t.border !== tag.border)
+          (t.bg !== tag.bg || t.text !== tag.text || t.border !== tag.border),
       );
 
       if (existingTag) {
@@ -432,19 +469,27 @@ export const useKanbanTasks = (boardId, board) => {
     }
 
     try {
+      // Sauvegarder si le timer local tourne pour le relancer côté serveur après création
+      timerWasRunningRef.current = !!taskForm.timeTracking?.isRunning;
+
       // Envoyer seulement les userId (tableau simple d'IDs), filtrer les nulls
-      const assignedMembers = Array.isArray(taskForm.assignedMembers) 
+      const assignedMembers = Array.isArray(taskForm.assignedMembers)
         ? taskForm.assignedMembers
-            .map(member => typeof member === 'string' ? member : member?.userId)
+            .map((member) =>
+              typeof member === "string" ? member : member?.userId,
+            )
             .filter(Boolean)
         : [];
-      
+
       await createTask({
         variables: {
           input: {
             title: taskForm.title,
             description: taskForm.description,
-            priority: taskForm.priority.toLowerCase() === 'none' ? '' : taskForm.priority.toLowerCase(),
+            priority:
+              taskForm.priority.toLowerCase() === "none"
+                ? ""
+                : taskForm.priority.toLowerCase(),
             startDate: taskForm.startDate || null,
             dueDate: taskForm.dueDate || null,
             columnId: taskForm.columnId,
@@ -458,6 +503,34 @@ export const useKanbanTasks = (boardId, board) => {
             })),
             assignedMembers: assignedMembers,
             clientId: taskForm.clientId || null,
+            ...(taskForm.timeTracking &&
+            (taskForm.timeTracking.totalSeconds > 0 ||
+              taskForm.timeTracking.hourlyRate ||
+              taskForm.timeTracking.isRunning)
+              ? (() => {
+                  // Calculer le temps total final, incluant le temps en cours si le timer tourne
+                  let finalTotalSeconds =
+                    taskForm.timeTracking.totalSeconds || 0;
+                  if (
+                    taskForm.timeTracking.isRunning &&
+                    taskForm.timeTracking.currentStartTime
+                  ) {
+                    const elapsed = Math.floor(
+                      (Date.now() - taskForm.timeTracking.currentStartTime) /
+                        1000,
+                    );
+                    finalTotalSeconds += elapsed;
+                  }
+                  return {
+                    timeTracking: {
+                      totalSeconds: finalTotalSeconds,
+                      hourlyRate: taskForm.timeTracking.hourlyRate || null,
+                      roundingOption:
+                        taskForm.timeTracking.roundingOption || "none",
+                    },
+                  };
+                })()
+              : {}),
           },
           workspaceId,
         },
@@ -475,17 +548,22 @@ export const useKanbanTasks = (boardId, board) => {
 
     try {
       // Envoyer seulement les userId (tableau simple d'IDs), filtrer les nulls
-      const assignedMembers = Array.isArray(taskForm.assignedMembers) 
+      const assignedMembers = Array.isArray(taskForm.assignedMembers)
         ? taskForm.assignedMembers
-            .map(member => typeof member === 'string' ? member : member?.userId)
+            .map((member) =>
+              typeof member === "string" ? member : member?.userId,
+            )
             .filter(Boolean)
         : [];
-      
+
       const input = {
         id: editingTask.id,
         title: taskForm.title,
         description: taskForm.description,
-        priority: taskForm.priority.toLowerCase() === 'none' ? '' : taskForm.priority.toLowerCase(),
+        priority:
+          taskForm.priority.toLowerCase() === "none"
+            ? ""
+            : taskForm.priority.toLowerCase(),
         startDate: taskForm.startDate || null,
         dueDate: taskForm.dueDate || null,
         columnId: taskForm.columnId,
@@ -498,7 +576,7 @@ export const useKanbanTasks = (boardId, board) => {
         assignedMembers: assignedMembers,
         clientId: taskForm.clientId || null,
       };
-      
+
       await updateTask({
         variables: {
           input,
@@ -549,11 +627,11 @@ export const useKanbanTasks = (boardId, board) => {
 
     setEditingTask(task);
     setIsEditTaskOpen(true);
-    
+
     // Déterminer si c'est une création ou une édition
     const taskId = task?.id || task?._id;
     const isCreating = !taskId || taskId === null;
-    
+
     // Ne pas inclure le champ id si c'est une création
     const formData = {
       ...initialTaskForm,
@@ -574,7 +652,9 @@ export const useKanbanTasks = (boardId, board) => {
         : [],
       clientId: task?.clientId || null,
       client: task?.client || null,
-      assignedMembers: Array.isArray(task?.assignedMembers) ? task.assignedMembers : [],
+      assignedMembers: Array.isArray(task?.assignedMembers)
+        ? task.assignedMembers
+        : [],
       comments: Array.isArray(task?.comments) ? task.comments : [],
       activity: Array.isArray(task?.activity) ? task.activity : [],
       images: Array.isArray(task?.images) ? task.images : [], // Images de la tâche
@@ -584,19 +664,19 @@ export const useKanbanTasks = (boardId, board) => {
       updatedAt: task?.updatedAt,
       pendingComments: [], // Pas de commentaires en attente en mode édition
     };
-    
+
     // Ajouter l'id seulement si c'est une édition
     if (!isCreating) {
       formData.id = taskId;
     }
-    
+
     setTaskForm(formData);
   };
 
   // Gestion des commentaires en attente (pour la création de tâche)
   const addPendingComment = (content) => {
     if (!content.trim()) return;
-    
+
     setTaskForm((prev) => ({
       ...prev,
       pendingComments: [
@@ -605,24 +685,24 @@ export const useKanbanTasks = (boardId, board) => {
           id: `pending-${Date.now()}-${Math.random()}`,
           content: content.trim(),
           createdAt: new Date().toISOString(),
-        }
-      ]
+        },
+      ],
     }));
   };
 
   const removePendingComment = (commentId) => {
     setTaskForm((prev) => ({
       ...prev,
-      pendingComments: prev.pendingComments.filter(c => c.id !== commentId)
+      pendingComments: prev.pendingComments.filter((c) => c.id !== commentId),
     }));
   };
 
   const updatePendingComment = (commentId, newContent) => {
     setTaskForm((prev) => ({
       ...prev,
-      pendingComments: prev.pendingComments.map(c => 
-        c.id === commentId ? { ...c, content: newContent } : c
-      )
+      pendingComments: prev.pendingComments.map((c) =>
+        c.id === commentId ? { ...c, content: newContent } : c,
+      ),
     }));
   };
 

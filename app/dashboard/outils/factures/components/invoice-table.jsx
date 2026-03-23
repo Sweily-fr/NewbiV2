@@ -109,6 +109,7 @@ import {
   IMPORTED_INVOICE_STATUS_LABELS,
   IMPORTED_INVOICE_STATUS_COLORS,
 } from "@/src/graphql/importedInvoiceQueries";
+import { useEmailTrackingSubscription } from "@/src/graphql/documentEmailQueries";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 
@@ -134,6 +135,16 @@ export default function InvoiceTable({
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [selectedImportedInvoice, setSelectedImportedInvoice] = useState(null);
   const { workspaceId } = useRequiredWorkspace();
+
+  // Subscription temps réel pour le tracking d'ouverture d'email
+  useEmailTrackingSubscription({
+    workspaceId,
+    onUpdate: (update) => {
+      if (update.documentType === "invoice") {
+        refetch();
+      }
+    },
+  });
 
   // Hook pour les factures importées
   const {
@@ -1116,7 +1127,10 @@ export default function InvoiceTable({
                 })()
               : null
           }
-          onSent={() => setSendEmailInvoice(null)}
+          onSent={() => {
+            setSendEmailInvoice(null);
+            refetch();
+          }}
         />
       )}
     </div>

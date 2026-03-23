@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/src/components/ui/badge";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Button } from "@/src/components/ui/button";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, Mail } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
   PURCHASE_ORDER_STATUS_LABELS,
@@ -20,6 +20,7 @@ import {
 } from "@/src/graphql/purchaseOrderQueries";
 import { formatDate, isDateExpired } from "../utils/date-utils";
 import PurchaseOrderRowActions from "../components/purchase-order-row-actions";
+import { EmailTrackingStatus } from "@/src/components/email-tracking-status";
 import { toast } from "@/src/components/ui/sonner";
 
 // Custom filter functions
@@ -86,11 +87,8 @@ const formatDateForSearch = (dateValue) => {
       }),
       date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }),
       date.toLocaleDateString("fr-FR", { month: "2-digit", year: "numeric" }),
-    ].filter(
-      (value, index, self) =>
-        value && self.indexOf(value) === index
-    );
-  } catch (error) {
+    ].filter((value, index, self) => value && self.indexOf(value) === index);
+  } catch {
     return [];
   }
 };
@@ -110,9 +108,7 @@ const formatAmountForSearch = (amount) => {
     formattedWithComma.replace(",", ""),
     Math.floor(numAmount).toString(),
     numAmount.toString(),
-  ].filter(
-    (value, index, self) => value && self.indexOf(value) === index
-  );
+  ].filter((value, index, self) => value && self.indexOf(value) === index);
 };
 
 // Memoized filter functions to prevent recreation on each render
@@ -123,9 +119,14 @@ const memoizedMultiColumnFilter = (row, columnId, filterValue) => {
     purchaseOrder.client?.name,
     purchaseOrder.client?.email,
     PURCHASE_ORDER_STATUS_LABELS[purchaseOrder.status],
-    ...(purchaseOrder.issueDate ? formatDateForSearch(purchaseOrder.issueDate) : []),
-    ...(purchaseOrder.deliveryDate ? formatDateForSearch(purchaseOrder.deliveryDate) : []),
-    ...(purchaseOrder.finalTotalTTC !== undefined && purchaseOrder.finalTotalTTC !== null
+    ...(purchaseOrder.issueDate
+      ? formatDateForSearch(purchaseOrder.issueDate)
+      : []),
+    ...(purchaseOrder.deliveryDate
+      ? formatDateForSearch(purchaseOrder.deliveryDate)
+      : []),
+    ...(purchaseOrder.finalTotalTTC !== undefined &&
+    purchaseOrder.finalTotalTTC !== null
       ? formatAmountForSearch(purchaseOrder.finalTotalTTC)
       : []),
   ]
@@ -158,7 +159,9 @@ const dateFilterFn = (row, columnId, filterValue) => {
   const issueDate = row.original.issueDate;
   if (!issueDate) return false;
 
-  const date = new Date(typeof issueDate === 'string' ? parseInt(issueDate) : issueDate);
+  const date = new Date(
+    typeof issueDate === "string" ? parseInt(issueDate) : issueDate,
+  );
   date.setHours(0, 0, 0, 0);
 
   if (filterValue.from && filterValue.to) {
@@ -179,7 +182,12 @@ const dateFilterFn = (row, columnId, filterValue) => {
   return true;
 };
 
-export function usePurchaseOrderTable({ data = [], onRefetch, onSendEmail, onSaveAsTemplate }) {
+export function usePurchaseOrderTable({
+  data = [],
+  onRefetch,
+  onSendEmail,
+  onSaveAsTemplate,
+}) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState([]);
   const [clientFilter, setClientFilter] = useState([]);
@@ -273,7 +281,7 @@ export function usePurchaseOrderTable({ data = [], onRefetch, onSendEmail, onSav
                 column.toggleSorting(column.getIsSorted() === "asc")
               }
             >
-              Date d'emission
+              Date d&apos;emission
               <ArrowUpDown className="ml-2 h-4 w-4" />
             </div>
           </div>
@@ -325,9 +333,7 @@ export function usePurchaseOrderTable({ data = [], onRefetch, onSendEmail, onSav
           return (
             <div className={cn("text-sm", isExpired && "text-red-600")}>
               {formattedDate}
-              {isExpired && (
-                <div className="text-xs text-red-500">Expirée</div>
-              )}
+              {isExpired && <div className="text-xs text-red-500">Expirée</div>}
             </div>
           );
         },
@@ -360,6 +366,27 @@ export function usePurchaseOrderTable({ data = [], onRefetch, onSendEmail, onSav
         filterFn: statusFilterFn,
       },
       {
+        id: "emailTracking",
+        header: () => (
+          <div className="flex items-center justify-center font-normal">
+            <Mail className="h-4 w-4" />
+          </div>
+        ),
+        meta: {
+          label: "Email",
+        },
+        cell: ({ row }) => {
+          const emailTracking = row.original.emailTracking;
+          return (
+            <div className="flex justify-center">
+              <EmailTrackingStatus emailTracking={emailTracking} />
+            </div>
+          );
+        },
+        size: 50,
+        enableSorting: false,
+      },
+      {
         accessorKey: "finalTotalTTC",
         header: ({ column }) => (
           <Button
@@ -380,15 +407,20 @@ export function usePurchaseOrderTable({ data = [], onRefetch, onSendEmail, onSav
 
           let amount = purchaseOrder.finalTotalTTC;
 
-          if (amount === undefined || amount === null || isNaN(amount)) return "-";
+          if (amount === undefined || amount === null || isNaN(amount))
+            return "-";
 
           if (escompteValue > 0) {
-            const totalHT = purchaseOrder.finalTotalHT || (purchaseOrder.totalHT || 0);
-            const totalVAT = purchaseOrder.finalTotalVAT || (purchaseOrder.totalVAT || 0);
+            const totalHT =
+              purchaseOrder.finalTotalHT || purchaseOrder.totalHT || 0;
+            const totalVAT =
+              purchaseOrder.finalTotalVAT || purchaseOrder.totalVAT || 0;
 
             const escompteAmount = (totalHT * escompteValue) / 100;
             const htAfterEscompte = totalHT - escompteAmount;
-            const tvaAfterEscompte = purchaseOrder.isReverseCharge ? 0 : (htAfterEscompte / totalHT) * totalVAT;
+            const tvaAfterEscompte = purchaseOrder.isReverseCharge
+              ? 0
+              : (htAfterEscompte / totalHT) * totalVAT;
             amount = htAfterEscompte + tvaAfterEscompte;
           }
 
@@ -406,12 +438,19 @@ export function usePurchaseOrderTable({ data = [], onRefetch, onSendEmail, onSav
       {
         id: "actions",
         header: () => <div className="text-right font-normal">Actions</div>,
-        cell: ({ row }) => <PurchaseOrderRowActions row={row} onRefetch={onRefetch} onSendEmail={onSendEmail} onSaveAsTemplate={onSaveAsTemplate} />,
+        cell: ({ row }) => (
+          <PurchaseOrderRowActions
+            row={row}
+            onRefetch={onRefetch}
+            onSendEmail={onSendEmail}
+            onSaveAsTemplate={onSaveAsTemplate}
+          />
+        ),
         size: 60,
         enableHiding: false,
       },
     ],
-    [onRefetch, onSendEmail, onSaveAsTemplate]
+    [onRefetch, onSendEmail, onSaveAsTemplate],
   );
 
   // Log des donnees pour debogage
@@ -419,18 +458,16 @@ export function usePurchaseOrderTable({ data = [], onRefetch, onSendEmail, onSav
     if (data && data.length > 0) {
       const samplePurchaseOrders = data.slice(0, 3);
 
-      samplePurchaseOrders.forEach((purchaseOrder, index) => {
+      samplePurchaseOrders.forEach((purchaseOrder) => {
         if (purchaseOrder.deliveryDate) {
           try {
-            let date;
-
             if (
               typeof purchaseOrder.deliveryDate === "number" ||
               /^\d+$/.test(purchaseOrder.deliveryDate)
             ) {
-              date = new Date(parseInt(purchaseOrder.deliveryDate, 10));
+              new Date(parseInt(purchaseOrder.deliveryDate, 10));
             } else {
-              date = new Date(purchaseOrder.deliveryDate);
+              new Date(purchaseOrder.deliveryDate);
             }
           } catch {
             // Date conversion error - silently handled
@@ -462,8 +499,12 @@ export function usePurchaseOrderTable({ data = [], onRefetch, onSendEmail, onSav
     state: {
       globalFilter,
       columnFilters: [
-        ...(statusFilter.length > 0 ? [{ id: "status", value: statusFilter }] : []),
-        ...(clientFilter.length > 0 ? [{ id: "client", value: clientFilter }] : []),
+        ...(statusFilter.length > 0
+          ? [{ id: "status", value: statusFilter }]
+          : []),
+        ...(clientFilter.length > 0
+          ? [{ id: "client", value: clientFilter }]
+          : []),
         ...(dateFilter ? [{ id: "issueDate", value: dateFilter }] : []),
       ],
     },
@@ -486,17 +527,19 @@ export function usePurchaseOrderTable({ data = [], onRefetch, onSendEmail, onSav
   // Handle bulk delete - only DRAFT purchase orders can be deleted
   const handleDeleteSelected = async () => {
     const draftPurchaseOrders = selectedRows.filter(
-      (purchaseOrder) => purchaseOrder.status === "DRAFT"
+      (purchaseOrder) => purchaseOrder.status === "DRAFT",
     );
 
     if (draftPurchaseOrders.length === 0) {
-      toast.error("Seuls les bons de commande en brouillon peuvent etre supprimes");
+      toast.error(
+        "Seuls les bons de commande en brouillon peuvent etre supprimes",
+      );
       return;
     }
 
     if (draftPurchaseOrders.length < selectedRows.length) {
       toast.warning(
-        `${selectedRows.length - draftPurchaseOrders.length} bon(s) de commande ignore(s) (non brouillon)`
+        `${selectedRows.length - draftPurchaseOrders.length} bon(s) de commande ignore(s) (non brouillon)`,
       );
     }
 
@@ -505,15 +548,19 @@ export function usePurchaseOrderTable({ data = [], onRefetch, onSendEmail, onSav
     for (let i = 0; i < draftPurchaseOrders.length; i += BATCH_SIZE) {
       const batch = draftPurchaseOrders.slice(i, i + BATCH_SIZE);
       try {
-        await Promise.all(batch.map((purchaseOrder) => deletePurchaseOrder(purchaseOrder.id)));
-      } catch (error) {
+        await Promise.all(
+          batch.map((purchaseOrder) => deletePurchaseOrder(purchaseOrder.id)),
+        );
+      } catch {
         toast.error(
-          `Erreur lors de la suppression du lot ${i / BATCH_SIZE + 1}`
+          `Erreur lors de la suppression du lot ${i / BATCH_SIZE + 1}`,
         );
       }
     }
 
-    toast.success(`${draftPurchaseOrders.length} bon(s) de commande supprime(s)`);
+    toast.success(
+      `${draftPurchaseOrders.length} bon(s) de commande supprime(s)`,
+    );
     table.resetRowSelection();
 
     if (onRefetch) {

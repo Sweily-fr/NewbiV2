@@ -79,6 +79,7 @@ import { SavePurchaseOrderTemplateDialog } from "./SavePurchaseOrderTemplateDial
 import { ImportPurchaseOrderModal } from "./import-purchase-order-modal";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
+import { useEmailTrackingSubscription } from "@/src/graphql/documentEmailQueries";
 
 export default function PurchaseOrderTable({
   handleNewPurchaseOrder,
@@ -89,6 +90,17 @@ export default function PurchaseOrderTable({
   const inputRef = useRef(null);
   const { purchaseOrders, loading, error, refetch } = usePurchaseOrders();
   const { workspaceId } = useRequiredWorkspace();
+
+  // Subscription temps réel pour le tracking d'ouverture d'email
+  useEmailTrackingSubscription({
+    workspaceId,
+    onUpdate: (update) => {
+      if (update.documentType === "purchaseOrder") {
+        refetch();
+      }
+    },
+  });
+
   const { canCreate } = usePermissions();
   const [canCreatePo, setCanCreatePo] = useState(false);
   const [poToOpen, setPoToOpen] = useState(null);
@@ -759,7 +771,10 @@ export default function PurchaseOrderTable({
                 })()
               : null
           }
-          onSent={() => setSendEmailPO(null)}
+          onSent={() => {
+            setSendEmailPO(null);
+            refetch();
+          }}
         />
       )}
 

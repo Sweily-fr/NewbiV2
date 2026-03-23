@@ -136,6 +136,11 @@ export const QUOTE_FRAGMENT = gql`
       finalTotalTTC
       isDeposit
     }
+    emailTracking {
+      emailSentAt
+      emailOpenedAt
+      emailOpenCount
+    }
   }
 `;
 
@@ -219,6 +224,11 @@ export const QUOTE_LIST_FRAGMENT = gql`
       number
       status
       finalTotalTTC
+    }
+    emailTracking {
+      emailSentAt
+      emailOpenedAt
+      emailOpenCount
     }
   }
 `;

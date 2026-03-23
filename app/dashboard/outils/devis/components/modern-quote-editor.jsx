@@ -36,7 +36,12 @@ import { ValidationCallout } from "@/app/dashboard/outils/factures/components/va
 import ClientsModal from "@/app/dashboard/clients/components/clients-modal";
 import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/send-document-modal";
 import { SaveQuoteTemplateDialog } from "./SaveQuoteTemplateDialog";
-import { useQuoteTemplates, GET_QUOTE_TEMPLATES, DELETE_QUOTE_TEMPLATE, useCheckQuoteNumber } from "@/src/graphql/quoteQueries";
+import {
+  useQuoteTemplates,
+  GET_QUOTE_TEMPLATES,
+  DELETE_QUOTE_TEMPLATE,
+  useCheckQuoteNumber,
+} from "@/src/graphql/quoteQueries";
 import { useMutation } from "@apollo/client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import {
@@ -59,7 +64,8 @@ export default function ModernQuoteEditor({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const clientIdFromUrl = mode === "create" ? searchParams.get("clientId") : null;
+  const clientIdFromUrl =
+    mode === "create" ? searchParams.get("clientId") : null;
   const { client: preselectedClient } = useClient(clientIdFromUrl);
   const [showSettings, setShowSettings] = useState(false);
   const [showEditClient, setShowEditClient] = useState(false);
@@ -77,7 +83,9 @@ export default function ModernQuoteEditor({
   const { workspaceId } = useWorkspace();
   const { templates, loading: templatesLoading } = useQuoteTemplates();
   const [deleteTemplateMutation] = useMutation(DELETE_QUOTE_TEMPLATE, {
-    refetchQueries: [{ query: GET_QUOTE_TEMPLATES, variables: { workspaceId } }],
+    refetchQueries: [
+      { query: GET_QUOTE_TEMPLATES, variables: { workspaceId } },
+    ],
   });
 
   // Récupérer l'organisation au chargement (pour les valeurs par défaut des templates)
@@ -271,23 +279,42 @@ export default function ModernQuoteEditor({
   // Valeurs par défaut d'un devis vierge — réutilise les paramètres globaux de l'organisation
   const getBlankQuoteFields = () => ({
     items: [],
-    headerNotes: organization?.quoteHeaderNotes || organization?.documentHeaderNotes || "",
-    footerNotes: organization?.quoteFooterNotes || organization?.documentFooterNotes || "",
-    termsAndConditions: organization?.quoteTermsAndConditions || organization?.documentTermsAndConditions || "",
+    headerNotes:
+      organization?.quoteHeaderNotes || organization?.documentHeaderNotes || "",
+    footerNotes:
+      organization?.quoteFooterNotes || organization?.documentFooterNotes || "",
+    termsAndConditions:
+      organization?.quoteTermsAndConditions ||
+      organization?.documentTermsAndConditions ||
+      "",
     termsAndConditionsLink: "",
     termsAndConditionsLinkTitle: "",
     customFields: [],
     discount: 0,
     discountType: "PERCENTAGE",
     appearance: {
-      textColor: organization?.quoteTextColor || organization?.documentTextColor || "#000000",
-      headerTextColor: organization?.quoteHeaderTextColor || organization?.documentHeaderTextColor || "#ffffff",
-      headerBgColor: organization?.quoteHeaderBgColor || organization?.documentHeaderBgColor || "#5b50FF",
+      textColor:
+        organization?.quoteTextColor ||
+        organization?.documentTextColor ||
+        "#000000",
+      headerTextColor:
+        organization?.quoteHeaderTextColor ||
+        organization?.documentHeaderTextColor ||
+        "#ffffff",
+      headerBgColor:
+        organization?.quoteHeaderBgColor ||
+        organization?.documentHeaderBgColor ||
+        "#5b50FF",
     },
     clientPositionRight: organization?.quoteClientPositionRight || false,
     isReverseCharge: false,
     showBankDetails: organization?.showBankDetails || false,
-    shipping: { billShipping: false, shippingAddress: null, shippingAmountHT: 0, shippingVatRate: 20 },
+    shipping: {
+      billShipping: false,
+      shippingAddress: null,
+      shippingAmountHT: 0,
+      shippingVatRate: 20,
+    },
     retenueGarantie: 0,
     escompte: 0,
     operationType: null,
@@ -299,7 +326,10 @@ export default function ModernQuoteEditor({
     const preserved = getPreservedFields();
 
     if (!templateId || templateId === "none") {
-      form.reset({ ...preserved, ...getBlankQuoteFields() }, { keepDefaultValues: false });
+      form.reset(
+        { ...preserved, ...getBlankQuoteFields() },
+        { keepDefaultValues: false },
+      );
       toast.success("Modèle retiré — devis remis à zéro");
       return;
     }
@@ -307,43 +337,61 @@ export default function ModernQuoteEditor({
     const template = templates.find((t) => t.id === templateId);
     if (!template) return;
 
-    form.reset({
-      ...preserved,
-      items: template.items?.map((item) => ({
-        description: item.description,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        vatRate: item.vatRate,
-        unit: item.unit || '',
-        discount: item.discount || 0,
-        discountType: item.discountType || 'PERCENTAGE',
-        details: item.details || '',
-        vatExemptionText: item.vatExemptionText || '',
-        progressPercentage: item.progressPercentage != null ? item.progressPercentage : 100,
-      })) || [],
-      headerNotes: template.headerNotes ?? "",
-      footerNotes: template.footerNotes ?? "",
-      termsAndConditions: template.termsAndConditions ?? "",
-      termsAndConditionsLink: template.termsAndConditionsLink ?? "",
-      termsAndConditionsLinkTitle: template.termsAndConditionsLinkTitle ?? "",
-      customFields: template.customFields?.length ? template.customFields : [],
-      discount: template.discount ?? 0,
-      discountType: template.discountType ?? "PERCENTAGE",
-      appearance: template.appearance ?? { textColor: "#000000", headerTextColor: "#ffffff", headerBgColor: "#5b50FF" },
-      clientPositionRight: template.clientPositionRight ?? false,
-      isReverseCharge: template.isReverseCharge ?? false,
-      showBankDetails: template.showBankDetails ?? false,
-      shipping: template.shipping ?? { billShipping: false, shippingAddress: null, shippingAmountHT: 0, shippingVatRate: 20 },
-      retenueGarantie: template.retenueGarantie ?? 0,
-      escompte: template.escompte ?? 0,
-      operationType: template.operationType ?? null,
-    }, { keepDefaultValues: false });
+    form.reset(
+      {
+        ...preserved,
+        items:
+          template.items?.map((item) => ({
+            description: item.description,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            vatRate: item.vatRate,
+            unit: item.unit || "",
+            discount: item.discount || 0,
+            discountType: item.discountType || "PERCENTAGE",
+            details: item.details || "",
+            vatExemptionText: item.vatExemptionText || "",
+            progressPercentage:
+              item.progressPercentage != null ? item.progressPercentage : 100,
+          })) || [],
+        headerNotes: template.headerNotes ?? "",
+        footerNotes: template.footerNotes ?? "",
+        termsAndConditions: template.termsAndConditions ?? "",
+        termsAndConditionsLink: template.termsAndConditionsLink ?? "",
+        termsAndConditionsLinkTitle: template.termsAndConditionsLinkTitle ?? "",
+        customFields: template.customFields?.length
+          ? template.customFields
+          : [],
+        discount: template.discount ?? 0,
+        discountType: template.discountType ?? "PERCENTAGE",
+        appearance: template.appearance ?? {
+          textColor: "#000000",
+          headerTextColor: "#ffffff",
+          headerBgColor: "#5b50FF",
+        },
+        clientPositionRight: template.clientPositionRight ?? false,
+        isReverseCharge: template.isReverseCharge ?? false,
+        showBankDetails: template.showBankDetails ?? false,
+        shipping: template.shipping ?? {
+          billShipping: false,
+          shippingAddress: null,
+          shippingAmountHT: 0,
+          shippingVatRate: 20,
+        },
+        retenueGarantie: template.retenueGarantie ?? 0,
+        escompte: template.escompte ?? 0,
+        operationType: template.operationType ?? null,
+      },
+      { keepDefaultValues: false },
+    );
 
     toast.success(`Modèle "${template.name}" appliqué`);
   };
 
   const handleDeleteTemplate = async (templateId) => {
-    await deleteTemplateMutation({ variables: { id: templateId, workspaceId } });
+    await deleteTemplateMutation({
+      variables: { id: templateId, workspaceId },
+    });
   };
 
   return (
@@ -448,7 +496,10 @@ export default function ModernQuoteEditor({
             {/* Template selector (create mode only) */}
             {isCreating && templates.length > 0 && (
               <div className="flex items-center gap-2 mb-4">
-                <Select value={selectedTemplateId} onValueChange={handleTemplateSelect}>
+                <Select
+                  value={selectedTemplateId}
+                  onValueChange={handleTemplateSelect}
+                >
                   <SelectTrigger className="flex-1">
                     <SelectValue placeholder="Appliquer un modèle..." />
                   </SelectTrigger>
@@ -456,14 +507,22 @@ export default function ModernQuoteEditor({
                     <SelectItem value="none">Aucun modèle</SelectItem>
                     {templates.map((t) => (
                       <SelectItem key={t.id} value={t.id}>
-                        {t.name} ({t.items?.length || 0} article{(t.items?.length || 0) > 1 ? 's' : ''})
+                        {t.name} ({t.items?.length || 0} article
+                        {(t.items?.length || 0) > 1 ? "s" : ""})
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <Popover open={showManageTemplates} onOpenChange={setShowManageTemplates}>
+                <Popover
+                  open={showManageTemplates}
+                  onOpenChange={setShowManageTemplates}
+                >
                   <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-2 font-normal">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 font-normal"
+                    >
                       <SlidersHorizontal className="w-4 h-4" />
                       Gérer les modèles
                     </Button>
@@ -472,11 +531,18 @@ export default function ModernQuoteEditor({
                     <div className="space-y-2">
                       <h4 className="font-medium text-sm">Gérer les modèles</h4>
                       {templates.length === 0 && (
-                        <p className="text-sm text-muted-foreground">Aucun modèle</p>
+                        <p className="text-sm text-muted-foreground">
+                          Aucun modèle
+                        </p>
                       )}
                       {templates.map((t) => (
-                        <div key={t.id} className="flex items-center justify-between gap-2 py-1">
-                          <span className="text-sm truncate flex-1">{t.name}</span>
+                        <div
+                          key={t.id}
+                          className="flex items-center justify-between gap-2 py-1"
+                        >
+                          <span className="text-sm truncate flex-1">
+                            {t.name}
+                          </span>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -517,6 +583,7 @@ export default function ModernQuoteEditor({
                       canEdit={!isReadOnly}
                       saveLabel="Appliquer à ce devis"
                       validateNumberExists={checkQuoteNumber}
+                      organization={organization}
                     />
                   ) : (
                     <EnhancedQuoteForm
@@ -587,7 +654,7 @@ export default function ModernQuoteEditor({
           onSent={handleEmailModalClose}
           onClose={() =>
             router.push(
-              createdQuoteData.redirectUrl || "/dashboard/outils/devis"
+              createdQuoteData.redirectUrl || "/dashboard/outils/devis",
             )
           }
           pdfRef={pdfRef}

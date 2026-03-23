@@ -6,17 +6,32 @@ import { useTreasuryForecastData } from "@/src/hooks/useTreasuryForecast";
 import { AnalyticsTreasuryBalanceChart } from "./components/analytics-treasury-balance-chart";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useFinancialAnalytics } from "@/src/hooks/useFinancialAnalytics";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/src/components/ui/tabs";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { getPlanLimits } from "@/src/lib/plan-limits";
 import { Lock } from "lucide-react";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/src/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/src/components/ui/tooltip";
 
 import {
   AnalyticsDateFilter,
   getDateRangeForPreset,
 } from "./components/analytics-date-filter";
-import { AnalyticsKpiRow, formatCurrency, formatPercent, formatNumber, formatDays } from "./components/analytics-kpi-cards";
+import {
+  AnalyticsKpiRow,
+  formatCurrency,
+  formatPercent,
+  formatNumber,
+  formatDays,
+} from "./components/analytics-kpi-cards";
 import { AnalyticsAlertBanner } from "./components/analytics-alert-banner";
 import { AnalyticsRevenueChart } from "./components/analytics-revenue-chart";
 import { AnalyticsCumulativeRevenueChart } from "./components/analytics-cumulative-revenue-chart";
@@ -65,47 +80,170 @@ const CATEGORY_LABELS = {
 // ==============================
 
 const SYNTHESE_KPI = [
-  { key: "netRevenueHT", label: "CA HT net", tooltip: "Chiffre d'affaires HT après déduction des avoirs" },
-  { key: "totalExpensesHT", label: "Dépenses HT", tooltip: "Total des dépenses hors taxes", invertTrend: true },
-  { key: "grossMargin", label: "Marge brute", tooltip: "CA HT net - Dépenses HT" },
-  { key: "grossMarginRate", label: "Taux de marge", format: formatPercent, tooltip: "Marge brute / CA HT net" },
-  { key: "invoiceCount", label: "Factures émises", format: formatNumber, tooltip: "Nombre de factures émises (hors brouillons)" },
-  { key: "averageInvoiceHT", label: "Panier moyen", tooltip: "CA HT / Nombre de factures" },
-  { key: "collectionRate", label: "Taux recouvrement", format: formatPercent, tooltip: "Factures payées / Total factures émises" },
-  { key: "dso", label: "DSO", format: formatDays, tooltip: "Délai moyen de paiement en jours", invertTrend: true },
+  {
+    key: "netRevenueHT",
+    label: "CA HT net",
+    tooltip: "Chiffre d'affaires HT après déduction des avoirs",
+  },
+  {
+    key: "totalExpensesHT",
+    label: "Dépenses HT",
+    tooltip: "Total des dépenses hors taxes",
+    invertTrend: true,
+  },
+  {
+    key: "grossMargin",
+    label: "Marge brute",
+    tooltip: "CA HT net - Dépenses HT",
+  },
+  {
+    key: "grossMarginRate",
+    label: "Taux de marge",
+    format: formatPercent,
+    tooltip: "Marge brute / CA HT net",
+  },
+  {
+    key: "invoiceCount",
+    label: "Factures émises",
+    format: formatNumber,
+    tooltip: "Nombre de factures émises (hors brouillons)",
+  },
+  {
+    key: "averageInvoiceHT",
+    label: "Panier moyen",
+    tooltip: "CA HT / Nombre de factures",
+  },
+  {
+    key: "collectionRate",
+    label: "Taux recouvrement",
+    format: formatPercent,
+    tooltip: "Factures payées / Total factures émises",
+  },
+  {
+    key: "dso",
+    label: "DSO",
+    format: formatDays,
+    tooltip: "Délai moyen de paiement en jours",
+    invertTrend: true,
+  },
 ];
 
 const RENTABILITE_KPI = [
-  { key: "netRevenueHT", label: "CA HT net", tooltip: "Chiffre d'affaires HT après déduction des avoirs" },
-  { key: "totalExpensesHT", label: "Dépenses HT", tooltip: "Total des dépenses hors taxes", invertTrend: true },
-  { key: "grossMargin", label: "Marge brute", tooltip: "CA HT net - Dépenses HT" },
+  {
+    key: "netRevenueHT",
+    label: "CA HT net",
+    tooltip: "Chiffre d'affaires HT après déduction des avoirs",
+  },
+  {
+    key: "totalExpensesHT",
+    label: "Dépenses HT",
+    tooltip: "Total des dépenses hors taxes",
+    invertTrend: true,
+  },
+  {
+    key: "grossMargin",
+    label: "Marge brute",
+    tooltip: "CA HT net - Dépenses HT",
+  },
   { key: "grossMarginRate", label: "Taux de marge", format: formatPercent },
-  { key: "chargeRate", label: "Taux de charges", format: formatPercent, tooltip: "Dépenses HT / CA HT net", invertTrend: true },
-  { key: "averageInvoiceHT", label: "Panier moyen", tooltip: "CA HT / Nombre de factures" },
+  {
+    key: "chargeRate",
+    label: "Taux de charges",
+    format: formatPercent,
+    tooltip: "Dépenses HT / CA HT net",
+    invertTrend: true,
+  },
+  {
+    key: "averageInvoiceHT",
+    label: "Panier moyen",
+    tooltip: "CA HT / Nombre de factures",
+  },
 ];
 
 const TRESORERIE_BANK_KPI = [
-  { key: "bankBalance", label: "Solde bancaire", tooltip: "Solde actuel de tous les comptes connectés" },
-  { key: "burnRate", label: "Burn rate mensuel", tooltip: "Moyenne des sorties bancaires sur les 3 derniers mois", invertTrend: true },
-  { key: "runway", label: "Runway", format: (v) => `${Math.round(v || 0)} mois`, tooltip: "Nombre de mois de trésorerie restants au rythme actuel" },
-  { key: "projectedBalance", label: "Solde projeté (3 mois)", tooltip: "Solde estimé dans 3 mois basé sur les prévisions" },
+  {
+    key: "bankBalance",
+    label: "Solde bancaire",
+    tooltip: "Solde actuel de tous les comptes connectés",
+  },
+  {
+    key: "burnRate",
+    label: "Burn rate mensuel",
+    tooltip: "Moyenne des sorties bancaires sur les 3 derniers mois",
+    invertTrend: true,
+  },
+  {
+    key: "runway",
+    label: "Runway",
+    format: (v) => `${Math.round(v || 0)} mois`,
+    tooltip: "Nombre de mois de trésorerie restants au rythme actuel",
+  },
+  {
+    key: "projectedBalance",
+    label: "Solde projeté (3 mois)",
+    tooltip: "Solde estimé dans 3 mois basé sur les prévisions",
+  },
 ];
 
 const TRESORERIE_KPI = [
-  { key: "outstandingReceivables", label: "Créances en cours", tooltip: "Somme des factures en attente et en retard" },
-  { key: "overdueAmount", label: "Factures en retard", tooltip: "Factures dont la date d'échéance est dépassée" },
-  { key: "dso", label: "DSO", format: formatDays, tooltip: "Délai moyen de paiement en jours", invertTrend: true },
-  { key: "collectionRate", label: "Taux recouvrement", format: formatPercent, tooltip: "Factures payées / Total factures émises" },
+  {
+    key: "outstandingReceivables",
+    label: "Créances en cours",
+    tooltip: "Somme des factures en attente et en retard",
+  },
+  {
+    key: "overdueAmount",
+    label: "Factures en retard",
+    tooltip: "Factures dont la date d'échéance est dépassée",
+  },
+  {
+    key: "dso",
+    label: "DSO",
+    format: formatDays,
+    tooltip: "Délai moyen de paiement en jours",
+    invertTrend: true,
+  },
+  {
+    key: "collectionRate",
+    label: "Taux recouvrement",
+    format: formatPercent,
+    tooltip: "Factures payées / Total factures émises",
+  },
 ];
 
 const COMMERCIAL_KPI = [
-  { key: "activeClientCount", label: "Clients actifs", format: formatNumber, tooltip: "Clients ayant au moins une facture sur la période" },
-  { key: "newClientCount", label: "Nouveaux clients", format: formatNumber, tooltip: "Clients actifs cette période mais pas sur N-1" },
-  { key: "retainedClientCount", label: "Clients fidélisés", format: formatNumber, tooltip: "Clients actifs sur les deux périodes" },
-  { key: "quoteConversionRate", label: "Conversion devis", format: formatPercent, tooltip: "Devis acceptés / Total devis" },
-  { key: "topClientConcentration", label: "Concentration top 3", format: formatPercent, tooltip: "Part du CA des 3 premiers clients", invertTrend: true },
+  {
+    key: "activeClientCount",
+    label: "Clients actifs",
+    format: formatNumber,
+    tooltip: "Clients ayant au moins une facture sur la période",
+  },
+  {
+    key: "newClientCount",
+    label: "Nouveaux clients",
+    format: formatNumber,
+    tooltip: "Clients actifs cette période mais pas sur N-1",
+  },
+  {
+    key: "retainedClientCount",
+    label: "Clients fidélisés",
+    format: formatNumber,
+    tooltip: "Clients actifs sur les deux périodes",
+  },
+  {
+    key: "quoteConversionRate",
+    label: "Conversion devis",
+    format: formatPercent,
+    tooltip: "Devis acceptés / Total devis",
+  },
+  {
+    key: "topClientConcentration",
+    label: "Concentration top 3",
+    format: formatPercent,
+    tooltip: "Part du CA des 3 premiers clients",
+    invertTrend: true,
+  },
 ];
-
 
 export default function AnalytiquesPage() {
   const { workspaceId } = useRequiredWorkspace();
@@ -114,14 +252,15 @@ export default function AnalytiquesPage() {
   const hasAdvancedAnalytics = planLimits.advancedAnalytics;
 
   const [period, setPeriod] = useState("current_year");
-  const [dateRange, setDateRange] = useState(() => getDateRangeForPreset("current_year"));
+  const [dateRange, setDateRange] = useState(() =>
+    getDateRangeForPreset("current_year"),
+  );
 
   // Fetch analytics data
   const { analyticsData, loading } = useFinancialAnalytics(
     dateRange?.startDate,
-    dateRange?.endDate
+    dateRange?.endDate,
   );
-
 
   // Bank data
   const {
@@ -137,17 +276,23 @@ export default function AnalytiquesPage() {
   const forecastStart = useMemo(() => {
     const d = new Date();
     d.setMonth(d.getMonth() - 3);
-    return d.toISOString().slice(0, 10);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
   }, []);
   const forecastEnd = useMemo(() => {
     const d = new Date();
     d.setMonth(d.getMonth() + 3);
-    return d.toISOString().slice(0, 10);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
   }, []);
 
   const { forecastData, loading: forecastLoading } = useTreasuryForecastData(
     forecastStart,
-    forecastEnd
+    forecastEnd,
   );
 
   // Bank KPI calculations
@@ -156,7 +301,7 @@ export default function AnalytiquesPage() {
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
     const recentExpenses =
       bankTransactions?.filter(
-        (t) => t.amount < 0 && new Date(t.date) >= threeMonthsAgo
+        (t) => t.amount < 0 && new Date(t.date) >= threeMonthsAgo,
       ) || [];
     const burnRate =
       recentExpenses.length > 0
@@ -185,13 +330,15 @@ export default function AnalytiquesPage() {
             dateRange={dateRange}
             onDateRangeChange={setDateRange}
           />
-
         </div>
       </div>
 
       {/* Tabs */}
       <div className="flex-1 min-h-0 flex flex-col">
-        <Tabs defaultValue="synthese" className="flex flex-col flex-1 min-h-0 gap-3">
+        <Tabs
+          defaultValue="synthese"
+          className="flex flex-col flex-1 min-h-0 gap-3"
+        >
           <TabsList className="mx-4 sm:mx-6 shrink-0">
             <TabsTrigger value="synthese">Synthèse</TabsTrigger>
             {hasAdvancedAnalytics ? (
@@ -203,25 +350,31 @@ export default function AnalytiquesPage() {
               </>
             ) : (
               <>
-                {["Rentabilité", "Trésorerie", "Clients", "Taxes"].map((label) => (
-                  <Tooltip key={label}>
-                    <TooltipTrigger asChild>
-                      <span className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-muted-foreground/50 cursor-not-allowed">
-                        {label}
-                        <Lock size={12} />
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      Passez au plan PME ou Entreprise pour accéder aux analyses avancées
-                    </TooltipContent>
-                  </Tooltip>
-                ))}
+                {["Rentabilité", "Trésorerie", "Clients", "Taxes"].map(
+                  (label) => (
+                    <Tooltip key={label}>
+                      <TooltipTrigger asChild>
+                        <span className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-muted-foreground/50 cursor-not-allowed">
+                          {label}
+                          <Lock size={12} />
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        Passez au plan PME ou Entreprise pour accéder aux
+                        analyses avancées
+                      </TooltipContent>
+                    </Tooltip>
+                  ),
+                )}
               </>
             )}
           </TabsList>
 
           {/* ===== Tab 1 — SYNTHESE ===== */}
-          <TabsContent value="synthese" className="space-y-8 flex-1 min-h-0 overflow-y-auto pb-8">
+          <TabsContent
+            value="synthese"
+            className="space-y-8 flex-1 min-h-0 overflow-y-auto pb-8"
+          >
             <AnalyticsAlertBanner alerts={analyticsData?.alerts} />
 
             {/* KPI Cards */}
@@ -249,8 +402,13 @@ export default function AnalytiquesPage() {
           </TabsContent>
 
           {/* ===== Tab 2 — RENTABILITE ===== */}
-          <TabsContent value="rentabilite" className="space-y-8 flex-1 min-h-0 overflow-y-auto pb-8">
-            <AnalyticsAlertBanner alerts={analyticsData?.alerts?.filter(a => a.type === 'MARGIN')} />
+          <TabsContent
+            value="rentabilite"
+            className="space-y-8 flex-1 min-h-0 overflow-y-auto pb-8"
+          >
+            <AnalyticsAlertBanner
+              alerts={analyticsData?.alerts?.filter((a) => a.type === "MARGIN")}
+            />
 
             {/* KPI Cards */}
             <div className="px-4 sm:px-6">
@@ -259,7 +417,6 @@ export default function AnalytiquesPage() {
                 kpi={analyticsData?.kpi}
                 previousPeriod={analyticsData?.previousPeriod}
                 loading={loading}
-
               />
             </div>
 
@@ -302,8 +459,15 @@ export default function AnalytiquesPage() {
           </TabsContent>
 
           {/* ===== Tab 3 — TRESORERIE & RECOUVREMENT ===== */}
-          <TabsContent value="tresorerie" className="space-y-8 flex-1 min-h-0 overflow-y-auto pb-8">
-            <AnalyticsAlertBanner alerts={analyticsData?.alerts?.filter(a => a.type === 'DSO' || a.type === 'OVERDUE')} />
+          <TabsContent
+            value="tresorerie"
+            className="space-y-8 flex-1 min-h-0 overflow-y-auto pb-8"
+          >
+            <AnalyticsAlertBanner
+              alerts={analyticsData?.alerts?.filter(
+                (a) => a.type === "DSO" || a.type === "OVERDUE",
+              )}
+            />
 
             {/* Bank KPI Cards */}
             <div className="px-4 sm:px-6">
@@ -381,8 +545,15 @@ export default function AnalytiquesPage() {
           </TabsContent>
 
           {/* ===== Tab 4 — COMMERCIAL ===== */}
-          <TabsContent value="commercial" className="space-y-8 flex-1 min-h-0 overflow-y-auto pb-8">
-            <AnalyticsAlertBanner alerts={analyticsData?.alerts?.filter(a => a.type === 'CONCENTRATION')} />
+          <TabsContent
+            value="commercial"
+            className="space-y-8 flex-1 min-h-0 overflow-y-auto pb-8"
+          >
+            <AnalyticsAlertBanner
+              alerts={analyticsData?.alerts?.filter(
+                (a) => a.type === "CONCENTRATION",
+              )}
+            />
 
             {/* KPI Cards */}
             <div className="px-4 sm:px-6">
@@ -391,7 +562,6 @@ export default function AnalytiquesPage() {
                 kpi={analyticsData?.kpi}
                 previousPeriod={analyticsData?.previousPeriod}
                 loading={loading}
-
               />
             </div>
 
@@ -438,7 +608,10 @@ export default function AnalytiquesPage() {
           </TabsContent>
 
           {/* ===== Tab 5 — DETAIL & EXPORT ===== */}
-          <TabsContent value="detail" className="space-y-8 flex-1 min-h-0 overflow-y-auto pb-8">
+          <TabsContent
+            value="detail"
+            className="space-y-8 flex-1 min-h-0 overflow-y-auto pb-8"
+          >
             {/* VAT Chart + Payment Method */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-4 sm:px-6">
               <AnalyticsVatChart
@@ -464,11 +637,9 @@ export default function AnalytiquesPage() {
               rowLabelMap={CATEGORY_LABELS}
               loading={loading}
             />
-
           </TabsContent>
         </Tabs>
       </div>
-
     </div>
   );
 }

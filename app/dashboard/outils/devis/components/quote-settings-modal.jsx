@@ -7,7 +7,10 @@ import { X, LoaderCircle } from "lucide-react";
 import QuoteSettingsView from "./quote-settings-view";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import { toast } from "@/src/components/ui/sonner";
-import { updateOrganization, getActiveOrganization } from "@/src/lib/organization-client";
+import {
+  updateOrganization,
+  getActiveOrganization,
+} from "@/src/lib/organization-client";
 import { generateQuotePrefix } from "@/src/utils/quoteUtils";
 import { useQuoteNumber } from "../hooks/use-quote-number";
 
@@ -19,8 +22,10 @@ const getDemoQuoteData = (formData, organization) => {
   const headerNotes = formData?.headerNotes || "";
   const footerNotes = formData?.footerNotes || "";
   const termsAndConditions = formData?.termsAndConditions || "";
-  const showBankDetails = formData?.showBankDetails !== undefined ? formData?.showBankDetails : false;
-  const headerBgColor = formData?.appearance?.headerBgColor || formData?.primaryColor || "#5b4fff";
+  const showBankDetails =
+    formData?.showBankDetails !== undefined ? formData?.showBankDetails : false;
+  const headerBgColor =
+    formData?.appearance?.headerBgColor || formData?.primaryColor || "#5b4fff";
   const headerTextColor = formData?.appearance?.headerTextColor || "#FFFFFF";
   const textColor = formData?.appearance?.textColor || "#000000";
   const clientPositionRight = formData?.clientPositionRight || false;
@@ -33,8 +38,10 @@ const getDemoQuoteData = (formData, organization) => {
     quoteNumber,
     prefix,
     number,
-    issueDate: new Date().toISOString(),
-    validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    issueDate: new Date().toLocaleDateString("sv-SE"),
+    validUntil: new Date(
+      Date.now() + 30 * 24 * 60 * 60 * 1000,
+    ).toLocaleDateString("sv-SE"),
     status: "PENDING",
     client: {
       name: "Client Exemple SARL",
@@ -51,14 +58,28 @@ const getDemoQuoteData = (formData, organization) => {
       type: "company",
     },
     companyInfo: {
-      name: formData?.companyName || organization?.companyName || "Votre Entreprise",
-      email: formData?.companyEmail || organization?.companyEmail || "contact@entreprise.fr",
-      phone: formData?.companyPhone || organization?.companyPhone || "+33 1 23 45 67 89",
+      name:
+        formData?.companyName ||
+        organization?.companyName ||
+        "Votre Entreprise",
+      email:
+        formData?.companyEmail ||
+        organization?.companyEmail ||
+        "contact@entreprise.fr",
+      phone:
+        formData?.companyPhone ||
+        organization?.companyPhone ||
+        "+33 1 23 45 67 89",
       address: {
-        street: formData?.addressStreet || organization?.addressStreet || "1 Rue de la République",
-        postalCode: formData?.addressZipCode || organization?.addressZipCode || "75001",
+        street:
+          formData?.addressStreet ||
+          organization?.addressStreet ||
+          "1 Rue de la République",
+        postalCode:
+          formData?.addressZipCode || organization?.addressZipCode || "75001",
         city: formData?.addressCity || organization?.addressCity || "Paris",
-        country: formData?.addressCountry || organization?.addressCountry || "France",
+        country:
+          formData?.addressCountry || organization?.addressCountry || "France",
       },
       siret: organization?.siret || "98765432109876",
       vatNumber: organization?.vatNumber || "FR98765432109",
@@ -126,7 +147,8 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
   const [isLoading, setIsLoading] = useState(true);
   const [initialValues, setInitialValues] = useState(null);
   const [currentPrefix, setCurrentPrefix] = useState("");
-  const { validateQuoteNumber, hasDocumentsForPrefix } = useQuoteNumber(currentPrefix);
+  const { validateQuoteNumber, hasDocumentsForPrefix } =
+    useQuoteNumber(currentPrefix);
 
   // Charger les données de l'organisation dès l'ouverture
   useEffect(() => {
@@ -136,7 +158,7 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
           setIsLoading(true);
           const org = await getActiveOrganization();
           setOrganization(org);
-          
+
           // Préparer les valeurs initiales depuis l'organisation (même structure que l'éditeur)
           const formValues = {
             // Numérotation - préfixe par défaut (le numéro sera auto-rempli par le hook useQuoteNumber)
@@ -164,19 +186,34 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
               bic: org?.bankBic || "",
               bankName: org?.bankName || "",
             },
-            headerNotes: org?.quoteHeaderNotes || org?.documentHeaderNotes || "",
-            footerNotes: org?.quoteFooterNotes || org?.documentFooterNotes || "",
-            termsAndConditions: org?.quoteTermsAndConditions || org?.documentTermsAndConditions || "",
+            headerNotes:
+              org?.quoteHeaderNotes || org?.documentHeaderNotes || "",
+            footerNotes:
+              org?.quoteFooterNotes || org?.documentFooterNotes || "",
+            termsAndConditions:
+              org?.quoteTermsAndConditions ||
+              org?.documentTermsAndConditions ||
+              "",
             showBankDetails: org?.showBankDetails || false,
-            primaryColor: org?.quoteHeaderBgColor || org?.documentHeaderBgColor || "#5b4fff",
+            primaryColor:
+              org?.quoteHeaderBgColor ||
+              org?.documentHeaderBgColor ||
+              "#5b4fff",
             appearance: {
-              textColor: org?.quoteTextColor || org?.documentTextColor || "#000000",
-              headerTextColor: org?.quoteHeaderTextColor || org?.documentHeaderTextColor || "#ffffff",
-              headerBgColor: org?.quoteHeaderBgColor || org?.documentHeaderBgColor || "#5b4fff",
+              textColor:
+                org?.quoteTextColor || org?.documentTextColor || "#000000",
+              headerTextColor:
+                org?.quoteHeaderTextColor ||
+                org?.documentHeaderTextColor ||
+                "#ffffff",
+              headerBgColor:
+                org?.quoteHeaderBgColor ||
+                org?.documentHeaderBgColor ||
+                "#5b4fff",
             },
             clientPositionRight: org?.quoteClientPositionRight || false,
           };
-          
+
           setInitialValues(formValues);
           setDebouncedFormData(formValues);
           setIsLoading(false);
@@ -185,7 +222,7 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
           setIsLoading(false);
         }
       };
-      
+
       loadOrganization();
     } else {
       // Réinitialiser l'état quand le modal se ferme
@@ -257,13 +294,13 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
     try {
       setIsSaving(true);
       const formValues = form.getValues();
-      
+
       if (!organization?.id) {
         toast.error("Aucune organisation active");
         setIsSaving(false);
         return;
       }
-      
+
       // Valider le numéro de devis si un préfixe existant a des documents
       if (formValues.number && hasDocumentsForPrefix) {
         const validation = validateQuoteNumber(formValues.number);
@@ -292,8 +329,12 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
         quoteTermsAndConditions: formValues.termsAndConditions,
 
         // Couleurs spécifiques aux devis
-        quoteHeaderBgColor: formValues.appearance?.headerBgColor || formValues.primaryColor || "#5b4fff",
-        quoteHeaderTextColor: formValues.appearance?.headerTextColor || "#ffffff",
+        quoteHeaderBgColor:
+          formValues.appearance?.headerBgColor ||
+          formValues.primaryColor ||
+          "#5b4fff",
+        quoteHeaderTextColor:
+          formValues.appearance?.headerTextColor || "#ffffff",
         quoteTextColor: formValues.appearance?.textColor || "#000000",
 
         // Préfixe de numérotation
@@ -311,12 +352,14 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
       };
 
       await updateOrganization(organization.id, updateData);
-      
+
       toast.success("Paramètres enregistrés avec succès");
       onOpenChange(false);
     } catch (error) {
       console.error("❌ Erreur lors de l'enregistrement:", error);
-      toast.error(error.message || "Erreur lors de l'enregistrement des paramètres");
+      toast.error(
+        error.message || "Erreur lors de l'enregistrement des paramètres",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -324,7 +367,9 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
 
   if (!open) return null;
 
-  const demoData = debouncedFormData ? getDemoQuoteData(debouncedFormData, organization) : null;
+  const demoData = debouncedFormData
+    ? getDemoQuoteData(debouncedFormData, organization)
+    : null;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-background">

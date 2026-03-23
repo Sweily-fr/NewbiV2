@@ -102,6 +102,7 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import { SignatureDialog } from "@/src/components/esignature/signature-dialog";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
+import { useEmailTrackingSubscription } from "@/src/graphql/documentEmailQueries";
 import { getPlanLimits } from "@/src/lib/plan-limits";
 
 export default function QuoteTable({
@@ -113,6 +114,17 @@ export default function QuoteTable({
   const inputRef = useRef(null);
   const { quotes, loading, error, refetch } = useQuotes();
   const { workspaceId } = useRequiredWorkspace();
+
+  // Subscription temps réel pour le tracking d'ouverture d'email
+  useEmailTrackingSubscription({
+    workspaceId,
+    onUpdate: (update) => {
+      if (update.documentType === "quote") {
+        refetch();
+      }
+    },
+  });
+
   const { importedQuotes, refetch: refetchImported } =
     useImportedQuotes(workspaceId);
   const { canCreate, canExport } = usePermissions();
@@ -1013,7 +1025,10 @@ export default function QuoteTable({
                 })()
               : null
           }
-          onSent={() => setSendEmailQuote(null)}
+          onSent={() => {
+            setSendEmailQuote(null);
+            refetch();
+          }}
         />
       )}
 

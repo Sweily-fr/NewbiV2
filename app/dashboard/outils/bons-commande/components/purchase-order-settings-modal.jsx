@@ -7,7 +7,10 @@ import { X, LoaderCircle } from "lucide-react";
 import QuoteSettingsView from "@/app/dashboard/outils/devis/components/quote-settings-view";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import { toast } from "@/src/components/ui/sonner";
-import { updateOrganization, getActiveOrganization } from "@/src/lib/organization-client";
+import {
+  updateOrganization,
+  getActiveOrganization,
+} from "@/src/lib/organization-client";
 import { generatePurchaseOrderPrefix } from "@/src/utils/quoteUtils";
 import { usePurchaseOrderNumber } from "../hooks/use-purchase-order-number";
 
@@ -18,8 +21,10 @@ const getDemoPurchaseOrderData = (formData, organization) => {
   const headerNotes = formData?.headerNotes || "";
   const footerNotes = formData?.footerNotes || "";
   const termsAndConditions = formData?.termsAndConditions || "";
-  const showBankDetails = formData?.showBankDetails !== undefined ? formData?.showBankDetails : false;
-  const headerBgColor = formData?.appearance?.headerBgColor || formData?.primaryColor || "#5b4fff";
+  const showBankDetails =
+    formData?.showBankDetails !== undefined ? formData?.showBankDetails : false;
+  const headerBgColor =
+    formData?.appearance?.headerBgColor || formData?.primaryColor || "#5b4fff";
   const headerTextColor = formData?.appearance?.headerTextColor || "#FFFFFF";
   const textColor = formData?.appearance?.textColor || "#000000";
   const clientPositionRight = formData?.clientPositionRight || false;
@@ -32,8 +37,10 @@ const getDemoPurchaseOrderData = (formData, organization) => {
     quoteNumber,
     prefix,
     number,
-    issueDate: new Date().toISOString(),
-    validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    issueDate: new Date().toLocaleDateString("sv-SE"),
+    validUntil: new Date(
+      Date.now() + 30 * 24 * 60 * 60 * 1000,
+    ).toLocaleDateString("sv-SE"),
     status: "CONFIRMED",
     client: {
       name: "Client Exemple SARL",
@@ -50,14 +57,28 @@ const getDemoPurchaseOrderData = (formData, organization) => {
       type: "company",
     },
     companyInfo: {
-      name: formData?.companyName || organization?.companyName || "Votre Entreprise",
-      email: formData?.companyEmail || organization?.companyEmail || "contact@entreprise.fr",
-      phone: formData?.companyPhone || organization?.companyPhone || "+33 1 23 45 67 89",
+      name:
+        formData?.companyName ||
+        organization?.companyName ||
+        "Votre Entreprise",
+      email:
+        formData?.companyEmail ||
+        organization?.companyEmail ||
+        "contact@entreprise.fr",
+      phone:
+        formData?.companyPhone ||
+        organization?.companyPhone ||
+        "+33 1 23 45 67 89",
       address: {
-        street: formData?.addressStreet || organization?.addressStreet || "1 Rue de la République",
-        postalCode: formData?.addressZipCode || organization?.addressZipCode || "75001",
+        street:
+          formData?.addressStreet ||
+          organization?.addressStreet ||
+          "1 Rue de la République",
+        postalCode:
+          formData?.addressZipCode || organization?.addressZipCode || "75001",
         city: formData?.addressCity || organization?.addressCity || "Paris",
-        country: formData?.addressCountry || organization?.addressCountry || "France",
+        country:
+          formData?.addressCountry || organization?.addressCountry || "France",
       },
       siret: organization?.siret || "98765432109876",
       vatNumber: organization?.vatNumber || "FR98765432109",
@@ -121,7 +142,8 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
   const [isLoading, setIsLoading] = useState(true);
   const [initialValues, setInitialValues] = useState(null);
   const [currentPrefix, setCurrentPrefix] = useState("");
-  const { validateNumber, hasDocumentsForPrefix } = usePurchaseOrderNumber(currentPrefix);
+  const { validateNumber, hasDocumentsForPrefix } =
+    usePurchaseOrderNumber(currentPrefix);
 
   // Charger les données de l'organisation dès l'ouverture
   useEffect(() => {
@@ -158,15 +180,32 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
               bic: org?.bankBic || "",
               bankName: org?.bankName || "",
             },
-            headerNotes: org?.purchaseOrderHeaderNotes || org?.documentHeaderNotes || "",
-            footerNotes: org?.purchaseOrderFooterNotes || org?.documentFooterNotes || "",
-            termsAndConditions: org?.purchaseOrderTermsAndConditions || org?.documentTermsAndConditions || "",
+            headerNotes:
+              org?.purchaseOrderHeaderNotes || org?.documentHeaderNotes || "",
+            footerNotes:
+              org?.purchaseOrderFooterNotes || org?.documentFooterNotes || "",
+            termsAndConditions:
+              org?.purchaseOrderTermsAndConditions ||
+              org?.documentTermsAndConditions ||
+              "",
             showBankDetails: org?.showBankDetails || false,
-            primaryColor: org?.purchaseOrderHeaderBgColor || org?.documentHeaderBgColor || "#5b4fff",
+            primaryColor:
+              org?.purchaseOrderHeaderBgColor ||
+              org?.documentHeaderBgColor ||
+              "#5b4fff",
             appearance: {
-              textColor: org?.purchaseOrderTextColor || org?.documentTextColor || "#000000",
-              headerTextColor: org?.purchaseOrderHeaderTextColor || org?.documentHeaderTextColor || "#ffffff",
-              headerBgColor: org?.purchaseOrderHeaderBgColor || org?.documentHeaderBgColor || "#5b4fff",
+              textColor:
+                org?.purchaseOrderTextColor ||
+                org?.documentTextColor ||
+                "#000000",
+              headerTextColor:
+                org?.purchaseOrderHeaderTextColor ||
+                org?.documentHeaderTextColor ||
+                "#ffffff",
+              headerBgColor:
+                org?.purchaseOrderHeaderBgColor ||
+                org?.documentHeaderBgColor ||
+                "#5b4fff",
             },
             clientPositionRight: org?.purchaseOrderClientPositionRight || false,
           };
@@ -285,8 +324,12 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
         purchaseOrderTermsAndConditions: formValues.termsAndConditions,
 
         // Couleurs spécifiques aux bons de commande
-        purchaseOrderHeaderBgColor: formValues.appearance?.headerBgColor || formValues.primaryColor || "#5b4fff",
-        purchaseOrderHeaderTextColor: formValues.appearance?.headerTextColor || "#ffffff",
+        purchaseOrderHeaderBgColor:
+          formValues.appearance?.headerBgColor ||
+          formValues.primaryColor ||
+          "#5b4fff",
+        purchaseOrderHeaderTextColor:
+          formValues.appearance?.headerTextColor || "#ffffff",
         purchaseOrderTextColor: formValues.appearance?.textColor || "#000000",
 
         // Préfixe de numérotation
@@ -294,7 +337,8 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
         purchaseOrderStartNumber: formValues.number || "",
 
         // Position du client dans le PDF (bons de commande)
-        purchaseOrderClientPositionRight: formValues.clientPositionRight || false,
+        purchaseOrderClientPositionRight:
+          formValues.clientPositionRight || false,
 
         // Coordonnées bancaires
         bankIban: formValues.bankDetails?.iban || "",
@@ -309,7 +353,9 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
       onOpenChange(false);
     } catch (error) {
       console.error("Erreur lors de l'enregistrement:", error);
-      toast.error(error.message || "Erreur lors de l'enregistrement des paramètres");
+      toast.error(
+        error.message || "Erreur lors de l'enregistrement des paramètres",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -317,7 +363,9 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
 
   if (!open) return null;
 
-  const demoData = debouncedFormData ? getDemoPurchaseOrderData(debouncedFormData, organization) : null;
+  const demoData = debouncedFormData
+    ? getDemoPurchaseOrderData(debouncedFormData, organization)
+    : null;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-background">
@@ -327,7 +375,9 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
           <div className="max-w-2xl mx-auto flex flex-col w-full h-full">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-normal">Paramètres des bons de commande</h2>
+              <h2 className="text-lg font-normal">
+                Paramètres des bons de commande
+              </h2>
               <Button
                 variant="ghost"
                 size="sm"

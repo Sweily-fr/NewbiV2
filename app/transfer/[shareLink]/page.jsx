@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
+import JSZip from "jszip";
 
 // Composants séparés
 import { PasswordModal, FilePreviewDrawer, PaymentModal } from "./components";
@@ -54,7 +55,7 @@ export default function TransferPage() {
       const timer = setTimeout(() => {
         // Toast de succès
         toast.success(
-          "Paiement effectué avec succès! Vous pouvez maintenant télécharger vos fichiers."
+          "Paiement effectué avec succès! Vous pouvez maintenant télécharger vos fichiers.",
         );
 
         // Nettoyer l'URL
@@ -113,7 +114,7 @@ export default function TransferPage() {
             email: `guest-${Date.now()}@newbi.fr`,
           }),
           signal: downloadAbortRef.current.signal,
-        }
+        },
       );
 
       if (!authResponse.ok) {
@@ -196,7 +197,7 @@ export default function TransferPage() {
               duration: Date.now() - startTime,
               isLastFile: true,
             }),
-          }
+          },
         ).catch(() => {}); // Fire and forget
       }
 
@@ -243,7 +244,7 @@ export default function TransferPage() {
             email: `guest-${Date.now()}@newbi.fr`, // Email unique pour traçabilité
           }),
           signal: downloadAbortRef.current.signal,
-        }
+        },
       );
 
       if (!authResponse.ok) {
@@ -267,7 +268,9 @@ export default function TransferPage() {
 
       // Bloquer tous les fichiers si filigrane actif
       if (hasWatermark) {
-        toast.error("Les fichiers de ce transfert sont protégés par un filigrane et ne peuvent pas être téléchargés.");
+        toast.error(
+          "Les fichiers de ce transfert sont protégés par un filigrane et ne peuvent pas être téléchargés.",
+        );
         return;
       }
       const files = allFiles;
@@ -283,7 +286,7 @@ export default function TransferPage() {
       // Filtrer les téléchargements autorisés pour exclure les images si filigrane
       const downloadableFileIds = files.map((f) => f.id);
       const filteredDownloads = authData.downloads.filter((d) =>
-        downloadableFileIds.includes(d.fileId)
+        downloadableFileIds.includes(d.fileId),
       );
 
       if (filteredDownloads.length === 0) {
@@ -311,14 +314,13 @@ export default function TransferPage() {
         setDownloadProgress(0);
         return;
       } else {
-        // Desktop : télécharger les fichiers un par un avec progression globale
+        // Desktop : télécharger tous les fichiers et créer un ZIP
+        const zip = new JSZip();
         let totalDownloaded = 0;
 
         for (let i = 0; i < filteredDownloads.length; i++) {
           const downloadInfo = filteredDownloads[i];
-          const file = files.find(
-            (f) => f.id === downloadInfo.fileId
-          );
+          const file = files.find((f) => f.id === downloadInfo.fileId);
           const fileSize = file?.size || 0;
 
           const response = await fetch(downloadInfo.downloadUrl, {
@@ -347,38 +349,48 @@ export default function TransferPage() {
               receivedLength += value.length;
 
               // Progression globale : (déjà téléchargé + en cours) / total
+              // Réserver les derniers 5% pour la génération du ZIP
               const globalProgress = Math.round(
-                ((totalDownloaded + receivedLength) / totalSize) * 100
+                ((totalDownloaded + receivedLength) / totalSize) * 95,
               );
-              setDownloadProgress(globalProgress);
+              setDownloadProgress(Math.min(globalProgress, 95));
             }
 
             totalDownloaded += actualFileSize;
 
             const blob = new Blob(chunks);
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = downloadInfo.fileName;
-            a.style.display = "none";
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
+            const arrayBuffer = await blob.arrayBuffer();
+            zip.file(downloadInfo.fileName, arrayBuffer);
           } else {
-            // Fallback direct
+            // Fallback : télécharger sans streaming
+            const response2 = await fetch(downloadInfo.downloadUrl, {
+              signal: downloadAbortRef.current.signal,
+            });
+            const blob = await response2.blob();
+            const arrayBuffer = await blob.arrayBuffer();
+            zip.file(downloadInfo.fileName, arrayBuffer);
             totalDownloaded += fileSize;
             setDownloadProgress(
-              Math.round((totalDownloaded / totalSize) * 100)
+              Math.min(Math.round((totalDownloaded / totalSize) * 95), 95),
             );
-            window.open(downloadInfo.downloadUrl, "_blank");
-          }
-
-          // Petit délai entre les téléchargements pour éviter les blocages navigateur
-          if (i < filteredDownloads.length - 1) {
-            await new Promise((resolve) => setTimeout(resolve, 300));
           }
         }
+
+        // Générer le ZIP
+        setDownloadProgress(96);
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+        setDownloadProgress(100);
+
+        // Télécharger le ZIP
+        const url = window.URL.createObjectURL(zipBlob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${transfer?.fileTransfer?.title || "transfert"}.zip`;
+        a.style.display = "none";
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
       }
 
       // Marquer les téléchargements comme terminés
@@ -396,7 +408,7 @@ export default function TransferPage() {
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({ duration, isLastFile }),
-            }
+            },
           ).catch(() => {}); // Fire and forget
         }
       }
@@ -410,7 +422,7 @@ export default function TransferPage() {
       }
       console.error("Erreur lors du téléchargement:", error);
       toast.error(
-        error.message || "Erreur lors du téléchargement des fichiers"
+        error.message || "Erreur lors du téléchargement des fichiers",
       );
     } finally {
       setIsDownloading(false);
@@ -531,7 +543,7 @@ export default function TransferPage() {
   // Calculer la taille totale des fichiers
   const totalSize = transfer?.fileTransfer?.files?.reduce(
     (acc, file) => acc + (file.size || 0),
-    0
+    0,
   );
 
   // Formater la taille
@@ -558,7 +570,18 @@ export default function TransferPage() {
   const isImageFile = (file) => {
     if (file?.mimeType?.startsWith("image/")) return true;
     const ext = (file.originalName || "").split(".").pop()?.toLowerCase();
-    return ["jpg", "jpeg", "png", "gif", "webp", "bmp", "heic", "heif", "svg", "tiff"].includes(ext);
+    return [
+      "jpg",
+      "jpeg",
+      "png",
+      "gif",
+      "webp",
+      "bmp",
+      "heic",
+      "heif",
+      "svg",
+      "tiff",
+    ].includes(ext);
   };
 
   // Vérifier si un fichier peut être prévisualisé
@@ -574,7 +597,16 @@ export default function TransferPage() {
       "application/pdf",
     ];
     const ext = (file.originalName || "").split(".").pop()?.toLowerCase();
-    const previewableExts = ["jpg", "jpeg", "png", "gif", "webp", "pdf", "heic", "heif"];
+    const previewableExts = [
+      "jpg",
+      "jpeg",
+      "png",
+      "gif",
+      "webp",
+      "pdf",
+      "heic",
+      "heif",
+    ];
     return (
       previewableTypes.includes(file.mimeType) || previewableExts.includes(ext)
     );
@@ -708,12 +740,31 @@ export default function TransferPage() {
                       {(() => {
                         const firstFile = transfer?.fileTransfer?.files?.[0];
                         const previewApiUrl = `${(process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "")}/api/files/preview/${transfer?.fileTransfer?.id}/${firstFile?.fileId || firstFile?.id}`;
-                        const isImg = firstFile?.mimeType?.startsWith("image/") ||
-                          ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "bmp", "svg", "tiff"].includes(
-                            firstFile?.originalName?.split(".")?.pop()?.toLowerCase()
+                        const isImg =
+                          firstFile?.mimeType?.startsWith("image/") ||
+                          [
+                            "jpg",
+                            "jpeg",
+                            "png",
+                            "gif",
+                            "webp",
+                            "heic",
+                            "heif",
+                            "bmp",
+                            "svg",
+                            "tiff",
+                          ].includes(
+                            firstFile?.originalName
+                              ?.split(".")
+                              ?.pop()
+                              ?.toLowerCase(),
                           );
-                        const isPdf = firstFile?.mimeType === "application/pdf" ||
-                          firstFile?.originalName?.split(".")?.pop()?.toLowerCase() === "pdf";
+                        const isPdf =
+                          firstFile?.mimeType === "application/pdf" ||
+                          firstFile?.originalName
+                            ?.split(".")
+                            ?.pop()
+                            ?.toLowerCase() === "pdf";
 
                         if (isImg && !thumbnailError) {
                           return (
@@ -803,7 +854,7 @@ export default function TransferPage() {
                               downloadFile(
                                 file.id || file.fileId,
                                 file.originalName,
-                                file.size
+                                file.size,
                               )
                             }
                             disabled={isDownloading}

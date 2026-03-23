@@ -129,6 +129,11 @@ export const INVOICE_FRAGMENT = gql`
         lastName
       }
     }
+    emailTracking {
+      emailSentAt
+      emailOpenedAt
+      emailOpenCount
+    }
   }
 `;
 
@@ -188,6 +193,11 @@ export const INVOICE_LIST_FRAGMENT = gql`
         postalCode
         country
       }
+    }
+    emailTracking {
+      emailSentAt
+      emailOpenedAt
+      emailOpenCount
     }
     createdAt
     updatedAt

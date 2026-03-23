@@ -4,8 +4,22 @@ import { useState, useMemo, useEffect } from "react";
 import * as React from "react";
 import { Button } from "@/src/components/ui/button";
 import { Textarea } from "@/src/components/ui/textarea";
-import { Send, Edit2, Trash2, ChevronDown, ChevronUp, FileText, ExternalLink, Bell } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
+import {
+  Send,
+  Edit2,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
+  FileText,
+  ExternalLink,
+  Bell,
+} from "lucide-react";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/src/components/ui/tabs";
 import { UserAvatar } from "@/src/components/ui/user-avatar";
 import {
   AlertDialog,
@@ -19,7 +33,12 @@ import {
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useSession } from "@/src/lib/auth-client";
-import { useAddClientNote, useUpdateClientNote, useDeleteClientNote, useAddClientActivity } from "@/src/graphql/clientQueries";
+import {
+  useAddClientNote,
+  useUpdateClientNote,
+  useDeleteClientNote,
+  useAddClientActivity,
+} from "@/src/graphql/clientQueries";
 import { useCreateEvent } from "@/src/hooks/useEvents";
 import { EventDialog } from "@/app/dashboard/calendar/components/event-dialog";
 import { toast } from "@/src/components/ui/sonner";
@@ -53,8 +72,10 @@ const ClientActivity = ({
   const [selectedQuote, setSelectedQuote] = useState(null);
   const [isInvoiceSidebarOpen, setIsInvoiceSidebarOpen] = useState(false);
   const [isQuoteSidebarOpen, setIsQuoteSidebarOpen] = useState(false);
-  const [isInvoiceMobileFullscreenOpen, setIsInvoiceMobileFullscreenOpen] = useState(false);
-  const [isQuoteMobileFullscreenOpen, setIsQuoteMobileFullscreenOpen] = useState(false);
+  const [isInvoiceMobileFullscreenOpen, setIsInvoiceMobileFullscreenOpen] =
+    useState(false);
+  const [isQuoteMobileFullscreenOpen, setIsQuoteMobileFullscreenOpen] =
+    useState(false);
   const { data: session } = useSession();
 
   // Détecter si on est sur mobile
@@ -63,19 +84,19 @@ const ClientActivity = ({
       setIsMobile(window.innerWidth < 768);
     };
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   const handleViewDocument = (docType, docId) => {
-    if (docType === 'invoice') {
+    if (docType === "invoice") {
       setSelectedInvoice({ id: docId });
       if (isMobile) {
         setIsInvoiceMobileFullscreenOpen(true);
       } else {
         setIsInvoiceSidebarOpen(true);
       }
-    } else if (docType === 'quote') {
+    } else if (docType === "quote") {
       setSelectedQuote({ id: docId });
       if (isMobile) {
         setIsQuoteMobileFullscreenOpen(true);
@@ -86,8 +107,10 @@ const ClientActivity = ({
   };
 
   const { addNote, loading: addingNote } = useAddClientNote(workspaceId);
-  const { updateNote, loading: updatingNote } = useUpdateClientNote(workspaceId);
-  const { deleteNote, loading: deletingNote } = useDeleteClientNote(workspaceId);
+  const { updateNote, loading: updatingNote } =
+    useUpdateClientNote(workspaceId);
+  const { deleteNote, loading: deletingNote } =
+    useDeleteClientNote(workspaceId);
   const { createEvent } = useCreateEvent();
   const { addActivity } = useAddClientActivity(workspaceId);
   const [selectedReminderEvent, setSelectedReminderEvent] = useState(null);
@@ -96,7 +119,9 @@ const ClientActivity = ({
 
   const handleViewReminder = async (eventId) => {
     try {
-      const { data } = await fetchEvent({ variables: { id: eventId, workspaceId } });
+      const { data } = await fetchEvent({
+        variables: { id: eventId, workspaceId },
+      });
       if (data?.getEvent?.event) {
         const evt = data.getEvent.event;
         setSelectedReminderEvent({
@@ -205,7 +230,9 @@ const ClientActivity = ({
         color: eventData.color || "sky",
         location: eventData.location,
         type: "REMINDER",
-        emailReminder: eventData.emailReminder?.enabled ? eventData.emailReminder : undefined,
+        emailReminder: eventData.emailReminder?.enabled
+          ? eventData.emailReminder
+          : undefined,
       };
 
       const createdEvent = await createEvent(input);
@@ -239,12 +266,12 @@ const ClientActivity = ({
       return "";
     }
     const date = new Date(dateString);
-    
+
     // Vérifier si la date est valide
     if (isNaN(date.getTime())) {
       return "";
     }
-    
+
     const now = new Date();
     const diffInHours = (now - date) / (1000 * 60 * 60);
 
@@ -282,7 +309,7 @@ const ClientActivity = ({
 
   const notes = useMemo(() => {
     const clientNotes = [...(client?.notes || [])];
-    const pending = pendingNotes.map(note => ({
+    const pending = pendingNotes.map((note) => ({
       ...note,
       isPending: true,
       userId: session?.user?.id,
@@ -290,13 +317,15 @@ const ClientActivity = ({
       userImage: session?.user?.image,
     }));
     return [...clientNotes, ...pending].sort(
-      (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+      (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
     );
   }, [client?.notes, pendingNotes, session]);
 
   const activities = useMemo(() => {
     return [...(client?.activity || [])]
-      .filter((a) => a.type !== "note_added")
+      .filter(
+        (a) => a.type !== "note_added" && a.type !== "automation_executed",
+      )
       .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
   }, [client?.activity]);
 
@@ -348,9 +377,14 @@ const ClientActivity = ({
                 {(showAllActivities ? allActivity : allActivity.slice(-3)).map(
                   (item, index) => {
                     const display =
-                      item.type === "activity" ? getActivityDisplay(item) : null;
+                      item.type === "activity"
+                        ? getActivityDisplay(item)
+                        : null;
                     return (
-                      <div key={`${item.type}-${item.id || index}`} className="flex gap-3 w-full">
+                      <div
+                        key={`${item.type}-${item.id || index}`}
+                        className="flex gap-3 w-full"
+                      >
                         {item.type === "note" ? (
                           <div className="bg-background rounded-lg p-3 flex-1 border border-border min-w-0">
                             <div className="flex gap-3 w-full">
@@ -374,14 +408,21 @@ const ClientActivity = ({
                                     <div className="space-y-2">
                                       <Textarea
                                         value={editingContent}
-                                        onChange={(e) => setEditingContent(e.target.value)}
+                                        onChange={(e) =>
+                                          setEditingContent(e.target.value)
+                                        }
                                         className="text-sm"
                                         rows={3}
                                       />
                                       <div className="flex gap-2">
                                         <Button
                                           size="sm"
-                                          onClick={() => handleUpdateNote(item.id, item.isPending)}
+                                          onClick={() =>
+                                            handleUpdateNote(
+                                              item.id,
+                                              item.isPending,
+                                            )
+                                          }
                                           disabled={updatingNote}
                                           className="text-white hover:opacity-90"
                                           style={{ backgroundColor: "#5b50FF" }}
@@ -415,63 +456,76 @@ const ClientActivity = ({
                                       <div className="flex items-center gap-2">
                                         {item.userId === session?.user?.id && (
                                           <div className="flex gap-1">
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="h-7 w-7 p-0 text-muted-foreground"
-                                            style={{ "--hover-color": "#5b50FF" }}
-                                            onMouseEnter={(e) =>
-                                              (e.currentTarget.style.color = "#5b50FF")
-                                            }
-                                            onMouseLeave={(e) =>
-                                              (e.currentTarget.style.color = "")
-                                            }
-                                            onClick={() => {
-                                              setEditingNoteId(item.id);
-                                              setEditingContent(item.content);
-                                            }}
-                                          >
-                                            <Edit2 className="h-3.5 w-3.5" />
-                                          </Button>
-                                          <AlertDialog
-                                            open={noteToDelete === item.id}
-                                            onOpenChange={(open) =>
-                                              !open && setNoteToDelete(null)
-                                            }
-                                          >
-                                            <AlertDialogTrigger asChild>
-                                              <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                                                onClick={() => setNoteToDelete(item.id)}
-                                              >
-                                                <Trash2 className="h-3.5 w-3.5" />
-                                              </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                              <AlertDialogTitle>
-                                                Supprimer la note
-                                              </AlertDialogTitle>
-                                              <AlertDialogDescription>
-                                                Êtes-vous sûr de vouloir supprimer cette note ?
-                                                Cette action ne peut pas être annulée.
-                                              </AlertDialogDescription>
-                                              <div className="flex gap-2 justify-end">
-                                                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                                <AlertDialogAction
-                                                  onClick={() => {
-                                                    handleDeleteNote(item.id, item.isPending);
-                                                    setNoteToDelete(null);
-                                                  }}
-                                                  disabled={deletingNote}
-                                                  className="bg-destructive text-white hover:bg-destructive/90"
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              className="h-7 w-7 p-0 text-muted-foreground"
+                                              style={{
+                                                "--hover-color": "#5b50FF",
+                                              }}
+                                              onMouseEnter={(e) =>
+                                                (e.currentTarget.style.color =
+                                                  "#5b50FF")
+                                              }
+                                              onMouseLeave={(e) =>
+                                                (e.currentTarget.style.color =
+                                                  "")
+                                              }
+                                              onClick={() => {
+                                                setEditingNoteId(item.id);
+                                                setEditingContent(item.content);
+                                              }}
+                                            >
+                                              <Edit2 className="h-3.5 w-3.5" />
+                                            </Button>
+                                            <AlertDialog
+                                              open={noteToDelete === item.id}
+                                              onOpenChange={(open) =>
+                                                !open && setNoteToDelete(null)
+                                              }
+                                            >
+                                              <AlertDialogTrigger asChild>
+                                                <Button
+                                                  size="sm"
+                                                  variant="ghost"
+                                                  className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                                                  onClick={() =>
+                                                    setNoteToDelete(item.id)
+                                                  }
                                                 >
-                                                  Supprimer
-                                                </AlertDialogAction>
-                                              </div>
-                                            </AlertDialogContent>
-                                          </AlertDialog>
+                                                  <Trash2 className="h-3.5 w-3.5" />
+                                                </Button>
+                                              </AlertDialogTrigger>
+                                              <AlertDialogContent>
+                                                <AlertDialogTitle>
+                                                  Supprimer la note
+                                                </AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                  Êtes-vous sûr de vouloir
+                                                  supprimer cette note ? Cette
+                                                  action ne peut pas être
+                                                  annulée.
+                                                </AlertDialogDescription>
+                                                <div className="flex gap-2 justify-end">
+                                                  <AlertDialogCancel>
+                                                    Annuler
+                                                  </AlertDialogCancel>
+                                                  <AlertDialogAction
+                                                    onClick={() => {
+                                                      handleDeleteNote(
+                                                        item.id,
+                                                        item.isPending,
+                                                      );
+                                                      setNoteToDelete(null);
+                                                    }}
+                                                    disabled={deletingNote}
+                                                    className="bg-destructive text-white hover:bg-destructive/90"
+                                                  >
+                                                    Supprimer
+                                                  </AlertDialogAction>
+                                                </div>
+                                              </AlertDialogContent>
+                                            </AlertDialog>
                                           </div>
                                         )}
                                       </div>
@@ -505,75 +559,133 @@ const ClientActivity = ({
                                       {formatDate(item.createdAt)}
                                     </span>
                                   </div>
-                                  {display.metadata && display.metadata.eventId && (
-                                    <div
-                                      className="mt-2 p-2 bg-muted/50 rounded-md border border-border max-w-md cursor-pointer hover:bg-muted/80 transition-colors"
-                                      onClick={() => handleViewReminder(display.metadata.eventId)}
-                                    >
-                                      <div className="flex items-center justify-between gap-2">
-                                        <div className="flex items-center gap-2">
-                                          <Bell className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                                          <div className="flex flex-col">
-                                            <span className="text-xs font-medium">
-                                              {display.metadata.eventTitle}
-                                            </span>
-                                            {display.metadata.eventDate && (
-                                              <span className="text-xs text-muted-foreground">
-                                                {format(new Date(display.metadata.eventDate), "d MMM yyyy 'à' HH:mm", { locale: fr })}
+                                  {display.metadata &&
+                                    display.metadata.eventId && (
+                                      <div
+                                        className="mt-2 p-2 bg-muted/50 rounded-md border border-border max-w-md cursor-pointer hover:bg-muted/80 transition-colors"
+                                        onClick={() =>
+                                          handleViewReminder(
+                                            display.metadata.eventId,
+                                          )
+                                        }
+                                      >
+                                        <div className="flex items-center justify-between gap-2">
+                                          <div className="flex items-center gap-2">
+                                            <Bell className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                            <div className="flex flex-col">
+                                              <span className="text-xs font-medium">
+                                                {display.metadata.eventTitle}
                                               </span>
-                                            )}
-                                          </div>
-                                        </div>
-                                        <ExternalLink className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                                      </div>
-                                    </div>
-                                  )}
-                                  {display.metadata && (display.metadata.documentType === 'invoice' || display.metadata.documentType === 'quote' || display.metadata.documentType === 'creditNote') && (
-                                    <div className="mt-2 p-2 bg-muted/50 rounded-md border border-border max-w-md">
-                                      <div className="flex items-center justify-between gap-2">
-                                        <div className="flex items-center gap-2">
-                                          <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                                          <div className="flex flex-col">
-                                            <span className="text-xs font-medium">
-                                              {display.metadata.documentType === 'invoice' && `Facture ${display.metadata.documentNumber}`}
-                                              {display.metadata.documentType === 'quote' && `Devis ${display.metadata.documentNumber}`}
-                                              {display.metadata.documentType === 'creditNote' && `Avoir ${display.metadata.documentNumber}`}
-                                            </span>
-                                            <span className="text-xs text-muted-foreground">
-                                              {display.metadata.documentType === 'creditNote' && display.metadata.originalInvoiceNumber && (
-                                                `En référence à la facture ${display.metadata.originalInvoiceNumber}`
+                                              {display.metadata.eventDate && (
+                                                <span className="text-xs text-muted-foreground">
+                                                  {format(
+                                                    new Date(
+                                                      display.metadata
+                                                        .eventDate,
+                                                    ),
+                                                    "d MMM yyyy 'à' HH:mm",
+                                                    { locale: fr },
+                                                  )}
+                                                </span>
                                               )}
-                                              {display.metadata.documentType !== 'creditNote' && (
-                                                <>
-                                                  {display.metadata.status === 'DRAFT' && 'Brouillon'}
-                                                  {display.metadata.status === 'PENDING' && (display.metadata.documentType === 'invoice' ? 'En attente' : 'En attente')}
-                                                  {display.metadata.status === 'COMPLETED' && (display.metadata.documentType === 'invoice' ? 'Payée' : 'Accepté')}
-                                                  {display.metadata.status === 'CANCELED' && (display.metadata.documentType === 'invoice' ? 'Annulée' : 'Refusé')}
-                                                </>
-                                              )}
-                                            </span>
+                                            </div>
                                           </div>
+                                          <ExternalLink className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                                         </div>
-                                        {/* Bouton "Voir" uniquement pour les factures et devis, pas pour les avoirs */}
-                                        {display.metadata.documentType !== 'creditNote' && (
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="h-7 px-2 text-xs hover:bg-transparent flex-shrink-0"
-                                            style={{ color: '#5b50FF' }}
-                                            onClick={() => {
-                                              const docType = display.metadata.documentType;
-                                              const docId = display.metadata.documentId;
-                                              handleViewDocument(docType, docId);
-                                            }}
-                                          >
-                                            <ExternalLink className="h-3 w-3 mr-1" />
-                                            {display.metadata.documentType === 'invoice' ? 'Voir la facture' : 'Voir le devis'}
-                                          </Button>
-                                        )}
                                       </div>
-                                    </div>
-                                  )}
+                                    )}
+                                  {display.metadata &&
+                                    (display.metadata.documentType ===
+                                      "invoice" ||
+                                      display.metadata.documentType ===
+                                        "quote" ||
+                                      display.metadata.documentType ===
+                                        "creditNote") && (
+                                      <div className="mt-2 p-2 bg-muted/50 rounded-md border border-border max-w-md">
+                                        <div className="flex items-center justify-between gap-2">
+                                          <div className="flex items-center gap-2">
+                                            <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                            <div className="flex flex-col">
+                                              <span className="text-xs font-medium">
+                                                {display.metadata
+                                                  .documentType === "invoice" &&
+                                                  `Facture ${display.metadata.documentNumber}`}
+                                                {display.metadata
+                                                  .documentType === "quote" &&
+                                                  `Devis ${display.metadata.documentNumber}`}
+                                                {display.metadata
+                                                  .documentType ===
+                                                  "creditNote" &&
+                                                  `Avoir ${display.metadata.documentNumber}`}
+                                              </span>
+                                              <span className="text-xs text-muted-foreground">
+                                                {display.metadata
+                                                  .documentType ===
+                                                  "creditNote" &&
+                                                  display.metadata
+                                                    .originalInvoiceNumber &&
+                                                  `En référence à la facture ${display.metadata.originalInvoiceNumber}`}
+                                                {display.metadata
+                                                  .documentType !==
+                                                  "creditNote" && (
+                                                  <>
+                                                    {display.metadata.status ===
+                                                      "DRAFT" && "Brouillon"}
+                                                    {display.metadata.status ===
+                                                      "PENDING" &&
+                                                      (display.metadata
+                                                        .documentType ===
+                                                      "invoice"
+                                                        ? "En attente"
+                                                        : "En attente")}
+                                                    {display.metadata.status ===
+                                                      "COMPLETED" &&
+                                                      (display.metadata
+                                                        .documentType ===
+                                                      "invoice"
+                                                        ? "Payée"
+                                                        : "Accepté")}
+                                                    {display.metadata.status ===
+                                                      "CANCELED" &&
+                                                      (display.metadata
+                                                        .documentType ===
+                                                      "invoice"
+                                                        ? "Annulée"
+                                                        : "Refusé")}
+                                                  </>
+                                                )}
+                                              </span>
+                                            </div>
+                                          </div>
+                                          {/* Bouton "Voir" uniquement pour les factures et devis, pas pour les avoirs */}
+                                          {display.metadata.documentType !==
+                                            "creditNote" && (
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              className="h-7 px-2 text-xs hover:bg-transparent flex-shrink-0"
+                                              style={{ color: "#5b50FF" }}
+                                              onClick={() => {
+                                                const docType =
+                                                  display.metadata.documentType;
+                                                const docId =
+                                                  display.metadata.documentId;
+                                                handleViewDocument(
+                                                  docType,
+                                                  docId,
+                                                );
+                                              }}
+                                            >
+                                              <ExternalLink className="h-3 w-3 mr-1" />
+                                              {display.metadata.documentType ===
+                                              "invoice"
+                                                ? "Voir la facture"
+                                                : "Voir le devis"}
+                                            </Button>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
                                 </>
                               ) : null}
                             </div>
@@ -581,7 +693,7 @@ const ClientActivity = ({
                         )}
                       </div>
                     );
-                  }
+                  },
                 )}
               </>
             )}
@@ -609,7 +721,9 @@ const ClientActivity = ({
                       {editingNoteId === note.id ? (
                         <>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-medium">{note.userName}</span>
+                            <span className="text-xs font-medium">
+                              {note.userName}
+                            </span>
                             <span className="text-xs text-muted-foreground">
                               {formatDate(note.createdAt)}
                             </span>
@@ -617,14 +731,18 @@ const ClientActivity = ({
                           <div className="space-y-2">
                             <Textarea
                               value={editingContent}
-                              onChange={(e) => setEditingContent(e.target.value)}
+                              onChange={(e) =>
+                                setEditingContent(e.target.value)
+                              }
                               className="text-sm"
                               rows={3}
                             />
                             <div className="flex gap-2">
                               <Button
                                 size="sm"
-                                onClick={() => handleUpdateNote(note.id, note.isPending)}
+                                onClick={() =>
+                                  handleUpdateNote(note.id, note.isPending)
+                                }
                                 disabled={updatingNote}
                                 className="text-white hover:opacity-90"
                                 style={{ backgroundColor: "#5b50FF" }}
@@ -647,69 +765,85 @@ const ClientActivity = ({
                       ) : (
                         <>
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs font-medium">{note.userName}</span>
+                            <span className="text-xs font-medium">
+                              {note.userName}
+                            </span>
                             <div className="flex items-center gap-2">
                               <span className="text-xs text-muted-foreground whitespace-nowrap">
                                 {formatDate(note.createdAt)}
                               </span>
                               {note.userId === session?.user?.id && (
                                 <div className="flex gap-1">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-7 w-7 p-0 text-muted-foreground"
-                                  style={{ "--hover-color": "#5b50FF" }}
-                                  onMouseEnter={(e) =>
-                                    (e.currentTarget.style.color = "#5b50FF")
-                                  }
-                                  onMouseLeave={(e) => (e.currentTarget.style.color = "")}
-                                  onClick={() => {
-                                    setEditingNoteId(note.id);
-                                    setEditingContent(note.content);
-                                  }}
-                                >
-                                  <Edit2 className="h-3.5 w-3.5" />
-                                </Button>
-                                <AlertDialog
-                                  open={noteToDelete === note.id}
-                                  onOpenChange={(open) => !open && setNoteToDelete(null)}
-                                >
-                                  <AlertDialogTrigger asChild>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                                      onClick={() => setNoteToDelete(note.id)}
-                                    >
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogTitle>Supprimer la note</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Êtes-vous sûr de vouloir supprimer cette note ? Cette
-                                      action ne peut pas être annulée.
-                                    </AlertDialogDescription>
-                                    <div className="flex gap-2 justify-end">
-                                      <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                      <AlertDialogAction
-                                        onClick={() => {
-                                          handleDeleteNote(note.id, note.isPending);
-                                          setNoteToDelete(null);
-                                        }}
-                                        disabled={deletingNote}
-                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 w-7 p-0 text-muted-foreground"
+                                    style={{ "--hover-color": "#5b50FF" }}
+                                    onMouseEnter={(e) =>
+                                      (e.currentTarget.style.color = "#5b50FF")
+                                    }
+                                    onMouseLeave={(e) =>
+                                      (e.currentTarget.style.color = "")
+                                    }
+                                    onClick={() => {
+                                      setEditingNoteId(note.id);
+                                      setEditingContent(note.content);
+                                    }}
+                                  >
+                                    <Edit2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <AlertDialog
+                                    open={noteToDelete === note.id}
+                                    onOpenChange={(open) =>
+                                      !open && setNoteToDelete(null)
+                                    }
+                                  >
+                                    <AlertDialogTrigger asChild>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                                        onClick={() => setNoteToDelete(note.id)}
                                       >
-                                        Supprimer
-                                      </AlertDialogAction>
-                                    </div>
-                                  </AlertDialogContent>
-                                </AlertDialog>
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogTitle>
+                                        Supprimer la note
+                                      </AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Êtes-vous sûr de vouloir supprimer cette
+                                        note ? Cette action ne peut pas être
+                                        annulée.
+                                      </AlertDialogDescription>
+                                      <div className="flex gap-2 justify-end">
+                                        <AlertDialogCancel>
+                                          Annuler
+                                        </AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => {
+                                            handleDeleteNote(
+                                              note.id,
+                                              note.isPending,
+                                            );
+                                            setNoteToDelete(null);
+                                          }}
+                                          disabled={deletingNote}
+                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        >
+                                          Supprimer
+                                        </AlertDialogAction>
+                                      </div>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
                                 </div>
                               )}
                             </div>
                           </div>
-                          <p className="text-sm whitespace-pre-wrap">{note.content}</p>
+                          <p className="text-sm whitespace-pre-wrap">
+                            {note.content}
+                          </p>
                         </>
                       )}
                     </div>
@@ -769,7 +903,7 @@ const ClientActivity = ({
                         </div>
                       </div>
                     );
-                  }
+                  },
                 )}
               </>
             )}

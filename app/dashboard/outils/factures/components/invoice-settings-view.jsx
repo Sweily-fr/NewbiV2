@@ -698,6 +698,44 @@ export default function InvoiceSettingsView({
                       de votre entreprise.
                     </p>
 
+                    {/* Choix du nom du bénéficiaire pour les auto-entrepreneurs */}
+                    {organization?.legalForm === "Auto-entrepreneur" && (
+                      <div className="flex items-center justify-between p-4 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                        <div className="grid gap-1.5 leading-none">
+                          <Label
+                            htmlFor="beneficiary-name-type"
+                            className="text-sm font-light leading-none"
+                          >
+                            Nom du bénéficiaire
+                          </Label>
+                          <p className="text-xs text-muted-foreground">
+                            {data.beneficiaryNameType === "fullName"
+                              ? "Nom complet affiché sur la facture"
+                              : "Nom d'entreprise affiché sur la facture"}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">
+                            {data.beneficiaryNameType === "fullName"
+                              ? "Nom complet"
+                              : "Nom d'entreprise"}
+                          </span>
+                          <Switch
+                            id="beneficiary-name-type"
+                            checked={data.beneficiaryNameType === "fullName"}
+                            onCheckedChange={(checked) => {
+                              setValue(
+                                "beneficiaryNameType",
+                                checked ? "fullName" : "companyName",
+                                { shouldDirty: true },
+                              );
+                            }}
+                            disabled={!canEdit}
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     {/* Alerte informative */}
                     <Alert>
                       <AlertDescription>
@@ -705,45 +743,6 @@ export default function InvoiceSettingsView({
                         pour faciliter les paiements de vos clients.
                       </AlertDescription>
                     </Alert>
-                  </div>
-                )}
-
-              {/* Choix du nom du bénéficiaire pour les auto-entrepreneurs */}
-              {data.showBankDetails &&
-                organization?.legalForm === "Auto-entrepreneur" && (
-                  <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                    <div className="grid gap-1.5 leading-none">
-                      <Label
-                        htmlFor="beneficiary-name-type"
-                        className="text-sm font-light leading-none"
-                      >
-                        Nom du bénéficiaire
-                      </Label>
-                      <p className="text-xs text-muted-foreground">
-                        {data.beneficiaryNameType === "fullName"
-                          ? "Nom complet affiché sur la facture"
-                          : "Nom d'entreprise affiché sur la facture"}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">
-                        {data.beneficiaryNameType === "fullName"
-                          ? "Nom complet"
-                          : "Nom d'entreprise"}
-                      </span>
-                      <Switch
-                        id="beneficiary-name-type"
-                        checked={data.beneficiaryNameType === "fullName"}
-                        onCheckedChange={(checked) => {
-                          setValue(
-                            "beneficiaryNameType",
-                            checked ? "fullName" : "companyName",
-                            { shouldDirty: true },
-                          );
-                        }}
-                        disabled={!canEdit}
-                      />
-                    </div>
                   </div>
                 )}
             </CardContent>

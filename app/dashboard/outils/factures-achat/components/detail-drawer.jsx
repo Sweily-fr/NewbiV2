@@ -251,10 +251,8 @@ export function PurchaseInvoiceDetailDrawer({
     const data = {
       supplierName: form.supplierName,
       invoiceNumber: form.invoiceNumber || undefined,
-      issueDate: form.issueDate
-        ? new Date(form.issueDate).toISOString()
-        : new Date().toISOString(),
-      dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : undefined,
+      issueDate: form.issueDate || new Date().toLocaleDateString("sv-SE"),
+      dueDate: form.dueDate || undefined,
       amountHT: parseFloat(form.amountHT) || 0,
       amountTVA: parseFloat(form.amountTVA) || 0,
       vatRate: parseFloat(form.vatRate) || 20,

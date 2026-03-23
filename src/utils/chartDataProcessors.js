@@ -21,7 +21,7 @@ export const processInvoicesForCharts = (paidInvoices) => {
   for (let i = 89; i >= 0; i--) {
     const date = new Date(now);
     date.setDate(date.getDate() - i);
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = toLocalDateKey(date);
 
     // Filter invoices for this day
     const dayInvoices = paidInvoices.filter((invoice) => {
@@ -44,18 +44,18 @@ export const processInvoicesForCharts = (paidInvoices) => {
           "Date de facture invalide:",
           invoice.issueDate,
           "pour la facture:",
-          invoice.id
+          invoice.id,
         );
         return false;
       }
 
-      return invoiceDate.toISOString().split("T")[0] === dateStr;
+      return toLocalDateKey(invoiceDate) === dateStr;
     });
 
     // Calculate income for this day (UNIQUEMENT les factures payées)
     const dayIncome = dayInvoices.reduce(
       (sum, invoice) => sum + (invoice.finalTotalTTC || 0),
-      0
+      0,
     );
     const dayInvoiceCount = dayInvoices.length;
 
@@ -77,7 +77,7 @@ export const processExpensesForCharts = (expenses) => {
   for (let i = 89; i >= 0; i--) {
     const date = new Date(now);
     date.setDate(date.getDate() - i);
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = toLocalDateKey(date);
 
     // Filter expenses for this day - TOUTES les dépenses (manuelles et OCR)
     const dayExpenses = expenses.filter((expense) => {
@@ -102,15 +102,13 @@ export const processExpensesForCharts = (expenses) => {
       // Vérifier si la date est valide
       if (isNaN(expenseDate.getTime())) return false;
 
-      const isCorrectDate = expenseDate.toISOString().split("T")[0] === dateStr;
-
-      return isCorrectDate;
+      return toLocalDateKey(expenseDate) === dateStr;
     });
 
     // Calculate expenses for this day
     const dayExpenseAmount = dayExpenses.reduce(
       (sum, expense) => sum + (expense.amount || 0),
-      0
+      0,
     );
     const dayExpenseCount = dayExpenses.length;
 
@@ -125,10 +123,11 @@ export const processExpensesForCharts = (expenses) => {
 };
 
 // MODE BANCAIRE PUR : Entrées basées uniquement sur les transactions bancaires positives
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const processIncomeForCharts = (
   paidInvoices = [],
   bankTransactions = [],
-  days = 365
+  days = 365,
 ) => {
   const now = new Date();
 
@@ -140,7 +139,10 @@ export const processIncomeForCharts = (
     if (t.amount <= 0) continue;
     const rawDate = t.date || t.processedAt || t.createdAt;
     const key = toLocalDateKey(rawDate);
-    if (!key) { parseFails++; continue; }
+    if (!key) {
+      parseFails++;
+      continue;
+    }
 
     const entry = incomeByDate.get(key);
     if (entry) {
@@ -177,7 +179,10 @@ export const processIncomeForCharts = (
     parseFails,
     daysWithData,
     totalAmount: totalDesktop,
-    dateRange: chartData.length > 0 ? `${chartData[0].date} → ${chartData[chartData.length - 1].date}` : "vide",
+    dateRange:
+      chartData.length > 0
+        ? `${chartData[0].date} → ${chartData[chartData.length - 1].date}`
+        : "vide",
     sampleEntries: [...incomeByDate.entries()].slice(0, 3),
   });
 
@@ -185,10 +190,11 @@ export const processIncomeForCharts = (
 };
 
 // MODE BANCAIRE PUR : Sorties basées uniquement sur les transactions bancaires négatives
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const processExpensesWithBankForCharts = (
   expenses = [],
   bankTransactions = [],
-  days = 365
+  days = 365,
 ) => {
   const now = new Date();
 
@@ -200,7 +206,10 @@ export const processExpensesWithBankForCharts = (
     if (t.amount >= 0) continue;
     const rawDate = t.date || t.processedAt || t.createdAt;
     const key = toLocalDateKey(rawDate);
-    if (!key) { parseFails++; continue; }
+    if (!key) {
+      parseFails++;
+      continue;
+    }
 
     const absAmount = Math.abs(t.amount);
     const entry = expenseByDate.get(key);
@@ -238,7 +247,10 @@ export const processExpensesWithBankForCharts = (
     parseFails,
     daysWithData,
     totalAmount: totalDesktop,
-    dateRange: chartData.length > 0 ? `${chartData[0].date} → ${chartData[chartData.length - 1].date}` : "vide",
+    dateRange:
+      chartData.length > 0
+        ? `${chartData[0].date} → ${chartData[chartData.length - 1].date}`
+        : "vide",
     sampleEntries: [...expenseByDate.entries()].slice(0, 3),
   });
 

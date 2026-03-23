@@ -8,7 +8,6 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { Badge } from "@/src/components/ui/badge";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -19,19 +18,19 @@ import {
   Send,
   XCircle,
   Archive,
+  Mail,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
   INVOICE_STATUS_LABELS,
-  INVOICE_STATUS_COLORS,
   useDeleteInvoice,
 } from "@/src/graphql/invoiceQueries";
 import {
   IMPORTED_INVOICE_STATUS_LABELS,
-  IMPORTED_INVOICE_STATUS_COLORS,
   useDeleteImportedInvoice,
 } from "@/src/graphql/importedInvoiceQueries";
 import InvoiceRowActions from "../components/invoice-row-actions";
+import { EmailTrackingStatus } from "@/src/components/email-tracking-status";
 import { toast } from "@/src/components/ui/sonner";
 
 // Custom filter functions
@@ -104,9 +103,9 @@ const memoizedMultiColumnFilter = (row, columnId, filterValue) => {
       ].filter(
         (value, index, self) =>
           // Supprimer les doublons
-          value && self.indexOf(value) === index
+          value && self.indexOf(value) === index,
       );
-    } catch (_) {
+    } catch {
       return [];
     }
   };
@@ -120,9 +119,10 @@ const memoizedMultiColumnFilter = (row, columnId, filterValue) => {
   const status = isImported
     ? IMPORTED_INVOICE_STATUS_LABELS[invoice.status] || ""
     : INVOICE_STATUS_LABELS[invoice.status] || "";
-  const amount = (invoice.finalTotalTTC || invoice.totalTTC || invoice.total)
-    ? (invoice.finalTotalTTC || invoice.totalTTC || invoice.total).toString()
-    : "";
+  const amount =
+    invoice.finalTotalTTC || invoice.totalTTC || invoice.total
+      ? (invoice.finalTotalTTC || invoice.totalTTC || invoice.total).toString()
+      : "";
 
   // Préparer le contenu de recherche
   const searchableContent = [
@@ -373,7 +373,7 @@ export function useInvoiceTable({
             const formattedDate = parsedDate.toLocaleDateString("fr-FR");
 
             return formattedDate;
-          } catch (_) {
+          } catch {
             return "-";
           }
         },
@@ -440,7 +440,7 @@ export function useInvoiceTable({
                 {isOverdue && <div className="text-xs">En retard</div>}
               </div>
             );
-          } catch (_) {
+          } catch {
             return "-";
           }
         },
@@ -553,7 +553,7 @@ export function useInvoiceTable({
             <span
               className={cn(
                 "inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium",
-                config.className
+                config.className,
               )}
             >
               {config.icon}
@@ -563,6 +563,27 @@ export function useInvoiceTable({
         },
         size: 100,
         filterFn: statusFilterFn,
+      },
+      {
+        id: "emailTracking",
+        header: () => (
+          <div className="flex items-center justify-center font-normal">
+            <Mail className="h-4 w-4" />
+          </div>
+        ),
+        meta: {
+          label: "Email",
+        },
+        cell: ({ row }) => {
+          const emailTracking = row.original.emailTracking;
+          return (
+            <div className="flex justify-center">
+              <EmailTrackingStatus emailTracking={emailTracking} />
+            </div>
+          );
+        },
+        size: 50,
+        enableSorting: false,
       },
       {
         accessorKey: "finalTotalTTC",
@@ -664,7 +685,7 @@ export function useInvoiceTable({
           const isClientExcluded =
             clientId &&
             excludedClientIds.some(
-              (excludedId) => String(excludedId) === String(clientId)
+              (excludedId) => String(excludedId) === String(clientId),
             );
 
           return (
@@ -698,7 +719,7 @@ export function useInvoiceTable({
       onOpenImportedSidebar,
       onSendEmail,
       onSaveAsTemplate,
-    ] // Inclure toutes les dépendances
+    ], // Inclure toutes les dépendances
   );
 
   // Create table instance with optimized settings
@@ -757,27 +778,27 @@ export function useInvoiceTable({
   const handleDeleteSelected = async () => {
     // Séparer les factures normales (brouillons) et les factures importées
     const draftInvoices = selectedRows.filter(
-      (invoice) => invoice._type !== "imported" && invoice.status === "DRAFT"
+      (invoice) => invoice._type !== "imported" && invoice.status === "DRAFT",
     );
     const importedInvoices = selectedRows.filter(
-      (invoice) => invoice._type === "imported"
+      (invoice) => invoice._type === "imported",
     );
 
     // Factures normales non-brouillon ignorées
     const ignoredNormalInvoices = selectedRows.filter(
-      (invoice) => invoice._type !== "imported" && invoice.status !== "DRAFT"
+      (invoice) => invoice._type !== "imported" && invoice.status !== "DRAFT",
     );
 
     if (draftInvoices.length === 0 && importedInvoices.length === 0) {
       toast.error(
-        "Seules les factures en brouillon ou importées peuvent être supprimées"
+        "Seules les factures en brouillon ou importées peuvent être supprimées",
       );
       return;
     }
 
     if (ignoredNormalInvoices.length > 0) {
       toast.warning(
-        `${ignoredNormalInvoices.length} facture(s) ignorée(s) (non brouillon)`
+        `${ignoredNormalInvoices.length} facture(s) ignorée(s) (non brouillon)`,
       );
     }
 
@@ -790,9 +811,9 @@ export function useInvoiceTable({
       try {
         await Promise.all(batch.map((invoice) => deleteInvoice(invoice.id)));
         deletedCount += batch.length;
-      } catch (_) {
+      } catch {
         toast.error(
-          `Erreur lors de la suppression du lot ${i / BATCH_SIZE + 1}`
+          `Erreur lors de la suppression du lot ${i / BATCH_SIZE + 1}`,
         );
       }
     }
@@ -803,11 +824,11 @@ export function useInvoiceTable({
       try {
         await Promise.all(
           batch.map((invoice) =>
-            deleteImportedInvoice({ variables: { id: invoice.id } })
-          )
+            deleteImportedInvoice({ variables: { id: invoice.id } }),
+          ),
         );
         deletedCount += batch.length;
-      } catch (_) {
+      } catch {
         toast.error(`Erreur lors de la suppression des factures importées`);
       }
     }
