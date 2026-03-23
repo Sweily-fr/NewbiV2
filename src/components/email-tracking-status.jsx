@@ -1,6 +1,6 @@
 "use client";
 
-import { Mail, MailOpen } from "lucide-react";
+import { Mail, MailOpen, MousePointerClick } from "lucide-react";
 import {
   Tooltip,
   TooltipTrigger,
@@ -51,7 +51,33 @@ export function EmailTrackingStatus({ emailTracking }) {
     );
   }
 
-  // Ouvert
+  // Cliqué (lien ouvert)
+  if (emailTracking.emailClickedAt) {
+    const clickedDate = formatTrackingDate(emailTracking.emailClickedAt);
+    const clickCount = emailTracking.emailClickCount || 1;
+
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex items-center justify-center">
+            <MousePointerClick className="h-4 w-4 text-blue-500" />
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Envoyé le {sentDate}</p>
+          <p className="text-emerald-400">
+            Ouvert le {formatTrackingDate(emailTracking.emailOpenedAt)}
+          </p>
+          <p className="text-blue-400">
+            Document consulté le {clickedDate}
+            {clickCount > 1 && ` (${clickCount} fois)`}
+          </p>
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  // Ouvert (mais pas cliqué)
   const openedDate = formatTrackingDate(emailTracking.emailOpenedAt);
   const openCount = emailTracking.emailOpenCount || 1;
 

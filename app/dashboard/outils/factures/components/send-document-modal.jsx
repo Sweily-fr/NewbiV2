@@ -41,7 +41,11 @@ const DOCUMENT_LABELS = {
   invoice: { singular: "facture", article: "la", title: "Envoyer la facture" },
   quote: { singular: "devis", article: "le", title: "Envoyer le devis" },
   creditNote: { singular: "avoir", article: "l'", title: "Envoyer l'avoir" },
-  purchaseOrder: { singular: "bon de commande", article: "le", title: "Envoyer le bon de commande" },
+  purchaseOrder: {
+    singular: "bon de commande",
+    article: "le",
+    title: "Envoyer le bon de commande",
+  },
 };
 
 // Récupérer le template sauvegardé depuis les paramètres email
@@ -238,7 +242,7 @@ export function SendDocumentModal({
       }
 
       // Sauvegarder le template en base de données pour les prochains envois
-      if (emailSettings) {
+      if (emailSettings && emailSettings.fromEmail) {
         const templateUpdate = {
           fromEmail: emailSettings.fromEmail,
           fromName: emailSettings.fromName || "",
@@ -267,12 +271,12 @@ export function SendDocumentModal({
         updateEmailSettings({ variables: { input: templateUpdate } }).catch(
           () => {
             // Ignorer les erreurs de sauvegarde du template
-          }
+          },
         );
       }
 
       toast.success(
-        `${labels.singular.charAt(0).toUpperCase() + labels.singular.slice(1)} envoyé${documentType === "invoice" ? "e" : ""} avec succès`
+        `${labels.singular.charAt(0).toUpperCase() + labels.singular.slice(1)} envoyé${documentType === "invoice" ? "e" : ""} avec succès`,
       );
       onOpenChange(false);
       onSent?.();
@@ -344,136 +348,138 @@ export function SendDocumentModal({
           showCloseButton={false}
         >
           <div className="flex flex-col h-full bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
-          {/* Header */}
-          <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-border/40">
-            <DialogHeader>
-              <DialogTitle className="text-sm font-medium">{labels.title}</DialogTitle>
-            </DialogHeader>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowCloseConfirm(true)}
-              className="h-8 w-8"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-border/40">
+              <DialogHeader>
+                <DialogTitle className="text-sm font-medium">
+                  {labels.title}
+                </DialogTitle>
+              </DialogHeader>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowCloseConfirm(true)}
+                className="h-8 w-8"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
 
-          {/* Content */}
-          <FormProvider {...methods}>
-            <form
-              onSubmit={handleSubmit(onSubmit)}
-              className="flex-1 min-h-0 flex overflow-hidden"
-            >
-              {/* Left Panel - Form */}
-              <div className="w-full lg:w-1/2 overflow-y-auto lg:border-r border-border/40 flex flex-col">
-                <div className="flex-1 overflow-y-auto p-5">
-                  <SendDocumentEmailForm
+            {/* Content */}
+            <FormProvider {...methods}>
+              <form
+                onSubmit={handleSubmit(onSubmit)}
+                className="flex-1 min-h-0 flex overflow-hidden"
+              >
+                {/* Left Panel - Form */}
+                <div className="w-full lg:w-1/2 overflow-y-auto lg:border-r border-border/40 flex flex-col">
+                  <div className="flex-1 overflow-y-auto p-5">
+                    <SendDocumentEmailForm
+                      documentType={documentType}
+                      clientEmail={clientEmail}
+                      clientName={clientName}
+                    />
+                  </div>
+                </div>
+
+                {/* Right Panel - Preview (hidden on mobile) */}
+                <div className="hidden lg:block w-1/2 overflow-y-auto p-5 bg-gray-50 dark:bg-[#252525]">
+                  <SendDocumentEmailPreview
+                    formData={watch()}
                     documentType={documentType}
-                    clientEmail={clientEmail}
+                    documentNumber={documentNumber}
                     clientName={clientName}
+                    clientEmail={clientEmail}
+                    totalAmount={totalAmount}
+                    companyName={companyName}
+                    senderEmail={senderEmail}
+                    senderName={senderName}
+                    issueDate={issueDate}
+                    dueDate={dueDate}
+                    invoiceNumber={invoiceNumber}
+                  />
+                </div>
+              </form>
+            </FormProvider>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between border-t border-border/40 px-5 py-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSkip}
+                disabled={isSending}
+              >
+                Ne pas envoyer
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleSubmit(onSubmit)}
+                disabled={isSending || !clientEmail}
+                className="gap-2"
+              >
+                {isSending ? (
+                  <>
+                    <LoaderCircle className="size-4 animate-spin" />
+                    Envoi...
+                  </>
+                ) : (
+                  <>
+                    Envoyer au client
+                    <kbd className="inline-flex items-center justify-center size-5 rounded bg-white/20 ml-0.5">
+                      <CornerDownLeft className="size-3" />
+                    </kbd>
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Floating Preview Button (mobile/tablet only) */}
+            <Button
+              type="button"
+              onClick={() => setShowMobilePreview(true)}
+              className="lg:hidden fixed bottom-24 right-4 h-12 w-12 rounded-full shadow-lg bg-[#5b50ff] hover:bg-[#4a41e0] z-50"
+              size="icon"
+            >
+              <Eye className="h-5 w-5 text-white" />
+            </Button>
+
+            {/* Mobile Preview Overlay */}
+            {showMobilePreview && (
+              <div className="lg:hidden fixed inset-0 z-[60] bg-white dark:bg-[#1a1a1a] flex flex-col">
+                {/* Preview Header */}
+                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Aperçu de l&apos;email
+                  </h3>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowMobilePreview(false)}
+                    className="h-8 w-8"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                {/* Preview Content */}
+                <div className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-[#252525]">
+                  <SendDocumentEmailPreview
+                    formData={watch()}
+                    documentType={documentType}
+                    documentNumber={documentNumber}
+                    clientName={clientName}
+                    clientEmail={clientEmail}
+                    totalAmount={totalAmount}
+                    companyName={companyName}
+                    senderEmail={senderEmail}
+                    senderName={senderName}
+                    issueDate={issueDate}
+                    dueDate={dueDate}
+                    invoiceNumber={invoiceNumber}
                   />
                 </div>
               </div>
-
-              {/* Right Panel - Preview (hidden on mobile) */}
-              <div className="hidden lg:block w-1/2 overflow-y-auto p-5 bg-gray-50 dark:bg-[#252525]">
-                <SendDocumentEmailPreview
-                  formData={watch()}
-                  documentType={documentType}
-                  documentNumber={documentNumber}
-                  clientName={clientName}
-                  clientEmail={clientEmail}
-                  totalAmount={totalAmount}
-                  companyName={companyName}
-                  senderEmail={senderEmail}
-                  senderName={senderName}
-                  issueDate={issueDate}
-                  dueDate={dueDate}
-                  invoiceNumber={invoiceNumber}
-                />
-              </div>
-            </form>
-          </FormProvider>
-
-          {/* Footer */}
-          <div className="flex items-center justify-between border-t border-border/40 px-5 py-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleSkip}
-              disabled={isSending}
-            >
-              Ne pas envoyer
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleSubmit(onSubmit)}
-              disabled={isSending || !clientEmail}
-              className="gap-2"
-            >
-              {isSending ? (
-                <>
-                  <LoaderCircle className="size-4 animate-spin" />
-                  Envoi...
-                </>
-              ) : (
-                <>
-                  Envoyer au client
-                  <kbd className="inline-flex items-center justify-center size-5 rounded bg-white/20 ml-0.5">
-                    <CornerDownLeft className="size-3" />
-                  </kbd>
-                </>
-              )}
-            </Button>
-          </div>
-
-          {/* Floating Preview Button (mobile/tablet only) */}
-          <Button
-            type="button"
-            onClick={() => setShowMobilePreview(true)}
-            className="lg:hidden fixed bottom-24 right-4 h-12 w-12 rounded-full shadow-lg bg-[#5b50ff] hover:bg-[#4a41e0] z-50"
-            size="icon"
-          >
-            <Eye className="h-5 w-5 text-white" />
-          </Button>
-
-          {/* Mobile Preview Overlay */}
-          {showMobilePreview && (
-            <div className="lg:hidden fixed inset-0 z-[60] bg-white dark:bg-[#1a1a1a] flex flex-col">
-              {/* Preview Header */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Aperçu de l&apos;email
-                </h3>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowMobilePreview(false)}
-                  className="h-8 w-8"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              {/* Preview Content */}
-              <div className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-[#252525]">
-                <SendDocumentEmailPreview
-                  formData={watch()}
-                  documentType={documentType}
-                  documentNumber={documentNumber}
-                  clientName={clientName}
-                  clientEmail={clientEmail}
-                  totalAmount={totalAmount}
-                  companyName={companyName}
-                  senderEmail={senderEmail}
-                  senderName={senderName}
-                  issueDate={issueDate}
-                  dueDate={dueDate}
-                  invoiceNumber={invoiceNumber}
-                />
-              </div>
-            </div>
-          )}
+            )}
           </div>
         </DialogContent>
       </Dialog>
