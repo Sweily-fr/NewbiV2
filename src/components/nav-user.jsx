@@ -1,6 +1,15 @@
 "use client";
 
-import { Moon, Sun, Monitor, CreditCard, Crown, CircleUser, LogOut, EllipsisVertical } from "lucide-react";
+import {
+  Moon,
+  Sun,
+  Monitor,
+  CreditCard,
+  Crown,
+  CircleUser,
+  LogOut,
+  EllipsisVertical,
+} from "lucide-react";
 
 import {
   Avatar,
@@ -80,6 +89,10 @@ export function NavUser({ user }) {
 
         // Vider le cache utilisateur
         localStorage.removeItem("user-cache");
+
+        // Vider l'organization et le rôle pour éviter les fuites entre comptes
+        localStorage.removeItem("active_organization_id");
+        localStorage.removeItem("user_role");
 
         // Vider tous les caches d'abonnement
         Object.keys(localStorage).forEach((key) => {
