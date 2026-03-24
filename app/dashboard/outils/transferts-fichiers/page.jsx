@@ -17,6 +17,7 @@ import {
   Trash2,
   Link2,
   ExternalLink,
+  Upload,
 } from "lucide-react";
 import {
   Tooltip,
@@ -30,6 +31,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogHeader,
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import {
@@ -322,24 +324,20 @@ function TransfertsContent() {
       </div>
 
       {/* Mobile Layout */}
-      <div className="md:hidden">
-        {/* Header - Style mobile */}
-        <div className="px-4 py-6">
+      <div className="md:hidden flex flex-col h-[calc(100vh-64px)] overflow-hidden">
+        {/* Header */}
+        <div className="px-4 py-6 flex-shrink-0">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-2xl font-medium mb-2">Transferts</h1>
-              <p className="text-muted-foreground text-sm">
-                Partagez des fichiers volumineux
-              </p>
+              <h1 className="text-2xl font-medium mb-1">Transferts</h1>
             </div>
             <div className="flex gap-2">
               <Button
-                variant="outline"
-                size="sm"
-                onClick={() => refetchTransfers()}
-                className="gap-2"
+                onClick={() => setShowUploadModal(true)}
+                size="icon"
+                className="cursor-pointer rounded-full bg-[#0A0A0A] text-white hover:bg-[#0A0A0A]/90"
               >
-                <Download className="h-4 w-4" />
+                <Plus className="h-5 w-5" />
               </Button>
             </div>
           </div>
@@ -362,15 +360,6 @@ function TransfertsContent() {
             isMobile={true}
           />
         </Suspense>
-
-        {/* Bouton flottant mobile */}
-        <Button
-          onClick={() => setShowUploadModal(true)}
-          className="fixed bottom-6 bg-[#5a50ff] right-6 h-14 w-14 rounded-full shadow-lg z-50 md:hidden"
-          size="icon"
-        >
-          <Plus className="h-6 w-6" />
-        </Button>
       </div>
 
       {/* Delete Confirmation Dialog */}
@@ -398,53 +387,64 @@ function TransfertsContent() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Upload Modal */}
-      {showUploadModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          onClick={() => !isUploading && setShowUploadModal(false)}
-        >
-          {/* Overlay */}
-          <div
-            className={`fixed inset-0 bg-black/50 ${isUploading ? "cursor-not-allowed" : ""}`}
-          />
-
-          {/* Modal Content */}
-          <div
-            className="relative z-50 max-w-6xl w-[95vw] h-[90vh] bg-background rounded-xl border border-border p-6 flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Close Button - Caché pendant l'upload */}
-            {!isUploading && (
-              <button
-                onClick={() => setShowUploadModal(false)}
-                className="absolute top-4 right-4 p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer"
-                aria-label="Fermer"
-              >
-                <X className="w-5 h-5 text-muted-foreground" />
-              </button>
-            )}
-
-            {/* Header */}
-            <div className="mb-6 pr-10">
-              <h2 className="text-lg font-semibold text-foreground">
-                Nouveau transfert
-              </h2>
-              <p className="text-sm text-muted-foreground mt-1">
+      {/* Upload Modal - Desktop (style invite member dialog) */}
+      <Dialog open={showUploadModal} onOpenChange={(open) => !isUploading && setShowUploadModal(open)}>
+        <DialogContent className="hidden md:flex flex-col sm:max-w-[980px] h-[85vh] p-1 gap-0 border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
+          <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1] flex flex-col h-full">
+            <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40 flex-shrink-0">
+              <DialogTitle className="text-sm font-medium flex items-center gap-2">
+                <Upload className="size-4" />
                 {isUploading
-                  ? "Transfert en cours... Ne fermez pas cette fenêtre."
-                  : "Partagez des fichiers volumineux jusqu'à 5GB avec vos clients ou collaborateurs"}
-              </p>
-            </div>
+                  ? "Transfert en cours..."
+                  : "Nouveau transfert"}
+              </DialogTitle>
+            </DialogHeader>
 
-            {/* Content - flex-1 pour prendre tout l'espace restant */}
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 min-h-0 overflow-y-auto px-5 pt-3 pb-5">
               <FileUploadNew
                 onTransferCreated={handleTransferCreated}
                 refetchTransfers={refetchTransfers}
                 onUploadingChange={setIsUploading}
               />
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Upload Modal - Mobile fullscreen */}
+      {showUploadModal && (
+        <div className="md:hidden fixed inset-0 z-[100] bg-background flex flex-col">
+          {/* Header */}
+          <div className="flex-shrink-0 border-b">
+            <div className="flex items-center justify-between p-4">
+              <h2 className="text-lg font-normal">Nouveau transfert</h2>
+              {!isUploading && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowUploadModal(false)}
+                  className="h-8 w-8"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              )}
+            </div>
+            {isUploading && (
+              <div className="px-4 pb-3">
+                <p className="text-sm text-muted-foreground">
+                  Transfert en cours... Ne fermez pas cette fenêtre.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Content scrollable */}
+          <div className="flex-1 overflow-y-auto p-4">
+            <FileUploadNew
+              onTransferCreated={handleTransferCreated}
+              refetchTransfers={refetchTransfers}
+              onUploadingChange={setIsUploading}
+            />
           </div>
         </div>
       )}
