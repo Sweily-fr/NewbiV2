@@ -18,18 +18,14 @@ import {
   VideoIcon,
   XIcon,
   LoaderCircle,
-  CloudUpload,
   Trash2,
   Eye,
   EyeOff,
+  CornerDownLeft,
 } from "lucide-react";
 import { FileUploadItem } from "./file-upload-item";
 
 import { Button } from "@/src/components/ui/button";
-import {
-  ButtonGroup,
-  ButtonGroupSeparator,
-} from "@/src/components/ui/button-group";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import CircularProgress from "@/src/components/ui/circular-progress";
@@ -1111,32 +1107,27 @@ export default function FileUploadNew({
           </div>
 
           {/* Create Transfer Button - Fixe en bas */}
-          <div className="flex justify-end mt-4 pt-4 border-t bg-background flex-shrink-0">
-            <ButtonGroup>
-              <Button
-                onClick={handleCreateTransfer}
-                disabled={isUploading}
-                className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-              >
-                {isUploading ? (
-                  <>
-                    <LoaderCircle className="size-4 animate-spin" />
-                    Création en cours...
-                  </>
-                ) : (
-                  <>Transférer vos fichiers</>
-                )}
-              </Button>
-              <ButtonGroupSeparator />
-              <Button
-                onClick={handleCreateTransfer}
-                disabled={isUploading}
-                size="icon"
-                className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-              >
-                <CloudUpload size={16} aria-hidden="true" />
-              </Button>
-            </ButtonGroup>
+          <div className="flex justify-end mt-3 pt-3 border-t border-border/40 bg-background flex-shrink-0">
+            <Button
+              variant="primary"
+              onClick={handleCreateTransfer}
+              disabled={isUploading}
+              className="gap-2"
+            >
+              {isUploading ? (
+                <>
+                  <LoaderCircle className="size-4 animate-spin" />
+                  Création en cours...
+                </>
+              ) : (
+                <>
+                  Transférer vos fichiers
+                  <kbd className="inline-flex items-center justify-center size-5 rounded bg-white/20 ml-0.5">
+                    <CornerDownLeft className="size-3" />
+                  </kbd>
+                </>
+              )}
+            </Button>
           </div>
         </div>
       </div>
