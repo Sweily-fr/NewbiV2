@@ -50,6 +50,7 @@ import {
   useSignatureActions,
 } from "../../hooks/use-signature-table";
 import SignatureRowActions from "./signature-row-actions";
+import SignaturePreviewModal from "../preview/signature-preview-modal";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Label } from "@/src/components/ui/label";
 import { useRouter } from "next/navigation";
@@ -66,6 +67,7 @@ const SIGNATURE_STATUS_COLORS = {
 
 export default function SignatureTable() {
   const router = useRouter();
+  const [previewSignatureId, setPreviewSignatureId] = useState(null);
   const { signatures, loading, error, refetch } = useSignatures();
   const signatureActions = useSignatureActions();
 
@@ -193,16 +195,14 @@ export default function SignatureTable() {
                     data-state={row.getIsSelected() && "selected"}
                     className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
                     onClick={(e) => {
-                      // Ne pas naviguer si on clique sur la checkbox ou les actions
+                      // Ne pas ouvrir si on clique sur la checkbox ou les actions
                       if (
                         e.target.closest('[role="checkbox"]') ||
                         e.target.closest("[data-actions-cell]")
                       ) {
                         return;
                       }
-                      router.push(
-                        `/dashboard/outils/signatures-mail/${row.original.id}`,
-                      );
+                      setPreviewSignatureId(row.original.id);
                     }}
                   >
                     {row.getVisibleCells().map((cell, index, arr) => (
@@ -323,6 +323,12 @@ export default function SignatureTable() {
           </Pagination>
         </div>
       </div>
+
+      <SignaturePreviewModal
+        signatureId={previewSignatureId}
+        isOpen={!!previewSignatureId}
+        onClose={() => setPreviewSignatureId(null)}
+      />
     </div>
   );
 }

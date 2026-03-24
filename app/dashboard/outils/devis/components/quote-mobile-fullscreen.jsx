@@ -1,17 +1,20 @@
 "use client";
+
+import { useState } from "react";
 import {
   X,
   CheckCircle,
   FileText,
   XCircle,
-  Download,
   LoaderCircle,
   FileCheck,
   Send,
   ShoppingCart,
+  Pencil,
+  ArrowRight,
+  ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import { Badge } from "@/src/components/ui/badge";
 import {
   useChangeQuoteStatus,
   useQuote,
@@ -20,10 +23,11 @@ import {
   QUOTE_STATUS_COLORS,
 } from "@/src/graphql/quoteQueries";
 import { toast } from "@/src/components/ui/sonner";
-import { Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDFDownloaderWithFacturX";
+import LinkedInvoicesList from "./linked-invoices-list";
+import CreateLinkedInvoicePopover from "./create-linked-invoice-popover";
 
 export default function QuoteMobileFullscreen({
   isOpen,
@@ -32,18 +36,16 @@ export default function QuoteMobileFullscreen({
   onRefetch,
 }) {
   const router = useRouter();
+  const [showPreview, setShowPreview] = useState(false);
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
 
-  // Récupérer les données complètes du devis
   const {
     quote: fullQuote,
     loading: loadingFullQuote,
   } = useQuote(initialQuote?.id);
 
-  // Ne rien afficher si pas ouvert ou pas de devis
   if (!isOpen || !initialQuote) return null;
 
-  // Utiliser les données complètes si disponibles, sinon les données initiales
   const quote = fullQuote || initialQuote;
 
   const formatCurrency = (amount) => {
@@ -146,9 +148,54 @@ export default function QuoteMobileFullscreen({
     }
   };
 
+  const calculateRemainingAmount = () => {
+    if (!quote.linkedInvoices || quote.linkedInvoices.length === 0) {
+      return quote.finalTotalTTC;
+    }
+    const totalInvoiced = quote.linkedInvoices.reduce((sum, invoice) => {
+      return sum + (invoice.finalTotalTTC || 0);
+    }, 0);
+    return quote.finalTotalTTC - totalInvoiced;
+  };
+
+  const handleCreateLinkedInvoice = ({ quoteId, amount, isDeposit }) => {
+    const vatRate = 20;
+    const unitPriceHT = amount / (1 + vatRate / 100);
+    const remainingAmount = calculateRemainingAmount();
+    const quoteRef = `${quote.prefix || ''}-${quote.number || ''}`;
+
+    let description;
+    if (isDeposit) {
+      description = `Acompte sur devis ${quoteRef}`;
+    } else if (amount >= remainingAmount - 0.01) {
+      description = `Facture sur devis ${quoteRef}`;
+    } else {
+      description = `Facture partielle sur devis ${quoteRef}`;
+    }
+
+    sessionStorage.setItem('quoteLinkedInvoiceData', JSON.stringify({
+      sourceQuoteId: quoteId,
+      purchaseOrderNumber: quoteRef,
+      client: quote.client,
+      isDeposit,
+      items: [{
+        description,
+        quantity: 1,
+        unitPrice: unitPriceHT,
+        vatRate,
+        unit: "forfait",
+        discount: 0,
+        discountType: "FIXED",
+        details: "",
+        vatExemptionText: "",
+      }],
+    }));
+    router.push('/dashboard/outils/factures/new');
+    onClose();
+  };
+
   const isLoading = changingStatus || loadingFullQuote;
 
-  const statusColor = QUOTE_STATUS_COLORS[quote.status] || "gray";
   const statusLabel = QUOTE_STATUS_LABELS[quote.status] || quote.status;
 
   const isValidUntilExpired = () => {
@@ -162,236 +209,423 @@ export default function QuoteMobileFullscreen({
   };
 
   return (
-    <>
-      {/* Fullscreen overlay - Seulement sur mobile */}
-      <div className="fixed inset-0 z-[60] bg-background md:hidden overflow-hidden">
-        {/* Header avec croix */}
-        <div className="sticky top-0 z-10 bg-background border-b">
-          <div className="flex items-start justify-between p-4">
-            <div className="flex flex-col gap-2">
-              <h2 className="text-lg font-normal">Devis {quote.number}</h2>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                    quote.status === 'DRAFT'
-                      ? 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
-                      : quote.status === 'PENDING'
-                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
-                      : quote.status === 'COMPLETED'
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
-                      : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
-                  }`}
-                >
-                  {statusLabel}
-                </span>
-                {isValidUntilExpired() && (
-                  <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100">
-                    Expiré
+    <div className="fixed inset-0 z-[100] bg-background md:hidden overflow-hidden">
+      {/* Container des deux panneaux avec slide */}
+      <div
+        className="flex h-full transition-transform duration-300 ease-in-out"
+        style={{ width: "200%", transform: showPreview ? "translateX(-50%)" : "translateX(0)" }}
+      >
+        {/* ===== PANNEAU 1 : Informations devis ===== */}
+        <div className="w-1/2 h-full flex flex-col">
+          {/* Header */}
+          <div className="flex-shrink-0 bg-background border-b">
+            <div className="flex items-start justify-between p-4">
+              <div className="flex flex-col gap-2">
+                <h2 className="text-lg font-normal">
+                  Devis {quote.prefix && quote.number ? `${quote.prefix}-${quote.number}` : quote.number || "Brouillon"}
+                </h2>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                      quote.status === 'DRAFT'
+                        ? 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
+                        : quote.status === 'PENDING'
+                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
+                        : quote.status === 'COMPLETED'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
+                        : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+                    }`}
+                  >
+                    {statusLabel}
                   </span>
+                  {isValidUntilExpired() && (
+                    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100">
+                      Expiré
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {quote.status !== QUOTE_STATUS.DRAFT && (
+                  <UniversalPDFDownloaderWithFacturX
+                    enableFacturX={false}
+                    data={quote}
+                    type="quote"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8"
+                  >
+                    Télécharger
+                  </UniversalPDFDownloaderWithFacturX>
                 )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClose}
+                  className="h-8 w-8"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {quote.status !== QUOTE_STATUS.DRAFT && (
-                <UniversalPDFDownloaderWithFacturX
-                  enableFacturX={false}
-                  data={quote}
-                  type="quote"
+          </div>
+
+          {/* Contenu scrollable */}
+          <div className="flex-1 overflow-y-auto">
+            {loadingFullQuote ? (
+              <div className="flex items-center justify-center h-full">
+                <LoaderCircle className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="p-4 space-y-6 pb-56">
+                {/* Client */}
+                <div className="space-y-2.5">
+                  <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Client</h3>
+                  {quote.client ? (
+                    <div className="space-y-1.5">
+                      <div>
+                        <p className="font-medium">{quote.client.name}</p>
+                        {quote.client.email && (
+                          <p className="text-sm text-muted-foreground">{quote.client.email}</p>
+                        )}
+                      </div>
+                      {quote.client.address && (
+                        <div className="text-sm text-muted-foreground">
+                          {quote.client.address.street && <p>{quote.client.address.street}</p>}
+                          {(quote.client.address.postalCode || quote.client.address.city) && (
+                            <p>
+                              {quote.client.address.postalCode}{quote.client.address.postalCode && quote.client.address.city && " "}{quote.client.address.city}
+                            </p>
+                          )}
+                          {quote.client.address.country && <p>{quote.client.address.country}</p>}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground">Aucun client sélectionné</p>
+                  )}
+                </div>
+
+                {/* Adresse de livraison */}
+                {(() => {
+                  const shippingData = quote.shipping;
+                  if (shippingData?.shippingAddress && shippingData?.billShipping) {
+                    return (
+                      <div className="space-y-2.5">
+                        <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Adresse de livraison</h3>
+                        <div className="text-sm text-muted-foreground">
+                          {shippingData.shippingAddress.fullName && (
+                            <p className="font-medium text-foreground">{shippingData.shippingAddress.fullName}</p>
+                          )}
+                          {shippingData.shippingAddress.street && <p>{shippingData.shippingAddress.street}</p>}
+                          {(shippingData.shippingAddress.postalCode || shippingData.shippingAddress.city) && (
+                            <p>{shippingData.shippingAddress.postalCode}{shippingData.shippingAddress.postalCode && shippingData.shippingAddress.city && " "}{shippingData.shippingAddress.city}</p>
+                          )}
+                          {shippingData.shippingAddress.country && <p>{shippingData.shippingAddress.country}</p>}
+                        </div>
+                      </div>
+                    );
+                  }
+                  if (quote.client?.hasDifferentShippingAddress && quote.client?.shippingAddress) {
+                    return (
+                      <div className="space-y-2.5">
+                        <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Adresse de livraison</h3>
+                        <div className="text-sm text-muted-foreground">
+                          {quote.client.shippingAddress.fullName && (
+                            <p className="font-medium text-foreground">{quote.client.shippingAddress.fullName}</p>
+                          )}
+                          {quote.client.shippingAddress.street && <p>{quote.client.shippingAddress.street}</p>}
+                          {(quote.client.shippingAddress.postalCode || quote.client.shippingAddress.city) && (
+                            <p>{quote.client.shippingAddress.postalCode}{quote.client.shippingAddress.postalCode && quote.client.shippingAddress.city && " "}{quote.client.shippingAddress.city}</p>
+                          )}
+                          {quote.client.shippingAddress.country && <p>{quote.client.shippingAddress.country}</p>}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+
+                {/* Dates */}
+                <div className="space-y-2.5">
+                  <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Dates</h3>
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Date d'émission</span>
+                      <span>{formatDate(quote.issueDate)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Valide jusqu'au</span>
+                      <span className={isValidUntilExpired() ? "text-red-600 font-medium" : ""}>
+                        {formatDate(quote.validUntil)}
+                        {isValidUntilExpired() && (
+                          <span className="text-xs block text-red-500">Expiré</span>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Articles */}
+                <div className="space-y-2.5">
+                  <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Articles</h3>
+                  <div className="space-y-1.5">
+                    {quote.items && quote.items.length > 0 ? (
+                      quote.items.map((item, index) => (
+                        <div key={index} className="text-sm">
+                          <div className="font-medium">
+                            {item.description || "Article sans description"}
+                          </div>
+                          <div className="text-muted-foreground">
+                            {item.quantity || 0} × {formatCurrency(item.unitPrice || 0)}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-muted-foreground">Aucun article</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Totaux */}
+                <div className="space-y-2.5">
+                  <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Totaux</h3>
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Sous-total HT</span>
+                      <span>{formatCurrency(quote.totalHT || 0)}</span>
+                    </div>
+                    {quote.discountAmount > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Remise</span>
+                        <span>-{formatCurrency(quote.discountAmount || 0)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Total HT</span>
+                      <span>
+                        {formatCurrency(
+                          quote.finalTotalHT !== undefined && quote.finalTotalHT !== null
+                            ? quote.finalTotalHT
+                            : quote.totalHT !== undefined && quote.totalHT !== null
+                              ? quote.totalHT
+                              : 0
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">TVA</span>
+                      <span>
+                        {formatCurrency(
+                          quote.finalTotalVAT !== undefined && quote.finalTotalVAT !== null
+                            ? quote.finalTotalVAT
+                            : quote.totalVAT !== undefined && quote.totalVAT !== null
+                              ? quote.totalVAT
+                              : 0
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex justify-between font-medium">
+                      <span>Total TTC</span>
+                      <span>
+                        {formatCurrency(
+                          quote.finalTotalTTC !== undefined && quote.finalTotalTTC !== null
+                            ? quote.finalTotalTTC
+                            : quote.totalTTC !== undefined && quote.totalTTC !== null
+                              ? quote.totalTTC
+                              : 0
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bouton Aperçu */}
+                <Button
                   variant="ghost"
-                  size="sm"
-                  className="h-8"
+                  onClick={() => setShowPreview(true)}
+                  className="w-full justify-between font-normal"
                 >
-                  Télécharger
-                </UniversalPDFDownloaderWithFacturX>
-              )}
+                  Aperçu du devis
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+
+                {/* Factures liées */}
+                {quote.status === QUOTE_STATUS.COMPLETED && (
+                  <div className="space-y-3">
+                    <LinkedInvoicesList quote={quote} />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Footer avec actions */}
+          <div className="flex-shrink-0 bg-background border-t px-4 py-3 flex flex-col gap-1.5" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+            {(quote.status === QUOTE_STATUS.DRAFT || quote.status === QUOTE_STATUS.PENDING) && (
               <Button
-                variant="ghost"
-                size="icon"
-                onClick={onClose}
-                className="h-8 w-8"
+                variant="outline"
+                onClick={() => {
+                  router.push(`/dashboard/outils/devis/${quote.id}/editer`);
+                  onClose();
+                }}
+                size="sm"
+                className="w-full font-normal"
               >
-                <X className="h-5 w-5" />
+                <Pencil className="mr-2 h-4 w-4" />
+                Éditer
               </Button>
-            </div>
+            )}
+
+            {quote.status === QUOTE_STATUS.DRAFT && (
+              <Button
+                onClick={handleSendQuote}
+                disabled={isLoading}
+                size="sm"
+                className="w-full font-normal"
+              >
+                {changingStatus ? (
+                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="mr-2 h-4 w-4" />
+                )}
+                Envoyer le devis
+              </Button>
+            )}
+
+            {quote.status === QUOTE_STATUS.PENDING && (
+              <div className="grid grid-cols-2 gap-1.5">
+                <Button
+                  onClick={handleAccept}
+                  disabled={isLoading}
+                  size="sm"
+                  className="font-normal"
+                >
+                  {changingStatus ? (
+                    <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                  )}
+                  Accepter
+                </Button>
+                <Button
+                  onClick={handleReject}
+                  variant="destructive"
+                  size="sm"
+                  className="font-normal"
+                  disabled={isLoading}
+                >
+                  <XCircle className="mr-2 h-4 w-4" />
+                  Rejeter
+                </Button>
+              </div>
+            )}
+
+            {quote.status === QUOTE_STATUS.COMPLETED && (
+              <div className="space-y-1.5">
+                {(!quote.linkedInvoices || quote.linkedInvoices.length < 2) && (
+                  <CreateLinkedInvoicePopover
+                    quote={quote}
+                    onCreateLinkedInvoice={handleCreateLinkedInvoice}
+                    isLoading={isLoading}
+                  />
+                )}
+
+                {quote.linkedInvoices && quote.linkedInvoices.length === 2 && (() => {
+                  const totalInvoiced = quote.linkedInvoices.reduce(
+                    (sum, invoice) => sum + (invoice.finalTotalTTC || 0), 0
+                  );
+                  const remainingAmount = (quote.finalTotalTTC || 0) - totalInvoiced;
+                  return remainingAmount > 0 && (
+                    <Button
+                      onClick={() => handleCreateLinkedInvoice({
+                        quoteId: quote.id,
+                        amount: remainingAmount,
+                        isDeposit: false,
+                      })}
+                      disabled={isLoading}
+                      size="sm"
+                      className="w-full font-normal"
+                    >
+                      <FileCheck className="mr-2 h-4 w-4" />
+                      Créer la facture finale ({formatCurrency(remainingAmount)})
+                    </Button>
+                  );
+                })()}
+
+                {(!quote.linkedInvoices || quote.linkedInvoices.length === 0) && (
+                  <Button
+                    variant="outline"
+                    onClick={handleConvertToInvoice}
+                    disabled={isLoading}
+                    size="sm"
+                    className="w-full font-normal"
+                  >
+                    <FileCheck className="mr-2 h-4 w-4" />
+                    Conversion complète
+                  </Button>
+                )}
+
+                <Button
+                  variant="outline"
+                  onClick={handleConvertToPurchaseOrder}
+                  disabled={isLoading}
+                  size="sm"
+                  className="w-full font-normal"
+                >
+                  <ShoppingCart className="mr-2 h-4 w-4" />
+                  Convertir en bon de commande
+                </Button>
+              </div>
+            )}
+
+            {quote.status === QUOTE_STATUS.DRAFT && (
+              <UniversalPDFDownloaderWithFacturX
+                enableFacturX={false}
+                data={quote}
+                type="quote"
+                variant="outline"
+                size="sm"
+              >
+                Télécharger
+              </UniversalPDFDownloaderWithFacturX>
+            )}
           </div>
         </div>
 
-        {/* Contenu scrollable */}
-        <div className="overflow-y-auto h-[calc(100vh-64px-72px)] pb-4">
-          {loadingFullQuote ? (
-            <div className="flex items-center justify-center h-full">
-              <LoaderCircle className="h-8 w-8 animate-spin text-muted-foreground" />
+        {/* ===== PANNEAU 2 : Aperçu PDF ===== */}
+        <div className="w-1/2 h-full flex flex-col">
+          {/* Header blanc avec bouton retour */}
+          <div className="flex-shrink-0 bg-background border-b">
+            <div className="flex items-center justify-between p-4">
+              <Button
+                variant="ghost"
+                onClick={() => setShowPreview(false)}
+                className="gap-2 font-normal"
+                size="sm"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Retour
+              </Button>
+              <span className="text-sm font-medium text-muted-foreground">Aperçu</span>
+              <div className="w-[72px]" />
             </div>
-          ) : (
-            <div className="p-4 space-y-6 pb-56">
-              {/* Informations principales */}
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Client</p>
-                  <p className="font-medium">{quote.client?.name || "N/A"}</p>
-                </div>
+          </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Date d'émission</p>
-                    <p className="font-medium">{formatDate(quote.issueDate)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Valide jusqu'au</p>
-                    <p className={`font-medium ${isValidUntilExpired() ? "text-red-600" : ""}`}>
-                      {formatDate(quote.validUntil)}
-                    </p>
-                  </div>
-                </div>
-
-                <div>
-                  <p className="text-sm text-muted-foreground">Montant total TTC</p>
-                  <p className="text-2xl font-bold">
-                    {formatCurrency(quote.finalTotalTTC)}
-                  </p>
-                </div>
-              </div>
-
-              {/* Aperçu PDF - Version mobile avec même design que desktop */}
-              <div className="w-full rounded-lg overflow-hidden">
+          {/* Contenu PDF scrollable */}
+          <div className="flex-1 overflow-y-auto bg-muted/30">
+            <div className="p-4">
+              <div className="w-full rounded-lg overflow-hidden bg-white">
                 <UniversalPreviewPDF
                   data={quote}
                   type="quote"
                   isMobile={true}
                 />
               </div>
-
-              {/* Factures liées */}
-              {quote.linkedInvoices && quote.linkedInvoices.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">
-                    Factures liées ({quote.linkedInvoices.length})
-                  </p>
-                  <div className="space-y-2">
-                    {quote.linkedInvoices.map((inv) => (
-                      <div
-                        key={inv.id}
-                        className="flex items-center justify-between p-3 border rounded-lg"
-                      >
-                        <div>
-                          <p className="font-medium">{inv.number}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {formatDate(inv.issueDate)}
-                          </p>
-                        </div>
-                        <p className="font-semibold">
-                          {formatCurrency(inv.finalTotalTTC)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
-          )}
-        </div>
-
-        {/* Footer avec actions */}
-        <div className="fixed bottom-0 left-0 right-0 bg-background border-t px-4 py-3 flex flex-col gap-1.5" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
-          {(quote.status === QUOTE_STATUS.DRAFT || quote.status === QUOTE_STATUS.PENDING) && (
-            <Button
-              variant="outline"
-              onClick={() => {
-                router.push(`/dashboard/outils/devis/${quote.id}/editer`);
-                onClose();
-              }}
-              size="sm"
-              className="w-full font-normal"
-            >
-              <Pencil className="mr-2 h-4 w-4" />
-              Éditer
-            </Button>
-          )}
-
-          {quote.status === QUOTE_STATUS.DRAFT && (
-            <Button
-              onClick={handleSendQuote}
-              disabled={isLoading}
-              size="sm"
-              className="w-full font-normal"
-            >
-              {changingStatus ? (
-                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="mr-2 h-4 w-4" />
-              )}
-              Envoyer le devis
-            </Button>
-          )}
-
-          {quote.status === QUOTE_STATUS.PENDING && (
-            <div className="grid grid-cols-2 gap-1.5">
-              <Button
-                onClick={handleAccept}
-                disabled={isLoading}
-                size="sm"
-                className="font-normal"
-              >
-                {changingStatus ? (
-                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                )}
-                Accepter
-              </Button>
-              <Button
-                onClick={handleReject}
-                variant="destructive"
-                size="sm"
-                className="font-normal"
-                disabled={isLoading}
-              >
-                <XCircle className="mr-2 h-4 w-4" />
-                Rejeter
-              </Button>
-            </div>
-          )}
-
-          {quote.status === QUOTE_STATUS.COMPLETED &&
-            (!quote.linkedInvoices || quote.linkedInvoices.length === 0) && (
-              <Button
-                onClick={handleConvertToInvoice}
-                disabled={isLoading}
-                size="sm"
-                className="w-full font-normal"
-              >
-                <FileCheck className="mr-2 h-4 w-4" />
-                Convertir en facture
-              </Button>
-            )}
-
-          {quote.status === QUOTE_STATUS.COMPLETED && (
-            <Button
-              variant="outline"
-              onClick={handleConvertToPurchaseOrder}
-              disabled={isLoading}
-              size="sm"
-              className="w-full font-normal"
-            >
-              <ShoppingCart className="mr-2 h-4 w-4" />
-              Convertir en bon de commande
-            </Button>
-          )}
-
-          {quote.status === QUOTE_STATUS.DRAFT && (
-            <UniversalPDFDownloaderWithFacturX
-              enableFacturX={false}
-              data={quote}
-              type="quote"
-              variant="outline"
-              size="sm"
-            >
-              Télécharger
-            </UniversalPDFDownloaderWithFacturX>
-          )}
+          </div>
         </div>
       </div>
-
-    </>
+    </div>
   );
 }

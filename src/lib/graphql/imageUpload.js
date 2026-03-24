@@ -88,9 +88,9 @@ export class CloudflareImageService {
         );
       }
 
-      if (!["imgProfil", "logoReseau"].includes(imageType)) {
+      if (!["imgProfil", "logoReseau", "banner"].includes(imageType)) {
         throw new Error(
-          'Type d\'image invalide. Utilisez "imgProfil" ou "logoReseau"',
+          'Type d\'image invalide. Utilisez "imgProfil", "logoReseau" ou "banner"',
         );
       }
 

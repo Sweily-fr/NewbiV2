@@ -334,13 +334,13 @@ export default function ContainerNode({
     return (
       <div
         className={cn(
-          "flex h-full",
+          "flex",
           container.layout === "horizontal" ? "flex-row" : "flex-col",
           // Largeur 100% seulement pour les conteneurs verticaux (non-séparateur vertical)
           !isVerticalSeparatorContainer && container.layout !== "horizontal" && "w-full",
           getAlignmentClasses(),
-          // Stretch when has separator
-          shouldStretch && "flex-1"
+          // Stretch height only when container has a separator that needs it
+          shouldStretch && "flex-1 h-full"
         )}
         style={getGapStyle()}
       >
@@ -489,7 +489,9 @@ export default function ContainerNode({
         // Dans un parent vertical, stretch en largeur
         shouldStretch && (isInHorizontalParent ? "self-stretch" : "w-full"),
         // Others fit content (unless width is set)
-        !shouldStretch && !container.width && "w-fit"
+        !shouldStretch && !container.width && "w-fit",
+        // Non-stretch containers in horizontal parent: don't stretch height
+        !shouldStretch && isInHorizontalParent && "self-start"
       )}
       style={{
         padding: `${containerPadding}px`,

@@ -100,6 +100,7 @@ import InvoiceRowActions from "./invoice-row-actions";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import InvoiceFilters from "./invoice-filters";
 import InvoiceSidebar from "./invoice-sidebar";
+import InvoiceMobileFullscreen from "./invoice-mobile-fullscreen";
 import { SendDocumentModal } from "./send-document-modal";
 import { SaveInvoiceTemplateDialog } from "./SaveInvoiceTemplateDialog";
 import { ImportInvoiceModal } from "./import-invoice-modal";
@@ -130,6 +131,8 @@ export default function InvoiceTable({
   // État pour la modal d'envoi par email - géré au niveau du tableau pour éviter les re-renders
   const [sendEmailInvoice, setSendEmailInvoice] = useState(null);
   const [templateInvoice, setTemplateInvoice] = useState(null);
+  // État pour le fullscreen mobile - géré au niveau du tableau
+  const [mobileFullscreenInvoice, setMobileFullscreenInvoice] = useState(null);
 
   // États pour les factures importées
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -845,7 +848,7 @@ export default function InvoiceTable({
                         if (invoice._type === "imported") {
                           setSelectedImportedInvoice(invoice);
                         } else {
-                          setInvoiceToOpen(invoice);
+                          setMobileFullscreenInvoice(invoice);
                         }
                       }}
                     >
@@ -1037,6 +1040,16 @@ export default function InvoiceTable({
           invoice={invoiceToOpen}
           isOpen={!!invoiceToOpen}
           onClose={() => setInvoiceToOpen(null)}
+          onRefetch={refetch}
+        />
+      )}
+
+      {/* Fullscreen mobile pour ouverture via clic sur ligne mobile */}
+      {mobileFullscreenInvoice && (
+        <InvoiceMobileFullscreen
+          invoice={mobileFullscreenInvoice}
+          isOpen={!!mobileFullscreenInvoice}
+          onClose={() => setMobileFullscreenInvoice(null)}
           onRefetch={refetch}
         />
       )}

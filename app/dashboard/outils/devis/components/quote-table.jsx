@@ -94,6 +94,7 @@ import { useQuoteTable } from "../hooks/use-quote-table";
 import QuoteRowActions from "./quote-row-actions";
 import QuoteFilters from "./quote-filters";
 import QuoteSidebar from "./quote-sidebar";
+import QuoteMobileFullscreen from "./quote-mobile-fullscreen";
 import { SendDocumentModal } from "../../factures/components/send-document-modal";
 import { SaveQuoteTemplateDialog } from "./SaveQuoteTemplateDialog";
 import { ImportQuoteModal } from "./import-quote-modal";
@@ -142,6 +143,8 @@ export default function QuoteTable({
   const [sendEmailQuote, setSendEmailQuote] = useState(null);
   // État pour la sidebar - gérée au niveau du tableau pour éviter les conflits z-index avec les modals
   const [sidebarQuote, setSidebarQuote] = useState(null);
+  // État pour le fullscreen mobile - géré au niveau du tableau
+  const [mobileFullscreenQuote, setMobileFullscreenQuote] = useState(null);
 
   const {
     table,
@@ -768,7 +771,7 @@ export default function QuoteTable({
                           e.target.closest('[role="menu"]')
                         )
                           return;
-                        setQuoteToOpen(row.original);
+                        setMobileFullscreenQuote(row.original);
                       }}
                     >
                       {row
@@ -971,6 +974,16 @@ export default function QuoteTable({
           onClose={() => setSidebarQuote(null)}
           onRefetch={refetch}
           isViewMode={true}
+        />
+      )}
+
+      {/* Fullscreen mobile pour ouverture via clic sur ligne mobile */}
+      {mobileFullscreenQuote && (
+        <QuoteMobileFullscreen
+          quote={mobileFullscreenQuote}
+          isOpen={!!mobileFullscreenQuote}
+          onClose={() => setMobileFullscreenQuote(null)}
+          onRefetch={refetch}
         />
       )}
 
