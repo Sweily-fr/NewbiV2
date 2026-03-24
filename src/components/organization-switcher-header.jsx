@@ -59,7 +59,10 @@ import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { Badge } from "@/src/components/ui/badge";
 import { Input } from "@/src/components/ui/input";
 import { toast } from "@/src/components/ui/sonner";
-import { apolloClient } from "@/src/lib/apolloClient";
+import {
+  apolloClient,
+  setOrganizationIdForApollo,
+} from "@/src/lib/apolloClient";
 import { CreateWorkspaceModal } from "./create-workspace-modal";
 import { SettingsModal } from "./settings-modal";
 import {
@@ -144,20 +147,20 @@ export function OrganizationSwitcherHeader() {
     try {
       setOrganizationsLoading(true);
       const response = await fetch("/api/organization/list-with-order");
-      
+
       // Si non authentifié (401), ne pas throw d'erreur - laisser le composant gérer
       if (response.status === 401) {
         console.warn("Session expirée ou non authentifié");
         setSortedOrganizations([]);
         return;
       }
-      
+
       if (!response.ok) {
         console.error("Erreur API:", response.status, response.statusText);
         setSortedOrganizations([]);
         return;
       }
-      
+
       const data = await response.json();
       setSortedOrganizations(data.organizations || []);
     } catch (error) {
@@ -177,7 +180,7 @@ export function OrganizationSwitcherHeader() {
   const filteredOrganizations = React.useMemo(() => {
     if (!debouncedSearchQuery.trim()) return sortedOrganizations;
     return sortedOrganizations.filter((org) =>
-      org.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+      org.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()),
     );
   }, [sortedOrganizations, debouncedSearchQuery]);
 
@@ -190,7 +193,9 @@ export function OrganizationSwitcherHeader() {
     }
 
     // Vérifier si l'org cible a un abonnement actif
-    const targetOrg = sortedOrganizations.find((org) => org.id === organizationId);
+    const targetOrg = sortedOrganizations.find(
+      (org) => org.id === organizationId,
+    );
     const targetHasSubscription = targetOrg?.subscriptionStatus === "active";
 
     try {
@@ -208,26 +213,18 @@ export function OrganizationSwitcherHeader() {
         return;
       }
 
-      // Nettoyer le cache Apollo
-      if (oldWorkspaceId) {
-        apolloClient.cache.evict({
-          id: "ROOT_QUERY",
-          fieldName: "getInvoices",
-        });
-        apolloClient.cache.evict({ id: "ROOT_QUERY", fieldName: "getQuotes" });
-        apolloClient.cache.evict({ id: "ROOT_QUERY", fieldName: "getClients" });
-        apolloClient.cache.evict({
-          id: "ROOT_QUERY",
-          fieldName: "getExpenses",
-        });
-        apolloClient.cache.gc();
-      }
+      // 1. Mettre à jour l'org ID immédiatement pour Apollo (sans attendre useWorkspace)
+      setOrganizationIdForApollo(organizationId);
+      localStorage.setItem("active_organization_id", organizationId);
+
+      // 2. Vider TOUT le cache Apollo — évite les données stale de l'ancienne org
+      await apolloClient.clearStore();
 
       const newOrg = sortedOrganizations.find(
-        (org) => org.id === organizationId
+        (org) => org.id === organizationId,
       );
       toast.success(
-        `Vous êtes sur l'espace ${newOrg?.name || "l'organisation"}`
+        `Vous êtes sur l'espace ${newOrg?.name || "l'organisation"}`,
       );
       setIsOpen(false);
     } catch (error) {
@@ -259,7 +256,9 @@ export function OrganizationSwitcherHeader() {
   }
 
   const currentOrganization = activeOrganization || sortedOrganizations[0];
-  const currentOrgData = sortedOrganizations.find((org) => org.id === currentOrganization?.id);
+  const currentOrgData = sortedOrganizations.find(
+    (org) => org.id === currentOrganization?.id,
+  );
   const currentSubStatus = currentOrgData?.subscriptionStatus || "none";
   const customColor = currentOrganization?.customColor || "#5b4fff";
   const customIconName = currentOrganization?.customIcon;
@@ -322,7 +321,9 @@ export function OrganizationSwitcherHeader() {
             {filteredOrganizations.length === 0 && (
               <div className="flex flex-col items-center justify-center py-6 px-2 text-center">
                 <Search className="h-4 w-4 text-muted-foreground/50 mb-2" />
-                <p className="text-[13px] text-muted-foreground">Aucun résultat</p>
+                <p className="text-[13px] text-muted-foreground">
+                  Aucun résultat
+                </p>
               </div>
             )}
             {filteredOrganizations.map((org) => {
@@ -342,7 +343,9 @@ export function OrganizationSwitcherHeader() {
                   disabled={isChangingOrg}
                   className={`flex items-center gap-2 px-2 py-2 cursor-pointer rounded-sm ${isCurrentOrg ? "bg-accent" : ""}`}
                 >
-                  <span className="flex-1 text-[13px] font-normal truncate">{org.name}</span>
+                  <span className="flex-1 text-[13px] font-normal truncate">
+                    {org.name}
+                  </span>
                   {hasActiveSub ? (
                     <Badge
                       variant="outline"
