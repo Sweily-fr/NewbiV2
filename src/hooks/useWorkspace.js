@@ -107,27 +107,29 @@ export const useWorkspace = () => {
     ],
   );
 
-  // ✅ FIX: Vérifier que l'org active correspond bien à la session actuelle
-  // La session Better Auth contient activeOrganizationId — c'est la source de vérité serveur
+  // Déterminer l'org ID valide
+  // useActiveOrganization() est la source de vérité côté client après un setActive()
+  // La session serveur (activeOrganizationId) peut être en retard lors d'un switch d'org
   const sessionActiveOrgId = session?.session?.activeOrganizationId;
   const orgId = activeOrganization?.id;
 
-  // L'org est valide seulement si elle correspond à celle de la session serveur
+  // L'org est valide si :
+  // - Elle correspond à la session serveur (cas normal)
+  // - OU si activeOrganization existe (switch en cours, session pas encore sync)
   const isOrgValid = !!(
     orgId &&
-    sessionActiveOrgId &&
-    orgId === sessionActiveOrgId
+    (orgId === sessionActiveOrgId || activeOrganization)
   );
 
   // Stocker l'organizationId pour Apollo Client via module-level + localStorage
   useEffect(() => {
-    if (isOrgValid) {
+    if (isOrgValid && orgId) {
       const currentStored = localStorage.getItem("active_organization_id");
       if (currentStored !== orgId) {
         localStorage.setItem("active_organization_id", orgId);
       }
       setOrganizationIdForApollo(orgId);
-    } else {
+    } else if (!orgId) {
       localStorage.removeItem("active_organization_id");
       setOrganizationIdForApollo(null);
     }
