@@ -300,7 +300,7 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess, organizationI
     const usersOverLimit = totalUsersAfter - (seatsInfo?.includedUsers || 0);
     if (usersOverLimit > 0 && !seatsInfo?.canAddPaidUsers) {
       toast.error(
-        `Le plan ${seatsInfo?.plan?.toUpperCase()} ne permet pas d'inviter d'utilisateurs. Passez au plan PME ou ENTREPRISE.`
+        `Votre plan ne permet pas d'ajouter d'utilisateurs supplémentaires. Passez à un plan supérieur.`
       );
       return;
     }
