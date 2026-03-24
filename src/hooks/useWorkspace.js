@@ -4,6 +4,7 @@ import { useSession } from "@/src/lib/auth-client";
 import {
   setOrganizationIdForApollo,
   resetOrganizationIdForApollo,
+  apolloClient,
 } from "@/src/lib/apolloClient";
 
 /**
@@ -43,6 +44,7 @@ export const useWorkspace = () => {
     ) {
       // L'utilisateur a changé → reset tout pour éviter les fuites cross-compte
       resetOrganizationIdForApollo();
+      apolloClient.clearStore(); // Vider le cache Apollo pour éviter les données stale
       localStorage.removeItem("active_organization_id");
       localStorage.removeItem("user_role");
       setFullOrganization(null);
