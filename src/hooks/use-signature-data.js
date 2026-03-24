@@ -58,6 +58,8 @@ const GET_EMAIL_SIGNATURE = gql`
       photoVisible
       logo
       logoKey
+      banner
+      bannerKey
       imageSize
       imageShape
       logoSize
@@ -369,6 +371,8 @@ function SignatureProviderContent({ children }) {
       photoVisible: false, // Visibilité de la photo (définie par le preset du template)
       logo: null, // URL du logo d'entreprise
       logoKey: null, // Clé Cloudflare du logo d'entreprise
+      banner: null, // URL du bandeau
+      bannerKey: null, // Clé Cloudflare du bandeau
       // Taille de l'image de profil (en pixels)
       imageSize: 70, // Taille par défaut de l'image de profil
       // Forme de l'image de profil (round ou square)

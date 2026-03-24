@@ -336,9 +336,9 @@ function ContainerLeafSettings({ container, onUpdate, onDelete }) {
       </div>
 
       {/* Tip */}
-      <div className="p-2 rounded bg-blue-50 dark:bg-blue-900/20 text-xs text-blue-600 dark:text-blue-400">
-        Cliquez sur un élément pour modifier ses propriétés. Utilisez l'icône oeil pour masquer/afficher un élément.
-      </div>
+      <p className="text-[11px] text-muted-foreground px-1">
+        * Sélectionnez un élément pour le configurer.
+      </p>
     </div>
   );
 }
@@ -690,9 +690,9 @@ function EmptyContainerSettings({ container, onUpdate, onDelete, isRoot }) {
       </div>
 
       {/* Tip */}
-      <div className="p-2 rounded bg-amber-50 dark:bg-amber-900/20 text-xs text-amber-600 dark:text-amber-400">
-        Glissez des widgets depuis la bibliothèque pour remplir ce conteneur.
-      </div>
+      <p className="text-[11px] text-amber-500 dark:text-amber-400 px-1">
+        * Glissez des widgets depuis la bibliothèque pour remplir ce conteneur.
+      </p>
     </div>
   );
 }
@@ -734,6 +734,12 @@ function ElementSettings({ element, onUpdate, onDelete }) {
 
       case ELEMENT_TYPES.SPACER:
         return <SpacerSettings props={props} onUpdate={onUpdate} />;
+
+      case ELEMENT_TYPES.CTA:
+        return <CTASettings props={props} onUpdate={onUpdate} />;
+
+      case ELEMENT_TYPES.BANNER:
+        return <BannerSettings props={props} onUpdate={onUpdate} />;
 
       default:
         return null;
@@ -786,10 +792,9 @@ function ElementSettings({ element, onUpdate, onDelete }) {
 
       {/* Hidden warning */}
       {isHidden && (
-        <div className="p-2 rounded bg-amber-50 dark:bg-amber-900/20 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-2">
-          <EyeOff className="w-3.5 h-3.5 flex-shrink-0" />
-          Cet élément est masqué dans la signature. Cliquez sur l'oeil pour le réactiver.
-        </div>
+        <p className="text-[11px] text-amber-500 dark:text-amber-400 px-1">
+          * Élément masqué. Cliquez sur l'œil pour le réactiver.
+        </p>
       )}
 
       {/* Element-specific settings */}
@@ -2110,6 +2115,322 @@ function SpacerSettings({ props, onUpdate }) {
   );
 }
 
+function BannerSettings({ props, onUpdate }) {
+  const { signatureData, updateSignatureData, editingSignatureId } = useSignatureData();
+  const { deleteImageFile, uploadImageFile } = useImageUpload();
+
+  const handleDeleteBanner = async (e) => {
+    e.stopPropagation();
+    try {
+      if (signatureData.bannerKey) {
+        await deleteImageFile(signatureData.bannerKey);
+      }
+      updateSignatureData("banner", null);
+      updateSignatureData("bannerKey", null);
+      toast.success("Bandeau supprimé");
+    } catch (error) {
+      console.error("❌ Erreur suppression bandeau:", error);
+      toast.error("Erreur lors de la suppression");
+    }
+  };
+
+  const handleBannerUpload = async (file) => {
+    if (!file) return;
+    try {
+      toast.info("Optimisation de l'image...");
+      const optimizedBlob = await optimizeImage(file, "logo");
+      const optimizedFile = new File(
+        [optimizedBlob],
+        `banner-${Date.now()}.jpg`,
+        { type: "image/jpeg" }
+      );
+      const signatureId = editingSignatureId || `temp-${Date.now()}`;
+      await uploadImageFile(
+        optimizedFile,
+        "banner",
+        signatureId,
+        (url, key) => {
+          updateSignatureData("banner", url);
+          updateSignatureData("bannerKey", key);
+          toast.success("Bandeau uploadé avec succès");
+        }
+      );
+    } catch (error) {
+      console.error("❌ Erreur upload bandeau:", error);
+      toast.error("Erreur lors de l'upload");
+    }
+  };
+
+  const openFileSelector = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) handleBannerUpload(file);
+    };
+    input.click();
+  };
+
+  const hasBanner = signatureData.banner != null;
+
+  return (
+    <div className="space-y-3">
+      {/* Upload / Preview */}
+      <div className="flex flex-col items-center">
+        <div className="w-full h-32 bg-neutral-100 dark:bg-neutral-800 rounded-lg flex items-center justify-center mb-3 relative overflow-hidden">
+          {hasBanner ? (
+            <div className="relative group w-full h-full flex items-center justify-center">
+              <img
+                src={signatureData.banner}
+                alt="Bandeau"
+                className="max-w-full max-h-full object-contain"
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleDeleteBanner}
+                className="absolute top-1 right-1 h-6 w-6 p-0 bg-white/80 cursor-pointer dark:bg-neutral-800/80 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20"
+                title="Supprimer le bandeau"
+              >
+                <X className="w-3 h-3 text-neutral-500 hover:text-red-500" />
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={openFileSelector}
+              className="bg-neutral-600 hover:bg-neutral-700 text-white text-xs px-4 py-2 rounded-md"
+            >
+              Choisir une image...
+            </Button>
+          )}
+        </div>
+        {hasBanner && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={openFileSelector}
+            className="bg-neutral-800 hover:bg-neutral-900 text-white text-xs px-4 py-2 rounded-md"
+          >
+            Changer l'image...
+          </Button>
+        )}
+      </div>
+
+      {/* URL */}
+      <div className="space-y-1.5">
+        <Label className="text-xs text-neutral-600 dark:text-neutral-400">
+          Lien (URL)
+        </Label>
+        <Input
+          className="h-8 text-xs bg-white"
+          value={props.url || ""}
+          onChange={(e) => onUpdate({ url: e.target.value })}
+          placeholder="https://example.com/promo"
+        />
+      </div>
+
+      {/* Width */}
+      {hasBanner && (
+        <div className="flex items-center justify-between">
+          <Label className="text-xs text-neutral-600 dark:text-neutral-400">
+            Largeur
+          </Label>
+          <div className="flex items-center gap-1.5 w-40">
+            <Slider
+              className="flex-1"
+              value={[props.width || 400]}
+              onValueChange={([value]) => onUpdate({ width: value })}
+              min={100}
+              max={600}
+              step={10}
+            />
+            <Input
+              className="h-8 w-14 px-2 py-1 text-xs text-center flex-shrink-0 bg-white"
+              type="text"
+              inputMode="decimal"
+              value={props.width || 400}
+              onChange={(e) => {
+                const numValue = parseInt(e.target.value);
+                if (!isNaN(numValue) && numValue >= 1) {
+                  onUpdate({ width: numValue });
+                }
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Border radius */}
+      {hasBanner && (
+        <div className="flex items-center justify-between">
+          <Label className="text-xs text-neutral-600 dark:text-neutral-400">
+            Arrondi
+          </Label>
+          <div className="flex items-center gap-1.5 w-40">
+            <Slider
+              className="flex-1"
+              value={[props.borderRadius ?? 0]}
+              onValueChange={([value]) => onUpdate({ borderRadius: value })}
+              min={0}
+              max={24}
+              step={2}
+            />
+            <Input
+              className="h-8 w-14 px-2 py-1 text-xs text-center flex-shrink-0 bg-white"
+              type="text"
+              inputMode="decimal"
+              value={props.borderRadius ?? 0}
+              onChange={(e) => {
+                const numValue = parseInt(e.target.value);
+                if (!isNaN(numValue) && numValue >= 0) {
+                  onUpdate({ borderRadius: numValue });
+                }
+              }}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CTASettings({ props, onUpdate }) {
+  return (
+    <div className="space-y-3">
+      {/* Label */}
+      <div className="space-y-1.5">
+        <Label className="text-xs text-neutral-600 dark:text-neutral-400">
+          Texte du bouton
+        </Label>
+        <Input
+          className="h-8 text-xs bg-white"
+          value={props.label || ""}
+          onChange={(e) => onUpdate({ label: e.target.value })}
+          placeholder="Prendre rendez-vous"
+        />
+      </div>
+
+      {/* URL */}
+      <div className="space-y-1.5">
+        <Label className="text-xs text-neutral-600 dark:text-neutral-400">
+          Lien (URL)
+        </Label>
+        <Input
+          className="h-8 text-xs bg-white"
+          value={props.url || ""}
+          onChange={(e) => onUpdate({ url: e.target.value })}
+          placeholder="https://calendly.com/..."
+        />
+      </div>
+
+      {/* Background color */}
+      <div className="flex items-center justify-between">
+        <Label className="text-xs text-neutral-600 dark:text-neutral-400">
+          Couleur de fond
+        </Label>
+        <label className="relative h-8 w-40 flex items-center gap-2 px-3 bg-white border border-neutral-200 dark:border-neutral-700 rounded-md cursor-pointer hover:bg-neutral-50 transition-colors">
+          <div
+            className="w-3 h-3 rounded border border-neutral-300 flex-shrink-0"
+            style={{ backgroundColor: props.backgroundColor || "#5a50ff" }}
+          />
+          <span className="text-xs text-neutral-700 dark:text-neutral-300">
+            {props.backgroundColor || "#5a50ff"}
+          </span>
+          <input
+            type="color"
+            value={props.backgroundColor || "#5a50ff"}
+            onChange={(e) => onUpdate({ backgroundColor: e.target.value })}
+            className="absolute inset-0 opacity-0 cursor-pointer"
+          />
+        </label>
+      </div>
+
+      {/* Text color */}
+      <div className="flex items-center justify-between">
+        <Label className="text-xs text-neutral-600 dark:text-neutral-400">
+          Couleur du texte
+        </Label>
+        <label className="relative h-8 w-40 flex items-center gap-2 px-3 bg-white border border-neutral-200 dark:border-neutral-700 rounded-md cursor-pointer hover:bg-neutral-50 transition-colors">
+          <div
+            className="w-3 h-3 rounded border border-neutral-300 flex-shrink-0"
+            style={{ backgroundColor: props.color || "#ffffff" }}
+          />
+          <span className="text-xs text-neutral-700 dark:text-neutral-300">
+            {props.color || "#ffffff"}
+          </span>
+          <input
+            type="color"
+            value={props.color || "#ffffff"}
+            onChange={(e) => onUpdate({ color: e.target.value })}
+            className="absolute inset-0 opacity-0 cursor-pointer"
+          />
+        </label>
+      </div>
+
+      {/* Font size */}
+      <div className="flex items-center justify-between">
+        <Label className="text-xs text-neutral-600 dark:text-neutral-400">
+          Taille du texte
+        </Label>
+        <div className="flex items-center gap-1.5 w-40">
+          <Slider
+            className="flex-1"
+            value={[props.fontSize || 13]}
+            onValueChange={([value]) => onUpdate({ fontSize: value })}
+            min={10}
+            max={20}
+            step={1}
+          />
+          <Input
+            className="h-8 w-14 px-2 py-1 text-xs text-center flex-shrink-0 bg-white"
+            type="text"
+            inputMode="decimal"
+            value={props.fontSize || 13}
+            onChange={(e) => {
+              const numValue = parseInt(e.target.value);
+              if (!isNaN(numValue) && numValue >= 1) {
+                onUpdate({ fontSize: numValue });
+              }
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Border radius */}
+      <div className="flex items-center justify-between">
+        <Label className="text-xs text-neutral-600 dark:text-neutral-400">
+          Arrondi
+        </Label>
+        <div className="flex items-center gap-1.5 w-40">
+          <Slider
+            className="flex-1"
+            value={[props.borderRadius ?? 6]}
+            onValueChange={([value]) => onUpdate({ borderRadius: value })}
+            min={0}
+            max={24}
+            step={2}
+          />
+          <Input
+            className="h-8 w-14 px-2 py-1 text-xs text-center flex-shrink-0 bg-white"
+            type="text"
+            inputMode="decimal"
+            value={props.borderRadius ?? 6}
+            onChange={(e) => {
+              const numValue = parseInt(e.target.value);
+              if (!isNaN(numValue) && numValue >= 0) {
+                onUpdate({ borderRadius: numValue });
+              }
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /**
  * Helper component for setting rows
  */
@@ -2141,6 +2462,8 @@ function getElementLabel(type) {
     [ELEMENT_TYPES.SOCIAL_ICONS]: "Réseaux sociaux",
     [ELEMENT_TYPES.LOGO]: "Logo",
     [ELEMENT_TYPES.TEXT]: "Texte",
+    [ELEMENT_TYPES.CTA]: "Call to Action",
+    [ELEMENT_TYPES.BANNER]: "Bandeau",
     [ELEMENT_TYPES.SEPARATOR_LINE]: "Séparateur",
     [ELEMENT_TYPES.SPACER]: "Espace",
   };

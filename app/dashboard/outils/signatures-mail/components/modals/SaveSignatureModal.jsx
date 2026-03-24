@@ -4,17 +4,15 @@ import { useState, useEffect } from "react";
 import { useMutation, useQuery, useApolloClient } from "@apollo/client";
 import { gql } from "@apollo/client";
 import { useRouter } from "next/navigation";
-import { LoaderCircleIcon, AlertCircle } from "lucide-react";
+import { LoaderCircle, AlertCircle, Save, CornerDownLeft } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/src/components/ui/dialog";
 import { useSignatureData } from "@/src/hooks/use-signature-data";
 
@@ -276,6 +274,8 @@ export default function SaveSignatureModal({ existingSignatureId = null }) {
       photoVisible: signatureData.photoVisible !== false,
       logo: signatureData.logo || null,
       logoKey: signatureData.logoKey || null,
+      banner: signatureData.banner || null,
+      bannerKey: signatureData.bannerKey || null,
       imageSize: signatureData.imageSize || 70,
       imageShape: signatureData.imageShape || "round",
       logoSize: signatureData.logoSize || 60,
@@ -558,56 +558,69 @@ export default function SaveSignatureModal({ existingSignatureId = null }) {
 
   return (
     <Dialog open={showSaveModal} onOpenChange={closeSaveModal}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {existingSignatureId
-              ? "Mettre à jour la signature"
-              : "Sauvegarder la signature"}
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-[480px] p-1 gap-0 top-[40%] border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
+        <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
+          <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
+            <DialogTitle className="text-sm font-medium flex items-center gap-2">
+              <Save className="size-4" />
+              {existingSignatureId
+                ? "Mettre à jour la signature"
+                : "Sauvegarder la signature"}
+            </DialogTitle>
+          </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="signatureName">Nom de la signature</Label>
-            <Input
-              id="signatureName"
-              value={signatureName}
-              onChange={(e) => setSignatureName(e.target.value)}
-              placeholder="Ma signature professionnelle"
-            />
-          </div>
-
-          {(saveStatus === "error" || saveStatus === "duplicate") && (
-            <div className="flex items-center gap-2 p-3 rounded-md border border-red-200 bg-red-50 text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-300">
-              <AlertCircle className="w-4 h-4" />
-              <span>{errorMessage || "Erreur lors de la sauvegarde"}</span>
-            </div>
-          )}
-        </div>
-
-        <DialogFooter>
-          <Button
-            onClick={closeSaveModal}
-            variant="outline"
-            disabled={isLoading}
-          >
-            Continuer l'édition
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={isLoading || !signatureName.trim()}
-          >
-            {isLoading && (
-              <LoaderCircleIcon
-                className="-ms-1 me-2 animate-spin"
-                size={16}
-                aria-hidden="true"
+          <div className="space-y-3 px-5 pt-3 pb-0">
+            <div className="space-y-2">
+              <label className="text-sm text-muted-foreground">
+                Nom de la signature
+              </label>
+              <Input
+                id="signatureName"
+                value={signatureName}
+                onChange={(e) => setSignatureName(e.target.value)}
+                placeholder="Ma signature professionnelle"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && signatureName.trim() && !isLoading) {
+                    e.preventDefault();
+                    handleSave();
+                  }
+                }}
               />
+            </div>
+
+            {(saveStatus === "error" || saveStatus === "duplicate") && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg border border-border/50">
+                <AlertCircle className="size-3.5 text-amber-500 shrink-0" />
+                <p className="text-xs text-muted-foreground">
+                  {errorMessage || "Erreur lors de la sauvegarde"}
+                </p>
+              </div>
             )}
-            {existingSignatureId ? "Mettre à jour" : "Sauvegarder"}
-          </Button>
-        </DialogFooter>
+
+            <div className="flex justify-end border-t border-border/40 mt-3 px-5 py-3 -mx-5">
+              <Button
+                variant="primary"
+                onClick={handleSave}
+                disabled={isLoading || !signatureName.trim()}
+                className="gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <LoaderCircle className="size-4 animate-spin" />
+                    Sauvegarde...
+                  </>
+                ) : (
+                  <>
+                    {existingSignatureId ? "Mettre à jour" : "Sauvegarder"}
+                    <kbd className="inline-flex items-center justify-center size-5 rounded bg-white/20 ml-0.5">
+                      <CornerDownLeft className="size-3" />
+                    </kbd>
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

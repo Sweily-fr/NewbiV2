@@ -146,6 +146,38 @@ function generateElementHTML(element, signatureData, parentLayout = 'vertical', 
       return `<div style="font-size: ${fontSize}px; font-weight: ${fontWeight}; color: ${color}; font-family: ${fontFamily}; font-style: ${fontStyle}; text-align: ${textAlign}; line-height: 1.4; margin: 0; padding: 0;">${content}</div>`;
     }
 
+    case ELEMENT_TYPES.CTA: {
+      const label = props.label || 'Prendre rendez-vous';
+      const url = props.url || '#';
+      const bgColor = props.backgroundColor || '#5a50ff';
+      const textColor = props.color || '#ffffff';
+      const fontSize = props.fontSize || 13;
+      const fontWeight = props.fontWeight || '600';
+      const borderRadius = props.borderRadius ?? 6;
+      const paddingX = props.paddingX ?? 16;
+      const paddingY = props.paddingY ?? 8;
+      const fontFamily = props.fontFamily || signatureData.fontFamily || 'Arial, sans-serif';
+
+      return `<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;"><tbody><tr><td align="center" style="background-color: ${bgColor}; border-radius: ${borderRadius}px; padding: ${paddingY}px ${paddingX}px;"><a href="${url}" target="_blank" style="display: inline-block; font-size: ${fontSize}px; font-weight: ${fontWeight}; color: ${textColor}; font-family: ${fontFamily}; text-decoration: none; line-height: 1.4;">${label}</a></td></tr></tbody></table>`;
+    }
+
+    case ELEMENT_TYPES.BANNER: {
+      const bannerUrl = signatureData.banner;
+      if (!bannerUrl) return '';
+
+      const bannerWidth = props.width || 400;
+      const borderRadius = props.borderRadius ?? 0;
+      const alt = props.alt || 'Bandeau';
+      const url = props.url;
+
+      const imgTag = `<img src="${bannerUrl}" alt="${alt}" width="${bannerWidth}" style="width: ${bannerWidth}px; height: auto; display: block; border: 0; border-radius: ${borderRadius}px;" />`;
+
+      if (url) {
+        return `<a href="${url}" target="_blank" style="text-decoration: none; display: inline-block;">${imgTag}</a>`;
+      }
+      return imgTag;
+    }
+
     case ELEMENT_TYPES.PHONE:
     case ELEMENT_TYPES.MOBILE: {
       const value = type === ELEMENT_TYPES.PHONE ? signatureData.phone : signatureData.mobile;

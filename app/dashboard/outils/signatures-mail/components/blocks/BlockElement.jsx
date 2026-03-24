@@ -114,8 +114,8 @@ export default function BlockElement({
   const getFieldName = (type) => {
     const mapping = {
       [ELEMENT_TYPES.NAME]: "fullName",
-      [ELEMENT_TYPES.POSITION]: "jobTitle",
-      [ELEMENT_TYPES.COMPANY]: "company",
+      [ELEMENT_TYPES.POSITION]: "position",
+      [ELEMENT_TYPES.COMPANY]: "companyName",
       [ELEMENT_TYPES.PHONE]: "phone",
       [ELEMENT_TYPES.MOBILE]: "mobile",
       [ELEMENT_TYPES.EMAIL]: "email",
@@ -402,6 +402,57 @@ export default function BlockElement({
           >
             {textContent || "Texte"}
           </div>
+        );
+
+      case ELEMENT_TYPES.CTA:
+        return (
+          <a
+            href={props.url || "#"}
+            onClick={(e) => e.preventDefault()}
+            style={{
+              display: "inline-block",
+              backgroundColor: props.backgroundColor || "#5a50ff",
+              color: props.color || "#ffffff",
+              fontSize: props.fontSize || 13,
+              fontWeight: props.fontWeight || "600",
+              fontFamily: props.fontFamily || "Arial, sans-serif",
+              borderRadius: `${props.borderRadius ?? 6}px`,
+              padding: `${props.paddingY ?? 8}px ${props.paddingX ?? 16}px`,
+              textDecoration: "none",
+              lineHeight: "1.4",
+              cursor: "pointer",
+            }}
+          >
+            {props.label || "Prendre rendez-vous"}
+          </a>
+        );
+
+      case ELEMENT_TYPES.BANNER:
+        const bannerSrc = signatureData?.banner;
+        const bannerWidth = props.width || 400;
+        if (!bannerSrc) {
+          return (
+            <div
+              className="flex items-center justify-center bg-neutral-100 dark:bg-neutral-800 border border-dashed border-neutral-300 dark:border-neutral-600 rounded"
+              style={{ width: `${bannerWidth}px`, height: "60px" }}
+            >
+              <span className="text-xs text-muted-foreground">Ajoutez une image via le panneau</span>
+            </div>
+          );
+        }
+        return (
+          <img
+            src={bannerSrc}
+            alt={props.alt || "Bandeau"}
+            style={{
+              width: `${bannerWidth}px`,
+              maxWidth: "100%",
+              height: "auto",
+              borderRadius: `${props.borderRadius ?? 0}px`,
+              display: "block",
+              objectFit: "cover",
+            }}
+          />
         );
 
       case ELEMENT_TYPES.SOCIAL_ICONS:

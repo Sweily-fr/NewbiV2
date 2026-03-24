@@ -6,6 +6,7 @@ import {
   Blocks,
   Settings2,
   MousePointerClick,
+  Check,
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useMutation } from "@apollo/client";
@@ -225,8 +226,8 @@ function UsersTab() {
   }
 
   return (
-    <div className="space-y-3">
-      <div className="text-xs text-neutral-500 mb-2">
+    <div className="space-y-1">
+      <div className="text-xs text-muted-foreground mb-2">
         Sélectionnez un membre pour pré-remplir la signature avec ses informations
       </div>
       {members.map((member) => {
@@ -234,16 +235,15 @@ function UsersTab() {
         const isCurrentUser = member.id === session?.user?.id;
 
         return (
-          <div
+          <button
             key={member.id}
             onClick={() => handleSelectUser(member)}
-            className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+            className={`w-full flex items-center gap-3 p-2 rounded-md transition-colors cursor-pointer ${
               isSelected
-                ? "border-[#5a50ff] bg-[#5a50ff]/5"
-                : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
+                ? "bg-accent"
+                : "hover:bg-accent"
             }`}
           >
-            {/* Avatar avec UserAvatar (même composant que le kanban) */}
             <UserAvatar
               src={member.image}
               name={member.name}
@@ -251,32 +251,20 @@ function UsersTab() {
               className="flex-shrink-0"
             />
 
-            {/* User info */}
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-neutral-800 dark:text-neutral-200 truncate">
-                {member.name}{isCurrentUser && <span className="text-xs text-[#5a50ff] ml-1">(Vous)</span>}
+            <div className="flex-1 min-w-0 text-left">
+              <div className="text-sm font-medium truncate">
+                {member.name}
+                {isCurrentUser && (
+                  <span className="text-muted-foreground ml-1">(Vous)</span>
+                )}
               </div>
-              <div className="text-xs text-neutral-500 truncate">{member.email}</div>
+              <div className="text-xs text-muted-foreground truncate">{member.email}</div>
             </div>
 
-            {/* Role badge */}
-            <div className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300">
-              {member.role === "owner" ? "Admin" : member.role === "admin" ? "Admin" : "Membre"}
-            </div>
-
-            {/* Radio indicator */}
-            <div
-              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                isSelected
-                  ? "border-[#5a50ff]"
-                  : "border-neutral-300 dark:border-neutral-600"
-              }`}
-            >
-              {isSelected && (
-                <div className="w-2.5 h-2.5 rounded-full bg-[#5a50ff]" />
-              )}
-            </div>
-          </div>
+            {isSelected && (
+              <Check className="h-4 w-4 text-primary flex-shrink-0" />
+            )}
+          </button>
         );
       })}
     </div>

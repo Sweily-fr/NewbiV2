@@ -32,6 +32,8 @@ export const ELEMENT_TYPES = {
   TEXT: 'text',
   SEPARATOR_LINE: 'separator-line',
   SPACER: 'spacer',
+  CTA: 'cta',
+  BANNER: 'banner',
 };
 
 // Default props for each element type
@@ -50,6 +52,8 @@ export const ELEMENT_DEFAULTS = {
   [ELEMENT_TYPES.TEXT]: { content: 'Texte', fontSize: 12, fontWeight: '400', color: '#171717' },
   [ELEMENT_TYPES.SEPARATOR_LINE]: { orientation: 'horizontal', thickness: 1, color: '#e0e0e0', width: '100%' },
   [ELEMENT_TYPES.SPACER]: { height: 8 },
+  [ELEMENT_TYPES.CTA]: { label: 'Prendre rendez-vous', url: '#', backgroundColor: '#5a50ff', color: '#ffffff', fontSize: 13, borderRadius: 6, paddingX: 16, paddingY: 8, fontWeight: '600' },
+  [ELEMENT_TYPES.BANNER]: { width: 400, borderRadius: 0, url: '', alt: 'Bandeau' },
 };
 
 // Widget palette - what users can drag & drop
@@ -125,6 +129,24 @@ export const WIDGET_PALETTE = [
     icon: 'Type',
     elements: [ELEMENT_TYPES.TEXT],
     layout: 'vertical',
+  },
+  {
+    id: 'widget-cta',
+    label: 'Call to Action',
+    description: 'Bouton avec lien',
+    icon: 'MousePointerClick',
+    elements: [ELEMENT_TYPES.CTA],
+    layout: 'vertical',
+  },
+  {
+    id: 'widget-banner',
+    label: 'Bandeau',
+    description: 'Image cliquable',
+    icon: 'Image',
+    elements: [ELEMENT_TYPES.BANNER],
+    layout: 'vertical',
+    padding: 0,
+    gap: 0,
   },
 ];
 
@@ -238,6 +260,8 @@ export function createContainerFromWidget(widgetId, customProps = {}) {
     elements: elementsConfig,
     layout: customProps.layout || widget.layout,
     label: widget.label,
+    padding: widget.padding ?? 12,
+    gap: widget.gap ?? 12,
   });
 }
 
