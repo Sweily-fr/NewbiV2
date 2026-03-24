@@ -35,7 +35,7 @@ let _workspaceReady = false;
 let _confirmedOrgId = null;
 
 export function setOrganizationIdForApollo(orgId) {
-  _workspaceReady = true;
+  _workspaceReady = !!orgId;
   _confirmedOrgId = orgId || null;
 }
 
