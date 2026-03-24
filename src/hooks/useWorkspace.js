@@ -1,7 +1,10 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import { authClient } from "@/src/lib/auth-client";
 import { useSession } from "@/src/lib/auth-client";
-import { setOrganizationIdForApollo } from "@/src/lib/apolloClient";
+import {
+  setOrganizationIdForApollo,
+  resetOrganizationIdForApollo,
+} from "@/src/lib/apolloClient";
 
 /**
  * Hook pour obtenir les informations du workspace actuel
@@ -27,6 +30,26 @@ export const useWorkspace = () => {
   // Ref pour éviter les appels multiples à getFullOrganization
   const lastFetchedOrgId = useRef(null);
   const isFetching = useRef(false);
+
+  // ✅ FIX: Détecter le changement d'utilisateur pour invalider les données stale
+  const previousUserIdRef = useRef(null);
+  const sessionUserId = session?.user?.id;
+
+  useEffect(() => {
+    if (
+      previousUserIdRef.current &&
+      sessionUserId &&
+      previousUserIdRef.current !== sessionUserId
+    ) {
+      // L'utilisateur a changé → reset tout pour éviter les fuites cross-compte
+      resetOrganizationIdForApollo();
+      localStorage.removeItem("active_organization_id");
+      localStorage.removeItem("user_role");
+      setFullOrganization(null);
+      lastFetchedOrgId.current = null;
+    }
+    previousUserIdRef.current = sessionUserId || null;
+  }, [sessionUserId]);
 
   const loading = sessionLoading || orgsLoading || activeLoading || loadingFull;
 
@@ -74,24 +97,39 @@ export const useWorkspace = () => {
   const orgWithMembers = useMemo(
     () => fullOrganization || activeOrganization,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [fullOrganization?.id, fullOrganization?.members?.length, activeOrganization?.id, activeOrganization?.members?.length]
+    [
+      fullOrganization?.id,
+      fullOrganization?.members?.length,
+      activeOrganization?.id,
+      activeOrganization?.members?.length,
+    ],
+  );
+
+  // ✅ FIX: Vérifier que l'org active correspond bien à la session actuelle
+  // La session Better Auth contient activeOrganizationId — c'est la source de vérité serveur
+  const sessionActiveOrgId = session?.session?.activeOrganizationId;
+  const orgId = activeOrganization?.id;
+
+  // L'org est valide seulement si elle correspond à celle de la session serveur
+  const isOrgValid = !!(
+    orgId &&
+    sessionActiveOrgId &&
+    orgId === sessionActiveOrgId
   );
 
   // Stocker l'organizationId pour Apollo Client via module-level + localStorage
-  const orgId = activeOrganization?.id;
   useEffect(() => {
-    if (orgId) {
+    if (isOrgValid) {
       const currentStored = localStorage.getItem("active_organization_id");
       if (currentStored !== orgId) {
         localStorage.setItem("active_organization_id", orgId);
       }
+      setOrganizationIdForApollo(orgId);
     } else {
       localStorage.removeItem("active_organization_id");
+      setOrganizationIdForApollo(null);
     }
-    // ✅ Synchroniser la variable module-level dans apolloClient
-    // pour que authLink utilise l'org confirmée au lieu de lire un localStorage potentiellement périmé
-    setOrganizationIdForApollo(orgId || null);
-  }, [orgId]);
+  }, [orgId, isOrgValid]);
 
   // Stocker le userRole dans localStorage pour Apollo Client
   const userId = session?.user?.id;
@@ -117,19 +155,19 @@ export const useWorkspace = () => {
   const stableOrganizations = useMemo(
     () => organizations || [],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [organizations?.length, organizations?.[0]?.id]
+    [organizations?.length, organizations?.[0]?.id],
   );
 
   // Mémoriser le résultat avec des deps primitives pour éviter les re-renders inutiles
   return useMemo(
     () => ({
-      workspaceId: activeOrganization?.id || null,
-      organization: orgWithMembers,
-      activeOrganization: orgWithMembers,
+      workspaceId: isOrgValid ? orgId : null,
+      organization: isOrgValid ? orgWithMembers : null,
+      activeOrganization: isOrgValid ? orgWithMembers : null,
       organizations: stableOrganizations,
       loading,
     }),
-    [activeOrganization?.id, orgWithMembers, stableOrganizations, loading]
+    [isOrgValid, orgId, orgWithMembers, stableOrganizations, loading],
   );
 };
 
