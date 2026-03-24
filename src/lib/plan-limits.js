@@ -13,11 +13,12 @@
 
 export const PLAN_LIMITS = {
   freelance: {
-    // Freelance: Owner seul, pas d'utilisateurs invités
+    // Freelance: Owner + possibilité d'ajouter des sièges payants
     invitableUsers: 0,
     accountants: 1,
     totalUsers: 1,
-    canAddPaidUsers: false,
+    canAddPaidUsers: true,
+    seatPrice: 7.49,
     workspaces: 1,
     bankAccounts: 1,
     storage: 50,
@@ -27,28 +28,30 @@ export const PLAN_LIMITS = {
     availableRoles: ["accountant"],
     // Exports comptables
     exports: ["csv", "excel"],
-    // E-signature
-    esignature: false,
+    // E-signature (SES avec quota mensuel)
+    esignature: "ses",
+    esignatureMonthlyQuota: 3,
     // Automatisations
-    documentAutomations: 0,
-    clientAutomations: false,
+    documentAutomations: 5,
+    clientAutomations: true,
     crmEmailAutomations: false,
     // Analytics
-    advancedAnalytics: false,
+    advancedAnalytics: true,
     // Prévisions trésorerie
-    forecastMonths: 0,
+    forecastMonths: 24,
     // Champs personnalisés (par entité)
-    customFields: 3,
+    customFields: 5,
     // Segments clients dynamiques
     clientSegments: false,
     // Calendriers connectés
     calendarConnections: 1,
     // Modèles de documents
-    documentTemplates: 3,
+    documentTemplates: 10,
     // SMTP personnalisé
     customSmtp: false,
-    // E-invoicing (Factur-X / SuperPDP)
+    // E-invoicing (Factur-X / SuperPDP) + archivage légal
     eInvoicing: true,
+    eInvoicingArchival: true,
   },
   pme: {
     // PME: Owner + jusqu'à 10 collaborateurs
@@ -66,28 +69,30 @@ export const PLAN_LIMITS = {
     availableRoles: ["member", "accountant", "admin"],
     // Exports comptables
     exports: ["csv", "excel", "fec"],
-    // E-signature (SES uniquement)
+    // E-signature (SES avec quota mensuel)
     esignature: "ses",
-    // Automatisations
-    documentAutomations: 5,
+    esignatureMonthlyQuota: 20,
+    // Automatisations (illimité = -1)
+    documentAutomations: -1,
     clientAutomations: true,
-    crmEmailAutomations: false,
+    crmEmailAutomations: true,
     // Analytics
     advancedAnalytics: true,
     // Prévisions trésorerie
-    forecastMonths: 6,
-    // Champs personnalisés (par entité)
-    customFields: 10,
+    forecastMonths: 24,
+    // Champs personnalisés (illimité = -1)
+    customFields: -1,
     // Segments clients dynamiques
     clientSegments: true,
     // Calendriers connectés
     calendarConnections: 3,
-    // Modèles de documents
-    documentTemplates: 10,
+    // Modèles de documents (illimité = -1)
+    documentTemplates: -1,
     // SMTP personnalisé
     customSmtp: false,
-    // E-invoicing (Factur-X / SuperPDP)
+    // E-invoicing (Factur-X / SuperPDP) + archivage légal
     eInvoicing: true,
+    eInvoicingArchival: true,
   },
   entreprise: {
     // Entreprise: Owner + jusqu'à 25 collaborateurs
@@ -105,8 +110,9 @@ export const PLAN_LIMITS = {
     availableRoles: ["member", "accountant", "admin", "viewer"],
     // Exports comptables (tous les formats)
     exports: ["csv", "excel", "fec", "sage", "cegid"],
-    // E-signature (SES + QES)
+    // E-signature (SES + QES, illimité)
     esignature: "qes",
+    esignatureMonthlyQuota: -1,
     // Automatisations (illimité = -1)
     documentAutomations: -1,
     clientAutomations: true,
