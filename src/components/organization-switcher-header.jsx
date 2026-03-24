@@ -217,7 +217,13 @@ export function OrganizationSwitcherHeader() {
       setOrganizationIdForApollo(organizationId);
       localStorage.setItem("active_organization_id", organizationId);
 
-      // 2. Vider TOUT le cache Apollo — évite les données stale de l'ancienne org
+      // 2. Vider les caches subscription localStorage (ancien + nouveau)
+      if (oldWorkspaceId) {
+        localStorage.removeItem(`subscription-${oldWorkspaceId}`);
+      }
+      localStorage.removeItem(`subscription-${organizationId}`);
+
+      // 3. Vider TOUT le cache Apollo — évite les données stale de l'ancienne org
       await apolloClient.clearStore();
 
       const newOrg = sortedOrganizations.find(
@@ -227,6 +233,9 @@ export function OrganizationSwitcherHeader() {
         `Vous êtes sur l'espace ${newOrg?.name || "l'organisation"}`,
       );
       setIsOpen(false);
+
+      // 4. Forcer le refresh SSR pour que layout.jsx re-vérifie avec la bonne session
+      router.refresh();
     } catch (error) {
       console.error("Erreur changement d'organisation:", error);
       toast.error("Erreur lors du changement d'organisation");
