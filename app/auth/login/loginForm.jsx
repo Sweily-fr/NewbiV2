@@ -22,13 +22,13 @@ const ensureActiveOrganization = async () => {
 
     if (activeOrg) {
       console.log(
-        `✅ [ENSURE ORG] Organisation active déjà définie: ${activeOrg.id}`
+        `✅ [ENSURE ORG] Organisation active déjà définie: ${activeOrg.id}`,
       );
       return;
     }
 
     console.log(
-      "⚠️ [ENSURE ORG] Aucune organisation active, tentative de définition..."
+      "⚠️ [ENSURE ORG] Aucune organisation active, tentative de définition...",
     );
 
     // Récupérer les organisations de l'utilisateur
@@ -38,13 +38,13 @@ const ensureActiveOrganization = async () => {
     if (orgsError) {
       console.error(
         "❌ [ENSURE ORG] Erreur lors de la récupération des organisations:",
-        orgsError
+        orgsError,
       );
       return;
     }
 
     console.log(
-      `📊 [ENSURE ORG] ${organizations?.length || 0} organisation(s) trouvée(s)`
+      `📊 [ENSURE ORG] ${organizations?.length || 0} organisation(s) trouvée(s)`,
     );
 
     // Si pas d'organisation active et qu'il y a des organisations disponibles
@@ -55,75 +55,65 @@ const ensureActiveOrganization = async () => {
       if (organizations.length === 1) {
         selectedOrg = organizations[0];
         console.log(
-          `✅ [ENSURE ORG] Organisation unique sélectionnée: ${selectedOrg.id}`
+          `✅ [ENSURE ORG] Organisation unique sélectionnée: ${selectedOrg.id}`,
         );
       } else {
         // Multiple orgs : sélection par priorité de rôle
-        // Récupérer la session UNE SEULE FOIS avant la boucle
-        const { data: session } = await authClient.getSession();
+        // Récupérer la session + toutes les orgs EN PARALLÈLE
+        const [{ data: session }, ...fullOrgResults] = await Promise.all([
+          authClient.getSession(),
+          ...organizations.map((org) =>
+            authClient.organization
+              .getFullOrganization({ organizationId: org.id })
+              .catch(() => ({ data: null })),
+          ),
+        ]);
         const currentUserId = session?.user?.id;
 
-        for (const org of organizations) {
-          try {
-            const { data: fullOrg } =
-              await authClient.organization.getFullOrganization({
-                organizationId: org.id,
-              });
-
-            if (fullOrg) {
-              const currentUserMember = fullOrg.members?.find(
-                (m) => m.userId === currentUserId
-              );
-
-              if (currentUserMember?.role === "owner") {
-                selectedOrg = org;
-                console.log(
-                  `✅ [ENSURE ORG] Organisation owner trouvée: ${org.id}`
-                );
-                break; // Priorité maximale, on arrête la recherche
-              } else if (currentUserMember?.role === "admin" && !selectedOrg) {
-                selectedOrg = org;
-                console.log(
-                  `✅ [ENSURE ORG] Organisation admin trouvée: ${org.id}`
-                );
-              }
-            }
-          } catch (error) {
-            console.warn(
-              `⚠️ [ENSURE ORG] Erreur récupération org ${org.id}:`,
-              error
+        for (let i = 0; i < organizations.length; i++) {
+          const fullOrg = fullOrgResults[i]?.data;
+          if (fullOrg) {
+            const currentUserMember = fullOrg.members?.find(
+              (m) => m.userId === currentUserId,
             );
+
+            if (currentUserMember?.role === "owner") {
+              selectedOrg = organizations[i];
+              console.log(
+                `✅ [ENSURE ORG] Organisation owner trouvée: ${organizations[i].id}`,
+              );
+              break;
+            } else if (currentUserMember?.role === "admin" && !selectedOrg) {
+              selectedOrg = organizations[i];
+            }
           }
         }
 
         // Si aucune organisation owner/admin trouvée, prendre la première
         if (!selectedOrg) {
           selectedOrg = organizations[0];
-          console.log(
-            `✅ [ENSURE ORG] Première organisation sélectionnée: ${selectedOrg.id}`
-          );
         }
       }
 
       const { error: setActiveError } = await authClient.organization.setActive(
         {
           organizationId: selectedOrg.id,
-        }
+        },
       );
 
       if (setActiveError) {
         console.error(
           "❌ [ENSURE ORG] Erreur lors de la définition de l'organisation active:",
-          setActiveError
+          setActiveError,
         );
       } else {
         console.log(
-          `✅ [ENSURE ORG] Organisation active définie avec succès: ${selectedOrg.id}`
+          `✅ [ENSURE ORG] Organisation active définie avec succès: ${selectedOrg.id}`,
         );
       }
     } else {
       console.log(
-        "⚠️ [ENSURE ORG] Aucune organisation trouvée, création d'une nouvelle..."
+        "⚠️ [ENSURE ORG] Aucune organisation trouvée, création d'une nouvelle...",
       );
       try {
         // Récupérer l'utilisateur actuel depuis la session
@@ -133,7 +123,7 @@ const ensureActiveOrganization = async () => {
         if (!user || !user.id) {
           console.error(
             "❌ Utilisateur non disponible dans la session:",
-            session
+            session,
           );
           return;
         }
@@ -143,9 +133,7 @@ const ensureActiveOrganization = async () => {
           user.name || `Espace ${user.email.split("@")[0]}'s`;
         const organizationSlug = `org-${user.id.slice(-8)}`;
 
-        console.log(
-          `🔄 Création organisation pour ${user.email}...`
-        );
+        console.log(`🔄 Création organisation pour ${user.email}...`);
 
         // ⚠️ IMPORTANT: Ne plus créer de trial organisation
         // L'utilisateur devra souscrire via Stripe (avec 30 jours d'essai Stripe)
@@ -162,7 +150,7 @@ const ensureActiveOrganization = async () => {
         if (result.error) {
           console.error(
             "❌ Erreur lors de la création de l'organisation:",
-            result.error
+            result.error,
           );
         } else {
           console.log(`✅ Organisation créée:`, result.data);
@@ -175,7 +163,7 @@ const ensureActiveOrganization = async () => {
   } catch (error) {
     console.error(
       "Erreur lors de la vérification de l'organisation active:",
-      error
+      error,
     );
   }
 };
@@ -209,7 +197,7 @@ const LoginForm = () => {
         if (ctx.data.twoFactorRedirect) {
           console.log("🔒 [LOGIN] Redirection 2FA détectée");
           console.log(
-            "🔒 [LOGIN] Better Auth va rediriger vers /auth/verify-2fa"
+            "🔒 [LOGIN] Better Auth va rediriger vers /auth/verify-2fa",
           );
           // ✅ Better Auth gère automatiquement la redirection via onTwoFactorRedirect
           // Pas besoin d'envoyer d'OTP ici car :
@@ -221,64 +209,50 @@ const LoginForm = () => {
         }
 
         // Connexion réussie — le cookie better-auth.session_token est automatiquement défini
-        // Vérifier la limite de sessions ET définir l'organisation active en parallèle
-        // Ces deux opérations sont indépendantes l'une de l'autre
-        console.log("🔍 [LOGIN] Vérification sessions + organisation en parallèle...");
+        // Le hook session.create.before a déjà défini activeOrganizationId
 
-        const [sessionLimitResult] = await Promise.all([
-          // 1. Vérifier la limite de sessions
+        // Étape 1 : getSession + check-session-limit en parallèle
+        // (ensureActiveOrganization est skip si le hook a déjà mis l'org)
+        const [{ data: session }, sessionLimitResult] = await Promise.all([
+          authClient.getSession(),
           fetch("/api/check-session-limit", {
             method: "GET",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
           })
-            .then(async (res) => {
-              if (res.ok) {
-                const data = await res.json();
-                console.log("📊 [LOGIN] Résultat vérification sessions:", data);
-                return data;
-              }
-              console.warn("⚠️ [LOGIN] Impossible de vérifier la limite de sessions");
-              return null;
-            })
-            .catch((err) => {
-              console.error("❌ [LOGIN] Erreur vérification sessions:", err);
-              return null; // Continuer la connexion même en cas d'erreur
-            }),
-          // 2. Définir l'organisation active
-          ensureActiveOrganization(),
+            .then((res) => (res.ok ? res.json() : null))
+            .catch(() => null),
         ]);
 
-        // Vérifier le résultat de la limite de sessions
+        // Vérifier la limite de sessions
         if (sessionLimitResult?.hasReachedLimit) {
-          console.log("⚠️ [LOGIN] Limite de sessions atteinte, redirection vers /auth/manage-devices");
           toast.info("Vous êtes déjà connecté sur un autre appareil");
           router.push("/auth/manage-devices");
           return;
         }
 
-        // Vérifier s'il y a des paramètres d'invitation dans l'URL
+        // Étape 2 : Si pas d'organisation active (rare: nouvel user sans org),
+        // la définir maintenant
+        if (!session?.session?.activeOrganizationId) {
+          await ensureActiveOrganization();
+        }
+
+        // Étape 3 : Gérer les invitations (cas peu fréquent)
         const urlParams = new URLSearchParams(window.location.search);
         let invitationId = urlParams.get("invitation");
         let invitationEmail = urlParams.get("email");
         const callbackUrl = urlParams.get("callbackUrl");
 
-        // Si pas dans l'URL, vérifier dans localStorage (pour les nouveaux utilisateurs)
         if (!invitationId) {
           const pendingInvitation = localStorage.getItem("pendingInvitation");
           if (pendingInvitation) {
             try {
               const invitation = JSON.parse(pendingInvitation);
-              // Vérifier que l'invitation n'est pas trop ancienne (7 jours max)
               const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
               if (Date.now() - invitation.timestamp < sevenDaysInMs) {
                 invitationId = invitation.invitationId;
                 invitationEmail = invitation.email;
-                console.log(
-                  `📋 Invitation récupérée depuis localStorage: ${invitationId}`
-                );
               } else {
-                console.log(`⚠️ Invitation expirée, suppression`);
                 localStorage.removeItem("pendingInvitation");
               }
             } catch (error) {
@@ -287,172 +261,91 @@ const LoginForm = () => {
           }
         }
 
-        // Si c'est une connexion via invitation, accepter automatiquement l'invitation
         if (invitationId && invitationEmail) {
           try {
             const response = await fetch(`/api/invitations/${invitationId}`, {
               method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ action: "accept" }),
             });
 
             const result = await response.json();
 
             if (response.ok) {
-              console.log(`✅ Invitation acceptée:`, result);
-
-              // ✅ CRITIQUE: Stocker l'organizationId dans localStorage pour Apollo Client
               if (result.organizationId) {
-                localStorage.setItem("active_organization_id", result.organizationId);
-                console.log(`📦 [LOGIN] Organization ID stocké: ${result.organizationId}`);
-
-                // ✅ Définir l'organisation active côté client Better Auth
+                localStorage.setItem(
+                  "active_organization_id",
+                  result.organizationId,
+                );
                 await authClient.organization.setActive({
                   organizationId: result.organizationId,
                 });
-                console.log(`🔄 [LOGIN] Organisation active définie côté client`);
               }
-
               toast.success(
-                "Invitation acceptée ! Bienvenue dans l'organisation."
+                "Invitation acceptée ! Bienvenue dans l'organisation.",
               );
-
-              // ✅ Nettoyer le localStorage après succès
               localStorage.removeItem("pendingInvitation");
 
-              // ✅ Vérifier si l'utilisateur est un invité (pas d'org propre)
-              // Dans ce cas, marquer l'onboarding comme vu et rediriger vers le dashboard
-              const { data: session } = await authClient.getSession();
-              const isInvitedUser = session?.user?.isInvitedUser;
-
-              if (isInvitedUser) {
-                console.log(`📨 [LOGIN] Utilisateur invité détecté, skip onboarding`);
-                await authClient.updateUser({
-                  hasSeenOnboarding: true,
-                });
+              if (session?.user?.isInvitedUser) {
+                await authClient.updateUser({ hasSeenOnboarding: true });
                 router.push("/dashboard?welcome=invited");
                 return;
               }
             } else {
-              console.error(
-                "❌ Erreur lors de l'acceptation automatique de l'invitation"
-              );
-              console.error("Status:", response.status);
-              console.error("Détails:", result);
-
-              // ✅ Nettoyer le localStorage en cas d'erreur définitive
-              // (invitation expirée, déjà acceptée, etc.)
               if (response.status === 410 || response.status === 400) {
                 localStorage.removeItem("pendingInvitation");
-                console.log(`🗑️ [LOGIN] Invitation invalide, localStorage nettoyé`);
               }
-
               toast.error(
-                result.error || "Erreur lors de l'acceptation de l'invitation"
+                result.error || "Erreur lors de l'acceptation de l'invitation",
               );
             }
           } catch (error) {
-            console.error(
-              "❌ Erreur lors de l'acceptation automatique:",
-              error
-            );
             toast.error("Erreur lors de l'acceptation de l'invitation");
           }
         }
 
+        // Étape 4 : Redirection rapide
+        // La vérification d'abonnement est faite côté serveur par dashboard/layout.jsx
+        // → pas besoin de subscription.list() ici, ça économise ~150-300ms
         if (callbackUrl) {
           router.push(callbackUrl);
         } else {
-          // Vérifier l'abonnement Stripe AVANT de rediriger
-          try {
-            const { data: session } = await authClient.getSession();
-            const organizationId = session?.session?.activeOrganizationId;
-            const hasSeenOnboarding = session?.user?.hasSeenOnboarding;
-            const userRedirectPage = session?.user?.redirect_after_login;
-            const isInvitedUser = session?.user?.isInvitedUser;
+          const isInvitedUser = session?.user?.isInvitedUser;
+          const userRedirectPage = session?.user?.redirect_after_login;
 
-            // ✅ Les utilisateurs invités n'ont pas besoin d'abonnement (ils utilisent celui de l'owner)
-            if (isInvitedUser) {
-              console.log("🎯 [LOGIN] Utilisateur invité, redirection vers dashboard");
-              if (!hasSeenOnboarding) {
-                await authClient.updateUser({
-                  hasSeenOnboarding: true,
-                });
-              }
-              router.push("/dashboard?welcome=invited");
-              return;
+          if (isInvitedUser) {
+            if (!session?.user?.hasSeenOnboarding) {
+              await authClient.updateUser({ hasSeenOnboarding: true });
             }
-
-            // ⚠️ IMPORTANT: Vérifier l'abonnement Stripe en priorité
-            let hasActiveSubscription = false;
-
-            if (organizationId) {
-              const { data: subscriptions } =
-                await authClient.subscription.list({
-                  query: {
-                    referenceId: organizationId,
-                  },
-                });
-
-              hasActiveSubscription = subscriptions?.some(
-                (sub) => sub.status === "active" || sub.status === "trialing"
-              );
-            }
-
-            // Si pas d'abonnement Stripe actif, TOUJOURS rediriger vers onboarding
-            if (!hasActiveSubscription) {
-              console.log(
-                "🎯 [LOGIN] Pas d'abonnement Stripe actif, redirection vers onboarding"
-              );
-              router.push("/onboarding");
-              return;
-            }
-
-            // Si l'utilisateur n'a pas vu l'onboarding mais a un abonnement, le rediriger quand même
-            if (!hasSeenOnboarding) {
-              console.log(
-                "🎯 [LOGIN] Première connexion avec abonnement, redirection vers onboarding"
-              );
-              router.push("/onboarding");
-              return;
-            }
-
-            // L'utilisateur a un abonnement actif, rediriger vers sa page préférée
-            let redirectPath = "/dashboard";
-
-            if (userRedirectPage && userRedirectPage !== "last-page") {
-              // Mapper les pages vers leurs vraies routes
-              const routeMap = {
-                dashboard: "/dashboard",
-                outils: "/dashboard",
-                kanban: "/dashboard/outils/kanban",
-                calendar: "/dashboard/calendar",
-                factures: "/dashboard/outils/factures",
-                devis: "/dashboard/outils/devis",
-                clients: "/dashboard/clients",
-                transactions: "/dashboard/outils/transactions",
-                depenses: "/dashboard/outils/transactions",
-                signatures: "/dashboard/outils/signatures-mail",
-                transferts: "/dashboard/outils/transferts-fichiers",
-                "documents-partages": "/dashboard/outils/documents-partages",
-                catalogues: "/dashboard/catalogues",
-                collaborateurs: "/dashboard/collaborateurs",
-              };
-
-              redirectPath = routeMap[userRedirectPage] || "/dashboard";
-            }
-
-            router.push(redirectPath);
-          } catch (error) {
-            console.error(
-              "Erreur lors de la vérification de l'abonnement:",
-              error
-            );
-            // En cas d'erreur, rediriger vers /onboarding par sécurité
-            router.push("/onboarding");
+            router.push("/dashboard?welcome=invited");
+            return;
           }
+
+          // Rediriger vers la page préférée de l'utilisateur
+          // dashboard/layout.jsx redirigera vers /onboarding si pas d'abonnement
+          const routeMap = {
+            dashboard: "/dashboard",
+            outils: "/dashboard",
+            kanban: "/dashboard/outils/kanban",
+            calendar: "/dashboard/calendar",
+            factures: "/dashboard/outils/factures",
+            devis: "/dashboard/outils/devis",
+            clients: "/dashboard/clients",
+            transactions: "/dashboard/outils/transactions",
+            depenses: "/dashboard/outils/transactions",
+            signatures: "/dashboard/outils/signatures-mail",
+            transferts: "/dashboard/outils/transferts-fichiers",
+            "documents-partages": "/dashboard/outils/documents-partages",
+            catalogues: "/dashboard/catalogues",
+            collaborateurs: "/dashboard/collaborateurs",
+          };
+
+          const redirectPath =
+            userRedirectPage && userRedirectPage !== "last-page"
+              ? routeMap[userRedirectPage] || "/dashboard"
+              : "/dashboard";
+
+          router.push(redirectPath);
         }
       },
       onError: async (error) => {
@@ -460,7 +353,7 @@ const LoginForm = () => {
         console.log("❌ [LOGIN] Type d'erreur:", typeof error);
         console.log(
           "❌ [LOGIN] Erreur complète:",
-          JSON.stringify(error, null, 2)
+          JSON.stringify(error, null, 2),
         );
 
         // Essayer différents formats d'erreur
@@ -485,7 +378,7 @@ const LoginForm = () => {
             errorMessage.toLowerCase().includes("too many"))
         ) {
           console.log(
-            "⚠️ [LOGIN] Erreur de limite de sessions détectée, redirection..."
+            "⚠️ [LOGIN] Erreur de limite de sessions détectée, redirection...",
           );
           toast.error("Vous êtes déjà connecté sur un autre appareil");
           router.push("/auth/manage-devices");
@@ -541,7 +434,7 @@ const LoginForm = () => {
           } catch (checkError) {
             console.log(
               "❌ Erreur lors de la vérification de l'utilisateur:",
-              checkError
+              checkError,
             );
           }
         }
@@ -603,8 +496,13 @@ const LoginForm = () => {
           if (response.ok) {
             // ✅ CRITIQUE: Stocker l'organizationId dans localStorage pour Apollo Client
             if (result.organizationId) {
-              localStorage.setItem("active_organization_id", result.organizationId);
-              console.log(`📦 [2FA] Organization ID stocké: ${result.organizationId}`);
+              localStorage.setItem(
+                "active_organization_id",
+                result.organizationId,
+              );
+              console.log(
+                `📦 [2FA] Organization ID stocké: ${result.organizationId}`,
+              );
 
               // ✅ Définir l'organisation active côté client Better Auth
               await authClient.organization.setActive({
@@ -614,7 +512,7 @@ const LoginForm = () => {
             }
 
             toast.success(
-              "Invitation acceptée ! Bienvenue dans l'organisation."
+              "Invitation acceptée ! Bienvenue dans l'organisation.",
             );
 
             // ✅ Nettoyer le localStorage après succès
@@ -625,7 +523,9 @@ const LoginForm = () => {
             const isInvitedUser = session?.user?.isInvitedUser;
 
             if (isInvitedUser) {
-              console.log(`📨 [2FA] Utilisateur invité détecté, skip onboarding`);
+              console.log(
+                `📨 [2FA] Utilisateur invité détecté, skip onboarding`,
+              );
               await authClient.updateUser({
                 hasSeenOnboarding: true,
               });
@@ -637,7 +537,9 @@ const LoginForm = () => {
             if (response.status === 410 || response.status === 400) {
               localStorage.removeItem("pendingInvitation");
             }
-            toast.error(result.error || "Erreur lors de l'acceptation de l'invitation");
+            toast.error(
+              result.error || "Erreur lors de l'acceptation de l'invitation",
+            );
           }
         } catch (error) {
           toast.error("Erreur lors de l'acceptation de l'invitation");
@@ -657,7 +559,9 @@ const LoginForm = () => {
 
           // ✅ Les utilisateurs invités n'ont pas besoin d'abonnement (ils utilisent celui de l'owner)
           if (isInvitedUser) {
-            console.log("🎯 [2FA] Utilisateur invité, redirection vers dashboard");
+            console.log(
+              "🎯 [2FA] Utilisateur invité, redirection vers dashboard",
+            );
             if (!hasSeenOnboarding) {
               await authClient.updateUser({
                 hasSeenOnboarding: true,
@@ -678,14 +582,14 @@ const LoginForm = () => {
             });
 
             hasActiveSubscription = subscriptions?.some(
-              (sub) => sub.status === "active" || sub.status === "trialing"
+              (sub) => sub.status === "active" || sub.status === "trialing",
             );
           }
 
           // Si pas d'abonnement Stripe actif, TOUJOURS rediriger vers onboarding
           if (!hasActiveSubscription) {
             console.log(
-              "🎯 [2FA] Pas d'abonnement Stripe actif, redirection vers onboarding"
+              "🎯 [2FA] Pas d'abonnement Stripe actif, redirection vers onboarding",
             );
             router.push("/onboarding");
             return true;
@@ -694,7 +598,7 @@ const LoginForm = () => {
           // Si l'utilisateur n'a pas vu l'onboarding mais a un abonnement, le rediriger quand même
           if (!hasSeenOnboarding) {
             console.log(
-              "🎯 [2FA] Première connexion avec abonnement, redirection vers onboarding"
+              "🎯 [2FA] Première connexion avec abonnement, redirection vers onboarding",
             );
             router.push("/onboarding");
             return true;
@@ -731,7 +635,7 @@ const LoginForm = () => {
         } catch (error) {
           console.error(
             "Erreur lors de la vérification de l'abonnement:",
-            error
+            error,
           );
           // En cas d'erreur, rediriger vers /onboarding par sécurité
           router.push("/onboarding");
