@@ -15,6 +15,7 @@ import {
   UserCircle,
   GripVertical,
   LayoutGrid,
+  MousePointerClick,
 } from "lucide-react";
 
 // Icon mapping for widget types
@@ -29,6 +30,7 @@ const WIDGET_ICONS = {
   Image: Image,
   UserCircle: UserCircle,
   LayoutGrid: LayoutGrid,
+  MousePointerClick: MousePointerClick,
 };
 
 /**

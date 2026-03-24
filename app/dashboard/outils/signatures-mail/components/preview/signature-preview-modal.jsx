@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
 import {
   Dialog,
@@ -10,14 +11,12 @@ import {
 } from "@/src/components/ui/dialog";
 import { useQuery } from "@apollo/client";
 import { gql } from "@apollo/client";
-import { Skeleton } from "@/src/components/ui/skeleton";
-import { LoaderCircleIcon } from "lucide-react";
+import { LoaderCircle, Eye, Copy, Pencil } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
-import HorizontalSignature from "./HorizontalSignature";
 import { generateSignatureHTML } from "../../utils/standalone-signature-generator";
+import { generateSignatureHTMLFromContainer } from "../../utils/container-html-generator";
 
 // Query pour récupérer une signature complète avec tous les champs nécessaires
-// Query pour récupérer une signature complète (copiée de use-signature-table.js)
 const GET_EMAIL_SIGNATURE = gql`
   query GetEmailSignature($id: ID!) {
     getEmailSignature(id: $id) {
@@ -69,8 +68,11 @@ const GET_EMAIL_SIGNATURE = gql`
       # Images
       photo
       photoKey
+      photoVisible
       logo
       logoKey
+      banner
+      bannerKey
       imageSize
       imageShape
       logoSize
@@ -78,6 +80,18 @@ const GET_EMAIL_SIGNATURE = gql`
       # Séparateurs
       separatorVerticalWidth
       separatorHorizontalWidth
+      separatorVerticalEnabled
+      separatorHorizontalEnabled
+
+      # Template et structure
+      templateId
+      containerStructure
+      elementsOrder
+      horizontalLayout {
+        leftColumn
+        rightColumn
+        bottomRow
+      }
 
       # Espacements
       spacings {
@@ -99,6 +113,86 @@ const GET_EMAIL_SIGNATURE = gql`
         verticalSeparatorRight
       }
       detailedSpacing
+      paddings {
+        photo {
+          top
+          right
+          bottom
+          left
+        }
+        name {
+          top
+          right
+          bottom
+          left
+        }
+        position {
+          top
+          right
+          bottom
+          left
+        }
+        company {
+          top
+          right
+          bottom
+          left
+        }
+        phone {
+          top
+          right
+          bottom
+          left
+        }
+        mobile {
+          top
+          right
+          bottom
+          left
+        }
+        email {
+          top
+          right
+          bottom
+          left
+        }
+        website {
+          top
+          right
+          bottom
+          left
+        }
+        address {
+          top
+          right
+          bottom
+          left
+        }
+        separatorHorizontal {
+          top
+          right
+          bottom
+          left
+        }
+        separatorVertical {
+          top
+          right
+          bottom
+          left
+        }
+        logo {
+          top
+          right
+          bottom
+          left
+        }
+        social {
+          top
+          right
+          bottom
+          left
+        }
+      }
 
       # Réseaux sociaux
       socialNetworks {
@@ -229,8 +323,11 @@ function transformSignatureData(signature) {
     address: signature.address || "",
     photo: signature.photo || "",
     photoKey: signature.photoKey || "",
+    photoVisible: signature.photoVisible !== false,
     logo: signature.logo || "",
     logoKey: signature.logoKey || "",
+    banner: signature.banner || "",
+    bannerKey: signature.bannerKey || "",
     imageSize: signature.imageSize || 80,
     imageShape: signature.imageShape || "circle",
     logoSize: signature.logoSize || 60,
@@ -240,11 +337,15 @@ function transformSignatureData(signature) {
     orientation: signature.orientation || "vertical",
     detailedSpacing: signature.detailedSpacing || false,
 
-    // Séparateurs activés
-    separatorVerticalEnabled: true,
-    separatorHorizontalEnabled: true,
+    // Séparateurs - utiliser les valeurs sauvegardées
+    separatorVerticalEnabled: signature.separatorVerticalEnabled ?? false,
+    separatorHorizontalEnabled: signature.separatorHorizontalEnabled ?? false,
     separatorVerticalWidth: signature.separatorVerticalWidth || 1,
     separatorHorizontalWidth: signature.separatorHorizontalWidth || 1,
+
+    // Layout
+    elementsOrder: signature.elementsOrder || null,
+    horizontalLayout: signature.horizontalLayout || null,
 
     // Couleurs
     colors: {
@@ -283,9 +384,12 @@ function transformSignatureData(signature) {
       verticalSeparatorRight: 8,
     },
 
+    // Paddings détaillés
+    paddings: signature.paddings || null,
+
     // Réseaux sociaux
     socialNetworks: signature.socialNetworks || {},
-    socialGlobalColor: signature.socialGlobalColor || null, // null = couleurs par défaut de chaque réseau
+    socialGlobalColor: signature.socialGlobalColor || null,
     socialSize: signature.socialSize || 24,
     socialColors: signature.socialColors || {},
     customSocialIcons: signature.customSocialIcons || {},
@@ -295,26 +399,33 @@ function transformSignatureData(signature) {
   };
 }
 
+// Générer le HTML de la signature en utilisant le bon moteur de rendu
+function generatePreviewHTML(signatureData, containerStructure) {
+  if (containerStructure) {
+    return generateSignatureHTMLFromContainer(containerStructure, signatureData);
+  }
+  return generateSignatureHTML(signatureData);
+}
+
 export default function SignaturePreviewModal({
   signatureId,
   isOpen,
   onClose,
 }) {
+  const router = useRouter();
   const { data, loading, error } = useQuery(GET_EMAIL_SIGNATURE, {
     variables: { id: signatureId },
     skip: !signatureId || !isOpen,
   });
 
   const [signatureData, setSignatureData] = useState(null);
+  const [containerStructure, setContainerStructure] = useState(null);
   const previewRef = useRef(null);
 
-  // Fonction de copie indépendante pour le modal
-  const copySignatureToClipboard = async (data) => {
+  const copySignatureToClipboard = async (data, container) => {
     try {
-      // Générer le HTML pur optimisé pour Gmail (pas de code React)
-      const signatureHTML = generateSignatureHTML(data);
-      
-      // Copier dans le presse-papiers avec formatage HTML
+      const signatureHTML = generatePreviewHTML(data, container);
+
       await navigator.clipboard.write([
         new ClipboardItem({
           "text/html": new Blob([signatureHTML], { type: "text/html" }),
@@ -327,9 +438,8 @@ export default function SignaturePreviewModal({
       toast.success("Signature copiée avec succès !");
     } catch (error) {
       console.error("❌ Erreur copie signature:", error);
-      // Fallback : copier en texte brut
       try {
-        const signatureHTML = generateSignatureHTML(data);
+        const signatureHTML = generatePreviewHTML(data, container);
         await navigator.clipboard.writeText(signatureHTML);
         toast.success("Signature copiée (texte brut)");
       } catch (fallbackError) {
@@ -338,18 +448,25 @@ export default function SignaturePreviewModal({
     }
   };
 
+  const handleEdit = () => {
+    onClose();
+    router.push(`/dashboard/outils/signatures-mail/new?edit=true&id=${signatureId}`);
+  };
+
   useEffect(() => {
     if (data?.getEmailSignature) {
       try {
-        // Transformer les données pour les composants de signature
-        const transformedData = transformSignatureData(data.getEmailSignature);
+        const signature = data.getEmailSignature;
+        const transformedData = transformSignatureData(signature);
         setSignatureData(transformedData);
+        setContainerStructure(signature.containerStructure || null);
       } catch (error) {
         console.error(
           "Erreur lors de la transformation de la signature:",
           error
         );
         setSignatureData(null);
+        setContainerStructure(null);
       }
     }
   }, [data]);
@@ -358,113 +475,73 @@ export default function SignaturePreviewModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent
-        className="max-h-[90vh] overflow-y-auto"
-        style={{
-          width: "75vw",
-          maxWidth: "75vw",
-          minWidth: "800px",
-        }}
-      >
-        <DialogHeader>
-          <DialogTitle>
-            Aperçu de la signature
-            {data?.getEmailSignature?.signatureName && (
-              <span className="ml-2 text-muted-foreground font-normal">
-                - {data.getEmailSignature.signatureName}
-              </span>
-            )}
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-[600px] p-1 gap-0 top-[40%] border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
+        <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
+          <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
+            <DialogTitle className="text-sm font-medium flex items-center gap-2">
+              <Eye className="size-4" />
+              Aperçu
+              {data?.getEmailSignature?.signatureName && (
+                <span className="text-muted-foreground font-normal">
+                  — {data.getEmailSignature.signatureName}
+                </span>
+              )}
+            </DialogTitle>
+          </DialogHeader>
 
-        <div className="mt-4">
           {loading && (
-            <div className="flex items-center justify-center py-8">
-              <LoaderCircleIcon
-                className="-ms-1 animate-spin"
-                size={16}
-                aria-hidden="true"
-              />
-              <span className="ml-2 text-sm text-muted-foreground">
-                Chargement de la signature...
-              </span>
+            <div className="flex items-center justify-center py-10">
+              <LoaderCircle className="h-5 w-5 animate-spin text-muted-foreground/50" />
             </div>
           )}
 
           {error && (
-            <div className="text-center py-8">
-              <p className="text-red-600 mb-4">Erreur lors du chargement</p>
-              <Button onClick={onClose} variant="outline">
-                Fermer
-              </Button>
+            <div className="flex items-center justify-center py-10">
+              <p className="text-sm text-muted-foreground">Erreur lors du chargement</p>
             </div>
           )}
 
           {signatureData && (
-            <div className="space-y-4">
-              {/* Aperçu dans un style email */}
-              <div className="rounded-lg border w-full">
-                <div className="bg-[#171717] text-white px-4 py-2 rounded-t-lg flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="flex gap-1">
-                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                      <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    </div>
-                    <span className="text-sm">Aperçu de la signature</span>
-                  </div>
-                </div>
+            <div>
+              {/* Signature preview */}
+              <div
+                ref={previewRef}
+                className="px-5 py-6 cursor-pointer hover:bg-accent/50 transition-colors"
+                onClick={handleEdit}
+                title="Cliquer pour modifier"
+                dangerouslySetInnerHTML={{ __html: generatePreviewHTML(signatureData, containerStructure) }}
+              />
 
-                <div className="p-6 space-y-3 text-sm dark:bg-white">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs dark:text-black">De :</span>
-                    <span className="text-xs dark:text-black">
-                      {signatureData.email || "exemple@contact.fr"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs dark:text-black">À :</span>
-                    <span className="text-xs dark:text-black">
-                      client@contact.fr
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs dark:text-black">Obj :</span>
-                    <span className="text-xs dark:text-black">
-                      Votre demande de renseignements
-                    </span>
-                  </div>
-
-                  <div className="border-t pt-4 mt-4">
-                    {/* Rendu du HTML brut pour un aperçu réaliste comme Gmail */}
-                    <div 
-                      ref={previewRef}
-                      className="flex justify-start bg-white p-4 rounded border"
-                      style={{ pointerEvents: 'none', userSelect: 'none' }}
-                      dangerouslySetInnerHTML={{ __html: generateSignatureHTML(signatureData) }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center pt-4 border-t">
-                <div className="text-sm text-muted-foreground">
-                  Aperçu de votre signature email
-                </div>
+              {/* Footer */}
+              <div className="flex justify-between items-center border-t border-border/40 px-5 py-3">
+                <p className="text-xs text-muted-foreground">
+                  Cliquez sur l'aperçu pour modifier
+                </p>
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
+                    size="sm"
                     onClick={async () => {
                       try {
-                        await copySignatureToClipboard(signatureData);
+                        await copySignatureToClipboard(signatureData, containerStructure);
                       } catch (error) {
                         console.error("Erreur lors de la copie:", error);
                       }
                     }}
+                    className="gap-1.5"
                   >
-                    Copier la signature
+                    <Copy className="size-3.5" />
+                    Copier
                   </Button>
-                  <Button onClick={onClose}>Fermer</Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleEdit}
+                    className="gap-1.5"
+                  >
+                    <Pencil className="size-3.5" />
+                    Modifier
+                  </Button>
                 </div>
               </div>
             </div>
