@@ -9,6 +9,10 @@ import { Label } from "@/src/components/ui/label";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
 import { authClient } from "../../../src/lib/auth-client";
+import {
+  apolloClient,
+  resetOrganizationIdForApollo,
+} from "../../../src/lib/apolloClient";
 import { TwoFactorModal } from "./components/TwoFactorModal";
 import { EmailVerificationDialog } from "./components/EmailVerificationDialog";
 
@@ -187,7 +191,9 @@ const LoginForm = () => {
   React.useEffect(() => {}, [showEmailVerification, userEmailForVerification]);
 
   const onSubmit = async (formData) => {
-    console.log("🔐 [LOGIN] Tentative de connexion...");
+    // Vider le cache Apollo avant connexion pour éviter les données stale d'un autre compte
+    resetOrganizationIdForApollo();
+    await apolloClient.clearStore();
 
     await authClient.signIn.email(formData, {
       onSuccess: async (ctx) => {
