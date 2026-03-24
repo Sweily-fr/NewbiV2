@@ -160,7 +160,7 @@ export class SeatSyncService {
 
         // Au-delà de la limite incluse
         if (planLimits.canAddPaidUsers) {
-          // PME/Entreprise : siège payant possible
+          // Siège payant possible (tous les plans)
           const additionalSeats = totalUsers - usersIncluded + 1; // +1 pour le nouveau
           return {
             canInvite: true,
@@ -177,10 +177,10 @@ export class SeatSyncService {
             totalAdditionalCost: additionalSeats * 7.49,
           };
         } else {
-          // Freelance : pas de siège payant
+          // Fallback : pas de siège payant pour ce plan
           return {
             canInvite: false,
-            reason: `Le plan FREELANCE ne permet pas d'inviter d'utilisateurs. Passez au plan PME ou ENTREPRISE pour inviter des collaborateurs.`,
+            reason: `Votre plan ne permet pas d'ajouter d'utilisateurs supplémentaires. Passez à un plan supérieur.`,
             planName: subscription.plan,
             currentUsers,
             pendingUsers,
