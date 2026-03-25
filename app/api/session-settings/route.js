@@ -6,15 +6,15 @@ import { ObjectId } from "mongodb";
 
 // Valeurs par défaut
 const DEFAULTS = {
-  sessionDuration: 30,     // jours
-  inactivityTimeout: 12,   // heures
+  sessionDuration: 30, // jours
+  inactivityTimeout: 12, // heures
   maxSessions: 1,
 };
 
 // Valeurs autorisées
 const ALLOWED = {
   sessionDuration: [7, 30, 90],
-  inactivityTimeout: [1, 12, 24],
+  inactivityTimeout: [0.0166, 0.25, 1, 12, 24],
   maxSessions: [1, 2],
 };
 
@@ -34,7 +34,7 @@ export async function GET() {
       .collection("organization")
       .findOne(
         { _id: new ObjectId(orgId) },
-        { projection: { sessionSettings: 1 } }
+        { projection: { sessionSettings: 1 } },
       );
 
     return NextResponse.json({
@@ -58,7 +58,7 @@ export async function PUT(req) {
     if (!orgId) {
       return NextResponse.json(
         { error: "Aucune organisation active" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -68,7 +68,7 @@ export async function PUT(req) {
     // Valider chaque champ
     for (const key of Object.keys(DEFAULTS)) {
       if (body[key] !== undefined) {
-        const val = parseInt(body[key]);
+        const val = parseFloat(body[key]);
         if (ALLOWED[key].includes(val)) {
           update[key] = val;
         }
@@ -78,7 +78,7 @@ export async function PUT(req) {
     if (Object.keys(update).length === 0) {
       return NextResponse.json(
         { error: "Aucun paramètre valide" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -97,7 +97,7 @@ export async function PUT(req) {
       .collection("organization")
       .findOne(
         { _id: new ObjectId(orgId) },
-        { projection: { sessionSettings: 1 } }
+        { projection: { sessionSettings: 1 } },
       );
 
     return NextResponse.json({

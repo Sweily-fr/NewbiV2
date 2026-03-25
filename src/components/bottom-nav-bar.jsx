@@ -25,7 +25,7 @@ import {
   Users,
   ReceiptText,
 } from "lucide-react";
-import { authClient, useSession } from "@/src/lib/auth-client";
+import { useSession, performLogout } from "@/src/lib/auth-client";
 import { useActivityNotifications } from "@/src/hooks/useActivityNotifications";
 
 // ─── Tab definitions ─────────────────────────────────────────────
@@ -65,7 +65,10 @@ const tabs = [
 const ventesQuickCreate = [
   { label: "Nouvelle facture", href: "/dashboard/outils/factures/new" },
   { label: "Nouveau devis", href: "/dashboard/outils/devis/new" },
-  { label: "Nouveau bon de commande", href: "/dashboard/outils/bons-commande/new" },
+  {
+    label: "Nouveau bon de commande",
+    href: "/dashboard/outils/bons-commande/new",
+  },
 ];
 
 const ventesNavigation = [
@@ -80,18 +83,39 @@ const moreMenuSections = [
   {
     title: "Gestion",
     items: [
-      { label: "Factures d'achat", href: "/dashboard/outils/factures-achat", icon: ReceiptText },
+      {
+        label: "Factures d'achat",
+        href: "/dashboard/outils/factures-achat",
+        icon: ReceiptText,
+      },
       { label: "Calendrier", href: "/dashboard/calendar", icon: Calendar },
       { label: "Tâches", href: "/dashboard/outils/kanban", icon: FolderKanban },
-      { label: "Documents partagés", href: "/dashboard/outils/documents-partages", icon: FolderOpen },
-      { label: "Transfert de fichiers", href: "/dashboard/outils/transferts-fichiers", icon: FileUp },
-      { label: "Signature de mail", href: "/dashboard/outils/signatures-mail", icon: MessageSquare },
+      {
+        label: "Documents partagés",
+        href: "/dashboard/outils/documents-partages",
+        icon: FolderOpen,
+      },
+      {
+        label: "Transfert de fichiers",
+        href: "/dashboard/outils/transferts-fichiers",
+        icon: FileUp,
+      },
+      {
+        label: "Signature de mail",
+        href: "/dashboard/outils/signatures-mail",
+        icon: MessageSquare,
+      },
     ],
   },
   {
     title: "Paramètres",
     items: [
-      { label: "Notifications", icon: Bell, action: "notifications", badge: true },
+      {
+        label: "Notifications",
+        icon: Bell,
+        action: "notifications",
+        badge: true,
+      },
       { label: "Paramètres", action: "settings", icon: Settings },
       {
         label: "Aide & support",
@@ -106,7 +130,7 @@ const moreMenuSections = [
 
 // Paths covered by the "Plus" menu
 const moreMenuPaths = moreMenuSections.flatMap((s) =>
-  s.items.filter((i) => i.href && !i.external).map((i) => i.href)
+  s.items.filter((i) => i.href && !i.external).map((i) => i.href),
 );
 
 // ─── Body scroll lock (iOS Safari compatible) ───────────────────
@@ -278,7 +302,7 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
     if (tab.exact) return pathname === tab.href;
     if (tab.matchPaths) {
       return tab.matchPaths.some(
-        (p) => pathname === p || pathname?.startsWith(p + "/")
+        (p) => pathname === p || pathname?.startsWith(p + "/"),
       );
     }
     return pathname === tab.href || pathname?.startsWith(tab.href + "/");
@@ -295,9 +319,7 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
 
   const isMoreActive =
     moreOpen ||
-    moreMenuPaths.some(
-      (p) => pathname === p || pathname?.startsWith(p + "/")
-    );
+    moreMenuPaths.some((p) => pathname === p || pathname?.startsWith(p + "/"));
 
   const handleTabClick = (tab) => {
     if (tab.key === "billing") {
@@ -331,9 +353,7 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
       return;
     }
     if (item.action === "logout") {
-      authClient.signOut().then(() => {
-        window.location.href = "/";
-      });
+      performLogout();
       return;
     }
     setMoreOpen(false);
@@ -343,9 +363,9 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
   const user = session?.user;
 
   // Hide on creation/edit pages
-  const isHidden = hiddenPaths.some(
-    (p) => pathname === p || pathname?.startsWith(p + "/")
-  ) || pathname?.match(/\/(factures|devis)\/[^/]+\/(edit|duplicate)$/);
+  const isHidden =
+    hiddenPaths.some((p) => pathname === p || pathname?.startsWith(p + "/")) ||
+    pathname?.match(/\/(factures|devis)\/[^/]+\/(edit|duplicate)$/);
   if (isHidden) return null;
 
   return (
@@ -370,7 +390,10 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
         >
           <div className="bg-white dark:bg-zinc-900 rounded-t-[28px] shadow-2xl">
             {/* Handle bar */}
-            <div data-drag-handle className="flex justify-center pt-3 pb-2 cursor-grab">
+            <div
+              data-drag-handle
+              className="flex justify-center pt-3 pb-2 cursor-grab"
+            >
               <div className="w-10 h-1 rounded-full bg-[#3D3E42]/20" />
             </div>
 
@@ -386,9 +409,7 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
                     href={item.href}
                     className={cn(
                       "flex items-center justify-between px-2 py-3.5 rounded-lg transition-colors",
-                      isActive
-                        ? "bg-accent"
-                        : "hover:bg-accent"
+                      isActive ? "bg-accent" : "hover:bg-accent",
                     )}
                     onClick={() => setBillingOpen(false)}
                   >
@@ -407,12 +428,23 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
             {/* Action buttons */}
             <div className="px-4 pt-3 pb-2 flex flex-col gap-2">
               <Button asChild size="lg" className="w-full rounded-xl h-11">
-                <Link href="/dashboard/outils/factures/new" onClick={() => setBillingOpen(false)}>
+                <Link
+                  href="/dashboard/outils/factures/new"
+                  onClick={() => setBillingOpen(false)}
+                >
                   Nouvelle facture
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="w-full rounded-xl h-11">
-                <Link href="/dashboard/outils/devis/new" onClick={() => setBillingOpen(false)}>
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="w-full rounded-xl h-11"
+              >
+                <Link
+                  href="/dashboard/outils/devis/new"
+                  onClick={() => setBillingOpen(false)}
+                >
                   Nouveau devis
                 </Link>
               </Button>
@@ -432,7 +464,10 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
         >
           <div className="bg-white dark:bg-zinc-900 rounded-t-[28px] shadow-2xl">
             {/* Handle bar */}
-            <div data-drag-handle className="flex justify-center pt-3 pb-2 cursor-grab">
+            <div
+              data-drag-handle
+              className="flex justify-center pt-3 pb-2 cursor-grab"
+            >
               <div className="w-10 h-1 rounded-full bg-[#3D3E42]/20" />
             </div>
 
@@ -440,7 +475,10 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
             <div
               ref={moreScrollRef}
               className="max-h-[calc(85vh-40px)] overflow-y-auto"
-              style={{ overscrollBehavior: "contain", WebkitOverflowScrolling: "touch" }}
+              style={{
+                overscrollBehavior: "contain",
+                WebkitOverflowScrolling: "touch",
+              }}
             >
               {/* User profile card */}
               {user && (
@@ -468,8 +506,12 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
                     </div>
                   </div>
                   <div className="grid flex-1 text-left text-sm leading-tight min-w-0">
-                    <span className="truncate font-medium">{user.name || "Utilisateur"}</span>
-                    <span className="text-muted-foreground truncate text-xs">{user.email}</span>
+                    <span className="truncate font-medium">
+                      {user.name || "Utilisateur"}
+                    </span>
+                    <span className="text-muted-foreground truncate text-xs">
+                      {user.email}
+                    </span>
                   </div>
                 </div>
               )}
@@ -492,24 +534,23 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
                         <div
                           className={cn(
                             "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors",
-                            isActive
-                              ? "bg-accent"
-                              : "hover:bg-accent",
-                            item.destructive && "text-destructive hover:bg-destructive/10"
+                            isActive ? "bg-accent" : "hover:bg-accent",
+                            item.destructive &&
+                              "text-destructive hover:bg-destructive/10",
                           )}
                         >
                           <item.icon
                             className={cn(
                               "w-5 h-5 shrink-0",
                               item.destructive && "text-destructive",
-                              !item.destructive && "text-[#3D3E42]"
+                              !item.destructive && "text-[#3D3E42]",
                             )}
                             strokeWidth={1.8}
                           />
                           <span
                             className={cn(
                               "text-sm font-normal flex-1",
-                              item.destructive && "text-destructive"
+                              item.destructive && "text-destructive",
                             )}
                           >
                             {item.label}
@@ -570,14 +611,15 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
               <div className="px-3 pb-3 pt-1">
                 <button
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-destructive/10 transition-colors"
-                  onClick={() =>
-                    authClient.signOut().then(() => {
-                      window.location.href = "/";
-                    })
-                  }
+                  onClick={() => performLogout()}
                 >
-                  <LogOut className="w-5 h-5 text-destructive shrink-0" strokeWidth={1.8} />
-                  <span className="text-sm font-medium text-destructive">Déconnexion</span>
+                  <LogOut
+                    className="w-5 h-5 text-destructive shrink-0"
+                    strokeWidth={1.8}
+                  />
+                  <span className="text-sm font-medium text-destructive">
+                    Déconnexion
+                  </span>
                 </button>
               </div>
 
@@ -627,14 +669,18 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
                   <tab.icon
                     className={cn(
                       "w-6 h-6 transition-all duration-200",
-                      active ? "text-[#5b4fff]" : "text-[#3D3E42] dark:text-white"
+                      active
+                        ? "text-[#5b4fff]"
+                        : "text-[#3D3E42] dark:text-white",
                     )}
                     strokeWidth={active ? 1.6 : 1.3}
                   />
                   <span
                     className={cn(
                       "text-[10px] font-normal leading-tight transition-colors duration-200",
-                      active ? "text-[#5b4fff]" : "text-[#3D3E42] dark:text-white"
+                      active
+                        ? "text-[#5b4fff]"
+                        : "text-[#3D3E42] dark:text-white",
                     )}
                   >
                     {tab.label}

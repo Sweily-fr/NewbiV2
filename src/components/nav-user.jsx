@@ -38,12 +38,10 @@ import { Badge } from "@/src/components/ui/badge";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import Link from "next/link";
 import { ModeToggle } from "@/src/components/ui/mode-toggle";
-import { signOut } from "../lib/auth-client";
+import { performLogout } from "../lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useApolloClient } from "@apollo/client";
-import { resetOrganizationIdForApollo } from "@/src/lib/apolloClient";
 import { SettingsModal } from "./settings-modal";
 import { useTheme } from "@/src/components/theme-provider";
 
@@ -53,7 +51,6 @@ export function NavUser({ user }) {
   const { isActive } = useSubscription();
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState("user-info");
-  const apolloClient = useApolloClient();
   const { theme, setTheme } = useTheme();
 
   const profileImage = user.avatar;
@@ -73,52 +70,7 @@ export function NavUser({ user }) {
 
   const router = useRouter();
 
-  const handleLogout = async () => {
-    try {
-      console.log("Déconnexion en cours - Clear du cache Apollo...");
-
-      // Clear complet du cache Apollo pour éviter les fuites de données entre utilisateurs
-      await apolloClient.clearStore();
-
-      // ✅ Réinitialiser la variable module-level d'org ID pour éviter les fuites entre sessions
-      resetOrganizationIdForApollo();
-
-      // Vider tous les caches localStorage
-      try {
-        console.log("🧹 Nettoyage des caches localStorage...");
-
-        // Vider le cache utilisateur
-        localStorage.removeItem("user-cache");
-
-        // Vider l'organization et le rôle pour éviter les fuites entre comptes
-        localStorage.removeItem("active_organization_id");
-        localStorage.removeItem("user_role");
-
-        // Vider tous les caches d'abonnement
-        Object.keys(localStorage).forEach((key) => {
-          if (key.startsWith("subscription-")) {
-            localStorage.removeItem(key);
-            console.log(`🗑️ Cache supprimé: ${key}`);
-          }
-        });
-
-        console.log("✅ Caches localStorage nettoyés");
-      } catch (cacheError) {
-        console.warn("⚠️ Erreur lors du nettoyage des caches:", cacheError);
-      }
-
-      await signOut({
-        fetchOptions: {
-          onSuccess: () => {
-            console.log("Déconnexion réussie - Tous les caches vidés");
-            router.push("/");
-          },
-        },
-      });
-    } catch (error) {
-      console.error("Erreur lors de la déconnexion:", error);
-    }
-  };
+  const handleLogout = () => performLogout();
 
   return (
     <SidebarMenu>

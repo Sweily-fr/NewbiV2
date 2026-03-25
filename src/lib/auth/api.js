@@ -1,5 +1,4 @@
-import { redirect } from "next/dist/server/api-utils";
-import { authClient } from "../auth-client";
+import { authClient, performLogout } from "../auth-client";
 
 export async function loginUser(formData, rememberMe = false) {
   try {
@@ -19,7 +18,7 @@ export async function loginUser(formData, rememberMe = false) {
           toast.error(error.message);
         },
         // Vous pouvez ajouter des callbacks ici si nécessaire
-      }
+      },
     );
 
     if (error) {
@@ -46,14 +45,17 @@ export async function registerUser(formData) {
     if (error) {
       // Propager le message d'erreur exact de Better Auth
       const errorMessage = error.message || "Erreur lors de l'inscription";
-      
+
       // Gérer les erreurs spécifiques
-      if (errorMessage.toLowerCase().includes("email") && errorMessage.toLowerCase().includes("exist")) {
+      if (
+        errorMessage.toLowerCase().includes("email") &&
+        errorMessage.toLowerCase().includes("exist")
+      ) {
         throw new Error("Cet email est déjà utilisé");
       } else if (errorMessage.toLowerCase().includes("already")) {
         throw new Error("Cet email est déjà utilisé");
       }
-      
+
       throw new Error(errorMessage);
     }
 
@@ -65,22 +67,8 @@ export async function registerUser(formData) {
 }
 
 export async function logoutUser() {
-  try {
-    const { error } = await authClient.signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          console.log("logout");
-        },
-      },
-    });
-    console.log(error);
-    if (error) {
-      throw new Error(error.message || "Erreur lors de la déconnexion");
-    }
-    return true;
-  } catch (err) {
-    throw new Error(err.message || "Erreur lors de la déconnexion");
-  }
+  await performLogout();
+  return true;
 }
 
 export async function getCurrentUser() {
@@ -90,7 +78,7 @@ export async function getCurrentUser() {
       return null;
     }
     return data?.user || null;
-  } catch (err) {
+  } catch {
     return null;
   }
 }
@@ -104,7 +92,7 @@ export async function updateUserProfile(formData) {
 
     if (error) {
       throw new Error(
-        error.message || "Erreur lors de la mise à jour du profil"
+        error.message || "Erreur lors de la mise à jour du profil",
       );
     }
 
@@ -180,7 +168,7 @@ export const getGoogleUserProfile = async (accessToken) => {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
-      }
+      },
     );
 
     if (!response.ok) {

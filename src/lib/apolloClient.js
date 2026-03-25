@@ -251,6 +251,10 @@ const errorLink = onError(
         if (isCriticalError(errorWithCode)) {
           hasCriticalError = true;
         } else {
+          // Pendant un retry auth en cours, ne pas afficher de toast
+          // car les erreurs vont être retried automatiquement avec le nouveau JWT
+          if (isRetryingAuth) return;
+
           if (processedMessages.has(message)) return;
           processedMessages.add(message);
 
@@ -403,6 +407,9 @@ const errorLink = onError(
     }
 
     if (networkError) {
+      // Pendant un retry auth, ne pas afficher de toasts réseau
+      if (isRetryingAuth || isRedirecting) return;
+
       const msg = networkError.message || "";
 
       // Erreurs de chunk stale (deploiement Vercel) : ne pas afficher de toast,

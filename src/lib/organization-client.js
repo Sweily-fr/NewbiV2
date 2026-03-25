@@ -7,10 +7,13 @@ import { authClient } from "./auth-client";
 export async function getActiveOrganization() {
   try {
     // Utiliser l'API Better Auth pour récupérer l'organisation active de la session
-    const { data: activeOrg, error } = await authClient.organization.getFullOrganization();
+    const { data: activeOrg, error } =
+      await authClient.organization.getFullOrganization();
 
     if (error || !activeOrg) {
-      console.warn("⚠️ Aucune organisation active, utilisation de la première organisation");
+      console.warn(
+        "⚠️ Aucune organisation active, utilisation de la première organisation",
+      );
       // Fallback: Si aucune organisation active, prendre la première
       const { data: organizations } = await authClient.organization.list();
       return organizations?.[0] || null;
@@ -46,7 +49,7 @@ export async function updateOrganization(organizationId, data, options = {}) {
     // reçoivent les données mises à jour
     try {
       await authClient.organization.setActive({ organizationId });
-    } catch (e) {
+    } catch {
       // Non critique : juste pour invalider le cache de la session
     }
 
@@ -88,7 +91,7 @@ export async function getOrganizationMembers(organizationId) {
 export async function inviteToOrganization(
   organizationId,
   email,
-  role = "member"
+  role = "member",
 ) {
   try {
     const result = await authClient.organization.inviteUser({
@@ -110,19 +113,23 @@ export async function inviteToOrganization(
  */
 export function useActiveOrganization() {
   // Utiliser directement le hook Better Auth pour l'organisation active
-  const { data: betterAuthOrg, isPending: betterAuthLoading, refetch: betterAuthRefetch } = 
-    authClient.useActiveOrganization();
-  
+  const {
+    data: betterAuthOrg,
+    isPending: betterAuthLoading,
+    refetch: betterAuthRefetch,
+  } = authClient.useActiveOrganization();
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [forceUpdateCounter, setForceUpdateCounter] = useState(0);
 
   // Stabiliser l'objet organization avec useMemo pour éviter les re-renders inutiles
-  // On change l'objet si l'ID change OU si forceUpdateCounter change (après un update)
+  // Dépend de l'ID, du nom, et du forceUpdateCounter pour refléter les mises à jour
+
   const organization = useMemo(() => {
     if (!betterAuthOrg) return null;
     return betterAuthOrg;
-  }, [betterAuthOrg?.id, forceUpdateCounter]); // ✅ Change si ID ou forceUpdate change
+  }, [betterAuthOrg, forceUpdateCounter]);
 
   // Synchroniser le loading
   useEffect(() => {
@@ -137,7 +144,7 @@ export function useActiveOrganization() {
       setError(null);
       await betterAuthRefetch();
       // Forcer la mise à jour du useMemo pour refléter les nouvelles données
-      setForceUpdateCounter(prev => prev + 1);
+      setForceUpdateCounter((prev) => prev + 1);
       console.log("✅ Organisation refetch depuis Better Auth");
     } catch (err) {
       setError(err);
@@ -157,10 +164,10 @@ export function useActiveOrganization() {
 
       // Forcer un refetch depuis Better Auth après la mise à jour
       await betterAuthRefetch();
-      
+
       // Incrémenter le compteur pour forcer la mise à jour du useMemo
-      setForceUpdateCounter(prev => prev + 1);
-      
+      setForceUpdateCounter((prev) => prev + 1);
+
       console.log("✅ Organisation mise à jour et refetch depuis Better Auth");
 
       return result;

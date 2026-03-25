@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/src/hooks/useAuth";
+import { useSession } from "@/src/lib/auth-client";
 import { isCompanyInfoComplete } from "@/src/hooks/useCompanyInfoGuard";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import {
@@ -35,7 +35,9 @@ export function CompanyInfoGuard({
   title = "Vérification des informations d'entreprise",
   description = "Nous vérifions que vos informations d'entreprise sont complètes...",
 }) {
-  const { isAuthenticated, isLoading: authLoading, user, session } = useAuth();
+  const { data: session, isPending: authLoading } = useSession();
+  const isAuthenticated = !!session?.user;
+  const user = session?.user;
   const router = useRouter();
   const [showAlert, setShowAlert] = useState(false);
   const [isLoading, setIsLoading] = useState(true);

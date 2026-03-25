@@ -138,3 +138,79 @@ export const {
   twoFactor,
   multiSession,
 } = authClient;
+
+/**
+ * Nettoie tous les caches localStorage liés à la session utilisateur.
+ * À appeler avant chaque signOut pour éviter les fuites de données entre comptes.
+ */
+export function clearSessionStorage() {
+  try {
+    localStorage.removeItem("user-cache");
+    localStorage.removeItem("active_organization_id");
+    localStorage.removeItem("user_role");
+
+    // Vider tous les caches d'abonnement
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith("subscription-")) {
+        localStorage.removeItem(key);
+      }
+    });
+  } catch (e) {
+    console.warn("Erreur lors du nettoyage des caches localStorage:", e);
+  }
+}
+
+/**
+ * Déconnexion complète et centralisée.
+ * Nettoie Apollo cache, localStorage, org ID, puis signOut Better Auth.
+ * Utiliser cette fonction PARTOUT au lieu d'implémenter le logout manuellement.
+ *
+ * @param {Object} [options]
+ * @param {string} [options.redirectTo="/auth/login"] - URL de redirection après logout
+ * @param {boolean} [options.useHardRedirect=true] - Utiliser window.location.href (true) ou router.push (false)
+ */
+let _isLoggingOut = false;
+
+export async function performLogout({
+  redirectTo = "/auth/login",
+  useHardRedirect = true,
+} = {}) {
+  // Éviter les doubles déconnexions simultanées
+  if (_isLoggingOut) return;
+  _isLoggingOut = true;
+
+  try {
+    // 1. Nettoyer les caches localStorage
+    clearSessionStorage();
+
+    // 2. Réinitialiser Apollo (import dynamique pour éviter les dépendances circulaires)
+    try {
+      const { apolloClient, resetOrganizationIdForApollo } =
+        await import("@/src/lib/apolloClient");
+      resetOrganizationIdForApollo();
+      await apolloClient.clearStore();
+    } catch {
+      // Apollo peut ne pas être disponible (page auth)
+    }
+
+    // 3. SignOut Better Auth (supprime le cookie session)
+    await authClient.signOut();
+
+    // 4. Redirection
+    if (useHardRedirect) {
+      // Hard redirect pour s'assurer que tout l'état React est détruit
+      window.location.href = redirectTo;
+    }
+  } catch (error) {
+    console.error("Erreur lors de la déconnexion:", error);
+    // En cas d'erreur, forcer la redirection quand même
+    if (useHardRedirect) {
+      window.location.href = redirectTo;
+    }
+  } finally {
+    // Reset après un délai pour laisser la redirection se faire
+    setTimeout(() => {
+      _isLoggingOut = false;
+    }, 2000);
+  }
+}

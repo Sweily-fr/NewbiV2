@@ -41,20 +41,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/src/components/ui/table";
-import {
-  Eye,
-  EyeOff,
-  LogOut,
-  Smartphone,
-} from "lucide-react";
+import { Eye, EyeOff, LogOut, Smartphone } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 import { useActiveOrganization } from "@/src/lib/organization-client";
 import {
   useSession,
   twoFactor,
-  signOut,
   authClient,
   updateUser,
+  performLogout,
 } from "@/src/lib/auth-client";
 import { useEffect } from "react";
 import { useUser } from "@/src/lib/auth/hooks";
@@ -138,7 +133,7 @@ export function SecuritySection({
           }
         } catch (restError) {
           console.log(
-            "🔍 API REST non disponible, utilisation des données client"
+            "🔍 API REST non disponible, utilisation des données client",
           );
         }
       }
@@ -192,7 +187,7 @@ export function SecuritySection({
             device:
               getUserAgent(sessionData.userAgent) || `Appareil ${index + 1}`,
             lastActivity: formatLastActivity(
-              sessionData.updatedAt || sessionData.lastAccessed
+              sessionData.updatedAt || sessionData.lastAccessed,
             ),
             ip: displayIp,
             location:
@@ -292,13 +287,14 @@ export function SecuritySection({
       fetchDeviceSessions();
       // Charger les paramètres de session depuis l'API
       fetch("/api/session-settings", { credentials: "include" })
-        .then((res) => res.ok ? res.json() : null)
+        .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data && !data.error) {
             setSecuritySettings((prev) => ({
               ...prev,
               sessionDuration: data.sessionDuration ?? prev.sessionDuration,
-              inactivityTimeout: data.inactivityTimeout ?? prev.inactivityTimeout,
+              inactivityTimeout:
+                data.inactivityTimeout ?? prev.inactivityTimeout,
               maxSessions: data.maxSessions ?? prev.maxSessions,
             }));
           }
@@ -372,7 +368,7 @@ export function SecuritySection({
         method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ [setting]: parseInt(value) }),
+        body: JSON.stringify({ [setting]: parseFloat(value) }),
       });
 
       if (!response.ok) {
@@ -388,11 +384,20 @@ export function SecuritySection({
         maxSessions: data.maxSessions ?? prev.maxSessions,
       }));
 
+      // Notifier l'InactivityDetector du changement de timeout (sans reload)
+      if (data.inactivityTimeout != null) {
+        window.dispatchEvent(
+          new CustomEvent("inactivitySettingsChanged", {
+            detail: { inactivityTimeout: data.inactivityTimeout },
+          }),
+        );
+      }
+
       toast.success("Paramètres de session mis à jour");
     } catch (error) {
       console.error(
         "Erreur lors de la mise à jour des paramètres de session:",
-        error
+        error,
       );
       toast.error("Erreur lors de la mise à jour des paramètres");
     } finally {
@@ -407,8 +412,7 @@ export function SecuritySection({
 
       if (device?.current) {
         // Session actuelle - déconnexion complète
-        await signOut();
-        toast.success("Déconnexion réussie");
+        await performLogout();
       } else if (device?.sessionToken) {
         // Déconnecter une session spécifique avec Better Auth
         const { error } = await authClient.multiSession.revoke({
@@ -450,7 +454,7 @@ export function SecuritySection({
         toast.info("Aucun autre appareil connecté");
       } else {
         toast.success(
-          `${result.revokedCount} session(s) déconnectée(s) avec succès`
+          `${result.revokedCount} session(s) déconnectée(s) avec succès`,
         );
       }
 
@@ -459,7 +463,7 @@ export function SecuritySection({
     } catch (error) {
       console.error(
         "Erreur lors de la déconnexion des autres appareils:",
-        error
+        error,
       );
       toast.error("Erreur lors de la déconnexion globale");
     }
@@ -561,6 +565,8 @@ export function SecuritySection({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="0.0166">1 minute (test)</SelectItem>
+                <SelectItem value="0.25">15 minutes</SelectItem>
                 <SelectItem value="1">1 heure</SelectItem>
                 <SelectItem value="12">12 heures</SelectItem>
                 <SelectItem value="24">24 heures</SelectItem>

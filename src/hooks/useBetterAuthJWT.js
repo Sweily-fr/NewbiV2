@@ -1,4 +1,4 @@
-import { useSession } from "@/src/lib/auth-client";
+import { useSession, performLogout } from "@/src/lib/auth-client";
 
 /**
  * Hook d'authentification simplifié — cookie-only
@@ -37,7 +37,7 @@ export const useBetterAuthJWT = () => {
       {
         method: "POST",
         body: JSON.stringify({ query, variables }),
-      }
+      },
     );
 
     const data = await response.json();
@@ -47,21 +47,6 @@ export const useBetterAuthJWT = () => {
     }
 
     return data.data;
-  };
-
-  /**
-   * Déconnexion complète
-   */
-  const logout = async () => {
-    try {
-      await fetch("/api/auth/sign-out", {
-        method: "POST",
-        credentials: "include",
-      });
-      window.location.href = "/auth/signin";
-    } catch (error) {
-      console.error("Erreur déconnexion:", error);
-    }
   };
 
   return {
@@ -75,7 +60,7 @@ export const useBetterAuthJWT = () => {
     refreshJWT: () => Promise.resolve(),
     apiRequest,
     graphqlRequest,
-    logout,
+    logout: performLogout,
     isAuthenticated: !!session?.user,
     isReady: !!session?.user,
   };
