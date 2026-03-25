@@ -16,6 +16,7 @@ import {
   sendResetPasswordEmail,
   sendVerificationEmail,
 } from "./auth-utils";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- utilisés par Better Auth RBAC plugin en interne
 import { ac, admin, member, viewer, accountant } from "./permissions";
 
 export const auth = betterAuth({
@@ -46,7 +47,7 @@ export const auth = betterAuth({
     updateAge: 60 * 60, // 1 heure - Renouvellement automatique si utilisateur actif
     cookieCache: {
       enabled: true,
-      maxAge: 5 * 60, // 5 minutes — safe avec une session de 30 jours
+      maxAge: 5 * 60, // 5 minutes — révocation de session effective rapidement
     },
     // Ajouter activeOrganizationId aux champs de session
     additionalFields: {
@@ -69,9 +70,7 @@ export const auth = betterAuth({
             const { mongoDb } = await import("./mongodb.js");
             const { ObjectId } = await import("mongodb");
 
-            console.log(
-              `🔄 [USER CREATE] Configuration pour ${user.email}...`
-            );
+            console.log(`🔄 [USER CREATE] Configuration pour ${user.email}...`);
 
             // Vérifier si l'utilisateur a une invitation pending
             const pendingInvitation = await mongoDb
@@ -87,7 +86,7 @@ export const auth = betterAuth({
 
             if (pendingInvitation) {
               console.log(
-                `📨 [USER CREATE] Invitation pending trouvée pour ${user.email}`
+                `📨 [USER CREATE] Invitation pending trouvée pour ${user.email}`,
               );
 
               // Marquer l'utilisateur comme invité
@@ -99,11 +98,11 @@ export const auth = betterAuth({
                     isInvitedUser: true,
                     pendingInvitationId: pendingInvitation._id.toString(),
                   },
-                }
+                },
               );
 
               console.log(
-                `✅ [USER CREATE] Utilisateur ${user.email} marqué comme invité`
+                `✅ [USER CREATE] Utilisateur ${user.email} marqué comme invité`,
               );
               return user;
             }
@@ -117,17 +116,14 @@ export const auth = betterAuth({
                   hasSeenOnboarding: false,
                   isInvitedUser: false,
                 },
-              }
+              },
             );
 
             console.log(
-              `✅ [USER CREATE] Utilisateur ${user.email} créé - organisation sera créée après paiement`
+              `✅ [USER CREATE] Utilisateur ${user.email} créé - organisation sera créée après paiement`,
             );
           } catch (error) {
-            console.error(
-              "❌ [USER CREATE] Erreur:",
-              error
-            );
+            console.error("❌ [USER CREATE] Erreur:", error);
           }
 
           return user;
@@ -142,7 +138,7 @@ export const auth = betterAuth({
             const { ObjectId } = await import("mongodb");
 
             console.log(
-              `🔍 [SESSION CREATE] Recherche organisation pour userId: ${session.userId}`
+              `🔍 [SESSION CREATE] Recherche organisation pour userId: ${session.userId}`,
             );
 
             // Chercher une organisation où l'utilisateur est membre
@@ -152,7 +148,7 @@ export const auth = betterAuth({
 
             if (member) {
               console.log(
-                `✅ [SESSION CREATE] Organisation trouvée: ${member.organizationId}`
+                `✅ [SESSION CREATE] Organisation trouvée: ${member.organizationId}`,
               );
               return {
                 data: {
@@ -164,7 +160,7 @@ export const auth = betterAuth({
 
             // Pas d'organisation = nouvel utilisateur qui n'a pas encore payé
             console.log(
-              `ℹ️ [SESSION CREATE] Pas d'organisation pour ${session.userId} (nouvel utilisateur)`
+              `ℹ️ [SESSION CREATE] Pas d'organisation pour ${session.userId} (nouvel utilisateur)`,
             );
             return { data: session };
           } catch (error) {
@@ -202,7 +198,7 @@ export const auth = betterAuth({
         await sendReactivationEmail(user);
 
         throw new Error(
-          "Votre compte a été désactivé. Un email de réactivation vous a été envoyé."
+          "Votre compte a été désactivé. Un email de réactivation vous a été envoyé.",
         );
       }
 
@@ -228,6 +224,7 @@ export const auth = betterAuth({
 
     // ✅ Callback après vérification réussie
     // S'exécute APRÈS que autoSignInAfterVerification ait créé la session
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async afterEmailVerification(user, request) {
       console.log(`✅ [EMAIL VERIFICATION] Email vérifié pour ${user.email}`);
 
@@ -236,11 +233,15 @@ export const auth = betterAuth({
         const { ObjectId } = await import("mongodb");
 
         // Synchroniser isEmailVerified (champ Mongoose) avec emailVerified (champ Better Auth)
-        await mongoDb.collection("user").updateOne(
-          { _id: new ObjectId(user.id) },
-          { $set: { isEmailVerified: true } }
+        await mongoDb
+          .collection("user")
+          .updateOne(
+            { _id: new ObjectId(user.id) },
+            { $set: { isEmailVerified: true } },
+          );
+        console.log(
+          `✅ [EMAIL VERIFICATION] isEmailVerified synchronisé pour ${user.email}`,
         );
-        console.log(`✅ [EMAIL VERIFICATION] isEmailVerified synchronisé pour ${user.email}`);
 
         // 1. Vérifier que l'utilisateur a une organisation
         let anyMember = null;
@@ -251,7 +252,7 @@ export const auth = betterAuth({
 
         if (!member) {
           console.warn(
-            `⚠️ [EMAIL VERIFICATION] Aucune organisation owner pour ${user.email}`
+            `⚠️ [EMAIL VERIFICATION] Aucune organisation owner pour ${user.email}`,
           );
 
           // Fallback : chercher n'importe quelle organisation
@@ -261,17 +262,17 @@ export const auth = betterAuth({
 
           if (!anyMember) {
             console.error(
-              `❌ [EMAIL VERIFICATION] Aucune organisation trouvée pour ${user.email}`
+              `❌ [EMAIL VERIFICATION] Aucune organisation trouvée pour ${user.email}`,
             );
             return;
           }
 
           console.log(
-            `✅ [EMAIL VERIFICATION] Organisation trouvée (fallback): ${anyMember.organizationId}`
+            `✅ [EMAIL VERIFICATION] Organisation trouvée (fallback): ${anyMember.organizationId}`,
           );
         } else {
           console.log(
-            `✅ [EMAIL VERIFICATION] Organisation owner trouvée: ${member.organizationId}`
+            `✅ [EMAIL VERIFICATION] Organisation owner trouvée: ${member.organizationId}`,
           );
         }
 
@@ -287,7 +288,7 @@ export const auth = betterAuth({
           const session = sessions[0];
           if (!session.activeOrganizationId) {
             console.warn(
-              `⚠️ [EMAIL VERIFICATION] Session sans organisation active, correction...`
+              `⚠️ [EMAIL VERIFICATION] Session sans organisation active, correction...`,
             );
 
             const orgToSet = member || anyMember;
@@ -297,15 +298,15 @@ export const auth = betterAuth({
                 $set: {
                   activeOrganizationId: orgToSet.organizationId.toString(),
                 },
-              }
+              },
             );
 
             console.log(
-              `✅ [EMAIL VERIFICATION] Organisation active définie: ${orgToSet.organizationId}`
+              `✅ [EMAIL VERIFICATION] Organisation active définie: ${orgToSet.organizationId}`,
             );
           } else {
             console.log(
-              `✅ [EMAIL VERIFICATION] Organisation active déjà définie: ${session.activeOrganizationId}`
+              `✅ [EMAIL VERIFICATION] Organisation active déjà définie: ${session.activeOrganizationId}`,
             );
           }
         }

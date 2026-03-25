@@ -191,9 +191,23 @@ const LoginForm = () => {
   React.useEffect(() => {}, [showEmailVerification, userEmailForVerification]);
 
   const onSubmit = async (formData) => {
-    // Vider le cache Apollo avant connexion pour éviter les données stale d'un autre compte
+    // Vider TOUS les caches avant connexion pour éviter les données stale d'un autre compte
     resetOrganizationIdForApollo();
     await apolloClient.clearStore();
+
+    // Nettoyer les caches localStorage (même nettoyage que handleLogout dans nav-user)
+    try {
+      localStorage.removeItem("user-cache");
+      localStorage.removeItem("active_organization_id");
+      localStorage.removeItem("user_role");
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith("subscription-")) {
+          localStorage.removeItem(key);
+        }
+      });
+    } catch {
+      // Ignorer les erreurs localStorage
+    }
 
     await authClient.signIn.email(formData, {
       onSuccess: async (ctx) => {
@@ -237,9 +251,14 @@ const LoginForm = () => {
           return;
         }
 
-        // Étape 2 : Si pas d'organisation active (rare: nouvel user sans org),
-        // la définir maintenant
-        if (!session?.session?.activeOrganizationId) {
+        // Étape 2 : Toujours synchroniser l'organisation active côté client
+        // Le hook session.create.before set l'org côté serveur, mais le SDK client
+        // peut garder l'ancienne org en cache (problème lors du switch de compte)
+        if (session?.session?.activeOrganizationId) {
+          await authClient.organization.setActive({
+            organizationId: session.session.activeOrganizationId,
+          });
+        } else {
           await ensureActiveOrganization();
         }
 
