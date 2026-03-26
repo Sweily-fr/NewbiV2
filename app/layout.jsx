@@ -43,7 +43,7 @@ export const metadata = {
     telephone: false,
   },
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://newbi.fr"
+    process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://newbi.fr",
   ),
   alternates: {
     canonical: "/",
@@ -105,7 +105,10 @@ export default function RootLayout({ children }) {
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta
+          name="apple-mobile-web-app-status-bar-style"
+          content="black-translucent"
+        />
         <meta name="apple-mobile-web-app-title" content="Newbi" />
         <meta name="theme-color" content="#5b4fff" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -138,11 +141,15 @@ export default function RootLayout({ children }) {
               // Detecter les erreurs de chunks stale (apres un nouveau deploiement Vercel).
               // Auto-reload la page au lieu d'afficher une erreur cryptique.
               window.addEventListener('error', function(e) {
-                var msg = (e.message || '') + ' ' + (e.filename || '');
-                var isChunk = msg.indexOf('Unexpected token') !== -1 ||
-                              msg.indexOf('ChunkLoadError') !== -1 ||
+                // Ne reloader que pour les vrais chunks stale (fichiers .js),
+                // pas pour les erreurs JSON parse d'API (ex: MongoDB down retourne du HTML)
+                var filename = e.filename || '';
+                var isFromScript = filename.indexOf('.js') !== -1 || filename.indexOf('_next') !== -1;
+                var msg = (e.message || '') + ' ' + filename;
+                var isChunk = (msg.indexOf('ChunkLoadError') !== -1 ||
                               msg.indexOf('Loading chunk') !== -1 ||
-                              msg.indexOf('dynamically imported module') !== -1;
+                              msg.indexOf('dynamically imported module') !== -1 ||
+                              (msg.indexOf('Unexpected token') !== -1 && isFromScript));
                 if (isChunk) {
                   var key = 'chunk_reload_' + window.location.pathname;
                   var last = sessionStorage.getItem(key);
