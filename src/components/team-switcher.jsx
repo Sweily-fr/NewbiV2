@@ -82,7 +82,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { authClient } from "@/src/lib/auth-client";
+import { authClient, performLogout } from "@/src/lib/auth-client";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
@@ -156,20 +156,20 @@ export function TeamSwitcher() {
     try {
       setOrganizationsLoading(true);
       const response = await fetch("/api/organization/list-with-order");
-      
+
       // Si non authentifié (401), ne pas throw d'erreur - laisser le composant gérer
       if (response.status === 401) {
         console.warn("Session expirée ou non authentifié");
         setSortedOrganizations([]);
         return;
       }
-      
+
       if (!response.ok) {
         console.error("Erreur API:", response.status, response.statusText);
         setSortedOrganizations([]);
         return;
       }
-      
+
       const data = await response.json();
       setSortedOrganizations(data.organizations || []);
     } catch (error) {
@@ -195,7 +195,7 @@ export function TeamSwitcher() {
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   // Gérer le drag end
@@ -208,7 +208,7 @@ export function TeamSwitcher() {
     }
 
     const oldIndex = sortedOrganizations.findIndex(
-      (org) => org.id === active.id
+      (org) => org.id === active.id,
     );
     const newIndex = sortedOrganizations.findIndex((org) => org.id === over.id);
 
@@ -256,56 +256,38 @@ export function TeamSwitcher() {
 
     try {
       setIsChangingOrg(true);
-      const oldWorkspaceId = activeOrganization?.id;
-      console.log("🔄 Changement d'organisation:", {
-        from: oldWorkspaceId,
-        to: organizationId,
-      });
 
       // 1. Changer d'organisation côté serveur avec Better Auth
       await authClient.organization.setActive({
         organizationId,
       });
 
-      console.log("✅ Organisation changée côté serveur");
+      // 2. Vider TOUT le cache Apollo (toutes les données sont liées à l'ancienne org)
+      await apolloClient.clearStore();
 
-      // 2. Nettoyer le cache Apollo pour l'ancienne organisation
-      if (oldWorkspaceId) {
-        console.log("🗑️ Nettoyage du cache Apollo...");
-
-        // Évict les queries spécifiques à l'ancienne organisation
-        apolloClient.cache.evict({
-          id: "ROOT_QUERY",
-          fieldName: "getInvoices",
-        });
-        apolloClient.cache.evict({
-          id: "ROOT_QUERY",
-          fieldName: "getQuotes",
-        });
-        apolloClient.cache.evict({
-          id: "ROOT_QUERY",
-          fieldName: "getClients",
-        });
-        apolloClient.cache.evict({
-          id: "ROOT_QUERY",
-          fieldName: "getExpenses",
-        });
-
-        // Garbage collection pour nettoyer les références orphelines
-        apolloClient.cache.gc();
-        console.log("✅ Cache Apollo nettoyé");
+      // 3. Refetch l'organisation active pour mettre à jour l'UI
+      if (refetchActiveOrg) {
+        await refetchActiveOrg();
       }
 
-      // 3. Notification de succès
+      // 4. Notification de succès
       const newOrg = sortedOrganizations.find(
-        (org) => org.id === organizationId
+        (org) => org.id === organizationId,
       );
       const orgName = newOrg?.name || "l'organisation";
       toast.success(`Vous êtes sur l'espace ${orgName}`);
 
-      console.log("✅ Changement d'organisation terminé");
+      // 5. Rediriger vers le dashboard si on est sur une page de détail
+      //    (les données de détail appartiennent à l'ancienne org)
+      if (
+        pathname &&
+        pathname !== "/dashboard" &&
+        pathname.split("/").length > 3
+      ) {
+        router.push("/dashboard");
+      }
     } catch (error) {
-      console.error("❌ Erreur changement d'organisation:", error);
+      console.error("Erreur changement d'organisation:", error);
       toast.error("Erreur lors du changement d'organisation");
     } finally {
       setIsChangingOrg(false);
@@ -322,11 +304,7 @@ export function TeamSwitcher() {
             disabled
             className={isCollapsed && !isMobile ? "justify-center" : ""}
           >
-            <img
-              src="/newbi.svg"
-              alt="NewBi Logo"
-              className="size-8"
-            />
+            <img src="/newbi.svg" alt="NewBi Logo" className="size-8" />
             {(!isCollapsed || isMobile) && (
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">...</span>
@@ -349,11 +327,7 @@ export function TeamSwitcher() {
             disabled
             className={isCollapsed && !isMobile ? "justify-center" : ""}
           >
-            <img
-              src="/newbi.svg"
-              alt="NewBi Logo"
-              className="size-8"
-            />
+            <img src="/newbi.svg" alt="NewBi Logo" className="size-8" />
             {(!isCollapsed || isMobile) && (
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">
@@ -415,7 +389,9 @@ export function TeamSwitcher() {
               </DropdownMenuLabel>
               <DropdownMenuItem className="gap-2 p-2 rounded-sm">
                 <Boxes className="size-4 text-muted-foreground" />
-                <span className="text-[13px] font-normal">{currentOrganization.name}</span>
+                <span className="text-[13px] font-normal">
+                  {currentOrganization.name}
+                </span>
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-border" />
               <DropdownMenuItem
@@ -426,7 +402,9 @@ export function TeamSwitcher() {
                 className="gap-2 p-2 rounded-sm cursor-pointer"
               >
                 <UserCog className="size-4 text-muted-foreground" />
-                <span className="text-[13px] font-normal">Paramètres du compte</span>
+                <span className="text-[13px] font-normal">
+                  Paramètres du compte
+                </span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {
@@ -436,7 +414,9 @@ export function TeamSwitcher() {
                 className="gap-2 p-2 rounded-sm cursor-pointer"
               >
                 <Settings className="size-4 text-muted-foreground" />
-                <span className="text-[13px] font-normal">Paramètres de l'espace</span>
+                <span className="text-[13px] font-normal">
+                  Paramètres de l'espace
+                </span>
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-border" />
               <DropdownMenuItem
@@ -444,7 +424,9 @@ export function TeamSwitcher() {
                 className="gap-2 p-2 rounded-sm cursor-pointer"
               >
                 <UserPlus className="size-4 text-muted-foreground" />
-                <span className="text-[13px] font-normal">Inviter des membres</span>
+                <span className="text-[13px] font-normal">
+                  Inviter des membres
+                </span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {
@@ -458,7 +440,7 @@ export function TeamSwitcher() {
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-border" />
               <DropdownMenuItem
-                onClick={() => router.push('/create-workspace')}
+                onClick={() => router.push("/create-workspace")}
                 className="gap-2 p-2 rounded-sm cursor-pointer"
               >
                 <LayersPlus className="size-4 text-muted-foreground" />
@@ -466,19 +448,7 @@ export function TeamSwitcher() {
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-border" />
               <DropdownMenuItem
-                onClick={async () => {
-                  try {
-                    await authClient.signOut({
-                      fetchOptions: {
-                        onSuccess: () => {
-                          window.location.href = "/auth/login";
-                        },
-                      },
-                    });
-                  } catch (error) {
-                    console.error("Erreur déconnexion:", error);
-                  }
-                }}
+                onClick={() => performLogout()}
                 className="gap-2 p-2 rounded-sm cursor-pointer text-red-500 hover:!text-red-600 hover:!bg-red-50"
               >
                 <LogOut className="size-4 text-red-500" />
@@ -807,8 +777,8 @@ function SortableOrganizationItem({
                         // Mise à jour optimiste : changer immédiatement dans l'état local
                         setSortedOrganizations((prev) =>
                           prev.map((o) =>
-                            o.id === org.id ? { ...o, customColor: color } : o
-                          )
+                            o.id === org.id ? { ...o, customColor: color } : o,
+                          ),
                         );
 
                         // Mise à jour en base de données en arrière-plan
@@ -885,8 +855,8 @@ function SortableOrganizationItem({
                         // Mise à jour optimiste : changer immédiatement dans l'état local
                         setSortedOrganizations((prev) =>
                           prev.map((o) =>
-                            o.id === org.id ? { ...o, customIcon: name } : o
-                          )
+                            o.id === org.id ? { ...o, customIcon: name } : o,
+                          ),
                         );
 
                         // Mise à jour en base de données en arrière-plan

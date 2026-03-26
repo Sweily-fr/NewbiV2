@@ -1,15 +1,37 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
 import { Clock, LogIn, LoaderCircle } from "lucide-react";
+import { clearSessionStorage } from "@/src/lib/auth-client";
 
 function SessionExpiredContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const reason = searchParams.get("reason") || "inactivity";
   const [countdown, setCountdown] = useState(30);
+  const cleanedUp = useRef(false);
+
+  // Nettoyer tout l'état auth au montage pour éviter les données stale
+  useEffect(() => {
+    if (cleanedUp.current) return;
+    cleanedUp.current = true;
+
+    // 1. Nettoyer localStorage
+    clearSessionStorage();
+    try {
+      localStorage.removeItem("newbi_last_activity");
+    } catch {}
+
+    // 2. Nettoyer Apollo (import dynamique pour éviter les dépendances lourdes)
+    import("@/src/lib/apolloClient")
+      .then(({ apolloClient, resetOrganizationIdForApollo }) => {
+        resetOrganizationIdForApollo();
+        apolloClient.clearStore().catch(() => {});
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -27,9 +49,9 @@ function SessionExpiredContent() {
 
   useEffect(() => {
     if (countdown === 0) {
-      router.push("/auth/login");
+      window.location.href = "/auth/login";
     }
-  }, [countdown, router]);
+  }, [countdown]);
 
   const getReasonContent = () => {
     switch (reason) {
@@ -66,7 +88,10 @@ function SessionExpiredContent() {
           className="h-5 w-auto mx-auto mb-8"
         />
 
-        <Clock className="w-12 h-12 text-gray-300 mx-auto mb-6" strokeWidth={1.5} />
+        <Clock
+          className="w-12 h-12 text-gray-300 mx-auto mb-6"
+          strokeWidth={1.5}
+        />
 
         <h1 className="text-xl font-semibold text-gray-900 text-center mb-2">
           {content.title}
@@ -77,7 +102,9 @@ function SessionExpiredContent() {
         </p>
 
         <Button
-          onClick={() => router.push("/auth/login")}
+          onClick={() => {
+            window.location.href = "/auth/login";
+          }}
           className="w-full py-2.5 text-sm font-medium rounded-lg cursor-pointer"
         >
           <LogIn className="w-4 h-4 mr-2" />

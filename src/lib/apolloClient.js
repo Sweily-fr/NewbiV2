@@ -71,6 +71,9 @@ const getJWTToken = async () => {
       });
 
       if (!response.ok) {
+        console.error(
+          `[JWT] /api/auth/token a retourné ${response.status}. Le cookie de session est peut-être invalide.`,
+        );
         _cachedJWT = null;
         _jwtExpiresAt = 0;
         return null;
@@ -78,6 +81,9 @@ const getJWTToken = async () => {
 
       const data = await response.json();
       if (!data.token) {
+        console.error(
+          "[JWT] /api/auth/token a répondu 200 mais sans token dans le body.",
+        );
         _cachedJWT = null;
         _jwtExpiresAt = 0;
         return null;
@@ -95,7 +101,11 @@ const getJWTToken = async () => {
       }
 
       return _cachedJWT;
-    } catch {
+    } catch (err) {
+      console.error(
+        "[JWT] Erreur réseau lors de l'appel /api/auth/token:",
+        err?.message || err,
+      );
       _cachedJWT = null;
       _jwtExpiresAt = 0;
       return null;
@@ -241,6 +251,10 @@ const errorLink = onError(
         if (isCriticalError(errorWithCode)) {
           hasCriticalError = true;
         } else {
+          // Pendant un retry auth en cours, ne pas afficher de toast
+          // car les erreurs vont être retried automatiquement avec le nouveau JWT
+          if (isRetryingAuth) return;
+
           if (processedMessages.has(message)) return;
           processedMessages.add(message);
 
@@ -296,6 +310,12 @@ const errorLink = onError(
         isRetryingAuth = true;
         clearCachedJWT();
 
+        console.warn(
+          `[Auth Retry] Erreur auth détectée sur "${operation.operationName}". JWT expiré, tentative de renouvellement...`,
+          `\n  Erreur:`,
+          graphQLErrors.map((e) => e.message).join(", "),
+        );
+
         // Retourner un Observable pour retry l'operation au lieu de propager l'erreur
         return new Observable((observer) => {
           authClient
@@ -303,6 +323,11 @@ const errorLink = onError(
             .then(async (session) => {
               if (!session?.data?.user) {
                 // Session reellement expiree — rediriger
+                console.error(
+                  "[Auth Retry] getSession() n'a pas retourné de user — session expirée.",
+                  "\n  session.data:",
+                  JSON.stringify(session?.data || null),
+                );
                 forceSessionExpiredRedirect("inactivity");
                 observer.error(graphQLErrors[0]);
                 // Vider la file d'attente avec erreur
@@ -317,6 +342,17 @@ const errorLink = onError(
               // forward() ne repasse PAS par authLink (il va directement a uploadLink),
               // donc on doit manuellement mettre a jour les headers ici.
               const newJWT = await getJWTToken();
+
+              if (!newJWT) {
+                console.error(
+                  "[Auth Retry] Session valide mais getJWTToken() a retourné null. Le endpoint /api/auth/token a échoué.",
+                );
+              } else {
+                console.log(
+                  `[Auth Retry] Nouveau JWT obtenu, retry de "${operation.operationName}"`,
+                );
+              }
+
               const oldHeaders = operation.getContext().headers || {};
               operation.setContext({
                 headers: {
@@ -350,8 +386,12 @@ const errorLink = onError(
                 });
               });
             })
-            .catch(() => {
+            .catch((err) => {
               // Erreur reseau lors de la verification — ne pas rediriger
+              console.error(
+                "[Auth Retry] Erreur réseau lors de getSession():",
+                err?.message || err,
+              );
               observer.error(graphQLErrors[0]);
               // Propager l'erreur aux operations en attente
               _pendingRetryQueue.forEach((pending) =>
@@ -367,6 +407,9 @@ const errorLink = onError(
     }
 
     if (networkError) {
+      // Pendant un retry auth, ne pas afficher de toasts réseau
+      if (isRetryingAuth || isRedirecting) return;
+
       const msg = networkError.message || "";
 
       // Erreurs de chunk stale (deploiement Vercel) : ne pas afficher de toast,

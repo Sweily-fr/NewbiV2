@@ -37,6 +37,7 @@ import { SignatureSidebarRight } from "@/src/components/signature-sidebar-right"
 import { BottomNavBar } from "@/src/components/bottom-nav-bar";
 import { PwaInstallBanner } from "@/src/components/pwa-install-banner";
 import { SessionGateProvider } from "@/src/contexts/session-gate-context";
+import { InactivityDetector } from "@/src/components/inactivity-detector";
 import { apolloClient } from "@/src/lib/apolloClient";
 import { gql } from "@apollo/client";
 
@@ -56,7 +57,10 @@ function SessionDebugPanel() {
   if (!open) {
     return (
       <button
-        onClick={() => { setOpen(true); refreshStatus(); }}
+        onClick={() => {
+          setOpen(true);
+          refreshStatus();
+        }}
         className="fixed bottom-20 right-4 z-[9999] h-10 w-10 rounded-full bg-red-600 text-white text-xs font-bold shadow-lg hover:bg-red-700 flex items-center justify-center md:bottom-4"
         title="Session Debug"
       >
@@ -69,7 +73,10 @@ function SessionDebugPanel() {
     <div className="fixed bottom-20 right-4 z-[9999] w-72 rounded-xl border border-red-500/30 bg-zinc-950 p-3 shadow-2xl text-xs text-white md:bottom-4">
       <div className="flex items-center justify-between mb-3">
         <span className="font-semibold text-red-400">Session Debug</span>
-        <button onClick={() => setOpen(false)} className="text-zinc-500 hover:text-white">
+        <button
+          onClick={() => setOpen(false)}
+          className="text-zinc-500 hover:text-white"
+        >
           X
         </button>
       </div>
@@ -79,12 +86,16 @@ function SessionDebugPanel() {
         <button
           onClick={() => {
             window.__debugAuth?.expireJWT();
-            setStatus("JWT invalide. Navigue ou fais une action pour voir le retry.");
+            setStatus(
+              "JWT invalide. Navigue ou fais une action pour voir le retry.",
+            );
           }}
           className="rounded-lg bg-orange-600 px-3 py-2 text-left hover:bg-orange-700"
         >
           <div className="font-medium">Expirer le JWT</div>
-          <div className="text-orange-200/70 mt-0.5">Cookie valide, doit retry sans toast</div>
+          <div className="text-orange-200/70 mt-0.5">
+            Cookie valide, doit retry sans toast
+          </div>
         </button>
 
         {/* Test 2 : Vider le cache JWT → la prochaine requete en redemande un */}
@@ -96,7 +107,9 @@ function SessionDebugPanel() {
           className="rounded-lg bg-yellow-600 px-3 py-2 text-left hover:bg-yellow-700"
         >
           <div className="font-medium">Vider cache JWT</div>
-          <div className="text-yellow-200/70 mt-0.5">Force re-generation JWT</div>
+          <div className="text-yellow-200/70 mt-0.5">
+            Force re-generation JWT
+          </div>
         </button>
 
         {/* Test 3 : Simuler session expiree (cookie + JWT) → doit rediriger */}
@@ -106,35 +119,52 @@ function SessionDebugPanel() {
             window.__debugAuth?.expireJWT();
             // Supprimer le cookie session (same-origin)
             document.cookie = "better-auth.session_token=; Max-Age=0; path=/;";
-            document.cookie = "__Secure-better-auth.session_token=; Max-Age=0; path=/; secure;";
+            document.cookie =
+              "__Secure-better-auth.session_token=; Max-Age=0; path=/; secure;";
             // Deconnecter via Better Auth
             try {
               await authClient.signOut();
             } catch {}
-            setStatus("Session detruite. Prochain appel GraphQL → redirection.");
+            setStatus(
+              "Session detruite. Prochain appel GraphQL → redirection.",
+            );
           }}
           className="rounded-lg bg-red-600 px-3 py-2 text-left hover:bg-red-700"
         >
           <div className="font-medium">Detruire la session</div>
-          <div className="text-red-200/70 mt-0.5">Cookie + JWT + signOut → doit rediriger</div>
+          <div className="text-red-200/70 mt-0.5">
+            Cookie + JWT + signOut → doit rediriger
+          </div>
         </button>
 
         {/* Test 4 : Forcer une requete GraphQL pour declencher le flow */}
         <button
           onClick={() => {
-            apolloClient.query({
-              query: gql`query { me { _id email } }`,
-              fetchPolicy: "cache-and-network",
-            }).then((r) => {
-              setStatus(`OK: ${r.data?.me?.email || "pas de data"}`);
-            }).catch((e) => {
-              setStatus(`Erreur: ${e.message?.substring(0, 60)}`);
-            });
+            apolloClient
+              .query({
+                query: gql`
+                  query {
+                    me {
+                      _id
+                      email
+                    }
+                  }
+                `,
+                fetchPolicy: "cache-and-network",
+              })
+              .then((r) => {
+                setStatus(`OK: ${r.data?.me?.email || "pas de data"}`);
+              })
+              .catch((e) => {
+                setStatus(`Erreur: ${e.message?.substring(0, 60)}`);
+              });
           }}
           className="rounded-lg bg-blue-600 px-3 py-2 text-left hover:bg-blue-700"
         >
           <div className="font-medium">Lancer query "me"</div>
-          <div className="text-blue-200/70 mt-0.5">Teste le flow auth avec l'etat actuel</div>
+          <div className="text-blue-200/70 mt-0.5">
+            Teste le flow auth avec l'etat actuel
+          </div>
         </button>
 
         {/* Afficher le statut */}
@@ -164,7 +194,7 @@ function DashboardContent({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const isSignaturePage = pathname?.startsWith(
-    "/dashboard/outils/signatures-mail/new"
+    "/dashboard/outils/signatures-mail/new",
   );
   const [isHydrated, setIsHydrated] = useState(false);
   const [isCommunitySidebarOpen, setIsCommunitySidebarOpen] = useState(false);
@@ -183,7 +213,11 @@ function DashboardContent({ children }) {
   } = useOnboarding();
 
   // Hook pour vérifier le statut de l'abonnement
-  const { isActive, subscription, isLoading: subscriptionLoading } = useDashboardLayoutContext();
+  const {
+    isActive,
+    subscription,
+    isLoading: subscriptionLoading,
+  } = useDashboardLayoutContext();
 
   // Protection contre l'erreur d'hydratation
   useEffect(() => {
@@ -284,9 +318,8 @@ function DashboardContent({ children }) {
         <SiteHeader />
         <div className="flex flex-1 flex-col overflow-y-auto">
           <div className="flex flex-1 flex-col gap-2 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0">
-            <SessionGateProvider>
-              {children}
-            </SessionGateProvider>
+            <SessionGateProvider>{children}</SessionGateProvider>
+            <InactivityDetector />
           </div>
         </div>
       </SidebarInset>
@@ -384,7 +417,7 @@ function DashboardContent({ children }) {
 export default function DashboardClientLayout({ children }) {
   const pathname = usePathname();
   const isSignaturePage = pathname?.startsWith(
-    "/dashboard/outils/signatures-mail/new"
+    "/dashboard/outils/signatures-mail/new",
   );
 
   // Wrapper avec le provider de layout optimisé
