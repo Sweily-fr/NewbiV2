@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
-import { authClient } from "@/src/lib/auth-client";
+import { authClient, performLogout } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
 import {
   AlertDialog,
@@ -90,16 +90,50 @@ function formatLastActivity(date) {
 function DesktopDeviceIcon() {
   return (
     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 flex items-center justify-center overflow-hidden">
-      <svg width="30" height="22" viewBox="0 0 30 21.5" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg
+        width="30"
+        height="22"
+        viewBox="0 0 30 21.5"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
         {/* Screen */}
         <rect x="2" y="0" width="26" height="17" rx="1.5" fill="#1a1a2e" />
-        <rect x="3.5" y="1.5" width="23" height="14" rx="0.5" fill="url(#sky-desktop)" />
+        <rect
+          x="3.5"
+          y="1.5"
+          width="23"
+          height="14"
+          rx="0.5"
+          fill="url(#sky-desktop)"
+        />
         {/* Cloud 1 */}
         <ellipse cx="12" cy="7" rx="3" ry="1.8" fill="white" opacity="0.9" />
-        <ellipse cx="10.2" cy="7.5" rx="2" ry="1.2" fill="white" opacity="0.8" />
-        <ellipse cx="14" cy="7.3" rx="2.2" ry="1.4" fill="white" opacity="0.85" />
+        <ellipse
+          cx="10.2"
+          cy="7.5"
+          rx="2"
+          ry="1.2"
+          fill="white"
+          opacity="0.8"
+        />
+        <ellipse
+          cx="14"
+          cy="7.3"
+          rx="2.2"
+          ry="1.4"
+          fill="white"
+          opacity="0.85"
+        />
         {/* Cloud 2 */}
-        <ellipse cx="22" cy="5.5" rx="2.5" ry="1.5" fill="white" opacity="0.7" />
+        <ellipse
+          cx="22"
+          cy="5.5"
+          rx="2.5"
+          ry="1.5"
+          fill="white"
+          opacity="0.7"
+        />
         <ellipse cx="20.5" cy="6" rx="1.8" ry="1" fill="white" opacity="0.65" />
         {/* Base */}
         <path d="M0 18.5h30l-2.5 3H2.5l-2.5-3z" fill="#c4c4c4" />
@@ -107,7 +141,14 @@ function DesktopDeviceIcon() {
         {/* Trackpad */}
         <rect x="11" y="18.5" width="8" height="0.5" rx="0.25" fill="#aaa" />
         <defs>
-          <linearGradient id="sky-desktop" x1="15" y1="1" x2="15" y2="16" gradientUnits="userSpaceOnUse">
+          <linearGradient
+            id="sky-desktop"
+            x1="15"
+            y1="1"
+            x2="15"
+            y2="16"
+            gradientUnits="userSpaceOnUse"
+          >
             <stop stopColor="#87CEEB" />
             <stop offset="1" stopColor="#4DA6E0" />
           </linearGradient>
@@ -120,21 +161,55 @@ function DesktopDeviceIcon() {
 function MobileDeviceIcon() {
   return (
     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 flex items-center justify-center overflow-hidden">
-      <svg width="18" height="30" viewBox="0 0 18 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg
+        width="18"
+        height="30"
+        viewBox="0 0 18 30"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
         {/* Phone body */}
         <rect x="0" y="0" width="18" height="30" rx="3" fill="#1a1a2e" />
         {/* Screen */}
-        <rect x="1.5" y="2.5" width="15" height="24" rx="1.5" fill="url(#sky-mobile)" />
+        <rect
+          x="1.5"
+          y="2.5"
+          width="15"
+          height="24"
+          rx="1.5"
+          fill="url(#sky-mobile)"
+        />
         {/* Cloud */}
         <ellipse cx="9" cy="11" rx="3.5" ry="2" fill="white" opacity="0.9" />
-        <ellipse cx="6.8" cy="11.5" rx="2.2" ry="1.3" fill="white" opacity="0.8" />
-        <ellipse cx="11.5" cy="11.2" rx="2.5" ry="1.5" fill="white" opacity="0.85" />
+        <ellipse
+          cx="6.8"
+          cy="11.5"
+          rx="2.2"
+          ry="1.3"
+          fill="white"
+          opacity="0.8"
+        />
+        <ellipse
+          cx="11.5"
+          cy="11.2"
+          rx="2.5"
+          ry="1.5"
+          fill="white"
+          opacity="0.85"
+        />
         {/* Small cloud */}
         <ellipse cx="5.5" cy="7.5" rx="2" ry="1.2" fill="white" opacity="0.6" />
         {/* Home indicator */}
         <rect x="6" y="28" width="6" height="0.8" rx="0.4" fill="#555" />
         <defs>
-          <linearGradient id="sky-mobile" x1="9" y1="2" x2="9" y2="27" gradientUnits="userSpaceOnUse">
+          <linearGradient
+            id="sky-mobile"
+            x1="9"
+            y1="2"
+            x2="9"
+            y2="27"
+            gradientUnits="userSpaceOnUse"
+          >
             <stop stopColor="#87CEEB" />
             <stop offset="1" stopColor="#4DA6E0" />
           </linearGradient>
@@ -147,19 +222,53 @@ function MobileDeviceIcon() {
 function TabletDeviceIcon() {
   return (
     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 flex items-center justify-center overflow-hidden">
-      <svg width="24" height="30" viewBox="0 0 24 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg
+        width="24"
+        height="30"
+        viewBox="0 0 24 30"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
         {/* Tablet body */}
         <rect x="0" y="0" width="24" height="30" rx="2.5" fill="#1a1a2e" />
         {/* Screen */}
-        <rect x="2" y="2.5" width="20" height="23" rx="1" fill="url(#sky-tablet)" />
+        <rect
+          x="2"
+          y="2.5"
+          width="20"
+          height="23"
+          rx="1"
+          fill="url(#sky-tablet)"
+        />
         {/* Cloud */}
         <ellipse cx="12" cy="11" rx="3.5" ry="2" fill="white" opacity="0.9" />
-        <ellipse cx="9.5" cy="11.5" rx="2.2" ry="1.3" fill="white" opacity="0.8" />
-        <ellipse cx="14.8" cy="11.2" rx="2.5" ry="1.5" fill="white" opacity="0.85" />
+        <ellipse
+          cx="9.5"
+          cy="11.5"
+          rx="2.2"
+          ry="1.3"
+          fill="white"
+          opacity="0.8"
+        />
+        <ellipse
+          cx="14.8"
+          cy="11.2"
+          rx="2.5"
+          ry="1.5"
+          fill="white"
+          opacity="0.85"
+        />
         {/* Home button */}
         <circle cx="12" cy="27.5" r="1.2" fill="#555" />
         <defs>
-          <linearGradient id="sky-tablet" x1="12" y1="2" x2="12" y2="26" gradientUnits="userSpaceOnUse">
+          <linearGradient
+            id="sky-tablet"
+            x1="12"
+            y1="2"
+            x2="12"
+            y2="26"
+            gradientUnits="userSpaceOnUse"
+          >
             <stop stopColor="#87CEEB" />
             <stop offset="1" stopColor="#4DA6E0" />
           </linearGradient>
@@ -181,7 +290,11 @@ function ManageDevicesContent() {
   const [loading, setLoading] = useState(true);
   const [revoking, setRevoking] = useState(null);
   const [currentSessionToken, setCurrentSessionToken] = useState(null);
-  const [confirmDialog, setConfirmDialog] = useState({ open: false, type: null, sessionToken: null });
+  const [confirmDialog, setConfirmDialog] = useState({
+    open: false,
+    type: null,
+    sessionToken: null,
+  });
 
   useEffect(() => {
     const fetchSessions = async () => {
@@ -217,9 +330,14 @@ function ManageDevicesContent() {
               browser,
               os,
               deviceType: device.type,
-              lastActivity: formatLastActivity(session.updatedAt || session.createdAt),
+              lastActivity: formatLastActivity(
+                session.updatedAt || session.createdAt,
+              ),
               ip: session.ipAddress || session.ip || null,
-              location: session.location && session.location !== "Localisation inconnue" ? session.location : null,
+              location:
+                session.location && session.location !== "Localisation inconnue"
+                  ? session.location
+                  : null,
               sessionToken: session.token || session.sessionToken || session.id,
             };
           });
@@ -246,7 +364,8 @@ function ManageDevicesContent() {
       if (orgsResponse.ok) {
         const organizations = await orgsResponse.json();
         if (organizations?.length > 0) {
-          const activeOrg = organizations.find((org) => org.isActive) || organizations[0];
+          const activeOrg =
+            organizations.find((org) => org.isActive) || organizations[0];
           await fetch("/api/auth/organization/set-active", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -272,9 +391,8 @@ function ManageDevicesContent() {
       if (!response.ok) {
         toast.error("Erreur lors de la revocation de la session");
       } else {
-        toast.success("Session revoquee");
-        await activateOrganization();
-        setTimeout(() => router.push("/dashboard"), 800);
+        // Hard redirect pour éviter les boucles si MongoDB est instable
+        window.location.href = "/dashboard";
       }
     } catch {
       toast.error("Erreur lors de la revocation");
@@ -296,10 +414,8 @@ function ManageDevicesContent() {
         return;
       }
 
-      const result = await response.json();
-      toast.success(`${result.revokedCount} session(s) revoquee(s)`);
-      await activateOrganization();
-      setTimeout(() => router.push("/dashboard"), 800);
+      // Hard redirect pour éviter les boucles si MongoDB est instable
+      window.location.href = "/dashboard";
     } catch {
       toast.error("Erreur lors de la deconnexion");
     } finally {
@@ -307,14 +423,7 @@ function ManageDevicesContent() {
     }
   };
 
-  const handleCancel = async () => {
-    try {
-      await authClient.signOut();
-      router.push("/auth/login");
-    } catch {
-      router.push("/auth/login");
-    }
-  };
+  const handleCancel = () => performLogout();
 
   const onConfirmAction = () => {
     if (confirmDialog.type === "revoke-one") {
@@ -334,11 +443,13 @@ function ManageDevicesContent() {
     },
     "revoke-all": {
       title: "Deconnecter les autres sessions ?",
-      description: "Toutes les autres sessions seront immediatement revoquees. Seule votre session actuelle restera active.",
+      description:
+        "Toutes les autres sessions seront immediatement revoquees. Seule votre session actuelle restera active.",
     },
     cancel: {
       title: "Se deconnecter ?",
-      description: "Vous serez deconnecte de cet appareil et redirige vers la page de connexion.",
+      description:
+        "Vous serez deconnecte de cet appareil et redirige vers la page de connexion.",
     },
   };
 
@@ -359,13 +470,13 @@ function ManageDevicesContent() {
       {loading ? (
         <div className="py-12 flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-gray-200 dark:border-gray-700 border-t-primary rounded-full animate-spin" />
-          <p className="text-sm text-muted-foreground">Chargement des sessions...</p>
+          <p className="text-sm text-muted-foreground">
+            Chargement des sessions...
+          </p>
         </div>
       ) : devices.length === 0 ? (
         <div className="py-12 text-center">
-          <p className="text-sm text-muted-foreground">
-            Aucune session active
-          </p>
+          <p className="text-sm text-muted-foreground">Aucune session active</p>
           <Button
             onClick={() => router.push("/dashboard")}
             variant="primary"
@@ -380,13 +491,17 @@ function ManageDevicesContent() {
           {hasMultipleSessions && (
             <div className="mb-6 border border-amber-200 dark:border-amber-800/40 bg-amber-50/80 dark:bg-amber-950/20 rounded-lg py-3 px-4">
               <div className="flex items-start gap-3">
-                <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
+                <AlertTriangle
+                  className="h-4 w-4 text-amber-500 flex-shrink-0 mt-0.5"
+                  strokeWidth={2}
+                />
                 <div>
                   <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
                     Connexion simultanee detectee
                   </p>
                   <p className="text-[13px] text-amber-700/80 dark:text-amber-300/80 mt-1 leading-relaxed">
-                    Vous etes deja connecte sur un autre appareil. Une seule connexion est autorisee a la fois.
+                    Vous etes deja connecte sur un autre appareil. Une seule
+                    connexion est autorisee a la fois.
                   </p>
                 </div>
               </div>
@@ -396,7 +511,9 @@ function ManageDevicesContent() {
           {/* Device list */}
           <div className="space-y-0">
             {devices.map((device) => {
-              const isCurrentSession = currentSessionToken && device.sessionToken === currentSessionToken;
+              const isCurrentSession =
+                currentSessionToken &&
+                device.sessionToken === currentSessionToken;
               const label = buildDeviceLabel(device);
 
               return (
@@ -421,21 +538,32 @@ function ManageDevicesContent() {
                           </span>
                           {(device.location || device.ip) && (
                             <>
-                              <span className="text-xs text-muted-foreground/40">&middot;</span>
-                              <span className="text-xs text-muted-foreground">{device.location || device.ip}</span>
+                              <span className="text-xs text-muted-foreground/40">
+                                &middot;
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {device.location || device.ip}
+                              </span>
                             </>
                           )}
                         </>
                       ) : (
                         <>
                           {(device.location || device.ip) && (
-                            <span className="text-xs text-muted-foreground">{device.location || device.ip}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {device.location || device.ip}
+                            </span>
                           )}
-                          {(device.location || device.ip) && device.lastActivity && (
-                            <span className="text-xs text-muted-foreground/40">&middot;</span>
-                          )}
+                          {(device.location || device.ip) &&
+                            device.lastActivity && (
+                              <span className="text-xs text-muted-foreground/40">
+                                &middot;
+                              </span>
+                            )}
                           {device.lastActivity && (
-                            <span className="text-xs text-muted-foreground">{device.lastActivity}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {device.lastActivity}
+                            </span>
                           )}
                         </>
                       )}
@@ -445,7 +573,13 @@ function ManageDevicesContent() {
                   {/* Revoke button */}
                   {!isCurrentSession && (
                     <button
-                      onClick={() => setConfirmDialog({ open: true, type: "revoke-one", sessionToken: device.sessionToken })}
+                      onClick={() =>
+                        setConfirmDialog({
+                          open: true,
+                          type: "revoke-one",
+                          sessionToken: device.sessionToken,
+                        })
+                      }
                       disabled={revoking === device.sessionToken}
                       className="text-xs text-muted-foreground hover:text-red-600 dark:hover:text-red-400 transition-colors duration-150 cursor-pointer flex-shrink-0 disabled:opacity-50"
                     >
@@ -462,7 +596,13 @@ function ManageDevicesContent() {
             {hasMultipleSessions ? (
               <>
                 <Button
-                  onClick={() => setConfirmDialog({ open: true, type: "cancel", sessionToken: null })}
+                  onClick={() =>
+                    setConfirmDialog({
+                      open: true,
+                      type: "cancel",
+                      sessionToken: null,
+                    })
+                  }
                   variant="outline"
                   size="sm"
                   disabled={revoking !== null}
@@ -471,13 +611,21 @@ function ManageDevicesContent() {
                   Se deconnecter
                 </Button>
                 <Button
-                  onClick={() => setConfirmDialog({ open: true, type: "revoke-all", sessionToken: null })}
+                  onClick={() =>
+                    setConfirmDialog({
+                      open: true,
+                      type: "revoke-all",
+                      sessionToken: null,
+                    })
+                  }
                   variant="primary"
                   size="sm"
                   disabled={revoking !== null}
                   className="sm:w-auto"
                 >
-                  {revoking === "all" ? "Deconnexion..." : "Garder cette session uniquement"}
+                  {revoking === "all"
+                    ? "Deconnexion..."
+                    : "Garder cette session uniquement"}
                 </Button>
               </>
             ) : (
@@ -512,12 +660,11 @@ function ManageDevicesContent() {
               Gerez les appareils connectes a votre compte.
             </p>
 
-            <div className="mt-8">
-              {sessionsList}
-            </div>
+            <div className="mt-8">{sessionsList}</div>
 
             <p className="mt-8 text-xs text-muted-foreground/60 leading-relaxed">
-              Si vous ne reconnaissez pas un appareil, revoquez sa session et changez votre mot de passe.
+              Si vous ne reconnaissez pas un appareil, revoquez sa session et
+              changez votre mot de passe.
             </p>
           </div>
         </div>
@@ -544,7 +691,11 @@ function ManageDevicesContent() {
       {/* Mobile Layout */}
       <div className="md:hidden min-h-screen bg-background flex flex-col">
         <div className="pt-10 flex justify-center">
-          <img src="/newbiLetter.png" alt="Newbi" className="h-5 w-auto object-contain" />
+          <img
+            src="/newbiLetter.png"
+            alt="Newbi"
+            className="h-5 w-auto object-contain"
+          />
         </div>
 
         <div className="flex-1 flex items-start justify-center px-6 pt-8">
@@ -559,14 +710,21 @@ function ManageDevicesContent() {
             {sessionsList}
 
             <p className="mt-8 text-xs text-muted-foreground/60 leading-relaxed text-center">
-              Si vous ne reconnaissez pas un appareil, revoquez sa session et changez votre mot de passe.
+              Si vous ne reconnaissez pas un appareil, revoquez sa session et
+              changez votre mot de passe.
             </p>
           </div>
         </div>
       </div>
 
       {/* Confirmation dialog */}
-      <AlertDialog open={confirmDialog.open} onOpenChange={(open) => !open && setConfirmDialog({ open: false, type: null, sessionToken: null })}>
+      <AlertDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) =>
+          !open &&
+          setConfirmDialog({ open: false, type: null, sessionToken: null })
+        }
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
@@ -580,7 +738,11 @@ function ManageDevicesContent() {
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction
               onClick={onConfirmAction}
-              className={confirmDialog.type === "cancel" ? "" : "bg-red-600 hover:bg-red-700 text-white"}
+              className={
+                confirmDialog.type === "cancel"
+                  ? ""
+                  : "bg-red-600 hover:bg-red-700 text-white"
+              }
             >
               {confirmDialog.type === "cancel" ? "Se deconnecter" : "Confirmer"}
             </AlertDialogAction>
