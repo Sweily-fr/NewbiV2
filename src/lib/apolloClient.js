@@ -426,36 +426,27 @@ const errorLink = onError(
         return;
       }
 
-      const userMessage = getErrorMessage(networkError, "network");
+      // "Failed to fetch" = erreur réseau transitoire (timeout, connexion perdue)
+      // Ne pas afficher de toast — ça n'a pas d'incidence fonctionnelle et c'est pas pro
+      if (msg === "Failed to fetch") {
+        console.warn(
+          `[Network] ${operation.operationName || "?"}: Failed to fetch (transitoire)`,
+        );
+        return;
+      }
 
+      const userMessage = getErrorMessage(networkError, "network");
       const networkOperationName = operation.operationName || "inconnue";
 
-      // Log détaillé dans la console pour le debug
       console.error(
         `[Network Error] Opération: ${networkOperationName}`,
         `\n  Message: ${msg}`,
         `\n  Status: ${networkError.statusCode || "N/A"}`,
       );
 
-      if (msg === "Failed to fetch") {
-        toast.error(userMessage, {
-          duration: 5000,
-          details: {
-            operation: networkOperationName,
-            errorCode: `HTTP ${networkError.statusCode || "?"}`,
-            rawMessage: msg,
-          },
-        });
-      } else {
-        toast.error(userMessage, {
-          duration: 4000,
-          details: {
-            operation: networkOperationName,
-            errorCode: `HTTP ${networkError.statusCode || "?"}`,
-            rawMessage: msg,
-          },
-        });
-      }
+      toast.error(userMessage, {
+        duration: 4000,
+      });
     }
   },
 );
