@@ -6,162 +6,138 @@ const dbName = process.env.MONGODB_DB_NAME || "invoice-app";
 // Options de connexion optimisées pour Vercel serverless
 const options = {
   maxPoolSize: 10,
-  minPoolSize: 0, // 0 en serverless pour éviter les connexions maintenues inutilement
-  maxIdleTimeMS: 30000, // Fermer les connexions inactives après 30s (serverless)
-  serverSelectionTimeoutMS: 10000, // 10s au lieu de 30s — fail fast pour le cold start
+  minPoolSize: 0,
+  maxIdleTimeMS: 30000,
+  serverSelectionTimeoutMS: 10000,
   socketTimeoutMS: 30000,
   retryWrites: true,
   retryReads: true,
-  connectTimeoutMS: 10000, // 10s — fail fast plutôt que bloquer 30s
+  connectTimeoutMS: 10000,
 };
 
 let client;
-let clientPromise;
 
 if (!global._mongoClient) {
   client = new MongoClient(uri, options);
   global._mongoClient = client;
-
-  // Connexion immédiate pour éviter timeout au premier appel
-  clientPromise = client
-    .connect()
-    .then(async () => {
-      global._mongoDb = client.db(dbName);
-      console.log("✅ MongoDB connected successfully");
-
-      // Créer un TTL index sur expiresAt pour nettoyer automatiquement les sessions expirées
-      try {
-        await global._mongoDb
-          .collection("session")
-          .createIndex(
-            { expiresAt: 1 },
-            { expireAfterSeconds: 0, background: true },
-          );
-      } catch {
-        // Index existe déjà ou erreur non critique
-      }
-
-      // TTL index pour nettoyer les données temporaires de création d'organisation
-      try {
-        await global._mongoDb
-          .collection("pending_org_data")
-          .createIndex(
-            { expiresAt: 1 },
-            { expireAfterSeconds: 0, background: true },
-          );
-      } catch {
-        // Index existe déjà ou erreur non critique
-      }
-
-      // Unique compound index on member (prevents duplicate owner records)
-      try {
-        await global._mongoDb
-          .collection("member")
-          .createIndex(
-            { userId: 1, organizationId: 1 },
-            { unique: true, background: true },
-          );
-      } catch {
-        // Index existe déjà ou erreur non critique
-      }
-
-      // Unique index on subscription.stripeSubscriptionId
-      try {
-        await global._mongoDb
-          .collection("subscription")
-          .createIndex(
-            { stripeSubscriptionId: 1 },
-            { unique: true, sparse: true, background: true },
-          );
-      } catch {
-        // Index existe déjà ou erreur non critique
-      }
-
-      // Index on subscription.referenceId for fast lookups
-      try {
-        await global._mongoDb
-          .collection("subscription")
-          .createIndex({ referenceId: 1 }, { background: true });
-      } catch {
-        // Index existe déjà ou erreur non critique
-      }
-
-      // Webhook deduplication index
-      try {
-        await global._mongoDb
-          .collection("stripeWebhookEvents")
-          .createIndex({ eventId: 1 }, { unique: true, background: true });
-      } catch {
-        // Index existe déjà ou erreur non critique
-      }
-
-      return client;
-    })
-    .catch((err) => {
-      console.error("❌ MongoDB initial connection error:", err);
-      throw err;
-    });
-
-  global._mongoClientPromise = clientPromise;
+  global._mongoConnected = false;
+  global._mongoConnecting = null;
 } else {
   client = global._mongoClient;
-  clientPromise = global._mongoClientPromise;
 }
 
-// Fonction pour s'assurer que la connexion est établie
-const ensureConnection = async () => {
-  try {
-    // Attendre que la connexion initiale soit établie
-    await clientPromise;
+// Créer les index (appelé une seule fois après connexion réussie)
+async function createIndexes(db) {
+  const indexes = [
+    {
+      coll: "session",
+      idx: { expiresAt: 1 },
+      opts: { expireAfterSeconds: 0, background: true },
+    },
+    {
+      coll: "pending_org_data",
+      idx: { expiresAt: 1 },
+      opts: { expireAfterSeconds: 0, background: true },
+    },
+    {
+      coll: "member",
+      idx: { userId: 1, organizationId: 1 },
+      opts: { unique: true, background: true },
+    },
+    {
+      coll: "subscription",
+      idx: { stripeSubscriptionId: 1 },
+      opts: { unique: true, sparse: true, background: true },
+    },
+    {
+      coll: "subscription",
+      idx: { referenceId: 1 },
+      opts: { background: true },
+    },
+    {
+      coll: "stripeWebhookEvents",
+      idx: { eventId: 1 },
+      opts: { unique: true, background: true },
+    },
+  ];
 
-    // global._mongoDb est déjà créé dans clientPromise
-    if (!global._mongoDb) {
-      global._mongoDb = client.db(dbName);
-    }
+  await Promise.allSettled(
+    indexes.map(({ coll, idx, opts }) =>
+      db.collection(coll).createIndex(idx, opts),
+    ),
+  );
+}
 
-    // Vérifier que la connexion est toujours active
-    await client.db().admin().ping();
+// Connexion lazy avec retry — ne crash JAMAIS le process
+async function connect() {
+  // Déjà connecté
+  if (global._mongoConnected && global._mongoDb) {
     return global._mongoDb;
-  } catch (error) {
-    console.error("❌ MongoDB connection lost, reconnecting...", error.message);
-    try {
-      // Tenter une reconnexion
-      const newClient = await client.connect();
-      global._mongoDb = newClient.db(dbName);
-      global._mongoClientPromise = Promise.resolve(newClient);
-      console.log("✅ MongoDB reconnected successfully");
-      return global._mongoDb;
-    } catch (reconnectError) {
-      console.error("❌ Failed to reconnect to MongoDB:", reconnectError);
-      throw reconnectError;
-    }
   }
+
+  // Connexion en cours — ne pas en lancer une deuxième
+  if (global._mongoConnecting) {
+    return global._mongoConnecting;
+  }
+
+  global._mongoConnecting = (async () => {
+    try {
+      await client.connect();
+      global._mongoDb = client.db(dbName);
+      global._mongoConnected = true;
+      global._mongoConnecting = null;
+      console.log("✅ MongoDB connected successfully");
+
+      // Créer les index en background (non bloquant)
+      createIndexes(global._mongoDb).catch(() => {});
+
+      return global._mongoDb;
+    } catch (err) {
+      global._mongoConnected = false;
+      global._mongoConnecting = null;
+      // Log l'erreur mais NE PAS throw — le process reste vivant pour la prochaine requête
+      console.error("❌ MongoDB connection failed:", err?.message || err);
+      return null;
+    }
+  })();
+
+  return global._mongoConnecting;
+}
+
+// Lancer la connexion dès le chargement du module (non bloquant, pas de throw)
+connect();
+
+// Fonction pour s'assurer que la connexion est établie (avec retry)
+const ensureConnection = async () => {
+  // Tenter la connexion (ou réutiliser si déjà connectée)
+  const db = await connect();
+  if (db) return db;
+
+  // Premier essai a échoué — retenter une fois
+  console.warn("⚠️ MongoDB retry connexion...");
+  const retryDb = await connect();
+  if (retryDb) return retryDb;
+
+  throw new Error("MongoDB unavailable after retry");
 };
 
 // Gestion des événements de connexion
-if (client) {
-  client.on("close", () => {
-    console.warn("⚠️ MongoDB connection closed (driver will auto-reconnect)");
-    // Ne pas nullifier global._mongoDb — le driver MongoDB gère la reconnexion automatiquement
-  });
+client.on("close", () => {
+  console.warn("⚠️ MongoDB connection closed");
+  global._mongoConnected = false;
+});
 
-  client.on("error", (error) => {
-    console.error("❌ MongoDB client error:", error);
-  });
-
-  client.on("timeout", () => {
-    console.warn("⚠️ MongoDB connection timeout");
-  });
-}
+client.on("error", (error) => {
+  console.error("❌ MongoDB client error:", error?.message);
+  global._mongoConnected = false;
+});
 
 // Exporter une fonction qui retourne la DB après connexion
 export async function getMongoDb() {
   return await ensureConnection();
 }
 
-// Créer un Proxy qui retourne la DB de manière synchrone
-// Better Auth a besoin d'un accès synchrone à la DB
-// Le Proxy intercepte les accès et retourne global._mongoDb ou client.db(dbName)
+// Proxy synchrone pour Better Auth (qui a besoin d'un accès synchrone à la DB)
 const mongoDbProxy = new Proxy(
   {},
   {
@@ -169,16 +145,12 @@ const mongoDbProxy = new Proxy(
       try {
         const db = global._mongoDb || client.db(dbName);
         const value = db[prop];
-
-        // Si c'est une fonction, la binder au bon contexte
         if (typeof value === "function") {
           return value.bind(db);
         }
-
         return value;
       } catch (error) {
         console.error("❌ MongoDB Proxy access error:", error?.message);
-        // Retourner undefined au lieu de crasher le module
         return undefined;
       }
     },
