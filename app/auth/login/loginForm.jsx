@@ -340,9 +340,13 @@ const LoginForm = () => {
           toast.error("Email ou mot de passe incorrect");
         },
       });
-    } catch (err) {
+    } catch {
       // Erreur réseau ou serveur (ex: MongoDB cold start timeout sur Vercel)
-      toast.error("Le serveur met du temps à répondre. Veuillez réessayer.");
+      // Retry silencieux — le second appel réussit car MongoDB est connecté après le cold start
+      if (!hasRetriedRef.current) {
+        hasRetriedRef.current = true;
+        return onSubmit(formData);
+      }
     }
   };
 
