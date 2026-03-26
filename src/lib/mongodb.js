@@ -13,7 +13,7 @@ const options = {
   retryWrites: true,
   retryReads: true,
   connectTimeoutMS: 5000,
-  compressors: ["zstd", "snappy"],
+  // compressors: ["zstd", "snappy"], // Désactivé — modules natifs optionnels non installés
 };
 
 // Réutiliser le client MongoDB entre les invocations serverless
