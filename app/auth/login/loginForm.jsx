@@ -267,18 +267,16 @@ const LoginForm = () => {
             (typeof error === "string" ? error : null);
           const errorStatus = error?.status || error?.error?.status;
 
-          // Token CSRF expiré (page restée ouverte longtemps) → retry automatique une fois
-          // Better Auth retourne 403 ou un message contenant "csrf"/"token"
-          const isCsrfError =
+          // Token CSRF expiré ou erreur serveur transitoire → retry silencieux une fois
+          const isRetryableError =
             errorStatus === 403 ||
-            (errorMessage &&
-              (errorMessage.toLowerCase().includes("csrf") ||
-                errorMessage.toLowerCase().includes("invalid token") ||
-                errorMessage.toLowerCase().includes("forbidden")));
+            errorStatus === 500 ||
+            errorStatus === 502 ||
+            errorStatus === 503 ||
+            (errorMessage && errorMessage.toLowerCase().includes("csrf"));
 
-          if (isCsrfError && !hasRetriedRef.current) {
+          if (isRetryableError && !hasRetriedRef.current) {
             hasRetriedRef.current = true;
-            // Le retry va automatiquement obtenir un nouveau token CSRF
             await onSubmit(formData);
             return;
           }
