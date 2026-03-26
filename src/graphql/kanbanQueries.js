@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 // GraphQL Queries
 export const GET_TASK_TIMER = gql`
@@ -127,13 +127,6 @@ export const GET_BOARD = gql`
             userName
             userImage
           }
-          entries {
-            id
-            startTime
-            endTime
-            duration
-            isManual
-          }
           hourlyRate
           roundingOption
         }
@@ -147,37 +140,66 @@ export const GET_BOARD = gql`
           uploadedBy
           uploadedAt
         }
-        comments {
+      }
+    }
+  }
+`;
+
+// Query complète pour charger les détails d'une tâche (comments, activity, timeTracking.entries)
+// Utilisée quand on ouvre le modal de détail d'une tâche
+export const GET_TASK_DETAILS = gql`
+  query GetTaskDetails($id: ID!, $workspaceId: ID) {
+    task(id: $id, workspaceId: $workspaceId) {
+      id
+      comments {
+        id
+        userId
+        userName
+        userImage
+        content
+        images {
           id
+          key
+          url
+          fileName
+          fileSize
+          contentType
+          uploadedBy
+          uploadedAt
+        }
+        createdAt
+        updatedAt
+      }
+      activity {
+        id
+        userId
+        userName
+        userImage
+        type
+        field
+        oldValue
+        newValue
+        description
+        createdAt
+      }
+      timeTracking {
+        totalSeconds
+        isRunning
+        currentStartTime
+        startedBy {
           userId
           userName
           userImage
-          content
-          images {
-            id
-            key
-            url
-            fileName
-            fileSize
-            contentType
-            uploadedBy
-            uploadedAt
-          }
-          createdAt
-          updatedAt
         }
-        activity {
+        entries {
           id
-          userId
-          userName
-          userImage
-          type
-          field
-          oldValue
-          newValue
-          description
-          createdAt
+          startTime
+          endTime
+          duration
+          isManual
         }
+        hourlyRate
+        roundingOption
       }
     }
   }
@@ -511,8 +533,18 @@ export const DELETE_TASK = gql`
 `;
 
 export const MOVE_TASK = gql`
-  mutation MoveTask($id: ID!, $columnId: String!, $position: Int!, $workspaceId: ID) {
-    moveTask(id: $id, columnId: $columnId, position: $position, workspaceId: $workspaceId) {
+  mutation MoveTask(
+    $id: ID!
+    $columnId: String!
+    $position: Int!
+    $workspaceId: ID
+  ) {
+    moveTask(
+      id: $id
+      columnId: $columnId
+      position: $position
+      workspaceId: $workspaceId
+    ) {
       id
       columnId
       position
@@ -521,9 +553,9 @@ export const MOVE_TASK = gql`
   }
 `;
 
-// Fragments pour les types communs (déplacés avant leur utilisation)
-export const TASK_FRAGMENT = gql`
-  fragment TaskFields on Task {
+// Fragment léger pour les cartes kanban et les subscriptions (sans comments/activity/entries)
+export const TASK_LIGHT_FRAGMENT = gql`
+  fragment TaskLightFields on Task {
     id
     title
     description
@@ -566,13 +598,6 @@ export const TASK_FRAGMENT = gql`
         userName
         userImage
       }
-      entries {
-        id
-        startTime
-        endTime
-        duration
-        isManual
-      }
       hourlyRate
       roundingOption
     }
@@ -585,6 +610,32 @@ export const TASK_FRAGMENT = gql`
       contentType
       uploadedBy
       uploadedAt
+    }
+  }
+`;
+
+// Fragment complet pour les mutations qui ont besoin de tout (comments, activity, entries)
+export const TASK_FRAGMENT = gql`
+  fragment TaskFields on Task {
+    ...TaskLightFields
+    timeTracking {
+      totalSeconds
+      isRunning
+      currentStartTime
+      startedBy {
+        userId
+        userName
+        userImage
+      }
+      entries {
+        id
+        startTime
+        endTime
+        duration
+        isManual
+      }
+      hourlyRate
+      roundingOption
     }
     comments {
       id
@@ -619,6 +670,7 @@ export const TASK_FRAGMENT = gql`
       createdAt
     }
   }
+  ${TASK_LIGHT_FRAGMENT}
 `;
 
 export const ADD_COMMENT = gql`
@@ -631,8 +683,18 @@ export const ADD_COMMENT = gql`
 `;
 
 export const UPDATE_COMMENT = gql`
-  mutation UpdateComment($taskId: ID!, $commentId: ID!, $content: String!, $workspaceId: ID) {
-    updateComment(taskId: $taskId, commentId: $commentId, content: $content, workspaceId: $workspaceId) {
+  mutation UpdateComment(
+    $taskId: ID!
+    $commentId: ID!
+    $content: String!
+    $workspaceId: ID
+  ) {
+    updateComment(
+      taskId: $taskId
+      commentId: $commentId
+      content: $content
+      workspaceId: $workspaceId
+    ) {
       ...TaskFields
     }
   }
@@ -641,7 +703,11 @@ export const UPDATE_COMMENT = gql`
 
 export const DELETE_COMMENT = gql`
   mutation DeleteComment($taskId: ID!, $commentId: ID!, $workspaceId: ID) {
-    deleteComment(taskId: $taskId, commentId: $commentId, workspaceId: $workspaceId) {
+    deleteComment(
+      taskId: $taskId
+      commentId: $commentId
+      workspaceId: $workspaceId
+    ) {
       ...TaskFields
     }
   }
@@ -707,7 +773,7 @@ export const TASK_UPDATED_SUBSCRIPTION = gql`
     taskUpdated(boardId: $boardId, workspaceId: $workspaceId) {
       type
       task {
-        ...TaskFields
+        ...TaskLightFields
       }
       taskId
       boardId
@@ -722,7 +788,7 @@ export const TASK_UPDATED_SUBSCRIPTION = gql`
       }
     }
   }
-  ${TASK_FRAGMENT}
+  ${TASK_LIGHT_FRAGMENT}
 `;
 
 export const COLUMN_UPDATED_SUBSCRIPTION = gql`
@@ -770,8 +836,18 @@ export const RESET_TIMER = gql`
 `;
 
 export const UPDATE_TIMER_SETTINGS = gql`
-  mutation UpdateTimerSettings($taskId: ID!, $hourlyRate: Float, $roundingOption: String, $workspaceId: ID) {
-    updateTimerSettings(taskId: $taskId, hourlyRate: $hourlyRate, roundingOption: $roundingOption, workspaceId: $workspaceId) {
+  mutation UpdateTimerSettings(
+    $taskId: ID!
+    $hourlyRate: Float
+    $roundingOption: String
+    $workspaceId: ID
+  ) {
+    updateTimerSettings(
+      taskId: $taskId
+      hourlyRate: $hourlyRate
+      roundingOption: $roundingOption
+      workspaceId: $workspaceId
+    ) {
       ...TaskFields
     }
   }
@@ -779,8 +855,18 @@ export const UPDATE_TIMER_SETTINGS = gql`
 `;
 
 export const ADD_MANUAL_TIME = gql`
-  mutation AddManualTime($taskId: ID!, $seconds: Int!, $description: String, $workspaceId: ID) {
-    addManualTime(taskId: $taskId, seconds: $seconds, description: $description, workspaceId: $workspaceId) {
+  mutation AddManualTime(
+    $taskId: ID!
+    $seconds: Int!
+    $description: String
+    $workspaceId: ID
+  ) {
+    addManualTime(
+      taskId: $taskId
+      seconds: $seconds
+      description: $description
+      workspaceId: $workspaceId
+    ) {
       ...TaskFields
     }
   }
@@ -984,8 +1070,18 @@ export const GET_PUBLIC_BOARD = gql`
 
 // Mutation pour demander l'accès (visiteurs bannis)
 export const REQUEST_ACCESS = gql`
-  mutation RequestAccess($token: String!, $email: String!, $name: String, $message: String) {
-    requestAccess(token: $token, email: $email, name: $name, message: $message) {
+  mutation RequestAccess(
+    $token: String!
+    $email: String!
+    $name: String
+    $message: String
+  ) {
+    requestAccess(
+      token: $token
+      email: $email
+      name: $name
+      message: $message
+    ) {
       success
       message
       alreadyRequested
@@ -1051,7 +1147,10 @@ export const VALIDATE_PUBLIC_TOKEN = gql`
 
 // Mutation pour créer un lien de partage
 export const CREATE_PUBLIC_SHARE = gql`
-  mutation CreatePublicShare($input: CreatePublicShareInput!, $workspaceId: ID) {
+  mutation CreatePublicShare(
+    $input: CreatePublicShareInput!
+    $workspaceId: ID
+  ) {
     createPublicShare(input: $input, workspaceId: $workspaceId) {
       id
       token
@@ -1076,7 +1175,10 @@ export const CREATE_PUBLIC_SHARE = gql`
 
 // Mutation pour mettre à jour un lien de partage
 export const UPDATE_PUBLIC_SHARE = gql`
-  mutation UpdatePublicShare($input: UpdatePublicShareInput!, $workspaceId: ID) {
+  mutation UpdatePublicShare(
+    $input: UpdatePublicShareInput!
+    $workspaceId: ID
+  ) {
     updatePublicShare(input: $input, workspaceId: $workspaceId) {
       id
       token
@@ -1121,8 +1223,18 @@ export const REACTIVATE_PUBLIC_SHARE = gql`
 
 // Mutation pour révoquer l'accès d'un visiteur spécifique (le bannit)
 export const REVOKE_VISITOR_ACCESS = gql`
-  mutation RevokeVisitorAccess($shareId: ID!, $visitorEmail: String!, $reason: String, $workspaceId: ID) {
-    revokeVisitorAccess(shareId: $shareId, visitorEmail: $visitorEmail, reason: $reason, workspaceId: $workspaceId) {
+  mutation RevokeVisitorAccess(
+    $shareId: ID!
+    $visitorEmail: String!
+    $reason: String
+    $workspaceId: ID
+  ) {
+    revokeVisitorAccess(
+      shareId: $shareId
+      visitorEmail: $visitorEmail
+      reason: $reason
+      workspaceId: $workspaceId
+    ) {
       id
       visitors {
         id
@@ -1154,8 +1266,16 @@ export const REVOKE_VISITOR_ACCESS = gql`
 
 // Mutation pour débannir un visiteur
 export const UNBAN_VISITOR = gql`
-  mutation UnbanVisitor($shareId: ID!, $visitorEmail: String!, $workspaceId: ID) {
-    unbanVisitor(shareId: $shareId, visitorEmail: $visitorEmail, workspaceId: $workspaceId) {
+  mutation UnbanVisitor(
+    $shareId: ID!
+    $visitorEmail: String!
+    $workspaceId: ID
+  ) {
+    unbanVisitor(
+      shareId: $shareId
+      visitorEmail: $visitorEmail
+      workspaceId: $workspaceId
+    ) {
       id
       bannedEmails {
         email
@@ -1168,8 +1288,16 @@ export const UNBAN_VISITOR = gql`
 
 // Mutation pour approuver une demande d'accès
 export const APPROVE_ACCESS_REQUEST = gql`
-  mutation ApproveAccessRequest($shareId: ID!, $requestId: ID!, $workspaceId: ID) {
-    approveAccessRequest(shareId: $shareId, requestId: $requestId, workspaceId: $workspaceId) {
+  mutation ApproveAccessRequest(
+    $shareId: ID!
+    $requestId: ID!
+    $workspaceId: ID
+  ) {
+    approveAccessRequest(
+      shareId: $shareId
+      requestId: $requestId
+      workspaceId: $workspaceId
+    ) {
       id
       bannedEmails {
         email
@@ -1190,8 +1318,16 @@ export const APPROVE_ACCESS_REQUEST = gql`
 
 // Mutation pour rejeter une demande d'accès
 export const REJECT_ACCESS_REQUEST = gql`
-  mutation RejectAccessRequest($shareId: ID!, $requestId: ID!, $workspaceId: ID) {
-    rejectAccessRequest(shareId: $shareId, requestId: $requestId, workspaceId: $workspaceId) {
+  mutation RejectAccessRequest(
+    $shareId: ID!
+    $requestId: ID!
+    $workspaceId: ID
+  ) {
+    rejectAccessRequest(
+      shareId: $shareId
+      requestId: $requestId
+      workspaceId: $workspaceId
+    ) {
       id
       accessRequests {
         id
@@ -1207,8 +1343,20 @@ export const REJECT_ACCESS_REQUEST = gql`
 
 // Mutation pour ajouter un commentaire externe
 export const ADD_EXTERNAL_COMMENT = gql`
-  mutation AddExternalComment($token: String!, $taskId: ID!, $content: String!, $visitorEmail: String!, $images: [CommentImageInput!]) {
-    addExternalComment(token: $token, taskId: $taskId, content: $content, visitorEmail: $visitorEmail, images: $images) {
+  mutation AddExternalComment(
+    $token: String!
+    $taskId: ID!
+    $content: String!
+    $visitorEmail: String!
+    $images: [CommentImageInput!]
+  ) {
+    addExternalComment(
+      token: $token
+      taskId: $taskId
+      content: $content
+      visitorEmail: $visitorEmail
+      images: $images
+    ) {
       success
       message
       task {
@@ -1282,7 +1430,11 @@ export const ADD_EXTERNAL_COMMENT = gql`
 
 // Mutation pour mettre à jour le profil d'un visiteur externe
 export const UPDATE_VISITOR_PROFILE = gql`
-  mutation UpdateVisitorProfile($token: String!, $email: String!, $input: UpdateVisitorProfileInput!) {
+  mutation UpdateVisitorProfile(
+    $token: String!
+    $email: String!
+    $input: UpdateVisitorProfileInput!
+  ) {
     updateVisitorProfile(token: $token, email: $email, input: $input) {
       success
       message
@@ -1300,7 +1452,11 @@ export const UPDATE_VISITOR_PROFILE = gql`
 
 // Mutation pour uploader l'image de profil d'un visiteur sur Cloudflare
 export const UPLOAD_VISITOR_IMAGE = gql`
-  mutation UploadVisitorImage($token: String!, $email: String!, $file: Upload!) {
+  mutation UploadVisitorImage(
+    $token: String!
+    $email: String!
+    $file: Upload!
+  ) {
     uploadVisitorImage(token: $token, email: $email, file: $file) {
       success
       message
@@ -1311,8 +1467,18 @@ export const UPLOAD_VISITOR_IMAGE = gql`
 
 // Mutation pour uploader une image dans un commentaire externe (visiteur)
 export const UPLOAD_EXTERNAL_COMMENT_IMAGE = gql`
-  mutation UploadExternalCommentImage($token: String!, $taskId: ID!, $file: Upload!, $visitorEmail: String!) {
-    uploadExternalCommentImage(token: $token, taskId: $taskId, file: $file, visitorEmail: $visitorEmail) {
+  mutation UploadExternalCommentImage(
+    $token: String!
+    $taskId: ID!
+    $file: Upload!
+    $visitorEmail: String!
+  ) {
+    uploadExternalCommentImage(
+      token: $token
+      taskId: $taskId
+      file: $file
+      visitorEmail: $visitorEmail
+    ) {
       success
       message
       image {
@@ -1492,7 +1658,10 @@ export const SET_INVITED_USER_PASSWORD = gql`
 
 // Mutation pour mettre à jour le profil d'un utilisateur invité
 export const UPDATE_INVITED_USER_PROFILE = gql`
-  mutation UpdateInvitedUserProfile($email: String!, $input: UpdateInvitedProfileInput!) {
+  mutation UpdateInvitedUserProfile(
+    $email: String!
+    $input: UpdateInvitedProfileInput!
+  ) {
     updateInvitedUserProfile(email: $email, input: $input) {
       id
       email
@@ -1572,7 +1741,10 @@ export const GET_KANBAN_TEMPLATES = gql`
 `;
 
 export const SAVE_BOARD_AS_TEMPLATE = gql`
-  mutation SaveBoardAsTemplate($input: SaveBoardAsTemplateInput!, $workspaceId: ID) {
+  mutation SaveBoardAsTemplate(
+    $input: SaveBoardAsTemplateInput!
+    $workspaceId: ID
+  ) {
     saveBoardAsTemplate(input: $input, workspaceId: $workspaceId) {
       id
       name
@@ -1592,7 +1764,10 @@ export const SAVE_BOARD_AS_TEMPLATE = gql`
 `;
 
 export const CREATE_BOARD_FROM_TEMPLATE = gql`
-  mutation CreateBoardFromTemplate($input: CreateBoardFromTemplateInput!, $workspaceId: ID) {
+  mutation CreateBoardFromTemplate(
+    $input: CreateBoardFromTemplateInput!
+    $workspaceId: ID
+  ) {
     createBoardFromTemplate(input: $input, workspaceId: $workspaceId) {
       id
       title

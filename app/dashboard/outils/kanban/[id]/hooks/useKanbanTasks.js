@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { toast } from "@/src/utils/debouncedToast";
-import { useMutation, gql } from "@apollo/client";
+import { useMutation, useLazyQuery, gql } from "@apollo/client";
 import {
   CREATE_TASK,
   UPDATE_TASK,
@@ -8,6 +8,7 @@ import {
   MOVE_TASK,
   ADD_COMMENT,
   GET_BOARD,
+  GET_TASK_DETAILS,
   START_TIMER,
 } from "@/src/graphql/kanbanQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
@@ -72,45 +73,68 @@ export const useKanbanTasks = (boardId, board) => {
   // Ref pour éviter les mises à jour en boucle
   const lastUpdateRef = useRef(null);
 
+  // Lazy query pour charger les détails d'une tâche (comments, activity, timeTracking.entries)
+  // Chargé uniquement quand on ouvre le modal de détail
+  const [fetchTaskDetails, { loading: taskDetailsLoading }] = useLazyQuery(
+    GET_TASK_DETAILS,
+    {
+      fetchPolicy: "network-only",
+      onCompleted: (data) => {
+        if (data?.task) {
+          setTaskForm((prev) => ({
+            ...prev,
+            comments: Array.isArray(data.task.comments)
+              ? data.task.comments
+              : [],
+            activity: Array.isArray(data.task.activity)
+              ? data.task.activity
+              : [],
+            // Merger les entries du timeTracking si elles existent
+            timeTracking: prev.timeTracking
+              ? {
+                  ...prev.timeTracking,
+                  entries: data.task.timeTracking?.entries || [],
+                }
+              : data.task.timeTracking,
+          }));
+        }
+      },
+    },
+  );
+
   // Extraire uniquement la tâche en cours d'édition du board (évite de dépendre de board?.tasks entier)
   const editingTaskFromBoard = useMemo(() => {
     if (!isEditTaskOpen || !editingTask?.id || !board?.tasks) return null;
     return board.tasks.find((t) => t.id === editingTask.id) || null;
   }, [board?.tasks, editingTask?.id, isEditTaskOpen]);
 
-  // Synchroniser taskForm avec les données temps réel (commentaires, activité)
-  // Ne dépend que de la tâche spécifique, pas de tout le tableau de tâches
+  // Synchroniser les données temps réel quand la tâche est mise à jour via subscription
+  // Quand updatedAt change, refetch les détails (comments, activity) depuis le serveur
   useEffect(() => {
     if (!editingTaskFromBoard) return;
 
-    // Créer une clé de comparaison incluant le contenu des commentaires (userName, userImage)
-    const getCommentsKey = (comments) => {
-      if (!comments || comments.length === 0) return "";
-      return comments
-        .map((c) => `${c.id}-${c.userName}-${c.userImage}`)
-        .join("|");
-    };
-
-    const updatedCommentsKey = getCommentsKey(editingTaskFromBoard.comments);
-
-    // Éviter les mises à jour en boucle
-    const updateKey = `${editingTaskFromBoard.id}-${updatedCommentsKey}-${editingTaskFromBoard.updatedAt}`;
+    const updateKey = `${editingTaskFromBoard.id}-${editingTaskFromBoard.updatedAt}`;
     if (lastUpdateRef.current === updateKey) return;
 
-    const currentCommentsKey = getCommentsKey(taskForm.comments);
-
-    // Si les commentaires ont changé (nombre OU contenu), mettre à jour le taskForm
-    if (currentCommentsKey !== updatedCommentsKey) {
+    // Premier rendu après ouverture du modal : ne pas refetch (déjà fait dans openEditTaskModal)
+    if (!lastUpdateRef.current) {
       lastUpdateRef.current = updateKey;
-
-      setTaskForm((prev) => ({
-        ...prev,
-        comments: editingTaskFromBoard.comments || [],
-        activity: editingTaskFromBoard.activity || [],
-        updatedAt: editingTaskFromBoard.updatedAt,
-      }));
+      return;
     }
-  }, [editingTaskFromBoard, taskForm.comments]);
+
+    lastUpdateRef.current = updateKey;
+
+    // La tâche a été mise à jour via subscription → refetch les détails
+    fetchTaskDetails({
+      variables: { id: editingTaskFromBoard.id, workspaceId },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    editingTaskFromBoard?.id,
+    editingTaskFromBoard?.updatedAt,
+    fetchTaskDetails,
+    workspaceId,
+  ]);
 
   // Ref pour savoir si le timer local tournait lors de la création
   const timerWasRunningRef = useRef(false);
@@ -622,6 +646,9 @@ export const useKanbanTasks = (boardId, board) => {
   const openEditTaskModal = (task) => {
     if (!task) return;
 
+    // Reset le ref de suivi pour éviter un refetch immédiat
+    lastUpdateRef.current = null;
+
     setEditingTask(task);
     setIsEditTaskOpen(true);
 
@@ -637,7 +664,7 @@ export const useKanbanTasks = (boardId, board) => {
       status: task?.status || "TODO",
       priority: task?.priority ? task.priority.toLowerCase() : "",
       startDate: task?.startDate || "",
-      dueDate: task?.dueDate || "", // Garder l'heure complète au format ISO
+      dueDate: task?.dueDate || "",
       columnId: task?.columnId || task?.column?.id || "",
       tags: Array.isArray(task?.tags) ? task.tags : [],
       checklist: Array.isArray(task?.checklist)
@@ -652,14 +679,14 @@ export const useKanbanTasks = (boardId, board) => {
       assignedMembers: Array.isArray(task?.assignedMembers)
         ? task.assignedMembers
         : [],
-      comments: Array.isArray(task?.comments) ? task.comments : [],
-      activity: Array.isArray(task?.activity) ? task.activity : [],
-      images: Array.isArray(task?.images) ? task.images : [], // Images de la tâche
-      timeTracking: task?.timeTracking || null, // Données du timer
+      comments: [], // Chargés à la demande via GET_TASK_DETAILS
+      activity: [], // Chargés à la demande via GET_TASK_DETAILS
+      images: Array.isArray(task?.images) ? task.images : [],
+      timeTracking: task?.timeTracking || null,
       userId: task?.userId,
       createdAt: task?.createdAt,
       updatedAt: task?.updatedAt,
-      pendingComments: [], // Pas de commentaires en attente en mode édition
+      pendingComments: [],
     };
 
     // Ajouter l'id seulement si c'est une édition
@@ -668,6 +695,13 @@ export const useKanbanTasks = (boardId, board) => {
     }
 
     setTaskForm(formData);
+
+    // Charger les détails (comments, activity, timeTracking.entries) en arrière-plan
+    if (!isCreating && taskId) {
+      fetchTaskDetails({
+        variables: { id: taskId, workspaceId },
+      });
+    }
   };
 
   // Gestion des commentaires en attente (pour la création de tâche)
@@ -711,6 +745,7 @@ export const useKanbanTasks = (boardId, board) => {
     isAddTaskOpen,
     isEditTaskOpen,
     loading: createTaskLoading || updateTaskLoading || deleteTaskLoading,
+    taskDetailsLoading,
 
     // Setters
     setTaskForm,
