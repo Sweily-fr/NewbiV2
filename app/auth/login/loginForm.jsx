@@ -100,17 +100,17 @@ const LoginForm = () => {
     React.useState("");
 
   const onSubmit = async (formData) => {
-    // Vider TOUS les caches avant connexion pour éviter les données stale d'un autre compte
-    resetOrganizationIdForApollo();
-    await apolloClient.clearStore();
-    clearSessionStorage();
-
     await authClient.signIn.email(formData, {
       onSuccess: async (ctx) => {
         // 2FA requis → Better Auth gère la redirection via onTwoFactorRedirect
         if (ctx.data.twoFactorRedirect) {
           return;
         }
+
+        // Vider les caches APRÈS le signIn réussi pour éviter de causer un remount du form
+        resetOrganizationIdForApollo();
+        clearSessionStorage();
+        await apolloClient.clearStore();
 
         // getSession + check-session-limit en parallèle
         const [{ data: session }, sessionLimitResult] = await Promise.all([
@@ -320,12 +320,7 @@ const LoginForm = () => {
   };
 
   return (
-    <form
-      action="#"
-      method="post"
-      className="mt-6 space-y-4"
-      onSubmit={handleSubmit(onSubmit)}
-    >
+    <form className="mt-6 space-y-4" onSubmit={handleSubmit(onSubmit)}>
       <div>
         <Label
           htmlFor="email"
