@@ -99,7 +99,11 @@ const LoginForm = () => {
   const [userEmailForVerification, setUserEmailForVerification] =
     React.useState("");
 
+  const hasRetriedRef = React.useRef(false);
+
   const onSubmit = async (formData) => {
+    hasRetriedRef.current = false;
+
     await authClient.signIn.email(formData, {
       onSuccess: async (ctx) => {
         // 2FA requis → Better Auth gère la redirection via onTwoFactorRedirect
@@ -259,6 +263,23 @@ const LoginForm = () => {
           error?.message ||
           error?.error?.message ||
           (typeof error === "string" ? error : null);
+        const errorStatus = error?.status || error?.error?.status;
+
+        // Token CSRF expiré (page restée ouverte longtemps) → retry automatique une fois
+        // Better Auth retourne 403 ou un message contenant "csrf"/"token"
+        const isCsrfError =
+          errorStatus === 403 ||
+          (errorMessage &&
+            (errorMessage.toLowerCase().includes("csrf") ||
+              errorMessage.toLowerCase().includes("invalid token") ||
+              errorMessage.toLowerCase().includes("forbidden")));
+
+        if (isCsrfError && !hasRetriedRef.current) {
+          hasRetriedRef.current = true;
+          // Le retry va automatiquement obtenir un nouveau token CSRF
+          await onSubmit(formData);
+          return;
+        }
 
         // Limite de sessions atteinte
         if (
