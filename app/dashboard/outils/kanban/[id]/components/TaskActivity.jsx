@@ -2,7 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import * as React from 'react';
 import { Button } from '@/src/components/ui/button';
 import { Textarea } from '@/src/components/ui/textarea';
-import { Edit2, Trash2, ImagePlus, X, ZoomIn, Loader2, Flag, Check, Square, Plus } from 'lucide-react';
+import { Edit2, Trash2, Paperclip, X, ZoomIn, Loader2, Flag, Check, Square, Plus } from 'lucide-react';
 import { MentionCommentInput, CommentContent } from '@/src/components/ui/mention-input';
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/src/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
@@ -651,7 +651,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
     <div className="flex flex-col h-full min-h-0">
       <Tabs defaultValue="all" className="flex flex-col h-full min-h-0" onValueChange={scrollToBottom}>
         <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto pl-2 px-4 py-4">
-          <TabsContent value="all" className="space-y-4 mt-0">
+          <TabsContent value="all" className="space-y-2.5 mt-0">
             {allActivity.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">
                 Aucune activité
@@ -663,50 +663,61 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                 return (
                   <div key={`${item._kind}-${item.id || index}`} className="flex gap-3">
                     {item._kind === 'comment' ? (
-                      <div className="bg-background rounded-lg p-3 flex-1 border border-border">
-                        <div className="flex gap-3">
+                      <div className="bg-background rounded-lg p-2.5 flex-1 border border-border/60">
+                        <div className="flex gap-2.5">
                           <UserAvatar
                             src={item.userImage}
                             name={item.userName}
-                            size="sm"
-                            className="flex-shrink-0 mt-0.5"
+                            size="xs"
+                            className="h-6 w-6 flex-shrink-0 mt-0.5"
                           />
                           <div className="flex-1 space-y-2">
                             {editingCommentId === item.id ? (
                               <>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-[13px] font-medium">{item.userName}</span>
-                                  <span className="text-[13px] text-muted-foreground">
+                                  <span className="text-xs font-medium">{item.userName}</span>
+                                  <span className="text-[11px] text-muted-foreground/60">
                                     {formatDate(item.createdAt)}
                                   </span>
                                 </div>
-                                <div className="space-y-2">
-                                  <Textarea
-                                    value={editingContent}
-                                    onChange={(e) => setEditingContent(e.target.value)}
-                                    className="text-sm"
-                                    rows={3}
-                                  />
-                                  <div className="flex gap-2">
-                                    <Button
-                                      size="sm"
-                                      onClick={() => handleUpdateComment(item.id)}
-                                      disabled={updatingComment}
-                                      className="text-white hover:opacity-90"
-                                      style={{ backgroundColor: '#5b50FF' }}
-                                    >
-                                      Enregistrer
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => {
-                                        setEditingCommentId(null);
-                                        setEditingContent('');
+                                <div className="space-y-1.5">
+                                  <div className="rounded-md border border-border/60 bg-white dark:bg-background overflow-hidden" style={{ boxShadow: '0 1px 2px rgba(0,0,0,.055)' }}>
+                                    <textarea
+                                      value={editingContent}
+                                      onChange={(e) => setEditingContent(e.target.value)}
+                                      className="w-full text-[13px] text-foreground bg-transparent px-3 py-2 outline-none resize-none min-h-[60px] max-h-[120px]"
+                                      rows={2}
+                                      autoFocus
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                                          e.preventDefault();
+                                          handleUpdateComment(item.id);
+                                        }
+                                        if (e.key === 'Escape') {
+                                          setEditingCommentId(null);
+                                          setEditingContent('');
+                                        }
                                       }}
-                                    >
-                                      Annuler
-                                    </Button>
+                                    />
+                                    <div className="flex items-center justify-between px-2 py-1 border-t border-border/40">
+                                      <span className="text-[10px] text-muted-foreground/40">Échap pour annuler · Cmd/Ctrl+Entrée pour sauvegarder</span>
+                                      <div className="flex items-center gap-1">
+                                        <button
+                                          onClick={() => { setEditingCommentId(null); setEditingContent(''); }}
+                                          className="h-6 px-2 rounded text-[11px] text-muted-foreground hover:bg-muted/50 transition-colors cursor-pointer"
+                                        >
+                                          Annuler
+                                        </button>
+                                        <button
+                                          onClick={() => handleUpdateComment(item.id)}
+                                          disabled={updatingComment || !editingContent.trim()}
+                                          className="h-6 px-2.5 rounded text-[11px] text-white font-medium transition-colors cursor-pointer disabled:opacity-40"
+                                          style={{ backgroundColor: '#5A50FF' }}
+                                        >
+                                          Sauvegarder
+                                        </button>
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
                               </>
@@ -714,15 +725,15 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                               <>
                                 <div className="flex items-center justify-between gap-2">
                                   <div className="flex items-center gap-2">
-                                    <span className="text-[13px] font-medium">{item.userName}</span>
-                                    <span className="text-[13px] text-muted-foreground">
+                                    <span className="text-xs font-medium">{item.userName}</span>
+                                    <span className="text-[11px] text-muted-foreground/60">
                                       {formatDate(item.createdAt)}
                                     </span>
                                   </div>
                                   <div className="flex gap-1">
                                     {item.userId === currentUser?.id && (
                                       <Button
-                                        size="sm"
+                                        size="xs"
                                         variant="ghost"
                                         className="h-7 w-7 p-0 text-muted-foreground"
                                         style={{ '--hover-color': '#5b50FF' }}
@@ -739,7 +750,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                                     <AlertDialog open={commentToDelete === item.id} onOpenChange={(open) => !open && setCommentToDelete(null)}>
                                       <AlertDialogTrigger asChild>
                                         <Button
-                                          size="sm"
+                                          size="xs"
                                           variant="ghost"
                                           className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
                                           onClick={() => setCommentToDelete(item.id)}
@@ -811,7 +822,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                         <UserAvatar
                           src={item.userImage}
                           name={item.userName}
-                          size="sm"
+                          size="xs"
                           className={`flex-shrink-0 ${display && !display.details && !display.moveDetails && !display.priorityDetails && !display.memberDetails && !display.checklistDetails && !display.tagDetails ? '' : 'mt-0.5'}`}
                         />
                         <div className="flex-1 min-w-0">
@@ -915,57 +926,50 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
             )}
           </TabsContent>
 
-          <TabsContent value="comments" className="space-y-4 mt-4">
+          <TabsContent value="comments" className="space-y-2.5 mt-3">
             {comments.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">
                 Aucun commentaire
               </p>
             ) : (
               comments.map((comment) => (
-                <div key={comment.id} className="bg-background rounded-lg p-3 border border-border">
-                  <div className="flex gap-3">
+                <div key={comment.id} className="bg-background rounded-lg p-2.5 border border-border/60">
+                  <div className="flex gap-2.5">
                     <UserAvatar
                       src={comment.userImage}
                       name={comment.userName}
-                      size="sm"
+                      size="xs"
                       className="flex-shrink-0 mt-0.5"
                     />
                     <div className="flex-1 space-y-2">
                       {editingCommentId === comment.id ? (
                         <>
                           <div className="flex items-center gap-2">
-                            <span className="text-[13px] font-medium">{comment.userName}</span>
-                            <span className="text-[13px] text-muted-foreground">
+                            <span className="text-xs font-medium">{comment.userName}</span>
+                            <span className="text-[11px] text-muted-foreground/60">
                               {formatDate(comment.createdAt)}
                             </span>
                           </div>
-                          <div className="space-y-2">
-                            <Textarea
-                              value={editingContent}
-                              onChange={(e) => setEditingContent(e.target.value)}
-                              className="text-sm"
-                              rows={3}
-                            />
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                onClick={() => handleUpdateComment(comment.id)}
-                                disabled={updatingComment}
-                                className="text-white hover:opacity-90"
-                                style={{ backgroundColor: '#5b50FF' }}
-                              >
-                                Enregistrer
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setEditingCommentId(null);
-                                  setEditingContent('');
+                          <div className="space-y-1.5">
+                            <div className="rounded-md border border-border/60 bg-white dark:bg-background overflow-hidden" style={{ boxShadow: '0 1px 2px rgba(0,0,0,.055)' }}>
+                              <textarea
+                                value={editingContent}
+                                onChange={(e) => setEditingContent(e.target.value)}
+                                className="w-full text-[13px] text-foreground bg-transparent px-3 py-2 outline-none resize-none min-h-[60px] max-h-[120px]"
+                                rows={2}
+                                autoFocus
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); handleUpdateComment(comment.id); }
+                                  if (e.key === 'Escape') { setEditingCommentId(null); setEditingContent(''); }
                                 }}
-                              >
-                                Annuler
-                              </Button>
+                              />
+                              <div className="flex items-center justify-between px-2 py-1 border-t border-border/40">
+                                <span className="text-[10px] text-muted-foreground/40">Échap pour annuler</span>
+                                <div className="flex items-center gap-1">
+                                  <button onClick={() => { setEditingCommentId(null); setEditingContent(''); }} className="h-6 px-2 rounded text-[11px] text-muted-foreground hover:bg-muted/50 transition-colors cursor-pointer">Annuler</button>
+                                  <button onClick={() => handleUpdateComment(comment.id)} disabled={updatingComment || !editingContent.trim()} className="h-6 px-2.5 rounded text-[11px] text-white font-medium transition-colors cursor-pointer disabled:opacity-40" style={{ backgroundColor: '#5A50FF' }}>Sauvegarder</button>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </>
@@ -973,15 +977,15 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                         <>
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
-                              <span className="text-[13px] font-medium">{comment.userName}</span>
-                              <span className="text-[13px] text-muted-foreground">
+                              <span className="text-xs font-medium">{comment.userName}</span>
+                              <span className="text-[11px] text-muted-foreground/60">
                                 {formatDate(comment.createdAt)}
                               </span>
                             </div>
                             <div className="flex gap-1">
                               {comment.userId === currentUser?.id && (
                                 <Button
-                                  size="sm"
+                                  size="xs"
                                   variant="ghost"
                                   className="h-7 w-7 p-0 text-muted-foreground"
                                   style={{ '--hover-color': '#5b50FF' }}
@@ -998,7 +1002,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                               <AlertDialog open={commentToDelete === comment.id} onOpenChange={(open) => !open && setCommentToDelete(null)}>
                                 <AlertDialogTrigger asChild>
                                   <Button
-                                    size="sm"
+                                    size="xs"
                                     variant="ghost"
                                     className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
                                     onClick={() => setCommentToDelete(comment.id)}
@@ -1069,7 +1073,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
             )}
           </TabsContent>
 
-          <TabsContent value="activity" className="space-y-4 mt-4">
+          <TabsContent value="activity" className="space-y-2.5 mt-3">
             {activities.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">
                 Aucune activité
@@ -1084,7 +1088,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                     <UserAvatar
                       src={activity.userImage}
                       name={activity.userName}
-                      size="sm"
+                      size="xs"
                       className={`flex-shrink-0 ${hasExtraDetails ? 'mt-0.5' : ''}`}
                     />
                     <div className="flex-1 min-w-0">
@@ -1211,64 +1215,63 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
             onDrop={handleDrop}
             onPaste={handlePaste}
             isDragOver={isDragOver}
-          >
-            {/* Images en attente + bouton image — rendus dans le children slot */}
-            <div className="flex items-center gap-2 mt-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/gif,image/webp"
-                multiple
-                onChange={(e) => {
-                  const files = Array.from(e.target.files || []);
-                  const newImages = files.map(file => ({
-                    file,
-                    preview: URL.createObjectURL(file)
-                  }));
-                  setPendingImages(prev => [...prev, ...newImages]);
-                  e.target.value = '';
-                }}
-                className="hidden"
-              />
-              <Button
+            toolbarSlot={
+              <button
                 type="button"
-                variant="ghost"
-                size="sm"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploadingImage}
-                className="h-8 px-2"
+                className="h-7 w-7 rounded-md flex items-center justify-center hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-30"
+                style={{ color: '#8D8D8D' }}
               >
                 {isUploadingImage ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <ImagePlus className="h-4 w-4" />
+                  <Paperclip className="h-3.5 w-3.5" />
                 )}
-              </Button>
-              {pendingImages.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {pendingImages.map((img, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={img.preview}
-                        alt={img.file.name}
-                        className={`w-12 h-12 object-cover rounded-md border border-border ${isUploadingImage ? 'opacity-50' : ''}`}
-                      />
-                      {!isUploadingImage && (
-                        <button
-                          onClick={() => {
-                            setPendingImages(prev => prev.filter((_, i) => i !== index));
-                            URL.revokeObjectURL(img.preview);
-                          }}
-                          className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white text-black border border-gray-200 shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
-                        >
-                          <X className="h-2.5 w-2.5" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+              </button>
+            }
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              multiple
+              onChange={(e) => {
+                const files = Array.from(e.target.files || []);
+                const newImages = files.map(file => ({
+                  file,
+                  preview: URL.createObjectURL(file)
+                }));
+                setPendingImages(prev => [...prev, ...newImages]);
+                e.target.value = '';
+              }}
+              className="hidden"
+            />
+            {/* Images en attente */}
+            {pendingImages.length > 0 && (
+              <div className="flex flex-wrap gap-2 pb-2">
+                {pendingImages.map((img, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={img.preview}
+                      alt={img.file.name}
+                      className={`w-12 h-12 object-cover rounded-md border border-border ${isUploadingImage ? 'opacity-50' : ''}`}
+                    />
+                    {!isUploadingImage && (
+                      <button
+                        onClick={() => {
+                          setPendingImages(prev => prev.filter((_, i) => i !== index));
+                          URL.revokeObjectURL(img.preview);
+                        }}
+                        className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white text-black border border-gray-200 shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </MentionCommentInput>
         </div>
       </Tabs>

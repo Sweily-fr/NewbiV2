@@ -19,6 +19,7 @@ import { toast } from "@/src/components/ui/sonner";
 
 // UI Components
 import { Button } from "@/src/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/src/components/ui/tooltip";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Badge } from "@/src/components/ui/badge";
@@ -336,37 +337,45 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
   return (
     <>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogTrigger asChild>
-          <Button variant="outline" className="gap-2 relative">
-            <Share2 className="h-4 w-4" />
-            Partager
-            {pendingRequestsCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white">
-                {pendingRequestsCount > 9 ? '9+' : pendingRequestsCount}
-              </span>
-            )}
-            {connectedVisitors.length > 0 && (
-              <span className="absolute -bottom-1 -right-1 flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-              </span>
-            )}
-          </Button>
-        </DialogTrigger>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2 relative">
+                <Share2 className="h-4 w-4" />
+                Partager
+                {pendingRequestsCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white">
+                    {pendingRequestsCount > 9 ? '9+' : pendingRequestsCount}
+                  </span>
+                )}
+                {connectedVisitors.length > 0 && (
+                  <span className="absolute -bottom-1 -right-1 flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                  </span>
+                )}
+              </Button>
+            </DialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Partager</TooltipContent>
+        </Tooltip>
         
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Share2 className="h-5 w-5" />
+        <DialogContent className="sm:max-w-[600px] p-1 gap-0 top-[40%] border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
+          <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
+          <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
+            <DialogTitle className="text-sm font-medium flex items-center gap-2">
+              <Share2 className="size-4" />
               Partager "{boardTitle}"
             </DialogTitle>
-            <DialogDescription>
-              Créez un lien pour permettre à des utilisateurs externes de voir ce tableau 
-              et d'ajouter des commentaires.
-            </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-3 px-5 pt-3 pb-4">
+            {/* Info */}
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg border border-border/50">
+              <p className="text-xs text-muted-foreground">
+                Créez un lien pour permettre à des utilisateurs externes de voir ce tableau et d'ajouter des commentaires.
+              </p>
+            </div>
             {/* Visiteurs connectés en temps réel */}
             {connectedVisitors.length > 0 && (
               <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
@@ -795,6 +804,7 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
                 </p>
               </div>
             )}
+          </div>
           </div>
         </DialogContent>
       </Dialog>

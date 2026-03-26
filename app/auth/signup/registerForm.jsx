@@ -165,7 +165,7 @@ const RegisterFormContent = () => {
     <form
       action="#"
       method="post"
-      className="mt-6 space-y-4"
+      className="space-y-3"
       onSubmit={handleSubmit(onSubmit)}
     >
       <div>
