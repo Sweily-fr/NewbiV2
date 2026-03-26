@@ -5,9 +5,9 @@ const dbName = process.env.MONGODB_DB_NAME || "invoice-app";
 
 // Options optimisées pour Vercel serverless + Atlas
 const options = {
-  maxPoolSize: 1, // 1 connexion par instance serverless (réduit les 82 → ~10)
+  maxPoolSize: 1,
   minPoolSize: 0,
-  maxIdleTimeMS: 10000, // Fermer après 10s d'inactivité
+  maxIdleTimeMS: 10000,
   serverSelectionTimeoutMS: 5000,
   socketTimeoutMS: 10000,
   retryWrites: true,
@@ -16,20 +16,12 @@ const options = {
   compressors: ["zstd", "snappy"],
 };
 
-/**
- * Pattern recommandé par MongoDB pour les serverless (Vercel/Lambda).
- *
- * En dev : global._mongoClientPromise persiste grâce au HMR (pas de reconnexion à chaque save)
- * En prod : global._mongoClientPromise persiste tant que l'instance serverless est chaude
- *           → réutilise la même connexion entre les invocations
- */
-let clientPromise;
-
-if (!global._mongoClientPromise) {
-  const client = new MongoClient(uri, options);
-  global._mongoClientPromise = client.connect();
+// Réutiliser le client MongoDB entre les invocations serverless
+// Le driver MongoDB gère la reconnexion automatiquement — pas besoin de connect()
+if (!global._mongoClient) {
+  global._mongoClient = new MongoClient(uri, options);
 }
-clientPromise = global._mongoClientPromise;
+const client = global._mongoClient;
 
 // Créer les index (une seule fois par instance)
 let indexesCreated = false;
@@ -78,46 +70,20 @@ async function ensureIndexes(db) {
 }
 
 /**
- * Retourne la DB connectée. Réutilise la connexion existante.
+ * Retourne la DB connectée (async).
+ * Le driver MongoDB 4.x+ se connecte automatiquement à la première opération.
  */
 export async function getMongoDb() {
-  const client = await clientPromise;
   const db = client.db(dbName);
   ensureIndexes(db).catch(() => {});
   return db;
 }
 
 /**
- * Proxy synchrone pour Better Auth.
- * Better Auth accède à la DB de manière synchrone (mongoDb.collection(...)).
- * Le Proxy attend que la connexion soit prête et redirige les appels.
+ * Accès synchrone à la DB pour Better Auth.
+ * Fonctionne car le driver MongoDB 4.x+ n'a plus besoin de connect() explicite —
+ * il se connecte automatiquement à la première opération.
  */
-let resolvedDb = null;
-
-// Résoudre la DB dès que possible (non bloquant)
-clientPromise
-  .then((client) => {
-    resolvedDb = client.db(dbName);
-    ensureIndexes(resolvedDb).catch(() => {});
-  })
-  .catch((err) => {
-    console.error("❌ MongoDB connection failed:", err?.message);
-    // Reset pour retry à la prochaine invocation
-    global._mongoClientPromise = null;
-  });
-
-const mongoDbProxy = new Proxy(
-  {},
-  {
-    get(target, prop) {
-      if (!resolvedDb) return undefined;
-      const value = resolvedDb[prop];
-      if (typeof value === "function") return value.bind(resolvedDb);
-      return value;
-    },
-  },
-);
-
-export const mongoDb = mongoDbProxy;
-export const mongoClient = null;
+export const mongoDb = client.db(dbName);
+export const mongoClient = client;
 export const ensureConnection = getMongoDb;
