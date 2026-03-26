@@ -14,7 +14,7 @@ const DEFAULTS = {
 // Valeurs autorisées
 const ALLOWED = {
   sessionDuration: [7, 30, 90],
-  inactivityTimeout: [0.0166, 0.25, 1, 12, 24],
+  inactivityTimeout: [0.25, 1, 12, 24],
   maxSessions: [1, 2],
 };
 
