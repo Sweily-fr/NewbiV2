@@ -3,31 +3,40 @@ import { MongoClient } from "mongodb";
 const uri = process.env.MONGODB_URI || "mongodb://localhost:27017";
 const dbName = process.env.MONGODB_DB_NAME || "invoice-app";
 
-// Options de connexion optimisées pour Vercel serverless
+// Options optimisées pour Vercel serverless + Atlas
 const options = {
-  maxPoolSize: 10,
+  maxPoolSize: 1, // 1 connexion par instance serverless (réduit les 82 → ~10)
   minPoolSize: 0,
-  maxIdleTimeMS: 30000,
-  serverSelectionTimeoutMS: 10000,
-  socketTimeoutMS: 30000,
+  maxIdleTimeMS: 10000, // Fermer après 10s d'inactivité
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 10000,
   retryWrites: true,
   retryReads: true,
-  connectTimeoutMS: 10000,
+  connectTimeoutMS: 5000,
+  compressors: ["zstd", "snappy"],
 };
 
-let client;
+/**
+ * Pattern recommandé par MongoDB pour les serverless (Vercel/Lambda).
+ *
+ * En dev : global._mongoClientPromise persiste grâce au HMR (pas de reconnexion à chaque save)
+ * En prod : global._mongoClientPromise persiste tant que l'instance serverless est chaude
+ *           → réutilise la même connexion entre les invocations
+ */
+let clientPromise;
 
-if (!global._mongoClient) {
-  client = new MongoClient(uri, options);
-  global._mongoClient = client;
-  global._mongoConnected = false;
-  global._mongoConnecting = null;
-} else {
-  client = global._mongoClient;
+if (!global._mongoClientPromise) {
+  const client = new MongoClient(uri, options);
+  global._mongoClientPromise = client.connect();
 }
+clientPromise = global._mongoClientPromise;
 
-// Créer les index (appelé une seule fois après connexion réussie)
-async function createIndexes(db) {
+// Créer les index (une seule fois par instance)
+let indexesCreated = false;
+async function ensureIndexes(db) {
+  if (indexesCreated) return;
+  indexesCreated = true;
+
   const indexes = [
     {
       coll: "session",
@@ -68,95 +77,47 @@ async function createIndexes(db) {
   );
 }
 
-// Connexion lazy avec retry — ne crash JAMAIS le process
-async function connect() {
-  // Déjà connecté
-  if (global._mongoConnected && global._mongoDb) {
-    return global._mongoDb;
-  }
-
-  // Connexion en cours — ne pas en lancer une deuxième
-  if (global._mongoConnecting) {
-    return global._mongoConnecting;
-  }
-
-  global._mongoConnecting = (async () => {
-    try {
-      await client.connect();
-      global._mongoDb = client.db(dbName);
-      global._mongoConnected = true;
-      global._mongoConnecting = null;
-      console.log("✅ MongoDB connected successfully");
-
-      // Créer les index en background (non bloquant)
-      createIndexes(global._mongoDb).catch(() => {});
-
-      return global._mongoDb;
-    } catch (err) {
-      global._mongoConnected = false;
-      global._mongoConnecting = null;
-      // Log l'erreur mais NE PAS throw — le process reste vivant pour la prochaine requête
-      console.error("❌ MongoDB connection failed:", err?.message || err);
-      return null;
-    }
-  })();
-
-  return global._mongoConnecting;
-}
-
-// Lancer la connexion dès le chargement du module (non bloquant, pas de throw)
-connect();
-
-// Fonction pour s'assurer que la connexion est établie (avec retry)
-const ensureConnection = async () => {
-  // Tenter la connexion (ou réutiliser si déjà connectée)
-  const db = await connect();
-  if (db) return db;
-
-  // Premier essai a échoué — retenter une fois
-  console.warn("⚠️ MongoDB retry connexion...");
-  const retryDb = await connect();
-  if (retryDb) return retryDb;
-
-  throw new Error("MongoDB unavailable after retry");
-};
-
-// Gestion des événements de connexion
-client.on("close", () => {
-  console.warn("⚠️ MongoDB connection closed");
-  global._mongoConnected = false;
-});
-
-client.on("error", (error) => {
-  console.error("❌ MongoDB client error:", error?.message);
-  global._mongoConnected = false;
-});
-
-// Exporter une fonction qui retourne la DB après connexion
+/**
+ * Retourne la DB connectée. Réutilise la connexion existante.
+ */
 export async function getMongoDb() {
-  return await ensureConnection();
+  const client = await clientPromise;
+  const db = client.db(dbName);
+  ensureIndexes(db).catch(() => {});
+  return db;
 }
 
-// Proxy synchrone pour Better Auth (qui a besoin d'un accès synchrone à la DB)
+/**
+ * Proxy synchrone pour Better Auth.
+ * Better Auth accède à la DB de manière synchrone (mongoDb.collection(...)).
+ * Le Proxy attend que la connexion soit prête et redirige les appels.
+ */
+let resolvedDb = null;
+
+// Résoudre la DB dès que possible (non bloquant)
+clientPromise
+  .then((client) => {
+    resolvedDb = client.db(dbName);
+    ensureIndexes(resolvedDb).catch(() => {});
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB connection failed:", err?.message);
+    // Reset pour retry à la prochaine invocation
+    global._mongoClientPromise = null;
+  });
+
 const mongoDbProxy = new Proxy(
   {},
   {
     get(target, prop) {
-      try {
-        const db = global._mongoDb || client.db(dbName);
-        const value = db[prop];
-        if (typeof value === "function") {
-          return value.bind(db);
-        }
-        return value;
-      } catch (error) {
-        console.error("❌ MongoDB Proxy access error:", error?.message);
-        return undefined;
-      }
+      if (!resolvedDb) return undefined;
+      const value = resolvedDb[prop];
+      if (typeof value === "function") return value.bind(resolvedDb);
+      return value;
     },
   },
 );
 
-export const mongoClient = client;
 export const mongoDb = mongoDbProxy;
-export { ensureConnection };
+export const mongoClient = null;
+export const ensureConnection = getMongoDb;
