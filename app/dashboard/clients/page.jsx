@@ -23,7 +23,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/src/components/ui/alert-dialog";
-import { Plus, Search, CircleXIcon, ListPlus, MoreHorizontal, Pencil, ShieldOff, UserCheck, Trash2, CircleAlertIcon, Upload, Settings2 } from "lucide-react";
+import { Plus, Search, CircleXIcon, ListPlus, MoreHorizontal, Pencil, ShieldOff, UserCheck, Trash2, CircleAlertIcon, Upload, Settings2, ChevronDown } from "lucide-react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useClientLists } from "@/src/hooks/useClientLists";
 import { useAddClientToLists } from "@/src/hooks/useClientLists";
@@ -33,7 +33,6 @@ import { toast } from "@/src/components/ui/sonner";
 import ClientsTable from "./components/clients-table";
 import ClientsModal from "./components/clients-modal";
 import ClientFilters from "./components/client-filters";
-import CustomFieldsManager from "./components/custom-fields-manager";
 import AutomationsPopover from "./components/automations-popover";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import ClientImportDialog from "./components/client-import-dialog";
@@ -60,7 +59,7 @@ function ClientsContent() {
   const [selectedClients, setSelectedClients] = useState(new Set());
   const [editClientId, setEditClientId] = useState(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [customFieldsOpen, setCustomFieldsOpen] = useState(false);
+  const [importDialogView, setImportDialogView] = useState("import");
   const [columnVisibility, setColumnVisibility] = useState({
     phone: false,
     firstName: false,
@@ -176,22 +175,41 @@ function ClientsContent() {
           </div>
           <div className="flex gap-2">
             <AutomationsPopover />
-            <Button
-              variant="outline"
-              onClick={() => setCustomFieldsOpen(true)}
-              className="self-start"
-            >
-              <Settings2 size={14} strokeWidth={2} aria-hidden="true" />
-              Champs
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setImportDialogOpen(true)}
-              className="self-start"
-            >
-              <Upload size={14} strokeWidth={2} aria-hidden="true" />
-              Importer
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="self-start gap-1.5"
+                >
+                  <Upload size={14} strokeWidth={2} aria-hidden="true" />
+                  Importer
+                  <ChevronDown size={12} strokeWidth={2} className="text-muted-foreground" aria-hidden="true" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuItem
+                  onClick={() => { setImportDialogView("import"); setImportDialogOpen(true); }}
+                  className="cursor-pointer gap-2"
+                >
+                  <Upload size={14} strokeWidth={2} className="text-muted-foreground" />
+                  <div>
+                    <div className="text-sm">Importer un fichier</div>
+                    <div className="text-xs text-muted-foreground">CSV, Excel — import en masse</div>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => { setImportDialogView("fields"); setImportDialogOpen(true); }}
+                  className="cursor-pointer gap-2"
+                >
+                  <Settings2 size={14} strokeWidth={2} className="text-muted-foreground" />
+                  <div>
+                    <div className="text-sm">Gérer les champs perso</div>
+                    <div className="text-xs text-muted-foreground">Configurez vos champs avant d'importer</div>
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               variant="primary"
               onClick={handleOpenInviteDialog}
@@ -422,6 +440,30 @@ function ClientsContent() {
               <h1 className="text-2xl font-medium mb-1">Contacts</h1>
             </div>
             <div className="flex gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="cursor-pointer">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem
+                    onClick={() => { setImportDialogView("import"); setImportDialogOpen(true); }}
+                    className="cursor-pointer gap-2"
+                  >
+                    <Upload size={14} strokeWidth={2} />
+                    Importer un fichier
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => { setImportDialogView("fields"); setImportDialogOpen(true); }}
+                    className="cursor-pointer gap-2"
+                  >
+                    <Settings2 size={14} strokeWidth={2} />
+                    Gérer les champs perso
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <PermissionButton
                 resource="clients"
                 action="create"
@@ -452,8 +494,7 @@ function ClientsContent() {
       </div>
 
       <ClientsModal open={dialogOpen} onOpenChange={setDialogOpen} />
-      <ClientImportDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} />
-      <CustomFieldsManager open={customFieldsOpen} onOpenChange={setCustomFieldsOpen} />
+      <ClientImportDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} initialView={importDialogView} />
     </>
   );
 }

@@ -225,11 +225,8 @@ export const useKanbanTasks = (boardId, board) => {
     UPDATE_TASK,
     {
       onCompleted: () => {
-        // Plus de toast ici - la subscription temps réel s'en charge
-        setTaskForm(initialTaskForm);
-        setEditingTask(null);
-        setIsEditTaskOpen(false); // Close the edit modal after successful update
-        // Plus besoin de refetch() - la subscription s'en charge
+        // Auto-save : ne pas fermer le dialog ni réinitialiser le formulaire
+        // La subscription temps réel met à jour les données
       },
       onError: () => {
         toast.error("Erreur lors de la modification de la tâche");
@@ -741,5 +738,6 @@ export const useKanbanTasks = (boardId, board) => {
     updatePendingComment,
     moveTask,
     updateTask,
+    createTask,
   };
 };

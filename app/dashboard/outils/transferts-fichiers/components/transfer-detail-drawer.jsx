@@ -27,7 +27,6 @@ import {
   Download,
   Eye,
   Lock,
-  Euro,
   FileText,
   FileImage,
   FileSpreadsheet,
@@ -512,17 +511,6 @@ export function TransferDetailDrawer({
                     </div>
                   </div>
 
-                  {/* Prix */}
-                  <div className="w-full flex items-center px-5 py-3">
-                    <div className="flex items-center gap-3">
-                      <Euro className="w-4 h-4 text-gray-500" />
-                      <span className="text-xs text-gray-700">
-                        {transfer.paymentAmount
-                          ? `${transfer.paymentAmount} ${transfer.paymentCurrency || "EUR"}`
-                          : "Aucun prix défini"}
-                      </span>
-                    </div>
-                  </div>
                 </div>
 
                 {/* Prévisualisation */}

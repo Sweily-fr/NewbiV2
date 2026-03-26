@@ -202,9 +202,15 @@ export async function applyWatermark(file, options = {}) {
 function getAdaptedFontSize(width, height, textLength, targetWidthRatio = 0.7) {
   // Estimer la largeur d'un caractère à ~0.6 * fontSize en bold Arial
   const charWidthRatio = 0.6;
-  // fontSize = targetWidth / (textLength * charWidthRatio)
-  const targetWidth = width * targetWidthRatio;
-  return Math.max(32, Math.round(targetWidth / (textLength * charWidthRatio)));
+  // Utiliser la plus petite dimension pour éviter un filigrane trop grand
+  const refDimension = Math.min(width, height);
+  const targetWidth = refDimension * targetWidthRatio;
+  const fontSize = Math.round(targetWidth / (textLength * charWidthRatio));
+  // Minimum relatif à la taille de l'image (2% de la plus petite dimension, min 10px)
+  const minFontSize = Math.max(10, Math.round(refDimension * 0.02));
+  // Maximum : ne pas dépasser 15% de la plus petite dimension
+  const maxFontSize = Math.round(refDimension * 0.15);
+  return Math.min(maxFontSize, Math.max(minFontSize, fontSize));
 }
 
 /**
@@ -258,9 +264,17 @@ function drawDiagonalWatermark(ctx, text, width, height, fontSize, rotation) {
   ctx.translate(width / 2, height / 2);
   ctx.rotate((rotation * Math.PI) / 180);
 
-  // Le texte prend ~80% de la largeur de l'image (la rotation le réduit visuellement)
-  const adaptedFontSize = getAdaptedFontSize(width, height, text.length, 0.8);
-  ctx.font = `bold ${adaptedFontSize}px Arial, sans-serif`;
+  // Utiliser la diagonale de l'image pour dimensionner le texte en diagonal
+  const diagonal = Math.sqrt(width * width + height * height);
+  const charWidthRatio = 0.6;
+  const targetWidth = diagonal * 0.6;
+  const adaptedFontSize = Math.round(targetWidth / (text.length * charWidthRatio));
+  // Bornes relatives à la plus petite dimension
+  const refDimension = Math.min(width, height);
+  const minFontSize = Math.max(10, Math.round(refDimension * 0.02));
+  const maxFontSize = Math.round(refDimension * 0.15);
+  const finalFontSize = Math.min(maxFontSize, Math.max(minFontSize, adaptedFontSize));
+  ctx.font = `bold ${finalFontSize}px Arial, sans-serif`;
 
   drawTextWithStroke(ctx, text, 0, 0);
   ctx.restore();
@@ -312,8 +326,12 @@ function hexToRgb01(hex) {
  */
 function getPdfAdaptedFontSize(width, height, textLength, targetWidthRatio = 0.7) {
   const charWidthRatio = 0.5;
-  const targetWidth = width * targetWidthRatio;
-  return Math.max(24, Math.round(targetWidth / (textLength * charWidthRatio)));
+  const refDimension = Math.min(width, height);
+  const targetWidth = refDimension * targetWidthRatio;
+  const fontSize = Math.round(targetWidth / (textLength * charWidthRatio));
+  const minFontSize = Math.max(8, Math.round(refDimension * 0.02));
+  const maxFontSize = Math.round(refDimension * 0.15);
+  return Math.min(maxFontSize, Math.max(minFontSize, fontSize));
 }
 
 /**
@@ -395,7 +413,14 @@ export async function applyWatermarkToPdf(file, options = {}) {
         }
         case "diagonal":
         default: {
-          const fontSize = getPdfAdaptedFontSize(width, height, text.length, 0.8);
+          const diagonal = Math.sqrt(width * width + height * height);
+          const charWidthRatio = 0.5;
+          const targetW = diagonal * 0.6;
+          const rawFontSize = Math.round(targetW / (text.length * charWidthRatio));
+          const refDim = Math.min(width, height);
+          const minFs = Math.max(8, Math.round(refDim * 0.02));
+          const maxFs = Math.round(refDim * 0.15);
+          const fontSize = Math.min(maxFs, Math.max(minFs, rawFontSize));
           const textWidth = font.widthOfTextAtSize(text, fontSize);
           page.drawText(text, {
             x: (width - textWidth * Math.cos(Math.abs(rotation * Math.PI / 180))) / 2,

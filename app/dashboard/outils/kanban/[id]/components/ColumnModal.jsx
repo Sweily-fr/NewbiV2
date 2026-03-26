@@ -1,12 +1,10 @@
-import { LoaderCircle, X } from 'lucide-react';
+import { LoaderCircle, Columns3, CornerDownLeft } from 'lucide-react';
 import { Button } from '@/src/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/src/components/ui/dialog';
-import { Input } from '@/src/components/ui/input';
-import { Label } from '@/src/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/src/components/ui/dialog';
 import { ColorPicker } from '@/src/components/ui/color-picker';
 
 /**
- * Modal pour créer ou modifier une colonne
+ * Modal pour créer ou modifier une colonne — style invite-member
  */
 export function ColumnModal({
   isOpen,
@@ -17,74 +15,70 @@ export function ColumnModal({
   columnForm,
   setColumnForm
 }) {
-  const handleSubmit = () => {
-    if (!columnForm.title.trim()) {
-      return;
-    }
+  const handleSubmit = (e) => {
+    e?.preventDefault();
+    if (!columnForm.title.trim()) return;
     onSubmit();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] h-[300px] p-0 bg-card text-card-foreground overflow-hidden flex flex-col" showCloseButton={false}>
-        <div className="flex flex-col h-full">
-          <DialogHeader className="px-6 py-4 border-b border-border relative flex-shrink-0 bg-card">
-            <DialogTitle className="pr-6">
-              {isEditing ? 'Modifier la colonne' : 'Ajouter une colonne'}
+      <DialogContent className="sm:max-w-[480px] p-1 gap-0 top-[40%] border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
+        <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
+          <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
+            <DialogTitle className="text-sm font-medium flex items-center gap-2">
+              <Columns3 className="size-4" />
+              {isEditing ? 'Modifier le status' : 'Nouveau status'}
             </DialogTitle>
-            <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-              <X className="h-4 w-4" />
-              <span className="sr-only">Fermer</span>
-            </DialogClose>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 h-0 min-h-0 bg-card">
-            <div className="grid gap-6 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="column-title" className="text-right">
-                  Titre
-                </Label>
-                <Input
-                  id="column-title"
+
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-4 px-5 pt-4 pb-0">
+              {/* Nom */}
+              <div className="space-y-1.5">
+                <label className="text-sm text-muted-foreground">Nom</label>
+                <input
                   value={columnForm.title}
                   onChange={(e) => setColumnForm({ ...columnForm, title: e.target.value })}
-                  className="col-span-3 bg-background text-foreground border-input focus:border-primary"
-                  placeholder="Nom de la colonne"
+                  placeholder="Ex: À faire, En cours, Terminé..."
+                  autoFocus
+                  className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm ring-offset-background transition-colors focus:ring-2 focus:ring-ring focus:ring-offset-2 outline-none placeholder:text-muted-foreground/50"
                 />
               </div>
-              <div className="grid grid-cols-4 gap-4">
-                <Label className="text-right pt-2">
-                  Couleur
-                </Label>
-                <div className="col-span-3">
-                  <ColorPicker
-                    color={columnForm.color}
-                    onChange={(color) => setColumnForm({ ...columnForm, color })}
-                    inline
-                  />
-                </div>
+
+              {/* Couleur */}
+              <div className="space-y-1.5">
+                <ColorPicker
+                  color={columnForm.color}
+                  onChange={(color) => setColumnForm({ ...columnForm, color })}
+                />
               </div>
             </div>
-          </div>
-          
-          <div className="border-t border-border bg-card px-6 py-4 flex justify-end gap-2">
-            <Button 
-              variant="outline" 
-              onClick={onClose} 
-              className="border-input text-foreground hover:bg-accent/50 hover:text-accent-foreground transition-colors"
-            >
-              Annuler
-            </Button>
-            <Button 
-              onClick={handleSubmit} 
-              disabled={isLoading || !columnForm.title.trim()}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md transition-all duration-200 shadow-sm"
-            >
-              {isLoading ? (
-                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-              ) : null}
-              {isEditing ? 'Modifier' : 'Créer'}
-            </Button>
-          </div>
+
+            {/* Footer */}
+            <div className="flex justify-end border-t border-border/40 mt-4 px-5 py-3">
+              <Button
+                variant="primary"
+                type="submit"
+                disabled={isLoading || !columnForm.title.trim()}
+                className="gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <LoaderCircle className="size-4 animate-spin" />
+                    {isEditing ? 'Modification...' : 'Création...'}
+                  </>
+                ) : (
+                  <>
+                    {isEditing ? 'Modifier' : 'Créer'}
+                    <kbd className="inline-flex items-center justify-center size-5 rounded bg-white/20 ml-0.5">
+                      <CornerDownLeft className="size-3" />
+                    </kbd>
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
         </div>
       </DialogContent>
     </Dialog>
