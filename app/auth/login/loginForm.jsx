@@ -104,240 +104,246 @@ const LoginForm = () => {
   const onSubmit = async (formData) => {
     hasRetriedRef.current = false;
 
-    await authClient.signIn.email(formData, {
-      onSuccess: async (ctx) => {
-        // 2FA requis → Better Auth gère la redirection via onTwoFactorRedirect
-        if (ctx.data.twoFactorRedirect) {
-          return;
-        }
-
-        // Vider les caches APRÈS le signIn réussi pour éviter de causer un remount du form
-        resetOrganizationIdForApollo();
-        clearSessionStorage();
-        await apolloClient.clearStore();
-
-        // getSession + check-session-limit en parallèle
-        const [{ data: session }, sessionLimitResult] = await Promise.all([
-          authClient.getSession(),
-          fetch("/api/check-session-limit", {
-            method: "GET",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-          })
-            .then((res) => (res.ok ? res.json() : null))
-            .catch(() => null),
-        ]);
-
-        // Vérifier la limite de sessions
-        if (sessionLimitResult?.hasReachedLimit) {
-          toast.info("Vous êtes déjà connecté sur un autre appareil");
-          router.push("/auth/manage-devices");
-          return;
-        }
-
-        // Étape 2 : Toujours synchroniser l'organisation active côté client
-        // Le hook session.create.before set l'org côté serveur, mais le SDK client
-        // peut garder l'ancienne org en cache (problème lors du switch de compte)
-        if (session?.session?.activeOrganizationId) {
-          await authClient.organization.setActive({
-            organizationId: session.session.activeOrganizationId,
-          });
-        } else {
-          await ensureActiveOrganization();
-        }
-
-        // Étape 3 : Gérer les invitations (cas peu fréquent)
-        const urlParams = new URLSearchParams(window.location.search);
-        let invitationId = urlParams.get("invitation");
-        let invitationEmail = urlParams.get("email");
-        const callbackUrl = urlParams.get("callbackUrl");
-
-        if (!invitationId) {
-          const pendingInvitation = localStorage.getItem("pendingInvitation");
-          if (pendingInvitation) {
-            try {
-              const invitation = JSON.parse(pendingInvitation);
-              const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
-              if (Date.now() - invitation.timestamp < sevenDaysInMs) {
-                invitationId = invitation.invitationId;
-                invitationEmail = invitation.email;
-              } else {
-                localStorage.removeItem("pendingInvitation");
-              }
-            } catch (error) {
-              console.error("Erreur parsing invitation:", error);
-            }
-          }
-        }
-
-        if (invitationId && invitationEmail) {
-          try {
-            const response = await fetch(`/api/invitations/${invitationId}`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ action: "accept" }),
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-              if (result.organizationId) {
-                localStorage.setItem(
-                  "active_organization_id",
-                  result.organizationId,
-                );
-                await authClient.organization.setActive({
-                  organizationId: result.organizationId,
-                });
-              }
-              toast.success(
-                "Invitation acceptée ! Bienvenue dans l'organisation.",
-              );
-              localStorage.removeItem("pendingInvitation");
-
-              if (session?.user?.isInvitedUser) {
-                await authClient.updateUser({ hasSeenOnboarding: true });
-                router.push("/dashboard?welcome=invited");
-                return;
-              }
-            } else {
-              if (response.status === 410 || response.status === 400) {
-                localStorage.removeItem("pendingInvitation");
-              }
-              toast.error(
-                result.error || "Erreur lors de l'acceptation de l'invitation",
-              );
-            }
-          } catch (error) {
-            toast.error("Erreur lors de l'acceptation de l'invitation");
-          }
-        }
-
-        // Étape 4 : Redirection rapide
-        // La vérification d'abonnement est faite côté serveur par dashboard/layout.jsx
-        // → pas besoin de subscription.list() ici, ça économise ~150-300ms
-        if (callbackUrl) {
-          router.push(callbackUrl);
-        } else {
-          const isInvitedUser = session?.user?.isInvitedUser;
-          const userRedirectPage = session?.user?.redirect_after_login;
-
-          if (isInvitedUser) {
-            if (!session?.user?.hasSeenOnboarding) {
-              await authClient.updateUser({ hasSeenOnboarding: true });
-            }
-            router.push("/dashboard?welcome=invited");
+    try {
+      await authClient.signIn.email(formData, {
+        onSuccess: async (ctx) => {
+          // 2FA requis → Better Auth gère la redirection via onTwoFactorRedirect
+          if (ctx.data.twoFactorRedirect) {
             return;
           }
 
-          // Rediriger vers la page préférée de l'utilisateur
-          // dashboard/layout.jsx redirigera vers /onboarding si pas d'abonnement
-          const routeMap = {
-            dashboard: "/dashboard",
-            outils: "/dashboard",
-            kanban: "/dashboard/outils/kanban",
-            calendar: "/dashboard/calendar",
-            factures: "/dashboard/outils/factures",
-            devis: "/dashboard/outils/devis",
-            clients: "/dashboard/clients",
-            transactions: "/dashboard/outils/transactions",
-            depenses: "/dashboard/outils/transactions",
-            signatures: "/dashboard/outils/signatures-mail",
-            transferts: "/dashboard/outils/transferts-fichiers",
-            "documents-partages": "/dashboard/outils/documents-partages",
-            catalogues: "/dashboard/catalogues",
-            collaborateurs: "/dashboard/collaborateurs",
-          };
+          // Vider les caches APRÈS le signIn réussi pour éviter de causer un remount du form
+          resetOrganizationIdForApollo();
+          clearSessionStorage();
+          await apolloClient.clearStore();
 
-          const redirectPath =
-            userRedirectPage && userRedirectPage !== "last-page"
-              ? routeMap[userRedirectPage] || "/dashboard"
-              : "/dashboard";
-
-          router.push(redirectPath);
-        }
-      },
-      onError: async (error) => {
-        // Extraire le message d'erreur (Better Auth peut retourner différents formats)
-        const errorMessage =
-          error?.message ||
-          error?.error?.message ||
-          (typeof error === "string" ? error : null);
-        const errorStatus = error?.status || error?.error?.status;
-
-        // Token CSRF expiré (page restée ouverte longtemps) → retry automatique une fois
-        // Better Auth retourne 403 ou un message contenant "csrf"/"token"
-        const isCsrfError =
-          errorStatus === 403 ||
-          (errorMessage &&
-            (errorMessage.toLowerCase().includes("csrf") ||
-              errorMessage.toLowerCase().includes("invalid token") ||
-              errorMessage.toLowerCase().includes("forbidden")));
-
-        if (isCsrfError && !hasRetriedRef.current) {
-          hasRetriedRef.current = true;
-          // Le retry va automatiquement obtenir un nouveau token CSRF
-          await onSubmit(formData);
-          return;
-        }
-
-        // Limite de sessions atteinte
-        if (
-          errorMessage &&
-          (errorMessage.toLowerCase().includes("maximum") ||
-            errorMessage.toLowerCase().includes("session") ||
-            errorMessage.toLowerCase().includes("limit") ||
-            errorMessage.toLowerCase().includes("too many"))
-        ) {
-          toast.error("Vous êtes déjà connecté sur un autre appareil");
-          router.push("/auth/manage-devices");
-          return;
-        }
-
-        // Compte désactivé
-        if (
-          errorMessage &&
-          (errorMessage.includes("désactivé") ||
-            errorMessage.includes("réactivation"))
-        ) {
-          toast.error(errorMessage);
-          return;
-        }
-
-        // Email non vérifié (détection par message d'erreur)
-        if (
-          errorMessage &&
-          (errorMessage.includes("vérifier votre adresse email") ||
-            errorMessage.includes("email avant de vous connecter") ||
-            errorMessage.includes("Veuillez vérifier"))
-        ) {
-          setUserEmailForVerification(formData.email);
-          setShowEmailVerification(true);
-          return;
-        }
-
-        // Fallback : vérifier côté serveur si l'email n'est pas vérifié
-        if (formData.email) {
-          try {
-            const response = await fetch("/api/auth/check-user", {
-              method: "POST",
+          // getSession + check-session-limit en parallèle
+          const [{ data: session }, sessionLimitResult] = await Promise.all([
+            authClient.getSession(),
+            fetch("/api/check-session-limit", {
+              method: "GET",
+              credentials: "include",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ email: formData.email }),
+            })
+              .then((res) => (res.ok ? res.json() : null))
+              .catch(() => null),
+          ]);
+
+          // Vérifier la limite de sessions
+          if (sessionLimitResult?.hasReachedLimit) {
+            toast.info("Vous êtes déjà connecté sur un autre appareil");
+            router.push("/auth/manage-devices");
+            return;
+          }
+
+          // Étape 2 : Toujours synchroniser l'organisation active côté client
+          // Le hook session.create.before set l'org côté serveur, mais le SDK client
+          // peut garder l'ancienne org en cache (problème lors du switch de compte)
+          if (session?.session?.activeOrganizationId) {
+            await authClient.organization.setActive({
+              organizationId: session.session.activeOrganizationId,
             });
-            if (response.ok) {
-              const userData = await response.json();
-              if (userData.exists && !userData.emailVerified) {
-                setUserEmailForVerification(formData.email);
-                setShowEmailVerification(true);
-                return;
+          } else {
+            await ensureActiveOrganization();
+          }
+
+          // Étape 3 : Gérer les invitations (cas peu fréquent)
+          const urlParams = new URLSearchParams(window.location.search);
+          let invitationId = urlParams.get("invitation");
+          let invitationEmail = urlParams.get("email");
+          const callbackUrl = urlParams.get("callbackUrl");
+
+          if (!invitationId) {
+            const pendingInvitation = localStorage.getItem("pendingInvitation");
+            if (pendingInvitation) {
+              try {
+                const invitation = JSON.parse(pendingInvitation);
+                const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+                if (Date.now() - invitation.timestamp < sevenDaysInMs) {
+                  invitationId = invitation.invitationId;
+                  invitationEmail = invitation.email;
+                } else {
+                  localStorage.removeItem("pendingInvitation");
+                }
+              } catch (error) {
+                console.error("Erreur parsing invitation:", error);
               }
             }
-          } catch {}
-        }
+          }
 
-        toast.error("Email ou mot de passe incorrect");
-      },
-    });
+          if (invitationId && invitationEmail) {
+            try {
+              const response = await fetch(`/api/invitations/${invitationId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "accept" }),
+              });
+
+              const result = await response.json();
+
+              if (response.ok) {
+                if (result.organizationId) {
+                  localStorage.setItem(
+                    "active_organization_id",
+                    result.organizationId,
+                  );
+                  await authClient.organization.setActive({
+                    organizationId: result.organizationId,
+                  });
+                }
+                toast.success(
+                  "Invitation acceptée ! Bienvenue dans l'organisation.",
+                );
+                localStorage.removeItem("pendingInvitation");
+
+                if (session?.user?.isInvitedUser) {
+                  await authClient.updateUser({ hasSeenOnboarding: true });
+                  router.push("/dashboard?welcome=invited");
+                  return;
+                }
+              } else {
+                if (response.status === 410 || response.status === 400) {
+                  localStorage.removeItem("pendingInvitation");
+                }
+                toast.error(
+                  result.error ||
+                    "Erreur lors de l'acceptation de l'invitation",
+                );
+              }
+            } catch (error) {
+              toast.error("Erreur lors de l'acceptation de l'invitation");
+            }
+          }
+
+          // Étape 4 : Redirection rapide
+          // La vérification d'abonnement est faite côté serveur par dashboard/layout.jsx
+          // → pas besoin de subscription.list() ici, ça économise ~150-300ms
+          if (callbackUrl) {
+            router.push(callbackUrl);
+          } else {
+            const isInvitedUser = session?.user?.isInvitedUser;
+            const userRedirectPage = session?.user?.redirect_after_login;
+
+            if (isInvitedUser) {
+              if (!session?.user?.hasSeenOnboarding) {
+                await authClient.updateUser({ hasSeenOnboarding: true });
+              }
+              router.push("/dashboard?welcome=invited");
+              return;
+            }
+
+            // Rediriger vers la page préférée de l'utilisateur
+            // dashboard/layout.jsx redirigera vers /onboarding si pas d'abonnement
+            const routeMap = {
+              dashboard: "/dashboard",
+              outils: "/dashboard",
+              kanban: "/dashboard/outils/kanban",
+              calendar: "/dashboard/calendar",
+              factures: "/dashboard/outils/factures",
+              devis: "/dashboard/outils/devis",
+              clients: "/dashboard/clients",
+              transactions: "/dashboard/outils/transactions",
+              depenses: "/dashboard/outils/transactions",
+              signatures: "/dashboard/outils/signatures-mail",
+              transferts: "/dashboard/outils/transferts-fichiers",
+              "documents-partages": "/dashboard/outils/documents-partages",
+              catalogues: "/dashboard/catalogues",
+              collaborateurs: "/dashboard/collaborateurs",
+            };
+
+            const redirectPath =
+              userRedirectPage && userRedirectPage !== "last-page"
+                ? routeMap[userRedirectPage] || "/dashboard"
+                : "/dashboard";
+
+            router.push(redirectPath);
+          }
+        },
+        onError: async (error) => {
+          // Extraire le message d'erreur (Better Auth peut retourner différents formats)
+          const errorMessage =
+            error?.message ||
+            error?.error?.message ||
+            (typeof error === "string" ? error : null);
+          const errorStatus = error?.status || error?.error?.status;
+
+          // Token CSRF expiré (page restée ouverte longtemps) → retry automatique une fois
+          // Better Auth retourne 403 ou un message contenant "csrf"/"token"
+          const isCsrfError =
+            errorStatus === 403 ||
+            (errorMessage &&
+              (errorMessage.toLowerCase().includes("csrf") ||
+                errorMessage.toLowerCase().includes("invalid token") ||
+                errorMessage.toLowerCase().includes("forbidden")));
+
+          if (isCsrfError && !hasRetriedRef.current) {
+            hasRetriedRef.current = true;
+            // Le retry va automatiquement obtenir un nouveau token CSRF
+            await onSubmit(formData);
+            return;
+          }
+
+          // Limite de sessions atteinte
+          if (
+            errorMessage &&
+            (errorMessage.toLowerCase().includes("maximum") ||
+              errorMessage.toLowerCase().includes("session") ||
+              errorMessage.toLowerCase().includes("limit") ||
+              errorMessage.toLowerCase().includes("too many"))
+          ) {
+            toast.error("Vous êtes déjà connecté sur un autre appareil");
+            router.push("/auth/manage-devices");
+            return;
+          }
+
+          // Compte désactivé
+          if (
+            errorMessage &&
+            (errorMessage.includes("désactivé") ||
+              errorMessage.includes("réactivation"))
+          ) {
+            toast.error(errorMessage);
+            return;
+          }
+
+          // Email non vérifié (détection par message d'erreur)
+          if (
+            errorMessage &&
+            (errorMessage.includes("vérifier votre adresse email") ||
+              errorMessage.includes("email avant de vous connecter") ||
+              errorMessage.includes("Veuillez vérifier"))
+          ) {
+            setUserEmailForVerification(formData.email);
+            setShowEmailVerification(true);
+            return;
+          }
+
+          // Fallback : vérifier côté serveur si l'email n'est pas vérifié
+          if (formData.email) {
+            try {
+              const response = await fetch("/api/auth/check-user", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: formData.email }),
+              });
+              if (response.ok) {
+                const userData = await response.json();
+                if (userData.exists && !userData.emailVerified) {
+                  setUserEmailForVerification(formData.email);
+                  setShowEmailVerification(true);
+                  return;
+                }
+              }
+            } catch {}
+          }
+
+          toast.error("Email ou mot de passe incorrect");
+        },
+      });
+    } catch (err) {
+      // Erreur réseau ou serveur (ex: MongoDB cold start timeout sur Vercel)
+      toast.error("Le serveur met du temps à répondre. Veuillez réessayer.");
+    }
   };
 
   return (
