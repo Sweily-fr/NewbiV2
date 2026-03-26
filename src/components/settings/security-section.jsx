@@ -565,7 +565,6 @@ export function SecuritySection({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="0.0166">1 minute (test)</SelectItem>
                 <SelectItem value="0.25">15 minutes</SelectItem>
                 <SelectItem value="1">1 heure</SelectItem>
                 <SelectItem value="12">12 heures</SelectItem>
