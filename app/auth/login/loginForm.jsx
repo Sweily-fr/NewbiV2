@@ -284,12 +284,15 @@ const LoginForm = () => {
           }
 
           // Limite de sessions atteinte
+          // Vérifier des patterns précis pour éviter les faux positifs
+          // (ex: "Topology is closed" contient "session" indirectement via d'autres erreurs)
           if (
             errorMessage &&
-            (errorMessage.toLowerCase().includes("maximum") ||
-              errorMessage.toLowerCase().includes("session") ||
-              errorMessage.toLowerCase().includes("limit") ||
-              errorMessage.toLowerCase().includes("too many"))
+            (errorMessage.toLowerCase().includes("too many sessions") ||
+              errorMessage
+                .toLowerCase()
+                .includes("maximum number of sessions") ||
+              errorMessage.toLowerCase().includes("session limit"))
           ) {
             toast.error("Vous êtes déjà connecté sur un autre appareil");
             router.push("/auth/manage-devices");
