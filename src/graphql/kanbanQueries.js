@@ -68,6 +68,9 @@ export const GET_BOARD = gql`
         lastName
         type
       }
+      priority
+      dueDate
+      boardMembers
       members {
         id
         userId
@@ -250,6 +253,9 @@ export const UPDATE_BOARD = gql`
         lastName
         type
       }
+      priority
+      dueDate
+      boardMembers
       totalBillableAmount
       createdAt
       updatedAt

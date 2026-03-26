@@ -6,19 +6,15 @@ import { SAVE_BOARD_AS_TEMPLATE, GET_KANBAN_TEMPLATES } from "@/src/graphql/kanb
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/components/ui/sonner";
 import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
-import { Textarea } from "@/src/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/src/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/src/components/ui/dialog";
-import { BookTemplate, LoaderCircle } from "lucide-react";
+import { BookTemplate, LoaderCircle, CornerDownLeft } from "lucide-react";
 
 export function SaveTemplateDialog({ boardId, boardTitle }) {
   const { workspaceId } = useWorkspace();
@@ -69,58 +65,84 @@ export function SaveTemplateDialog({ boardId, boardTitle }) {
         }
       }}
     >
-      <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2">
-          <BookTemplate className="h-4 w-4" />
-          Sauv. modèle
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>Sauvegarder comme modèle</DialogTitle>
-            <DialogDescription>
-              Sauvegardez ce tableau comme modèle réutilisable (colonnes, tâches, couleurs).
-            </DialogDescription>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="icon">
+              <BookTemplate className="h-4 w-4" />
+            </Button>
+          </DialogTrigger>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">Sauvegarder comme modèle</TooltipContent>
+      </Tooltip>
+      <DialogContent className="sm:max-w-[480px] p-1 gap-0 top-[40%] border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
+        <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
+          <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
+            <DialogTitle className="text-sm font-medium flex items-center gap-2">
+              <BookTemplate className="size-4" />
+              Sauvegarder comme modèle
+            </DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="template-name">Nom *</Label>
-              <Input
-                id="template-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Nom du template"
-                required
-              />
+
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-3 px-5 pt-3 pb-0">
+              {/* Info */}
+              <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg border border-border/50">
+                <p className="text-xs text-muted-foreground">
+                  Les colonnes, tâches et couleurs seront sauvegardées comme modèle réutilisable.
+                </p>
+              </div>
+
+              {/* Nom */}
+              <div className="space-y-1.5">
+                <label className="text-sm text-muted-foreground">Nom du modèle</label>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Nom du template"
+                  required
+                  className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm ring-offset-background transition-colors focus:ring-2 focus:ring-ring focus:ring-offset-2 outline-none placeholder:text-muted-foreground/50"
+                />
+              </div>
+
+              {/* Description */}
+              <div className="space-y-1.5">
+                <label className="text-sm text-muted-foreground">Description <span className="text-muted-foreground/40">(optionnel)</span></label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Décrivez ce modèle..."
+                  rows={3}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background transition-colors focus:ring-2 focus:ring-ring focus:ring-offset-2 outline-none resize-none placeholder:text-muted-foreground/50"
+                />
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="template-description">Description</Label>
-              <Textarea
-                id="template-description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Description du template (optionnel)"
-                rows={3}
-              />
+
+            {/* Footer */}
+            <div className="flex justify-end border-t border-border/40 mt-3 px-5 py-3">
+              <Button
+                variant="primary"
+                type="submit"
+                disabled={loading || !name.trim()}
+                className="gap-2"
+              >
+                {loading ? (
+                  <>
+                    <LoaderCircle className="size-4 animate-spin" />
+                    Sauvegarde...
+                  </>
+                ) : (
+                  <>
+                    Sauvegarder
+                    <kbd className="inline-flex items-center justify-center size-5 rounded bg-white/20 ml-0.5">
+                      <CornerDownLeft className="size-3" />
+                    </kbd>
+                  </>
+                )}
+              </Button>
             </div>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Annuler
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? (
-                <>
-                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                  Sauvegarde...
-                </>
-              ) : (
-                "Sauvegarder"
-              )}
-            </Button>
-          </DialogFooter>
-        </form>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

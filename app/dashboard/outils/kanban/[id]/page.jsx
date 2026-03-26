@@ -17,6 +17,13 @@ import {
   FileText,
   Euro,
   CircleXIcon,
+  Star,
+  ChevronRight,
+  Smile,
+  Flag,
+  Calendar,
+  UserRoundPlus,
+  Pencil,
 } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 
@@ -29,6 +36,10 @@ import {
   CardTitle,
 } from "@/src/components/ui/card";
 import { Input } from "@/src/components/ui/input";
+import { UserAvatar } from "@/src/components/ui/user-avatar";
+import { Calendar as CalendarComponent } from "@/src/components/ui/calendar";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
 import { Label } from "@/src/components/ui/label";
 import { Textarea } from "@/src/components/ui/textarea";
@@ -44,6 +55,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/src/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -66,7 +78,32 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/src/components/ui/popover";
-import { LayoutGrid, List, GanttChart } from "lucide-react";
+import { GanttChart } from "lucide-react";
+
+// Custom tab icons
+const ListViewIcon = ({ className }) => (
+  <svg className={className} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="1" y="2" width="14" height="2" rx="0.5" fill="currentColor" opacity="0.9" />
+    <rect x="1" y="7" width="14" height="2" rx="0.5" fill="currentColor" opacity="0.6" />
+    <rect x="1" y="12" width="14" height="2" rx="0.5" fill="currentColor" opacity="0.35" />
+  </svg>
+);
+
+const BoardViewIcon = ({ className }) => (
+  <svg className={className} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="1" y="1" width="4" height="14" rx="1" fill="#7B68EE" />
+    <rect x="6" y="1" width="4" height="10" rx="1" fill="#7B68EE" opacity="0.6" />
+    <rect x="11" y="1" width="4" height="7" rx="1" fill="#7B68EE" opacity="0.35" />
+  </svg>
+);
+
+const GanttViewIcon = ({ className }) => (
+  <svg className={className} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="1" y="2" width="8" height="2.5" rx="0.5" fill="#E8723A" />
+    <rect x="4" y="6.75" width="10" height="2.5" rx="0.5" fill="#E8723A" opacity="0.6" />
+    <rect x="2" y="11.5" width="6" height="2.5" rx="0.5" fill="#E8723A" opacity="0.35" />
+  </svg>
+);
 import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
 import {
   Tabs,
@@ -86,6 +123,7 @@ import { useColumnCollapse } from "./hooks/useColumnCollapse";
 import { useViewMode } from "./hooks/useViewMode";
 import { useDragToScroll } from "./hooks/useDragToScroll";
 import { useKanbanDnD } from "./hooks/useKanbanDnD";
+import { useListDnD } from "./hooks/useListDnD";
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 
@@ -116,12 +154,202 @@ import {
   UPDATE_TASK,
   DELETE_TASK,
   MOVE_TASK,
+  UPDATE_BOARD,
 } from "@/src/graphql/kanbanQueries";
 
 // @hello-pangea/dnd
-import { DragDropContext } from "@hello-pangea/dnd";
+// DragDropContext removed — list view now uses custom useListDnD hook
 
 import { useMutation } from "@apollo/client";
+
+function InlineBoardTitle({ title, onSave }) {
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [value, setValue] = React.useState(title);
+  const inputRef = React.useRef(null);
+
+  React.useEffect(() => { setValue(title); }, [title]);
+
+  const save = () => {
+    const trimmed = value.trim();
+    if (trimmed && trimmed !== title) onSave(trimmed);
+    else setValue(title);
+    setIsEditing(false);
+  };
+
+  return (
+    <div className="flex items-center gap-1 group/title">
+      <div className="relative h-6 flex items-center">
+        <h1 className={`text-base font-semibold leading-6 whitespace-nowrap ${isEditing ? 'invisible' : ''}`}>{isEditing ? value : title}</h1>
+        {isEditing && (
+          <input
+            ref={inputRef}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') { e.preventDefault(); save(); }
+              if (e.key === 'Escape') { setValue(title); setIsEditing(false); }
+            }}
+            onBlur={save}
+            className="absolute inset-0 text-base font-semibold text-foreground bg-transparent border-none outline-none caret-[#5A50FF] p-0 m-0 leading-6"
+          />
+        )}
+      </div>
+      {!isEditing && (
+        <button
+          onClick={() => { setIsEditing(true); setTimeout(() => inputRef.current?.focus(), 0); }}
+          className="opacity-0 group-hover/title:opacity-100 transition-opacity cursor-pointer"
+        >
+          <Pencil className="h-3 w-3 text-muted-foreground/50 hover:text-muted-foreground" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+const EMOJI_CATEGORIES = {
+  'Projet': ['📋', '📁', '📂', '🗂️', '📌', '📎', '🔖', '🏷️', '📝', '✏️'],
+  'Status': ['✅', '⏳', '🚧', '❌', '🔄', '⏸️', '▶️', '🏁', '🎯', '🏆'],
+  'Idées': ['💡', '🧩', '🔍', '🧪', '🔬', '📐', '🧮', '💭', '🤔', '🗒️'],
+  'Énergie': ['🚀', '⚡', '🔥', '💪', '🌟', '✨', '💫', '🎉', '🎊', '🪄'],
+  'Dev': ['🛠️', '⚙️', '🔧', '💻', '🖥️', '📱', '🌐', '🔗', '🗄️', '📡'],
+  'Business': ['💼', '📊', '📈', '💰', '🏗️', '🏢', '🤝', '📣', '📢', '🎨'],
+  'Nature': ['🌱', '🌿', '🍀', '🌸', '🌻', '🌈', '☀️', '🌙', '⭐', '🦋'],
+  'Divers': ['📦', '🎁', '🧰', '🔑', '🛡️', '🎮', '🎵', '📷', '🗺️', '🧭'],
+};
+
+function EmojiPicker({ boardEmoji, onSelect, onClear }) {
+  const [search, setSearch] = React.useState('');
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  const filteredCategories = React.useMemo(() => {
+    if (!search) return EMOJI_CATEGORIES;
+    const filtered = {};
+    for (const [cat, emojis] of Object.entries(EMOJI_CATEGORIES)) {
+      const match = emojis.filter(() => cat.toLowerCase().includes(search.toLowerCase()));
+      if (match.length) filtered[cat] = match;
+    }
+    // Si pas de match par catégorie, chercher tous les emojis
+    if (Object.keys(filtered).length === 0) {
+      return EMOJI_CATEGORIES;
+    }
+    return filtered;
+  }, [search]);
+
+  return (
+    <Popover open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (open) setSearch(''); }}>
+      <PopoverTrigger asChild>
+        <button className="flex items-center justify-center h-7 w-7 rounded-md hover:bg-muted/50 transition-colors cursor-pointer text-base">
+          {boardEmoji || <Smile className="h-4 w-4 text-muted-foreground/40" />}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[280px] p-0" side="bottom" align="start">
+        {/* Search */}
+        <div className="p-2 pb-1.5">
+          <div className="relative">
+            <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Rechercher..."
+              className="w-full h-7 text-xs pl-7 pr-2 rounded-md bg-muted/30 border border-border/50 outline-none focus:ring-1 focus:ring-[#5A50FF]/30 focus:border-ring placeholder:text-muted-foreground/40"
+            />
+          </div>
+        </div>
+
+        {/* Emoji grid */}
+        <div className="px-2 pb-2 max-h-[240px] overflow-y-auto space-y-2">
+          {Object.entries(filteredCategories).map(([category, emojis]) => (
+            <div key={category}>
+              <span className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider px-0.5">{category}</span>
+              <div className="grid grid-cols-10 gap-0.5 mt-0.5">
+                {emojis.map(e => (
+                  <button
+                    key={e}
+                    onClick={() => { onSelect(e); setIsOpen(false); }}
+                    className="h-7 w-7 flex items-center justify-center rounded hover:bg-muted cursor-pointer text-base transition-colors"
+                  >
+                    {e}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Clear */}
+        {boardEmoji && (
+          <div className="border-t border-border/40 px-2 py-1.5">
+            <button
+              onClick={() => { onClear(); setIsOpen(false); }}
+              className="text-[11px] text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+            >
+              Supprimer l'icône
+            </button>
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function ExpandableSearch({ searchQuery, setSearchQuery }) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const inputRef = React.useRef(null);
+  const containerRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (isOpen) inputRef.current?.focus();
+  }, [isOpen]);
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+    function handleClickOutside(e) {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        if (!searchQuery) setIsOpen(false);
+      }
+    }
+    document.addEventListener('pointerdown', handleClickOutside, true);
+    return () => document.removeEventListener('pointerdown', handleClickOutside, true);
+  }, [isOpen, searchQuery]);
+
+  if (!isOpen && !searchQuery) {
+    return (
+      <Button variant="outline" size="icon" title="Rechercher" onClick={() => setIsOpen(true)}>
+        <Search size={14} aria-hidden="true" />
+      </Button>
+    );
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      className="flex items-center gap-2 h-8 w-[220px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-2.5 transition-all duration-200 focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px] animate-in fade-in slide-in-from-right-2"
+    >
+      <Search size={14} className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
+      <input
+        ref={inputRef}
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        placeholder="Rechercher..."
+        className="flex-1 min-w-0 bg-transparent border-none outline-none text-sm placeholder:text-muted-foreground/50 p-0"
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            setSearchQuery('');
+            setIsOpen(false);
+          }
+        }}
+      />
+      {Boolean(searchQuery) && (
+        <button
+          className="text-muted-foreground/80 hover:text-foreground cursor-pointer shrink-0 transition-colors outline-none"
+          onClick={() => { setSearchQuery(''); inputRef.current?.focus(); }}
+        >
+          <CircleXIcon size={14} aria-hidden="true" />
+        </button>
+      )}
+    </div>
+  );
+}
 
 function KanbanBoardPageContent({ params }) {
   const router = useRouter();
@@ -211,10 +439,56 @@ function KanbanBoardPageContent({ params }) {
     updatePendingComment,
     moveTask,
     updateTask,
+    createTask,
   } = useKanbanTasks(id, board);
 
   // Mutation pour réorganiser les colonnes
   const [reorderColumnsMutation] = useMutation(REORDER_COLUMNS);
+
+  // Mutation pour mettre à jour le board
+  const [updateBoardMutation] = useMutation(UPDATE_BOARD);
+  const updateBoardField = (field, value) => {
+    updateBoardMutation({ variables: { input: { id, [field]: value }, workspaceId } });
+  };
+
+  // Emoji & Favori (localStorage — pas de champ backend)
+  const [boardEmoji, setBoardEmoji] = React.useState(() => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(`board-emoji-${id}`) || null;
+  });
+  const [isFavorite, setIsFavorite] = React.useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem(`board-fav-${id}`) === '1';
+  });
+  const toggleFavorite = () => {
+    setIsFavorite(prev => {
+      const next = !prev;
+      localStorage.setItem(`board-fav-${id}`, next ? '1' : '0');
+      return next;
+    });
+  };
+  const handleEmojiSelect = (emoji) => {
+    setBoardEmoji(emoji);
+    localStorage.setItem(`board-emoji-${id}`, emoji);
+  };
+  const clearEmoji = () => {
+    setBoardEmoji(null);
+    localStorage.removeItem(`board-emoji-${id}`);
+  };
+
+  // Priorité, Date, Membres — persistés en base via updateBoard
+  const boardPriority = board?.priority || '';
+  const boardDueDate = board?.dueDate ? new Date(board.dueDate) : null;
+  const boardMemberIds = board?.boardMembers || [];
+
+  // Stats du board
+  const boardStats = React.useMemo(() => {
+    if (!board?.tasks) return { total: 0, done: 0, percent: 0 };
+    const total = board.tasks.length;
+    const lastColumn = board?.columns?.[board.columns.length - 1];
+    const done = lastColumn ? board.tasks.filter(t => t.columnId === lastColumn.id).length : 0;
+    return { total, done, percent: total ? Math.round((done / total) * 100) : 0 };
+  }, [board?.tasks, board?.columns]);
 
   // Colonnes dérivées du board (synchrone, pas de délai useEffect)
   const boardColumns = React.useMemo(() => {
@@ -259,8 +533,6 @@ function KanbanBoardPageContent({ params }) {
   const [selectedTaskIds, setSelectedTaskIds] = React.useState(new Set());
 
   // État pour le popover de description du tableau
-  const [showBoardDescriptionPopover, setShowBoardDescriptionPopover] =
-    React.useState(false);
 
   // État pour le niveau de zoom du Kanban (0.7 = 70%, 1 = 100%, 1.3 = 130%)
   const [zoomLevel, setZoomLevel] = React.useState(1);
@@ -576,6 +848,15 @@ function KanbanBoardPageContent({ params }) {
     enabled: isBoard,
   });
 
+  // Custom DnD pour la vue liste (même comportement visuel que le board)
+  const listScrollRef = React.useRef(null);
+  useListDnD({
+    onDragStart: handleDragStart,
+    onDragEnd: handleDragEnd,
+    scrollElementRef: listScrollRef,
+    enabled: isList,
+  });
+
   // Détecter les changements d'organisation
   const { hasChangedOrganization } = useOrganizationChange({
     resourceId: id,
@@ -637,36 +918,184 @@ function KanbanBoardPageContent({ params }) {
     >
       {/* Header - Fixe en haut */}
       <div className="flex-shrink-0 bg-background z-10">
-        <div className="flex items-center gap-2 pt-2 pb-2 border-b px-4 sm:px-6">
-          <h1 className="text-base font-semibold">{board.title}</h1>
+        <div className="flex items-center gap-3 pt-2 pb-2 px-4 sm:px-6">
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-1 text-xs text-muted-foreground/50">
+            <span className="hover:text-foreground transition-colors cursor-pointer" onClick={() => router.push('/dashboard/outils/kanban')}>Projets</span>
+            <ChevronRight className="h-3 w-3" />
+          </div>
+
+          {/* Emoji + Titre */}
+          <div className="flex items-center gap-1">
+            <EmojiPicker boardEmoji={boardEmoji} onSelect={handleEmojiSelect} onClear={clearEmoji} />
+            <InlineBoardTitle title={board.title} onSave={(title) => updateBoardField('title', title)} />
+          </div>
+
+          {/* Description — texte tronqué inline, tooltip au hover */}
           {board.description && (
-            <Popover
-              open={showBoardDescriptionPopover}
-              onOpenChange={setShowBoardDescriptionPopover}
-            >
-              <PopoverTrigger asChild>
-                <div
-                  className="cursor-pointer text-muted-foreground/70 hover:text-foreground transition-colors"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowBoardDescriptionPopover(
-                      !showBoardDescriptionPopover,
-                    );
-                  }}
-                >
-                  <AlignLeft className="h-4 w-4" />
-                </div>
-              </PopoverTrigger>
-              <PopoverContent className="w-80" side="top">
-                <div className="space-y-2">
-                  <h4 className="font-medium text-sm">Description</h4>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
-                    {board.description}
-                  </p>
-                </div>
-              </PopoverContent>
-            </Popover>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-xs text-muted-foreground/50 truncate max-w-[200px] cursor-default hidden sm:inline">
+                  {board.description}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" align="start" className="max-w-[320px]">
+                <p className="text-xs whitespace-pre-wrap break-words">{board.description}</p>
+              </TooltipContent>
+            </Tooltip>
           )}
+
+          {/* Favori */}
+          <button
+            onClick={toggleFavorite}
+            className="cursor-pointer transition-colors"
+            title={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+          >
+            <Star className={`h-3.5 w-3.5 ${isFavorite ? 'text-amber-400 fill-amber-400' : 'text-muted-foreground/40 hover:text-amber-400'} transition-colors`} />
+          </button>
+
+          {/* Séparateur */}
+          <div className="h-4 w-px bg-border/60" />
+
+          {/* Priorité / Date / Membres */}
+          <div className="flex items-center gap-1 bg-muted/50 rounded-md px-1 py-0.5">
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="h-6 px-1.5 rounded-md hover:bg-muted cursor-pointer transition-colors flex items-center" title="Priorité du projet">
+                <Flag className={`h-3.5 w-3.5 transition-colors ${
+                  boardPriority === 'high' ? 'text-red-500 fill-red-500' :
+                  boardPriority === 'medium' ? 'text-yellow-500 fill-yellow-500' :
+                  boardPriority === 'low' ? 'text-green-500 fill-green-500' :
+                  'text-muted-foreground/40 hover:text-muted-foreground'
+                }`} />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-44 p-0" side="bottom" align="start">
+              <div className="p-1.5 space-y-0.5">
+                {[
+                  { value: 'high', label: 'Urgent', color: 'text-red-500 fill-red-500' },
+                  { value: 'medium', label: 'Moyen', color: 'text-yellow-500 fill-yellow-500' },
+                  { value: 'low', label: 'Faible', color: 'text-green-500 fill-green-500' },
+                  { value: '', label: 'Aucune', color: 'text-gray-400' },
+                ].map((p) => (
+                  <button
+                    key={p.value || 'none'}
+                    onClick={() => updateBoardField('priority', p.value)}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer ${boardPriority === p.value || (!boardPriority && !p.value) ? 'bg-muted/60' : ''}`}
+                  >
+                    <Flag className={`h-3.5 w-3.5 ${p.color}`} />
+                    <span className="text-xs">{p.label}</span>
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {/* Date d'échéance */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="h-6 px-1.5 rounded-md hover:bg-muted flex items-center gap-1 cursor-pointer transition-colors" title="Échéance du projet">
+                <Calendar className={`h-3.5 w-3.5 transition-colors ${boardDueDate ? 'text-foreground/70' : 'text-muted-foreground/40 hover:text-muted-foreground'}`} />
+                {boardDueDate && (
+                  <span className="text-[11px] text-foreground/60 font-medium">{format(boardDueDate, 'dd MMM', { locale: fr })}</span>
+                )}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" side="bottom" align="start">
+              <CalendarComponent
+                mode="single"
+                selected={boardDueDate}
+                onSelect={(date) => { if (date) { date.setHours(18, 0, 0, 0); updateBoardField('dueDate', date.toISOString()); } }}
+                locale={fr}
+                fromDate={new Date()}
+                className="border-0 p-2 text-xs [--cell-size:--spacing(8)]"
+              />
+              {boardDueDate && (
+                <div className="px-2 pb-2">
+                  <button onClick={() => updateBoardField('dueDate', null)} className="text-[11px] text-muted-foreground hover:text-foreground cursor-pointer transition-colors">Supprimer la date</button>
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
+
+          {/* Assigner des membres */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="h-6 px-1.5 rounded-md hover:bg-muted cursor-pointer transition-colors flex items-center gap-1" title="Membres du projet">
+                <UserRoundPlus className={`h-3.5 w-3.5 transition-colors ${boardMemberIds.length > 0 ? 'text-foreground/70' : 'text-muted-foreground/50'}`} />
+                {boardMemberIds.length > 0 && (
+                  <span className="text-[11px] text-foreground/60 font-medium">{boardMemberIds.length}</span>
+                )}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-60 p-0" side="bottom" align="start">
+              <div className="px-2 pt-2 pb-0.5">
+                <span className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider">Membres du projet</span>
+              </div>
+              <div className="p-1.5 pt-0.5 space-y-0.5 max-h-[280px] overflow-y-auto">
+                {board?.members?.map((member) => {
+                  const memberId = member.userId || member.id;
+                  const isAssigned = boardMemberIds.includes(memberId);
+                  return (
+                    <button
+                      key={memberId}
+                      onClick={() => {
+                        const newMembers = isAssigned
+                          ? boardMemberIds.filter(mid => mid !== memberId)
+                          : [...boardMemberIds, memberId];
+                        updateBoardField('boardMembers', newMembers);
+                      }}
+                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer"
+                    >
+                      <div className={`rounded-full flex-shrink-0 ${isAssigned ? 'ring-[1.5px] ring-[#5A50FF] ring-offset-1 ring-offset-background' : ''}`}>
+                        <UserAvatar src={member.image} name={member.name || member.email} size="xs" className="h-5 w-5" />
+                      </div>
+                      <span className="flex-1 text-left text-xs font-medium truncate">{member.name || member.email}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
+          </div>
+
+          {/* Séparateur */}
+          <div className="h-4 w-px bg-border/60" />
+
+          {/* Membres */}
+          {board?.members?.length > 0 && (
+            <div className="flex items-center">
+              <div className="flex -space-x-1.5">
+                {board.members.slice(0, 4).map((member) => (
+                  <UserAvatar
+                    key={member.userId || member.id}
+                    src={member.image}
+                    name={member.name || member.email}
+                    size="xs"
+                    className="h-5 w-5 ring-1 ring-background"
+                  />
+                ))}
+                {board.members.length > 4 && (
+                  <div className="h-5 w-5 rounded-full bg-muted border border-background flex items-center justify-center text-[8px] font-medium text-muted-foreground">
+                    +{board.members.length - 4}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Sauv. modèle & Partager */}
+          <div className="flex items-center gap-1.5">
+            <SaveTemplateDialog boardId={id} boardTitle={board.title} />
+            <ShareBoardDialog
+              boardId={id}
+              boardTitle={board.title}
+              workspaceId={workspaceId}
+            />
+          </div>
         </div>
 
         <div className="flex items-center justify-between gap-3 border-b border-[#eeeff1] dark:border-[#232323] pt-2 pb-[9px] px-4 sm:px-6 kanban-tabs">
@@ -682,64 +1111,115 @@ function KanbanBoardPageContent({ params }) {
           >
             <TabsList className="h-auto rounded-none bg-transparent p-0 gap-1.5">
               <TabsTrigger
-                value="board"
-                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323] hidden md:inline-flex"
-              >
-                <LayoutGrid className="h-4 w-4" />
-                Board
-              </TabsTrigger>
-              <TabsTrigger
                 value="list"
                 className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
               >
-                <List className="h-4 w-4 md:inline hidden" />
+                <ListViewIcon className="h-4 w-4 md:inline hidden" />
                 List
+              </TabsTrigger>
+              <TabsTrigger
+                value="board"
+                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323] hidden md:inline-flex"
+              >
+                <BoardViewIcon className="h-4 w-4" />
+                Board
               </TabsTrigger>
               <TabsTrigger
                 value="gantt"
                 className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323] hidden md:inline-flex"
               >
-                <GanttChart className="h-4 w-4" />
+                <GanttViewIcon className="h-4 w-4" />
                 Gantt
               </TabsTrigger>
             </TabsList>
           </Tabs>
 
           <div className="flex items-center gap-2">
-            {/* Bouton Supprimer si des tâches sont sélectionnées */}
-            {selectedTaskIds.size > 0 && (
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={async () => {
-                  // Supprimer chaque tâche sélectionnée
-                  for (const taskId of selectedTaskIds) {
-                    try {
-                      await handleDeleteTask(taskId);
-                    } catch (error) {
-                      console.error("Erreur suppression tâche:", error);
-                    }
-                  }
-                  // Réinitialiser la sélection
-                  setSelectedTaskIds(new Set());
-                  toast.success(
-                    `${selectedTaskIds.size} tâche(s) supprimée(s)`,
-                  );
-                }}
-                className="gap-2"
-              >
-                <Trash2 className="h-4 w-4" />
-                Supprimer ({selectedTaskIds.size})
-              </Button>
-            )}
+            {/* Bouton Recherche expansible */}
+            <ExpandableSearch searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
-            {/* Bouton sauvegarder modèle + partage */}
-            <SaveTemplateDialog boardId={id} boardTitle={board.title} />
-            <ShareBoardDialog
-              boardId={id}
-              boardTitle={board.title}
-              workspaceId={workspaceId}
-            />
+            {/* Bouton Filtres */}
+            <DropdownMenu
+              onOpenChange={(open) => {
+                if (open) fetchMembers();
+              }}
+            >
+              <DropdownMenuTrigger asChild>
+                    <Button variant={selectedMemberId ? "primary" : "outline"} size="icon" className="relative" title="Filtres">
+                      <Filter size={14} aria-hidden="true" />
+                      {selectedMemberId && (
+                        <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#5A50FF] text-[9px] font-bold text-white">
+                          1
+                        </span>
+                      )}
+                    </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[240px]">
+                <DropdownMenuItem
+                  onClick={() => setSelectedMemberId(null)}
+                  className="cursor-pointer"
+                >
+                  Effacer le filtre
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="whitespace-nowrap">
+                    <Users className="h-4 w-4 mr-2" />
+                    Par utilisateurs
+                    {selectedMemberId && (
+                      <Badge variant="secondary" className="ml-auto">
+                        1
+                      </Badge>
+                    )}
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-[250px]">
+                    {membersLoading ? (
+                      <div className="text-xs text-muted-foreground px-2 py-4 text-center">
+                        Chargement...
+                      </div>
+                    ) : members && members.length > 0 ? (
+                      <div className="space-y-1 p-1">
+                        {members.map((member) => (
+                          <DropdownMenuItem
+                            key={member.id}
+                            onClick={() =>
+                              setSelectedMemberId(
+                                selectedMemberId === member.id ? null : member.id,
+                              )
+                            }
+                            className="flex items-center px-2 py-1.5 cursor-pointer text-sm"
+                          >
+                            {member.image ? (
+                              <img
+                                src={member.image}
+                                alt={member.name || member.email}
+                                className="w-6 h-6 rounded-full mr-2 object-cover"
+                              />
+                            ) : (
+                              <div className="w-6 h-6 rounded-full mr-2 bg-primary/20 flex items-center justify-center text-xs font-medium">
+                                {(member.name || member.email).charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <span className="flex-1">{member.name || member.email}</span>
+                            <div className={`w-4 h-4 rounded border flex items-center justify-center ${
+                              selectedMemberId === member.id ? "bg-primary border-primary" : "border-muted-foreground/50"
+                            }`}>
+                              {selectedMemberId === member.id && (
+                                <span className="text-white text-xs">✓</span>
+                              )}
+                            </div>
+                          </DropdownMenuItem>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-muted-foreground px-2 py-4 text-center">
+                        Aucun membre
+                      </div>
+                    )}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <Button
               variant="primary"
@@ -766,134 +1246,7 @@ function KanbanBoardPageContent({ params }) {
             </button>
           )}
 
-          {/* Recherche + Filtres */}
           <div className="flex items-center gap-2">
-            {/* Barre de recherche */}
-            <div className="flex items-center gap-2 h-8 w-full sm:w-[300px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
-              <Search
-                size={16}
-                className="text-muted-foreground/80 shrink-0"
-                aria-hidden="true"
-              />
-              <Input
-                variant="ghost"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Rechercher des tâches..."
-                aria-label="Filter tasks"
-              />
-              {Boolean(searchQuery) && (
-                <button
-                  className="text-muted-foreground/80 hover:text-foreground cursor-pointer shrink-0 transition-colors outline-none"
-                  aria-label="Clear filter"
-                  onClick={() => setSearchQuery("")}
-                >
-                  <CircleXIcon size={16} aria-hidden="true" />
-                </button>
-              )}
-            </div>
-
-            {/* Bouton Filtres avec dropdown utilisateur */}
-            <DropdownMenu
-              onOpenChange={(open) => {
-                if (open) fetchMembers();
-              }}
-            >
-              <DropdownMenuTrigger asChild>
-                <Button variant={selectedMemberId ? "primary" : "filter"}>
-                  <Filter size={14} aria-hidden="true" />
-                  Filtres
-                  {selectedMemberId && (
-                    <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-xs">
-                      1
-                    </span>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[240px]">
-                {/* Effacer le filtre */}
-                <DropdownMenuItem
-                  onClick={() => setSelectedMemberId(null)}
-                  className="cursor-pointer"
-                >
-                  Effacer le filtre
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator />
-
-                {/* Sous-menu Filtre par utilisateur */}
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className="whitespace-nowrap">
-                    <Users className="h-4 w-4 mr-2" />
-                    Par utilisateurs
-                    {selectedMemberId && (
-                      <Badge variant="secondary" className="ml-auto">
-                        1
-                      </Badge>
-                    )}
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="w-[250px]">
-                    {membersLoading ? (
-                      <div className="text-xs text-muted-foreground px-2 py-4 text-center">
-                        Chargement...
-                      </div>
-                    ) : members && members.length > 0 ? (
-                      <div className="space-y-1 p-1">
-                        {members.map((member) => (
-                          <DropdownMenuItem
-                            key={member.id}
-                            onClick={() =>
-                              setSelectedMemberId(
-                                selectedMemberId === member.id
-                                  ? null
-                                  : member.id,
-                              )
-                            }
-                            className="flex items-center px-2 py-1.5 cursor-pointer text-sm"
-                          >
-                            {/* Avatar */}
-                            {member.image ? (
-                              <img
-                                src={member.image}
-                                alt={member.name || member.email}
-                                className="w-6 h-6 rounded-full mr-2 object-cover"
-                              />
-                            ) : (
-                              <div className="w-6 h-6 rounded-full mr-2 bg-primary/20 flex items-center justify-center text-xs font-medium">
-                                {(member.name || member.email)
-                                  .charAt(0)
-                                  .toUpperCase()}
-                              </div>
-                            )}
-
-                            {/* Nom et checkbox */}
-                            <span className="flex-1">
-                              {member.name || member.email}
-                            </span>
-                            <div
-                              className={`w-4 h-4 rounded border flex items-center justify-center ${
-                                selectedMemberId === member.id
-                                  ? "bg-primary border-primary"
-                                  : "border-muted-foreground/50"
-                              }`}
-                            >
-                              {selectedMemberId === member.id && (
-                                <span className="text-white text-xs">✓</span>
-                              )}
-                            </div>
-                          </DropdownMenuItem>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-xs text-muted-foreground px-2 py-4 text-center">
-                        Aucun membre
-                      </div>
-                    )}
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
             {/* Bouton Convertir en facture */}
             {billableTasks.length > 0 && (
               <Button
@@ -951,10 +1304,9 @@ function KanbanBoardPageContent({ params }) {
         </div>
       )}
 
-      {/* Contrôles pour la vue liste - Recherche et Filtre */}
-      {isList && (
+      {/* Contrôles pour la vue liste */}
+      {isList && (collapsedColumnsCount > 0 || billableTasks.length > 0) && (
         <div className="sticky left-0 px-4 sm:px-6 py-3 bg-background z-10 flex items-center gap-4">
-          {/* Lien Déplier toutes */}
           {collapsedColumnsCount > 0 && (
             <button
               onClick={expandAll}
@@ -963,137 +1315,8 @@ function KanbanBoardPageContent({ params }) {
               Déplier toutes ({collapsedColumnsCount})
             </button>
           )}
-
-          {/* Recherche + Filtres */}
-          <div className="flex items-center gap-2">
-            {/* Barre de recherche */}
-            <div className="flex items-center gap-2 h-8 w-full sm:w-[300px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
-              <Search
-                size={16}
-                className="text-muted-foreground/80 shrink-0"
-                aria-hidden="true"
-              />
-              <Input
-                variant="ghost"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Rechercher des tâches..."
-                aria-label="Filter tasks"
-              />
-              {Boolean(searchQuery) && (
-                <button
-                  className="text-muted-foreground/80 hover:text-foreground cursor-pointer shrink-0 transition-colors outline-none"
-                  aria-label="Clear filter"
-                  onClick={() => setSearchQuery("")}
-                >
-                  <CircleXIcon size={16} aria-hidden="true" />
-                </button>
-              )}
-            </div>
-
-            {/* Bouton Filtres avec dropdown utilisateur */}
-            <DropdownMenu
-              onOpenChange={(open) => {
-                if (open) fetchMembers();
-              }}
-            >
-              <DropdownMenuTrigger asChild>
-                <Button variant={selectedMemberId ? "primary" : "filter"}>
-                  <Filter size={14} aria-hidden="true" />
-                  Filtres
-                  {selectedMemberId && (
-                    <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-xs">
-                      1
-                    </span>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[240px]">
-                {/* Effacer le filtre */}
-                <DropdownMenuItem
-                  onClick={() => setSelectedMemberId(null)}
-                  className="cursor-pointer"
-                >
-                  Effacer le filtre
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator />
-
-                {/* Sous-menu Filtre par utilisateur */}
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className="whitespace-nowrap">
-                    <Users className="h-4 w-4 mr-2" />
-                    Par utilisateurs
-                    {selectedMemberId && (
-                      <Badge variant="secondary" className="ml-auto">
-                        1
-                      </Badge>
-                    )}
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="w-[250px]">
-                    {membersLoading ? (
-                      <div className="text-xs text-muted-foreground px-2 py-4 text-center">
-                        Chargement...
-                      </div>
-                    ) : members && members.length > 0 ? (
-                      <div className="space-y-1 p-1">
-                        {members.map((member) => (
-                          <DropdownMenuItem
-                            key={member.id}
-                            onClick={() =>
-                              setSelectedMemberId(
-                                selectedMemberId === member.id
-                                  ? null
-                                  : member.id,
-                              )
-                            }
-                            className="flex items-center px-2 py-1.5 cursor-pointer text-sm"
-                          >
-                            {/* Avatar */}
-                            {member.image ? (
-                              <img
-                                src={member.image}
-                                alt={member.name || member.email}
-                                className="w-6 h-6 rounded-full mr-2 object-cover"
-                              />
-                            ) : (
-                              <div className="w-6 h-6 rounded-full mr-2 bg-primary/20 flex items-center justify-center text-xs font-medium">
-                                {(member.name || member.email)
-                                  .charAt(0)
-                                  .toUpperCase()}
-                              </div>
-                            )}
-
-                            {/* Nom et checkbox */}
-                            <span className="flex-1">
-                              {member.name || member.email}
-                            </span>
-                            <div
-                              className={`w-4 h-4 rounded border flex items-center justify-center ${
-                                selectedMemberId === member.id
-                                  ? "bg-primary border-primary"
-                                  : "border-muted-foreground/50"
-                              }`}
-                            >
-                              {selectedMemberId === member.id && (
-                                <span className="text-white text-xs">✓</span>
-                              )}
-                            </div>
-                          </DropdownMenuItem>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-xs text-muted-foreground px-2 py-4 text-center">
-                        Aucun membre
-                      </div>
-                    )}
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Bouton Convertir en facture */}
-            {billableTasks.length > 0 && (
+          {billableTasks.length > 0 && (
+            <>
               <Button
                 variant="outline"
                 size="sm"
@@ -1103,17 +1326,13 @@ function KanbanBoardPageContent({ params }) {
                 <FileText className="h-4 w-4" />
                 <span className="hidden lg:inline">Convertir en facture</span>
               </Button>
-            )}
-          </div>
-
-          {/* Prix total */}
-          {billableTasks.length > 0 && (
-            <span className="text-sm font-medium whitespace-nowrap">
-              Dossier à{" "}
-              <span className="bg-[#5b50ff]/10 text-[#5b50ff] px-2.5 py-1 rounded-md text-sm font-semibold ml-1.5">
-                {formatCurrency(projectTotalPrice)}
+              <span className="text-sm font-medium whitespace-nowrap">
+                Dossier à{" "}
+                <span className="bg-[#5b50ff]/10 text-[#5b50ff] px-2.5 py-1 rounded-md text-sm font-semibold ml-1.5">
+                  {formatCurrency(projectTotalPrice)}
+                </span>
               </span>
-            </span>
+            </>
           )}
         </div>
       )}
@@ -1135,13 +1354,10 @@ function KanbanBoardPageContent({ params }) {
       )}
 
       {/* Board Content - Zone scrollable pour les colonnes */}
-      <div className="flex-1 overflow-hidden px-4 sm:px-6 mt-4">
+      <div className={`flex-1 overflow-hidden ${isList ? '' : 'px-4 sm:px-6'}`}>
         {isList && (
-          <div className="h-full overflow-auto">
-            <DragDropContext
-              onDragEnd={handleDragEnd}
-              onDragStart={handleDragStart}
-            >
+          <div className="h-full overflow-auto" ref={(node) => { listScrollRef.current = node; }}>
+              <div className="h-6 bg-background sticky top-0 z-[21]" />
               <KanbanListView
                 columns={localColumns}
                 getTasksByColumn={getLocalTasksByColumn}
@@ -1156,9 +1372,10 @@ function KanbanBoardPageContent({ params }) {
                 setSelectedTaskIds={setSelectedTaskIds}
                 moveTask={moveTask}
                 updateTask={updateTask}
+                createTask={createTask}
+                boardId={id}
                 workspaceId={workspaceId}
               />
-            </DragDropContext>
           </div>
         )}
 
@@ -1248,6 +1465,7 @@ function KanbanBoardPageContent({ params }) {
         addChecklistItem={addChecklistItem}
         toggleChecklistItem={toggleChecklistItem}
         removeChecklistItem={removeChecklistItem}
+        openEditTaskModal={openEditTaskModal}
       />
 
       <AlertDialog

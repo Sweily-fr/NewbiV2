@@ -152,9 +152,9 @@ export default function LoginPage() {
         </div>
 
         {/* Mobile Layout */}
-        <div className="md:hidden min-h-screen bg-background flex flex-col">
+        <div className="md:hidden h-[100dvh] bg-background flex flex-col">
           {/* Logo en haut centré */}
-          <div className="pt-10 flex justify-center">
+          <div className="pt-6 flex justify-center">
             <img
               src="/newbiLetter.png"
               alt="Newbi"
@@ -165,7 +165,7 @@ export default function LoginPage() {
           {/* Contenu centré verticalement */}
           <div className="flex-1 flex items-center justify-center px-6">
             <div className="w-full max-w-sm">
-              <h3 className="text-2xl font-medium text-foreground text-center mb-8">
+              <h3 className="text-2xl font-medium text-foreground text-center mb-5">
                 Connexion
               </h3>
 
@@ -179,7 +179,7 @@ export default function LoginPage() {
                 Connexion avec Google
               </Button>
 
-              <div className="relative my-6">
+              <div className="relative my-4">
                 <div className="absolute inset-0 flex items-center">
                   <Separator className="w-full" />
                 </div>
@@ -192,7 +192,7 @@ export default function LoginPage() {
 
               <LoginForm />
 
-              <p className="mt-4 text-sm text-muted-foreground text-center">
+              <p className="mt-3 text-sm text-muted-foreground text-center">
                 <Link
                   href="/auth/forget-password"
                   className="font-medium text-primary hover:text-primary/90"
@@ -204,7 +204,7 @@ export default function LoginPage() {
           </div>
 
           {/* Footer en bas */}
-          <div className="pb-6 px-6 text-center space-y-3">
+          <div className="pb-4 px-6 text-center space-y-2">
             <p className="text-xs text-muted-foreground">
               Vous n'avez pas de compte ?{" "}
               <Link

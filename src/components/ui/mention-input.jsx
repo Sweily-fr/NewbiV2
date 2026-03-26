@@ -130,6 +130,7 @@ export const MentionCommentInput = forwardRef(function MentionCommentInput(
     onDragLeave,
     isDragOver = false,
     children,
+    toolbarSlot,
   },
   ref,
 ) {
@@ -273,17 +274,19 @@ export const MentionCommentInput = forwardRef(function MentionCommentInput(
       )}
 
       <div
-        className={`relative transition-all ${isDragOver ? "ring-2 ring-primary ring-offset-2 rounded-md" : ""}`}
+        className={`relative rounded-lg border border-border/60 bg-white dark:bg-background overflow-hidden transition-all focus-within:border-border ${isDragOver ? "ring-2 ring-primary ring-offset-2" : ""}`}
+        style={{ boxShadow: '0 1px 2px rgba(0, 0, 0, .055)' }}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         onDrop={onDrop}
       >
+        {/* Zone d'écriture */}
         <div
-          className="relative min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm cursor-text"
+          className="relative min-h-[44px] px-3.5 pt-2.5 pb-1 cursor-text"
           onClick={() => editorRef.current?.focus()}
         >
           {isEmpty && (
-            <span className="absolute top-2 left-3 text-sm text-muted-foreground pointer-events-none">
+            <span className="absolute top-2.5 left-3.5 text-sm text-muted-foreground/50 pointer-events-none">
               {isDragOver ? "Déposez vos images ici..." : placeholder}
             </span>
           )}
@@ -297,46 +300,48 @@ export const MentionCommentInput = forwardRef(function MentionCommentInput(
             }}
             onKeyDown={handleKeyDown}
             onPaste={onPaste}
-            className="w-full text-sm text-foreground focus:outline-none min-h-[56px] max-h-[200px] overflow-y-auto [&_[data-mention-id]]:bg-[#5a50ff]/10 [&_[data-mention-id]]:text-[#5a50ff] [&_[data-mention-id]]:rounded [&_[data-mention-id]]:px-1.5 [&_[data-mention-id]]:py-0.5 [&_[data-mention-id]]:text-xs [&_[data-mention-id]]:font-medium"
+            className="w-full text-sm text-foreground focus:outline-none min-h-[20px] max-h-[120px] overflow-y-auto [&_[data-mention-id]]:bg-[#5a50ff]/10 [&_[data-mention-id]]:text-[#5a50ff] [&_[data-mention-id]]:rounded [&_[data-mention-id]]:px-1.5 [&_[data-mention-id]]:py-0.5 [&_[data-mention-id]]:text-xs [&_[data-mention-id]]:font-medium"
           />
           {isDragOver && (
-            <div className="absolute inset-0 bg-primary/10 rounded-md flex items-center justify-center pointer-events-none">
+            <div className="absolute inset-0 bg-primary/10 rounded-lg flex items-center justify-center pointer-events-none">
               <div className="text-primary font-medium text-sm flex items-center gap-2">
                 Déposez vos images ici
               </div>
             </div>
           )}
         </div>
-      </div>
 
-      {/* Children slot (for pending images, file picker, etc.) */}
-      {children}
+        {/* Children slot (for pending images, file picker, etc.) */}
+        <div className="px-3.5">
+          {children}
+        </div>
 
-      {/* Footer with hints + send button */}
-      <div className="flex justify-between items-center mt-2">
-        <span className="text-xs text-muted-foreground">
-          @ pour mentionner · Cmd/Ctrl + Entrée
-        </span>
-        <Button
-          size="sm"
-          disabled={isEmpty || disabled || loading}
-          onMouseDown={(e) => {
-            e.preventDefault();
-            handleSubmit();
-          }}
-        >
-          {loading ? (
-            <>
-              <Loader2 className="h-3 w-3 mr-2 animate-spin" />
-              Envoi...
-            </>
-          ) : (
-            <>
-              <Send className="h-3 w-3 mr-2" />
-              Envoyer
-            </>
-          )}
-        </Button>
+        {/* Toolbar */}
+        <div className="flex items-center justify-between px-2 py-1.5">
+          <div className="flex items-center gap-0.5">
+            <span className="text-[10px] px-1.5" style={{ color: '#8D8D8D' }}>
+              @ pour mentionner
+            </span>
+          </div>
+          <div className="flex items-center gap-0.5">
+            {toolbarSlot}
+            <button
+              disabled={isEmpty || disabled || loading}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleSubmit();
+              }}
+              className="h-7 w-7 rounded-md flex items-center justify-center hover:bg-muted/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+              style={{ color: '#8D8D8D' }}
+            >
+              {loading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Send className="h-3.5 w-3.5" />
+              )}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -356,7 +361,7 @@ export function CommentContent({ content }) {
   if (isHtml) {
     return (
       <div
-        className="text-[14px] whitespace-pre-wrap [&_[data-mention-id]]:bg-[#5a50ff]/10 [&_[data-mention-id]]:text-[#5a50ff] [&_[data-mention-id]]:rounded [&_[data-mention-id]]:px-1.5 [&_[data-mention-id]]:py-0.5 [&_[data-mention-id]]:text-xs [&_[data-mention-id]]:font-medium"
+        className="text-[13px] whitespace-pre-wrap [&_[data-mention-id]]:bg-[#5a50ff]/10 [&_[data-mention-id]]:text-[#5a50ff] [&_[data-mention-id]]:rounded [&_[data-mention-id]]:px-1.5 [&_[data-mention-id]]:py-0.5 [&_[data-mention-id]]:text-xs [&_[data-mention-id]]:font-medium"
         dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
       />
     );

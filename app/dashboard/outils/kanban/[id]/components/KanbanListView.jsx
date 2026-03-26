@@ -1,17 +1,18 @@
-import React, { useState, Fragment, useMemo, useCallback } from "react";
-import { MoreHorizontal, Calendar, ChevronDown, ChevronRight, Plus, Flag, MessageSquare, Paperclip, MoreVertical, GripVertical, AlignLeft, Clock, Users, Building2 } from "lucide-react";
+import React, { useState, useRef, Fragment, useMemo, useCallback } from "react";
+import { MoreHorizontal, Calendar, ChevronDown, ChevronRight, Plus, Flag, MessageSquare, Paperclip, MoreVertical, GripVertical, AlignLeft, Clock, Users, UserRoundPlus, Building2, X, Search, Check, Pencil, CircleDot, Trash2, CopyPlus, ArrowRightLeft, Ellipsis, Settings, ChevronsDownUp, CheckCheck, CornerDownLeft, Tag } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from "@/src/components/ui/dropdown-menu";
 import { Badge } from "@/src/components/ui/badge";
 import { UserAvatar } from "@/src/components/ui/user-avatar";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Input } from "@/src/components/ui/input";
-import { Draggable, Droppable } from "@hello-pangea/dnd";
 import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
 import {
   Popover,
@@ -28,15 +29,24 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { MemberSelector } from "./MemberSelector";
 
+function _formatDate(dateString) {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
 function DescriptionHoverPopover({ description }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
         <span
-          className="cursor-pointer text-muted-foreground/70 hover:text-foreground transition-colors flex-shrink-0 ml-4"
+          className="cursor-pointer text-muted-foreground/40 hover:text-muted-foreground transition-colors flex-shrink-0"
           onClick={(e) => e.stopPropagation()}
         >
-          <AlignLeft className="h-4 w-4" />
+          <AlignLeft className="h-3 w-3" />
         </span>
       </PopoverTrigger>
       <PopoverContent
@@ -65,45 +75,46 @@ function DescriptionHoverPopover({ description }) {
 /**
  * Composant pour sélectionner les membres assignés avec un bouton de mise à jour
  */
-function MembersPopover({ task, membersInfo, members, updateTask, workspaceId, isTrigger }) {
-  const [selectedMembers, setSelectedMembers] = useState(new Set());
-  const [isUpdating, setIsUpdating] = useState(false);
+function MembersPopover({ task, membersInfo, members, updateTask, workspaceId, isTrigger, popoverOpenRef }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [popoverSide, setPopoverSide] = useState('bottom');
+  const triggerRef = useRef(null);
 
-  // Réinitialiser les membres sélectionnés quand le popover s'ouvre
   const handleOpenChange = (open) => {
     setIsOpen(open);
     if (open) {
-      // Pré-sélectionner les membres actuels de la tâche
-      setSelectedMembers(new Set(task.assignedMembers || []));
+      setSearchQuery('');
+      if (popoverOpenRef) popoverOpenRef.current = true;
+      if (triggerRef.current) {
+        const rect = triggerRef.current.getBoundingClientRect();
+        setPopoverSide(window.innerHeight - rect.bottom < 300 ? 'top' : 'bottom');
+      }
+    } else {
+      if (popoverOpenRef) {
+        setTimeout(() => { popoverOpenRef.current = false; }, 100);
+      }
     }
   };
 
-  const handleUpdateMembers = async () => {
-    setIsUpdating(true);
-    try {
-      await updateTask({
-        variables: {
-          input: {
-            id: task.id,
-            assignedMembers: Array.from(selectedMembers)
-          },
-          workspaceId
-        }
-      });
-      setIsOpen(false);
-    } catch (error) {
-      console.error('Erreur lors de la mise à jour des membres:', error);
-    } finally {
-      setIsUpdating(false);
-    }
+  const toggleMember = (memberId) => {
+    const current = task.assignedMembers || [];
+    const newMembers = current.includes(memberId)
+      ? current.filter(id => id !== memberId)
+      : [...current, memberId];
+    updateTask({
+      variables: {
+        input: { id: task.id, assignedMembers: newMembers },
+        workspaceId
+      }
+    });
   };
 
   return (
     <Popover open={isOpen} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
+      <PopoverTrigger asChild ref={triggerRef}>
         {isTrigger ? (
-          <div 
+          <div
             className="flex -space-x-2 cursor-pointer"
             onClick={(e) => e.stopPropagation()}
           >
@@ -111,37 +122,37 @@ function MembersPopover({ task, membersInfo, members, updateTask, workspaceId, i
               const memberInfo = membersInfo.find(m => m.id === memberId);
               return (
                 <div key={memberId} className="relative group/avatar">
-                  <UserAvatar
-                    src={memberInfo?.image}
-                    name={memberInfo?.name || memberId}
-                    size="sm"
-                    className="border border-background ring-1 ring-border/10 hover:ring-primary/50 transition-all"
-                    style={{ zIndex: task.assignedMembers.length - idx }}
-                  />
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div>
+                        <UserAvatar
+                          src={memberInfo?.image}
+                          name={memberInfo?.name || memberId}
+                          size="xs"
+                          className="border border-background ring-1 ring-border/10 hover:ring-primary/50 transition-all"
+                          style={{ zIndex: task.assignedMembers.length - idx }}
+                        />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-[10px] px-2 py-1">
+                      {memberInfo?.name || memberId}
+                    </TooltipContent>
+                  </Tooltip>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      const newMembers = task.assignedMembers.filter(id => id !== memberId);
-                      updateTask({
-                        variables: {
-                          input: {
-                            id: task.id,
-                            assignedMembers: newMembers
-                          },
-                          workspaceId
-                        }
-                      });
+                      toggleMember(memberId);
                     }}
-                    className="absolute -top-1 -right-1 w-4 h-4 bg-destructive rounded-full flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity cursor-pointer"
+                    className="absolute -top-1.5 -right-0.5 w-3.5 h-3.5 bg-muted-foreground border border-white rounded-full flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity cursor-pointer"
                     title="Supprimer l'assignation"
                   >
-                    <span className="text-white text-xs font-bold">×</span>
+                    <X className="w-2 h-2 text-white stroke-[3]" />
                   </button>
                 </div>
               );
             })}
             {task.assignedMembers.length > 3 && (
-              <div className="w-6 h-6 rounded-full bg-muted/80 border border-background flex items-center justify-center text-[9px] font-semibold text-muted-foreground flex-shrink-0">
+              <div className="w-5 h-5 rounded-full bg-muted/80 border border-background flex items-center justify-center text-[8px] font-semibold text-muted-foreground flex-shrink-0">
                 +{task.assignedMembers.length - 3}
               </div>
             )}
@@ -152,68 +163,50 @@ function MembersPopover({ task, membersInfo, members, updateTask, workspaceId, i
             onClick={(e) => e.stopPropagation()}
             title="Ajouter des membres"
           >
-            <Users className="h-4 w-4" />
+            <UserRoundPlus className="h-4 w-4" />
           </button>
         )}
       </PopoverTrigger>
-      <PopoverContent className="w-72 p-0" side="top" align="start">
-        <div className="p-2 space-y-1 max-h-[400px] overflow-y-auto">
-          {members.map((member) => (
-            <button
-              key={member.id}
-              onClick={(e) => {
-                e.stopPropagation();
-                const newSelected = new Set(selectedMembers);
-                if (newSelected.has(member.id)) {
-                  newSelected.delete(member.id);
-                } else {
-                  newSelected.add(member.id);
-                }
-                setSelectedMembers(newSelected);
-              }}
-              className={`w-full flex items-center gap-3 p-2 rounded-md hover:bg-accent transition-colors cursor-pointer ${
-                selectedMembers.has(member.id) ? 'bg-accent' : ''
-              }`}
-            >
-              <UserAvatar 
-                src={member.image} 
-                name={member.name} 
-                size="sm"
-              />
-              <div className="flex-1 text-left">
-                <div className="text-sm font-medium">{member.name}</div>
-                <div className="text-xs text-muted-foreground">{member.email}</div>
-              </div>
-              <Checkbox
-                checked={selectedMembers.has(member.id)}
-                onCheckedChange={() => {
-                  const newSelected = new Set(selectedMembers);
-                  if (newSelected.has(member.id)) {
-                    newSelected.delete(member.id);
-                  } else {
-                    newSelected.add(member.id);
-                  }
-                  setSelectedMembers(newSelected);
-                }}
-                onClick={(e) => e.stopPropagation()}
-                className="flex-shrink-0"
-              />
-            </button>
-          ))}
+      <PopoverContent className="w-60 p-0" side={popoverSide} align="start">
+        <div className="px-2 pt-2 pb-1.5">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground/50" />
+            <Input
+              placeholder="Rechercher..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              className="h-7 text-xs pl-7 pr-2 bg-muted/30 border-border/50 focus-visible:ring-1 focus-visible:ring-[#5A50FF]/30"
+            />
+          </div>
         </div>
-
-        <div className="p-2 border-t">
-          <Button
-            size="sm"
-            className="w-full"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleUpdateMembers();
-            }}
-            disabled={isUpdating}
-          >
-            {isUpdating ? 'Mise à jour...' : 'Mettre à jour'}
-          </Button>
+        <div className="px-2 pb-0.5">
+          <span className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider">Assigné</span>
+        </div>
+        <div className="p-1.5 pt-0.5 space-y-0.5 max-h-[280px] overflow-y-auto">
+          {members.filter(m => m.name?.toLowerCase().includes(searchQuery.toLowerCase())).map((member) => {
+            const isSelected = (task.assignedMembers || []).includes(member.id);
+            return (
+              <button
+                key={member.id}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleMember(member.id);
+                }}
+                className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer"
+              >
+                <div className={`rounded-full flex-shrink-0 ${isSelected ? 'ring-[1.5px] ring-[#5A50FF] ring-offset-1 ring-offset-background' : ''}`}>
+                  <UserAvatar
+                    src={member.image}
+                    name={member.name}
+                    size="xs"
+                    className="h-5 w-5"
+                  />
+                </div>
+                <span className="flex-1 text-left text-xs font-medium truncate">{member.name}</span>
+              </button>
+            );
+          })}
         </div>
       </PopoverContent>
     </Popover>
@@ -232,71 +225,1026 @@ function EmptyColumnDropZone({ columnId }) {
 }
 
 /**
- * Zone de drop sur l'en-tête d'une section fermée
+ * Zone de drop sur l'en-tête d'une section fermée (data-attribute based)
  */
-function CollapsedColumnDropZone({ columnId, onOpen, children }) {
+function CollapsedColumnDropZone({ columnId, children }) {
   return (
-    <Droppable droppableId={`collapsed-${columnId}`} type="task">
-      {(provided, snapshot) => {
-        // Ouvrir automatiquement quand on survole avec une tâche
-        React.useEffect(() => {
-          if (snapshot.isDraggingOver) {
-            const timer = setTimeout(() => {
-              onOpen(columnId);
-            }, 500); // Délai de 500ms avant d'ouvrir
-            return () => clearTimeout(timer);
-          }
-        }, [snapshot.isDraggingOver, columnId, onOpen]);
-
-        return (
-          <div
-            ref={provided.innerRef}
-            {...provided.droppableProps}
-            className={`transition-colors ${snapshot.isDraggingOver ? 'bg-primary/10' : ''}`}
-          >
-            {children}
-            {/* Placeholder avec hauteur limitée */}
-            <div style={{ maxHeight: '100px', overflow: 'hidden' }}>
-              {provided.placeholder}
-            </div>
-          </div>
-        );
-      }}
-    </Droppable>
+    <div data-dnd-list-zone={columnId}>
+      {children}
+    </div>
   );
 }
 
 /**
- * Composant pour une ligne de tâche draggable
+ * Contenu du popover de status avec recherche
  */
-function DraggableTaskRow({ task, column, onEditTask, index, children }) {
+function StatusPopoverContent({ columns, column, task, moveTask, workspaceId }) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const filtered = columns.filter(c => c.title?.toLowerCase().includes(searchQuery.toLowerCase()));
+
   return (
-    <Draggable draggableId={task.id} index={index}>
-      {(provided, snapshot) => (
-        <div
-          ref={provided.innerRef}
-          {...provided.draggableProps}
-          {...provided.dragHandleProps}
-          style={{
-            ...provided.draggableProps.style,
-            display: snapshot.isDragging ? provided.draggableProps.style?.display : undefined,
-            gridTemplateColumns: '2.5fr 1fr 1fr 1fr 1fr 1fr 80px',
-            gap: '2rem'
-          }}
-          className={`grid px-2 py-1.5 items-center hover:bg-accent/5 cursor-grab active:cursor-grabbing group relative overflow-hidden border-b border-border/60 ${
-            snapshot.isDragging ? 'opacity-90 shadow-2xl bg-background border border-primary/40 rounded-lg z-[9999]' : ''
-          }`}
-          onClick={(e) => {
-            // Ne pas ouvrir la modal si on est en train de drag
-            if (!snapshot.isDragging) {
-              onEditTask(task);
-            }
-          }}
-        >
-          {children}
+    <>
+      <div className="px-2 pt-2 pb-1.5">
+        <div className="relative">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground/50" />
+          <Input
+            placeholder="Rechercher..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onClick={(e) => e.stopPropagation()}
+            className="h-7 text-xs pl-7 pr-2 bg-muted/30 border-border/50 focus-visible:ring-1 focus-visible:ring-[#5A50FF]/30"
+          />
         </div>
+      </div>
+      <div className="px-2 pb-0.5">
+        <span className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider">Status</span>
+      </div>
+      <div className="p-1.5 pt-0.5 space-y-0.5 max-h-[280px] overflow-y-auto">
+        {filtered.map((col) => (
+          <button
+            key={col.id}
+            onClick={async (e) => {
+              e.stopPropagation();
+              try {
+                await moveTask({
+                  variables: {
+                    id: task.id,
+                    columnId: col.id,
+                    position: 0,
+                    workspaceId
+                  }
+                });
+              } catch (error) {
+                console.error('Erreur lors du déplacement de la tâche:', error);
+              }
+            }}
+            className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors cursor-pointer ${
+              col.id === column.id ? 'bg-muted/60' : ''
+            }`}
+          >
+            <div
+              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+              style={{
+                backgroundColor: col.color || "#94a3b8",
+                border: `1.5px solid ${(col.color || "#94a3b8")}60`,
+                outline: `1.5px solid ${(col.color || "#94a3b8")}30`,
+                outlineOffset: '1.5px'
+              }}
+            />
+            <span className="flex-1 text-left text-xs font-normal">{col.title}</span>
+            {col.id === column.id && (
+              <Check className="w-3.5 h-3.5 text-[#5A50FF]" />
+            )}
+          </button>
+        ))}
+      </div>
+    </>
+  );
+}
+
+/**
+ * Barre d'actions groupées — apparaît quand des tâches sont sélectionnées
+ */
+function BulkActionBar({ selectedTaskIds, setSelectedTaskIds, columns, members, updateTask, moveTask, onDeleteTask, workspaceId, listRef }) {
+  const bulkBarRef = useRef(null);
+  const count = selectedTaskIds.size;
+
+  // Centrer la barre par rapport à la zone de contenu (SidebarInset)
+  React.useEffect(() => {
+    if (count === 0 || !bulkBarRef.current) return;
+    const update = () => {
+      const inset = listRef?.current?.closest('[data-slot="sidebar-inset"]') || listRef?.current?.parentElement;
+      if (!inset || !bulkBarRef.current) return;
+      const rect = inset.getBoundingClientRect();
+      const barWidth = Math.min(rect.width - 48, rect.width * 0.75);
+      bulkBarRef.current.style.left = `${rect.left + rect.width / 2}px`;
+      bulkBarRef.current.style.transform = 'translateX(-50%)';
+      bulkBarRef.current.style.width = `${barWidth}px`;
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    const inset = listRef?.current?.closest('[data-slot="sidebar-inset"]') || listRef?.current?.parentElement;
+    if (inset) observer.observe(inset);
+    return () => observer.disconnect();
+  }, [count, listRef]);
+
+  // Injecter le keyframe une seule fois
+  React.useEffect(() => {
+    if (document.getElementById('bulkbar-keyframes')) return;
+    const style = document.createElement('style');
+    style.id = 'bulkbar-keyframes';
+    style.textContent = `@keyframes bulkbar-enter { from { opacity: 0; bottom: 0; } to { opacity: 1; bottom: 2.5rem; } }`;
+    document.head.appendChild(style);
+  }, []);
+
+  if (count === 0) return null;
+
+  const selectedIds = Array.from(selectedTaskIds);
+
+  const bulkUpdateField = (field, value) => {
+    selectedIds.forEach(taskId => {
+      updateTask({
+        variables: {
+          input: { id: taskId, [field]: value },
+          workspaceId
+        }
+      });
+    });
+  };
+
+  const bulkMove = (columnId) => {
+    selectedIds.forEach(taskId => {
+      moveTask({
+        variables: { id: taskId, columnId, position: 0, workspaceId }
+      });
+    });
+  };
+
+  const bulkDelete = () => {
+    selectedIds.forEach(taskId => onDeleteTask(taskId));
+    setSelectedTaskIds(new Set());
+  };
+
+  const bulkAssign = (memberIds) => {
+    selectedIds.forEach(taskId => {
+      updateTask({
+        variables: {
+          input: { id: taskId, assignedMembers: memberIds },
+          workspaceId
+        }
+      });
+    });
+  };
+
+  return (
+    <div
+      ref={bulkBarRef}
+      className="fixed bottom-10 z-[200]"
+      style={{
+        animation: 'bulkbar-enter 150ms ease-out both',
+      }}
+    >
+      <div className="flex items-center text-white rounded-xl p-2 border border-white/10" style={{ backgroundColor: '#202020', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, .106), 0 4px 6px -4px rgba(0, 0, 0, .106)' }}>
+        {/* Compteur */}
+        <div
+          className="flex items-center gap-1.5 bg-transparent text-white rounded-md px-2.5 py-1 border border-white/20 cursor-pointer hover:bg-white/10 transition-colors"
+          onClick={(e) => { e.stopPropagation(); setSelectedTaskIds(new Set()); }}
+        >
+          <span className="text-sm font-medium whitespace-nowrap">{count} tâche{count > 1 ? 's' : ''} sélectionnée{count > 1 ? 's' : ''}</span>
+          <div className="p-0.5">
+            <X className="h-3 w-3" />
+          </div>
+        </div>
+
+        {/* Actions — poussées à droite */}
+        <div className="flex-1 flex items-center justify-end gap-1">
+
+        {/* Status */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium hover:bg-white/10 transition-colors cursor-pointer whitespace-nowrap" style={{ color: '#BEBEBE' }}>
+              <CircleDot className="h-3.5 w-3.5" />
+              Status
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-52 p-0" side="top" align="start">
+            <div className="px-2 pt-2 pb-0.5">
+              <span className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider">Déplacer vers</span>
+            </div>
+            <div className="p-1.5 pt-0.5 space-y-0.5">
+              {columns.map(col => (
+                <button
+                  key={col.id}
+                  onClick={() => { bulkMove(col.id); setSelectedTaskIds(new Set()); }}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer"
+                >
+                  <div
+                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: col.color || '#94a3b8' }}
+                  />
+                  <span className="text-xs">{col.title}</span>
+                </button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* Assignees */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium hover:bg-white/10 transition-colors cursor-pointer whitespace-nowrap" style={{ color: '#BEBEBE' }}>
+              <Users className="h-3.5 w-3.5" />
+              Assignés
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 p-0" side="top" align="start">
+            <div className="px-2 pt-2 pb-0.5">
+              <span className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider">Assigner à</span>
+            </div>
+            <div className="p-1.5 pt-0.5 space-y-0.5 max-h-[280px] overflow-y-auto">
+              {members.map(member => {
+                const memberId = member.userId || member.id;
+                const memberName = member.name || member.user?.name || memberId;
+                const memberImage = member.image || member.user?.image;
+                return (
+                  <button
+                    key={memberId}
+                    onClick={() => bulkAssign([memberId])}
+                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer"
+                  >
+                    <UserAvatar src={memberImage} name={memberName} size="xs" className="h-5 w-5" />
+                    <span className="text-xs font-medium truncate">{memberName}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* Date */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium hover:bg-white/10 transition-colors cursor-pointer whitespace-nowrap" style={{ color: '#BEBEBE' }}>
+              <Calendar className="h-3.5 w-3.5" />
+              Échéance
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" side="top" align="start">
+            <CalendarComponent
+              mode="single"
+              selected={undefined}
+              onSelect={(date) => {
+                if (date) {
+                  date.setHours(18, 0, 0, 0);
+                  bulkUpdateField('dueDate', date.toISOString());
+                }
+              }}
+              locale={fr}
+              fromDate={new Date()}
+              className="border-0 p-2 text-xs [--cell-size:--spacing(8)]"
+            />
+          </PopoverContent>
+        </Popover>
+
+        {/* Priorité */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium hover:bg-white/10 transition-colors cursor-pointer whitespace-nowrap" style={{ color: '#BEBEBE' }}>
+              <Flag className="h-3.5 w-3.5" />
+              Priorité
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-48 p-0" side="top" align="start">
+            <div className="p-1.5 space-y-0.5">
+              {PRIORITIES.map(p => (
+                <button
+                  key={p.value || 'none'}
+                  onClick={() => bulkUpdateField('priority', p.value)}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer"
+                >
+                  <Flag className={`h-3.5 w-3.5 ${p.color} ${p.fill}`} />
+                  <span className="text-xs">{p.label}</span>
+                </button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* Séparateur */}
+        <div style={{ width: '1px', height: '16px', backgroundColor: 'rgba(255,255,255,.2)', margin: '0 2px', flexShrink: 0 }} />
+
+        {/* Déplacer */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium hover:bg-white/10 transition-colors cursor-pointer whitespace-nowrap" style={{ color: '#BEBEBE' }}>
+              <ArrowRightLeft className="h-3.5 w-3.5" />
+              Déplacer/Ajouter
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-52 p-0" side="top" align="start">
+            <div className="px-2 pt-2 pb-0.5">
+              <span className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider">Déplacer vers</span>
+            </div>
+            <div className="p-1.5 pt-0.5 space-y-0.5">
+              {columns.map(col => (
+                <button
+                  key={col.id}
+                  onClick={() => bulkMove(col.id)}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer"
+                >
+                  <div
+                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: col.color || '#94a3b8' }}
+                  />
+                  <span className="text-xs">{col.title}</span>
+                </button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* Dupliquer */}
+        <button
+          onClick={() => {
+            // Dupliquer = créer des copies des tâches sélectionnées (placeholder)
+          }}
+          className="flex items-center justify-center p-1.5 rounded-md hover:bg-white/10 transition-colors cursor-pointer" style={{ color: '#BEBEBE' }}
+          title="Dupliquer"
+        >
+          <CopyPlus className="h-4 w-4" />
+        </button>
+
+        {/* Supprimer */}
+        <button
+          onClick={bulkDelete}
+          className="flex items-center justify-center p-1.5 rounded-md text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer"
+          title="Supprimer"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+
+        {/* Séparateur */}
+        <div style={{ width: '1px', height: '16px', backgroundColor: 'rgba(255,255,255,.2)', margin: '0 2px', flexShrink: 0 }} />
+
+        {/* Plus */}
+        <button
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium hover:bg-white/10 transition-colors cursor-pointer whitespace-nowrap" style={{ color: '#BEBEBE' }}
+          title="Plus d'actions"
+        >
+          <Ellipsis className="h-4 w-4" />
+          Plus
+        </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Wrapper du popover status avec position auto
+ */
+function StatusPopoverWrapper({ columns, column, task, moveTask, workspaceId, popoverOpenRef }) {
+  const triggerRef = useRef(null);
+  const [popoverSide, setPopoverSide] = useState('bottom');
+
+  return (
+    <Popover onOpenChange={(open) => {
+      if (open) {
+        if (popoverOpenRef) popoverOpenRef.current = true;
+        if (triggerRef.current) {
+          const rect = triggerRef.current.getBoundingClientRect();
+          const spaceBelow = window.innerHeight - rect.bottom;
+          setPopoverSide(spaceBelow < 300 ? 'top' : 'bottom');
+        }
+      } else {
+        if (popoverOpenRef) {
+          setTimeout(() => { popoverOpenRef.current = false; }, 100);
+        }
+      }
+    }}>
+      <PopoverTrigger asChild ref={triggerRef}>
+        <button
+          className="px-2 py-1 rounded-md flex-shrink-0 text-xs font-medium border flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
+          style={{
+            backgroundColor: `${column.color || "#94a3b8"}20`,
+            borderColor: `${column.color || "#94a3b8"}20`,
+            color: column.color || "#94a3b8"
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div
+            className="w-2 h-2 rounded-full flex-shrink-0"
+            style={{ backgroundColor: column.color || "#94a3b8" }}
+          />
+          <span>{column.title}</span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-60 p-0" side={popoverSide} align="start">
+        <StatusPopoverContent
+          columns={columns}
+          column={column}
+          task={task}
+          moveTask={moveTask}
+          workspaceId={workspaceId}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+const PRIORITIES = [
+  { value: 'high', label: 'Urgent', color: 'text-red-500', fill: 'fill-red-500' },
+  { value: 'medium', label: 'Moyen', color: 'text-yellow-500', fill: 'fill-yellow-500' },
+  { value: 'low', label: 'Faible', color: 'text-green-500', fill: 'fill-green-500' },
+  { value: '', label: 'Aucune', color: 'text-gray-400', fill: 'fill-gray-400' },
+];
+
+/**
+ * Wrapper du popover priorité avec position auto et style unifié
+ */
+function PriorityPopoverWrapper({ task, updateTask, workspaceId, popoverOpenRef, trigger }) {
+  const triggerRef = useRef(null);
+  const [popoverSide, setPopoverSide] = useState('bottom');
+  const [isOpen, setIsOpen] = useState(false);
+
+  const currentPriority = task.priority?.toLowerCase() || '';
+
+  return (
+    <Popover open={isOpen} onOpenChange={(open) => {
+      setIsOpen(open);
+      if (open) {
+        if (popoverOpenRef) popoverOpenRef.current = true;
+        if (triggerRef.current) {
+          const rect = triggerRef.current.getBoundingClientRect();
+          const spaceBelow = window.innerHeight - rect.bottom;
+          setPopoverSide(spaceBelow < 250 ? 'top' : 'bottom');
+        }
+      } else {
+        if (popoverOpenRef) {
+          setTimeout(() => { popoverOpenRef.current = false; }, 100);
+        }
+      }
+    }}>
+      <PopoverTrigger asChild ref={triggerRef}>
+        {trigger}
+      </PopoverTrigger>
+      <PopoverContent className="w-52 p-0" side={popoverSide} align="start">
+        <div className="px-2 pt-2 pb-0.5">
+          <span className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider">Priorité</span>
+        </div>
+        <div className="p-1.5 pt-0.5 space-y-0.5">
+          {PRIORITIES.map((priority) => {
+            const isActive = (priority.value === '' && !currentPriority) || currentPriority === priority.value;
+            return (
+              <button
+                key={priority.value || 'none'}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  updateTask({
+                    variables: {
+                      input: {
+                        id: task.id,
+                        priority: priority.value
+                      },
+                      workspaceId
+                    }
+                  });
+                  setIsOpen(false);
+                }}
+                className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors cursor-pointer ${
+                  isActive ? 'bg-muted/60' : ''
+                }`}
+              >
+                <Flag className={`h-3.5 w-3.5 ${priority.color} ${priority.fill}`} />
+                <span className="flex-1 text-left text-xs font-normal">{priority.label}</span>
+                {isActive && (
+                  <Check className="w-3.5 h-3.5 text-[#5A50FF]" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/**
+ * Popover d'assignation inline — même style que MembersPopover
+ */
+function InlineAssignPopover({ members, assignedMembers, setAssignedMembers }) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [popoverSide, setPopoverSide] = useState('bottom');
+  const triggerRef = useRef(null);
+
+  return (
+    <Popover onOpenChange={(open) => {
+      if (open) {
+        setSearchQuery('');
+        if (triggerRef.current) {
+          const rect = triggerRef.current.getBoundingClientRect();
+          setPopoverSide(window.innerHeight - rect.bottom < 300 ? 'top' : 'bottom');
+        }
+      }
+    }}>
+      <PopoverTrigger asChild ref={triggerRef}>
+        <Button variant="outline" size="sm" className={`h-6 p-0 rounded-sm text-muted-foreground hover:text-foreground ${assignedMembers.length > 0 ? 'px-1' : 'w-6'}`} title="Assigner">
+          {assignedMembers.length > 0 ? (
+            <div className="flex -space-x-1">
+              {assignedMembers.slice(0, 3).map((userId) => {
+                const member = members.find(m => m.userId === userId || m.id === userId);
+                return member ? (
+                  <UserAvatar key={userId} src={member.image || member.user?.image} name={member.name || member.user?.name} size="xs" className="h-4 w-4 ring-1 ring-background" />
+                ) : null;
+              })}
+              {assignedMembers.length > 3 && (
+                <span className="h-4 w-4 rounded-full bg-muted text-[8px] font-medium flex items-center justify-center text-muted-foreground">+{assignedMembers.length - 3}</span>
+              )}
+            </div>
+          ) : (
+            <Users className="h-3 w-3 text-gray-400" />
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-60 p-0" side={popoverSide} align="start">
+        <div className="px-2 pt-2 pb-1.5">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground/50" />
+            <Input
+              placeholder="Rechercher..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              className="h-7 text-xs pl-7 pr-2 bg-muted/30 border-border/50 focus-visible:ring-1 focus-visible:ring-[#5A50FF]/30"
+            />
+          </div>
+        </div>
+        <div className="px-2 pb-0.5">
+          <span className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider">Assigné</span>
+        </div>
+        <div className="p-1.5 pt-0.5 space-y-0.5 max-h-[280px] overflow-y-auto">
+          {members
+            .filter(m => (m.name || m.user?.name || '').toLowerCase().includes(searchQuery.toLowerCase()))
+            .map((member) => {
+              const memberId = member.userId || member.id;
+              const memberName = member.name || member.user?.name || memberId;
+              const memberImage = member.image || member.user?.image;
+              const isSelected = assignedMembers.includes(memberId);
+              return (
+                <button
+                  key={memberId}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setAssignedMembers(prev =>
+                      isSelected ? prev.filter(id => id !== memberId) : [...prev, memberId]
+                    );
+                  }}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer"
+                >
+                  <div className={`rounded-full flex-shrink-0 ${isSelected ? 'ring-[1.5px] ring-[#5A50FF] ring-offset-1 ring-offset-background' : ''}`}>
+                    <UserAvatar
+                      src={memberImage}
+                      name={memberName}
+                      size="xs"
+                      className="h-5 w-5"
+                    />
+                  </div>
+                  <span className="flex-1 text-left text-xs font-medium truncate">{memberName}</span>
+                  </button>
+              );
+            })}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/**
+ * Row inline pour ajouter une tâche rapidement
+ */
+function InlineAddTask({ columnId, boardId, columns, members, createTask, workspaceId, onCancel }) {
+  const [title, setTitle] = useState('');
+  const [assignedMembers, setAssignedMembers] = useState([]);
+  const [dueDate, setDueDate] = useState(null);
+  const [priority, setPriority] = useState('');
+  const inputRef = useRef(null);
+  const [saving, setSaving] = useState(false);
+
+  const column = columns.find(c => c.id === columnId);
+  const rowRef = useRef(null);
+
+  React.useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  // Fermer quand on clique à l'extérieur (capture phase pour passer avant Radix)
+  React.useEffect(() => {
+    function handleClickOutside(e) {
+      if (rowRef.current && !rowRef.current.contains(e.target)) {
+        if (e.target.closest('[data-radix-popper-content-wrapper]')) return;
+        if (rowRef.current.querySelector('[data-state="open"]')) return;
+        onCancel();
+      }
+    }
+    document.addEventListener('pointerdown', handleClickOutside, true);
+    return () => document.removeEventListener('pointerdown', handleClickOutside, true);
+  }, [onCancel]);
+
+  const handleSave = async () => {
+    if (!title.trim() || saving) return;
+    setSaving(true);
+    try {
+      await createTask({
+        variables: {
+          input: {
+            title: title.trim(),
+            columnId,
+            boardId,
+            priority: priority || '',
+            dueDate: dueDate ? dueDate.toISOString() : null,
+            assignedMembers: assignedMembers.map(m => typeof m === 'string' ? m : m.userId).filter(Boolean),
+            tags: [],
+            checklist: [],
+          },
+          workspaceId,
+        },
+      });
+      onCancel();
+    } catch {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div
+      ref={rowRef}
+      className="grid px-4 sm:px-6 py-1.5 items-center bg-muted/30 relative overflow-hidden after:absolute after:bottom-0 after:left-6 after:right-6 after:sm:left-8 after:sm:right-8 after:h-px after:bg-border/60 after:content-['']"
+      style={{ gridTemplateColumns: '2.5fr 1fr 1fr 1fr 1fr 1fr 80px', gap: '2rem' }}
+    >
+      {/* Colonne Nom — même structure que TaskRow */}
+      <div className="min-w-0">
+        <div className="flex items-center gap-3">
+          {/* Spacer grip */}
+          <div className="h-4 w-4 flex-shrink-0" />
+          {/* Spacer checkbox */}
+          <div className="h-4 w-4 flex-shrink-0 mr-4" />
+          {/* Status dot — même style que les tâches existantes */}
+          <div
+            className="flex-shrink-0 w-2.5 h-2.5 rounded-full"
+            style={{
+              backgroundColor: column?.color || '#94a3b8',
+              border: `1.5px solid ${column?.color || '#94a3b8'}60`,
+              outline: `1.5px solid ${column?.color || '#94a3b8'}30`,
+              outlineOffset: '1.5px'
+            }}
+          />
+          {/* Input nom */}
+          <input
+            ref={inputRef}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') { e.preventDefault(); handleSave(); }
+              if (e.key === 'Escape') onCancel();
+            }}
+            placeholder="Nom de la tâche..."
+            className="flex-1 min-w-0 text-sm font-normal text-foreground/90 bg-transparent border-none outline-none caret-[#5A50FF] p-0 m-0 placeholder:text-muted-foreground/40"
+          />
+        </div>
+      </div>
+
+      {/* Colonne Assigné — tous les boutons d'action groupés ici */}
+      <div className="flex items-center gap-1.5">
+        {/* Assign */}
+        <InlineAssignPopover
+          members={members}
+          assignedMembers={assignedMembers}
+          setAssignedMembers={setAssignedMembers}
+        />
+
+        {/* Échéance */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className={`h-6 p-0 rounded-sm ${dueDate ? 'px-1.5 text-foreground' : 'w-6 text-muted-foreground hover:text-foreground'}`} title="Échéance">
+              {dueDate ? (
+                <span className="text-xs">{format(dueDate, 'dd MMM', { locale: fr })}</span>
+              ) : (
+                <Calendar className="h-3 w-3 text-gray-400" />
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" side="bottom" align="start">
+            <CalendarComponent
+              mode="single"
+              selected={dueDate}
+              onSelect={(date) => { if (date) { date.setHours(18, 0, 0, 0); setDueDate(date); } }}
+              locale={fr}
+              fromDate={new Date()}
+              className="border-0 p-2 text-xs [--cell-size:--spacing(8)]"
+            />
+          </PopoverContent>
+        </Popover>
+
+        {/* Priorité */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="h-6 w-6 p-0 rounded-sm text-muted-foreground hover:text-foreground" title="Priorité">
+              <Flag className={`h-3 w-3 ${
+                priority === 'high' ? 'text-red-500 fill-red-500' :
+                priority === 'medium' ? 'text-yellow-500 fill-yellow-500' :
+                priority === 'low' ? 'text-green-500 fill-green-500' :
+                'text-gray-400'
+              }`} />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-52 p-0" side="bottom" align="start">
+            <div className="px-2 pt-2 pb-0.5">
+              <span className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider">Priorité</span>
+            </div>
+            <div className="p-1.5 pt-0.5 space-y-0.5">
+              {PRIORITIES.map((p) => {
+                const isActive = (p.value === '' && !priority) || priority === p.value;
+                return (
+                  <button
+                    key={p.value || 'none'}
+                    onClick={() => setPriority(p.value)}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors cursor-pointer ${isActive ? 'bg-muted/60' : ''}`}
+                  >
+                    <Flag className={`h-3.5 w-3.5 ${p.color} ${p.fill}`} />
+                    <span className="flex-1 text-left text-xs font-normal">{p.label}</span>
+                    {isActive && <Check className="w-3.5 h-3.5 text-[#5A50FF]" />}
+                  </button>
+                );
+              })}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* Séparateur */}
+        <div style={{ width: '1px', height: '16px', backgroundColor: '#e6e6e6', margin: '0 4px', flexShrink: 0 }} />
+
+        {/* Cancel / Save */}
+        <Button variant="outline" size="sm" className="h-6 px-1.5 rounded-sm text-[11px] text-muted-foreground" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button
+          size="sm"
+          className="h-6 px-2 rounded-sm text-[11px] bg-[#5A50FF] hover:bg-[#4a42d4] text-white"
+          onClick={handleSave}
+          disabled={!title.trim() || saving}
+        >
+          Save ↵
+        </Button>
+      </div>
+
+      {/* Colonnes restantes vides pour garder la grille */}
+      <div />
+      <div />
+      <div />
+      <div />
+      <div />
+    </div>
+  );
+}
+
+/**
+ * Titre éditable inline — clic sur pencil → input, sauvegarde sur Enter ou blur
+ */
+const TAG_COLORS = [
+  { bg: '#EDE9FE', text: '#6D28D9', border: '#DDD6FE' },
+  { bg: '#DBEAFE', text: '#1D4ED8', border: '#BFDBFE' },
+  { bg: '#DCFCE7', text: '#15803D', border: '#BBF7D0' },
+  { bg: '#FEF3C7', text: '#B45309', border: '#FDE68A' },
+  { bg: '#FEE2E2', text: '#B91C1C', border: '#FECACA' },
+  { bg: '#FCE7F3', text: '#BE185D', border: '#FBCFE8' },
+  { bg: '#E0E7FF', text: '#4338CA', border: '#C7D2FE' },
+  { bg: '#F3F4F6', text: '#374151', border: '#E5E7EB' },
+];
+
+function InlineTagPopover({ task, updateTask, workspaceId, allBoardTags = [] }) {
+  const [search, setSearch] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
+  const taskTags = task.tags || [];
+
+  const existingTags = useMemo(() => {
+    const seen = new Set();
+    return allBoardTags.filter(t => {
+      const key = t.name.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [allBoardTags]);
+
+  const filteredTags = existingTags.filter(t =>
+    t.name.toLowerCase().includes(search.toLowerCase()) &&
+    !taskTags.some(tt => tt.name.toLowerCase() === t.name.toLowerCase())
+  );
+
+  const canCreate = search.trim() &&
+    !existingTags.some(t => t.name.toLowerCase() === search.trim().toLowerCase()) &&
+    !taskTags.some(t => t.name.toLowerCase() === search.trim().toLowerCase());
+
+  const getNextColor = () => {
+    const usedBgs = new Set(existingTags.map(t => t.bg));
+    return TAG_COLORS.find(c => !usedBgs.has(c.bg)) || TAG_COLORS[0];
+  };
+
+  const addTagToTask = (tag) => {
+    const newTags = [...taskTags, { name: tag.name, className: '', bg: tag.bg, text: tag.text, border: tag.border }];
+    updateTask({ variables: { input: { id: task.id, tags: newTags.map(t => ({ name: t.name, className: t.className || '', bg: t.bg, text: t.text, border: t.border })) }, workspaceId } });
+  };
+
+  const removeTagFromTask = (tagName) => {
+    const newTags = taskTags.filter(t => t.name.toLowerCase() !== tagName.toLowerCase());
+    updateTask({ variables: { input: { id: task.id, tags: newTags.map(t => ({ name: t.name, className: t.className || '', bg: t.bg, text: t.text, border: t.border })) }, workspaceId } });
+  };
+
+  const createAndAdd = () => {
+    const color = getNextColor();
+    addTagToTask({ name: search.trim(), ...color });
+    setSearch('');
+  };
+
+  return (
+    <Popover open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (open) setSearch(''); }}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-shrink-0 h-5 w-5 p-0 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-background"
+          onClick={(e) => e.stopPropagation()}
+          title="Ajouter un tag"
+        >
+          <Tag className="h-3 w-3 text-muted-foreground" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-56 p-0" side="bottom" align="start" onClick={(e) => e.stopPropagation()}>
+        {/* Tags actuels */}
+        {taskTags.length > 0 && (
+          <div className="flex flex-wrap gap-1 px-3 pt-2.5 pb-1">
+            {taskTags.map(tag => (
+              <span
+                key={tag.name}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium"
+                style={{ backgroundColor: tag.bg, color: tag.text, border: `1px solid ${tag.border}` }}
+              >
+                {tag.name}
+                <button onClick={() => removeTagFromTask(tag.name)} className="hover:opacity-70 cursor-pointer">
+                  <X className="h-2.5 w-2.5" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Search input */}
+        <div className="px-3 pt-2 pb-1.5">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && canCreate) { e.preventDefault(); createAndAdd(); }
+            }}
+            placeholder="Rechercher ou créer..."
+            className="w-full bg-transparent border-none outline-none text-sm placeholder:text-muted-foreground/40 p-0"
+            autoFocus
+          />
+        </div>
+
+        <div className="border-t border-border/40" />
+
+        {/* Options */}
+        <div className="p-1.5 max-h-[200px] overflow-y-auto">
+          {filteredTags.length > 0 && (
+            <div className="px-1.5 pb-1">
+              <span className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider">Sélectionner</span>
+            </div>
+          )}
+          {filteredTags.map(tag => (
+            <button
+              key={tag.name}
+              onClick={() => { addTagToTask(tag); setSearch(''); }}
+              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer"
+            >
+              <span
+                className="px-2 py-0.5 rounded-md text-[11px] font-medium"
+                style={{ backgroundColor: tag.bg, color: tag.text, border: `1px solid ${tag.border}` }}
+              >
+                {tag.name}
+              </span>
+            </button>
+          ))}
+
+          {/* Create new */}
+          {canCreate && (
+            <button
+              onClick={createAndAdd}
+              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer"
+            >
+              <span className="text-xs text-muted-foreground">Créer</span>
+              <span
+                className="px-2 py-0.5 rounded-md text-[11px] font-medium"
+                style={{ backgroundColor: getNextColor().bg, color: getNextColor().text, border: `1px solid ${getNextColor().border}` }}
+              >
+                {search.trim()}
+              </span>
+              <kbd className="ml-auto inline-flex items-center justify-center size-4 rounded bg-muted text-[9px] text-muted-foreground">
+                <CornerDownLeft className="size-2.5" />
+              </kbd>
+            </button>
+          )}
+
+          {filteredTags.length === 0 && !canCreate && (
+            <p className="text-xs text-muted-foreground/50 text-center py-3">Aucun tag disponible</p>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function InlineEditTitle({ task, updateTask, workspaceId, popoverOpenRef, allBoardTags = [] }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [value, setValue] = useState(task.title);
+  const inputRef = useRef(null);
+
+  const save = useCallback(() => {
+    const trimmed = value.trim();
+    if (trimmed && trimmed !== task.title) {
+      updateTask({
+        variables: {
+          input: { id: task.id, title: trimmed },
+          workspaceId
+        }
+      });
+    } else {
+      setValue(task.title);
+    }
+    setIsEditing(false);
+    if (popoverOpenRef) setTimeout(() => { popoverOpenRef.current = false; }, 100);
+  }, [value, task.title, task.id, updateTask, workspaceId, popoverOpenRef]);
+
+  const startEditing = (e) => {
+    e.stopPropagation();
+    if (popoverOpenRef) popoverOpenRef.current = true;
+    setValue(task.title);
+    setIsEditing(true);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  if (isEditing) {
+    return (
+      <div className="flex-1 w-0 min-w-0" onClick={(e) => e.stopPropagation()}>
+        <input
+          ref={inputRef}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { e.preventDefault(); save(); }
+            if (e.key === 'Escape') { setValue(task.title); setIsEditing(false); }
+          }}
+          onBlur={save}
+          className="text-sm font-normal text-[#5A50FF] bg-transparent border-none outline-none w-full caret-[#5A50FF] p-0 m-0"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 w-0 flex items-center gap-1 min-w-0">
+      <p className="text-sm truncate font-normal text-foreground/90 group-hover:text-[#5A50FF] transition-colors max-w-[200px]">{task.title}</p>
+      {task.description && (
+        <DescriptionHoverPopover description={task.description} />
       )}
-    </Draggable>
+      {/* Tags inline */}
+      {task.tags?.length > 0 && task.tags.map(tag => (
+        <span
+          key={tag.name}
+          className="inline-flex items-center px-1.5 py-0 rounded text-[10px] font-medium flex-shrink-0"
+          style={{ backgroundColor: tag.bg, color: tag.text, border: `1px solid ${tag.border}` }}
+        >
+          {tag.name}
+        </span>
+      ))}
+      <Button
+        variant="outline"
+        size="sm"
+        className="flex-shrink-0 h-5 w-5 p-0 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-background"
+        onClick={startEditing}
+        title="Modifier le nom"
+      >
+        <Pencil className="h-3 w-3 text-muted-foreground" />
+      </Button>
+      <InlineTagPopover task={task} updateTask={updateTask} workspaceId={workspaceId} allBoardTags={allBoardTags} />
+    </div>
+  );
+}
+
+/**
+ * Ligne de tâche avec data attributes pour le custom DnD.
+ * L'original reste en place, le hook useListDnD gère le clone + indicator.
+ */
+function TaskRow({ task, column, onEditTask, index, isSelected, isPrevSelected, popoverOpenRef, children }) {
+  return (
+    <div
+      data-dnd-list-task={task.id}
+      data-dnd-list-column={column.id}
+      data-dnd-list-index={index}
+      style={{
+        gridTemplateColumns: '2.5fr 1fr 1fr 1fr 1fr 1fr 80px',
+        gap: '2rem',
+        ...(isSelected ? { backgroundColor: '#5A50FF0D' } : {})
+      }}
+      className={`grid px-4 sm:px-6 py-1.5 items-center hover:bg-muted/50 cursor-grab active:cursor-grabbing group relative overflow-hidden after:absolute after:bottom-0 after:h-px after:content-[""] ${isSelected ? 'after:left-0 after:right-0 after:bg-[#5A50FF]/35' : 'after:left-6 after:right-6 after:sm:left-8 after:sm:right-8 after:bg-border/60'} ${isSelected && index > 0 && !isPrevSelected ? 'before:absolute before:top-0 before:left-0 before:right-0 before:h-px before:bg-[#5A50FF]/35 before:content-[""]' : ''}`}
+      onClick={(e) => {
+        if (e.target.closest('button, input, [role="checkbox"], [data-radix-popover-trigger], [data-radix-dropdown-menu-trigger]')) return;
+        if (popoverOpenRef?.current) return;
+        onEditTask(task);
+      }}
+    >
+      {children}
+    </div>
   );
 }
 
@@ -317,10 +1265,28 @@ export function KanbanListView({
   setSelectedTaskIds,
   moveTask,
   updateTask,
+  createTask,
+  boardId,
   workspaceId,
 }) {
   const [collapsedColumns, setCollapsedColumns] = useState(new Set());
-  const [priorityPopovers, setPriorityPopovers] = useState({});
+  const [inlineAddColumnId, setInlineAddColumnId] = useState(null);
+  const [isAnyPopoverOpen, setIsAnyPopoverOpen] = useState(false);
+  const popoverOpenRef = useRef(false);
+  const listRef = useRef(null);
+
+  // Détecter automatiquement quand un popover Radix s'ouvre/ferme
+  React.useEffect(() => {
+    const container = listRef.current;
+    if (!container) return;
+    const observer = new MutationObserver(() => {
+      const hasOpen = !!container.querySelector('[data-state="open"]');
+      setIsAnyPopoverOpen(hasOpen);
+      popoverOpenRef.current = hasOpen;
+    });
+    observer.observe(container, { attributes: true, subtree: true, attributeFilter: ['data-state'] });
+    return () => observer.disconnect();
+  }, []);
   
   // Fonction wrapper pour récupérer les tâches filtrées
   const getFilteredTasksByColumn = useCallback((columnId) => {
@@ -340,6 +1306,18 @@ export function KanbanListView({
       });
     });
     return Array.from(ids);
+  }, [columns, getFilteredTasksByColumn]);
+
+  // Récupérer tous les tags du board
+  const allBoardTags = useMemo(() => {
+    const tags = [];
+    columns.forEach(column => {
+      const tasks = getFilteredTasksByColumn(column.id);
+      tasks.forEach(task => {
+        (task.tags || []).forEach(tag => tags.push(tag));
+      });
+    });
+    return tags;
   }, [columns, getFilteredTasksByColumn]);
 
   // Récupérer les infos complètes de tous les membres
@@ -377,14 +1355,7 @@ export function KanbanListView({
     return tasks.length === 0;
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
+  const formatDate = _formatDate;
 
   const getPriorityBadge = (priority) => {
     if (!priority || priority.toLowerCase() === "none") return null;
@@ -421,7 +1392,11 @@ export function KanbanListView({
   };
 
   return (
-    <div className="space-y-4 bg-background pb-24 md:pb-12 lg:pb-16">
+    <div ref={listRef} className="relative space-y-4 bg-background pb-24 md:pb-12 lg:pb-16">
+      {/* Overlay transparent quand un popover est ouvert — bloque les clics parasites */}
+      {isAnyPopoverOpen && (
+        <div className="fixed inset-0 z-[99]" />
+      )}
       {columns.map((column, columnIndex) => {
         const tasks = getFilteredTasksByColumn(column.id);
         const isCollapsed = collapsedColumns.has(column.id) || (tasks.length === 0 && !collapsedColumns.has(column.id));
@@ -430,9 +1405,9 @@ export function KanbanListView({
           <div key={column.id} className="space-y-0">
             {/* En-tête de colonne pliable avec zone de drop si fermée */}
             {isCollapsed ? (
-              <CollapsedColumnDropZone columnId={column.id} onOpen={openColumnOnDrag}>
+              <CollapsedColumnDropZone columnId={column.id}>
                 <div 
-                  className="flex items-center gap-2 py-2 bg-muted/10 hover:bg-muted/20 cursor-pointer transition-colors group"
+                  className="flex items-center gap-2 py-2 px-4 sm:px-6 bg-muted/10 hover:bg-muted/20 cursor-pointer transition-colors group"
                   onClick={() => toggleColumn(column.id)}
                 >
                   <Button
@@ -457,58 +1432,82 @@ export function KanbanListView({
                       />
                       <span>{column.title}</span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground/60 font-medium" style={{ color: column.color || "#94a3b8" }}>
-                      {tasks.length}
-                    </span>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <MoreHorizontal className="h-3.5 w-3.5" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-40">
-                        <DropdownMenuItem onClick={(e) => {
-                          e.stopPropagation();
-                          onEditColumn?.(column);
-                        }}>
-                          Modifier
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={(e) => {
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-muted-foreground/60 font-medium w-6 text-center" style={{ color: column.color || "#94a3b8" }}>
+                        {tasks.length}
+                      </span>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreHorizontal className="h-3.5 w-3.5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-52">
+                          <DropdownMenuLabel className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-wider">Options du groupe</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEditColumn?.(column); }} className="gap-2">
+                            <Pencil className="h-3.5 w-3.5" />
+                            Renommer
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEditColumn?.(column); }} className="gap-2">
+                            <Settings className="h-3.5 w-3.5" />
+                            Modifier le status
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toggleColumn(column.id); }} className="gap-2">
+                            <ChevronRight className="h-3.5 w-3.5" />
+                            {collapsedColumns.has(column.id) ? 'Déplier le groupe' : 'Replier le groupe'}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={(e) => {
                             e.stopPropagation();
-                            onDeleteColumn?.(column);
-                          }}
-                          className="text-red-600 focus:text-red-600 focus:bg-red-50"
-                        >
-                          Supprimer
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onAddTask(column.id);
-                      }}
-                      className="h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground font-medium"
-                    >
-                      <Plus className="h-3 w-3" />
-                      Ajouter une tâche
-                    </Button>
+                            const tasks = getFilteredTasksByColumn(column.id);
+                            const newSelected = new Set(selectedTaskIds);
+                            tasks.forEach(t => newSelected.add(t.id));
+                            setSelectedTaskIds(newSelected);
+                          }} className="gap-2">
+                            <CheckCheck className="h-3.5 w-3.5" />
+                            Tout sélectionner
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => {
+                            e.stopPropagation();
+                            const allCollapsed = new Set(columns.map(c => c.id));
+                            setCollapsedColumns(allCollapsed);
+                          }} className="gap-2">
+                            <ChevronsDownUp className="h-3.5 w-3.5" />
+                            Replier tous les groupes
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDeleteColumn?.(column); }} className="gap-2 text-red-600 focus:text-red-600 focus:bg-red-50">
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Supprimer
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); setInlineAddColumnId(column.id); }}
+                        className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                        title="Ajouter une tâche"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CollapsedColumnDropZone>
             ) : (
               <>
+              {/* Bloc sticky : header groupe + titres colonnes */}
+              <div className="sticky top-6 z-[20] bg-background">
               {/* En-tête de section cliquable */}
-              <div 
-                className="flex items-center gap-3 py-2 bg-muted/5 hover:bg-muted/10 cursor-pointer transition-all group"
+              <div
+                className="flex items-center gap-3 py-2 px-4 sm:px-6 bg-muted/5 hover:bg-muted/10 cursor-pointer transition-all group"
                 onClick={() => toggleColumn(column.id)}
               >
                 <Button
@@ -533,117 +1532,121 @@ export function KanbanListView({
                     />
                     <span>{column.title}</span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground/60 font-medium" style={{ color: column.color || "#94a3b8" }}>
-                    {tasks.length}
-                  </span>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <MoreHorizontal className="h-3.5 w-3.5" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-40">
-                      <DropdownMenuItem onClick={(e) => {
-                        e.stopPropagation();
-                        onEditColumn?.(column);
-                      }}>
-                        Modifier
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={(e) => {
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-muted-foreground/60 font-medium" style={{ color: column.color || "#94a3b8" }}>
+                      {tasks.length}
+                    </span>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreHorizontal className="h-3.5 w-3.5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-52">
+                        <DropdownMenuLabel className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-wider">Options du groupe</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEditColumn?.(column); }} className="gap-2">
+                          <Pencil className="h-3.5 w-3.5" />
+                          Renommer
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEditColumn?.(column); }} className="gap-2">
+                          <Settings className="h-3.5 w-3.5" />
+                          Modifier le status
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toggleColumn(column.id); }} className="gap-2">
+                          <ChevronRight className="h-3.5 w-3.5" />
+                          {collapsedColumns.has(column.id) ? 'Déplier le groupe' : 'Replier le groupe'}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={(e) => {
                           e.stopPropagation();
-                          onDeleteColumn?.(column);
-                        }}
-                        className="text-red-600 focus:text-red-600 focus:bg-red-50"
-                      >
-                        Supprimer
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onAddTask(column.id);
-                    }}
-                    className="h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground font-medium"
-                  >
-                    <Plus className="h-3 w-3" />
-                    Ajouter une tâche
-                  </Button>
+                          const tasks = getFilteredTasksByColumn(column.id);
+                          const newSelected = new Set(selectedTaskIds);
+                          tasks.forEach(t => newSelected.add(t.id));
+                          setSelectedTaskIds(newSelected);
+                        }} className="gap-2">
+                          <CheckCheck className="h-3.5 w-3.5" />
+                          Tout sélectionner
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => {
+                          e.stopPropagation();
+                          const allCollapsed = new Set(columns.map(c => c.id));
+                          setCollapsedColumns(allCollapsed);
+                        }} className="gap-2">
+                          <ChevronsDownUp className="h-3.5 w-3.5" />
+                          Replier tous les groupes
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDeleteColumn?.(column); }} className="gap-2 text-red-600 focus:text-red-600 focus:bg-red-50">
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Supprimer
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => { e.stopPropagation(); setInlineAddColumnId(column.id); }}
+                      className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                      title="Ajouter une tâche"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
+              </div>
+              {/* Header de section avec colonnes — dans le bloc sticky */}
+              <div className="grid px-4 sm:px-6 py-2 text-xs font-medium text-muted-foreground/70 tracking-wide relative after:absolute after:bottom-0 after:left-6 after:right-6 sm:after:left-8 sm:after:right-8 after:h-px after:bg-border/60 after:content-['']" style={{ gridTemplateColumns: '2.5fr 1fr 1fr 1fr 1fr 1fr 80px', gap: '2rem' }}>
+                <div className="flex items-center gap-2">
+                  <GripVertical className="h-4 w-4 opacity-0" />
+                  Nom
+                </div>
+                <div className="flex items-center">Assigné à</div>
+                <div className="flex items-center">Status</div>
+                <div className="flex items-center">Échéance</div>
+                <div className="flex items-center">Priorité</div>
+                <div className="flex items-center">Client</div>
+                <div className="flex items-center justify-center">Actions</div>
+              </div>
               </div>
               {/* Conteneur avec scroll pour le tableau */}
               <div className="w-full overflow-x-auto scrollbar-hide">
                 <div className="w-max min-w-full">
-                  {/* Header de section avec colonnes */}
-                  <div className="grid px-2 py-2 text-xs font-normal text-muted-foreground/70 tracking-wide border-b border-border/60" style={{ gridTemplateColumns: '2.5fr 1fr 1fr 1fr 1fr 1fr 80px', gap: '2rem' }}>
-                    <div className="flex items-center gap-2">
-                      <GripVertical className="h-4 w-4 opacity-0" />
-                      <Checkbox
-                        checked={tasks.length > 0 && tasks.every(t => selectedTaskIds.has(t.id)) ? true : tasks.length > 0 && tasks.some(t => selectedTaskIds.has(t.id)) ? "indeterminate" : false}
-                        onCheckedChange={(checked) => {
-                          const newSelected = new Set(selectedTaskIds);
-                          if (checked === true) {
-                            tasks.forEach(t => newSelected.add(t.id));
-                          } else {
-                            tasks.forEach(t => newSelected.delete(t.id));
-                          }
-                          setSelectedTaskIds(newSelected);
-                        }}
-                        className="flex-shrink-0 h-4 w-4 border-muted-foreground/30 mr-4"
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      Nom de la tâche
-                    </div>
-                    <div className="flex items-center">Assigné à</div>
-                    <div className="flex items-center">Status</div>
-                    <div className="flex items-center">Échéance</div>
-                    <div className="flex items-center">Priorité</div>
-                    <div className="flex items-center">Client</div>
-                    <div className="flex items-center justify-center">Actions</div>
-                  </div>
-
                   {/* Liste des tâches */}
-                  <div>
-                    <Droppable droppableId={column.id} type="task">
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.droppableProps}
-                          className={`transition-all duration-200 ${snapshot.isDraggingOver ? 'bg-accent/10' : ''}`}
-                          style={{
-                            minHeight: tasks.length === 0 ? '80px' : 'auto'
-                          }}
-                        >
+                  <div
+                    data-dnd-list-zone={column.id}
+                    data-dnd-list-zone-color={column.color || '#5A50FF'}
+                    style={{ minHeight: tasks.length === 0 ? '80px' : 'auto' }}
+                  >
                           {tasks.length === 0 ? (
                             <EmptyColumnDropZone columnId={column.id} />
                           ) : (
                             tasks.map((task, taskIndex) => (
-                              <DraggableTaskRow 
-                                key={task.id} 
-                                task={task} 
-                                column={column} 
-                                onEditTask={onEditTask} 
+                              <TaskRow
+                                key={task.id}
+                                task={task}
+                                column={column}
+                                onEditTask={onEditTask}
                                 index={taskIndex}
+                                isSelected={selectedTaskIds.has(task.id)}
+                                isPrevSelected={taskIndex > 0 && selectedTaskIds.has(tasks[taskIndex - 1].id)}
+                                popoverOpenRef={popoverOpenRef}
                               >
                               {/* Nom avec drag handle et checkbox */}
                               <div className="min-w-0">
-                                <div className="flex items-center gap-2">
-                                  {/* Drag handle toujours visible */}
-                                  <GripVertical className="h-4 w-4 text-muted-foreground/40 flex-shrink-0 cursor-grab" />
-                                  {/* Checkbox toujours visible */}
+                                <div className="flex items-center gap-3">
+                                  {/* Drag handle visible au hover */}
+                                  <GripVertical className="h-4 w-4 text-muted-foreground/40 flex-shrink-0 cursor-grab opacity-0 group-hover:opacity-100 transition-opacity" />
+                                  {/* Checkbox visible au hover ou si cochée */}
                                   <Checkbox
                                     checked={selectedTaskIds.has(task.id)}
                                     onCheckedChange={(checked) => {
                                       const newSelected = new Set(selectedTaskIds);
-                                      // Gérer les trois états : true, false, "indeterminate"
                                       if (checked === true) {
                                         newSelected.add(task.id);
                                       } else if (checked === false) {
@@ -651,19 +1654,19 @@ export function KanbanListView({
                                       }
                                       setSelectedTaskIds(newSelected);
                                     }}
-                                    className="flex-shrink-0 h-4 w-4 border-muted-foreground/30 mr-4"
+                                    className={`flex-shrink-0 h-4 w-4 border-muted-foreground/30 mr-4 transition-opacity ${selectedTaskIds.has(task.id) ? 'opacity-100 border-[#5A50FF] bg-[#5A50FF] text-white data-[state=checked]:bg-[#5A50FF] data-[state=checked]:border-[#5A50FF]' : 'opacity-0 group-hover:opacity-100'}`}
                                     onClick={(e) => e.stopPropagation()}
                                   />
                                   {/* Rond de couleur du status */}
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                       <button
-                                        className="flex-shrink-0 w-3.5 h-3.5 rounded-full cursor-pointer hover:opacity-80 transition-opacity"
-                                        style={{ 
+                                        className="flex-shrink-0 w-2.5 h-2.5 rounded-full cursor-pointer hover:opacity-80 transition-opacity"
+                                        style={{
                                           backgroundColor: column.color || "#94a3b8",
-                                          border: `2px solid ${column.color || "#94a3b8"}60`,
-                                          outline: `2px solid ${column.color || "#94a3b8"}30`,
-                                          outlineOffset: '2px'
+                                          border: `1.5px solid ${column.color || "#94a3b8"}60`,
+                                          outline: `1.5px solid ${column.color || "#94a3b8"}30`,
+                                          outlineOffset: '1.5px'
                                         }}
                                         onClick={(e) => e.stopPropagation()}
                                         title="Changer le status"
@@ -700,12 +1703,13 @@ export function KanbanListView({
                                       ))}
                                     </DropdownMenuContent>
                                   </DropdownMenu>
-                                  <div className="flex-1 w-0 flex items-center gap-1 min-w-0">
-                                    <p className="text-sm truncate font-normal text-foreground/90 max-w-[200px]">{task.title}</p>
-                                    {task.description && (
-                                      <DescriptionHoverPopover description={task.description} />
-                                    )}
-                                  </div>
+                                  <InlineEditTitle
+                                    task={task}
+                                    updateTask={updateTask}
+                                    workspaceId={workspaceId}
+                                    popoverOpenRef={popoverOpenRef}
+                                    allBoardTags={allBoardTags}
+                                  />
                                 </div>
                               </div>
 
@@ -719,6 +1723,7 @@ export function KanbanListView({
                                     updateTask={updateTask}
                                     workspaceId={workspaceId}
                                     isTrigger={true}
+                                    popoverOpenRef={popoverOpenRef}
                                   />
                                 ) : (
                                   <MembersPopover
@@ -728,79 +1733,39 @@ export function KanbanListView({
                                     updateTask={updateTask}
                                     workspaceId={workspaceId}
                                     isTrigger={false}
+                                    popoverOpenRef={popoverOpenRef}
                                   />
                                 )}
                               </div>
 
                               {/* Status */}
                               <div className="flex items-center gap-1 min-w-0">
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <button 
-                                      className="px-2 py-1 rounded-md flex-shrink-0 text-xs font-medium border flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
-                                      style={{
-                                        backgroundColor: `${column.color || "#94a3b8"}20`,
-                                        borderColor: `${column.color || "#94a3b8"}20`,
-                                        color: column.color || "#94a3b8"
-                                      }}
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
-                                      <div
-                                        className="w-2 h-2 rounded-full flex-shrink-0"
-                                        style={{ backgroundColor: column.color || "#94a3b8" }}
-                                      />
-                                      <span>{column.title}</span>
-                                    </button>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-48 p-2" side="top" align="start">
-                                    <div className="space-y-1">
-                                      {columns.map((col) => (
-                                        <button
-                                          key={col.id}
-                                          onClick={async (e) => {
-                                            e.stopPropagation();
-                                            try {
-                                              await moveTask({
-                                                variables: {
-                                                  id: task.id,
-                                                  columnId: col.id,
-                                                  position: 0,
-                                                  workspaceId
-                                                }
-                                              });
-                                            } catch (error) {
-                                              console.error('Erreur lors du déplacement de la tâche:', error);
-                                            }
-                                          }}
-                                          className="w-full flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-accent text-sm cursor-pointer"
-                                        >
-                                          <div
-                                            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                                            style={{ backgroundColor: col.color || "#94a3b8" }}
-                                          />
-                                          <span>{col.title}</span>
-                                        </button>
-                                      ))}
-                                    </div>
-                                  </PopoverContent>
-                                </Popover>
+                                <StatusPopoverWrapper
+                                  columns={columns}
+                                  column={column}
+                                  task={task}
+                                  moveTask={moveTask}
+                                  workspaceId={workspaceId}
+                                  popoverOpenRef={popoverOpenRef}
+                                />
                               </div>
 
                               {/* Date d'échéance */}
                               <div className="flex items-center gap-1.5 text-xs min-w-0">
                                 {task.dueDate ? (
-                                  <Popover>
-                                    <PopoverTrigger asChild>
-                                      <button 
-                                        className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer bg-transparent border-0 p-0"
-                                        onClick={(e) => e.stopPropagation()}
-                                      >
-                                        <span className="truncate font-normal text-foreground/70">{formatDate(task.dueDate)}</span>
-                                      </button>
-                                    </PopoverTrigger>
+                                  <div className="relative group/date inline-flex items-center">
+                                    <Popover>
+                                      <PopoverTrigger asChild>
+                                        <button
+                                          className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-muted/60 hover:ring-1 hover:ring-border transition-all cursor-pointer bg-transparent border-0 p-0"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          <span className="truncate font-normal text-foreground/70">{formatDate(task.dueDate)}</span>
+                                        </button>
+                                      </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0" side="top" align="start">
                                       <div className="flex flex-col">
-                                        <div className="border-b p-4">
+                                        <div className="border-b p-2">
                                           <CalendarComponent
                                             mode="single"
                                             selected={task.dueDate ? new Date(task.dueDate) : undefined}
@@ -826,12 +1791,35 @@ export function KanbanListView({
                                             initialFocus
                                             locale={fr}
                                             fromDate={new Date()}
-                                            className="border-0"
+                                            className="border-0 p-2 text-xs [--cell-size:--spacing(8)]"
                                           />
                                         </div>
                                       </div>
                                     </PopoverContent>
-                                  </Popover>
+                                    </Popover>
+                                    <button
+                                      onClick={async (e) => {
+                                        e.stopPropagation();
+                                        try {
+                                          await updateTask({
+                                            variables: {
+                                              input: {
+                                                id: task.id,
+                                                dueDate: null
+                                              },
+                                              workspaceId
+                                            }
+                                          });
+                                        } catch (error) {
+                                          console.error('Erreur lors de la suppression de la date:', error);
+                                        }
+                                      }}
+                                      className="absolute -top-1.5 -right-2 w-3.5 h-3.5 bg-muted-foreground border border-white rounded-full flex items-center justify-center opacity-0 group-hover/date:opacity-100 transition-opacity cursor-pointer"
+                                      title="Supprimer la date"
+                                    >
+                                      <X className="w-2 h-2 text-white stroke-[3]" />
+                                    </button>
+                                  </div>
                                 ) : (
                                   <Popover>
                                     <PopoverTrigger asChild>
@@ -845,7 +1833,7 @@ export function KanbanListView({
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0" side="top" align="start">
                                       <div className="flex flex-col">
-                                        <div className="border-b p-4">
+                                        <div className="border-b p-2">
                                           <CalendarComponent
                                             mode="single"
                                             selected={undefined}
@@ -870,7 +1858,7 @@ export function KanbanListView({
                                             initialFocus
                                             locale={fr}
                                             fromDate={new Date()}
-                                            className="border-0"
+                                            className="border-0 p-2 text-xs [--cell-size:--spacing(8)]"
                                           />
                                         </div>
                                         <div className="p-4 flex items-center gap-2">
@@ -894,12 +1882,13 @@ export function KanbanListView({
 
                               {/* Priorité */}
                               <div className="flex items-center gap-1 min-w-0">
-                                <Popover 
-                                  open={priorityPopovers[task.id] || false} 
-                                  onOpenChange={(open) => setPriorityPopovers(prev => ({ ...prev, [task.id]: open }))}
-                                >
-                                  <PopoverTrigger asChild>
-                                    <button 
+                                <PriorityPopoverWrapper
+                                  task={task}
+                                  updateTask={updateTask}
+                                  workspaceId={workspaceId}
+                                  popoverOpenRef={popoverOpenRef}
+                                  trigger={
+                                    <button
                                       className="bg-transparent border-0 p-0 cursor-pointer hover:opacity-80 transition-opacity"
                                       onClick={(e) => e.stopPropagation()}
                                     >
@@ -915,41 +1904,8 @@ export function KanbanListView({
                                         </Badge>
                                       )}
                                     </button>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-48 p-2" side="top" align="start">
-                                    <div className="space-y-1">
-                                      {[
-                                        { value: 'high', label: 'Urgent', color: 'text-red-500 fill-red-500' },
-                                        { value: 'medium', label: 'Moyen', color: 'text-yellow-500 fill-yellow-500' },
-                                        { value: 'low', label: 'Faible', color: 'text-green-500 fill-green-500' },
-                                        { value: '', label: 'Aucune', color: 'text-gray-400 fill-gray-400' }
-                                      ].map((priority) => (
-                                        <button
-                                          key={priority.value || 'none'}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            updateTask({
-                                              variables: {
-                                                input: {
-                                                  id: task.id,
-                                                  priority: priority.value
-                                                },
-                                                workspaceId
-                                              }
-                                            });
-                                            setPriorityPopovers(prev => ({ ...prev, [task.id]: false }));
-                                          }}
-                                          className={`w-full flex items-center gap-2 p-2 rounded-md hover:bg-accent transition-colors cursor-pointer ${
-                                            (priority.value === '' && !task.priority) || task.priority?.toLowerCase() === priority.value ? 'bg-accent' : ''
-                                          }`}
-                                        >
-                                          <Flag className={`h-4 w-4 ${priority.color}`} />
-                                          <span className="text-sm">{priority.label}</span>
-                                        </button>
-                                      ))}
-                                    </div>
-                                  </PopoverContent>
-                                </Popover>
+                                  }
+                                />
                               </div>
 
                               {/* Client */}
@@ -975,7 +1931,7 @@ export function KanbanListView({
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      className="h-6 w-6 p-0 opacity-100 group-hover:opacity-100 transition-opacity hover:bg-muted/50"
+                                      className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-muted/50"
                                       onClick={(e) => e.stopPropagation()}
                                     >
                                       <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
@@ -1000,37 +1956,57 @@ export function KanbanListView({
                                   </DropdownMenuContent>
                                 </DropdownMenu>
                               </div>
-                            </DraggableTaskRow>
+                            </TaskRow>
                         ))
                       )}
-                          {/* Placeholder avec hauteur limitée */}
-                          <div style={{ maxHeight: '100px', overflow: 'hidden' }}>
-                            {provided.placeholder}
-                          </div>
-                        </div>
-                      )}
-                    </Droppable>
                   </div>
                 </div>
               </div>
               
-              {/* Bouton "Ajouter une tâche" en bas de la section - FIXE */}
-              <div className="mt-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onAddTask(column.id)}
-                  className="w-full justify-start px-3 py-2 h-auto text-xs text-muted-foreground hover:text-foreground hover:bg-muted/20 rounded-none"
+              {/* Ajout inline ou bouton "Ajouter une tâche" */}
+              {inlineAddColumnId === column.id ? (
+                <InlineAddTask
+                  columnId={column.id}
+                  boardId={boardId}
+                  columns={columns}
+                  members={members}
+                  createTask={createTask}
+                  workspaceId={workspaceId}
+                  onCancel={() => setInlineAddColumnId(null)}
+                />
+              ) : (
+                <div
+                  className="px-4 sm:px-6 py-1.5 min-h-[36px] flex items-center hover:bg-muted/50 transition-colors cursor-pointer group/add"
+                  onClick={() => setInlineAddColumnId(column.id)}
                 >
-                  <Plus className="h-3.5 w-3.5 mr-2" />
-                  Ajouter une tâche
-                </Button>
-              </div>
+                  <div className="flex items-center gap-3">
+                    <div className="h-4 w-4 flex-shrink-0" />
+                    <div className="h-4 w-4 flex-shrink-0 mr-4" />
+                    <div className="flex items-center gap-2 text-sm font-normal" style={{ color: '#646464' }}>
+                      <Plus className="h-3.5 w-3.5" />
+                      <span className="px-2 py-0.5 rounded-md border border-transparent group-hover/add:border-border/60 group-hover/add:bg-white dark:group-hover/add:bg-background group-hover/add:text-foreground/70 transition-all">Ajouter une tâche</span>
+                    </div>
+                  </div>
+                </div>
+              )}
               </>
             )}
           </div>
         );
       })}
+
+      {/* Barre d'actions groupées */}
+      <BulkActionBar
+        selectedTaskIds={selectedTaskIds}
+        setSelectedTaskIds={setSelectedTaskIds}
+        columns={columns}
+        members={members}
+        updateTask={updateTask}
+        moveTask={moveTask}
+        onDeleteTask={onDeleteTask}
+        workspaceId={workspaceId}
+        listRef={listRef}
+      />
     </div>
   );
 }

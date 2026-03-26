@@ -7,31 +7,20 @@ import React, {
 } from "react";
 import {
   LoaderCircle,
-  Trash2,
   X,
   CalendarIcon,
   Clock,
   FileText,
   MessageSquare,
-  ChevronDown,
   Flag,
   Users,
   UserPlus,
   Columns,
   Tag,
-  Send,
-  Edit2,
   Paperclip,
-  Bold,
-  Italic,
-  Underline,
-  List,
-  ListOrdered,
-  Quote,
-  Code,
-  Link,
   Building2,
-  Search,
+  Play,
+  Square,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -39,18 +28,9 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogClose,
 } from "@/src/components/ui/dialog";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
-import { Textarea } from "@/src/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/select";
 import {
   Popover,
   PopoverContent,
@@ -71,538 +51,25 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/src/components/ui/tabs";
-import { Checkbox } from "@/src/components/ui/checkbox";
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/src/components/ui/tooltip";
 import { UserAvatar } from "@/src/components/ui/user-avatar";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Checklist } from "@/src/components/Checklist";
-import { MemberSelector } from "./MemberSelector";
 import { TaskActivity } from "./TaskActivity";
 import { TimerControls } from "./TimerControls";
 import { LocalTimerControls } from "./LocalTimerControls";
 import { TaskImageUpload } from "./TaskImageUpload";
 import { useTaskImageUpload } from "../hooks/useTaskImageUpload";
 import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
-import { useClients } from "@/src/hooks/useClients";
-import MultipleSelector from "@/src/components/ui/multiple-selector";
 import { cn } from "@/src/lib/utils";
-import { useSession } from "@/src/lib/auth-client";
 
-/**
- * Composant pour afficher les commentaires en attente avant la création de la tâche
- */
-function PendingCommentsView({
-  pendingComments,
-  addPendingComment,
-  removePendingComment,
-  updatePendingComment,
-  currentUser,
-}) {
-  const { data: session } = useSession();
-  const [newComment, setNewComment] = useState("");
-  const [editingCommentId, setEditingCommentId] = useState(null);
-  const [editingContent, setEditingContent] = useState("");
+// Sub-components extracted for maintainability
+import { PendingCommentsView } from "./task-modal/PendingCommentsView";
+import { DescriptionEditor } from "./task-modal/DescriptionEditor";
+import { TaskClientSelector } from "./task-modal/TaskClientSelector";
+import { TaskModalHeader } from "./task-modal/TaskModalHeader";
 
-  // Récupérer les infos complètes de l'utilisateur actuel (avec avatar)
-  const userIds = React.useMemo(() => {
-    return session?.user?.id ? [session.user.id] : [];
-  }, [session?.user?.id]);
 
-  const { members: usersInfo } = useAssignedMembersInfo(userIds);
-
-  // Récupérer les infos de l'utilisateur actuel
-  const currentUserInfo = React.useMemo(() => {
-    if (usersInfo && usersInfo.length > 0) {
-      return usersInfo[0];
-    }
-    return {
-      name: session?.user?.name || currentUser?.name || "Utilisateur",
-      image: session?.user?.image || currentUser?.avatarUrl || null,
-    };
-  }, [usersInfo, session?.user, currentUser]);
-
-  const handleAddComment = () => {
-    if (!newComment.trim()) return;
-    addPendingComment?.(newComment);
-    setNewComment("");
-  };
-
-  const handleEditComment = (comment) => {
-    setEditingCommentId(comment.id);
-    setEditingContent(comment.content);
-  };
-
-  const handleSaveEdit = (commentId) => {
-    if (!editingContent.trim()) return;
-
-    // Mettre à jour le commentaire en attente
-    updatePendingComment?.(commentId, editingContent.trim());
-
-    setEditingCommentId(null);
-    setEditingContent("");
-  };
-
-  const handleCancelEdit = () => {
-    setEditingCommentId(null);
-    setEditingContent("");
-  };
-
-  return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto pl-2 px-4 py-4">
-        <div className="space-y-3">
-          {pendingComments.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              Aucun commentaire en attente
-            </p>
-          ) : (
-            <>
-              <p className="text-xs text-muted-foreground mb-2">
-                Ces commentaires seront ajoutés à la création de la tâche
-              </p>
-              {pendingComments.map((comment) => (
-                <div key={comment.id} className="flex gap-3">
-                  <div className="bg-background rounded-lg p-3 flex-1 border border-border">
-                    <div className="flex gap-3">
-                      <UserAvatar
-                        src={currentUserInfo.image}
-                        name={currentUserInfo.name}
-                        size="sm"
-                        className="flex-shrink-0"
-                      />
-                      <div className="flex-1 space-y-2">
-                        {editingCommentId === comment.id ? (
-                          <>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-medium">
-                                {currentUserInfo.name}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                En attente
-                              </span>
-                            </div>
-                            <div className="space-y-2">
-                              <Textarea
-                                value={editingContent}
-                                onChange={(e) =>
-                                  setEditingContent(e.target.value)
-                                }
-                                className="text-sm"
-                                rows={3}
-                              />
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleSaveEdit(comment.id)}
-                                  disabled={!editingContent.trim()}
-                                  style={{
-                                    backgroundColor: "#5b50FF",
-                                    color: "white",
-                                  }}
-                                  className="hover:opacity-90"
-                                >
-                                  Enregistrer
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={handleCancelEdit}
-                                >
-                                  Annuler
-                                </Button>
-                              </div>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-medium">
-                                  {currentUserInfo.name}
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  En attente
-                                </span>
-                              </div>
-                              <div className="flex gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0 text-muted-foreground hover:text-[#5b50FF]"
-                                  onClick={() => handleEditComment(comment)}
-                                >
-                                  <Edit2 className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                                  onClick={() =>
-                                    removePendingComment?.(comment.id)
-                                  }
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              </div>
-                            </div>
-                            <p className="text-sm whitespace-pre-wrap">
-                              {comment.content}
-                            </p>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Zone de saisie de commentaire - Sticky en bas */}
-      <div className="pb-3 pl-3 pr-3 pt-3 space-y-2 flex-shrink-0 border-t border-border">
-        <Textarea
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          placeholder="Ajouter un commentaire..."
-          className="min-h-[80px] text-sm bg-background border-border"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-              e.preventDefault();
-              handleAddComment();
-            }
-          }}
-        />
-        <div className="flex justify-between items-center">
-          <span className="text-xs text-muted-foreground">
-            Cmd/Ctrl + Entrée pour envoyer
-          </span>
-          <Button
-            size="sm"
-            onClick={handleAddComment}
-            disabled={!newComment.trim()}
-          >
-            <Send className="h-3 w-3 mr-2" />
-            Envoyer
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/**
- * Éditeur rich text pour la description (style NoteComposer des notes client)
- */
-const descriptionToolbarItems = [
-  { icon: Bold, tooltip: "Gras", command: "bold" },
-  { icon: Italic, tooltip: "Italique", command: "italic" },
-  { icon: Underline, tooltip: "Souligné", command: "underline" },
-  { icon: List, tooltip: "Liste à puces", command: "insertUnorderedList" },
-  {
-    icon: ListOrdered,
-    tooltip: "Liste numérotée",
-    command: "insertOrderedList",
-  },
-  {
-    icon: Quote,
-    tooltip: "Citation",
-    command: "formatBlock",
-    value: "blockquote",
-  },
-  { icon: Code, tooltip: "Code", command: "formatBlock", value: "pre" },
-  { icon: Link, tooltip: "Lien", command: "createLink" },
-];
-
-function DescriptionEditor({
-  value,
-  onChange,
-  placeholder = "Ajouter une description...",
-}) {
-  const editorRef = useRef(null);
-  const [isEmpty, setIsEmpty] = useState(!value);
-  const lastValueRef = useRef(null);
-  const [activeFormats, setActiveFormats] = useState({});
-
-  const updateActiveFormats = useCallback(() => {
-    const formats = {};
-    descriptionToolbarItems.forEach((item) => {
-      if (item.command === "createLink") {
-        const selection = window.getSelection();
-        if (selection && selection.rangeCount > 0) {
-          let node = selection.anchorNode;
-          while (node && node !== editorRef.current) {
-            if (node.nodeName === "A") {
-              formats["createLink"] = true;
-              break;
-            }
-            node = node.parentNode;
-          }
-        }
-      } else if (item.command === "formatBlock") {
-        const val = document.queryCommandValue("formatBlock");
-        if (val && val.toLowerCase() === item.value?.toLowerCase()) {
-          formats[item.command + "-" + item.value] = true;
-        }
-      } else {
-        try {
-          if (document.queryCommandState(item.command)) {
-            formats[item.command] = true;
-          }
-        } catch (_) {}
-      }
-    });
-    setActiveFormats(formats);
-  }, []);
-
-  useEffect(() => {
-    const handleSelectionChange = () => {
-      if (
-        editorRef.current?.contains(document.activeElement) ||
-        editorRef.current?.contains(window.getSelection()?.anchorNode)
-      ) {
-        updateActiveFormats();
-      }
-    };
-    document.addEventListener("selectionchange", handleSelectionChange);
-    return () =>
-      document.removeEventListener("selectionchange", handleSelectionChange);
-  }, [updateActiveFormats]);
-
-  // Initialiser le contenu au montage + sync quand value change de l'extérieur
-  useEffect(() => {
-    if (editorRef.current && value !== lastValueRef.current) {
-      editorRef.current.innerHTML = value || "";
-      lastValueRef.current = value || "";
-      const text = editorRef.current.textContent || "";
-      setIsEmpty(text.trim().length === 0);
-    }
-  }, [value]);
-
-  const syncValue = useCallback(() => {
-    if (!editorRef.current) return;
-    const html = editorRef.current.innerHTML;
-    const text = editorRef.current.textContent || "";
-    const newValue = text.trim().length === 0 ? "" : html;
-    setIsEmpty(text.trim().length === 0);
-    if (newValue !== lastValueRef.current) {
-      lastValueRef.current = newValue;
-      onChange(newValue);
-    }
-  }, [onChange]);
-
-  const applyFormat = useCallback(
-    (item) => {
-      if (item.command === "createLink") {
-        const url = prompt("URL du lien :");
-        if (url) document.execCommand("createLink", false, url);
-      } else if (item.value) {
-        document.execCommand(item.command, false, item.value);
-      } else {
-        document.execCommand(item.command, false, null);
-      }
-      editorRef.current?.focus();
-      syncValue();
-      setTimeout(updateActiveFormats, 0);
-    },
-    [syncValue, updateActiveFormats],
-  );
-
-  const handleInput = useCallback(() => {
-    syncValue();
-  }, [syncValue]);
-
-  const handleClear = useCallback(() => {
-    if (editorRef.current) {
-      editorRef.current.innerHTML = "";
-      setIsEmpty(true);
-      lastValueRef.current = "";
-      onChange("");
-      editorRef.current.focus();
-    }
-  }, [onChange]);
-
-  return (
-    <div
-      className="flex flex-col rounded-xl border border-[#eeeff1] dark:border-[#232323] bg-white dark:bg-[#1a1a1a] shadow-xs cursor-text overflow-hidden min-w-0"
-      onClick={() => editorRef.current?.focus()}
-    >
-      {/* Formatting toolbar */}
-      <div className="flex items-center justify-between px-2 py-1.5 border-b border-[#eeeff1] dark:border-[#232323]">
-        <div className="flex items-center gap-0.5">
-          {descriptionToolbarItems.map((item, index) => {
-            const isActive =
-              item.command === "createLink"
-                ? activeFormats["createLink"]
-                : item.command === "formatBlock"
-                  ? activeFormats[item.command + "-" + item.value]
-                  : activeFormats[item.command];
-            return (
-              <Tooltip key={index}>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      applyFormat(item);
-                    }}
-                    className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${isActive ? "bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 dark:text-[#7c74ff]" : "text-[#606164] dark:text-muted-foreground hover:bg-[#f8f9fa] dark:hover:bg-[#232323] hover:text-[#242529] dark:hover:text-foreground"}`}
-                  >
-                    <item.icon className="h-3.5 w-3.5" strokeWidth={1.75} />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>{item.tooltip}</p>
-                </TooltipContent>
-              </Tooltip>
-            );
-          })}
-        </div>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              className="flex h-7 w-7 items-center justify-center rounded-md text-[#606164] hover:bg-red-50 hover:text-red-500 transition-colors"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleClear();
-              }}
-            >
-              <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            <p>Effacer</p>
-          </TooltipContent>
-        </Tooltip>
-      </div>
-
-      {/* Rich text editor */}
-      <div className="relative px-4 py-3 min-h-[100px] max-h-[200px] overflow-y-auto overflow-x-hidden">
-        {isEmpty && (
-          <span className="absolute top-3 left-4 text-sm text-muted-foreground pointer-events-none">
-            {placeholder}
-          </span>
-        )}
-        <div
-          ref={editorRef}
-          contentEditable
-          onInput={handleInput}
-          onBlur={syncValue}
-          style={{ overflowWrap: "anywhere", wordBreak: "break-word" }}
-          className="w-full max-w-full text-sm text-foreground focus:outline-none min-h-[80px] whitespace-pre-wrap [&_b]:font-bold [&_i]:italic [&_u]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-[#eeeff1] [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground [&_pre]:bg-[#f8f9fa] [&_pre]:rounded [&_pre]:px-2 [&_pre]:py-1 [&_pre]:font-mono [&_pre]:text-xs [&_pre]:whitespace-pre-wrap [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-[#5a50ff] [&_a]:underline"
-        />
-      </div>
-    </div>
-  );
-}
-
-/**
- * Sélecteur de client simplifié pour les tâches kanban
- */
-function TaskClientSelector({ clientId, clientName, onChange }) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const { clients, loading } = useClients(1, 50, searchTerm);
-
-  const getClientDisplayName = (client) => {
-    if (client.type === "INDIVIDUAL") {
-      return `${client.firstName || ""} ${client.lastName || client.name || ""}`.trim();
-    }
-    return client.name || "";
-  };
-
-  if (clientId && clientName) {
-    return (
-      <div className="flex items-center gap-2">
-        <Badge
-          variant="outline"
-          className="inline-flex items-center gap-1.5 py-1 px-2.5 text-xs font-medium rounded-md"
-        >
-          <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-          <span>{clientName}</span>
-        </Badge>
-        <button
-          type="button"
-          onClick={() => onChange(null, null)}
-          className="w-5 h-5 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
-          title="Retirer le client"
-        >
-          <X className="h-3 w-3 text-muted-foreground" />
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className="inline-flex items-center gap-1.5 py-1 px-2.5 text-xs font-medium rounded-md border border-dashed border-muted-foreground/30 hover:border-muted-foreground/50 hover:bg-muted/10 transition-colors bg-transparent cursor-pointer text-muted-foreground"
-        >
-          <Building2 className="h-3.5 w-3.5" />
-          <span>Assigner un client</span>
-        </button>
-      </PopoverTrigger>
-      <PopoverContent
-        align="start"
-        className="w-72 p-2"
-        onOpenAutoFocus={(e) => e.preventDefault()}
-      >
-        <div className="relative mb-2">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher un client..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8 h-8 text-sm"
-            autoFocus
-          />
-        </div>
-        <div className="max-h-[250px] overflow-y-auto space-y-0.5">
-          {loading ? (
-            <div className="flex items-center justify-center py-4">
-              <LoaderCircle className="h-4 w-4 animate-spin text-muted-foreground" />
-            </div>
-          ) : clients.length === 0 ? (
-            <div className="text-sm text-muted-foreground text-center py-4">
-              Aucun client trouvé
-            </div>
-          ) : (
-            clients.map((client) => (
-              <button
-                key={client.id}
-                type="button"
-                onClick={() => onChange(client.id, client)}
-                className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md hover:bg-accent text-left transition-colors cursor-pointer bg-transparent border-0"
-              >
-                <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">
-                    {getClientDisplayName(client)}
-                  </div>
-                  {client.email && (
-                    <div className="text-xs text-muted-foreground truncate">
-                      {client.email}
-                    </div>
-                  )}
-                </div>
-              </button>
-            ))
-          )}
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
 
 /**
  * Modal pour créer ou modifier une tâche
@@ -625,7 +92,35 @@ export function TaskModal({
   addPendingComment,
   removePendingComment,
   updatePendingComment,
+  openEditTaskModal,
 }) {
+  // Navigation prev/next entre tâches
+  const { prevTask, nextTask, currentIndex, totalTasks } = useMemo(() => {
+    if (!board?.tasks || !taskForm?.id) return { prevTask: null, nextTask: null, currentIndex: -1, totalTasks: 0 };
+    const tasks = board.tasks;
+    const idx = tasks.findIndex(t => t.id === taskForm.id);
+    return {
+      prevTask: idx > 0 ? tasks[idx - 1] : null,
+      nextTask: idx < tasks.length - 1 ? tasks[idx + 1] : null,
+      currentIndex: idx,
+      totalTasks: tasks.length,
+    };
+  }, [board?.tasks, taskForm?.id]);
+
+  const goToPrev = useCallback(() => { if (prevTask && openEditTaskModal) openEditTaskModal(prevTask); }, [prevTask, openEditTaskModal]);
+  const goToNext = useCallback(() => { if (nextTask && openEditTaskModal) openEditTaskModal(nextTask); }, [nextTask, openEditTaskModal]);
+
+  // Raccourcis clavier pour navigation
+  useEffect(() => {
+    if (!isOpen || !isEditing) return;
+    const handleKey = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+      if (e.altKey && e.key === 'ArrowUp') { e.preventDefault(); goToPrev(); }
+      if (e.altKey && e.key === 'ArrowDown') { e.preventDefault(); goToNext(); }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [isOpen, isEditing, goToPrev, goToNext]);
   // Optimisation: handlers mémorisés pour éviter les re-renders
   const handleTitleChange = useCallback(
     (e) => {
@@ -809,6 +304,34 @@ export function TaskModal({
     onSubmit(formData);
   };
 
+  // Auto-save en mode édition (debounce 800ms)
+  const autoSaveRef = useRef(null);
+  const initialFormRef = useRef(null);
+
+  // Capturer l'état initial à l'ouverture
+  useEffect(() => {
+    if (isOpen && isEditing) {
+      initialFormRef.current = JSON.stringify(taskForm);
+    }
+  }, [isOpen, isEditing]);
+
+  useEffect(() => {
+    if (!isOpen || !isEditing || !taskForm?.title?.trim()) return;
+
+    // Ne pas auto-save si rien n'a changé
+    const current = JSON.stringify(taskForm);
+    if (current === initialFormRef.current) return;
+
+    if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
+    autoSaveRef.current = setTimeout(() => {
+      const formData = { ...taskForm, priority: getSubmitPriority(taskForm.priority) };
+      onSubmit(formData);
+      initialFormRef.current = current;
+    }, 800);
+
+    return () => { if (autoSaveRef.current) clearTimeout(autoSaveRef.current); };
+  }, [isOpen, isEditing, taskForm, onSubmit]);
+
   // Gestion de la date d'échéance
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [statusPopoverOpen, setStatusPopoverOpen] = useState(false);
@@ -903,64 +426,50 @@ export function TaskModal({
         className="!max-w-[calc(100vw-2rem)] !w-[calc(100vw-2rem)] h-[calc(100vh-2rem)] p-0 bg-card text-card-foreground overflow-hidden flex flex-col"
       >
         {/* Version Desktop : 2 colonnes */}
-        <div className="hidden lg:flex h-full">
+        <div className="hidden lg:flex flex-col h-full">
+          <TaskModalHeader
+            isEditing={isEditing}
+            board={board}
+            taskForm={taskForm}
+            prevTask={prevTask}
+            nextTask={nextTask}
+            currentIndex={currentIndex}
+            totalTasks={totalTasks}
+            goToPrev={goToPrev}
+            goToNext={goToNext}
+          />
+
+          <div className="flex flex-1 min-h-0">
           {/* Partie gauche : Formulaire */}
           <div className="flex-1 flex flex-col border-r">
-            <DialogHeader className="px-6 py-4 border-b border-border relative flex-shrink-0">
-              <DialogTitle className="text-lg font-semibold">
-                {isEditing ? "Modifier la tâche" : "Créer une nouvelle tâche"}
-              </DialogTitle>
-            </DialogHeader>
+              {isEditing ? (
+              <DialogHeader className="sr-only">
+                <DialogTitle>Modifier la tâche</DialogTitle>
+              </DialogHeader>
+            ) : (
+              <DialogHeader className="px-6 py-4 border-b border-border relative flex-shrink-0">
+                <DialogTitle className="text-lg font-semibold">Créer une nouvelle tâche</DialogTitle>
+              </DialogHeader>
+            )}
 
-            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 h-0 min-h-0">
-              {/* Titre */}
-              <div className="space-y-2">
-                <Label htmlFor="task-title" className="text-sm font-normal">
-                  Titre <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="task-title"
-                  value={taskForm.title}
-                  onChange={handleTitleChange}
-                  onFocus={(e) => e.target.setSelectionRange(0, 0)}
-                  className="w-full bg-background text-foreground border-input focus:border-primary"
-                  placeholder="Titre de la tâche"
-                />
-              </div>
-
-              {/* Description */}
-              <div className="space-y-2 mb-12">
-                {!showDescription ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowDescription(true)}
-                    className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity bg-transparent border-0 p-0 cursor-pointer"
-                    style={{ color: "#5b50FF" }}
-                  >
-                    + Ajouter une description
-                  </button>
-                ) : (
-                  <>
-                    <Label className="text-sm font-normal">Description</Label>
-                    <DescriptionEditor
-                      value={taskForm.description}
-                      onChange={(html) =>
-                        setTaskForm((prev) => ({ ...prev, description: html }))
-                      }
-                      placeholder="Ajouter une description..."
-                    />
-                  </>
-                )}
-              </div>
+            <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 h-0 min-h-0">
+              {/* Titre — gros, hover gris, focus border */}
+              <input
+                value={taskForm.title}
+                onChange={handleTitleChange}
+                onFocus={(e) => e.target.setSelectionRange(0, 0)}
+                className="w-full text-2xl font-semibold text-foreground bg-transparent outline-none caret-[#5A50FF] px-2 py-1 -mx-2 rounded-md border border-transparent hover:bg-muted/40 focus:bg-transparent focus:border-border/60 transition-all placeholder:text-muted-foreground/30"
+                placeholder="Titre de la tâche"
+              />
 
               {/* Grille 2 colonnes : Status à Tags */}
-              <div className="grid grid-cols-2 gap-x-6 gap-y-6">
+              <div className="grid grid-cols-2 gap-x-8 gap-y-0">
                 {/* Colonne 1 */}
-                <div className="space-y-6">
+                <div className="space-y-0">
                   {/* Status */}
-                  <div className="flex items-center gap-4">
-                    <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2">
-                      <Columns className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex items-center gap-4 py-2.5">
+                    <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2" style={{ color: '#8D8D8D' }}>
+                      <Columns className="h-4 w-4" />
                       Status
                     </Label>
                     <div className="flex-1">
@@ -1024,17 +533,17 @@ export function TaskModal({
                   </div>
 
                   {/* Date de début */}
-                  <div className="flex items-center gap-4">
-                    <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2">
-                      <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                      Date de début
+                  <div className="flex items-center gap-4 py-2.5">
+                    <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2" style={{ color: '#8D8D8D' }}>
+                      <CalendarIcon className="h-4 w-4" />
+                      Dates
                     </Label>
                     <div className="flex-1">
                       <Popover modal={false}>
                         <PopoverTrigger asChild>
                           <div
                             className={cn(
-                              "text-sm cursor-pointer hover:opacity-70 transition-opacity",
+                              "text-sm cursor-pointer px-3 py-1 rounded-md hover:bg-muted/60 transition-colors inline-block",
                               !taskForm.startDate && "text-muted-foreground",
                             )}
                           >
@@ -1138,11 +647,11 @@ export function TaskModal({
                 </div>
 
                 {/* Colonne 2 */}
-                <div className="space-y-6">
+                <div className="space-y-0">
                   {/* Priorité */}
-                  <div className="flex items-center gap-4">
-                    <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2">
-                      <Flag className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex items-center gap-4 py-2.5">
+                    <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2" style={{ color: '#8D8D8D' }}>
+                      <Flag className="h-4 w-4" />
                       Priorité
                     </Label>
                     <div className="flex-1">
@@ -1235,9 +744,9 @@ export function TaskModal({
                   </div>
 
                   {/* Date de fin */}
-                  <div className="flex items-center gap-4">
-                    <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex items-center gap-4 py-2.5">
+                    <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2" style={{ color: '#8D8D8D' }}>
+                      <Clock className="h-4 w-4" />
                       Date de fin
                     </Label>
                     <div className="flex-1">
@@ -1245,7 +754,7 @@ export function TaskModal({
                         <PopoverTrigger asChild>
                           <div
                             className={cn(
-                              "text-sm cursor-pointer hover:opacity-70 transition-opacity",
+                              "text-sm cursor-pointer px-3 py-1 rounded-md hover:bg-muted/60 transition-colors inline-block",
                               !taskForm.dueDate && "text-muted-foreground",
                             )}
                           >
@@ -1345,261 +854,235 @@ export function TaskModal({
                 </div>
               </div>
 
-              {/* Tags et Membres sur une ligne */}
-              <div className="grid grid-cols-2 gap-x-6 gap-y-6">
+              {/* Tags + Membres — intégrés dans la grille */}
+              <div className="grid grid-cols-2 gap-x-8 gap-y-0">
                 {/* Tags */}
-                <div className="flex items-start gap-4">
-                  <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2 pt-1.5">
-                    <Tag className="h-4 w-4 text-muted-foreground" />
+                <div className="flex items-center gap-4 py-2.5">
+                  <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2" style={{ color: '#8D8D8D' }}>
+                    <Tag className="h-4 w-4" />
                     Tags
                   </Label>
-                  <div className="flex-1 relative">
-                    {taskForm.tags.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setTaskForm({ ...taskForm, tags: [] })}
-                        className="absolute -top-2 -right-2 z-10 w-5 h-5 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
-                        title="Supprimer tous les tags"
-                      >
-                        <X className="h-3 w-3 text-muted-foreground" />
-                      </button>
-                    )}
-                    <div
-                      className="min-h-10 rounded-md border border-input px-3 py-2 text-sm ring-offset-background transition-all focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-text"
-                      onClick={() => {
-                        if (!tagsInputFocused) {
-                          setTagsInputFocused(true);
-                        }
-                      }}
-                    >
-                      {taskForm.tags.length > 0 || tagsInputFocused ? (
-                        <div className="flex flex-wrap gap-2 items-center min-h-full">
-                          {taskForm.tags.map((tag, index) => {
-                            const color = getTagColor(tag.name);
-                            return (
-                              <div
-                                key={index}
-                                className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border"
-                                style={{
-                                  backgroundColor: color.bg,
-                                  borderColor: color.border,
-                                  color: color.text,
-                                }}
-                              >
-                                {tag.name}
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const newTags = taskForm.tags.filter(
-                                      (_, i) => i !== index,
-                                    );
-                                    setTaskForm({ ...taskForm, tags: newTags });
-                                  }}
-                                  className="ml-1.5 rounded-full outline-none hover:opacity-70 transition-opacity"
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
-                              </div>
-                            );
-                          })}
-                          {tagsInputFocused && (
-                            <Input
-                              autoFocus
-                              placeholder={
-                                taskForm.tags.length === 0
-                                  ? "Ajouter des tags..."
-                                  : ""
-                              }
-                              className="flex-1 min-w-[120px] border-0 shadow-none focus-visible:ring-0 px-0 h-6"
-                              onFocus={() => setTagsInputFocused(true)}
-                              onBlur={() => setTagsInputFocused(false)}
-                              onKeyDown={(e) => {
-                                if (
-                                  e.key === "Enter" &&
-                                  e.currentTarget.value.trim()
-                                ) {
-                                  e.preventDefault();
-                                  const newTag = e.currentTarget.value.trim();
-                                  if (
-                                    !taskForm.tags.find(
-                                      (t) => t.name === newTag,
-                                    )
-                                  ) {
-                                    setTaskForm({
-                                      ...taskForm,
-                                      tags: [
-                                        ...taskForm.tags,
-                                        { name: newTag },
-                                      ],
-                                    });
-                                  }
-                                  e.currentTarget.value = "";
-                                }
-                              }}
-                            />
+                  <div className="flex-1">
+                    <Popover modal={false}>
+                      <PopoverTrigger asChild>
+                        <div className="cursor-pointer">
+                          {taskForm.tags?.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {taskForm.tags.map((tag, i) => {
+                                const color = getTagColor(tag.name);
+                                return (
+                                  <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium" style={{ backgroundColor: color.bg, color: color.text, border: `1px solid ${color.border}` }}>
+                                    {tag.name}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <span className="text-sm px-3 py-1 rounded-md hover:bg-muted/60 transition-colors" style={{ color: '#8D8D8D' }}>Vide</span>
                           )}
                         </div>
-                      ) : (
-                        <div className="text-sm text-muted-foreground">
-                          Ajouter des tags...
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56 p-0" side="bottom" align="start" onCloseAutoFocus={(e) => e.preventDefault()}>
+                        {/* Tags actuels */}
+                        {taskForm.tags?.length > 0 && (
+                          <div className="flex flex-wrap gap-1 px-3 pt-2.5 pb-1">
+                            {taskForm.tags.map((tag, i) => {
+                              const color = getTagColor(tag.name);
+                              return (
+                                <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium" style={{ backgroundColor: color.bg, color: color.text, border: `1px solid ${color.border}` }}>
+                                  {tag.name}
+                                  <button type="button" onClick={() => {
+                                    const newTags = taskForm.tags.filter((_, idx) => idx !== i);
+                                    setTaskForm({ ...taskForm, tags: newTags });
+                                  }} className="hover:opacity-70 cursor-pointer"><X className="h-2.5 w-2.5" /></button>
+                                </span>
+                              );
+                            })}
+                          </div>
+                        )}
+                        <div className="px-3 pt-2 pb-1.5 border-b border-border/40">
+                          <input
+                            placeholder="Rechercher ou créer..."
+                            className="w-full bg-transparent border-none outline-none text-sm placeholder:text-muted-foreground/40 p-0"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                                e.preventDefault();
+                                const newTag = e.currentTarget.value.trim();
+                                if (!taskForm.tags?.find(t => t.name.toLowerCase() === newTag.toLowerCase())) {
+                                  setTaskForm({ ...taskForm, tags: [...(taskForm.tags || []), { name: newTag, className: '' }] });
+                                }
+                                e.currentTarget.value = '';
+                              }
+                            }}
+                          />
                         </div>
-                      )}
-                    </div>
+                        <div className="p-1.5 max-h-[200px] overflow-y-auto">
+                          <p className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider px-1.5 pb-1">Appuyer Entrée pour créer</p>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
 
-                {/* Membres assignés */}
-                <div className="flex items-start gap-4">
-                  <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2 pt-1.5">
-                    <Users className="h-4 w-4 text-muted-foreground" />
+                {/* Membres */}
+                <div className="flex items-center gap-4 py-2.5">
+                  <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2" style={{ color: '#8D8D8D' }}>
+                    <Users className="h-4 w-4" />
                     Membres
                   </Label>
                   <div className="flex-1">
                     <DropdownMenu modal={false}>
                       <DropdownMenuTrigger asChild>
-                        {taskForm.assignedMembers &&
-                        taskForm.assignedMembers.length > 0 ? (
-                          <div className="flex -space-x-2 cursor-pointer">
-                            {taskForm.assignedMembers
-                              .slice(0, 3)
-                              .map((memberId, idx) => {
-                                const memberInfo = membersInfo.find(
-                                  (m) => m.id === memberId,
-                                );
+                        <div className="cursor-pointer">
+                          {taskForm.assignedMembers?.length > 0 ? (
+                            <div className="flex -space-x-1.5">
+                              {taskForm.assignedMembers.slice(0, 4).map((memberId, idx) => {
+                                const info = membersInfo.find(m => m.id === memberId);
                                 return (
-                                  <div
-                                    key={memberId}
-                                    className="relative group/avatar"
-                                  >
-                                    <UserAvatar
-                                      src={memberInfo?.image}
-                                      name={memberInfo?.name || memberId}
-                                      size="sm"
-                                      className="border border-background ring-1 ring-border/10 hover:ring-primary/50 transition-all"
-                                      style={{
-                                        zIndex:
-                                          taskForm.assignedMembers.length - idx,
-                                      }}
-                                    />
-                                  </div>
+                                  <UserAvatar key={memberId} src={info?.image} name={info?.name || memberId} size="xs" className="h-6 w-6 ring-1 ring-background" style={{ zIndex: taskForm.assignedMembers.length - idx }} />
                                 );
                               })}
-                            {taskForm.assignedMembers.length > 3 && (
-                              <div className="w-6 h-6 rounded-full bg-muted/80 border border-background flex items-center justify-center text-[9px] font-semibold text-muted-foreground flex-shrink-0">
-                                +{taskForm.assignedMembers.length - 3}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <button
-                            className="w-7 h-7 rounded-full border border-muted-foreground/30 hover:border-muted-foreground/50 hover:bg-muted/10 flex items-center justify-center cursor-pointer transition-colors bg-transparent p-0"
-                            title="Ajouter des membres"
-                          >
-                            <UserPlus className="h-4 w-4 text-muted-foreground" />
-                          </button>
-                        )}
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align="start"
-                        className="w-72 max-h-[400px] overflow-y-auto"
-                        onCloseAutoFocus={(e) => e.preventDefault()}
-                      >
-                        {board?.members?.map((member) => (
-                          <DropdownMenuCheckboxItem
-                            key={member.id}
-                            checked={(taskForm.assignedMembers || []).includes(
-                              member.id,
-                            )}
-                            onCheckedChange={() => {
-                              const currentMembers =
-                                taskForm.assignedMembers || [];
-                              const newMembers = currentMembers.includes(
-                                member.id,
-                              )
-                                ? currentMembers.filter(
-                                    (id) => id !== member.id,
-                                  )
-                                : [...currentMembers, member.id];
-                              setTaskForm({
-                                ...taskForm,
-                                assignedMembers: newMembers,
-                              });
-                            }}
-                            className="flex items-center gap-3 cursor-pointer"
-                          >
-                            <UserAvatar
-                              src={member.image}
-                              name={member.name}
-                              size="sm"
-                            />
-                            <div className="flex-1 text-left">
-                              <div className="text-sm font-medium">
-                                {member.name}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {member.email}
-                              </div>
+                              {taskForm.assignedMembers.length > 4 && (
+                                <div className="h-6 w-6 rounded-full bg-muted border border-background flex items-center justify-center text-[8px] font-medium text-muted-foreground">+{taskForm.assignedMembers.length - 4}</div>
+                              )}
                             </div>
-                          </DropdownMenuCheckboxItem>
-                        ))}
+                          ) : (
+                            <span className="text-sm px-3 py-1 rounded-md hover:bg-muted/60 transition-colors" style={{ color: '#8D8D8D' }}>Vide</span>
+                          )}
+                        </div>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-60 p-0" onCloseAutoFocus={(e) => e.preventDefault()}>
+                        <div className="px-2 pt-2 pb-0.5">
+                          <span className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider">Membres</span>
+                        </div>
+                        <div className="p-1.5 pt-0.5 space-y-0.5 max-h-[280px] overflow-y-auto">
+                          {board?.members?.map((member) => {
+                            const isSelected = (taskForm.assignedMembers || []).includes(member.id);
+                            return (
+                              <button
+                                key={member.id}
+                                onClick={() => {
+                                  const current = taskForm.assignedMembers || [];
+                                  const newMembers = isSelected ? current.filter(id => id !== member.id) : [...current, member.id];
+                                  setTaskForm({ ...taskForm, assignedMembers: newMembers });
+                                }}
+                                className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer"
+                              >
+                                <div className={`rounded-full flex-shrink-0 ${isSelected ? 'ring-[1.5px] ring-[#5A50FF] ring-offset-1 ring-offset-background' : ''}`}>
+                                  <UserAvatar src={member.image} name={member.name} size="xs" className="h-5 w-5" />
+                                </div>
+                                <span className="flex-1 text-left text-xs font-medium truncate">{member.name}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
                 </div>
-              </div>
 
-              {/* Client assigné */}
-              <div className="flex items-center gap-4">
-                <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-muted-foreground" />
-                  Client
-                </Label>
-                <div className="flex-1">
-                  <TaskClientSelector
-                    clientId={taskForm.clientId}
-                    clientName={
-                      taskForm.client
-                        ? taskForm.client.type === "INDIVIDUAL"
-                          ? `${taskForm.client.firstName || ""} ${taskForm.client.lastName || taskForm.client.name || ""}`.trim()
-                          : taskForm.client.name || ""
-                        : null
-                    }
-                    onChange={(clientId, client) =>
-                      setTaskForm({ ...taskForm, clientId, client })
-                    }
-                  />
-                </div>
-              </div>
-
-              {/* Timer et facturation */}
-              {isEditing && (taskForm.id || taskForm._id) ? (
-                <div className="mt-12">
-                  <TimerControls
-                    taskId={taskForm.id || taskForm._id}
-                    timeTracking={taskForm.timeTracking}
-                    onTimerUpdate={(newTimeTracking) => {
-                      setTaskForm((prev) => ({
-                        ...prev,
-                        timeTracking: newTimeTracking,
-                      }));
-                    }}
-                  />
-                </div>
-              ) : (
-                !isEditing && (
-                  <div className="mt-12">
-                    <LocalTimerControls
-                      timeTracking={taskForm.timeTracking}
-                      onTimeTrackingChange={(newTimeTracking) => {
-                        setTaskForm((prev) => ({
-                          ...prev,
-                          timeTracking: newTimeTracking,
-                        }));
-                      }}
+                {/* Client */}
+                <div className="flex items-center gap-4 py-2.5">
+                  <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2" style={{ color: '#8D8D8D' }}>
+                    <Building2 className="h-4 w-4" />
+                    Client
+                  </Label>
+                  <div className="flex-1">
+                    <TaskClientSelector
+                      clientId={taskForm.clientId}
+                      clientName={
+                        taskForm.client
+                          ? taskForm.client.type === "INDIVIDUAL"
+                            ? `${taskForm.client.firstName || ""} ${taskForm.client.lastName || taskForm.client.name || ""}`.trim()
+                            : taskForm.client.name || ""
+                          : null
+                      }
+                      onChange={(clientId, client) =>
+                        setTaskForm({ ...taskForm, clientId, client })
+                      }
                     />
                   </div>
-                )
-              )}
+                </div>
+
+                {/* Gestion du temps */}
+                <div className="flex items-center gap-4 py-2.5">
+                  <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2" style={{ color: '#8D8D8D' }}>
+                    <Clock className="h-4 w-4" />
+                    Temps
+                  </Label>
+                  <div className="flex-1">
+                    <Popover modal={false}>
+                      <PopoverTrigger asChild>
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md hover:bg-muted/60 transition-colors cursor-pointer">
+                          {taskForm.timeTracking?.isRunning ? (
+                            <>
+                              <Square className="h-3 w-3 fill-red-500 text-red-500" />
+                              <span className="text-sm text-red-500 font-medium">En cours...</span>
+                            </>
+                          ) : taskForm.timeTracking?.totalSeconds > 0 ? (
+                            <span className="text-sm text-foreground/70">
+                              {`${Math.floor(taskForm.timeTracking.totalSeconds / 3600)}h ${Math.floor((taskForm.timeTracking.totalSeconds % 3600) / 60)}m`}
+                            </span>
+                          ) : (
+                            <>
+                              <Play className="h-3 w-3" style={{ color: '#8D8D8D' }} />
+                              <span className="text-sm" style={{ color: '#8D8D8D' }}>Start</span>
+                            </>
+                          )}
+                        </div>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80 p-0" side="bottom" align="start" onCloseAutoFocus={(e) => e.preventDefault()}>
+                        {isEditing && (taskForm.id || taskForm._id) ? (
+                          <TimerControls
+                            taskId={taskForm.id || taskForm._id}
+                            timeTracking={taskForm.timeTracking}
+                            onTimerUpdate={(newTimeTracking) => {
+                              setTaskForm((prev) => ({
+                                ...prev,
+                                timeTracking: newTimeTracking,
+                              }));
+                            }}
+                            inline
+                          />
+                        ) : (
+                          <LocalTimerControls
+                            timeTracking={taskForm.timeTracking}
+                            onTimeTrackingChange={(newTimeTracking) => {
+                              setTaskForm((prev) => ({
+                                ...prev,
+                                timeTracking: newTimeTracking,
+                              }));
+                            }}
+                            inline
+                          />
+                        )}
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+              </div>
+
+              {/* Description — sous la grille des propriétés */}
+              <div className="space-y-1 border-t border-border/30 pt-4">
+                {!showDescription && !taskForm.description ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowDescription(true)}
+                    className="text-sm text-muted-foreground/50 hover:text-muted-foreground transition-colors bg-transparent border-0 p-0 cursor-pointer"
+                  >
+                    Ajouter une description...
+                  </button>
+                ) : (
+                  <DescriptionEditor
+                    value={taskForm.description}
+                    onChange={(html) =>
+                      setTaskForm((prev) => ({ ...prev, description: html }))
+                    }
+                    placeholder="Ajouter une description..."
+                  />
+                )}
+              </div>
 
               {/* Checklist */}
               <div className="space-y-3 mt-6">
@@ -1638,80 +1121,42 @@ export function TaskModal({
               </div>
             </div>
 
-            {/* Footer fixe */}
-            <div className="border-t border-border bg-card px-6 py-4 flex-shrink-0 space-y-3">
-              {/* Informations de création (uniquement en mode édition) */}
-              {isEditing &&
-                taskForm.createdAt &&
-                (() => {
-                  const creator = getCreatorInfo();
-                  return (
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground pb-2 border-b border-border">
-                      <div className="flex items-center gap-1.5">
-                        <UserAvatar
-                          src={creator.image}
-                          name={creator.name}
-                          size="xs"
-                        />
-                        <span>
-                          Créé par{" "}
-                          <span className="font-medium text-foreground">
-                            {creator.name}
-                          </span>
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="h-3 w-3" />
-                        <span>{formatCreatedDate(taskForm.createdAt)}</span>
-                      </div>
-                      {taskForm.updatedAt &&
-                        taskForm.updatedAt !== taskForm.createdAt && (
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-muted-foreground/70">
-                              • Modifié le{" "}
-                              {formatCreatedDate(taskForm.updatedAt)}
-                            </span>
-                          </div>
-                        )}
-                    </div>
-                  );
-                })()}
-
-              {/* Boutons d'action */}
-              <div className="flex justify-end gap-3">
-                <Button
-                  variant="outline"
-                  onClick={onClose}
-                  disabled={isLoading}
-                  className="px-6 border-input"
-                >
-                  Annuler
-                </Button>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={isLoading || !taskForm.title.trim()}
-                  className="px-6 text-white hover:opacity-90"
-                  style={{ backgroundColor: "#5b50FF" }}
-                >
-                  {isLoading ? (
-                    <>
-                      <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                      {isEditing ? "Enregistrement..." : "Création..."}
-                    </>
-                  ) : isEditing ? (
-                    "Enregistrer les modifications"
-                  ) : (
-                    "Créer la tâche"
-                  )}
-                </Button>
+            {/* Footer fixe — uniquement en mode création */}
+            {!isEditing && (
+              <div className="border-t border-border bg-card px-6 py-3 flex-shrink-0">
+                <div className="flex justify-end gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={onClose}
+                    disabled={isLoading}
+                    className="px-6 border-input"
+                  >
+                    Annuler
+                  </Button>
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={isLoading || !taskForm.title.trim()}
+                    className="px-6 text-white hover:opacity-90"
+                    style={{ backgroundColor: "#5b50FF" }}
+                  >
+                    {isLoading ? (
+                      <>
+                        <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                        Création...
+                      </>
+                    ) : (
+                      "Créer la tâche"
+                    )}
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Partie droite : Activité et commentaires */}
-          <div className="w-[500px] flex flex-col">
-            <div className="px-6 py-4 border-b border-border bg-background">
-              <h3 className="text-lg font-semibold">Activité</h3>
+          <div className="w-[420px] flex flex-col">
+            <div className="px-5 py-2.5 border-b border-border bg-background">
+              <h3 className="text-sm font-medium">Activité</h3>
             </div>
             <div className="flex-1 min-h-0 overflow-hidden px-2 bg-muted/40">
               {isEditing && (taskForm.id || taskForm._id) ? (
@@ -1735,6 +1180,7 @@ export function TaskModal({
                 />
               )}
             </div>
+          </div>
           </div>
         </div>
 
@@ -1822,9 +1268,9 @@ export function TaskModal({
                 {/* Status et Priorité - Une seule colonne */}
                 <div className="space-y-4">
                   {/* Status */}
-                  <div className="flex items-center gap-4">
-                    <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2">
-                      <Columns className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex items-center gap-4 py-2.5">
+                    <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2" style={{ color: '#8D8D8D' }}>
+                      <Columns className="h-4 w-4" />
                       Status
                     </Label>
                     <div className="flex-1">
@@ -1888,9 +1334,9 @@ export function TaskModal({
                   </div>
 
                   {/* Priorité */}
-                  <div className="flex items-center gap-4">
-                    <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2">
-                      <Flag className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex items-center gap-4 py-2.5">
+                    <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2" style={{ color: '#8D8D8D' }}>
+                      <Flag className="h-4 w-4" />
                       Priorité
                     </Label>
                     <div className="flex-1">
@@ -1994,7 +1440,7 @@ export function TaskModal({
                       <PopoverTrigger asChild>
                         <div
                           className={cn(
-                            "text-sm cursor-pointer hover:opacity-70 transition-opacity",
+                            "text-sm cursor-pointer px-3 py-1 rounded-md hover:bg-muted/60 transition-colors inline-block",
                             !taskForm.startDate && "text-muted-foreground",
                           )}
                         >
@@ -2103,7 +1549,7 @@ export function TaskModal({
                       <PopoverTrigger asChild>
                         <div
                           className={cn(
-                            "text-sm cursor-pointer hover:opacity-70 transition-opacity",
+                            "text-sm cursor-pointer px-3 py-1 rounded-md hover:bg-muted/60 transition-colors inline-block",
                             !taskForm.dueDate && "text-muted-foreground",
                           )}
                         >
@@ -2495,64 +1941,36 @@ export function TaskModal({
                 </div>
               </div>
 
-              {/* Footer fixe mobile */}
-              <div className="border-t border-border bg-card px-4 py-3 flex-shrink-0 space-y-3">
-                {/* Informations de création */}
-                {isEditing &&
-                  taskForm.createdAt &&
-                  (() => {
-                    const creator = getCreatorInfo();
-                    return (
-                      <div className="flex flex-col gap-2 text-xs text-muted-foreground pb-2 border-b border-border">
-                        <div className="flex items-center gap-1.5">
-                          <UserAvatar
-                            src={creator.image}
-                            name={creator.name}
-                            size="xs"
-                          />
-                          <span>
-                            Créé par{" "}
-                            <span className="font-medium text-foreground">
-                              {creator.name}
-                            </span>
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <Clock className="h-3 w-3" />
-                          <span>{formatCreatedDate(taskForm.createdAt)}</span>
-                        </div>
-                      </div>
-                    );
-                  })()}
-
-                {/* Boutons d'action */}
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={onClose}
-                    disabled={isLoading}
-                    className="flex-1 border-input"
-                  >
-                    Annuler
-                  </Button>
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={isLoading || !taskForm.title.trim()}
-                    className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
-                  >
-                    {isLoading ? (
-                      <>
-                        <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                        {isEditing ? "Enregistrement..." : "Création..."}
-                      </>
-                    ) : isEditing ? (
-                      "Enregistrer"
-                    ) : (
-                      "Créer"
-                    )}
-                  </Button>
+              {/* Footer fixe mobile — uniquement en mode création */}
+              {!isEditing && (
+                <div className="border-t border-border bg-card px-4 py-3 flex-shrink-0">
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={onClose}
+                      disabled={isLoading}
+                      className="flex-1 border-input"
+                    >
+                      Annuler
+                    </Button>
+                    <Button
+                      onClick={handleSubmit}
+                      disabled={isLoading || !taskForm.title.trim()}
+                      className="flex-1 text-white hover:opacity-90"
+                      style={{ backgroundColor: "#5b50FF" }}
+                    >
+                      {isLoading ? (
+                        <>
+                          <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                          Création...
+                        </>
+                      ) : (
+                        "Créer la tâche"
+                      )}
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              )}
             </TabsContent>
 
             {/* Onglet Activité (mobile) */}
