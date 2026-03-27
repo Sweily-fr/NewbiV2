@@ -147,8 +147,7 @@ const APPLICATIONS = [
     id: "paypal",
     name: "PayPal",
     author: "PayPal",
-    description:
-      "Proposez PayPal comme moyen de paiement sur vos factures.",
+    description: "Proposez PayPal comme moyen de paiement sur vos factures.",
     category: "payment",
     logo: `${BRANDFETCH_CDN}/paypal.com/w/400/h/400`,
     logoBg: "#003087",
@@ -163,8 +162,7 @@ const APPLICATIONS = [
     id: "zapier",
     name: "Zapier",
     author: "Zapier",
-    description:
-      "Connectez Newbi à plus de 5 000 applications sans code.",
+    description: "Connectez Newbi à plus de 5 000 applications sans code.",
     category: "automations",
     logo: `${BRANDFETCH_CDN}/zapier.com/w/400/h/400`,
     logoBg: "#FF4A00",
@@ -211,8 +209,7 @@ const APPLICATIONS = [
     id: "brevo",
     name: "Brevo",
     author: "Brevo (ex-Sendinblue)",
-    description:
-      "Envoyez vos factures et relances via Brevo.",
+    description: "Envoyez vos factures et relances via Brevo.",
     category: "email",
     logo: `${BRANDFETCH_CDN}/brevo.com/w/400/h/400`,
     logoBg: "#0B996E",
@@ -227,8 +224,7 @@ const APPLICATIONS = [
     id: "hubspot",
     name: "HubSpot",
     author: "HubSpot",
-    description:
-      "Synchronisez vos contacts et deals avec votre CRM HubSpot.",
+    description: "Synchronisez vos contacts et deals avec votre CRM HubSpot.",
     category: "crm",
     logo: `${BRANDFETCH_CDN}/hubspot.com/w/400/h/400`,
     logoBg: "#FF7A59",
@@ -273,8 +269,7 @@ const APPLICATIONS = [
     id: "openai",
     name: "OpenAI",
     author: "OpenAI",
-    description:
-      "Générez des descriptions, relances et contenus avec l'IA.",
+    description: "Générez des descriptions, relances et contenus avec l'IA.",
     category: "ai",
     logo: `${BRANDFETCH_CDN}/openai.com/w/400/h/400`,
     logoBg: "#000000",
@@ -376,12 +371,7 @@ function InstalledAppChip({ app, onClick }) {
       onClick={onClick}
       className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] hover:bg-[#f9f9f9] dark:hover:bg-[#1a1a1a] cursor-pointer rounded-xl transition-colors duration-75"
     >
-      <AppLogo
-        src={app.logo}
-        name={app.name}
-        size="xs"
-        bgColor={app.logoBg}
-      />
+      <AppLogo src={app.logo} name={app.name} size="xs" bgColor={app.logoBg} />
       <span className="text-sm font-medium">{app.name}</span>
       {app.connected && (
         <span className="ml-auto px-2 py-0.5 text-[10px] font-medium bg-gray-100 border border-gray-200 text-gray-500 dark:bg-[#2c2c2c] dark:border-[#3c3c3c] dark:text-gray-400 rounded-md flex-shrink-0">
@@ -400,7 +390,12 @@ function InstalledAppRow({ app, onClick }) {
       style={{ padding: "12px 18px 12px 12px" }}
     >
       <div className="flex items-center gap-3 min-w-0">
-        <AppLogo src={app.logo} name={app.name} size="sm" bgColor={app.logoBg} />
+        <AppLogo
+          src={app.logo}
+          name={app.name}
+          size="sm"
+          bgColor={app.logoBg}
+        />
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             <h4 className="text-sm font-medium">{app.name}</h4>
@@ -431,7 +426,12 @@ function InstalledAppRow({ app, onClick }) {
 
 // ── Panneau de connexion Pennylane ──
 
-function PennylaneConnectionPanel({ app, isConnected, connectionDetail, actions }) {
+function PennylaneConnectionPanel({
+  app,
+  isConnected,
+  connectionDetail,
+  actions,
+}) {
   const [apiToken, setApiToken] = useState("");
   const [showToken, setShowToken] = useState(false);
   const [testResult, setTestResult] = useState(null);
@@ -471,14 +471,20 @@ function PennylaneConnectionPanel({ app, isConnected, connectionDetail, actions 
         {/* Statut connexion */}
         <div className="flex-shrink-0 flex items-center justify-between gap-6 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5 w-full min-h-[44px] overflow-hidden">
           <div className="flex items-center gap-3">
-            <AppLogo src={app.logo} name={app.name} size="xs" bgColor={app.logoBg} />
+            <AppLogo
+              src={app.logo}
+              name={app.name}
+              size="xs"
+              bgColor={app.logoBg}
+            />
             <div>
               <p className="text-sm font-medium text-[#505154] dark:text-gray-400">
                 {connectionDetail || "Pennylane connecté"}
               </p>
               {actions.lastSyncAt && (
                 <p className="text-[11px] text-gray-400 mt-0.5">
-                  Dernière sync : {new Date(actions.lastSyncAt).toLocaleString("fr-FR")}
+                  Dernière sync :{" "}
+                  {new Date(actions.lastSyncAt).toLocaleString("fr-FR")}
                 </p>
               )}
             </div>
@@ -505,12 +511,20 @@ function PennylaneConnectionPanel({ app, isConnected, connectionDetail, actions 
         {actions.account?.stats && (
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5">
-              <p className="text-[11px] text-gray-400 mb-0.5">Factures synchronisées</p>
-              <p className="text-lg font-semibold">{actions.account.stats.invoicesSynced}</p>
+              <p className="text-[11px] text-gray-400 mb-0.5">
+                Factures synchronisées
+              </p>
+              <p className="text-lg font-semibold">
+                {actions.account.stats.invoicesSynced}
+              </p>
             </div>
             <div className="bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5">
-              <p className="text-[11px] text-gray-400 mb-0.5">Dépenses synchronisées</p>
-              <p className="text-lg font-semibold">{actions.account.stats.expensesSynced}</p>
+              <p className="text-[11px] text-gray-400 mb-0.5">
+                Dépenses synchronisées
+              </p>
+              <p className="text-lg font-semibold">
+                {actions.account.stats.expensesSynced}
+              </p>
             </div>
           </div>
         )}
@@ -518,12 +532,16 @@ function PennylaneConnectionPanel({ app, isConnected, connectionDetail, actions 
         {/* Sync automatique */}
         {actions.account?.autoSync && (
           <div className="space-y-3">
-            <h4 className="text-xs font-medium text-gray-500">Synchronisation automatique</h4>
+            <h4 className="text-xs font-medium text-gray-500">
+              Synchronisation automatique
+            </h4>
 
             {/* Groupe : Documents */}
             <div className="bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl overflow-hidden">
               <div className="px-3 py-2 border-b border-[#eeeff1] dark:border-[#232323]">
-                <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Documents</span>
+                <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">
+                  Documents
+                </span>
               </div>
               <div className="divide-y divide-[#eeeff1] dark:divide-[#232323]">
                 {[
@@ -531,35 +549,18 @@ function PennylaneConnectionPanel({ app, isConnected, connectionDetail, actions 
                   { key: "supplierInvoices", label: "Factures fournisseurs" },
                   { key: "quotes", label: "Devis acceptés" },
                 ].map(({ key, label }) => (
-                  <label key={key} className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-[#f3f3f3] dark:hover:bg-[#1a1a1a] transition-colors">
-                    <span className="text-[13px] text-[#505154] dark:text-gray-400">{label}</span>
+                  <label
+                    key={key}
+                    className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-[#f3f3f3] dark:hover:bg-[#1a1a1a] transition-colors"
+                  >
+                    <span className="text-[13px] text-[#505154] dark:text-gray-400">
+                      {label}
+                    </span>
                     <Checkbox
                       checked={actions.account.autoSync[key]}
-                      onCheckedChange={(checked) => actions.onUpdateAutoSync({ [key]: !!checked })}
-                      disabled={!actions.canManage}
-                    />
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Groupe : Données */}
-            <div className="bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl overflow-hidden">
-              <div className="px-3 py-2 border-b border-[#eeeff1] dark:border-[#232323]">
-                <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Données</span>
-              </div>
-              <div className="divide-y divide-[#eeeff1] dark:divide-[#232323]">
-                {[
-                  { key: "clients", label: "Clients" },
-                  { key: "suppliers", label: "Fournisseurs" },
-                  { key: "products", label: "Produits" },
-                  { key: "transactions", label: "Transactions bancaires" },
-                ].map(({ key, label }) => (
-                  <label key={key} className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-[#f3f3f3] dark:hover:bg-[#1a1a1a] transition-colors">
-                    <span className="text-[13px] text-[#505154] dark:text-gray-400">{label}</span>
-                    <Checkbox
-                      checked={actions.account.autoSync[key]}
-                      onCheckedChange={(checked) => actions.onUpdateAutoSync({ [key]: !!checked })}
+                      onCheckedChange={(checked) =>
+                        actions.onUpdateAutoSync({ [key]: !!checked })
+                      }
                       disabled={!actions.canManage}
                     />
                   </label>
@@ -571,12 +572,16 @@ function PennylaneConnectionPanel({ app, isConnected, connectionDetail, actions 
 
         {/* Erreur de sync */}
         {actions.account?.syncError && (
-          <p className="text-[11px] text-red-500 dark:text-red-400">{actions.account.syncError}</p>
+          <p className="text-[11px] text-red-500 dark:text-red-400">
+            {actions.account.syncError}
+          </p>
         )}
 
         {/* Résultat sync */}
         {syncResult && (
-          <p className={`text-[11px] ${syncResult.success ? "text-gray-500 dark:text-gray-400" : "text-red-500 dark:text-red-400"}`}>
+          <p
+            className={`text-[11px] ${syncResult.success ? "text-gray-500 dark:text-gray-400" : "text-red-500 dark:text-red-400"}`}
+          >
             {syncResult.success
               ? syncResult.invoicesSynced != null
                 ? `${syncResult.invoicesSynced} facture${syncResult.invoicesSynced > 1 ? "s" : ""}, ${syncResult.expensesSynced} dépense${syncResult.expensesSynced > 1 ? "s" : ""} synchronisée${syncResult.expensesSynced > 1 ? "s" : ""}`
@@ -591,7 +596,11 @@ function PennylaneConnectionPanel({ app, isConnected, connectionDetail, actions 
             type="button"
             size="sm"
             onClick={handleSyncAll}
-            disabled={isSyncing || actions.syncStatus === "IN_PROGRESS" || !actions.canManage}
+            disabled={
+              isSyncing ||
+              actions.syncStatus === "IN_PROGRESS" ||
+              !actions.canManage
+            }
             className="bg-[#222] hover:bg-[#222]/90 text-white cursor-pointer"
           >
             {isSyncing ? (
@@ -662,8 +671,12 @@ function PennylaneConnectionPanel({ app, isConnected, connectionDetail, actions 
 
       {/* Résultat du test */}
       {testResult && (
-        <div className={`px-3 py-2 rounded-lg border ${testResult.success ? "bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800" : "bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800"}`}>
-          <p className={`text-xs ${testResult.success ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+        <div
+          className={`px-3 py-2 rounded-lg border ${testResult.success ? "bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800" : "bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800"}`}
+        >
+          <p
+            className={`text-xs ${testResult.success ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
+          >
             {testResult.success
               ? `Connexion réussie${testResult.companyName ? ` — ${testResult.companyName}` : ""}`
               : testResult.message}
@@ -674,7 +687,9 @@ function PennylaneConnectionPanel({ app, isConnected, connectionDetail, actions 
       {/* Erreur */}
       {actions.error && !testResult && (
         <div className="px-3 py-2 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg">
-          <p className="text-xs text-red-600 dark:text-red-400">{actions.error}</p>
+          <p className="text-xs text-red-600 dark:text-red-400">
+            {actions.error}
+          </p>
         </div>
       )}
 
@@ -722,7 +737,21 @@ function PennylaneConnectionPanel({ app, isConnected, connectionDetail, actions 
 
 // ── Vue détail d'une app installée ──
 
-function AppDetailView({ app, onBack, isConnected, connectionDetail, stripeActions, bankingActions, pennylaneActions, isInstalled, onInstall, onUninstall, installLoading, uninstallLoading, canManage }) {
+function AppDetailView({
+  app,
+  onBack,
+  isConnected,
+  connectionDetail,
+  stripeActions,
+  bankingActions,
+  pennylaneActions,
+  isInstalled,
+  onInstall,
+  onUninstall,
+  installLoading,
+  uninstallLoading,
+  canManage,
+}) {
   return (
     <div className="space-y-6">
       {/* Back */}
@@ -819,201 +848,249 @@ function AppDetailView({ app, onBack, isConnected, connectionDetail, stripeActio
         </TabsNewList>
 
         {isInstalled && (
-        <TabsNewContent value="connexions" className="mt-6">
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-sm font-medium mb-1">Connexions actives</h3>
-              <p className="text-xs text-gray-400">
-                Gérez les connexions de cette application.
-              </p>
-            </div>
+          <TabsNewContent value="connexions" className="mt-6">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium mb-1">Connexions actives</h3>
+                <p className="text-xs text-gray-400">
+                  Gérez les connexions de cette application.
+                </p>
+              </div>
 
-            {/* ── Stripe ── */}
-            {app.id === "stripe" && stripeActions && (
-              <>
-                {isConnected ? (
-                  <div className="space-y-3">
-                    <div className="flex-shrink-0 flex items-center justify-between gap-6 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5 w-full min-h-[44px] overflow-hidden">
-                      <div className="flex items-center gap-3">
-                        <AppLogo src={app.logo} name={app.name} size="xs" bgColor={app.logoBg} />
-                        <p className="text-sm font-medium text-[#505154] dark:text-gray-400">
-                          {connectionDetail || "Application connectée et active."}
-                        </p>
+              {/* ── Stripe ── */}
+              {app.id === "stripe" && stripeActions && (
+                <>
+                  {isConnected ? (
+                    <div className="space-y-3">
+                      <div className="flex-shrink-0 flex items-center justify-between gap-6 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5 w-full min-h-[44px] overflow-hidden">
+                        <div className="flex items-center gap-3">
+                          <AppLogo
+                            src={app.logo}
+                            name={app.name}
+                            size="xs"
+                            bgColor={app.logoBg}
+                          />
+                          <p className="text-sm font-medium text-[#505154] dark:text-gray-400">
+                            {connectionDetail ||
+                              "Application connectée et active."}
+                          </p>
+                        </div>
+                        <span className="px-2 py-0.5 text-[11px] font-medium bg-green-50 border border-green-200 text-green-600 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 rounded-md flex-shrink-0">
+                          Active
+                        </span>
                       </div>
-                      <span className="px-2 py-0.5 text-[11px] font-medium bg-green-50 border border-green-200 text-green-600 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 rounded-md flex-shrink-0">
-                        Active
-                      </span>
-                    </div>
 
-                    {/* Stripe actions */}
-                    <div className="flex items-center gap-2">
-                      {stripeActions.stripeAccount && !stripeActions.stripeAccount.isOnboarded ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={stripeActions.onFinishSetup}
-                          disabled={!stripeActions.canManage}
-                          className="bg-[#635BFF] hover:bg-[#5A54E5] text-white cursor-pointer"
-                          title={!stripeActions.canManage ? "Réservé aux owners et admins" : "Finalisez votre configuration Stripe"}
-                        >
-                          <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-                          Finaliser la configuration
-                        </Button>
-                      ) : (
+                      {/* Stripe actions */}
+                      <div className="flex items-center gap-2">
+                        {stripeActions.stripeAccount &&
+                        !stripeActions.stripeAccount.isOnboarded ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={stripeActions.onFinishSetup}
+                            disabled={!stripeActions.canManage}
+                            className="bg-[#635BFF] hover:bg-[#5A54E5] text-white cursor-pointer"
+                            title={
+                              !stripeActions.canManage
+                                ? "Réservé aux owners et admins"
+                                : "Finalisez votre configuration Stripe"
+                            }
+                          >
+                            <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                            Finaliser la configuration
+                          </Button>
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={stripeActions.onOpenDashboard}
+                            disabled={!stripeActions.canManage}
+                            className="cursor-pointer"
+                            title={
+                              !stripeActions.canManage
+                                ? "Réservé aux owners et admins"
+                                : ""
+                            }
+                          >
+                            <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                            Tableau de bord
+                          </Button>
+                        )}
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={stripeActions.onOpenDashboard}
-                          disabled={!stripeActions.canManage}
-                          className="cursor-pointer"
-                          title={!stripeActions.canManage ? "Réservé aux owners et admins" : ""}
+                          onClick={stripeActions.onDisconnect}
+                          disabled={
+                            stripeActions.isLoading || !stripeActions.canManage
+                          }
+                          className="cursor-pointer text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
+                          title={
+                            !stripeActions.canManage
+                              ? "Réservé aux owners et admins"
+                              : ""
+                          }
                         >
-                          <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-                          Tableau de bord
+                          {stripeActions.isLoading ? "..." : "Déconnecter"}
                         </Button>
-                      )}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={stripeActions.onDisconnect}
-                        disabled={stripeActions.isLoading || !stripeActions.canManage}
-                        className="cursor-pointer text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
-                        title={!stripeActions.canManage ? "Réservé aux owners et admins" : ""}
-                      >
-                        {stripeActions.isLoading ? "..." : "Déconnecter"}
-                      </Button>
-                    </div>
+                      </div>
 
-                    {!stripeActions.canManage && (
-                      <p className="text-xs text-amber-600 dark:text-amber-400">
-                        Seuls les propriétaires et administrateurs peuvent gérer Stripe Connect
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-3">
+                      {!stripeActions.canManage && (
+                        <p className="text-xs text-amber-600 dark:text-amber-400">
+                          Seuls les propriétaires et administrateurs peuvent
+                          gérer Stripe Connect
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex-shrink-0 flex items-center justify-between gap-6 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2 w-full min-h-[44px] overflow-hidden">
+                        <div className="flex items-center gap-3">
+                          <Info className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                          <p className="text-sm font-medium text-[#505154] dark:text-gray-400">
+                            Connectez Stripe pour recevoir des paiements sur vos
+                            factures.
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={stripeActions.onConnect}
+                          disabled={
+                            stripeActions.isLoading || !stripeActions.canManage
+                          }
+                          className="bg-[#635BFF] hover:bg-[#5A54E5] text-white cursor-pointer"
+                          title={
+                            !stripeActions.canManage
+                              ? "Réservé aux owners et admins"
+                              : ""
+                          }
+                        >
+                          {stripeActions.isLoading
+                            ? "Connexion..."
+                            : "Connecter"}
+                        </Button>
+                      </div>
+                      {!stripeActions.canManage && (
+                        <p className="text-xs text-amber-600 dark:text-amber-400">
+                          Seuls les propriétaires et administrateurs peuvent
+                          gérer Stripe Connect
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* ── Bridge ── */}
+              {app.id === "bridge" && bankingActions && (
+                <>
+                  {isConnected ? (
+                    <div className="space-y-3">
+                      <div className="flex-shrink-0 flex items-center justify-between gap-6 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5 w-full min-h-[44px] overflow-hidden">
+                        <div className="flex items-center gap-3">
+                          <AppLogo
+                            src={app.logo}
+                            name={app.name}
+                            size="xs"
+                            bgColor={app.logoBg}
+                          />
+                          <p className="text-sm font-medium text-[#505154] dark:text-gray-400">
+                            {connectionDetail ||
+                              "Synchronisation bancaire active."}
+                          </p>
+                        </div>
+                        <span className="px-2 py-0.5 text-[11px] font-medium bg-green-50 border border-green-200 text-green-600 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 rounded-md flex-shrink-0">
+                          Active
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={bankingActions.onDisconnect}
+                          disabled={bankingActions.isLoading}
+                          className="cursor-pointer text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
+                        >
+                          {bankingActions.isLoading ? "..." : "Déconnecter"}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
                     <div className="flex-shrink-0 flex items-center justify-between gap-6 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2 w-full min-h-[44px] overflow-hidden">
                       <div className="flex items-center gap-3">
                         <Info className="w-4 h-4 text-gray-400 flex-shrink-0" />
                         <p className="text-sm font-medium text-[#505154] dark:text-gray-400">
-                          Connectez Stripe pour recevoir des paiements sur vos factures.
+                          Connectez votre banque pour synchroniser vos
+                          transactions.
                         </p>
                       </div>
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={stripeActions.onConnect}
-                        disabled={stripeActions.isLoading || !stripeActions.canManage}
-                        className="bg-[#635BFF] hover:bg-[#5A54E5] text-white cursor-pointer"
-                        title={!stripeActions.canManage ? "Réservé aux owners et admins" : ""}
-                      >
-                        {stripeActions.isLoading ? "Connexion..." : "Connecter"}
-                      </Button>
-                    </div>
-                    {!stripeActions.canManage && (
-                      <p className="text-xs text-amber-600 dark:text-amber-400">
-                        Seuls les propriétaires et administrateurs peuvent gérer Stripe Connect
-                      </p>
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* ── Bridge ── */}
-            {app.id === "bridge" && bankingActions && (
-              <>
-                {isConnected ? (
-                  <div className="space-y-3">
-                    <div className="flex-shrink-0 flex items-center justify-between gap-6 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5 w-full min-h-[44px] overflow-hidden">
-                      <div className="flex items-center gap-3">
-                        <AppLogo src={app.logo} name={app.name} size="xs" bgColor={app.logoBg} />
-                        <p className="text-sm font-medium text-[#505154] dark:text-gray-400">
-                          {connectionDetail || "Synchronisation bancaire active."}
-                        </p>
-                      </div>
-                      <span className="px-2 py-0.5 text-[11px] font-medium bg-green-50 border border-green-200 text-green-600 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 rounded-md flex-shrink-0">
-                        Active
+                      <span className="px-2 py-0.5 text-[11px] font-medium bg-amber-50 border border-amber-200 text-amber-500 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400 rounded-md flex-shrink-0">
+                        Non connectée
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={bankingActions.onDisconnect}
-                        disabled={bankingActions.isLoading}
-                        className="cursor-pointer text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
-                      >
-                        {bankingActions.isLoading ? "..." : "Déconnecter"}
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex-shrink-0 flex items-center justify-between gap-6 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2 w-full min-h-[44px] overflow-hidden">
-                    <div className="flex items-center gap-3">
-                      <Info className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                      <p className="text-sm font-medium text-[#505154] dark:text-gray-400">
-                        Connectez votre banque pour synchroniser vos transactions.
-                      </p>
-                    </div>
-                    <span className="px-2 py-0.5 text-[11px] font-medium bg-amber-50 border border-amber-200 text-amber-500 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400 rounded-md flex-shrink-0">
-                      Non connectée
-                    </span>
-                  </div>
-                )}
-              </>
-            )}
+                  )}
+                </>
+              )}
 
-            {/* ── Pennylane ── */}
-            {app.id === "pennylane" && pennylaneActions && (
-              <PennylaneConnectionPanel
-                app={app}
-                isConnected={isConnected}
-                connectionDetail={connectionDetail}
-                actions={pennylaneActions}
-              />
-            )}
+              {/* ── Pennylane ── */}
+              {app.id === "pennylane" && pennylaneActions && (
+                <PennylaneConnectionPanel
+                  app={app}
+                  isConnected={isConnected}
+                  connectionDetail={connectionDetail}
+                  actions={pennylaneActions}
+                />
+              )}
 
-            {/* ── Autres apps (générique) ── */}
-            {app.id !== "stripe" && app.id !== "bridge" && app.id !== "pennylane" && (
-              <>
-                {isConnected ? (
-                  <div className="flex-shrink-0 flex items-center justify-between gap-6 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5 w-full min-h-[44px] overflow-hidden">
-                    <div className="flex items-center gap-3">
-                      <AppLogo src={app.logo} name={app.name} size="xs" bgColor={app.logoBg} />
-                      <p className="text-sm font-medium text-[#505154] dark:text-gray-400">
-                        {connectionDetail || "Application connectée et active."}
-                      </p>
-                    </div>
-                    <span className="px-2 py-0.5 text-[11px] font-medium bg-green-50 border border-green-200 text-green-600 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 rounded-md flex-shrink-0">
-                      Active
-                    </span>
-                  </div>
-                ) : (
-                  <div className="flex-shrink-0 flex items-center justify-between gap-6 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2 w-full min-h-[44px] overflow-hidden">
-                    <div className="flex items-center gap-3">
-                      <Info className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                      <p className="text-sm font-medium text-[#505154] dark:text-gray-400">
-                        Cette application nécessite une connexion pour être utilisée.
-                      </p>
-                    </div>
-                    <Button
-                      type="button"
-                      size="sm"
-                      className="bg-[#5b4eff] hover:bg-[#4a3eee] dark:text-white cursor-pointer"
-                    >
-                      <Plus className="w-3.5 h-3.5 mr-1.5" />
-                      Connecter
-                    </Button>
-                  </div>
+              {/* ── Autres apps (générique) ── */}
+              {app.id !== "stripe" &&
+                app.id !== "bridge" &&
+                app.id !== "pennylane" && (
+                  <>
+                    {isConnected ? (
+                      <div className="flex-shrink-0 flex items-center justify-between gap-6 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5 w-full min-h-[44px] overflow-hidden">
+                        <div className="flex items-center gap-3">
+                          <AppLogo
+                            src={app.logo}
+                            name={app.name}
+                            size="xs"
+                            bgColor={app.logoBg}
+                          />
+                          <p className="text-sm font-medium text-[#505154] dark:text-gray-400">
+                            {connectionDetail ||
+                              "Application connectée et active."}
+                          </p>
+                        </div>
+                        <span className="px-2 py-0.5 text-[11px] font-medium bg-green-50 border border-green-200 text-green-600 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 rounded-md flex-shrink-0">
+                          Active
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex-shrink-0 flex items-center justify-between gap-6 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2 w-full min-h-[44px] overflow-hidden">
+                        <div className="flex items-center gap-3">
+                          <Info className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                          <p className="text-sm font-medium text-[#505154] dark:text-gray-400">
+                            Cette application nécessite une connexion pour être
+                            utilisée.
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="bg-[#5b4eff] hover:bg-[#4a3eee] dark:text-white cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5 mr-1.5" />
+                          Connecter
+                        </Button>
+                      </div>
+                    )}
+                  </>
                 )}
-              </>
-            )}
-          </div>
-        </TabsNewContent>
+            </div>
+          </TabsNewContent>
         )}
 
         <TabsNewContent value="a-propos" className="mt-6">
@@ -1027,9 +1104,7 @@ function AppDetailView({ app, onBack, isConnected, connectionDetail, stripeActio
                 </p>
                 <div className="flex items-center gap-2">
                   {(() => {
-                    const cat = CATEGORIES.find(
-                      (c) => c.id === app.category
-                    );
+                    const cat = CATEGORIES.find((c) => c.id === app.category);
                     const CatIcon = cat?.icon;
                     return (
                       <>
@@ -1125,30 +1200,32 @@ function AppDetailView({ app, onBack, isConnected, connectionDetail, stripeActio
                 Comment ça marche
               </h3>
               <p className="text-sm leading-6 tracking-tight text-[#505154] dark:text-gray-400">
-                Intégrez {app.name} pour automatiser vos flux de travail
-                et synchroniser vos données directement avec Newbi.
+                Intégrez {app.name} pour automatiser vos flux de travail et
+                synchroniser vos données directement avec Newbi.
               </p>
 
               <h3 className="text-xl font-semibold text-[#242529] dark:text-white mb-2 mt-8">
                 Configurer
               </h3>
               <p className="text-sm leading-6 tracking-tight text-[#505154] dark:text-gray-400">
-                Un administrateur peut suivre ces étapes pour connecter
-                votre compte {app.name} :
+                Un administrateur peut suivre ces étapes pour connecter votre
+                compte {app.name} :
               </p>
               <ol className="list-decimal list-inside mt-3 space-y-1.5 text-sm leading-6 tracking-tight text-[#505154] dark:text-gray-400">
                 <li>
-                  Allez dans les <strong className="dark:text-gray-200">Paramètres</strong> de votre
-                  espace de travail.
+                  Allez dans les{" "}
+                  <strong className="dark:text-gray-200">Paramètres</strong> de
+                  votre espace de travail.
                 </li>
                 <li>
-                  Ouvrez <strong className="dark:text-gray-200">Applications</strong>, recherchez{" "}
-                  <strong className="dark:text-gray-200">{app.name}</strong> et cliquez sur{" "}
+                  Ouvrez{" "}
+                  <strong className="dark:text-gray-200">Applications</strong>,
+                  recherchez{" "}
+                  <strong className="dark:text-gray-200">{app.name}</strong> et
+                  cliquez sur{" "}
                   <strong className="dark:text-gray-200">Installer</strong>.
                 </li>
-                <li>
-                  Connectez-vous à {app.name} et autorisez l'accès.
-                </li>
+                <li>Connectez-vous à {app.name} et autorisez l'accès.</li>
               </ol>
             </div>
           </div>
@@ -1219,7 +1296,8 @@ export function ApplicationsSection() {
   const [selectedApp, setSelectedApp] = useState(null);
 
   // Modal Stripe onboarding
-  const [isStripeOnboardingModalOpen, setIsStripeOnboardingModalOpen] = useState(false);
+  const [isStripeOnboardingModalOpen, setIsStripeOnboardingModalOpen] =
+    useState(false);
   const [stripeOnboardingStep, setStripeOnboardingStep] = useState(1);
 
   // Hooks pour vérifier le statut réel des connexions
@@ -1286,7 +1364,10 @@ export function ApplicationsSection() {
 
     window.addEventListener("stripeConfigComplete", handleStripeConfigComplete);
     return () => {
-      window.removeEventListener("stripeConfigComplete", handleStripeConfigComplete);
+      window.removeEventListener(
+        "stripeConfigComplete",
+        handleStripeConfigComplete,
+      );
     };
   }, [refetchStripeStatus]);
 
@@ -1300,7 +1381,11 @@ export function ApplicationsSection() {
     if (stripeSuccess === "true" || stripeConnectSuccess === "true") {
       refetchStripeStatus();
       if (stripeSuccess === "true") {
-        window.history.replaceState({}, document.title, window.location.pathname);
+        window.history.replaceState(
+          {},
+          document.title,
+          window.location.pathname,
+        );
       }
     } else if (stripeRefresh === "true") {
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -1345,7 +1430,15 @@ export function ApplicationsSection() {
       }
       return { ...app, installed, connected: false };
     });
-  }, [isStripeConnected, stripeCanReceive, isBankingConnected, bankingAccountsCount, isPennylaneConnected, pennylaneAccount, isAppInstalled]);
+  }, [
+    isStripeConnected,
+    stripeCanReceive,
+    isBankingConnected,
+    bankingAccountsCount,
+    isPennylaneConnected,
+    pennylaneAccount,
+    isAppInstalled,
+  ]);
 
   const installedApps = appsWithStatus.filter((app) => app.installed);
 
@@ -1526,9 +1619,7 @@ export function ApplicationsSection() {
 
       {/* Section Parcourir */}
       <div>
-        <h3 className="text-sm font-medium mb-1">
-          Parcourir les applications
-        </h3>
+        <h3 className="text-sm font-medium mb-1">Parcourir les applications</h3>
         <p className="text-xs text-gray-400 mb-4">
           Découvrez de nouvelles applications pour améliorer votre productivité.
         </p>

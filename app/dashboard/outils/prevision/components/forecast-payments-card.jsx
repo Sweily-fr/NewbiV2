@@ -11,22 +11,17 @@ import {
   ReferenceArea,
   Tooltip,
 } from "recharts";
-import {
-  Card,
-  CardContent,
-} from "@/src/components/ui/card";
-import {
-  ChartContainer,
-} from "@/src/components/ui/chart";
+import { Card, CardContent } from "@/src/components/ui/card";
+import { ChartContainer } from "@/src/components/ui/chart";
 import { Skeleton } from "@/src/components/ui/skeleton";
 
 // ─── Chart config ───
 
 const chartConfig = {
-  actualIncome: { label: "Entrées réelles", color: "#22c55e" },
-  forecastIncome: { label: "Prév. entrées", color: "#22c55e" },
-  actualExpense: { label: "Sorties réelles", color: "#fca5a5" },
-  forecastExpense: { label: "Prév. sorties", color: "#f87171" },
+  actualIncome: { label: "Entrées réelles", color: "#5b50ff" },
+  forecastIncome: { label: "Prév. entrées", color: "#5b50ff" },
+  actualExpense: { label: "Sorties réelles", color: "#333333" },
+  forecastExpense: { label: "Prév. sorties", color: "#000000" },
   balance: { label: "Solde", color: "#3b82f6" },
 };
 
@@ -85,8 +80,14 @@ const CATEGORY_LABELS = {
 };
 
 const CATEGORY_COLORS = [
-  "#3B82F6", "#2DD4BF", "#F59E0B", "#EF4444", "#8B5CF6",
-  "#EC4899", "#14B8A6", "#F97316",
+  "#3B82F6",
+  "#2DD4BF",
+  "#F59E0B",
+  "#EF4444",
+  "#8B5CF6",
+  "#EC4899",
+  "#14B8A6",
+  "#F97316",
 ];
 
 // ─── Custom Tooltip (Qonto style) ───
@@ -103,15 +104,22 @@ function CustomTooltip({ active, payload }) {
     month: "long",
     year: "numeric",
   });
-  const capitalizedLabel = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+  const capitalizedLabel =
+    monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
 
   const forecastIncome = data.rawForecastIncome || 0;
   const actualIncome = data.actualIncome || 0;
   const forecastExpense = data.rawForecastExpense || 0;
   const actualExpense = data.actualExpense || 0;
 
-  const incomePct = forecastIncome > 0 ? Math.round((actualIncome / forecastIncome) * 100) : null;
-  const expensePct = forecastExpense > 0 ? Math.round((actualExpense / forecastExpense) * 100) : null;
+  const incomePct =
+    forecastIncome > 0
+      ? Math.round((actualIncome / forecastIncome) * 100)
+      : null;
+  const expensePct =
+    forecastExpense > 0
+      ? Math.round((actualExpense / forecastExpense) * 100)
+      : null;
 
   return (
     <div className="bg-background rounded-xl shadow-lg border border-border p-4 min-w-[240px]">
@@ -122,26 +130,34 @@ function CustomTooltip({ active, payload }) {
       {/* Entrées */}
       {(forecastIncome > 0 || actualIncome > 0) && (
         <div className="mb-3">
-          <div className="text-xs font-medium text-foreground mb-1.5">Entrées</div>
+          <div className="text-xs font-medium text-foreground mb-1.5">
+            Entrées
+          </div>
           {forecastIncome > 0 && (
             <div className="flex items-center justify-between gap-3 mb-1">
               <div className="flex items-center gap-2">
                 <span
                   className="inline-block w-3 h-3 rounded-sm"
                   style={{
-                    backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(34,197,94,0.5) 2px, rgba(34,197,94,0.5) 4px)",
-                    backgroundColor: "rgba(34,197,94,0.15)",
+                    backgroundImage:
+                      "repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(91,80,255,0.5) 2px, rgba(91,80,255,0.5) 4px)",
+                    backgroundColor: "rgba(91,80,255,0.15)",
                   }}
                 />
                 <span className="text-xs text-muted-foreground">Prévision</span>
               </div>
-              <span className="text-xs font-medium text-foreground">{formatCurrency(forecastIncome)}</span>
+              <span className="text-xs font-medium text-foreground">
+                {formatCurrency(forecastIncome)}
+              </span>
             </div>
           )}
           {actualIncome > 0 && (
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <span className="inline-block w-3 h-3 rounded-sm bg-green-500" />
+                <span
+                  className="inline-block w-3 h-3 rounded-sm"
+                  style={{ backgroundColor: "#5b50ff" }}
+                />
                 <span className="text-xs text-muted-foreground">Réelles</span>
               </div>
               <div className="flex items-center gap-2">
@@ -150,7 +166,9 @@ function CustomTooltip({ active, payload }) {
                     {incomePct}%
                   </span>
                 )}
-                <span className="text-xs font-medium text-foreground">{formatCurrency(actualIncome)}</span>
+                <span className="text-xs font-medium text-foreground">
+                  {formatCurrency(actualIncome)}
+                </span>
               </div>
             </div>
           )}
@@ -160,26 +178,34 @@ function CustomTooltip({ active, payload }) {
       {/* Sorties */}
       {(forecastExpense > 0 || actualExpense > 0) && (
         <div>
-          <div className="text-xs font-medium text-foreground mb-1.5">Sorties</div>
+          <div className="text-xs font-medium text-foreground mb-1.5">
+            Sorties
+          </div>
           {forecastExpense > 0 && (
             <div className="flex items-center justify-between gap-3 mb-1">
               <div className="flex items-center gap-2">
                 <span
                   className="inline-block w-3 h-3 rounded-sm"
                   style={{
-                    backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(248,113,113,0.5) 2px, rgba(248,113,113,0.5) 4px)",
-                    backgroundColor: "rgba(248,113,113,0.15)",
+                    backgroundImage:
+                      "repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.4) 2px, rgba(0,0,0,0.4) 4px)",
+                    backgroundColor: "rgba(0,0,0,0.15)",
                   }}
                 />
                 <span className="text-xs text-muted-foreground">Prévision</span>
               </div>
-              <span className="text-xs font-medium text-foreground">{formatCurrency(forecastExpense)}</span>
+              <span className="text-xs font-medium text-foreground">
+                {formatCurrency(forecastExpense)}
+              </span>
             </div>
           )}
           {actualExpense > 0 && (
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <span className="inline-block w-3 h-3 rounded-sm bg-red-400" />
+                <span
+                  className="inline-block w-3 h-3 rounded-sm"
+                  style={{ backgroundColor: "#000000" }}
+                />
                 <span className="text-xs text-muted-foreground">Réelles</span>
               </div>
               <div className="flex items-center gap-2">
@@ -188,7 +214,9 @@ function CustomTooltip({ active, payload }) {
                     {expensePct}%
                   </span>
                 )}
-                <span className="text-xs font-medium text-foreground">{formatCurrency(actualExpense)}</span>
+                <span className="text-xs font-medium text-foreground">
+                  {formatCurrency(actualExpense)}
+                </span>
               </div>
             </div>
           )}
@@ -202,22 +230,95 @@ function CustomTooltip({ active, payload }) {
 
 function HatchedIcon() {
   return (
-    <svg width="48" height="56" viewBox="0 0 48 56" fill="none" className="shrink-0">
+    <svg
+      width="48"
+      height="56"
+      viewBox="0 0 48 56"
+      fill="none"
+      className="shrink-0"
+    >
       <defs>
-        <pattern id="hatch-icon-1" patternUnits="userSpaceOnUse" width="3" height="3">
-          <line x1="0" y1="0" x2="0" y2="3" stroke="#0D9488" strokeWidth="1.5" opacity="0.7" />
+        <pattern
+          id="hatch-icon-1"
+          patternUnits="userSpaceOnUse"
+          width="3"
+          height="3"
+        >
+          <line
+            x1="0"
+            y1="0"
+            x2="0"
+            y2="3"
+            stroke="#0D9488"
+            strokeWidth="1.5"
+            opacity="0.7"
+          />
         </pattern>
-        <pattern id="hatch-icon-2" patternUnits="userSpaceOnUse" width="3" height="3">
-          <line x1="0" y1="0" x2="0" y2="3" stroke="#0D9488" strokeWidth="1.5" opacity="0.5" />
+        <pattern
+          id="hatch-icon-2"
+          patternUnits="userSpaceOnUse"
+          width="3"
+          height="3"
+        >
+          <line
+            x1="0"
+            y1="0"
+            x2="0"
+            y2="3"
+            stroke="#0D9488"
+            strokeWidth="1.5"
+            opacity="0.5"
+          />
         </pattern>
-        <pattern id="hatch-icon-3" patternUnits="userSpaceOnUse" width="3" height="3">
-          <line x1="0" y1="0" x2="0" y2="3" stroke="#0D9488" strokeWidth="1.5" opacity="0.35" />
+        <pattern
+          id="hatch-icon-3"
+          patternUnits="userSpaceOnUse"
+          width="3"
+          height="3"
+        >
+          <line
+            x1="0"
+            y1="0"
+            x2="0"
+            y2="3"
+            stroke="#0D9488"
+            strokeWidth="1.5"
+            opacity="0.35"
+          />
         </pattern>
       </defs>
-      <rect x="2" y="8" width="10" height="48" rx="2" fill="url(#hatch-icon-1)" />
-      <rect x="14" y="18" width="10" height="38" rx="2" fill="url(#hatch-icon-2)" />
-      <rect x="26" y="26" width="10" height="30" rx="2" fill="url(#hatch-icon-3)" />
-      <rect x="38" y="34" width="8" height="22" rx="2" fill="url(#hatch-icon-3)" />
+      <rect
+        x="2"
+        y="8"
+        width="10"
+        height="48"
+        rx="2"
+        fill="url(#hatch-icon-1)"
+      />
+      <rect
+        x="14"
+        y="18"
+        width="10"
+        height="38"
+        rx="2"
+        fill="url(#hatch-icon-2)"
+      />
+      <rect
+        x="26"
+        y="26"
+        width="10"
+        height="30"
+        rx="2"
+        fill="url(#hatch-icon-3)"
+      />
+      <rect
+        x="38"
+        y="34"
+        width="8"
+        height="22"
+        rx="2"
+        fill="url(#hatch-icon-3)"
+      />
     </svg>
   );
 }
@@ -241,8 +342,14 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
       actualIncome: m.actualIncome || 0,
       actualExpense: m.actualExpense || 0,
       // Forecast remainder (hatched bars) — portion above actual
-      forecastIncome: Math.max(0, (m.forecastIncome || 0) - (m.actualIncome || 0)),
-      forecastExpense: Math.max(0, (m.forecastExpense || 0) - (m.actualExpense || 0)),
+      forecastIncome: Math.max(
+        0,
+        (m.forecastIncome || 0) - (m.actualIncome || 0),
+      ),
+      forecastExpense: Math.max(
+        0,
+        (m.forecastExpense || 0) - (m.actualExpense || 0),
+      ),
       // Raw forecast for tooltip
       rawForecastIncome: m.forecastIncome || 0,
       rawForecastExpense: m.forecastExpense || 0,
@@ -258,36 +365,56 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
       (m.categoryBreakdown || []).forEach((cb) => {
         if (cb.type !== type) return;
         const key = cb.category;
-        if (!catMap[key]) catMap[key] = { category: key, type: cb.type, amount: 0 };
+        if (!catMap[key])
+          catMap[key] = { category: key, type: cb.type, amount: 0 };
         const isPast = m.month <= currentMonth;
-        catMap[key].amount += isPast ? (cb.actualAmount || 0) : (cb.forecastAmount || 0);
+        catMap[key].amount += isPast
+          ? cb.actualAmount || 0
+          : cb.forecastAmount || 0;
       });
     });
     const all = Object.values(catMap).filter((c) => c.amount > 0);
     const total = all.reduce((s, c) => s + c.amount, 0);
     const sorted = [...all].sort((a, b) => b.amount - a.amount).slice(0, limit);
-    return { categories: sorted.map((c, i) => ({
-      ...c,
-      label: CATEGORY_LABELS[c.category] || c.category,
-      color: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
-      pct: total > 0 ? ((c.amount / total) * 100).toFixed(1) : "0",
-    })), total };
+    return {
+      categories: sorted.map((c, i) => ({
+        ...c,
+        label: CATEGORY_LABELS[c.category] || c.category,
+        color: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
+        pct: total > 0 ? ((c.amount / total) * 100).toFixed(1) : "0",
+      })),
+      total,
+    };
   };
 
   const { categories: topIncome, total: totalIncome } = useMemo(
-    () => safeMonths.length ? buildCategoryList("INCOME", 3) : { categories: [], total: 0 },
-    [safeMonths, currentMonth]
+    () =>
+      safeMonths.length
+        ? buildCategoryList("INCOME", 3)
+        : { categories: [], total: 0 },
+    [safeMonths, currentMonth],
   );
   const { categories: topExpense, total: totalExpense } = useMemo(
-    () => safeMonths.length ? buildCategoryList("EXPENSE", 3) : { categories: [], total: 0 },
-    [safeMonths, currentMonth]
+    () =>
+      safeMonths.length
+        ? buildCategoryList("EXPENSE", 3)
+        : { categories: [], total: 0 },
+    [safeMonths, currentMonth],
   );
 
   const today = new Date();
-  const todayDate = today.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
-  const timeStr = today.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  const todayDate = today.toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  const timeStr = today.toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
-  const totalAmount = (kpi?.pendingPayables || 0) + (kpi?.pendingReceivables || 0);
+  const totalAmount =
+    (kpi?.pendingPayables || 0) + (kpi?.pendingReceivables || 0);
 
   // Current month index for highlight
   const currentIdx = chartData.findIndex((d) => d.isCurrent);
@@ -317,7 +444,9 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
           <div className="flex items-center gap-4">
             <HatchedIcon />
             <div>
-              <p className="text-sm text-muted-foreground mb-1">Paiements en attente</p>
+              <p className="text-sm text-muted-foreground mb-1">
+                Paiements en attente
+              </p>
               <p className="text-[32px] font-medium text-foreground leading-tight tracking-tight">
                 {formatCurrencyShort(totalAmount)}
               </p>
@@ -325,12 +454,20 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
           </div>
           <div className="flex items-start gap-12">
             <div className="text-center">
-              <p className="text-xs text-muted-foreground font-normal mb-1.5">Encaissements</p>
-              <p className="text-xl font-medium text-foreground">{formatCurrencyShort(kpi?.pendingReceivables || 0)}</p>
+              <p className="text-xs text-muted-foreground font-normal mb-1.5">
+                Encaissements
+              </p>
+              <p className="text-xl font-medium text-foreground">
+                {formatCurrencyShort(kpi?.pendingReceivables || 0)}
+              </p>
             </div>
             <div className="text-center">
-              <p className="text-xs text-muted-foreground font-normal mb-1.5">Décaissements</p>
-              <p className="text-xl font-medium text-foreground">{formatCurrencyShort(kpi?.pendingPayables || 0)}</p>
+              <p className="text-xs text-muted-foreground font-normal mb-1.5">
+                Décaissements
+              </p>
+              <p className="text-xl font-medium text-foreground">
+                {formatCurrencyShort(kpi?.pendingPayables || 0)}
+              </p>
             </div>
             <div className="text-right">
               <p className="text-xs">
@@ -350,18 +487,35 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
               {/* ── Entrées ── */}
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-[13px] font-medium text-emerald-600">Entrées</p>
-                  <p className="text-[13px] font-medium text-foreground">{formatCurrencyShort(totalIncome)}</p>
+                  <p
+                    className="text-[13px] font-medium"
+                    style={{ color: "#5b50ff" }}
+                  >
+                    Entrées
+                  </p>
+                  <p className="text-[13px] font-medium text-foreground">
+                    {formatCurrencyShort(totalIncome)}
+                  </p>
                 </div>
                 {topIncome.length > 0 ? (
                   <div className="flex flex-col gap-3">
                     {topIncome.map((cat) => (
-                      <div key={cat.category} className="flex items-center justify-between">
+                      <div
+                        key={cat.category}
+                        className="flex items-center justify-between"
+                      >
                         <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full shrink-0 bg-emerald-500" />
-                          <span className="text-sm text-foreground">{cat.label}</span>
+                          <span
+                            className="w-2 h-2 rounded-full shrink-0"
+                            style={{ backgroundColor: "#5b50ff" }}
+                          />
+                          <span className="text-sm text-foreground">
+                            {cat.label}
+                          </span>
                         </div>
-                        <span className="text-sm tabular-nums text-foreground">{formatCurrencyShort(cat.amount)}</span>
+                        <span className="text-sm tabular-nums text-foreground">
+                          {formatCurrencyShort(cat.amount)}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -373,18 +527,35 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
               {/* ── Sorties ── */}
               <div className="pt-6 border-t border-border">
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-[13px] font-medium text-red-400">Sorties</p>
-                  <p className="text-[13px] font-medium text-foreground">{formatCurrencyShort(totalExpense)}</p>
+                  <p
+                    className="text-[13px] font-medium"
+                    style={{ color: "#000000" }}
+                  >
+                    Sorties
+                  </p>
+                  <p className="text-[13px] font-medium text-foreground">
+                    {formatCurrencyShort(totalExpense)}
+                  </p>
                 </div>
                 {topExpense.length > 0 ? (
                   <div className="flex flex-col gap-3">
                     {topExpense.map((cat) => (
-                      <div key={cat.category} className="flex items-center justify-between">
+                      <div
+                        key={cat.category}
+                        className="flex items-center justify-between"
+                      >
                         <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full shrink-0 bg-red-400" />
-                          <span className="text-sm text-foreground">{cat.label}</span>
+                          <span
+                            className="w-2 h-2 rounded-full shrink-0"
+                            style={{ backgroundColor: "#000000" }}
+                          />
+                          <span className="text-sm text-foreground">
+                            {cat.label}
+                          </span>
                         </div>
-                        <span className="text-sm tabular-nums text-foreground">{formatCurrencyShort(cat.amount)}</span>
+                        <span className="text-sm tabular-nums text-foreground">
+                          {formatCurrencyShort(cat.amount)}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -396,10 +567,15 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
 
             {/* Right: chart */}
             <div className="flex-1 min-w-0 px-8 pt-6 pb-8">
-              <p className="text-sm font-medium text-foreground mb-4">Flux mensuels</p>
+              <p className="text-sm font-medium text-foreground mb-4">
+                Flux mensuels
+              </p>
 
               {chartData.length > 0 ? (
-                <ChartContainer config={chartConfig} className="aspect-auto h-[400px] w-full">
+                <ChartContainer
+                  config={chartConfig}
+                  className="aspect-auto h-[400px] w-full"
+                >
                   <ComposedChart
                     data={chartData}
                     margin={{ top: 12, right: 12, bottom: 12, left: 0 }}
@@ -413,8 +589,16 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                         height="6"
                         patternTransform="rotate(45)"
                       >
-                        <rect width="6" height="6" fill="#dcfce7" />
-                        <line x1="0" y1="0" x2="0" y2="6" stroke="#22c55e" strokeWidth="2.5" strokeOpacity="0.5" />
+                        <rect width="6" height="6" fill="#e8e6ff" />
+                        <line
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="6"
+                          stroke="#5b50ff"
+                          strokeWidth="2.5"
+                          strokeOpacity="0.5"
+                        />
                       </pattern>
                       {/* Hatched pattern for forecast expense (red) */}
                       <pattern
@@ -424,17 +608,43 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                         height="6"
                         patternTransform="rotate(45)"
                       >
-                        <rect width="6" height="6" fill="#fee2e2" />
-                        <line x1="0" y1="0" x2="0" y2="6" stroke="#f87171" strokeWidth="2.5" strokeOpacity="0.5" />
+                        <rect width="6" height="6" fill="#e5e5e5" />
+                        <line
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="6"
+                          stroke="#000000"
+                          strokeWidth="2.5"
+                          strokeOpacity="0.5"
+                        />
                       </pattern>
                       {/* Gradient under balance line for forecast zone */}
-                      <linearGradient id="balanceGradientPayments" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.12} />
-                        <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.02} />
+                      <linearGradient
+                        id="balanceGradientPayments"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="0%"
+                          stopColor="#3b82f6"
+                          stopOpacity={0.12}
+                        />
+                        <stop
+                          offset="100%"
+                          stopColor="#3b82f6"
+                          stopOpacity={0.02}
+                        />
                       </linearGradient>
                     </defs>
 
-                    <CartesianGrid vertical={false} strokeDasharray="0" className="stroke-border" />
+                    <CartesianGrid
+                      vertical={false}
+                      strokeDasharray="0"
+                      className="stroke-border"
+                    />
 
                     {/* Current month highlight */}
                     {currentIdx >= 0 && (
@@ -454,7 +664,9 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                       tickMargin={12}
                       interval={0}
                       tick={({ x, y, payload }) => {
-                        const dataItem = chartData.find((d) => d.label === payload.value);
+                        const dataItem = chartData.find(
+                          (d) => d.label === payload.value,
+                        );
                         const isCurrent = dataItem?.isCurrent;
                         return (
                           <text
@@ -483,21 +695,45 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                       }}
                       width={50}
                     />
-                    <YAxis
-                      yAxisId="balance"
-                      orientation="right"
-                      hide={true}
-                    />
+                    <YAxis yAxisId="balance" orientation="right" hide={true} />
 
                     <Tooltip content={<CustomTooltip />} cursor={false} />
 
                     {/* Income: actual (solid green) + forecast remainder (hatched green) */}
-                    <Bar yAxisId="bars" dataKey="actualIncome" stackId="income" fill="#22c55e" barSize={20} radius={[4, 4, 0, 0]} />
-                    <Bar yAxisId="bars" dataKey="forecastIncome" stackId="income" fill="url(#hatchIncomePayments)" barSize={20} radius={[4, 4, 0, 0]} />
+                    <Bar
+                      yAxisId="bars"
+                      dataKey="actualIncome"
+                      stackId="income"
+                      fill="#5b50ff"
+                      barSize={20}
+                      radius={[4, 4, 0, 0]}
+                    />
+                    <Bar
+                      yAxisId="bars"
+                      dataKey="forecastIncome"
+                      stackId="income"
+                      fill="url(#hatchIncomePayments)"
+                      barSize={20}
+                      radius={[4, 4, 0, 0]}
+                    />
 
                     {/* Expense: actual (solid red) + forecast remainder (hatched red) */}
-                    <Bar yAxisId="bars" dataKey="actualExpense" stackId="expense" fill="#fca5a5" barSize={20} radius={[4, 4, 0, 0]} />
-                    <Bar yAxisId="bars" dataKey="forecastExpense" stackId="expense" fill="url(#hatchExpensePayments)" barSize={20} radius={[4, 4, 0, 0]} />
+                    <Bar
+                      yAxisId="bars"
+                      dataKey="actualExpense"
+                      stackId="expense"
+                      fill="#333333"
+                      barSize={20}
+                      radius={[4, 4, 0, 0]}
+                    />
+                    <Bar
+                      yAxisId="bars"
+                      dataKey="forecastExpense"
+                      stackId="expense"
+                      fill="url(#hatchExpensePayments)"
+                      barSize={20}
+                      radius={[4, 4, 0, 0]}
+                    />
 
                     {/* Balance line (separate right axis) */}
                     <Line
@@ -506,8 +742,18 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                       type="monotone"
                       stroke="#3b82f6"
                       strokeWidth={2}
-                      dot={{ r: 3, fill: "#ffffff", stroke: "#3b82f6", strokeWidth: 2 }}
-                      activeDot={{ r: 5, fill: "#ffffff", stroke: "#3b82f6", strokeWidth: 2 }}
+                      dot={{
+                        r: 3,
+                        fill: "#ffffff",
+                        stroke: "#3b82f6",
+                        strokeWidth: 2,
+                      }}
+                      activeDot={{
+                        r: 5,
+                        fill: "#ffffff",
+                        stroke: "#3b82f6",
+                        strokeWidth: 2,
+                      }}
                       connectNulls
                     />
                   </ComposedChart>

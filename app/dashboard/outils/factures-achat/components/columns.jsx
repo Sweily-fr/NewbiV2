@@ -21,12 +21,33 @@ import { findMerchant } from "@/lib/merchants-config";
 import { MerchantLogo } from "@/app/dashboard/outils/transactions/components/merchant-logo";
 
 const STATUS_CONFIG = {
-  TO_PROCESS: { label: "À traiter", className: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300" },
-  TO_PAY: { label: "À payer", className: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400" },
-  PENDING: { label: "En attente", className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
-  PAID: { label: "Payée", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
-  OVERDUE: { label: "En retard", className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
-  ARCHIVED: { label: "Archivée", className: "bg-gray-50 text-gray-500 dark:bg-gray-900 dark:text-gray-500" },
+  TO_PROCESS: {
+    label: "À traiter",
+    className: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+  },
+  TO_PAY: {
+    label: "À payer",
+    className:
+      "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
+  },
+  PENDING: {
+    label: "En attente",
+    className:
+      "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  },
+  PAID: {
+    label: "Payée",
+    className:
+      "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  },
+  OVERDUE: {
+    label: "En retard",
+    className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+  },
+  ARCHIVED: {
+    label: "Archivée",
+    className: "bg-gray-50 text-gray-500 dark:bg-gray-900 dark:text-gray-500",
+  },
 };
 
 function parseDate(value) {
@@ -70,7 +91,7 @@ function SortableHeader({ column, children }) {
   );
 }
 
-export const columns = [
+export const getColumns = ({ onViewInvoice } = {}) => [
   {
     id: "select",
     size: 28,
@@ -100,7 +121,7 @@ export const columns = [
   },
   {
     accessorKey: "supplierName",
-    size: 200,
+    size: 140,
     header: ({ column }) => (
       <SortableHeader column={column}>Fournisseur</SortableHeader>
     ),
@@ -109,11 +130,7 @@ export const columns = [
       const merchant = findMerchant(name || "");
       return (
         <div className="flex items-center gap-3">
-          <MerchantLogo
-            merchant={merchant}
-            fallbackText={name}
-            size="sm"
-          />
+          <MerchantLogo merchant={merchant} fallbackText={name} size="sm" />
           <div className="font-normal truncate max-w-[200px]" title={name}>
             {merchant?.name || name || "Fournisseur"}
           </div>
@@ -125,7 +142,10 @@ export const columns = [
   {
     accessorKey: "invoiceNumber",
     size: 130,
-    header: "N° Facture",
+    header: ({ column }) => (
+      <SortableHeader column={column}>Référence</SortableHeader>
+    ),
+    meta: { label: "Référence" },
     cell: ({ row }) => (
       <div className="font-normal text-muted-foreground">
         {row.getValue("invoiceNumber") || "—"}
@@ -133,8 +153,51 @@ export const columns = [
     ),
   },
   {
+    accessorKey: "amountHT",
+    size: 110,
+    meta: { label: "Montant HT" },
+    header: ({ column }) => (
+      <SortableHeader column={column}>Montant HT</SortableHeader>
+    ),
+    cell: ({ row }) => {
+      const amount = row.getValue("amountHT");
+      if (amount === undefined || amount === null)
+        return <div className="font-normal text-muted-foreground">—</div>;
+      return (
+        <div className="font-normal">
+          {new Intl.NumberFormat("fr-FR", {
+            minimumFractionDigits: 2,
+          }).format(amount)}{" "}
+          €
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "amountTVA",
+    size: 100,
+    meta: { label: "TVA" },
+    header: ({ column }) => (
+      <SortableHeader column={column}>TVA</SortableHeader>
+    ),
+    cell: ({ row }) => {
+      const amount = row.getValue("amountTVA");
+      if (amount === undefined || amount === null)
+        return <div className="font-normal text-muted-foreground">—</div>;
+      return (
+        <div className="font-normal">
+          {new Intl.NumberFormat("fr-FR", {
+            minimumFractionDigits: 2,
+          }).format(amount)}{" "}
+          €
+        </div>
+      );
+    },
+  },
+  {
     accessorKey: "amountTTC",
     size: 110,
+    meta: { label: "Montant TTC" },
     header: ({ column }) => (
       <SortableHeader column={column}>Montant TTC</SortableHeader>
     ),
@@ -153,8 +216,9 @@ export const columns = [
   {
     accessorKey: "issueDate",
     size: 100,
+    meta: { label: "Date d'émission" },
     header: ({ column }) => (
-      <SortableHeader column={column}>Date</SortableHeader>
+      <SortableHeader column={column}>Date d&apos;émission</SortableHeader>
     ),
     cell: ({ row }) => {
       const date = row.getValue("issueDate");
@@ -170,13 +234,15 @@ export const columns = [
   {
     accessorKey: "dueDate",
     size: 100,
+    meta: { label: "Date d'échéance" },
     header: ({ column }) => (
-      <SortableHeader column={column}>Échéance</SortableHeader>
+      <SortableHeader column={column}>Date d&apos;échéance</SortableHeader>
     ),
     cell: ({ row }) => {
       const date = row.original.dueDate;
       const parsed = parseDate(date);
-      if (!parsed) return <div className="font-normal text-muted-foreground">—</div>;
+      if (!parsed)
+        return <div className="font-normal text-muted-foreground">—</div>;
 
       const isOverdue = parsed < new Date() && row.original.status !== "PAID";
       return (
@@ -189,6 +255,7 @@ export const columns = [
   {
     accessorKey: "category",
     size: 130,
+    meta: { label: "Catégorie" },
     header: "Catégorie",
     cell: ({ row }) => {
       const category = row.getValue("category");
@@ -210,6 +277,7 @@ export const columns = [
   {
     accessorKey: "status",
     size: 110,
+    meta: { label: "Statut" },
     header: "Statut",
     cell: ({ row }) => {
       const status = row.getValue("status");
@@ -253,7 +321,7 @@ export const columns = [
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onViewInvoice?.(invoice)}>
                 <Eye className="h-4 w-4 mr-2" />
                 Voir
               </DropdownMenuItem>

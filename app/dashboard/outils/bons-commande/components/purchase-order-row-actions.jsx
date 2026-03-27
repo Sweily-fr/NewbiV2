@@ -35,9 +35,7 @@ import {
   useChangePurchaseOrderStatus,
   useDeletePurchaseOrder,
   PURCHASE_ORDER_STATUS,
-  GET_PURCHASE_ORDER,
 } from "@/src/graphql/purchaseOrderQueries";
-import { useApolloClient } from "@apollo/client";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/components/ui/sonner";
 import PurchaseOrderSidebar from "./purchase-order-sidebar";
@@ -69,14 +67,19 @@ const formatDateForEmail = (dateValue) => {
   }
 };
 
-export default function PurchaseOrderRowActions({ row, onRefetch, onSendEmail, onSaveAsTemplate }) {
+export default function PurchaseOrderRowActions({
+  row,
+  onRefetch,
+  onSendEmail,
+  onSaveAsTemplate,
+}) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const router = useRouter();
   const purchaseOrder = row.original;
 
-  const apolloClient = useApolloClient();
   const { workspaceId } = useRequiredWorkspace();
-  const { changeStatus, loading: changingStatus } = useChangePurchaseOrderStatus();
+  const { changeStatus, loading: changingStatus } =
+    useChangePurchaseOrderStatus();
   const { deletePurchaseOrder, loading: isDeleting } = useDeletePurchaseOrder();
 
   const handleView = () => {
@@ -147,33 +150,28 @@ export default function PurchaseOrderRowActions({ row, onRefetch, onSendEmail, o
     }
   };
 
-  const handleConvertToInvoice = async () => {
+  const handleConvertToInvoice = () => {
     try {
-      const { data } = await apolloClient.query({
-        query: GET_PURCHASE_ORDER,
-        variables: { workspaceId, id: purchaseOrder.id },
-        fetchPolicy: "cache-and-network",
-      });
-      const po = data?.purchaseOrder;
-      if (!po) {
-        toast.error("Impossible de récupérer le bon de commande");
-        return;
-      }
-      sessionStorage.setItem('purchaseOrderInvoiceData', JSON.stringify({
-        sourcePurchaseOrderId: po.id,
-        purchaseOrderNumber: `${po.prefix || ''}-${po.number || ''}`,
-        client: po.client,
-        items: po.items,
-        discount: po.discount,
-        discountType: po.discountType,
-        customFields: po.customFields,
-        shipping: po.shipping,
-        isReverseCharge: po.isReverseCharge,
-        retenueGarantie: po.retenueGarantie,
-        escompte: po.escompte,
-      }));
-      router.push('/dashboard/outils/factures/new');
+      const po = purchaseOrder;
+      sessionStorage.setItem(
+        "purchaseOrderInvoiceData",
+        JSON.stringify({
+          sourcePurchaseOrderId: po.id,
+          purchaseOrderNumber: `${po.prefix || ""}-${po.number || ""}`,
+          client: po.client,
+          items: po.items,
+          discount: po.discount,
+          discountType: po.discountType,
+          customFields: po.customFields,
+          shipping: po.shipping,
+          isReverseCharge: po.isReverseCharge,
+          retenueGarantie: po.retenueGarantie,
+          escompte: po.escompte,
+        }),
+      );
+      router.push("/dashboard/outils/factures/new");
     } catch (error) {
+      console.error("Erreur conversion BC → Facture:", error);
       toast.error("Erreur lors de la conversion en facture");
     }
   };
@@ -183,13 +181,15 @@ export default function PurchaseOrderRowActions({ row, onRefetch, onSendEmail, o
   // Déterminer les actions disponibles selon le statut
   const isDraft = purchaseOrder.status === PURCHASE_ORDER_STATUS.DRAFT;
   const isConfirmed = purchaseOrder.status === PURCHASE_ORDER_STATUS.CONFIRMED;
-  const isInProgress = purchaseOrder.status === PURCHASE_ORDER_STATUS.IN_PROGRESS;
+  const isInProgress =
+    purchaseOrder.status === PURCHASE_ORDER_STATUS.IN_PROGRESS;
   const isDelivered = purchaseOrder.status === PURCHASE_ORDER_STATUS.DELIVERED;
 
   const hasStatusActions = isDraft || isConfirmed || isInProgress;
   const canConvertToInvoice =
     (isConfirmed || isInProgress || isDelivered) &&
-    (!purchaseOrder.linkedInvoices || purchaseOrder.linkedInvoices.length === 0);
+    (!purchaseOrder.linkedInvoices ||
+      purchaseOrder.linkedInvoices.length === 0);
 
   return (
     <>
@@ -259,7 +259,9 @@ export default function PurchaseOrderRowActions({ row, onRefetch, onSendEmail, o
               )}
 
               {/* Actions de statut */}
-              {(hasStatusActions || canConvertToInvoice) && <DropdownMenuSeparator />}
+              {(hasStatusActions || canConvertToInvoice) && (
+                <DropdownMenuSeparator />
+              )}
 
               {isDraft && (
                 <DropdownMenuItem onClick={handleConfirm} disabled={isLoading}>
@@ -270,11 +272,17 @@ export default function PurchaseOrderRowActions({ row, onRefetch, onSendEmail, o
 
               {isConfirmed && (
                 <>
-                  <DropdownMenuItem onClick={handleStartProgress} disabled={isLoading}>
+                  <DropdownMenuItem
+                    onClick={handleStartProgress}
+                    disabled={isLoading}
+                  >
                     <Play className="mr-2 h-4 w-4" />
                     Démarrer le traitement
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleRevertToDraft} disabled={isLoading}>
+                  <DropdownMenuItem
+                    onClick={handleRevertToDraft}
+                    disabled={isLoading}
+                  >
                     <RotateCcw className="mr-2 h-4 w-4" />
                     Repasser en brouillon
                   </DropdownMenuItem>
@@ -287,7 +295,10 @@ export default function PurchaseOrderRowActions({ row, onRefetch, onSendEmail, o
 
               {isInProgress && (
                 <>
-                  <DropdownMenuItem onClick={handleDeliver} disabled={isLoading}>
+                  <DropdownMenuItem
+                    onClick={handleDeliver}
+                    disabled={isLoading}
+                  >
                     <Truck className="mr-2 h-4 w-4" />
                     Marquer comme livré
                   </DropdownMenuItem>
@@ -299,7 +310,10 @@ export default function PurchaseOrderRowActions({ row, onRefetch, onSendEmail, o
               )}
 
               {canConvertToInvoice && (
-                <DropdownMenuItem onClick={handleConvertToInvoice} disabled={isLoading}>
+                <DropdownMenuItem
+                  onClick={handleConvertToInvoice}
+                  disabled={isLoading}
+                >
                   <FileCheck className="mr-2 h-4 w-4" />
                   Convertir en facture
                 </DropdownMenuItem>
@@ -327,7 +341,6 @@ export default function PurchaseOrderRowActions({ row, onRefetch, onSendEmail, o
         onClose={() => setIsSidebarOpen(false)}
         onRefetch={onRefetch}
       />
-
     </>
   );
 }

@@ -16,7 +16,12 @@ import {
   ComposedChart,
 } from "recharts";
 import { ChartContainer } from "@/src/components/ui/chart";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { getTransactionCategory } from "@/lib/bank-categories-config";
 
@@ -42,41 +47,41 @@ const CATEGORY_LABELS = {
 
 // Mapping des noms de catégories Bridge → enum interne
 const BANK_NAME_TO_CATEGORY = {
-  "Alimentation": "MEALS",
-  "Restaurants": "MEALS",
-  "Courses": "MEALS",
-  "Transport": "TRAVEL",
-  "Carburant": "TRAVEL",
+  Alimentation: "MEALS",
+  Restaurants: "MEALS",
+  Courses: "MEALS",
+  Transport: "TRAVEL",
+  Carburant: "TRAVEL",
   "Transports en commun": "TRAVEL",
   "Taxi/VTC": "TRAVEL",
-  "Parking": "TRAVEL",
-  "Logement": "RENT",
-  "Loyer": "RENT",
-  "Charges": "UTILITIES",
+  Parking: "TRAVEL",
+  Logement: "RENT",
+  Loyer: "RENT",
+  Charges: "UTILITIES",
   "Assurance habitation": "INSURANCE",
-  "Loisirs": "OTHER",
-  "Sorties": "OTHER",
-  "Voyages": "ACCOMMODATION",
-  "Sport": "OTHER",
-  "Santé": "SERVICES",
-  "Médecin": "SERVICES",
-  "Pharmacie": "SERVICES",
-  "Mutuelle": "INSURANCE",
-  "Shopping": "OTHER",
-  "Vêtements": "OTHER",
+  Loisirs: "OTHER",
+  Sorties: "OTHER",
+  Voyages: "ACCOMMODATION",
+  Sport: "OTHER",
+  Santé: "SERVICES",
+  Médecin: "SERVICES",
+  Pharmacie: "SERVICES",
+  Mutuelle: "INSURANCE",
+  Shopping: "OTHER",
+  Vêtements: "OTHER",
   "High-tech": "HARDWARE",
-  "Maison": "OFFICE_SUPPLIES",
-  "Services": "SERVICES",
+  Maison: "OFFICE_SUPPLIES",
+  Services: "SERVICES",
   "Téléphone/Internet": "SUBSCRIPTIONS",
-  "Abonnements": "SUBSCRIPTIONS",
-  "Banque": "SERVICES",
+  Abonnements: "SUBSCRIPTIONS",
+  Banque: "SERVICES",
   "Impôts & Taxes": "TAXES",
   "Impôt sur le revenu": "TAXES",
   "Taxe foncière": "TAXES",
-  "Éducation": "TRAINING",
-  "Formation": "TRAINING",
-  "Livres": "TRAINING",
-  "Autre": "OTHER",
+  Éducation: "TRAINING",
+  Formation: "TRAINING",
+  Livres: "TRAINING",
+  Autre: "OTHER",
   "Non catégorisé": "OTHER",
 };
 
@@ -102,7 +107,13 @@ const CATEGORY_COLORS_MAP = {
 };
 
 const PAYMENT_COLORS = [
-  "#5b50ff", "#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#a855f7", "#06b6d4",
+  "#5b50ff",
+  "#10b981",
+  "#3b82f6",
+  "#f59e0b",
+  "#ef4444",
+  "#a855f7",
+  "#06b6d4",
 ];
 
 const PAYMENT_LABELS = {
@@ -170,24 +181,37 @@ function MonthlyTooltip({ active, payload }) {
       <div className="space-y-1">
         <div className="flex items-center justify-between gap-6">
           <span className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ backgroundColor: "#5b50ff" }}
+            />
             Revenus HT
           </span>
           <span className="font-medium">{formatCurrency(data.revenueHT)}</span>
         </div>
         <div className="flex items-center justify-between gap-6">
           <span className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ backgroundColor: "#000000" }}
+            />
             Dépenses HT
           </span>
-          <span className="font-medium">{formatCurrency(data.expenseAmount)}</span>
+          <span className="font-medium">
+            {formatCurrency(data.expenseAmount)}
+          </span>
         </div>
         <div className="flex items-center justify-between gap-6 border-t pt-1 mt-1">
           <span className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#5b50ff" }} />
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ backgroundColor: "#5b50ff" }}
+            />
             Marge brute
           </span>
-          <span className={`font-medium ${data.grossMargin >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+          <span
+            className={`font-medium ${data.grossMargin >= 0 ? "text-emerald-600" : "text-red-600"}`}
+          >
             {formatCurrency(data.grossMargin)}
           </span>
         </div>
@@ -196,7 +220,13 @@ function MonthlyTooltip({ active, payload }) {
   );
 }
 
-export function AnalyticsExpenseCategoryChart({ expenseByCategory, totalExpensesHT, totalExpensesTTC, bankTransactions, loading }) {
+export function AnalyticsExpenseCategoryChart({
+  expenseByCategory,
+  totalExpensesHT,
+  totalExpensesTTC,
+  bankTransactions,
+  loading,
+}) {
   const chartData = useMemo(() => {
     // Aggregate bank transactions by mapped internal category
     const bankByCategory = {};
@@ -215,7 +245,7 @@ export function AnalyticsExpenseCategoryChart({ expenseByCategory, totalExpenses
 
     // Check if expense model data is mostly "OTHER"
     const expenseNonOther = (expenseByCategory || []).filter(
-      (c) => c.category !== "OTHER"
+      (c) => c.category !== "OTHER",
     );
     const expenseMostlyOther =
       expenseNonOther.length === 0 && (expenseByCategory || []).length > 0;
@@ -238,7 +268,7 @@ export function AnalyticsExpenseCategoryChart({ expenseByCategory, totalExpenses
         const otherAmount = merged.OTHER.amount;
         const bankTotal = Object.values(bankByCategory).reduce(
           (s, d) => s + d.amount,
-          0
+          0,
         );
         if (bankTotal > 0) {
           delete merged.OTHER;
@@ -285,14 +315,16 @@ export function AnalyticsExpenseCategoryChart({ expenseByCategory, totalExpenses
 
   const totalAmount = useMemo(
     () => chartData.reduce((s, e) => s + e.amount, 0),
-    [chartData]
+    [chartData],
   );
 
   if (loading) {
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Dépenses par catégorie</CardTitle>
+          <CardTitle className="text-sm font-medium">
+            Dépenses par catégorie
+          </CardTitle>
         </CardHeader>
         <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
           <Skeleton className="min-h-[200px] w-full" />
@@ -305,7 +337,9 @@ export function AnalyticsExpenseCategoryChart({ expenseByCategory, totalExpenses
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Dépenses par catégorie</CardTitle>
+          <CardTitle className="text-sm font-medium">
+            Dépenses par catégorie
+          </CardTitle>
         </CardHeader>
         <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 flex items-center justify-center flex-1 min-h-[200px] text-muted-foreground">
           Aucune donnée
@@ -317,7 +351,9 @@ export function AnalyticsExpenseCategoryChart({ expenseByCategory, totalExpenses
   return (
     <Card className="shadow-xs flex flex-col min-h-0 py-4">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Dépenses par catégorie</CardTitle>
+        <CardTitle className="text-sm font-medium">
+          Dépenses par catégorie
+        </CardTitle>
       </CardHeader>
       <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
         <div className="flex items-center gap-8">
@@ -327,10 +363,7 @@ export function AnalyticsExpenseCategoryChart({ expenseByCategory, totalExpenses
               className="aspect-square h-[280px] w-[280px]"
             >
               <PieChart>
-                <Tooltip
-                  content={<CategoryTooltip />}
-                  cursor={false}
-                />
+                <Tooltip content={<CategoryTooltip />} cursor={false} />
                 <Pie
                   data={chartData}
                   dataKey="amount"
@@ -401,7 +434,11 @@ export function AnalyticsExpenseCategoryChart({ expenseByCategory, totalExpenses
   );
 }
 
-export function AnalyticsRevenueVsExpenseChart({ monthlyRevenue, bankTransactions, loading }) {
+export function AnalyticsRevenueVsExpenseChart({
+  monthlyRevenue,
+  bankTransactions,
+  loading,
+}) {
   const chartData = useMemo(() => {
     if (!monthlyRevenue?.length) return [];
 
@@ -414,7 +451,8 @@ export function AnalyticsRevenueVsExpenseChart({ monthlyRevenue, bankTransaction
       const d = new Date(rawDate);
       if (isNaN(d.getTime())) return;
       const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      bankExpenseByMonth[monthKey] = (bankExpenseByMonth[monthKey] || 0) + Math.abs(t.amount);
+      bankExpenseByMonth[monthKey] =
+        (bankExpenseByMonth[monthKey] || 0) + Math.abs(t.amount);
     });
 
     return monthlyRevenue.map((m) => {
@@ -425,14 +463,14 @@ export function AnalyticsRevenueVsExpenseChart({ monthlyRevenue, bankTransaction
         ...m,
         monthLabel: formatMonthLabel(m.month),
         expenseAmount: expense,
-        grossMargin: m.grossMargin ?? ((m.revenueHT || 0) - expense),
+        grossMargin: m.grossMargin ?? (m.revenueHT || 0) - expense,
       };
     });
   }, [monthlyRevenue, bankTransactions]);
 
   const chartConfig = {
-    revenueHT: { label: "Revenus HT", color: "#10b981" },
-    expenseAmount: { label: "Dépenses", color: "#ef4444" },
+    revenueHT: { label: "Revenus HT", color: "#5b50ff" },
+    expenseAmount: { label: "Dépenses", color: "#000000" },
     grossMargin: { label: "Marge brute", color: "#5b50ff" },
   };
 
@@ -440,7 +478,9 @@ export function AnalyticsRevenueVsExpenseChart({ monthlyRevenue, bankTransaction
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Revenus vs Dépenses</CardTitle>
+          <CardTitle className="text-sm font-medium">
+            Revenus vs Dépenses
+          </CardTitle>
         </CardHeader>
         <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
           <Skeleton className="min-h-[200px] w-full" />
@@ -453,7 +493,9 @@ export function AnalyticsRevenueVsExpenseChart({ monthlyRevenue, bankTransaction
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Revenus vs Dépenses</CardTitle>
+          <CardTitle className="text-sm font-medium">
+            Revenus vs Dépenses
+          </CardTitle>
         </CardHeader>
         <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 flex items-center justify-center flex-1 min-h-[200px] text-muted-foreground">
           Aucune donnée
@@ -465,11 +507,19 @@ export function AnalyticsRevenueVsExpenseChart({ monthlyRevenue, bankTransaction
   return (
     <Card className="shadow-xs flex flex-col min-h-0 py-4">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Revenus vs Dépenses</CardTitle>
+        <CardTitle className="text-sm font-medium">
+          Revenus vs Dépenses
+        </CardTitle>
       </CardHeader>
       <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
-        <ChartContainer config={chartConfig} className="flex-1 min-h-[350px] w-full">
-          <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+        <ChartContainer
+          config={chartConfig}
+          className="flex-1 min-h-[350px] w-full"
+        >
+          <ComposedChart
+            data={chartData}
+            margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+          >
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis
               dataKey="monthLabel"
@@ -480,7 +530,14 @@ export function AnalyticsRevenueVsExpenseChart({ monthlyRevenue, bankTransaction
             />
             <YAxis
               tick={({ y, payload }) => (
-                <text x={0} y={y} textAnchor="start" dominantBaseline="middle" fontSize={11} className="fill-muted-foreground">
+                <text
+                  x={0}
+                  y={y}
+                  textAnchor="start"
+                  dominantBaseline="middle"
+                  fontSize={11}
+                  className="fill-muted-foreground"
+                >
                   {`${(payload.value / 1000).toFixed(0)}k`}
                 </text>
               )}
@@ -489,8 +546,20 @@ export function AnalyticsRevenueVsExpenseChart({ monthlyRevenue, bankTransaction
               width={35}
             />
             <Tooltip content={<MonthlyTooltip />} />
-            <Bar dataKey="revenueHT" fill="#10b981" fillOpacity={0.8} radius={[4, 4, 0, 0]} barSize={20} />
-            <Bar dataKey="expenseAmount" fill="#ef4444" fillOpacity={0.7} radius={[4, 4, 0, 0]} barSize={20} />
+            <Bar
+              dataKey="revenueHT"
+              fill="#5b50ff"
+              fillOpacity={0.8}
+              radius={[4, 4, 0, 0]}
+              barSize={20}
+            />
+            <Bar
+              dataKey="expenseAmount"
+              fill="#000000"
+              fillOpacity={0.7}
+              radius={[4, 4, 0, 0]}
+              barSize={20}
+            />
             <Line
               type="bump"
               dataKey="grossMargin"
@@ -528,7 +597,9 @@ export function AnalyticsPaymentMethodChart({ paymentMethodStats, loading }) {
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Méthodes de paiement</CardTitle>
+          <CardTitle className="text-sm font-medium">
+            Méthodes de paiement
+          </CardTitle>
         </CardHeader>
         <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
           <Skeleton className="min-h-[300px] w-full" />
@@ -541,7 +612,9 @@ export function AnalyticsPaymentMethodChart({ paymentMethodStats, loading }) {
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Méthodes de paiement</CardTitle>
+          <CardTitle className="text-sm font-medium">
+            Méthodes de paiement
+          </CardTitle>
         </CardHeader>
         <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 flex items-center justify-center flex-1 min-h-[300px] text-muted-foreground">
           Aucune donnée
@@ -553,48 +626,54 @@ export function AnalyticsPaymentMethodChart({ paymentMethodStats, loading }) {
   return (
     <Card className="shadow-xs flex flex-col min-h-0 py-4">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Méthodes de paiement</CardTitle>
+        <CardTitle className="text-sm font-medium">
+          Méthodes de paiement
+        </CardTitle>
       </CardHeader>
       <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
-      <ChartContainer config={chartConfig} className="h-[300px] w-full">
-        <PieChart>
-          <Pie
-            data={chartData}
-            dataKey="totalTTC"
-            nameKey="name"
-            cx="50%"
-            cy="50%"
-            outerRadius={100}
-            innerRadius={70}
-            paddingAngle={2}
-          >
-            {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.fill} />
-            ))}
-          </Pie>
-          <Tooltip
-            content={({ active, payload }) => {
-              if (!active || !payload?.length) return null;
-              const data = payload[0]?.payload;
-              if (!data) return null;
-              return (
-                <div className="rounded-lg border bg-background p-3 shadow-sm text-sm">
-                  <p className="font-medium mb-1">{data.name}</p>
-                  <div className="flex items-center justify-between gap-4">
-                    <span>Total TTC</span>
-                    <span className="font-medium">{formatCurrency(data.totalTTC)}</span>
+        <ChartContainer config={chartConfig} className="h-[300px] w-full">
+          <PieChart>
+            <Pie
+              data={chartData}
+              dataKey="totalTTC"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              outerRadius={100}
+              innerRadius={70}
+              paddingAngle={2}
+            >
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.fill} />
+              ))}
+            </Pie>
+            <Tooltip
+              content={({ active, payload }) => {
+                if (!active || !payload?.length) return null;
+                const data = payload[0]?.payload;
+                if (!data) return null;
+                return (
+                  <div className="rounded-lg border bg-background p-3 shadow-sm text-sm">
+                    <p className="font-medium mb-1">{data.name}</p>
+                    <div className="flex items-center justify-between gap-4">
+                      <span>Total TTC</span>
+                      <span className="font-medium">
+                        {formatCurrency(data.totalTTC)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <span>Nombre</span>
+                      <span className="font-medium">{data.count}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <span>Nombre</span>
-                    <span className="font-medium">{data.count}</span>
-                  </div>
-                </div>
-              );
-            }}
-          />
-          <Legend formatter={(value) => <span className="text-xs">{value}</span>} />
-        </PieChart>
-      </ChartContainer>
+                );
+              }}
+            />
+            <Legend
+              formatter={(value) => <span className="text-xs">{value}</span>}
+            />
+          </PieChart>
+        </ChartContainer>
       </CardContent>
     </Card>
   );

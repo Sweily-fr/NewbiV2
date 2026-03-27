@@ -321,6 +321,131 @@ export function useInvoiceTable({
         size: 200,
       },
       {
+        id: "reference",
+        accessorFn: (row) => {
+          if (row._type === "imported") return row.invoiceNumber || "";
+          if (!row.number) return "";
+          return row.prefix ? `${row.prefix}${row.number}` : row.number;
+        },
+        header: ({ column }) => (
+          <div
+            className="flex items-center cursor-pointer font-normal"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Référence
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </div>
+        ),
+        meta: {
+          label: "Référence",
+        },
+        cell: ({ row }) => {
+          const invoice = row.original;
+          if (invoice._type === "imported") {
+            return (
+              <div className="font-normal text-muted-foreground">
+                {invoice.invoiceNumber || "—"}
+              </div>
+            );
+          }
+          const ref = invoice.prefix
+            ? `${invoice.prefix}${invoice.number}`
+            : invoice.number;
+          return (
+            <div className="font-normal">
+              {ref || (
+                <span className="text-muted-foreground italic">Brouillon</span>
+              )}
+            </div>
+          );
+        },
+        size: 130,
+      },
+      {
+        accessorKey: "finalTotalHT",
+        header: ({ column }) => (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="h-auto p-0 font-normal"
+          >
+            Montant HT
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        ),
+        meta: {
+          label: "Montant HT",
+        },
+        cell: ({ row }) => {
+          const invoice = row.original;
+          if (invoice._type === "imported") {
+            const amount = invoice.totalHT || 0;
+            return (
+              <div className="font-normal">
+                {new Intl.NumberFormat("fr-FR", {
+                  style: "currency",
+                  currency: invoice.currency || "EUR",
+                }).format(amount)}
+              </div>
+            );
+          }
+          const amount = invoice.finalTotalHT ?? invoice.totalHT;
+          if (amount === undefined || amount === null || isNaN(amount))
+            return "—";
+          return (
+            <div className="font-normal">
+              {new Intl.NumberFormat("fr-FR", {
+                style: "currency",
+                currency: "EUR",
+              }).format(amount)}
+            </div>
+          );
+        },
+        size: 110,
+      },
+      {
+        accessorKey: "finalTotalVAT",
+        header: ({ column }) => (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="h-auto p-0 font-normal"
+          >
+            TVA
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        ),
+        meta: {
+          label: "TVA",
+        },
+        cell: ({ row }) => {
+          const invoice = row.original;
+          if (invoice._type === "imported") {
+            const amount = invoice.totalVAT || 0;
+            return (
+              <div className="font-normal">
+                {new Intl.NumberFormat("fr-FR", {
+                  style: "currency",
+                  currency: invoice.currency || "EUR",
+                }).format(amount)}
+              </div>
+            );
+          }
+          const amount = invoice.finalTotalVAT ?? invoice.totalVAT;
+          if (amount === undefined || amount === null || isNaN(amount))
+            return "—";
+          return (
+            <div className="font-normal">
+              {new Intl.NumberFormat("fr-FR", {
+                style: "currency",
+                currency: "EUR",
+              }).format(amount)}
+            </div>
+          );
+        },
+        size: 100,
+      },
+      {
         accessorKey: "issueDate",
         header: ({ column }) => (
           <div

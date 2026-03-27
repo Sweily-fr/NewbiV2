@@ -11,12 +11,17 @@ import {
   Tooltip,
 } from "recharts";
 import { ChartContainer } from "@/src/components/ui/chart";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
 
 const chartConfig = {
-  revenueHT: { label: "CA HT", color: "#10b981" },
-  expenseAmount: { label: "Dépenses HT", color: "#ef4444" },
+  revenueHT: { label: "CA HT", color: "#5b50ff" },
+  expenseAmount: { label: "Dépenses HT", color: "#000000" },
   grossMarginComputed: { label: "Marge brute", color: "#5b50ff" },
 };
 
@@ -56,24 +61,37 @@ function CustomTooltip({ active, payload }) {
       <div className="space-y-1">
         <div className="flex items-center justify-between gap-6">
           <span className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ backgroundColor: "#5b50ff" }}
+            />
             CA HT
           </span>
           <span className="font-medium">{formatCurrency(data.revenueHT)}</span>
         </div>
         <div className="flex items-center justify-between gap-6">
           <span className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ backgroundColor: "#000000" }}
+            />
             Dépenses HT
           </span>
-          <span className="font-medium">{formatCurrency(data.expenseAmount)}</span>
+          <span className="font-medium">
+            {formatCurrency(data.expenseAmount)}
+          </span>
         </div>
         <div className="flex items-center justify-between gap-6 border-t pt-1 mt-1">
           <span className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#5b50ff" }} />
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ backgroundColor: "#5b50ff" }}
+            />
             Marge brute
           </span>
-          <span className={`font-medium ${data.grossMarginComputed >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+          <span
+            className={`font-medium ${data.grossMarginComputed >= 0 ? "text-emerald-600" : "text-red-600"}`}
+          >
             {formatCurrency(data.grossMarginComputed)}
           </span>
         </div>
@@ -82,7 +100,11 @@ function CustomTooltip({ active, payload }) {
   );
 }
 
-export function AnalyticsRevenueChart({ monthlyRevenue, bankTransactions, loading }) {
+export function AnalyticsRevenueChart({
+  monthlyRevenue,
+  bankTransactions,
+  loading,
+}) {
   const chartData = useMemo(() => {
     if (!monthlyRevenue?.length) return [];
 
@@ -95,7 +117,8 @@ export function AnalyticsRevenueChart({ monthlyRevenue, bankTransactions, loadin
       const d = new Date(rawDate);
       if (isNaN(d.getTime())) return;
       const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      bankExpenseByMonth[monthKey] = (bankExpenseByMonth[monthKey] || 0) + Math.abs(t.amount);
+      bankExpenseByMonth[monthKey] =
+        (bankExpenseByMonth[monthKey] || 0) + Math.abs(t.amount);
     });
 
     return monthlyRevenue.map((m) => {
@@ -106,7 +129,7 @@ export function AnalyticsRevenueChart({ monthlyRevenue, bankTransactions, loadin
         ...m,
         monthLabel: formatMonthLabel(m.month),
         expenseAmount: expense,
-        grossMarginComputed: m.grossMargin ?? ((m.revenueHT || 0) - expense),
+        grossMarginComputed: m.grossMargin ?? (m.revenueHT || 0) - expense,
       };
     });
   }, [monthlyRevenue, bankTransactions]);
@@ -115,7 +138,9 @@ export function AnalyticsRevenueChart({ monthlyRevenue, bankTransactions, loadin
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">CA, Dépenses et Marge brute</CardTitle>
+          <CardTitle className="text-sm font-medium">
+            CA, Dépenses et Marge brute
+          </CardTitle>
         </CardHeader>
         <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
           <Skeleton className="min-h-[200px] w-full" />
@@ -128,7 +153,9 @@ export function AnalyticsRevenueChart({ monthlyRevenue, bankTransactions, loadin
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">CA, Dépenses et Marge brute</CardTitle>
+          <CardTitle className="text-sm font-medium">
+            CA, Dépenses et Marge brute
+          </CardTitle>
         </CardHeader>
         <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 flex items-center justify-center flex-1 min-h-[200px] text-muted-foreground">
           Aucune donnée pour cette période
@@ -140,55 +167,70 @@ export function AnalyticsRevenueChart({ monthlyRevenue, bankTransactions, loadin
   return (
     <Card className="shadow-xs flex flex-col min-h-0 py-4">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">CA, Dépenses et Marge brute</CardTitle>
+        <CardTitle className="text-sm font-medium">
+          CA, Dépenses et Marge brute
+        </CardTitle>
       </CardHeader>
       <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
-        <ChartContainer config={chartConfig} className="flex-1 min-h-[350px] w-full">
-        <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} />
-          <XAxis
-            dataKey="monthLabel"
-            tick={{ fontSize: 11 }}
-            tickLine={false}
-            axisLine={false}
-            interval={0}
-          />
-          <YAxis
-            tickCount={6}
-            tick={({ y, payload }) => (
-              <text x={0} y={y} textAnchor="start" dominantBaseline="middle" fontSize={11} className="fill-muted-foreground">
-                {`${(payload.value / 1000).toFixed(0)}k`}
-              </text>
-            )}
-            tickLine={false}
-            axisLine={false}
-            width={35}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Bar
-            dataKey="revenueHT"
-            fill="#10b981"
-            fillOpacity={0.8}
-            radius={[4, 4, 0, 0]}
-            barSize={20}
-          />
-          <Bar
-            dataKey="expenseAmount"
-            fill="#ef4444"
-            fillOpacity={0.7}
-            radius={[4, 4, 0, 0]}
-            barSize={20}
-          />
-          <Line
-            type="bump"
-            dataKey="grossMarginComputed"
-            stroke="#5b50ff"
-            strokeWidth={2}
-            dot={false}
-            activeDot={{ r: 5 }}
-          />
-        </ComposedChart>
-      </ChartContainer>
+        <ChartContainer
+          config={chartConfig}
+          className="flex-1 min-h-[350px] w-full"
+        >
+          <ComposedChart
+            data={chartData}
+            margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis
+              dataKey="monthLabel"
+              tick={{ fontSize: 11 }}
+              tickLine={false}
+              axisLine={false}
+              interval={0}
+            />
+            <YAxis
+              tickCount={6}
+              tick={({ y, payload }) => (
+                <text
+                  x={0}
+                  y={y}
+                  textAnchor="start"
+                  dominantBaseline="middle"
+                  fontSize={11}
+                  className="fill-muted-foreground"
+                >
+                  {`${(payload.value / 1000).toFixed(0)}k`}
+                </text>
+              )}
+              tickLine={false}
+              axisLine={false}
+              width={35}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar
+              dataKey="revenueHT"
+              fill="#5b50ff"
+              fillOpacity={0.8}
+              radius={[4, 4, 0, 0]}
+              barSize={20}
+            />
+            <Bar
+              dataKey="expenseAmount"
+              fill="#000000"
+              fillOpacity={0.7}
+              radius={[4, 4, 0, 0]}
+              barSize={20}
+            />
+            <Line
+              type="bump"
+              dataKey="grossMarginComputed"
+              stroke="#5b50ff"
+              strokeWidth={2}
+              dot={false}
+              activeDot={{ r: 5 }}
+            />
+          </ComposedChart>
+        </ChartContainer>
       </CardContent>
     </Card>
   );

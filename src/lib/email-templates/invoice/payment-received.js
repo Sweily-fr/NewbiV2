@@ -48,7 +48,7 @@ export const invoicePaymentReceived = ({
 
           <!-- Titre -->
           <h1 style="font-size: 26px; font-weight: 500; color: #1a1a1a; margin: 0 0 24px 0; line-height: 1.3;">
-            Votre paiement a été confirmé
+            Votre facture a été réglée
           </h1>
 
           <!-- Salutation -->
@@ -58,7 +58,7 @@ export const invoicePaymentReceived = ({
 
           <!-- Message -->
           <p style="font-size: 15px; color: #4b5563; margin: 0 0 24px 0; line-height: 1.6;">
-            Merci pour votre paiement ! La facture <strong style="color: #1a1a1a;">${invoiceNumber}</strong> a été automatiquement marquée comme payée.
+            La facture <strong style="color: #1a1a1a;">${invoiceNumber}</strong> a été automatiquement marquée comme payée.
           </p>
 
           <!-- Détails -->
@@ -98,7 +98,7 @@ export const invoicePaymentReceived = ({
             Votre gestion, simplifiée.
           </p>
           <p style="font-size: 12px; color: #9ca3af; margin: 0 0 24px 0; line-height: 1.8;">
-            Vous recevez cet email suite à votre paiement sur Newbi. • <a href="https://newbi.fr/aide" style="color: #9ca3af; text-decoration: underline;">FAQ</a>
+            Vous recevez cet email suite à un règlement sur Newbi. • <a href="https://newbi.fr/aide" style="color: #9ca3af; text-decoration: underline;">FAQ</a>
           </p>
           <div style="font-size: 11px; color: #9ca3af; line-height: 1.6;">
             <p style="margin: 0 0 4px 0;">SWEILY (SAS),</p>

@@ -14,52 +14,73 @@ export function filterInvoicesByDateRange(invoices, dateRange) {
   }
 
   return invoices.filter((invoice) => {
-    // Vérifier que la facture a une date d'émission
-    if (!invoice.issueDate) {
+    // Vérifier que la facture a une date d'émission (issueDate ou invoiceDate pour les importées)
+    const rawDate = invoice.issueDate || invoice.invoiceDate;
+    if (!rawDate) {
       return false;
     }
 
     // Convertir le timestamp ou la string en Date
     let invoiceDate;
-    
+
     // Convertir en nombre si c'est une string numérique
-    let timestamp = invoice.issueDate;
-    if (typeof timestamp === 'string' && /^\d+$/.test(timestamp)) {
+    let timestamp = rawDate;
+    if (typeof timestamp === "string" && /^\d+$/.test(timestamp)) {
       timestamp = parseInt(timestamp, 10);
     }
-    
-    if (typeof timestamp === 'number') {
+
+    if (typeof timestamp === "number") {
       // Essayer différentes conversions et choisir celle qui donne une date valide
       const asIs = new Date(timestamp);
       const divided = new Date(timestamp / 1000);
       const multiplied = new Date(timestamp * 1000);
-      
+
       // Vérifier quelle conversion donne une date valide et raisonnable (entre 2020 et 2100)
-      if (!isNaN(asIs.getTime()) && asIs.getFullYear() >= 2020 && asIs.getFullYear() <= 2100) {
+      if (
+        !isNaN(asIs.getTime()) &&
+        asIs.getFullYear() >= 2020 &&
+        asIs.getFullYear() <= 2100
+      ) {
         invoiceDate = asIs;
-      } else if (!isNaN(divided.getTime()) && divided.getFullYear() >= 2020 && divided.getFullYear() <= 2100) {
+      } else if (
+        !isNaN(divided.getTime()) &&
+        divided.getFullYear() >= 2020 &&
+        divided.getFullYear() <= 2100
+      ) {
         invoiceDate = divided;
-      } else if (!isNaN(multiplied.getTime()) && multiplied.getFullYear() >= 2020 && multiplied.getFullYear() <= 2100) {
+      } else if (
+        !isNaN(multiplied.getTime()) &&
+        multiplied.getFullYear() >= 2020 &&
+        multiplied.getFullYear() <= 2100
+      ) {
         invoiceDate = multiplied;
       } else {
         // Aucune conversion ne fonctionne
-        console.warn(`Date invalide pour la facture:`, invoice.number, invoice.issueDate);
+        console.warn(
+          `Date invalide pour la facture:`,
+          invoice.number,
+          invoice.issueDate,
+        );
         return false;
       }
-    } else if (typeof timestamp === 'string') {
+    } else if (typeof timestamp === "string") {
       // Si c'est une string ISO (format date)
       invoiceDate = new Date(timestamp);
     } else {
       // Si c'est déjà un objet Date
       invoiceDate = new Date(timestamp);
     }
-    
+
     // Vérifier que la date est valide
     if (isNaN(invoiceDate.getTime())) {
-      console.warn(`Date invalide pour la facture:`, invoice.number, invoice.issueDate);
+      console.warn(
+        `Date invalide pour la facture:`,
+        invoice.number,
+        invoice.issueDate,
+      );
       return false;
     }
-    
+
     // Normaliser la date de la facture (début de journée)
     invoiceDate.setHours(0, 0, 0, 0);
 
@@ -80,7 +101,7 @@ export function filterInvoicesByDateRange(invoices, dateRange) {
     // Si les deux dates sont définies
     const fromDate = new Date(dateRange.from);
     fromDate.setHours(0, 0, 0, 0);
-    
+
     const toDate = new Date(dateRange.to);
     toDate.setHours(23, 59, 59, 999);
 
@@ -95,30 +116,42 @@ export function filterInvoicesByDateRange(invoices, dateRange) {
  */
 function convertToDate(dateValue) {
   if (!dateValue) return null;
-  
+
   // Convertir en nombre si c'est une string numérique
   let timestamp = dateValue;
-  if (typeof timestamp === 'string' && /^\d+$/.test(timestamp)) {
+  if (typeof timestamp === "string" && /^\d+$/.test(timestamp)) {
     timestamp = parseInt(timestamp, 10);
   }
-  
-  if (typeof timestamp === 'number') {
+
+  if (typeof timestamp === "number") {
     // Essayer différentes conversions et choisir celle qui donne une date valide
     const asIs = new Date(timestamp);
     const divided = new Date(timestamp / 1000);
     const multiplied = new Date(timestamp * 1000);
-    
+
     // Vérifier quelle conversion donne une date valide et raisonnable (entre 2020 et 2100)
-    if (!isNaN(asIs.getTime()) && asIs.getFullYear() >= 2020 && asIs.getFullYear() <= 2100) {
+    if (
+      !isNaN(asIs.getTime()) &&
+      asIs.getFullYear() >= 2020 &&
+      asIs.getFullYear() <= 2100
+    ) {
       return asIs;
-    } else if (!isNaN(divided.getTime()) && divided.getFullYear() >= 2020 && divided.getFullYear() <= 2100) {
+    } else if (
+      !isNaN(divided.getTime()) &&
+      divided.getFullYear() >= 2020 &&
+      divided.getFullYear() <= 2100
+    ) {
       return divided;
-    } else if (!isNaN(multiplied.getTime()) && multiplied.getFullYear() >= 2020 && multiplied.getFullYear() <= 2100) {
+    } else if (
+      !isNaN(multiplied.getTime()) &&
+      multiplied.getFullYear() >= 2020 &&
+      multiplied.getFullYear() <= 2100
+    ) {
       return multiplied;
     }
     return null;
   }
-  
+
   const date = new Date(timestamp);
   return isNaN(date.getTime()) ? null : date;
 }
@@ -129,48 +162,78 @@ function convertToDate(dateValue) {
  * @returns {Object} - Facture formatée
  */
 function formatInvoiceForExport(invoice) {
-  const issueDate = convertToDate(invoice.issueDate);
+  const isImported = invoice._type === "imported";
+  const issueDate = convertToDate(invoice.issueDate || invoice.invoiceDate);
   const dueDate = convertToDate(invoice.dueDate);
   const createdAt = convertToDate(invoice.createdAt);
-  
+
+  // Pour les factures importées, utiliser les champs spécifiques
+  const totalHT = isImported
+    ? (invoice.totalHT ?? 0)
+    : (invoice.finalTotalHT ?? invoice.totalHT ?? 0);
+  const totalVAT = isImported
+    ? (invoice.totalVAT ?? 0)
+    : (invoice.finalTotalVAT ?? invoice.totalVAT ?? 0);
+  const totalTTC = isImported
+    ? (invoice.totalTTC ?? 0)
+    : (invoice.finalTotalTTC ?? invoice.totalTTC ?? 0);
+
+  const invoiceNumber = isImported
+    ? invoice.originalInvoiceNumber || invoice.number || ""
+    : invoice.prefix
+      ? `${invoice.prefix}-${invoice.number}`
+      : invoice.number || "";
+
+  const clientName = isImported
+    ? invoice.client?.name || invoice.vendor?.name || ""
+    : invoice.client?.name || "";
+
   return {
     // Identification
-    "Numéro": invoice.prefix
-      ? `${invoice.prefix}-${invoice.number}`
-      : (invoice.number || ""),
+    Numéro: invoiceNumber,
     "N° Bon de commande": invoice.purchaseOrderNumber || "",
-    
+    Source: isImported ? "Importée" : "Newbi",
+
     // Client
-    "Client": invoice.client?.name || "",
+    Client: clientName,
     "Email client": invoice.client?.email || "",
     "SIRET client": invoice.client?.siret || "",
     "N° TVA client": invoice.client?.vatNumber || "",
-    "Type client": invoice.client?.type === "COMPANY" ? "Entreprise" : "Particulier",
-    
+    "Type client":
+      invoice.client?.type === "COMPANY" ? "Entreprise" : "Particulier",
+
     // Dates
-    "Date d'émission": issueDate 
+    "Date d'émission": issueDate
       ? format(issueDate, "dd/MM/yyyy", { locale: fr })
       : "",
-    "Date d'échéance": dueDate 
+    "Date d'échéance": dueDate
       ? format(dueDate, "dd/MM/yyyy", { locale: fr })
       : "",
-    "Date de création": createdAt 
+    "Date de création": createdAt
       ? format(createdAt, "dd/MM/yyyy HH:mm", { locale: fr })
       : "",
-    
+
     // Montants
-    "Total HT (€)": formatAmount(invoice.finalTotalHT),
-    "Total TVA (€)": formatAmount(invoice.finalTotalVAT),
-    "Total TTC (€)": formatAmount(invoice.finalTotalTTC),
-    "Remise (%)": invoice.discountType === "PERCENTAGE" ? formatAmount(invoice.discount) : "",
-    "Remise (€)": invoice.discountType === "FIXED" ? formatAmount(invoice.discount) : "",
+    "Total HT (€)": formatAmount(totalHT),
+    "Total TVA (€)": formatAmount(totalVAT),
+    "Total TTC (€)": formatAmount(totalTTC),
+    "Remise (%)":
+      invoice.discountType === "PERCENTAGE"
+        ? formatAmount(invoice.discount)
+        : "",
+    "Remise (€)":
+      invoice.discountType === "FIXED" ? formatAmount(invoice.discount) : "",
     "Montant remise (€)": formatAmount(invoice.discountAmount),
-    
+
     // Statut et paiement
-    "Statut": getStatusLabel(invoice.status),
-    "Type": invoice.isDeposit ? "Acompte" : "Facture complète",
+    Statut: getStatusLabel(invoice.status),
+    Type: isImported
+      ? "Importée"
+      : invoice.isDeposit
+        ? "Acompte"
+        : "Facture complète",
     "Stripe ID": invoice.stripeInvoiceId || "",
-    
+
     // Informations comptables
     "Adresse client": formatAddress(invoice.client?.address),
     "Code postal client": invoice.client?.address?.postalCode || "",
@@ -190,7 +253,7 @@ function formatAddress(address) {
     address.street,
     address.postalCode,
     address.city,
-    address.country
+    address.country,
   ].filter(Boolean);
   return parts.join(", ");
 }
@@ -202,13 +265,13 @@ function formatAddress(address) {
  */
 function formatAmount(amount) {
   if (amount === null || amount === undefined || amount === "") return "0.00";
-  
+
   // Convertir en nombre si c'est une string
-  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-  
+  const numAmount = typeof amount === "string" ? parseFloat(amount) : amount;
+
   // Vérifier que c'est un nombre valide
   if (isNaN(numAmount)) return "0.00";
-  
+
   return numAmount.toFixed(2);
 }
 
@@ -224,6 +287,11 @@ function getStatusLabel(status) {
     COMPLETED: "Payée",
     OVERDUE: "En retard",
     CANCELED: "Annulée",
+    // Statuts des factures importées
+    PENDING_REVIEW: "En attente de validation",
+    VALIDATED: "Validée",
+    REJECTED: "Rejetée",
+    ARCHIVED: "Archivée",
   };
   return labels[status] || status;
 }
@@ -235,19 +303,20 @@ function getStatusLabel(status) {
  */
 export function exportToCSV(invoices, dateRange = null) {
   // Filtrer par date si nécessaire
-  const filteredInvoices = dateRange 
+  const filteredInvoices = dateRange
     ? filterInvoicesByDateRange(invoices, dateRange)
     : invoices;
 
   if (filteredInvoices.length === 0) {
     // Message d'erreur plus détaillé
     const totalInvoices = invoices.length;
-    const dateInfo = dateRange?.from && dateRange?.to 
-      ? `du ${format(new Date(dateRange.from), "dd/MM/yyyy", { locale: fr })} au ${format(new Date(dateRange.to), "dd/MM/yyyy", { locale: fr })}`
-      : "pour cette période";
-    
+    const dateInfo =
+      dateRange?.from && dateRange?.to
+        ? `du ${format(new Date(dateRange.from), "dd/MM/yyyy", { locale: fr })} au ${format(new Date(dateRange.to), "dd/MM/yyyy", { locale: fr })}`
+        : "pour cette période";
+
     throw new Error(
-      `Aucune facture à exporter ${dateInfo}. ${totalInvoices} facture(s) au total dans le système.`
+      `Aucune facture à exporter ${dateInfo}. ${totalInvoices} facture(s) au total dans le système.`,
     );
   }
 
@@ -259,21 +328,28 @@ export function exportToCSV(invoices, dateRange = null) {
   const csvContent = [
     headers.join(";"),
     ...formattedData.map((row) =>
-      headers.map((header) => {
-        const value = row[header] || "";
-        // Échapper les guillemets et entourer de guillemets si nécessaire
-        if (value.toString().includes(";") || value.toString().includes('"')) {
-          return `"${value.toString().replace(/"/g, '""')}"`;
-        }
-        return value;
-      }).join(";")
+      headers
+        .map((header) => {
+          const value = row[header] || "";
+          // Échapper les guillemets et entourer de guillemets si nécessaire
+          if (
+            value.toString().includes(";") ||
+            value.toString().includes('"')
+          ) {
+            return `"${value.toString().replace(/"/g, '""')}"`;
+          }
+          return value;
+        })
+        .join(";"),
     ),
   ].join("\n");
 
   // Ajouter le BOM UTF-8 pour Excel
   const BOM = "\uFEFF";
-  const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
-  
+  const blob = new Blob([BOM + csvContent], {
+    type: "text/csv;charset=utf-8;",
+  });
+
   // Télécharger le fichier
   const filename = generateFilename("csv", dateRange);
   downloadBlob(blob, filename);
@@ -286,19 +362,20 @@ export function exportToCSV(invoices, dateRange = null) {
  */
 export function exportToExcel(invoices, dateRange = null) {
   // Filtrer par date si nécessaire
-  const filteredInvoices = dateRange 
+  const filteredInvoices = dateRange
     ? filterInvoicesByDateRange(invoices, dateRange)
     : invoices;
 
   if (filteredInvoices.length === 0) {
     // Message d'erreur plus détaillé
     const totalInvoices = invoices.length;
-    const dateInfo = dateRange?.from && dateRange?.to 
-      ? `du ${format(new Date(dateRange.from), "dd/MM/yyyy", { locale: fr })} au ${format(new Date(dateRange.to), "dd/MM/yyyy", { locale: fr })}`
-      : "pour cette période";
-    
+    const dateInfo =
+      dateRange?.from && dateRange?.to
+        ? `du ${format(new Date(dateRange.from), "dd/MM/yyyy", { locale: fr })} au ${format(new Date(dateRange.to), "dd/MM/yyyy", { locale: fr })}`
+        : "pour cette période";
+
     throw new Error(
-      `Aucune facture à exporter ${dateInfo}. ${totalInvoices} facture(s) au total dans le système.`
+      `Aucune facture à exporter ${dateInfo}. ${totalInvoices} facture(s) au total dans le système.`,
     );
   }
 
@@ -345,7 +422,7 @@ export function exportToExcel(invoices, dateRange = null) {
                 (row) =>
                   `<tr>${headers
                     .map((header) => `<td>${row[header] || ""}</td>`)
-                    .join("")}</tr>`
+                    .join("")}</tr>`,
               )
               .join("")}
           </tbody>
@@ -356,10 +433,33 @@ export function exportToExcel(invoices, dateRange = null) {
 
   // Créer le blob
   const blob = new Blob([htmlContent], { type: "application/vnd.ms-excel" });
-  
+
   // Télécharger le fichier
   const filename = generateFilename("xls", dateRange);
   downloadBlob(blob, filename);
+}
+
+/**
+ * Normalise une facture (normale ou importée) pour les exports comptables
+ * @param {Object} invoice - Facture brute
+ * @returns {Object} - Facture avec champs normalisés
+ */
+function normalizeInvoiceForAccounting(invoice) {
+  if (invoice._type !== "imported") return invoice;
+
+  return {
+    ...invoice,
+    issueDate: invoice.issueDate || invoice.invoiceDate,
+    number: invoice.originalInvoiceNumber || invoice.number || "IMP",
+    prefix: invoice.prefix || "",
+    finalTotalHT: invoice.totalHT ?? 0,
+    finalTotalVAT: invoice.totalVAT ?? 0,
+    finalTotalTTC: invoice.totalTTC ?? 0,
+    client: {
+      ...invoice.client,
+      name: invoice.client?.name || invoice.vendor?.name || "Client inconnu",
+    },
+  };
 }
 
 /**
@@ -371,39 +471,45 @@ export function exportToExcel(invoices, dateRange = null) {
  */
 export function exportToFEC(invoices, dateRange = null) {
   // Filtrer par date si nécessaire
-  const filteredInvoices = dateRange 
+  const filteredInvoices = dateRange
     ? filterInvoicesByDateRange(invoices, dateRange)
     : invoices;
 
   if (filteredInvoices.length === 0) {
     const totalInvoices = invoices.length;
-    const dateInfo = dateRange?.from && dateRange?.to 
-      ? `du ${format(new Date(dateRange.from), "dd/MM/yyyy", { locale: fr })} au ${format(new Date(dateRange.to), "dd/MM/yyyy", { locale: fr })}`
-      : "pour cette période";
-    
+    const dateInfo =
+      dateRange?.from && dateRange?.to
+        ? `du ${format(new Date(dateRange.from), "dd/MM/yyyy", { locale: fr })} au ${format(new Date(dateRange.to), "dd/MM/yyyy", { locale: fr })}`
+        : "pour cette période";
+
     throw new Error(
-      `Aucune facture à exporter ${dateInfo}. ${totalInvoices} facture(s) au total dans le système.`
+      `Aucune facture à exporter ${dateInfo}. ${totalInvoices} facture(s) au total dans le système.`,
     );
   }
 
   // Générer les écritures comptables avec numérotation séquentielle
   const entries = [];
   let ecritureCounter = 1;
-  
-  filteredInvoices.forEach((invoice) => {
+
+  filteredInvoices.forEach((rawInvoice) => {
+    const invoice = normalizeInvoiceForAccounting(rawInvoice);
     const issueDate = convertToDate(invoice.issueDate);
     const createdAt = convertToDate(invoice.createdAt);
     if (!issueDate) return;
-    
+
     const dateStr = format(issueDate, "yyyyMMdd");
     const validDateStr = createdAt ? format(createdAt, "yyyyMMdd") : dateStr;
-    const invoiceNumber = sanitizeFECField(invoice.prefix ? `${invoice.prefix}-${invoice.number}` : invoice.number);
-    const clientName = sanitizeFECField(invoice.client?.name || "Client inconnu");
+    const invoiceNumber = sanitizeFECField(
+      invoice.prefix ? `${invoice.prefix}-${invoice.number}` : invoice.number,
+    );
+    const clientName = sanitizeFECField(
+      invoice.client?.name || "Client inconnu",
+    );
     const totalTTC = parseFloat(invoice.finalTotalTTC) || 0;
-    
+
     // Numéro d'écriture unique et séquentiel
-    const ecritureNum = `VTE${String(ecritureCounter).padStart(8, '0')}`;
-    
+    const ecritureNum = `VTE${String(ecritureCounter).padStart(8, "0")}`;
+
     // Ligne 1 : Débit client (compte 411)
     entries.push({
       JournalCode: "VTE",
@@ -423,23 +529,23 @@ export function exportToFEC(invoices, dateRange = null) {
       DateLet: "",
       ValidDate: validDateStr,
       Montantdevise: "",
-      Idevise: ""
+      Idevise: "",
     });
-    
+
     // Traiter les lignes de facture pour ventilation par compte et TVA
     if (invoice.items && invoice.items.length > 0) {
       // Grouper les lignes par taux de TVA
       const itemsByVatRate = {};
-      
+
       invoice.items.forEach((item) => {
         const vatRate = item.vatRate || 0;
         const quantity = parseFloat(item.quantity) || 0;
         const unitPrice = parseFloat(item.unitPrice) || 0;
         const itemDiscount = parseFloat(item.discount) || 0;
-        
+
         // Calculer le montant HT de la ligne
         let lineHT = quantity * unitPrice;
-        
+
         // Appliquer la remise de ligne
         if (itemDiscount > 0) {
           if (item.discountType === "PERCENTAGE") {
@@ -448,36 +554,39 @@ export function exportToFEC(invoices, dateRange = null) {
             lineHT = lineHT - itemDiscount;
           }
         }
-        
+
         // Grouper par taux de TVA
         if (!itemsByVatRate[vatRate]) {
           itemsByVatRate[vatRate] = {
             totalHT: 0,
-            items: []
+            items: [],
           };
         }
-        
+
         itemsByVatRate[vatRate].totalHT += lineHT;
         itemsByVatRate[vatRate].items.push({
           description: item.description,
-          amount: lineHT
+          amount: lineHT,
         });
       });
-      
+
       // Appliquer la remise globale proportionnellement
-      const totalHTBeforeDiscount = Object.values(itemsByVatRate).reduce((sum, group) => sum + group.totalHT, 0);
+      const totalHTBeforeDiscount = Object.values(itemsByVatRate).reduce(
+        (sum, group) => sum + group.totalHT,
+        0,
+      );
       const globalDiscountAmount = parseFloat(invoice.discountAmount) || 0;
-      
+
       // Créer les lignes de crédit ventes par taux de TVA
       Object.entries(itemsByVatRate).forEach(([vatRate, group]) => {
         let finalHT = group.totalHT;
-        
+
         // Appliquer la remise globale proportionnellement
         if (globalDiscountAmount > 0 && totalHTBeforeDiscount > 0) {
           const proportion = group.totalHT / totalHTBeforeDiscount;
-          finalHT = finalHT - (globalDiscountAmount * proportion);
+          finalHT = finalHT - globalDiscountAmount * proportion;
         }
-        
+
         if (finalHT > 0) {
           // Ligne crédit ventes (compte 706)
           entries.push({
@@ -498,9 +607,9 @@ export function exportToFEC(invoices, dateRange = null) {
             DateLet: "",
             ValidDate: validDateStr,
             Montantdevise: "",
-            Idevise: ""
+            Idevise: "",
           });
-          
+
           // Ligne crédit TVA (compte 44571x selon le taux)
           const vatAmount = finalHT * (parseFloat(vatRate) / 100);
           if (vatAmount > 0) {
@@ -523,7 +632,7 @@ export function exportToFEC(invoices, dateRange = null) {
               DateLet: "",
               ValidDate: validDateStr,
               Montantdevise: "",
-              Idevise: ""
+              Idevise: "",
             });
           }
         }
@@ -532,7 +641,7 @@ export function exportToFEC(invoices, dateRange = null) {
       // Pas de détail des lignes : utiliser les totaux globaux
       const totalHT = parseFloat(invoice.finalTotalHT) || 0;
       const totalTVA = parseFloat(invoice.finalTotalVAT) || 0;
-      
+
       if (totalHT > 0) {
         entries.push({
           JournalCode: "VTE",
@@ -545,17 +654,19 @@ export function exportToFEC(invoices, dateRange = null) {
           CompAuxLib: "",
           PieceRef: invoiceNumber,
           PieceDate: dateStr,
-          EcritureLib: sanitizeFECField(`Facture ${invoiceNumber} - ${clientName}`),
+          EcritureLib: sanitizeFECField(
+            `Facture ${invoiceNumber} - ${clientName}`,
+          ),
           Debit: formatFECAmount(0),
           Credit: formatFECAmount(totalHT),
           EcritureLet: "",
           DateLet: "",
           ValidDate: validDateStr,
           Montantdevise: "",
-          Idevise: ""
+          Idevise: "",
         });
       }
-      
+
       if (totalTVA > 0) {
         entries.push({
           JournalCode: "VTE",
@@ -568,38 +679,57 @@ export function exportToFEC(invoices, dateRange = null) {
           CompAuxLib: "",
           PieceRef: invoiceNumber,
           PieceDate: dateStr,
-          EcritureLib: sanitizeFECField(`Facture ${invoiceNumber} - ${clientName}`),
+          EcritureLib: sanitizeFECField(
+            `Facture ${invoiceNumber} - ${clientName}`,
+          ),
           Debit: formatFECAmount(0),
           Credit: formatFECAmount(totalTVA),
           EcritureLet: "",
           DateLet: "",
           ValidDate: validDateStr,
           Montantdevise: "",
-          Idevise: ""
+          Idevise: "",
         });
       }
     }
-    
+
     ecritureCounter++;
   });
 
   // Créer le contenu FEC
   // IMPORTANT : Le FEC ne doit PAS avoir de ligne d'en-tête selon la norme
   const headers = [
-    "JournalCode", "JournalLib", "EcritureNum", "EcritureDate", "CompteNum", "CompteLib",
-    "CompAuxNum", "CompAuxLib", "PieceRef", "PieceDate", "EcritureLib", "Debit", "Credit",
-    "EcritureLet", "DateLet", "ValidDate", "Montantdevise", "Idevise"
+    "JournalCode",
+    "JournalLib",
+    "EcritureNum",
+    "EcritureDate",
+    "CompteNum",
+    "CompteLib",
+    "CompAuxNum",
+    "CompAuxLib",
+    "PieceRef",
+    "PieceDate",
+    "EcritureLib",
+    "Debit",
+    "Credit",
+    "EcritureLet",
+    "DateLet",
+    "ValidDate",
+    "Montantdevise",
+    "Idevise",
   ];
-  
+
   // Générer les lignes sans en-tête
-  const fecContent = entries.map(entry => 
-    headers.map(h => entry[h] || "").join("|")
-  ).join("\n");
+  const fecContent = entries
+    .map((entry) => headers.map((h) => entry[h] || "").join("|"))
+    .join("\n");
 
   // Ajouter le BOM UTF-8
   const BOM = "\uFEFF";
-  const blob = new Blob([BOM + fecContent], { type: "text/plain;charset=utf-8;" });
-  
+  const blob = new Blob([BOM + fecContent], {
+    type: "text/plain;charset=utf-8;",
+  });
+
   // Télécharger le fichier
   const filename = generateFilename("txt", dateRange, "FEC");
   downloadBlob(blob, filename);
@@ -614,18 +744,20 @@ export function exportToFEC(invoices, dateRange = null) {
  */
 function sanitizeFECField(value, maxLength = 255) {
   if (!value) return "";
-  
-  return String(value)
-    // Supprimer les retours à la ligne et tabulations
-    .replace(/[\r\n\t]/g, " ")
-    // Supprimer les pipes (séparateur FEC)
-    .replace(/\|/g, "-")
-    // Supprimer les caractères de contrôle
-    .replace(/[\x00-\x1F\x7F]/g, "")
-    // Limiter la longueur
-    .substring(0, maxLength)
-    // Trim
-    .trim();
+
+  return (
+    String(value)
+      // Supprimer les retours à la ligne et tabulations
+      .replace(/[\r\n\t]/g, " ")
+      // Supprimer les pipes (séparateur FEC)
+      .replace(/\|/g, "-")
+      // Supprimer les caractères de contrôle
+      .replace(/[\x00-\x1F\x7F]/g, "")
+      // Limiter la longueur
+      .substring(0, maxLength)
+      // Trim
+      .trim()
+  );
 }
 
 /**
@@ -662,18 +794,20 @@ function getVATAccount(vatRate) {
  */
 function sanitizeSageField(value) {
   if (!value) return "";
-  
-  return String(value)
-    // Supprimer les retours à la ligne et tabulations
-    .replace(/[\r\n\t]/g, " ")
-    // Supprimer les point-virgules (séparateur Sage)
-    .replace(/;/g, ",")
-    // Supprimer les caractères de contrôle
-    .replace(/[\x00-\x1F\x7F]/g, "")
-    // Limiter la longueur
-    .substring(0, 100)
-    // Trim
-    .trim();
+
+  return (
+    String(value)
+      // Supprimer les retours à la ligne et tabulations
+      .replace(/[\r\n\t]/g, " ")
+      // Supprimer les point-virgules (séparateur Sage)
+      .replace(/;/g, ",")
+      // Supprimer les caractères de contrôle
+      .replace(/[\x00-\x1F\x7F]/g, "")
+      // Limiter la longueur
+      .substring(0, 100)
+      // Trim
+      .trim()
+  );
 }
 
 /**
@@ -684,63 +818,73 @@ function sanitizeSageField(value) {
  */
 export function exportToSage(invoices, dateRange = null) {
   // Filtrer par date si nécessaire
-  const filteredInvoices = dateRange 
+  const filteredInvoices = dateRange
     ? filterInvoicesByDateRange(invoices, dateRange)
     : invoices;
 
   if (filteredInvoices.length === 0) {
     const totalInvoices = invoices.length;
-    const dateInfo = dateRange?.from && dateRange?.to 
-      ? `du ${format(new Date(dateRange.from), "dd/MM/yyyy", { locale: fr })} au ${format(new Date(dateRange.to), "dd/MM/yyyy", { locale: fr })}`
-      : "pour cette période";
-    
+    const dateInfo =
+      dateRange?.from && dateRange?.to
+        ? `du ${format(new Date(dateRange.from), "dd/MM/yyyy", { locale: fr })} au ${format(new Date(dateRange.to), "dd/MM/yyyy", { locale: fr })}`
+        : "pour cette période";
+
     throw new Error(
-      `Aucune facture à exporter ${dateInfo}. ${totalInvoices} facture(s) au total dans le système.`
+      `Aucune facture à exporter ${dateInfo}. ${totalInvoices} facture(s) au total dans le système.`,
     );
   }
 
   // Générer les écritures pour Sage
   const entries = [];
-  
-  filteredInvoices.forEach((invoice) => {
+
+  filteredInvoices.forEach((rawInvoice) => {
+    const invoice = normalizeInvoiceForAccounting(rawInvoice);
     const issueDate = convertToDate(invoice.issueDate);
     if (!issueDate) return;
-    
+
     const dateStr = format(issueDate, "ddMMyyyy");
-    const invoiceNumber = sanitizeSageField(invoice.prefix ? `${invoice.prefix}-${invoice.number}` : invoice.number);
-    const clientName = sanitizeSageField(invoice.client?.name || "Client inconnu");
-    const clientCode = sanitizeSageField(invoice.client?.siret || invoiceNumber);
+    const invoiceNumber = sanitizeSageField(
+      invoice.prefix ? `${invoice.prefix}-${invoice.number}` : invoice.number,
+    );
+    const clientName = sanitizeSageField(
+      invoice.client?.name || "Client inconnu",
+    );
+    const clientCode = sanitizeSageField(
+      invoice.client?.siret || invoiceNumber,
+    );
     const totalTTC = parseFloat(invoice.finalTotalTTC) || 0;
-    
+
     // Format Sage étendu : Journal;Date;Compte;CompteAux;Libellé;Débit;Crédit;Lettrage;Pièce
-    
+
     // Ligne 1 : Débit client avec compte auxiliaire
-    entries.push([
-      "VTE",
-      dateStr,
-      "411000",
-      clientCode,
-      sanitizeSageField(`${clientName} - ${invoiceNumber}`),
-      formatFECAmount(totalTTC),
-      formatFECAmount(0),
-      "",
-      invoiceNumber
-    ].join(";"));
-    
+    entries.push(
+      [
+        "VTE",
+        dateStr,
+        "411000",
+        clientCode,
+        sanitizeSageField(`${clientName} - ${invoiceNumber}`),
+        formatFECAmount(totalTTC),
+        formatFECAmount(0),
+        "",
+        invoiceNumber,
+      ].join(";"),
+    );
+
     // Traiter les lignes de facture pour ventilation par TVA
     if (invoice.items && invoice.items.length > 0) {
       // Grouper les lignes par taux de TVA
       const itemsByVatRate = {};
-      
+
       invoice.items.forEach((item) => {
         const vatRate = item.vatRate || 0;
         const quantity = parseFloat(item.quantity) || 0;
         const unitPrice = parseFloat(item.unitPrice) || 0;
         const itemDiscount = parseFloat(item.discount) || 0;
-        
+
         // Calculer le montant HT de la ligne
         let lineHT = quantity * unitPrice;
-        
+
         // Appliquer la remise de ligne
         if (itemDiscount > 0) {
           if (item.discountType === "PERCENTAGE") {
@@ -749,57 +893,64 @@ export function exportToSage(invoices, dateRange = null) {
             lineHT = lineHT - itemDiscount;
           }
         }
-        
+
         // Grouper par taux de TVA
         if (!itemsByVatRate[vatRate]) {
           itemsByVatRate[vatRate] = 0;
         }
         itemsByVatRate[vatRate] += lineHT;
       });
-      
+
       // Appliquer la remise globale proportionnellement
-      const totalHTBeforeDiscount = Object.values(itemsByVatRate).reduce((sum, ht) => sum + ht, 0);
+      const totalHTBeforeDiscount = Object.values(itemsByVatRate).reduce(
+        (sum, ht) => sum + ht,
+        0,
+      );
       const globalDiscountAmount = parseFloat(invoice.discountAmount) || 0;
-      
+
       // Créer les lignes de crédit ventes par taux de TVA
       Object.entries(itemsByVatRate).forEach(([vatRate, htAmount]) => {
         let finalHT = htAmount;
-        
+
         // Appliquer la remise globale proportionnellement
         if (globalDiscountAmount > 0 && totalHTBeforeDiscount > 0) {
           const proportion = htAmount / totalHTBeforeDiscount;
-          finalHT = finalHT - (globalDiscountAmount * proportion);
+          finalHT = finalHT - globalDiscountAmount * proportion;
         }
-        
+
         if (finalHT > 0) {
           // Ligne crédit ventes
-          entries.push([
-            "VTE",
-            dateStr,
-            "706000",
-            "",
-            sanitizeSageField(`${clientName} - TVA ${vatRate}%`),
-            formatFECAmount(0),
-            formatFECAmount(finalHT),
-            "",
-            invoiceNumber
-          ].join(";"));
-          
+          entries.push(
+            [
+              "VTE",
+              dateStr,
+              "706000",
+              "",
+              sanitizeSageField(`${clientName} - TVA ${vatRate}%`),
+              formatFECAmount(0),
+              formatFECAmount(finalHT),
+              "",
+              invoiceNumber,
+            ].join(";"),
+          );
+
           // Ligne crédit TVA
           const vatAmount = finalHT * (parseFloat(vatRate) / 100);
           if (vatAmount > 0) {
             const vatAccount = getVATAccount(parseFloat(vatRate));
-            entries.push([
-              "VTE",
-              dateStr,
-              vatAccount,
-              "",
-              sanitizeSageField(`TVA ${vatRate}% - ${invoiceNumber}`),
-              formatFECAmount(0),
-              formatFECAmount(vatAmount),
-              "",
-              invoiceNumber
-            ].join(";"));
+            entries.push(
+              [
+                "VTE",
+                dateStr,
+                vatAccount,
+                "",
+                sanitizeSageField(`TVA ${vatRate}% - ${invoiceNumber}`),
+                formatFECAmount(0),
+                formatFECAmount(vatAmount),
+                "",
+                invoiceNumber,
+              ].join(";"),
+            );
           }
         }
       });
@@ -807,45 +958,52 @@ export function exportToSage(invoices, dateRange = null) {
       // Pas de détail des lignes : utiliser les totaux globaux
       const totalHT = parseFloat(invoice.finalTotalHT) || 0;
       const totalTVA = parseFloat(invoice.finalTotalVAT) || 0;
-      
+
       if (totalHT > 0) {
-        entries.push([
-          "VTE",
-          dateStr,
-          "706000",
-          "",
-          sanitizeSageField(`Prestation - ${invoiceNumber}`),
-          formatFECAmount(0),
-          formatFECAmount(totalHT),
-          "",
-          invoiceNumber
-        ].join(";"));
+        entries.push(
+          [
+            "VTE",
+            dateStr,
+            "706000",
+            "",
+            sanitizeSageField(`Prestation - ${invoiceNumber}`),
+            formatFECAmount(0),
+            formatFECAmount(totalHT),
+            "",
+            invoiceNumber,
+          ].join(";"),
+        );
       }
-      
+
       if (totalTVA > 0) {
-        entries.push([
-          "VTE",
-          dateStr,
-          "445710",
-          "",
-          sanitizeSageField(`TVA - ${invoiceNumber}`),
-          formatFECAmount(0),
-          formatFECAmount(totalTVA),
-          "",
-          invoiceNumber
-        ].join(";"));
+        entries.push(
+          [
+            "VTE",
+            dateStr,
+            "445710",
+            "",
+            sanitizeSageField(`TVA - ${invoiceNumber}`),
+            formatFECAmount(0),
+            formatFECAmount(totalTVA),
+            "",
+            invoiceNumber,
+          ].join(";"),
+        );
       }
     }
   });
 
   // En-tête Sage étendu
-  const headers = "Journal;Date;Compte;CompteAux;Libellé;Débit;Crédit;Lettrage;Pièce";
+  const headers =
+    "Journal;Date;Compte;CompteAux;Libellé;Débit;Crédit;Lettrage;Pièce";
   const sageContent = [headers, ...entries].join("\n");
 
   // Encodage UTF-8 avec BOM pour compatibilité Sage
   const BOM = "\uFEFF";
-  const blob = new Blob([BOM + sageContent], { type: "text/plain;charset=utf-8;" });
-  
+  const blob = new Blob([BOM + sageContent], {
+    type: "text/plain;charset=utf-8;",
+  });
+
   const filename = generateFilename("txt", dateRange, "Sage");
   downloadBlob(blob, filename);
 }
@@ -858,20 +1016,22 @@ export function exportToSage(invoices, dateRange = null) {
  */
 function sanitizeCegidField(value) {
   if (!value) return "";
-  
-  return String(value)
-    // Supprimer les retours à la ligne et tabulations
-    .replace(/[\r\n\t]/g, " ")
-    // Supprimer les point-virgules (séparateur Cegid)
-    .replace(/;/g, ",")
-    // Supprimer les guillemets doubles
-    .replace(/"/g, "'")
-    // Supprimer les caractères de contrôle
-    .replace(/[\x00-\x1F\x7F]/g, "")
-    // Limiter la longueur
-    .substring(0, 100)
-    // Trim
-    .trim();
+
+  return (
+    String(value)
+      // Supprimer les retours à la ligne et tabulations
+      .replace(/[\r\n\t]/g, " ")
+      // Supprimer les point-virgules (séparateur Cegid)
+      .replace(/;/g, ",")
+      // Supprimer les guillemets doubles
+      .replace(/"/g, "'")
+      // Supprimer les caractères de contrôle
+      .replace(/[\x00-\x1F\x7F]/g, "")
+      // Limiter la longueur
+      .substring(0, 100)
+      // Trim
+      .trim()
+  );
 }
 
 /**
@@ -882,63 +1042,71 @@ function sanitizeCegidField(value) {
  */
 export function exportToCegid(invoices, dateRange = null) {
   // Filtrer par date si nécessaire
-  const filteredInvoices = dateRange 
+  const filteredInvoices = dateRange
     ? filterInvoicesByDateRange(invoices, dateRange)
     : invoices;
 
   if (filteredInvoices.length === 0) {
     const totalInvoices = invoices.length;
-    const dateInfo = dateRange?.from && dateRange?.to 
-      ? `du ${format(new Date(dateRange.from), "dd/MM/yyyy", { locale: fr })} au ${format(new Date(dateRange.to), "dd/MM/yyyy", { locale: fr })}`
-      : "pour cette période";
-    
+    const dateInfo =
+      dateRange?.from && dateRange?.to
+        ? `du ${format(new Date(dateRange.from), "dd/MM/yyyy", { locale: fr })} au ${format(new Date(dateRange.to), "dd/MM/yyyy", { locale: fr })}`
+        : "pour cette période";
+
     throw new Error(
-      `Aucune facture à exporter ${dateInfo}. ${totalInvoices} facture(s) au total dans le système.`
+      `Aucune facture à exporter ${dateInfo}. ${totalInvoices} facture(s) au total dans le système.`,
     );
   }
 
   // Générer les écritures pour Cegid
   const entries = [];
-  
-  filteredInvoices.forEach((invoice) => {
+
+  filteredInvoices.forEach((rawInvoice) => {
+    const invoice = normalizeInvoiceForAccounting(rawInvoice);
     const issueDate = convertToDate(invoice.issueDate);
     if (!issueDate) return;
-    
+
     const dateStr = format(issueDate, "dd/MM/yyyy");
-    const invoiceNumber = sanitizeCegidField(invoice.prefix ? `${invoice.prefix}-${invoice.number}` : invoice.number);
-    const clientName = sanitizeCegidField(invoice.client?.name || "Client inconnu");
+    const invoiceNumber = sanitizeCegidField(
+      invoice.prefix ? `${invoice.prefix}-${invoice.number}` : invoice.number,
+    );
+    const clientName = sanitizeCegidField(
+      invoice.client?.name || "Client inconnu",
+    );
     const clientCode = sanitizeCegidField(invoice.client?.siret || "");
     const totalTTC = parseFloat(invoice.finalTotalTTC) || 0;
-    
+
     // Format Cegid : CodeJournal;Date;NumPiece;CompteGeneral;CompteAuxiliaire;Libelle;Debit;Credit;Devise
-    
+
     // Ligne 1 : Débit client avec compte auxiliaire
-    entries.push([
-      "VTE",
-      dateStr,
-      invoiceNumber,
-      "411000",
-      clientCode,
-      sanitizeCegidField(`${clientName} - ${invoiceNumber}`),
-      formatFECAmount(totalTTC),
-      formatFECAmount(0),
-      "EUR"
-    ].join(";"));
-    
+    entries.push(
+      [
+        "VTE",
+        dateStr,
+        invoiceNumber,
+        "411000",
+        clientCode,
+        sanitizeCegidField(`${clientName} - ${invoiceNumber}`),
+        formatFECAmount(totalTTC),
+        formatFECAmount(0),
+        "EUR",
+      ].join(";"),
+    );
+
     // Traiter les lignes de facture pour ventilation par TVA
     if (invoice.items && invoice.items.length > 0) {
       // Grouper les lignes par taux de TVA
       const itemsByVatRate = {};
-      
+
       invoice.items.forEach((item) => {
         const vatRate = item.vatRate || 0;
         const quantity = parseFloat(item.quantity) || 0;
         const unitPrice = parseFloat(item.unitPrice) || 0;
         const itemDiscount = parseFloat(item.discount) || 0;
-        
+
         // Calculer le montant HT de la ligne
         let lineHT = quantity * unitPrice;
-        
+
         // Appliquer la remise de ligne
         if (itemDiscount > 0) {
           if (item.discountType === "PERCENTAGE") {
@@ -947,57 +1115,64 @@ export function exportToCegid(invoices, dateRange = null) {
             lineHT = lineHT - itemDiscount;
           }
         }
-        
+
         // Grouper par taux de TVA
         if (!itemsByVatRate[vatRate]) {
           itemsByVatRate[vatRate] = 0;
         }
         itemsByVatRate[vatRate] += lineHT;
       });
-      
+
       // Appliquer la remise globale proportionnellement
-      const totalHTBeforeDiscount = Object.values(itemsByVatRate).reduce((sum, ht) => sum + ht, 0);
+      const totalHTBeforeDiscount = Object.values(itemsByVatRate).reduce(
+        (sum, ht) => sum + ht,
+        0,
+      );
       const globalDiscountAmount = parseFloat(invoice.discountAmount) || 0;
-      
+
       // Créer les lignes de crédit ventes par taux de TVA
       Object.entries(itemsByVatRate).forEach(([vatRate, htAmount]) => {
         let finalHT = htAmount;
-        
+
         // Appliquer la remise globale proportionnellement
         if (globalDiscountAmount > 0 && totalHTBeforeDiscount > 0) {
           const proportion = htAmount / totalHTBeforeDiscount;
-          finalHT = finalHT - (globalDiscountAmount * proportion);
+          finalHT = finalHT - globalDiscountAmount * proportion;
         }
-        
+
         if (finalHT > 0) {
           // Ligne crédit ventes
-          entries.push([
-            "VTE",
-            dateStr,
-            invoiceNumber,
-            "706000",
-            "",
-            sanitizeCegidField(`${clientName} - TVA ${vatRate}%`),
-            formatFECAmount(0),
-            formatFECAmount(finalHT),
-            "EUR"
-          ].join(";"));
-          
+          entries.push(
+            [
+              "VTE",
+              dateStr,
+              invoiceNumber,
+              "706000",
+              "",
+              sanitizeCegidField(`${clientName} - TVA ${vatRate}%`),
+              formatFECAmount(0),
+              formatFECAmount(finalHT),
+              "EUR",
+            ].join(";"),
+          );
+
           // Ligne crédit TVA
           const vatAmount = finalHT * (parseFloat(vatRate) / 100);
           if (vatAmount > 0) {
             const vatAccount = getVATAccount(parseFloat(vatRate));
-            entries.push([
-              "VTE",
-              dateStr,
-              invoiceNumber,
-              vatAccount,
-              "",
-              sanitizeCegidField(`TVA ${vatRate}% - ${invoiceNumber}`),
-              formatFECAmount(0),
-              formatFECAmount(vatAmount),
-              "EUR"
-            ].join(";"));
+            entries.push(
+              [
+                "VTE",
+                dateStr,
+                invoiceNumber,
+                vatAccount,
+                "",
+                sanitizeCegidField(`TVA ${vatRate}% - ${invoiceNumber}`),
+                formatFECAmount(0),
+                formatFECAmount(vatAmount),
+                "EUR",
+              ].join(";"),
+            );
           }
         }
       });
@@ -1005,44 +1180,51 @@ export function exportToCegid(invoices, dateRange = null) {
       // Pas de détail des lignes : utiliser les totaux globaux
       const totalHT = parseFloat(invoice.finalTotalHT) || 0;
       const totalTVA = parseFloat(invoice.finalTotalVAT) || 0;
-      
+
       if (totalHT > 0) {
-        entries.push([
-          "VTE",
-          dateStr,
-          invoiceNumber,
-          "706000",
-          "",
-          sanitizeCegidField(`Prestation - ${invoiceNumber}`),
-          formatFECAmount(0),
-          formatFECAmount(totalHT),
-          "EUR"
-        ].join(";"));
+        entries.push(
+          [
+            "VTE",
+            dateStr,
+            invoiceNumber,
+            "706000",
+            "",
+            sanitizeCegidField(`Prestation - ${invoiceNumber}`),
+            formatFECAmount(0),
+            formatFECAmount(totalHT),
+            "EUR",
+          ].join(";"),
+        );
       }
-      
+
       if (totalTVA > 0) {
-        entries.push([
-          "VTE",
-          dateStr,
-          invoiceNumber,
-          "445710",
-          "",
-          sanitizeCegidField(`TVA - ${invoiceNumber}`),
-          formatFECAmount(0),
-          formatFECAmount(totalTVA),
-          "EUR"
-        ].join(";"));
+        entries.push(
+          [
+            "VTE",
+            dateStr,
+            invoiceNumber,
+            "445710",
+            "",
+            sanitizeCegidField(`TVA - ${invoiceNumber}`),
+            formatFECAmount(0),
+            formatFECAmount(totalTVA),
+            "EUR",
+          ].join(";"),
+        );
       }
     }
   });
 
   // En-tête Cegid
-  const headers = "CodeJournal;Date;NumPiece;CompteGeneral;CompteAuxiliaire;Libelle;Debit;Credit;Devise";
+  const headers =
+    "CodeJournal;Date;NumPiece;CompteGeneral;CompteAuxiliaire;Libelle;Debit;Credit;Devise";
   const cegidContent = [headers, ...entries].join("\n");
 
   const BOM = "\uFEFF";
-  const blob = new Blob([BOM + cegidContent], { type: "text/csv;charset=utf-8;" });
-  
+  const blob = new Blob([BOM + cegidContent], {
+    type: "text/csv;charset=utf-8;",
+  });
+
   const filename = generateFilename("csv", dateRange, "Cegid");
   downloadBlob(blob, filename);
 }
@@ -1056,13 +1238,13 @@ export function exportToCegid(invoices, dateRange = null) {
  */
 function generateFilename(extension, dateRange, prefix = "factures") {
   const timestamp = format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-  
+
   if (dateRange?.from && dateRange?.to) {
     const fromStr = format(new Date(dateRange.from), "yyyy-MM-dd");
     const toStr = format(new Date(dateRange.to), "yyyy-MM-dd");
     return `${prefix}_${fromStr}_au_${toStr}.${extension}`;
   }
-  
+
   return `${prefix}_export_${timestamp}.${extension}`;
 }
 

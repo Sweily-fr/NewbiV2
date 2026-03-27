@@ -18,16 +18,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/ui/card";
-import {
-  ChartContainer,
-} from "@/src/components/ui/chart";
+import { ChartContainer } from "@/src/components/ui/chart";
 import { Skeleton } from "@/src/components/ui/skeleton";
 
 const chartConfig = {
-  actualIncome: { label: "Entrées réelles", color: "#22c55e" },
-  forecastIncome: { label: "Prév. entrées", color: "#22c55e" },
-  actualExpense: { label: "Sorties réelles", color: "#f87171" },
-  forecastExpense: { label: "Prév. sorties", color: "#f87171" },
+  actualIncome: { label: "Entrées réelles", color: "#5b50ff" },
+  forecastIncome: { label: "Prév. entrées", color: "#5b50ff" },
+  actualExpense: { label: "Sorties réelles", color: "#000000" },
+  forecastExpense: { label: "Prév. sorties", color: "#000000" },
   balance: { label: "Solde", color: "#3b82f6" },
 };
 
@@ -95,18 +93,28 @@ function CustomTooltip({ active, payload, label }) {
           {forecastIncome > 0 && (
             <div className="flex items-center justify-between gap-3 mb-1">
               <div className="flex items-center gap-2">
-                <span className="inline-block w-3 h-3 rounded-sm bg-green-500/30" style={{
-                  backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(34,197,94,0.5) 2px, rgba(34,197,94,0.5) 4px)",
-                }} />
+                <span
+                  className="inline-block w-3 h-3 rounded-sm"
+                  style={{
+                    backgroundColor: "rgba(91,80,255,0.3)",
+                    backgroundImage:
+                      "repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(91,80,255,0.5) 2px, rgba(91,80,255,0.5) 4px)",
+                  }}
+                />
                 <span className="text-xs text-muted-foreground">Prévision</span>
               </div>
-              <span className="text-xs font-medium">{formatCurrency(forecastIncome)}</span>
+              <span className="text-xs font-medium">
+                {formatCurrency(forecastIncome)}
+              </span>
             </div>
           )}
           {actualIncome > 0 && (
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <span className="inline-block w-3 h-3 rounded-sm bg-green-500" />
+                <span
+                  className="inline-block w-3 h-3 rounded-sm"
+                  style={{ backgroundColor: "#5b50ff" }}
+                />
                 <span className="text-xs text-muted-foreground">Réelles</span>
               </div>
               <div className="flex items-center gap-2">
@@ -115,7 +123,9 @@ function CustomTooltip({ active, payload, label }) {
                     {incomePct}%
                   </span>
                 )}
-                <span className="text-xs font-medium">{formatCurrency(actualIncome)}</span>
+                <span className="text-xs font-medium">
+                  {formatCurrency(actualIncome)}
+                </span>
               </div>
             </div>
           )}
@@ -131,18 +141,28 @@ function CustomTooltip({ active, payload, label }) {
           {forecastExpense > 0 && (
             <div className="flex items-center justify-between gap-3 mb-1">
               <div className="flex items-center gap-2">
-                <span className="inline-block w-3 h-3 rounded-sm bg-red-400/30" style={{
-                  backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(248,113,113,0.5) 2px, rgba(248,113,113,0.5) 4px)",
-                }} />
+                <span
+                  className="inline-block w-3 h-3 rounded-sm"
+                  style={{
+                    backgroundColor: "rgba(0,0,0,0.15)",
+                    backgroundImage:
+                      "repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.4) 2px, rgba(0,0,0,0.4) 4px)",
+                  }}
+                />
                 <span className="text-xs text-muted-foreground">Prévision</span>
               </div>
-              <span className="text-xs font-medium">{formatCurrency(forecastExpense)}</span>
+              <span className="text-xs font-medium">
+                {formatCurrency(forecastExpense)}
+              </span>
             </div>
           )}
           {actualExpense > 0 && (
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <span className="inline-block w-3 h-3 rounded-sm bg-red-400" />
+                <span
+                  className="inline-block w-3 h-3 rounded-sm"
+                  style={{ backgroundColor: "#000000" }}
+                />
                 <span className="text-xs text-muted-foreground">Réelles</span>
               </div>
               <div className="flex items-center gap-2">
@@ -151,7 +171,9 @@ function CustomTooltip({ active, payload, label }) {
                     {expensePct}%
                   </span>
                 )}
-                <span className="text-xs font-medium">{formatCurrency(actualExpense)}</span>
+                <span className="text-xs font-medium">
+                  {formatCurrency(actualExpense)}
+                </span>
               </div>
             </div>
           )}
@@ -214,7 +236,10 @@ export function ForecastChart({ months, loading, showForecast }) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="aspect-auto h-[320px] w-full">
+        <ChartContainer
+          config={chartConfig}
+          className="aspect-auto h-[320px] w-full"
+        >
           <ComposedChart
             data={chartData}
             margin={{ left: 0, right: 12, top: 12, bottom: 12 }}
@@ -228,10 +253,13 @@ export function ForecastChart({ months, loading, showForecast }) {
                 height="6"
                 patternTransform="rotate(45)"
               >
-                <rect width="6" height="6" fill="#dcfce7" />
+                <rect width="6" height="6" fill="#e8e6ff" />
                 <line
-                  x1="0" y1="0" x2="0" y2="6"
-                  stroke="#22c55e"
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="6"
+                  stroke="#5b50ff"
                   strokeWidth="2.5"
                   strokeOpacity="0.5"
                 />
@@ -244,10 +272,13 @@ export function ForecastChart({ months, loading, showForecast }) {
                 height="6"
                 patternTransform="rotate(45)"
               >
-                <rect width="6" height="6" fill="#fee2e2" />
+                <rect width="6" height="6" fill="#e5e5e5" />
                 <line
-                  x1="0" y1="0" x2="0" y2="6"
-                  stroke="#f87171"
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="6"
+                  stroke="#000000"
                   strokeWidth="2.5"
                   strokeOpacity="0.5"
                 />
@@ -283,7 +314,7 @@ export function ForecastChart({ months, loading, showForecast }) {
               tickMargin={12}
               tick={({ x, y, payload }) => {
                 const dataItem = chartData.find(
-                  (d) => d.label === payload.value
+                  (d) => d.label === payload.value,
                 );
                 const isCurrent = dataItem?.isCurrent;
                 return (
@@ -313,16 +344,13 @@ export function ForecastChart({ months, loading, showForecast }) {
               width={50}
             />
 
-            <Tooltip
-              content={<CustomTooltip />}
-              cursor={false}
-            />
+            <Tooltip content={<CustomTooltip />} cursor={false} />
 
             {/* Income bars: actual (solid green) stacked with forecast (hatched green) */}
             <Bar
               dataKey="actualIncome"
               stackId="income"
-              fill="#22c55e"
+              fill="#5b50ff"
               barSize={14}
               radius={[0, 0, 0, 0]}
             />
@@ -340,7 +368,7 @@ export function ForecastChart({ months, loading, showForecast }) {
             <Bar
               dataKey="actualExpense"
               stackId="expense"
-              fill="#fca5a5"
+              fill="#333333"
               barSize={14}
               radius={[0, 0, 0, 0]}
             />

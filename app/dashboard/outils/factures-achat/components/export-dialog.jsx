@@ -62,13 +62,13 @@ export function ExportDialog({ open, onOpenChange, invoices = [] }) {
     // Filter by date
     if (dateFrom) {
       data = data.filter(
-        (inv) => new Date(inv.issueDate) >= new Date(dateFrom)
+        (inv) => new Date(inv.issueDate) >= new Date(dateFrom),
       );
     }
     if (dateTo) {
-      data = data.filter(
-        (inv) => new Date(inv.issueDate) <= new Date(dateTo)
-      );
+      const endOfDay = new Date(dateTo);
+      endOfDay.setHours(23, 59, 59, 999);
+      data = data.filter((inv) => new Date(inv.issueDate) <= endOfDay);
     }
 
     if (data.length === 0) {
@@ -89,7 +89,7 @@ export function ExportDialog({ open, onOpenChange, invoices = [] }) {
       "Fournisseur",
       "N° Facture",
       "Date d'émission",
-      "Échéance",
+      "Date d'échéance",
       "Montant HT",
       "TVA",
       "Montant TTC",
@@ -119,9 +119,10 @@ export function ExportDialog({ open, onOpenChange, invoices = [] }) {
 
     const csvContent =
       "\uFEFF" +
-      [headers.join(";"), ...rows.map((r) => r.map((c) => `"${c}"`).join(";"))].join(
-        "\n"
-      );
+      [
+        headers.join(";"),
+        ...rows.map((r) => r.map((c) => `"${c}"`).join(";")),
+      ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -162,7 +163,7 @@ export function ExportDialog({ open, onOpenChange, invoices = [] }) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Date début</Label>
+              <Label>Date d&apos;émission début</Label>
               <Input
                 type="date"
                 value={dateFrom}
@@ -170,7 +171,7 @@ export function ExportDialog({ open, onOpenChange, invoices = [] }) {
               />
             </div>
             <div>
-              <Label>Date fin</Label>
+              <Label>Date d&apos;émission fin</Label>
               <Input
                 type="date"
                 value={dateTo}

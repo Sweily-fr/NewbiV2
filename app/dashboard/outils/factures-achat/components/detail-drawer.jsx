@@ -58,6 +58,15 @@ import {
   useReconcilePurchaseInvoice,
 } from "@/src/hooks/usePurchaseInvoices";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { cn } from "@/src/lib/utils";
+import { Calendar } from "@/src/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
 
 const STATUS_OPTIONS = [
   { value: "TO_PROCESS", label: "À traiter" },
@@ -449,28 +458,114 @@ export function PurchaseInvoiceDetailDrawer({
                         Date d'émission
                       </span>
                     </div>
-                    <Input
-                      type="date"
-                      value={form.issueDate}
-                      onChange={(e) =>
-                        handleChange("issueDate", e.target.value)
-                      }
-                      className="w-40 h-8 text-sm"
-                    />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-40 h-8 justify-start text-left font-normal text-sm",
+                            !form.issueDate && "text-muted-foreground",
+                          )}
+                          type="button"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {form.issueDate ? (
+                            (() => {
+                              try {
+                                const date = new Date(
+                                  form.issueDate + "T00:00:00",
+                                );
+                                if (isNaN(date.getTime()))
+                                  return <span>Date invalide</span>;
+                                return format(date, "PPP", { locale: fr });
+                              } catch {
+                                return <span>Date invalide</span>;
+                              }
+                            })()
+                          ) : (
+                            <span>Choisir une date</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="end">
+                        <Calendar
+                          mode="single"
+                          selected={
+                            form.issueDate
+                              ? new Date(form.issueDate + "T00:00:00")
+                              : undefined
+                          }
+                          onSelect={(date) => {
+                            if (date) {
+                              handleChange(
+                                "issueDate",
+                                format(date, "yyyy-MM-dd"),
+                              );
+                            }
+                          }}
+                          initialFocus
+                          locale={fr}
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-normal text-muted-foreground">
-                        Échéance
+                        Date d&apos;échéance
                       </span>
                     </div>
-                    <Input
-                      type="date"
-                      value={form.dueDate}
-                      onChange={(e) => handleChange("dueDate", e.target.value)}
-                      className="w-40 h-8 text-sm"
-                    />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-40 h-8 justify-start text-left font-normal text-sm",
+                            !form.dueDate && "text-muted-foreground",
+                          )}
+                          type="button"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {form.dueDate ? (
+                            (() => {
+                              try {
+                                const date = new Date(
+                                  form.dueDate + "T00:00:00",
+                                );
+                                if (isNaN(date.getTime()))
+                                  return <span>Date invalide</span>;
+                                return format(date, "PPP", { locale: fr });
+                              } catch {
+                                return <span>Date invalide</span>;
+                              }
+                            })()
+                          ) : (
+                            <span>Choisir une date</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="end">
+                        <Calendar
+                          mode="single"
+                          selected={
+                            form.dueDate
+                              ? new Date(form.dueDate + "T00:00:00")
+                              : undefined
+                          }
+                          onSelect={(date) => {
+                            if (date) {
+                              handleChange(
+                                "dueDate",
+                                format(date, "yyyy-MM-dd"),
+                              );
+                            }
+                          }}
+                          initialFocus
+                          locale={fr}
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -508,7 +603,7 @@ export function PurchaseInvoiceDetailDrawer({
                     <div className="flex items-center gap-2">
                       <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-normal text-muted-foreground">
-                        Date
+                        Date d&apos;émission
                       </span>
                     </div>
                     <span className="text-sm font-normal">
@@ -520,7 +615,7 @@ export function PurchaseInvoiceDetailDrawer({
                       <div className="flex items-center gap-2">
                         <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-normal text-muted-foreground">
-                          Échéance
+                          Date d&apos;échéance
                         </span>
                       </div>
                       <span className="text-sm font-normal">

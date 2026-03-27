@@ -169,10 +169,6 @@ function DashboardContent() {
 
     if (isFromBridge && workspaceId) {
       hasHandledBridgeReturn.current = true;
-      console.log(
-        "🏦 Retour de Bridge détecté, synchronisation des comptes...",
-      );
-
       // Afficher l'overlay de chargement immédiatement
       setIsBankSyncing(true);
 
@@ -191,7 +187,6 @@ function DashboardContent() {
 
           if (response.ok) {
             const data = await response.json();
-            console.log("✅ Sync bancaire terminée:", data);
             // Rafraîchir les données du dashboard
             refreshData();
           } else {
@@ -225,25 +220,14 @@ function DashboardContent() {
 
     if (isFromStripe && session?.user?.id) {
       hasHandledStripeReturn.current = true;
-      console.log(
-        "🔄 Retour de Stripe détecté sur dashboard, vérification du statut...",
-      );
-
       const timer = setTimeout(async () => {
         try {
           // Vérifier et mettre à jour le statut du compte Stripe Connect
           await checkAndUpdateAccountStatus();
           await refetchStatus();
 
-          console.log("✅ Statut Stripe Connect mis à jour");
-
           // Ouvrir le modal settings sur la section sécurité
           if (shouldOpenSettings) {
-            // Déclencher l'ouverture du modal settings
-            console.log(
-              "🔧 Ouverture du modal settings sur la section sécurité",
-            );
-
             // Dispatch d'un event pour ouvrir le modal settings
             window.dispatchEvent(
               new CustomEvent("openSettingsModal", {
@@ -631,7 +615,6 @@ function DashboardWithSearchParams() {
       searchParams.get("subscription_success") === "true";
 
     if (paymentSuccess || subscriptionSuccess) {
-      console.log("🎉 Paiement réussi détecté, affichage de l'animation Pro");
       setShowProAnimation(true);
       // Nettoyer l'URL des paramètres
       const cleanUrl = window.location.pathname;
@@ -641,7 +624,6 @@ function DashboardWithSearchParams() {
 
   const handleProAnimationComplete = () => {
     setShowProAnimation(false);
-    console.log("✅ Animation Pro terminée, dashboard accessible");
   };
 
   return (
