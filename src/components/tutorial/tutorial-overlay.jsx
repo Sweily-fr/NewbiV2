@@ -7,7 +7,10 @@ import { useSidebar } from "@/src/components/ui/sidebar";
 import { tutorialSteps } from "./tutorial-steps";
 
 // Import dynamique de Joyride pour éviter les erreurs SSR
-const Joyride = dynamic(() => import("react-joyride"), { ssr: false });
+const Joyride = dynamic(
+  () => import("react-joyride").then((mod) => mod.Joyride),
+  { ssr: false },
+);
 
 // Styles personnalisés pour correspondre à la charte graphique Newbi
 const joyrideStyles = {

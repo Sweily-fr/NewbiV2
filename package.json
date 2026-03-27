@@ -84,6 +84,7 @@
     "dompurify": "^3.3.3",
     "framer-motion": "^12.23.12",
     "geist": "^1.5.1",
+    "graphql": "^16.13.2",
     "graphql-upload-minimal": "^1.6.1",
     "graphql-ws": "^6.0.6",
     "gray-matter": "^4.0.3",
@@ -154,6 +155,7 @@
     "react-email": "4.3.0",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.3.4",
+    "typescript": "^6.0.2",
     "vitest": "^4.0.18"
   }
 }
