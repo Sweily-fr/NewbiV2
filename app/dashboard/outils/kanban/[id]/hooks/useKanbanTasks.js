@@ -515,7 +515,7 @@ export const useKanbanTasks = (boardId, board) => {
             dueDate: taskForm.dueDate || null,
             columnId: taskForm.columnId,
             boardId,
-            // Ne pas envoyer position - le backend la calculera automatiquement
+            position: 0,
             tags: cleanTags(taskForm.tags),
             checklist: taskForm.checklist.map((item) => ({
               id: item.id || undefined,

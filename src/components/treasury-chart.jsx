@@ -52,11 +52,11 @@ const chartConfig = {
   },
   income: {
     label: "Entrées",
-    color: "#4ade80", // Green-400
+    color: "#5b50ff", // Violet Newbi
   },
   expenses: {
     label: "Sorties",
-    color: "#f87171", // Red-400
+    color: "#000000", // Noir
   },
 };
 

@@ -21,8 +21,8 @@ export const MY_PENNYLANE_ACCOUNT = gql`
       }
       autoSync {
         invoices
-        expenses
-        clients
+        supplierInvoices
+        quotes
       }
       createdAt
       updatedAt
@@ -81,8 +81,8 @@ export const UPDATE_PENNYLANE_AUTO_SYNC = gql`
         id
         autoSync {
           invoices
-          expenses
-          clients
+          supplierInvoices
+          quotes
         }
       }
     }

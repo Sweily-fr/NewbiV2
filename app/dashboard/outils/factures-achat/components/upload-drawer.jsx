@@ -105,12 +105,14 @@ export function PurchaseInvoiceUploadDrawer({
   const [processing, setProcessing] = useState(false);
   const [ocrResults, setOcrResults] = useState([]);
   const [currentStep, setCurrentStep] = useState("upload");
+  const [currentReviewIndex, setCurrentReviewIndex] = useState(0);
+  const [createdCount, setCreatedCount] = useState(0);
 
   const [processOcr] = useMutation(PROCESS_DOCUMENT_OCR);
   const { createInvoice } = useCreatePurchaseInvoice();
   const { addFile } = useAddPurchaseInvoiceFile();
 
-  const [editableData, setEditableData] = useState({
+  const defaultEditableData = {
     supplierName: "",
     invoiceNumber: "",
     issueDate: "",
@@ -122,7 +124,9 @@ export function PurchaseInvoiceUploadDrawer({
     category: "OTHER",
     status: "TO_PROCESS",
     paymentMethod: "",
-  });
+  };
+
+  const [editableData, setEditableData] = useState(defaultEditableData);
 
   const handleDrag = useCallback((e) => {
     e.preventDefault();
@@ -159,6 +163,85 @@ export function PurchaseInvoiceUploadDrawer({
     setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Normalize date to YYYY-MM-DD for <input type="date">
+  const toDateInput = (dateStr) => {
+    if (!dateStr) return "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+    const frMatch = dateStr.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
+    if (frMatch) {
+      const [, day, month, year] = frMatch;
+      return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+    }
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+    return dateStr;
+  };
+
+  const populateEditableDataFromResult = useCallback((result) => {
+    if (!result?.financial) {
+      setEditableData({ ...defaultEditableData });
+      return;
+    }
+    const f = result.financial;
+    const td = f.transaction_data || {};
+    const ef = f.extracted_fields || {};
+    const totals = ef.totals || {};
+
+    setEditableData({
+      supplierName:
+        td.vendor_name ||
+        td.supplier_name ||
+        f.vendor_name ||
+        f.supplier_name ||
+        "",
+      invoiceNumber:
+        td.document_number ||
+        td.invoice_number ||
+        f.invoice_number ||
+        f.document_number ||
+        "",
+      issueDate: toDateInput(
+        td.transaction_date ||
+          td.invoice_date ||
+          f.invoice_date ||
+          f.date ||
+          "",
+      ),
+      dueDate: toDateInput(td.due_date || f.due_date || ""),
+      amountHT:
+        td.amount_ht?.toString() ||
+        totals.total_ht?.toString() ||
+        f.amount_ht?.toString() ||
+        f.total_ht?.toString() ||
+        "",
+      amountTVA:
+        td.tax_amount?.toString() ||
+        totals.total_tax?.toString() ||
+        f.tax_amount?.toString() ||
+        f.total_vat?.toString() ||
+        "",
+      vatRate: td.tax_rate?.toString() || f.tax_rate?.toString() || "20",
+      amountTTC:
+        td.amount?.toString() ||
+        totals.total_ttc?.toString() ||
+        f.total_ttc?.toString() ||
+        f.amount_ttc?.toString() ||
+        "",
+      category: VALID_CATEGORIES.has(td.category)
+        ? td.category
+        : VALID_CATEGORIES.has(f.category)
+          ? f.category
+          : "OTHER",
+      status: "TO_PROCESS",
+      paymentMethod: "",
+    });
+  }, []);
+
   const handleProcessOCR = async () => {
     if (files.length === 0) return;
     setProcessing(true);
@@ -193,86 +276,15 @@ export function PurchaseInvoiceUploadDrawer({
 
     setOcrResults(results);
 
-    const firstSuccess = results.find((r) => !r.error);
-    if (firstSuccess?.financial) {
-      const f = firstSuccess.financial;
-      const td = f.transaction_data || {};
-      const ef = f.extracted_fields || {};
-      const totals = ef.totals || {};
-
-      // Normalize date to YYYY-MM-DD for <input type="date">
-      const toDateInput = (dateStr) => {
-        if (!dateStr) return "";
-        // Already YYYY-MM-DD
-        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
-        // French format DD/MM/YYYY or DD-MM-YYYY or DD.MM.YYYY
-        const frMatch = dateStr.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
-        if (frMatch) {
-          const [, day, month, year] = frMatch;
-          return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
-        }
-        // Try ISO parse
-        const d = new Date(dateStr);
-        if (!isNaN(d.getTime())) {
-          const y = d.getFullYear();
-          const m = String(d.getMonth() + 1).padStart(2, "0");
-          const day = String(d.getDate()).padStart(2, "0");
-          return `${y}-${m}-${day}`;
-        }
-        return dateStr;
-      };
-
-      setEditableData({
-        supplierName:
-          td.vendor_name ||
-          td.supplier_name ||
-          f.vendor_name ||
-          f.supplier_name ||
-          "",
-        invoiceNumber:
-          td.document_number ||
-          td.invoice_number ||
-          f.invoice_number ||
-          f.document_number ||
-          "",
-        issueDate: toDateInput(
-          td.transaction_date ||
-            td.invoice_date ||
-            f.invoice_date ||
-            f.date ||
-            "",
-        ),
-        dueDate: toDateInput(td.due_date || f.due_date || ""),
-        amountHT:
-          td.amount_ht?.toString() ||
-          totals.total_ht?.toString() ||
-          f.amount_ht?.toString() ||
-          f.total_ht?.toString() ||
-          "",
-        amountTVA:
-          td.tax_amount?.toString() ||
-          totals.total_tax?.toString() ||
-          f.tax_amount?.toString() ||
-          f.total_vat?.toString() ||
-          "",
-        vatRate: td.tax_rate?.toString() || f.tax_rate?.toString() || "20",
-        amountTTC:
-          td.amount?.toString() ||
-          totals.total_ttc?.toString() ||
-          f.total_ttc?.toString() ||
-          f.amount_ttc?.toString() ||
-          "",
-        category: VALID_CATEGORIES.has(td.category)
-          ? td.category
-          : VALID_CATEGORIES.has(f.category)
-            ? f.category
-            : "OTHER",
-        status: "TO_PROCESS",
-        paymentMethod: "",
-      });
+    // Find first successful result to start review
+    const firstSuccessIndex = results.findIndex((r) => !r.error);
+    setCurrentReviewIndex(firstSuccessIndex >= 0 ? firstSuccessIndex : 0);
+    if (firstSuccessIndex >= 0) {
+      populateEditableDataFromResult(results[firstSuccessIndex]);
     }
 
     setProcessing(false);
+    setCreatedCount(0);
     setCurrentStep("review");
   };
 
@@ -293,12 +305,18 @@ export function PurchaseInvoiceUploadDrawer({
     return `${y}-${m}-${dy}`;
   };
 
+  // Get only successful OCR results
+  const successResults = ocrResults.filter((r) => !r.error);
+  const totalToReview = successResults.length;
+  const currentResult = ocrResults[currentReviewIndex];
+
   const handleCreate = async () => {
     if (!editableData.supplierName || !editableData.amountTTC) {
       toast.error("Fournisseur et montant TTC requis");
       return;
     }
     try {
+      const result = currentResult;
       const invoice = await createInvoice({
         supplierName: editableData.supplierName,
         invoiceNumber: editableData.invoiceNumber || undefined,
@@ -315,31 +333,46 @@ export function PurchaseInvoiceUploadDrawer({
         paymentMethod: editableData.paymentMethod || undefined,
         source: "OCR",
       });
-      if (invoice?.id) {
-        for (const result of ocrResults) {
-          if (!result.error && result.metadata) {
-            const fileInput = result.metadata.documentUrl
-              ? {
-                  cloudflareUrl: result.metadata.documentUrl,
-                  fileName: result.metadata.fileName,
-                  mimeType: result.metadata.mimeType,
-                  fileSize: result.metadata.fileSize,
-                  ocrData: result.financial,
-                }
-              : {
-                  file: result.file,
-                  ocrData: result.financial,
-                  processOCR: false,
-                };
-            await addFile(invoice.id, fileInput);
-          }
-        }
+      if (invoice?.id && result && !result.error && result.metadata) {
+        const fileInput = result.metadata.documentUrl
+          ? {
+              cloudflareUrl: result.metadata.documentUrl,
+              fileName: result.metadata.fileName,
+              mimeType: result.metadata.mimeType,
+              fileSize: result.metadata.fileSize,
+              ocrData: result.financial,
+            }
+          : {
+              file: result.file,
+              ocrData: result.financial,
+              processOCR: false,
+            };
+        await addFile(invoice.id, fileInput);
       }
-      setCurrentStep("done");
-      setTimeout(() => {
-        resetForm();
-        onUploaded?.();
-      }, 1000);
+
+      const newCreatedCount = createdCount + 1;
+      setCreatedCount(newCreatedCount);
+
+      // Find next successful result after current index
+      const nextIndex = ocrResults.findIndex(
+        (r, i) => i > currentReviewIndex && !r.error,
+      );
+
+      if (nextIndex >= 0) {
+        // Move to next invoice
+        toast.success(
+          `Facture ${newCreatedCount}/${totalToReview} créée — suivante`,
+        );
+        setCurrentReviewIndex(nextIndex);
+        populateEditableDataFromResult(ocrResults[nextIndex]);
+      } else {
+        // All done
+        setCurrentStep("done");
+        setTimeout(() => {
+          resetForm();
+          onUploaded?.();
+        }, 1000);
+      }
     } catch {
       toast.error("Erreur lors de la création");
     }
@@ -349,20 +382,10 @@ export function PurchaseInvoiceUploadDrawer({
     setFiles([]);
     setOcrResults([]);
     setCurrentStep("upload");
+    setCurrentReviewIndex(0);
+    setCreatedCount(0);
     setDragActive(false);
-    setEditableData({
-      supplierName: "",
-      invoiceNumber: "",
-      issueDate: "",
-      dueDate: "",
-      amountHT: "",
-      amountTVA: "",
-      vatRate: "20",
-      amountTTC: "",
-      category: "OTHER",
-      status: "TO_PROCESS",
-      paymentMethod: "",
-    });
+    setEditableData({ ...defaultEditableData });
   };
 
   const handleEditChange = (field, value) => {
@@ -399,8 +422,12 @@ export function PurchaseInvoiceUploadDrawer({
               {currentStep === "upload"
                 ? "Importer une facture"
                 : currentStep === "review"
-                  ? "Vérifier les données"
-                  : "Importation terminée"}
+                  ? totalToReview > 1
+                    ? `Facture ${createdCount + 1} / ${totalToReview}`
+                    : "Vérifier les données"
+                  : createdCount > 1
+                    ? `${createdCount} factures créées !`
+                    : "Importation terminée"}
             </DrawerTitle>
             {currentStep === "review" && (
               <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
@@ -505,32 +532,29 @@ export function PurchaseInvoiceUploadDrawer({
             )}
 
             {/* Step 2: Review */}
-            {currentStep === "review" && (
+            {currentStep === "review" && currentResult && (
               <>
-                {/* OCR status */}
+                {/* Current file indicator */}
                 <div className="space-y-2">
-                  {ocrResults.map((r, i) => (
-                    <div
-                      key={i}
-                      className={`flex items-center gap-2 p-3 rounded-lg text-sm ${
-                        r.error
-                          ? "bg-red-50 text-red-700 dark:bg-red-900/10 dark:text-red-400"
-                          : "bg-green-50 text-green-700 dark:bg-green-900/10 dark:text-green-400"
-                      }`}
-                    >
-                      {r.error ? (
-                        <X className="h-4 w-4 flex-shrink-0" />
-                      ) : (
-                        <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-                      )}
-                      <span className="truncate">{r.file.name}</span>
-                      {r.error && (
-                        <span className="text-xs ml-auto flex-shrink-0">
-                          {r.error}
-                        </span>
-                      )}
-                    </div>
-                  ))}
+                  <div
+                    className={`flex items-center gap-2 p-3 rounded-lg text-sm ${
+                      currentResult.error
+                        ? "bg-red-50 text-red-700 dark:bg-red-900/10 dark:text-red-400"
+                        : "bg-green-50 text-green-700 dark:bg-green-900/10 dark:text-green-400"
+                    }`}
+                  >
+                    {currentResult.error ? (
+                      <X className="h-4 w-4 flex-shrink-0" />
+                    ) : (
+                      <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                    )}
+                    <span className="truncate">{currentResult.file.name}</span>
+                    {currentResult.error && (
+                      <span className="text-xs ml-auto flex-shrink-0">
+                        {currentResult.error}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <Separator />
@@ -577,7 +601,7 @@ export function PurchaseInvoiceUploadDrawer({
                       <div className="flex items-center gap-2">
                         <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-normal text-muted-foreground">
-                          Date
+                          Date d&apos;émission
                         </span>
                       </div>
                       <Input
@@ -593,7 +617,7 @@ export function PurchaseInvoiceUploadDrawer({
                       <div className="flex items-center gap-2">
                         <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-normal text-muted-foreground">
-                          Échéance
+                          Date d&apos;échéance
                         </span>
                       </div>
                       <Input
@@ -741,28 +765,28 @@ export function PurchaseInvoiceUploadDrawer({
                 </div>
 
                 {/* Justificatif */}
-                {ocrResults.some((r) => !r.error && r.metadata) && (
-                  <>
-                    <Separator />
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                          Justificatif
-                        </p>
-                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
-                          <Paperclip className="w-3 h-3" />
-                          Attaché
-                        </span>
-                      </div>
-                      {ocrResults
-                        .filter((r) => !r.error && r.metadata)
-                        .map((r, i) => {
+                {currentResult &&
+                  !currentResult.error &&
+                  currentResult.metadata && (
+                    <>
+                      <Separator />
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                            Justificatif
+                          </p>
+                          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
+                            <Paperclip className="w-3 h-3" />
+                            Attaché
+                          </span>
+                        </div>
+                        {(() => {
+                          const r = currentResult;
                           const isImage = r.file.type.startsWith("image/");
                           const isPdf = r.file.type === "application/pdf";
                           const blobUrl = URL.createObjectURL(r.file);
                           return (
                             <div
-                              key={i}
                               className="relative group cursor-pointer rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:border-gray-400 dark:hover:border-gray-500 hover:shadow-sm transition-all"
                               onClick={() =>
                                 window.open(
@@ -812,10 +836,10 @@ export function PurchaseInvoiceUploadDrawer({
                               </div>
                             </div>
                           );
-                        })}
-                    </div>
-                  </>
-                )}
+                        })()}
+                      </div>
+                    </>
+                  )}
               </>
             )}
 
@@ -826,10 +850,14 @@ export function PurchaseInvoiceUploadDrawer({
                   <CheckCircle2 className="h-6 w-6 text-green-500" />
                 </div>
                 <p className="text-lg font-medium tracking-tight">
-                  Facture créée !
+                  {createdCount > 1
+                    ? `${createdCount} factures créées !`
+                    : "Facture créée !"}
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  La facture a été ajoutée à votre liste
+                  {createdCount > 1
+                    ? "Les factures ont été ajoutées à votre liste"
+                    : "La facture a été ajoutée à votre liste"}
                 </p>
               </div>
             )}
@@ -883,7 +911,9 @@ export function PurchaseInvoiceUploadDrawer({
                 onClick={handleCreate}
                 disabled={!editableData.supplierName || !editableData.amountTTC}
               >
-                Créer la facture
+                {totalToReview > 1 && createdCount + 1 < totalToReview
+                  ? "Valider et suivante"
+                  : "Créer la facture"}
               </Button>
             </div>
           )}

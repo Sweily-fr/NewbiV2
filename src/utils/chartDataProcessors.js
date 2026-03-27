@@ -123,9 +123,9 @@ export const processExpensesForCharts = (expenses) => {
 };
 
 // MODE BANCAIRE PUR : Entrées basées uniquement sur les transactions bancaires positives
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const processIncomeForCharts = (
-  paidInvoices = [],
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _paidInvoices = [],
   bankTransactions = [],
   days = 365,
 ) => {
@@ -190,9 +190,9 @@ export const processIncomeForCharts = (
 };
 
 // MODE BANCAIRE PUR : Sorties basées uniquement sur les transactions bancaires négatives
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const processExpensesWithBankForCharts = (
-  expenses = [],
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _expenses = [],
   bankTransactions = [],
   days = 365,
 ) => {
@@ -264,11 +264,11 @@ export const getIncomeChartConfig = () => ({
   },
   desktop: {
     label: "Montant",
-    color: "#22c55e", // Vert pour les revenus
+    color: "#5b50ff", // Violet Newbi pour les entrées
   },
   mobile: {
     label: "Nombre de transactions",
-    color: "#16a34a", // Vert plus foncé
+    color: "#4840cc", // Violet plus foncé
   },
 });
 
@@ -278,10 +278,10 @@ export const getExpenseChartConfig = () => ({
   },
   desktop: {
     label: "Montant",
-    color: "#ef4444", // Rouge pour les dépenses
+    color: "#000000", // Noir pour les sorties
   },
   mobile: {
     label: "Nombre de transactions",
-    color: "#dc2626", // Rouge plus foncé
+    color: "#1a1a1a", // Noir légèrement plus clair
   },
 });

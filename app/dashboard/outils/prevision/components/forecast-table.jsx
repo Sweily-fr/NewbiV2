@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useMemo, useState, useCallback, useRef, useEffect } from "react";
+import React, {
+  useMemo,
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+} from "react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { cn } from "@/src/lib/utils";
 import {
@@ -23,20 +29,30 @@ const INCOME_GROUPS = [
   {
     id: "revenue",
     label: "Chiffre d'affaires",
-    color: "#22c55e",
+    color: "#5b50ff",
     icon: Banknote,
     items: [
-      { category: "SALES", label: "Ventes", type: "INCOME", color: "#22c55e" },
+      { category: "SALES", label: "Ventes", type: "INCOME", color: "#5b50ff" },
     ],
   },
   {
     id: "other-income",
     label: "Autres entrées",
-    color: "#4ade80",
+    color: "#7b73ff",
     icon: BadgeDollarSign,
     items: [
-      { category: "REFUNDS_RECEIVED", label: "Remboursements reçus", type: "INCOME", color: "#4ade80" },
-      { category: "OTHER_INCOME", label: "Autres revenus", type: "INCOME", color: "#86efac" },
+      {
+        category: "REFUNDS_RECEIVED",
+        label: "Remboursements reçus",
+        type: "INCOME",
+        color: "#7b73ff",
+      },
+      {
+        category: "OTHER_INCOME",
+        label: "Autres revenus",
+        type: "INCOME",
+        color: "#9d97ff",
+      },
     ],
   },
 ];
@@ -45,13 +61,28 @@ const EXPENSE_GROUPS = [
   {
     id: "operations",
     label: "Dépenses opérationnelles",
-    color: "#f87171",
+    color: "#333333",
     icon: Building2,
     items: [
-      { category: "RENT", label: "Loyer", type: "EXPENSE", color: "#f87171" },
-      { category: "OFFICE_SUPPLIES", label: "Fournitures", type: "EXPENSE", color: "#a78bfa" },
-      { category: "TRANSPORT", label: "Transport", type: "EXPENSE", color: "#60a5fa" },
-      { category: "INSURANCE", label: "Assurance", type: "EXPENSE", color: "#34d399" },
+      { category: "RENT", label: "Loyer", type: "EXPENSE", color: "#333333" },
+      {
+        category: "OFFICE_SUPPLIES",
+        label: "Fournitures",
+        type: "EXPENSE",
+        color: "#a78bfa",
+      },
+      {
+        category: "TRANSPORT",
+        label: "Transport",
+        type: "EXPENSE",
+        color: "#60a5fa",
+      },
+      {
+        category: "INSURANCE",
+        label: "Assurance",
+        type: "EXPENSE",
+        color: "#34d399",
+      },
     ],
   },
   {
@@ -60,7 +91,12 @@ const EXPENSE_GROUPS = [
     color: "#fb923c",
     icon: Users,
     items: [
-      { category: "SALARIES", label: "Salaires", type: "EXPENSE", color: "#fb923c" },
+      {
+        category: "SALARIES",
+        label: "Salaires",
+        type: "EXPENSE",
+        color: "#fb923c",
+      },
     ],
   },
   {
@@ -69,9 +105,24 @@ const EXPENSE_GROUPS = [
     color: "#fbbf24",
     icon: Briefcase,
     items: [
-      { category: "SUBSCRIPTIONS", label: "Abonnements", type: "EXPENSE", color: "#fbbf24" },
-      { category: "SERVICES", label: "Sous-traitance", type: "EXPENSE", color: "#e2a20c" },
-      { category: "SOFTWARE", label: "Logiciels", type: "EXPENSE", color: "#22d3ee" },
+      {
+        category: "SUBSCRIPTIONS",
+        label: "Abonnements",
+        type: "EXPENSE",
+        color: "#fbbf24",
+      },
+      {
+        category: "SERVICES",
+        label: "Sous-traitance",
+        type: "EXPENSE",
+        color: "#e2a20c",
+      },
+      {
+        category: "SOFTWARE",
+        label: "Logiciels",
+        type: "EXPENSE",
+        color: "#22d3ee",
+      },
     ],
   },
   {
@@ -80,7 +131,12 @@ const EXPENSE_GROUPS = [
     color: "#f472b6",
     icon: Megaphone,
     items: [
-      { category: "MARKETING", label: "Marketing", type: "EXPENSE", color: "#f472b6" },
+      {
+        category: "MARKETING",
+        label: "Marketing",
+        type: "EXPENSE",
+        color: "#f472b6",
+      },
     ],
   },
   {
@@ -89,8 +145,18 @@ const EXPENSE_GROUPS = [
     color: "#94a3b8",
     icon: Landmark,
     items: [
-      { category: "TAXES", label: "Impôts & taxes", type: "EXPENSE", color: "#94a3b8" },
-      { category: "OTHER_EXPENSE", label: "Autres dépenses", type: "EXPENSE", color: "#b0b8c4" },
+      {
+        category: "TAXES",
+        label: "Impôts & taxes",
+        type: "EXPENSE",
+        color: "#94a3b8",
+      },
+      {
+        category: "OTHER_EXPENSE",
+        label: "Autres dépenses",
+        type: "EXPENSE",
+        color: "#b0b8c4",
+      },
     ],
   },
 ];
@@ -124,7 +190,15 @@ function AchievementBadge({ actual, forecast }) {
   );
 }
 
-function EditableCell({ value, isPast, month, category, type, onCellEdit, forecast }) {
+function EditableCell({
+  value,
+  isPast,
+  month,
+  category,
+  type,
+  onCellEdit,
+  forecast,
+}) {
   const [editing, setEditing] = useState(false);
   const [localValue, setLocalValue] = useState(String(value || ""));
 
@@ -144,7 +218,7 @@ function EditableCell({ value, isPast, month, category, type, onCellEdit, foreca
         setEditing(false);
       }
     },
-    [value]
+    [value],
   );
 
   if (isPast) {
@@ -192,7 +266,8 @@ function EditableCell({ value, isPast, month, category, type, onCellEdit, foreca
 
 // ─── Sticky helpers ───
 
-const stickyLeft = "sticky left-0 bg-background relative after:content-[''] after:absolute after:top-0 after:-right-3 after:bottom-0 after:w-3 after:pointer-events-none after:bg-gradient-to-r after:from-black/[0.06] after:to-transparent";
+const stickyLeft =
+  "sticky left-0 bg-background relative after:content-[''] after:absolute after:top-0 after:-right-3 after:bottom-0 after:w-3 after:pointer-events-none after:bg-gradient-to-r after:from-black/[0.06] after:to-transparent";
 
 function findScrollParent(el) {
   let node = el?.parentElement;
@@ -224,7 +299,7 @@ export function ForecastTable({ months, loading, onCellEdit }) {
 
   const isGroupExpanded = useCallback(
     (groupId) => expandedGroups[groupId] !== false, // default expanded
-    [expandedGroups]
+    [expandedGroups],
   );
 
   // Footer appears when the sentinel (top of table) scrolls out of view
@@ -236,7 +311,7 @@ export function ForecastTable({ months, loading, onCellEdit }) {
     const scrollParent = findScrollParent(wrapper);
     const observer = new IntersectionObserver(
       ([entry]) => setShowFooter(!entry.isIntersecting),
-      { root: scrollParent || null, threshold: 0 }
+      { root: scrollParent || null, threshold: 0 },
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
@@ -276,7 +351,7 @@ export function ForecastTable({ months, loading, onCellEdit }) {
   const getGroupTotal = (group, month, isPast) => {
     return group.items.reduce((sum, item) => {
       const data = getCellData(month, item.type, item.category);
-      return sum + (isPast ? (data.actual || 0) : (data.forecast || 0));
+      return sum + (isPast ? data.actual || 0 : data.forecast || 0);
     }, 0);
   };
 
@@ -321,7 +396,7 @@ export function ForecastTable({ months, loading, onCellEdit }) {
                 key={m.month}
                 className={cn(
                   "text-center text-[13px] font-normal tabular-nums text-foreground whitespace-nowrap",
-                  m.month === currentMonth && "bg-primary/[0.04]"
+                  m.month === currentMonth && "bg-primary/[0.04]",
                 )}
               >
                 {formatAmount(total)}
@@ -356,7 +431,7 @@ export function ForecastTable({ months, loading, onCellEdit }) {
                     key={m.month}
                     className={cn(
                       "text-center px-1",
-                      m.month === currentMonth && "bg-primary/[0.04]"
+                      m.month === currentMonth && "bg-primary/[0.04]",
                     )}
                   >
                     <EditableCell
@@ -381,14 +456,13 @@ export function ForecastTable({ months, loading, onCellEdit }) {
     <div ref={wrapperRef} className="w-full pb-6">
       <div ref={sentinelRef} className="h-px" />
       <table className="w-full border-collapse">
-
         {/* ═══ THEAD ═══ */}
         <thead className="sticky top-0 z-40">
           <tr className="h-11 bg-background shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
             <th
               className={cn(
                 stickyLeft,
-                "z-50 min-w-[280px] px-5 text-left text-[11px] font-medium text-muted-foreground uppercase tracking-wider"
+                "z-50 min-w-[280px] px-5 text-left text-[11px] font-medium text-muted-foreground uppercase tracking-wider",
               )}
             />
             {months.map((m) => (
@@ -398,7 +472,7 @@ export function ForecastTable({ months, loading, onCellEdit }) {
                   "min-w-[150px] px-4 text-center text-[11px] font-medium uppercase tracking-wider bg-background whitespace-nowrap",
                   m.month === currentMonth
                     ? "text-primary"
-                    : "text-muted-foreground"
+                    : "text-muted-foreground",
                 )}
               >
                 {formatMonthHeader(m.month)}
@@ -421,7 +495,9 @@ export function ForecastTable({ months, loading, onCellEdit }) {
                 className={cn(
                   "text-center text-[13px] font-semibold tabular-nums whitespace-nowrap",
                   m.month === currentMonth && "bg-primary/[0.04]",
-                  (m.openingBalance || 0) >= 0 ? "text-foreground" : "text-red-600"
+                  (m.openingBalance || 0) >= 0
+                    ? "text-foreground"
+                    : "text-red-600",
                 )}
               >
                 {formatAmount(m.openingBalance)}
@@ -429,7 +505,9 @@ export function ForecastTable({ months, loading, onCellEdit }) {
             ))}
           </tr>
 
-          <tr><td colSpan={colCount} className="h-2 bg-muted/40" /></tr>
+          <tr>
+            <td colSpan={colCount} className="h-2 bg-muted/40" />
+          </tr>
 
           {/* ═══ ENTRÉES — section header ═══ */}
           <tr
@@ -438,7 +516,10 @@ export function ForecastTable({ months, loading, onCellEdit }) {
           >
             <td className={cn(stickyLeft, "z-[36] px-5")}>
               <div className="flex items-center gap-2">
-                <div className="w-1 h-6 rounded-full bg-emerald-500 shrink-0" />
+                <div
+                  className="w-1 h-6 rounded-full shrink-0"
+                  style={{ backgroundColor: "#5b50ff" }}
+                />
                 {incomeExpanded ? (
                   <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
                 ) : (
@@ -451,13 +532,16 @@ export function ForecastTable({ months, loading, onCellEdit }) {
             </td>
             {months.map((m) => {
               const isPast = m.month < currentMonth;
-              const total = isPast ? m.actualIncome || 0 : m.forecastIncome || 0;
+              const total = isPast
+                ? m.actualIncome || 0
+                : m.forecastIncome || 0;
               return (
                 <td
                   key={m.month}
                   className={cn(
-                    "text-center text-[13px] font-semibold tabular-nums text-emerald-700 bg-background whitespace-nowrap",
-                    m.month === currentMonth && "!bg-primary/[0.04]"
+                    "text-center text-[13px] font-semibold tabular-nums bg-background whitespace-nowrap",
+                    "text-[#5b50ff]",
+                    m.month === currentMonth && "!bg-primary/[0.04]",
                   )}
                 >
                   {formatAmount(total)}
@@ -469,7 +553,9 @@ export function ForecastTable({ months, loading, onCellEdit }) {
           {/* Income groups */}
           {INCOME_GROUPS.map((group) => renderGroup(group, incomeExpanded))}
 
-          <tr><td colSpan={colCount} className="h-2 bg-muted/40" /></tr>
+          <tr>
+            <td colSpan={colCount} className="h-2 bg-muted/40" />
+          </tr>
 
           {/* ═══ SORTIES — section header ═══ */}
           <tr
@@ -478,7 +564,7 @@ export function ForecastTable({ months, loading, onCellEdit }) {
           >
             <td className={cn(stickyLeft, "z-[36] px-5")}>
               <div className="flex items-center gap-2">
-                <div className="w-1 h-6 rounded-full bg-red-500 shrink-0" />
+                <div className="w-1 h-6 rounded-full bg-black shrink-0" />
                 {expenseExpanded ? (
                   <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
                 ) : (
@@ -491,13 +577,15 @@ export function ForecastTable({ months, loading, onCellEdit }) {
             </td>
             {months.map((m) => {
               const isPast = m.month < currentMonth;
-              const total = isPast ? m.actualExpense || 0 : m.forecastExpense || 0;
+              const total = isPast
+                ? m.actualExpense || 0
+                : m.forecastExpense || 0;
               return (
                 <td
                   key={m.month}
                   className={cn(
-                    "text-center text-[13px] font-semibold tabular-nums text-red-600 bg-background whitespace-nowrap",
-                    m.month === currentMonth && "!bg-primary/[0.04]"
+                    "text-center text-[13px] font-semibold tabular-nums text-black bg-background whitespace-nowrap",
+                    m.month === currentMonth && "!bg-primary/[0.04]",
                   )}
                 >
                   {formatAmount(total)}
@@ -510,7 +598,9 @@ export function ForecastTable({ months, loading, onCellEdit }) {
           {EXPENSE_GROUPS.map((group) => renderGroup(group, expenseExpanded))}
 
           {/* Sentinel for footer observer */}
-          <tr><td colSpan={colCount} className="h-px" /></tr>
+          <tr>
+            <td colSpan={colCount} className="h-px" />
+          </tr>
         </tbody>
 
         {/* ═══ TFOOT ═══ */}
@@ -519,7 +609,7 @@ export function ForecastTable({ months, loading, onCellEdit }) {
             "sticky bottom-0 z-40 transition-all duration-200",
             showFooter
               ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-2 pointer-events-none"
+              : "opacity-0 translate-y-2 pointer-events-none",
           )}
         >
           <tr className="h-[46px] bg-background shadow-[0_-1px_3px_rgba(0,0,0,0.08)]">
@@ -530,8 +620,12 @@ export function ForecastTable({ months, loading, onCellEdit }) {
             </td>
             {months.map((m) => {
               const isPast = m.month < currentMonth;
-              const income = isPast ? m.actualIncome || 0 : m.forecastIncome || 0;
-              const expense = isPast ? m.actualExpense || 0 : m.forecastExpense || 0;
+              const income = isPast
+                ? m.actualIncome || 0
+                : m.forecastIncome || 0;
+              const expense = isPast
+                ? m.actualExpense || 0
+                : m.forecastExpense || 0;
               const variation = income - expense;
               return (
                 <td
@@ -539,7 +633,7 @@ export function ForecastTable({ months, loading, onCellEdit }) {
                   className={cn(
                     "text-center text-[13px] font-medium tabular-nums bg-background whitespace-nowrap",
                     m.month === currentMonth && "!bg-primary/[0.04]",
-                    variation >= 0 ? "text-emerald-700" : "text-red-600"
+                    variation >= 0 ? "text-emerald-700" : "text-red-600",
                   )}
                 >
                   {variation > 0 && "+"}
@@ -561,7 +655,9 @@ export function ForecastTable({ months, loading, onCellEdit }) {
                 className={cn(
                   "text-center text-[13px] font-semibold tabular-nums bg-background whitespace-nowrap",
                   m.month === currentMonth && "!bg-primary/[0.04]",
-                  (m.closingBalance || 0) >= 0 ? "text-foreground" : "text-red-600"
+                  (m.closingBalance || 0) >= 0
+                    ? "text-foreground"
+                    : "text-red-600",
                 )}
               >
                 {formatAmount(m.closingBalance)}

@@ -47,18 +47,27 @@ import { getPlanLimits } from "@/src/lib/plan-limits";
 const FORMAT_CONFIG = {
   csv: {
     label: "CSV",
-    icon: ({ className }) => <BsFiletypeCsv className={className} style={{ color: "#22C55E" }} />,
-    description: "Sélectionnez une plage de dates pour filtrer les factures à exporter.",
+    icon: ({ className }) => (
+      <BsFiletypeCsv className={className} style={{ color: "#22C55E" }} />
+    ),
+    description:
+      "Sélectionnez une plage de dates pour filtrer les factures à exporter.",
   },
   excel: {
     label: "Excel",
-    icon: ({ className }) => <BsFiletypeXlsx className={className} style={{ color: "#16A34A" }} />,
-    description: "Sélectionnez une plage de dates pour filtrer les factures à exporter.",
+    icon: ({ className }) => (
+      <BsFiletypeXlsx className={className} style={{ color: "#16A34A" }} />
+    ),
+    description:
+      "Sélectionnez une plage de dates pour filtrer les factures à exporter.",
   },
   fec: {
     label: "FEC (Format légal)",
-    icon: ({ className }) => <FileText className={className} style={{ color: "#3B82F6" }} />,
-    description: "Format légal obligatoire pour l'administration fiscale française.",
+    icon: ({ className }) => (
+      <FileText className={className} style={{ color: "#3B82F6" }} />
+    ),
+    description:
+      "Format légal obligatoire pour l'administration fiscale française.",
   },
   sage: {
     label: "Sage Compta",
@@ -101,9 +110,7 @@ export default function InvoiceExportButton({
   const hasSelection = selectedRows && selectedRows.length > 0;
 
   const invoicesToExport = hasSelection
-    ? selectedRows
-        .map((row) => row.original || row)
-        .filter(Boolean)
+    ? selectedRows.map((row) => row.original || row).filter(Boolean)
     : invoices || [];
 
   const handleFormatSelect = (format) => {
@@ -123,16 +130,24 @@ export default function InvoiceExportButton({
         toast.success(`${finalInvoices.length} facture(s) exportée(s) en CSV`);
       } else if (selectedFormat === "excel") {
         exportToExcel(finalInvoices, finalDateRange);
-        toast.success(`${finalInvoices.length} facture(s) exportée(s) en Excel`);
+        toast.success(
+          `${finalInvoices.length} facture(s) exportée(s) en Excel`,
+        );
       } else if (selectedFormat === "fec") {
         exportToFEC(finalInvoices, finalDateRange);
-        toast.success(`${finalInvoices.length} facture(s) exportée(s) au format FEC`);
+        toast.success(
+          `${finalInvoices.length} facture(s) exportée(s) au format FEC`,
+        );
       } else if (selectedFormat === "sage") {
         exportToSage(finalInvoices, finalDateRange);
-        toast.success(`${finalInvoices.length} facture(s) exportée(s) pour Sage`);
+        toast.success(
+          `${finalInvoices.length} facture(s) exportée(s) pour Sage`,
+        );
       } else if (selectedFormat === "cegid") {
         exportToCegid(finalInvoices, finalDateRange);
-        toast.success(`${finalInvoices.length} facture(s) exportée(s) pour Cegid`);
+        toast.success(
+          `${finalInvoices.length} facture(s) exportée(s) pour Cegid`,
+        );
       }
 
       setIsDialogOpen(false);
@@ -179,11 +194,17 @@ export default function InvoiceExportButton({
         <DropdownMenuContent align="end" className="w-[220px]">
           <DropdownMenuLabel>Formats standards</DropdownMenuLabel>
           <DropdownMenuItem onClick={() => handleFormatSelect("csv")}>
-            <BsFiletypeCsv className="mr-2 h-4 w-4" style={{ color: "#22C55E" }} />
+            <BsFiletypeCsv
+              className="mr-2 h-4 w-4"
+              style={{ color: "#22C55E" }}
+            />
             CSV
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleFormatSelect("excel")}>
-            <BsFiletypeXlsx className="mr-2 h-4 w-4" style={{ color: "#16A34A" }} />
+            <BsFiletypeXlsx
+              className="mr-2 h-4 w-4"
+              style={{ color: "#16A34A" }}
+            />
             Excel
           </DropdownMenuItem>
 
@@ -265,9 +286,12 @@ export default function InvoiceExportButton({
                 {hasSelection ? (
                   <>
                     <span className="font-medium text-foreground">
-                      {invoicesToExport.length} facture{invoicesToExport.length > 1 ? "s" : ""}
+                      {invoicesToExport.length} facture
+                      {invoicesToExport.length > 1 ? "s" : ""}
                     </span>{" "}
-                    sélectionnée{invoicesToExport.length > 1 ? "s" : ""} sera{invoicesToExport.length > 1 ? "ont" : ""} exportée{invoicesToExport.length > 1 ? "s" : ""}.
+                    sélectionnée{invoicesToExport.length > 1 ? "s" : ""} sera
+                    {invoicesToExport.length > 1 ? "ont" : ""} exportée
+                    {invoicesToExport.length > 1 ? "s" : ""}.
                   </>
                 ) : (
                   formatConfig?.description
@@ -280,7 +304,11 @@ export default function InvoiceExportButton({
                   <label className="text-sm text-muted-foreground">
                     Période
                   </label>
-                  <DateRangePicker date={dateRange} setDate={setDateRange} popoverClassName="z-[101]" />
+                  <DateRangePicker
+                    date={dateRange}
+                    setDate={setDateRange}
+                    popoverClassName="z-[101]"
+                  />
                   <p className="text-xs text-muted-foreground">
                     {dateRange?.from && dateRange?.to
                       ? "Les factures entre ces dates seront exportées."
@@ -296,20 +324,31 @@ export default function InvoiceExportButton({
                     {invoicesToExport.slice(0, 5).map(
                       (inv) =>
                         inv && (
-                          <div key={inv.id} className="flex items-center gap-2 text-sm">
+                          <div
+                            key={inv.id}
+                            className="flex items-center gap-2 text-sm"
+                          >
                             <FileText className="size-3.5 text-muted-foreground shrink-0" />
                             <span className="truncate">
-                              {inv.prefix || ""}{inv.number}
+                              {inv._type === "imported"
+                                ? inv.originalInvoiceNumber ||
+                                  inv.number ||
+                                  "Importée"
+                                : `${inv.prefix || ""}${inv.number}`}
                             </span>
                             <span className="text-muted-foreground truncate">
-                              — {inv.client?.name || "Client inconnu"}
+                              —{" "}
+                              {inv.client?.name ||
+                                inv.vendor?.name ||
+                                "Client inconnu"}
                             </span>
                           </div>
-                        )
+                        ),
                     )}
                     {invoicesToExport.length > 5 && (
                       <p className="text-xs text-muted-foreground pl-5.5">
-                        et {invoicesToExport.length - 5} autre{invoicesToExport.length - 5 > 1 ? "s" : ""}
+                        et {invoicesToExport.length - 5} autre
+                        {invoicesToExport.length - 5 > 1 ? "s" : ""}
                       </p>
                     )}
                   </div>
@@ -320,13 +359,18 @@ export default function InvoiceExportButton({
               <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg border border-border/50">
                 <Info className="size-3.5 text-muted-foreground shrink-0" />
                 <p className="text-xs text-muted-foreground">
-                  Les factures importées ne sont pas incluses dans l&apos;export.
+                  Les factures importées sont incluses dans l&apos;export avec
+                  la mention &quot;Importée&quot;.
                 </p>
               </div>
 
               {/* Footer */}
               <div className="flex justify-end gap-2 border-t border-border/40 mt-3 px-5 py-3 -mx-5">
-                <Button variant="ghost" onClick={handleCancel} className="text-sm">
+                <Button
+                  variant="ghost"
+                  onClick={handleCancel}
+                  className="text-sm"
+                >
                   Annuler
                 </Button>
                 <Button

@@ -17,7 +17,7 @@ import {
   useBulkUpdateStatus,
   useBulkCategorize,
 } from "@/src/hooks/usePurchaseInvoices";
-import { columns } from "./columns";
+import { getColumns } from "./columns";
 
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -69,6 +69,7 @@ import {
   XCircle,
   Loader2,
   Check,
+  Columns3,
 } from "lucide-react";
 import {
   useConvertImportedInvoice,
@@ -176,6 +177,11 @@ export default function PurchaseInvoiceTable({
   const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState([{ id: "issueDate", desc: true }]);
   const [rowSelection, setRowSelection] = useState({});
+  const [columnVisibility, setColumnVisibility] = useState({
+    invoiceNumber: false,
+    amountHT: false,
+    amountTVA: false,
+  });
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 25 });
   const [activeTab, setActiveTab] = useState("all");
   const [statusFilters, setStatusFilters] = useState([]);
@@ -245,6 +251,11 @@ export default function PurchaseInvoiceTable({
     return result;
   }, [invoices, activeTab, statusFilters, categoryFilters]);
 
+  const columns = useMemo(
+    () => getColumns({ onViewInvoice: onRowClick }),
+    [onRowClick],
+  );
+
   const table = useReactTable({
     data: filteredInvoices,
     columns,
@@ -253,12 +264,14 @@ export default function PurchaseInvoiceTable({
       globalFilter,
       sorting,
       rowSelection,
+      columnVisibility,
       pagination,
     },
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
     onSortingChange: setSorting,
     onRowSelectionChange: setRowSelection,
+    onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -393,6 +406,41 @@ export default function PurchaseInvoiceTable({
                       </label>
                     ))}
                   </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="cursor-pointer">
+                  <Columns3 size={14} />
+                  Colonnes
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-[200px] p-0">
+                <div className="px-3 py-2 border-b">
+                  <span className="text-sm font-medium">Colonnes visibles</span>
+                </div>
+                <div className="px-3 py-2 space-y-1.5">
+                  {table
+                    .getAllColumns()
+                    .filter((col) => col.getCanHide())
+                    .map((col) => (
+                      <label
+                        key={col.id}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <Checkbox
+                          checked={col.getIsVisible()}
+                          onCheckedChange={(value) =>
+                            col.toggleVisibility(!!value)
+                          }
+                        />
+                        <span className="text-sm">
+                          {col.columnDef.meta?.label || col.id}
+                        </span>
+                      </label>
+                    ))}
                 </div>
               </PopoverContent>
             </Popover>

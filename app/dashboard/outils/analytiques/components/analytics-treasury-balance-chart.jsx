@@ -33,8 +33,8 @@ import { ChevronRight } from "lucide-react";
 
 const chartConfig = {
   treasury: { label: "Trésorerie", color: "#93c5fd" },
-  income: { label: "Entrées", color: "#4ade80" },
-  expenses: { label: "Sorties", color: "#f87171" },
+  income: { label: "Entrées", color: "#5b50ff" },
+  expenses: { label: "Sorties", color: "#000000" },
 };
 
 const formatCurrency = (value) =>

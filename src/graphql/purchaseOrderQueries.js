@@ -174,13 +174,21 @@ export const PURCHASE_ORDER_LIST_FRAGMENT = gql`
       unit
       discount
       discountType
+      details
+      vatExemptionText
       progressPercentage
+    }
+    customFields {
+      key
+      value
     }
     client {
       id
       name
       email
       type
+      firstName
+      lastName
       siret
       vatNumber
       address {
@@ -512,6 +520,7 @@ export const usePurchaseOrder = (id) => {
     variables: { workspaceId, id },
     skip: !id || !workspaceId,
     errorPolicy: "all",
+    fetchPolicy: "network-only",
   });
 
   return {
