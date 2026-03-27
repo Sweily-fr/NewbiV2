@@ -228,6 +228,7 @@ import {
   DELETE_TASK,
   MOVE_TASK,
   UPDATE_BOARD,
+  TOGGLE_BOARD_FAVORITE,
 } from "@/src/graphql/kanbanQueries";
 
 // @hello-pangea/dnd
@@ -573,29 +574,20 @@ function KanbanBoardPageContent({ params }) {
     });
   };
 
-  // Emoji & Favori (localStorage — pas de champ backend)
-  const [boardEmoji, setBoardEmoji] = React.useState(() => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem(`board-emoji-${id}`) || null;
-  });
-  const [isFavorite, setIsFavorite] = React.useState(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem(`board-fav-${id}`) === "1";
-  });
+  // Favori (persisté en base)
+  const isFavorite = board?.isFavorite || false;
+  const [toggleFavMutation] = useMutation(TOGGLE_BOARD_FAVORITE);
   const toggleFavorite = () => {
-    setIsFavorite((prev) => {
-      const next = !prev;
-      localStorage.setItem(`board-fav-${id}`, next ? "1" : "0");
-      return next;
-    });
+    toggleFavMutation({ variables: { boardId: id, workspaceId } });
   };
+
+  // Emoji — persisté en base via updateBoard
+  const boardEmoji = board?.emoji || null;
   const handleEmojiSelect = (emoji) => {
-    setBoardEmoji(emoji);
-    localStorage.setItem(`board-emoji-${id}`, emoji);
+    updateBoardField("emoji", emoji);
   };
   const clearEmoji = () => {
-    setBoardEmoji(null);
-    localStorage.removeItem(`board-emoji-${id}`);
+    updateBoardField("emoji", null);
   };
 
   // Priorité, Date, Membres — persistés en base via updateBoard

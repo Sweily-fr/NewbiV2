@@ -22,8 +22,25 @@ import {
   Euro,
   LayoutTemplate,
   CalendarClock,
+  Check,
+  Building2,
+  ChevronDown,
+  Download,
+  FileSpreadsheet,
+  FileText,
+  LayoutGrid,
+  List,
+  Star,
+  Filter,
+  CornerDownLeft,
+  Palette,
+  Pencil,
 } from "lucide-react";
-import { Avatar, AvatarImage, AvatarFallback } from "@/src/components/ui/avatar";
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+} from "@/src/components/ui/avatar";
 import { flexRender } from "@tanstack/react-table";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -62,11 +79,26 @@ import {
   PaginationItem,
 } from "@/src/components/ui/pagination";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { ColorPicker } from "@/src/components/ui/color-picker";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/src/components/ui/dropdown-menu";
+import { cn } from "@/src/lib/utils";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/src/components/ui/popover";
+import * as XLSX from "xlsx";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { useMutation } from "@apollo/client";
+import { TOGGLE_BOARD_FAVORITE } from "@/src/graphql/kanbanQueries";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useKanbanBoards } from "./hooks/useKanbanBoards";
 import { useKanbanBoardsTable } from "./hooks/useKanbanBoardsTable";
 import { useClients } from "@/src/graphql/clientQueries";
@@ -76,8 +108,16 @@ function KanbanPageContent() {
   const [boardPreview, setBoardPreview] = React.useState(null);
   const [isDeleteMultipleOpen, setIsDeleteMultipleOpen] = React.useState(false);
   const [isDeletingMultiple, setIsDeletingMultiple] = React.useState(false);
+  const [clientFilter, setClientFilter] = React.useState(null);
+  const [viewMode, setViewMode] = React.useState("table"); // "table" | "grid"
+  const [categoryFilter, setCategoryFilter] = React.useState(null);
 
   const { clients } = useClients({ limit: 200 });
+  const { workspaceId } = useWorkspace();
+  const [toggleFavoriteMutation] = useMutation(TOGGLE_BOARD_FAVORITE);
+  const handleToggleFavorite = (boardId) => {
+    toggleFavoriteMutation({ variables: { boardId, workspaceId } });
+  };
 
   const {
     // State
@@ -119,14 +159,113 @@ function KanbanPageContent() {
   } = useKanbanBoards();
 
   // Hook pour le tableau
-  const { table, globalFilter, setGlobalFilter, selectedRows } =
-    useKanbanBoardsTable({
-      data: boards,
-      onEdit: handleEditClick,
-      onDelete: (board) => setBoardToDelete(board),
-      onPreview: (board) => setBoardPreview(board),
-      formatDate,
+  const {
+    table,
+    globalFilter,
+    setGlobalFilter,
+    selectedRows,
+    uniqueClients,
+    uniqueCategories,
+  } = useKanbanBoardsTable({
+    data: boards,
+    onEdit: handleEditClick,
+    onDelete: (board) => setBoardToDelete(board),
+    onPreview: (board) => setBoardPreview(board),
+    formatDate,
+    clientFilter,
+    categoryFilter,
+    onToggleFavorite: handleToggleFavorite,
+  });
+
+  // Stats
+  const totalTasks = React.useMemo(() => {
+    return (boards || []).reduce((acc, b) => acc + (b.taskCount || 0), 0);
+  }, [boards]);
+
+  // Export Excel
+  const exportToExcel = () => {
+    const rows = (boards || []).map((b) => ({
+      Nom: b.title || "",
+      Description: b.description || "",
+      Tâches: b.taskCount || 0,
+      Membres: (b.members || []).map((m) => m.name || m.email).join(", "),
+      Client: b.client
+        ? b.client.type === "INDIVIDUAL"
+          ? `${b.client.firstName || ""} ${b.client.lastName || ""}`.trim()
+          : b.client.name
+        : "",
+      Montant: b.totalBillableAmount || 0,
+      "Créée le": b.createdAt
+        ? format(new Date(b.createdAt), "dd/MM/yyyy", { locale: fr })
+        : "",
+      "Modifiée le": b.updatedAt
+        ? format(new Date(b.updatedAt), "dd/MM/yyyy", { locale: fr })
+        : "",
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = [
+      { wch: 25 },
+      { wch: 30 },
+      { wch: 8 },
+      { wch: 25 },
+      { wch: 20 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 12 },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Listes");
+    XLSX.writeFile(
+      wb,
+      `listes-kanban_${format(new Date(), "yyyy-MM-dd")}.xlsx`,
+    );
+  };
+
+  // Export CSV
+  const exportToCSV = () => {
+    const rows = (boards || []).map((b) => ({
+      Nom: b.title || "",
+      Description: b.description || "",
+      Tâches: b.taskCount || 0,
+      Membres: (b.members || []).map((m) => m.name || m.email).join(", "),
+      Client: b.client
+        ? b.client.type === "INDIVIDUAL"
+          ? `${b.client.firstName || ""} ${b.client.lastName || ""}`.trim()
+          : b.client.name
+        : "",
+      Montant: b.totalBillableAmount || 0,
+      "Créée le": b.createdAt
+        ? format(new Date(b.createdAt), "dd/MM/yyyy", { locale: fr })
+        : "",
+      "Modifiée le": b.updatedAt
+        ? format(new Date(b.updatedAt), "dd/MM/yyyy", { locale: fr })
+        : "",
+    }));
+    const headers = Object.keys(rows[0] || {});
+    const csvContent = [
+      headers.join(";"),
+      ...rows.map((row) =>
+        headers
+          .map((h) => {
+            const v = row[h];
+            return typeof v === "string" && (v.includes(";") || v.includes('"'))
+              ? `"${v.replace(/"/g, '""')}"`
+              : v;
+          })
+          .join(";"),
+      ),
+    ].join("\n");
+    const blob = new Blob(["\uFEFF" + csvContent], {
+      type: "text/csv;charset=utf-8;",
     });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `listes-kanban_${format(new Date(), "yyyy-MM-dd")}.csv`;
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden">
@@ -135,265 +274,499 @@ function KanbanPageContent() {
         <div>
           <h1 className="text-2xl font-medium mb-2">Mes listes de tâches</h1>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
-          setIsCreateDialogOpen(open);
-          if (!open) {
-            setSelectedTemplateId(null);
-            setFormData({ title: "", description: "", clientId: null });
-          }
-        }}>
-          <DialogTrigger asChild>
-            <Button
-              variant="default"
-              className="font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Nouvelle liste
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] p-6">
-            <form onSubmit={handleCreateBoard}>
-              <DialogHeader>
-                <DialogTitle>Créer une nouvelle liste</DialogTitle>
-                <DialogDescription>
-                  Créez une nouvelle liste pour organiser vos tâches.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="title" className="text-foreground">
-                    Titre *
-                  </Label>
-                  <Input
-                    id="title"
-                    value={formData.title}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        title: e.target.value,
-                      }))
-                    }
-                    placeholder="Nom de la liste"
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-foreground">
-                      Template (optionnel)
-                    </Label>
-                    {templates.length > 0 && (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-muted-foreground">
-                            <Settings2 className="h-3 w-3 mr-1" />
-                            Gérer
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-72 p-3" align="end">
-                          <p className="text-sm font-medium mb-2">Mes templates</p>
-                          <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                            {templates.map((t) => (
-                              <div key={t.id} className="flex items-center justify-between gap-2 py-1.5 px-2 rounded hover:bg-muted/50">
-                                <div className="min-w-0 flex-1">
-                                  <p className="text-sm truncate">{t.name}</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {t.columns.length} col. · {t.tasks.length} tâche(s)
-                                  </p>
-                                </div>
+        <div className="flex items-center gap-2">
+          {/* Export */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="cursor-pointer">
+                <Download size={14} strokeWidth={1.5} aria-hidden="true" />
+                Exporter
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                Format d'export
+              </DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={exportToExcel}
+                className="cursor-pointer"
+              >
+                <FileSpreadsheet size={16} className="text-green-600" />
+                Excel (.xlsx)
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={exportToCSV}
+                className="cursor-pointer"
+              >
+                <FileText size={16} className="text-blue-600" />
+                CSV (.csv)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Nouvelle liste */}
+          <Dialog
+            open={isCreateDialogOpen}
+            onOpenChange={(open) => {
+              setIsCreateDialogOpen(open);
+              if (!open) {
+                setSelectedTemplateId(null);
+                setFormData({ title: "", description: "", clientId: null });
+              }
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button variant="primary" className="cursor-pointer">
+                <Plus size={14} strokeWidth={2} aria-hidden="true" />
+                Nouvelle liste
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[520px] p-1 gap-0 border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
+              <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
+                <form onSubmit={handleCreateBoard}>
+                  <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
+                    <DialogTitle className="text-sm font-medium flex items-center gap-2">
+                      <Plus className="size-4" />
+                      Nouvelle liste
+                    </DialogTitle>
+                  </DialogHeader>
+
+                  <div className="px-5 py-4 space-y-4">
+                    {/* Titre */}
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="title"
+                        className="text-xs text-muted-foreground"
+                      >
+                        Titre *
+                      </Label>
+                      <Input
+                        id="title"
+                        value={formData.title}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            title: e.target.value,
+                          }))
+                        }
+                        placeholder="Nom de la liste"
+                        required
+                      />
+                    </div>
+
+                    {/* Description */}
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="description"
+                        className="text-xs text-muted-foreground"
+                      >
+                        Description
+                      </Label>
+                      <Textarea
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            description: e.target.value,
+                          }))
+                        }
+                        placeholder="Description de la liste (optionnel)"
+                        rows={2}
+                        className="resize-none"
+                      />
+                    </div>
+
+                    {/* Ligne Catégorie + Couleur */}
+                    <div className="grid grid-cols-2 gap-3 items-start">
+                      <div>
+                        <Label className="text-xs text-muted-foreground mb-1.5 block">
+                          Catégorie
+                        </Label>
+                        <Input
+                          value={formData.category || ""}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              category: e.target.value || null,
+                            }))
+                          }
+                          placeholder="Ex : Design..."
+                          list="category-suggestions"
+                        />
+                        {uniqueCategories.length > 0 && (
+                          <datalist id="category-suggestions">
+                            {uniqueCategories.map((cat) => (
+                              <option key={cat} value={cat} />
+                            ))}
+                          </datalist>
+                        )}
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground mb-1.5 block">
+                          Couleur
+                        </Label>
+                        <ColorPicker
+                          color={formData.color || "#5A50FF"}
+                          onChange={(color) =>
+                            setFormData((prev) => ({ ...prev, color }))
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    {/* Ligne Template + Client */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs text-muted-foreground">
+                            Template
+                          </Label>
+                          {templates.length > 0 && (
+                            <Popover>
+                              <PopoverTrigger asChild>
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive flex-shrink-0"
-                                  onClick={() => handleDeleteTemplate(t.id)}
+                                  className="h-5 px-1.5 text-[10px] text-muted-foreground"
                                 >
-                                  <Trash2 className="h-3.5 w-3.5" />
+                                  <Settings2 className="h-2.5 w-2.5 mr-0.5" />
+                                  Gérer
                                 </Button>
-                              </div>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-72 p-3" align="end">
+                                <p className="text-sm font-medium mb-2">
+                                  Mes templates
+                                </p>
+                                <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                                  {templates.map((t) => (
+                                    <div
+                                      key={t.id}
+                                      className="flex items-center justify-between gap-2 py-1.5 px-2 rounded hover:bg-muted/50"
+                                    >
+                                      <div className="min-w-0 flex-1">
+                                        <p className="text-sm truncate">
+                                          {t.name}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                          {t.columns.length} col. ·{" "}
+                                          {t.tasks.length} tâche(s)
+                                        </p>
+                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive flex-shrink-0"
+                                        onClick={() =>
+                                          handleDeleteTemplate(t.id)
+                                        }
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          )}
+                        </div>
+                        <Select
+                          value={selectedTemplateId || "none"}
+                          onValueChange={(value) => {
+                            const templateId = value === "none" ? null : value;
+                            setSelectedTemplateId(templateId);
+                            if (templateId) {
+                              const template = templates.find(
+                                (t) => t.id === templateId,
+                              );
+                              if (template?.clientId)
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  clientId: template.clientId,
+                                }));
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="w-full min-w-0">
+                            <SelectValue placeholder="Aucun" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Aucun template</SelectItem>
+                            {templates.map((t) => (
+                              <SelectItem key={t.id} value={t.id}>
+                                <div className="flex items-center gap-1.5">
+                                  <BookTemplate className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                                  <span className="truncate">{t.name}</span>
+                                </div>
+                              </SelectItem>
                             ))}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                    )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">
+                          Client
+                        </Label>
+                        <Select
+                          value={formData.clientId || "none"}
+                          onValueChange={(value) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              clientId: value === "none" ? null : value,
+                            }))
+                          }
+                        >
+                          <SelectTrigger className="w-full min-w-0">
+                            <SelectValue placeholder="Aucun" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Aucun client</SelectItem>
+                            {clients.map((c) => (
+                              <SelectItem key={c.id} value={c.id}>
+                                {c.type === "INDIVIDUAL"
+                                  ? `${c.firstName || ""} ${c.lastName || ""}`.trim()
+                                  : c.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
                   </div>
-                  <Select
-                    value={selectedTemplateId || "none"}
-                    onValueChange={(value) => {
-                      const templateId = value === "none" ? null : value;
-                      setSelectedTemplateId(templateId);
-                      if (templateId) {
-                        const template = templates.find((t) => t.id === templateId);
-                        if (template?.clientId) {
-                          setFormData((prev) => ({ ...prev, clientId: template.clientId }));
-                        }
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="w-full min-w-0">
-                      <SelectValue placeholder="Aucun template (colonnes par défaut)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">
-                        Aucun template (colonnes par défaut)
-                      </SelectItem>
-                      {templates.map((t) => (
-                        <SelectItem key={t.id} value={t.id}>
-                          <div className="flex items-center gap-2 min-w-0">
-                            <BookTemplate className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                            <span className="truncate">{t.name}</span>
-                            <span className="text-xs text-muted-foreground flex-shrink-0">
-                              ({t.columns.length} col. · {t.tasks.length} tâches)
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="description" className="text-foreground">
-                    Description
-                  </Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        description: e.target.value,
-                      }))
-                    }
-                    placeholder="Description de la liste (optionnel)"
-                    rows={3}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label className="text-foreground">
-                    Client (optionnel)
-                  </Label>
-                  <Select
-                    value={formData.clientId || "none"}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        clientId: value === "none" ? null : value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger className="w-full min-w-0">
-                      <SelectValue placeholder="Aucun client" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Aucun client</SelectItem>
-                      {clients.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.type === "INDIVIDUAL"
-                            ? `${c.firstName || ""} ${c.lastName || ""}`.trim()
-                            : c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+
+                  {/* Footer */}
+                  <div className="flex justify-end border-t border-border/40 px-5 py-3">
+                    <Button
+                      variant="primary"
+                      type="submit"
+                      disabled={loading}
+                      className="gap-2"
+                    >
+                      {loading ? (
+                        <>
+                          <LoaderCircle className="size-4 animate-spin" />
+                          {creatingFromTemplate ? "Création..." : "Création..."}
+                        </>
+                      ) : (
+                        <>
+                          Créer la liste
+                          <kbd className="inline-flex items-center justify-center size-5 rounded bg-white/20 ml-0.5">
+                            <CornerDownLeft className="size-3" />
+                          </kbd>
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </form>
               </div>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setIsCreateDialogOpen(false);
-                    setSelectedTemplateId(null);
-                    setFormData({ title: "", description: "", clientId: null });
-                  }}
-                >
-                  Annuler
-                </Button>
-                <Button type="submit" disabled={loading}>
-                  {loading ? (
-                    <>
-                      <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                      {creatingFromTemplate ? "Création depuis template..." : "Création..."}
-                    </>
-                  ) : (
-                    "Créer"
-                  )}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 flex-shrink-0">
-        <div className="relative max-w-md">
-          <Input
-            placeholder="Rechercher une liste..."
-            value={globalFilter ?? ""}
-            onChange={(event) => setGlobalFilter(event.target.value)}
-            className="w-full sm:w-[400px] ps-9"
-          />
-          <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3">
-            <Search size={16} aria-hidden="true" />
+      {/* Stats subtiles */}
+      {boards?.length > 0 && (
+        <div className="flex items-center gap-4 px-4 sm:px-6 pt-1 flex-shrink-0">
+          <span className="text-xs text-muted-foreground">
+            {boards.length} liste{boards.length > 1 ? "s" : ""}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {totalTasks} tâche{totalTasks > 1 ? "s" : ""}
+          </span>
+        </div>
+      )}
+
+      {/* Search Bar + Filtres + Toggle vue */}
+      <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3 flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Input
+              placeholder="Rechercher une liste..."
+              value={globalFilter ?? ""}
+              onChange={(event) => setGlobalFilter(event.target.value)}
+              className="w-full sm:w-[300px] ps-9"
+            />
+            <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3">
+              <Search size={16} aria-hidden="true" />
+            </div>
           </div>
+
+          {/* Bouton Filtres */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="filter" className="cursor-pointer relative">
+                <Filter size={14} aria-hidden="true" />
+                Filtres
+                {(clientFilter || categoryFilter) && (
+                  <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#5A50FF] text-[9px] font-bold text-white">
+                    {(clientFilter ? 1 : 0) + (categoryFilter ? 1 : 0)}
+                  </span>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              {/* Client */}
+              {uniqueClients.length > 0 && (
+                <>
+                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                    Client
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem
+                    onClick={() => setClientFilter(null)}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <span className="flex-1 text-sm">Tous les clients</span>
+                  </DropdownMenuItem>
+                  {uniqueClients.map((client) => (
+                    <DropdownMenuItem
+                      key={client.id}
+                      onClick={() => setClientFilter(client.id)}
+                      className={cn(
+                        "flex items-center gap-2 cursor-pointer",
+                        clientFilter === client.id && "bg-accent",
+                      )}
+                    >
+                      <span className="flex-1 text-sm truncate">
+                        {client.name}
+                      </span>
+                    </DropdownMenuItem>
+                  ))}
+                </>
+              )}
+
+              {/* Catégorie */}
+              {uniqueCategories.length > 0 && (
+                <>
+                  {uniqueClients.length > 0 && (
+                    <div className="my-1 border-t border-border" />
+                  )}
+                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                    Catégorie
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem
+                    onClick={() => setCategoryFilter(null)}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <span className="flex-1 text-sm">
+                      Toutes les catégories
+                    </span>
+                  </DropdownMenuItem>
+                  {uniqueCategories.map((cat) => (
+                    <DropdownMenuItem
+                      key={cat}
+                      onClick={() => setCategoryFilter(cat)}
+                      className={cn(
+                        "flex items-center gap-2 cursor-pointer",
+                        categoryFilter === cat && "bg-accent",
+                      )}
+                    >
+                      <span className="flex-1 text-sm">{cat}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </>
+              )}
+
+              {/* Reset */}
+              {(clientFilter || categoryFilter) && (
+                <>
+                  <div className="my-1 border-t border-border" />
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setClientFilter(null);
+                      setCategoryFilter(null);
+                    }}
+                    className="text-xs text-muted-foreground cursor-pointer"
+                  >
+                    Réinitialiser les filtres
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
-        {/* Bulk delete */}
-        {selectedRows.length > 0 && (
-          <AlertDialog open={isDeleteMultipleOpen} onOpenChange={setIsDeleteMultipleOpen}>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive">
-                <Trash2 className="mr-2 h-4 w-4" />
-                Supprimer ({selectedRows.length})
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Supprimer les listes</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Êtes-vous sûr de vouloir supprimer {selectedRows.length} liste(s) ?
-                  Cette action est irréversible et supprimera également toutes les
-                  colonnes et tâches associées.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={async () => {
-                    setIsDeletingMultiple(true);
-                    try {
-                      // Supprimer chaque dossier directement par ID
-                      for (const board of selectedRows) {
-                        await deleteBoardById(board.id);
+        <div className="flex items-center gap-2">
+          {/* Bulk delete */}
+          {selectedRows.length > 0 && (
+            <AlertDialog
+              open={isDeleteMultipleOpen}
+              onOpenChange={setIsDeleteMultipleOpen}
+            >
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Supprimer ({selectedRows.length})
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Supprimer les listes</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
+                    liste(s) ? Cette action est irréversible et supprimera
+                    également toutes les colonnes et tâches associées.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={async () => {
+                      setIsDeletingMultiple(true);
+                      try {
+                        for (const board of selectedRows) {
+                          await deleteBoardById(board.id);
+                        }
+                        table.resetRowSelection();
+                      } finally {
+                        setIsDeletingMultiple(false);
+                        setIsDeleteMultipleOpen(false);
                       }
-                      table.resetRowSelection();
-                    } finally {
-                      setIsDeletingMultiple(false);
-                      setIsDeleteMultipleOpen(false);
-                    }
-                  }}
-                  className="bg-destructive text-white hover:bg-destructive/90"
-                  disabled={isDeletingMultiple}
-                >
-                  {isDeletingMultiple ? (
-                    <>
-                      <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                      Suppression...
-                    </>
-                  ) : (
-                    "Supprimer définitivement"
-                  )}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
+                    }}
+                    className="bg-destructive text-white hover:bg-destructive/90"
+                    disabled={isDeletingMultiple}
+                  >
+                    {isDeletingMultiple ? (
+                      <>
+                        <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                        Suppression...
+                      </>
+                    ) : (
+                      "Supprimer définitivement"
+                    )}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+
+          {/* Toggle vue */}
+          <div className="flex items-center rounded-md bg-muted p-0.5">
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`h-7 w-7 rounded-sm ${viewMode === "table" ? "bg-background shadow-sm" : ""}`}
+              onClick={() => setViewMode("table")}
+              title="Vue tableau"
+            >
+              <List className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`h-7 w-7 rounded-sm ${viewMode === "grid" ? "bg-background shadow-sm" : ""}`}
+              onClick={() => setViewMode("grid")}
+              title="Vue grille"
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {/* Table */}
+      {/* Content */}
       {isInitialLoading ? (
         <KanbanTableSkeleton />
-      ) : boards?.length === 0 && !globalFilter ? (
+      ) : boards?.length === 0 && !globalFilter && !clientFilter ? (
         <div className="flex-1 flex items-center justify-center pb-24">
           <div className="text-center">
             <div className="text-foreground mb-6 text-center">
@@ -401,8 +774,7 @@ function KanbanPageContent() {
                 Commencez votre organisation
               </h3>
               <p className="text-sm text-muted-foreground">
-                Créez votre première liste pour organiser vos tâches et
-                projets
+                Créez votre première liste pour organiser vos tâches et projets
               </p>
             </div>
             <Button
@@ -414,10 +786,137 @@ function KanbanPageContent() {
             </Button>
           </div>
         </div>
+      ) : viewMode === "grid" ? (
+        /* ── Vue Grille ── */
+        <div className="flex-1 overflow-auto px-4 sm:px-6 py-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            {table.getRowModel().rows.map((row) => {
+              const board = row.original;
+              const isFav = board.isFavorite;
+              const clientName = board.client
+                ? board.client.type === "INDIVIDUAL"
+                  ? `${board.client.firstName || ""} ${board.client.lastName || ""}`.trim()
+                  : board.client.name
+                : null;
+              const members = board.members || [];
+              return (
+                <div
+                  key={board.id}
+                  className="bg-card border border-border rounded-xl p-4 hover:shadow-sm cursor-pointer transition-all group"
+                  onClick={() =>
+                    router.push(`/dashboard/outils/kanban/${board.id}`)
+                  }
+                >
+                  {/* Header card */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      {board.emoji && (
+                        <span className="text-lg">{board.emoji}</span>
+                      )}
+                      <h3 className="font-medium text-sm truncate">
+                        {board.title}
+                      </h3>
+                    </div>
+                    <button
+                      className="text-muted-foreground/30 hover:text-yellow-400 transition-colors cursor-pointer flex-shrink-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleFavorite(board.id);
+                      }}
+                    >
+                      <Star
+                        className={`h-3.5 w-3.5 ${isFav ? "text-yellow-400 fill-yellow-400" : ""}`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Description */}
+                  {board.description && (
+                    <p className="text-xs text-muted-foreground truncate mb-3">
+                      {board.description}
+                    </p>
+                  )}
+
+                  {/* Client */}
+                  {clientName && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground mb-3">
+                      {clientName}
+                    </span>
+                  )}
+
+                  {/* Stats */}
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
+                    <span className="inline-flex items-center gap-1">
+                      <ListChecks className="h-3 w-3" />
+                      {board.taskCount || 0} tâche
+                      {(board.taskCount || 0) > 1 ? "s" : ""}
+                    </span>
+                    {board.totalBillableAmount > 0 && (
+                      <span className="inline-flex items-center gap-1 text-[#5b50ff] font-medium">
+                        <Euro className="h-3 w-3" />
+                        {new Intl.NumberFormat("fr-FR", {
+                          style: "currency",
+                          currency: "EUR",
+                        }).format(board.totalBillableAmount)}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Footer: membres + date */}
+                  <div className="flex items-center justify-between pt-2 border-t border-border">
+                    {members.length > 0 ? (
+                      <div className="flex items-center -space-x-1.5">
+                        {members.slice(0, 3).map((m) => (
+                          <Avatar
+                            key={m.userId || m.id}
+                            className="h-5 w-5 ring-2 ring-background"
+                          >
+                            {m.image ? (
+                              <AvatarImage src={m.image} alt={m.name} />
+                            ) : (
+                              <AvatarFallback className="text-[8px] bg-muted">
+                                {(m.name || m.email || "?")
+                                  .charAt(0)
+                                  .toUpperCase()}
+                              </AvatarFallback>
+                            )}
+                          </Avatar>
+                        ))}
+                        {members.length > 3 && (
+                          <span className="h-5 w-5 rounded-full bg-muted text-[8px] font-medium flex items-center justify-center text-muted-foreground ring-2 ring-background">
+                            +{members.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <div />
+                    )}
+                    <span className="text-[11px] text-muted-foreground">
+                      {board.updatedAt
+                        ? (() => {
+                            const d = new Date(board.updatedAt);
+                            const now = new Date();
+                            const diff = Math.floor((now - d) / 86400000);
+                            if (diff === 0) return "Aujourd'hui";
+                            if (diff === 1) return "Hier";
+                            if (diff < 7) return `Il y a ${diff}j`;
+                            return d.toLocaleDateString("fr-FR", {
+                              day: "numeric",
+                              month: "short",
+                            });
+                          })()
+                        : ""}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       ) : (
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           {/* Table Header */}
-          <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
+          <div className="flex-shrink-0 border-b border-border">
             <table className="w-full table-fixed">
               <thead>
                 {table.getHeaderGroups().map((headerGroup) => (
@@ -427,14 +926,16 @@ function KanbanPageContent() {
                       return (
                         <th
                           key={header.id}
-                          style={isTitle ? undefined : { width: header.getSize() }}
+                          style={
+                            isTitle ? undefined : { width: header.getSize() }
+                          }
                           className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${isTitle ? "overflow-hidden" : ""} ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
                         >
                           {header.isPlaceholder
                             ? null
                             : flexRender(
                                 header.column.columnDef.header,
-                                header.getContext()
+                                header.getContext(),
                               )}
                         </th>
                       );
@@ -454,7 +955,7 @@ function KanbanPageContent() {
                     <tr
                       key={row.id}
                       data-state={row.getIsSelected() && "selected"}
-                      className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
+                      className="border-b border-border hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
                       onClick={(e) => {
                         // Ne pas naviguer si on clique sur la checkbox ou les actions
                         if (
@@ -464,7 +965,7 @@ function KanbanPageContent() {
                           return;
                         }
                         router.push(
-                          `/dashboard/outils/kanban/${row.original.id}`
+                          `/dashboard/outils/kanban/${row.original.id}`,
                         );
                       }}
                     >
@@ -473,12 +974,16 @@ function KanbanPageContent() {
                         return (
                           <td
                             key={cell.id}
-                            style={isTitle ? undefined : { width: cell.column.getSize() }}
+                            style={
+                              isTitle
+                                ? undefined
+                                : { width: cell.column.getSize() }
+                            }
                             className={`p-2 align-middle text-sm ${isTitle ? "overflow-hidden" : ""} ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
                           >
                             {flexRender(
                               cell.column.columnDef.cell,
-                              cell.getContext()
+                              cell.getContext(),
                             )}
                           </td>
                         );
@@ -502,10 +1007,11 @@ function KanbanPageContent() {
           </div>
 
           {/* Pagination */}
-          <div className="flex items-center justify-between px-4 sm:px-6 py-2 border-t border-gray-200 dark:border-gray-800 bg-background flex-shrink-0">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-2 border-t border-border bg-background flex-shrink-0">
             <div className="flex-1 text-xs font-normal text-muted-foreground">
               {table.getFilteredSelectedRowModel().rows.length} sur{" "}
-              {table.getFilteredRowModel().rows.length} ligne(s) sélectionnée(s).
+              {table.getFilteredRowModel().rows.length} ligne(s)
+              sélectionnée(s).
             </div>
             <div className="flex items-center space-x-4 lg:space-x-6">
               <div className="flex items-center gap-1.5">
@@ -595,100 +1101,156 @@ function KanbanPageContent() {
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] rounded-xl">
-          <form onSubmit={handleUpdateBoard}>
-            <DialogHeader className="border-b pb-6 mb-6">
-              <DialogTitle className="text-2xl font-bold text-foreground">
-                Modifier la liste
-              </DialogTitle>
-              <DialogDescription className="text-muted-foreground mt-2">
-                Modifiez les informations de votre liste.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="edit-title" className="text-sm font-semibold text-foreground">
-                  Titre *
-                </Label>
-                <Input
-                  id="edit-title"
-                  value={formData.title}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, title: e.target.value }))
-                  }
-                  placeholder="Nom de la liste"
-                  required
-                  className="rounded-lg"
-                />
+        <DialogContent className="sm:max-w-[520px] p-1 gap-0 border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
+          <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
+            <form onSubmit={handleUpdateBoard}>
+              <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
+                <DialogTitle className="text-sm font-medium flex items-center gap-2">
+                  <Pencil className="size-4" />
+                  Modifier la liste
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="px-5 py-4 space-y-4">
+                {/* Titre */}
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="edit-title"
+                    className="text-xs text-muted-foreground"
+                  >
+                    Titre *
+                  </Label>
+                  <Input
+                    id="edit-title"
+                    value={formData.title}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        title: e.target.value,
+                      }))
+                    }
+                    placeholder="Nom de la liste"
+                    required
+                  />
+                </div>
+
+                {/* Description */}
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="edit-description"
+                    className="text-xs text-muted-foreground"
+                  >
+                    Description
+                  </Label>
+                  <Textarea
+                    id="edit-description"
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
+                    }
+                    placeholder="Description de la liste (optionnel)"
+                    rows={2}
+                    className="resize-none"
+                  />
+                </div>
+
+                {/* Ligne Catégorie + Couleur */}
+                <div className="grid grid-cols-2 gap-3 items-start">
+                  <div>
+                    <Label className="text-xs text-muted-foreground mb-1.5 block">
+                      Catégorie
+                    </Label>
+                    <Input
+                      value={formData.category || ""}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          category: e.target.value || null,
+                        }))
+                      }
+                      placeholder="Ex : Design..."
+                      list="category-suggestions-edit"
+                    />
+                    {uniqueCategories.length > 0 && (
+                      <datalist id="category-suggestions-edit">
+                        {uniqueCategories.map((cat) => (
+                          <option key={cat} value={cat} />
+                        ))}
+                      </datalist>
+                    )}
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground mb-1.5 block">
+                      Couleur
+                    </Label>
+                    <ColorPicker
+                      color={formData.color || "#5A50FF"}
+                      onChange={(color) =>
+                        setFormData((prev) => ({ ...prev, color }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                {/* Client */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">
+                    Client
+                  </Label>
+                  <Select
+                    value={formData.clientId || "none"}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        clientId: value === "none" ? null : value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="w-full min-w-0">
+                      <SelectValue placeholder="Aucun client" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Aucun client</SelectItem>
+                      {clients.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.type === "INDIVIDUAL"
+                            ? `${c.firstName || ""} ${c.lastName || ""}`.trim()
+                            : c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-description" className="text-sm font-semibold text-foreground">
-                  Description
-                </Label>
-                <Textarea
-                  id="edit-description"
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      description: e.target.value,
-                    }))
-                  }
-                  placeholder="Description de la liste (optionnel)"
-                  rows={4}
-                  className="rounded-lg resize-none"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-foreground">
-                  Client (optionnel)
-                </Label>
-                <Select
-                  value={formData.clientId || "none"}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      clientId: value === "none" ? null : value,
-                    }))
-                  }
+
+              {/* Footer */}
+              <div className="flex justify-end border-t border-border/40 px-5 py-3">
+                <Button
+                  variant="primary"
+                  type="submit"
+                  disabled={updating}
+                  className="gap-2"
                 >
-                  <SelectTrigger className="w-full min-w-0 rounded-lg">
-                    <SelectValue placeholder="Aucun client" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Aucun client</SelectItem>
-                    {clients.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.type === "INDIVIDUAL"
-                          ? `${c.firstName || ""} ${c.lastName || ""}`.trim()
-                          : c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  {updating ? (
+                    <>
+                      <LoaderCircle className="size-4 animate-spin" />
+                      Modification...
+                    </>
+                  ) : (
+                    <>
+                      Enregistrer
+                      <kbd className="inline-flex items-center justify-center size-5 rounded bg-white/20 ml-0.5">
+                        <CornerDownLeft className="size-3" />
+                      </kbd>
+                    </>
+                  )}
+                </Button>
               </div>
-            </div>
-            <DialogFooter className="mt-8 pt-6 border-t">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsEditDialogOpen(false)}
-                className="px-6"
-              >
-                Annuler
-              </Button>
-              <Button type="submit" disabled={updating} className="px-6">
-                {updating ? (
-                  <>
-                    <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                    Modification...
-                  </>
-                ) : (
-                  "Modifier"
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
+            </form>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -729,10 +1291,16 @@ function KanbanPageContent() {
       </AlertDialog>
 
       {/* Preview Dialog */}
-      <Dialog open={!!boardPreview} onOpenChange={(open) => !open && setBoardPreview(null)}>
+      <Dialog
+        open={!!boardPreview}
+        onOpenChange={(open) => !open && setBoardPreview(null)}
+      >
         <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto [&>button]:hidden">
           <DialogHeader className="border-b pb-6 mb-6 pr-8">
-            <DialogTitle className="text-foreground text-2xl font-bold break-words" style={{ wordBreak: 'break-word' }}>
+            <DialogTitle
+              className="text-foreground text-2xl font-bold break-words"
+              style={{ wordBreak: "break-word" }}
+            >
               {boardPreview?.title}
             </DialogTitle>
           </DialogHeader>
@@ -743,7 +1311,10 @@ function KanbanPageContent() {
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
                 Description
               </h3>
-              <p className="text-base text-foreground break-words whitespace-pre-wrap leading-relaxed" style={{ wordBreak: 'break-word' }}>
+              <p
+                className="text-base text-foreground break-words whitespace-pre-wrap leading-relaxed"
+                style={{ wordBreak: "break-word" }}
+              >
                 {boardPreview?.description || "Aucune description"}
               </p>
             </div>
@@ -771,7 +1342,9 @@ function KanbanPageContent() {
                   <ListChecks className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   <div>
                     <p className="text-xs text-muted-foreground">Tâches</p>
-                    <p className="text-sm font-medium">{boardPreview.taskCount}</p>
+                    <p className="text-sm font-medium">
+                      {boardPreview.taskCount}
+                    </p>
                   </div>
                 </div>
               )}
@@ -784,8 +1357,12 @@ function KanbanPageContent() {
                     <p className="text-xs text-muted-foreground">Temps passé</p>
                     <p className="text-sm font-medium">
                       {(() => {
-                        const h = Math.floor(boardPreview.totalTimeSpent / 3600);
-                        const m = Math.floor((boardPreview.totalTimeSpent % 3600) / 60);
+                        const h = Math.floor(
+                          boardPreview.totalTimeSpent / 3600,
+                        );
+                        const m = Math.floor(
+                          (boardPreview.totalTimeSpent % 3600) / 60,
+                        );
                         return h > 0 ? `${h}h ${m}min` : `${m}min`;
                       })()}
                     </p>
@@ -800,7 +1377,10 @@ function KanbanPageContent() {
                   <div>
                     <p className="text-xs text-muted-foreground">Montant</p>
                     <p className="text-sm font-medium">
-                      {boardPreview.totalBillableAmount.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}
+                      {boardPreview.totalBillableAmount.toLocaleString(
+                        "fr-FR",
+                        { style: "currency", currency: "EUR" },
+                      )}
                     </p>
                   </div>
                 </div>
@@ -812,7 +1392,9 @@ function KanbanPageContent() {
                   <LayoutTemplate className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   <div className="min-w-0">
                     <p className="text-xs text-muted-foreground">Modèle</p>
-                    <p className="text-sm font-medium truncate">{boardPreview.templateName}</p>
+                    <p className="text-sm font-medium truncate">
+                      {boardPreview.templateName}
+                    </p>
                   </div>
                 </div>
               )}
@@ -829,12 +1411,20 @@ function KanbanPageContent() {
                 </div>
                 <div className="flex -space-x-2">
                   {boardPreview.members.slice(0, 8).map((member) => (
-                    <Avatar key={member.id} className="h-8 w-8 border-2 border-background">
+                    <Avatar
+                      key={member.id}
+                      className="h-8 w-8 border-2 border-background"
+                    >
                       {member.image ? (
                         <AvatarImage src={member.image} alt={member.name} />
                       ) : null}
                       <AvatarFallback className="text-xs">
-                        {member.name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "?"}
+                        {member.name
+                          ?.split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .slice(0, 2)
+                          .toUpperCase() || "?"}
                       </AvatarFallback>
                     </Avatar>
                   ))}
@@ -854,17 +1444,24 @@ function KanbanPageContent() {
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                 <span className="text-foreground">
-                  Créé le <span className="font-medium">{boardPreview && formatDate(boardPreview.createdAt)}</span>
+                  Créé le{" "}
+                  <span className="font-medium">
+                    {boardPreview && formatDate(boardPreview.createdAt)}
+                  </span>
                 </span>
               </div>
-              {boardPreview?.updatedAt && boardPreview.updatedAt !== boardPreview.createdAt && (
-                <div className="flex items-center gap-2">
-                  <CalendarClock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                  <span className="text-foreground">
-                    Modifié le <span className="font-medium">{formatDate(boardPreview.updatedAt)}</span>
-                  </span>
-                </div>
-              )}
+              {boardPreview?.updatedAt &&
+                boardPreview.updatedAt !== boardPreview.createdAt && (
+                  <div className="flex items-center gap-2">
+                    <CalendarClock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="text-foreground">
+                      Modifié le{" "}
+                      <span className="font-medium">
+                        {formatDate(boardPreview.updatedAt)}
+                      </span>
+                    </span>
+                  </div>
+                )}
             </div>
 
             {/* Bouton en bas à droite */}
@@ -884,7 +1481,7 @@ function KanbanPageContent() {
 
 export default function KanbanPage() {
   return (
-    <RoleRouteGuard 
+    <RoleRouteGuard
       roles={["owner", "admin", "member", "viewer"]}
       fallbackUrl="/dashboard"
       toastMessage="Vous n'avez pas accès aux listes de tâches. Cette fonctionnalité est réservée aux membres de l'équipe."
@@ -898,7 +1495,7 @@ function KanbanTableSkeleton() {
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-4 sm:px-6">
       {/* Table Header Skeleton */}
-      <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800 py-3">
+      <div className="flex-shrink-0 border-b border-border py-3">
         <div className="flex items-center gap-4">
           <Skeleton className="h-4 w-4" />
           <Skeleton className="h-4 w-[200px]" />
@@ -932,7 +1529,7 @@ function KanbanTableSkeleton() {
       </div>
 
       {/* Pagination Skeleton */}
-      <div className="flex items-center justify-between py-3 border-t border-gray-200 dark:border-gray-800 flex-shrink-0">
+      <div className="flex items-center justify-between py-3 border-t border-border flex-shrink-0">
         <Skeleton className="h-4 w-[150px]" />
         <div className="flex items-center gap-4">
           <Skeleton className="h-7 w-[100px]" />
