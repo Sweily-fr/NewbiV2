@@ -48,8 +48,21 @@ export const GET_BOARDS = gql`
       taskCount
       totalTimeSpent
       templateName
+      category
+      emoji
+      color
+      isFavorite
       createdAt
       updatedAt
+    }
+  }
+`;
+
+export const TOGGLE_BOARD_FAVORITE = gql`
+  mutation ToggleBoardFavorite($boardId: ID!, $workspaceId: ID) {
+    toggleBoardFavorite(boardId: $boardId, workspaceId: $workspaceId) {
+      id
+      isFavorite
     }
   }
 `;
@@ -71,6 +84,9 @@ export const GET_BOARD = gql`
       priority
       dueDate
       boardMembers
+      emoji
+      color
+      isFavorite
       members {
         id
         userId
@@ -255,6 +271,8 @@ export const CREATE_BOARD = gql`
         type
       }
       totalBillableAmount
+      category
+      color
       createdAt
       updatedAt
     }
@@ -279,6 +297,9 @@ export const UPDATE_BOARD = gql`
       dueDate
       boardMembers
       totalBillableAmount
+      category
+      color
+      emoji
       createdAt
       updatedAt
     }
