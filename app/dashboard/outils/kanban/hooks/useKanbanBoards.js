@@ -26,7 +26,13 @@ export const useKanbanBoards = () => {
   const [boardToEdit, setBoardToEdit] = useState(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({ title: "", description: "", clientId: null });
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    clientId: null,
+    category: null,
+    color: null,
+  });
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
 
@@ -41,7 +47,9 @@ export const useKanbanBoards = () => {
   // Attendre que la session soit chargée avant d'activer la subscription
   useEffect(() => {
     if (!sessionLoading && session?.user) {
-      console.log('✅ [useKanbanBoards] Session chargée, activation subscription');
+      console.log(
+        "✅ [useKanbanBoards] Session chargée, activation subscription",
+      );
       setIsReady(true);
     }
   }, [sessionLoading, session]);
@@ -60,9 +68,13 @@ export const useKanbanBoards = () => {
     onData: ({ data: subscriptionData, client }) => {
       if (subscriptionData?.data?.boardUpdated) {
         const { type, board, boardId } = subscriptionData.data.boardUpdated;
-        
-        console.log("🔄 [Kanban] Mise à jour temps réel:", type, board || boardId);
-        
+
+        console.log(
+          "🔄 [Kanban] Mise à jour temps réel:",
+          type,
+          board || boardId,
+        );
+
         // Mettre à jour le cache Apollo automatiquement
         const cache = client.cache;
         const existingBoards = cache.readQuery({
@@ -71,9 +83,11 @@ export const useKanbanBoards = () => {
         });
 
         if (existingBoards) {
-          if (type === 'CREATED' && board) {
+          if (type === "CREATED" && board) {
             // Vérifier si le board n'existe pas déjà pour éviter les doublons
-            const boardExists = existingBoards.boards.some(b => b.id === board.id);
+            const boardExists = existingBoards.boards.some(
+              (b) => b.id === board.id,
+            );
             if (!boardExists) {
               // Ajouter le nouveau board au cache
               cache.writeQuery({
@@ -84,34 +98,34 @@ export const useKanbanBoards = () => {
                 },
               });
               toast.success(`Nouveau tableau créé: ${board.title}`, {
-                description: "Mis à jour automatiquement"
+                description: "Mis à jour automatiquement",
               });
             }
-          } else if (type === 'UPDATED' && board) {
+          } else if (type === "UPDATED" && board) {
             // Mettre à jour le board existant
             cache.writeQuery({
               query: GET_BOARDS,
               variables: { workspaceId },
               data: {
-                boards: existingBoards.boards.map(b =>
-                  b.id === board.id ? { ...b, ...board } : b
+                boards: existingBoards.boards.map((b) =>
+                  b.id === board.id ? { ...b, ...board } : b,
                 ),
               },
             });
             toast.info(`Tableau modifié: ${board.title}`, {
-              description: "Mis à jour automatiquement"
+              description: "Mis à jour automatiquement",
             });
-          } else if (type === 'DELETED' && boardId) {
+          } else if (type === "DELETED" && boardId) {
             // Supprimer le board du cache
             cache.writeQuery({
               query: GET_BOARDS,
               variables: { workspaceId },
               data: {
-                boards: existingBoards.boards.filter(b => b.id !== boardId),
+                boards: existingBoards.boards.filter((b) => b.id !== boardId),
               },
             });
             toast.info("Tableau supprimé", {
-              description: "Mis à jour automatiquement"
+              description: "Mis à jour automatiquement",
             });
           }
         }
@@ -119,18 +133,24 @@ export const useKanbanBoards = () => {
     },
     onError: (error) => {
       // Ne pas afficher d'erreur si c'est un problème d'authentification (changement d'organisation)
-      if (error.message?.includes('connecté')) {
+      if (error.message?.includes("connecté")) {
         // Silencieux - c'est normal pendant un changement d'organisation
         return;
       }
       console.error("❌ [Kanban] Erreur subscription:", error);
-    }
+    },
   });
 
   const [createBoard, { loading: creating }] = useMutation(CREATE_BOARD, {
     onCompleted: () => {
       setIsCreateDialogOpen(false);
-      setFormData({ title: "", description: "", clientId: null });
+      setFormData({
+        title: "",
+        description: "",
+        clientId: null,
+        category: null,
+        color: null,
+      });
       // La subscription s'occupe de mettre à jour le cache et d'afficher le toast
     },
     onError: (error) => {
@@ -144,7 +164,13 @@ export const useKanbanBoards = () => {
       toast.success("Tableau modifié avec succès");
       setIsEditDialogOpen(false);
       setBoardToEdit(null);
-      setFormData({ title: "", description: "", clientId: null });
+      setFormData({
+        title: "",
+        description: "",
+        clientId: null,
+        category: null,
+        color: null,
+      });
       // La subscription s'occupe de mettre à jour le cache
     },
     onError: (error) => {
@@ -173,17 +199,24 @@ export const useKanbanBoards = () => {
     errorPolicy: "all",
   });
 
-  const [createBoardFromTemplate, { loading: creatingFromTemplate }] = useMutation(CREATE_BOARD_FROM_TEMPLATE, {
-    onCompleted: () => {
-      setIsCreateDialogOpen(false);
-      setFormData({ title: "", description: "", clientId: null });
-      setSelectedTemplateId(null);
-    },
-    onError: (error) => {
-      toast.error("Erreur lors de la création depuis le template");
-      console.error("Create from template error:", error);
-    },
-  });
+  const [createBoardFromTemplate, { loading: creatingFromTemplate }] =
+    useMutation(CREATE_BOARD_FROM_TEMPLATE, {
+      onCompleted: () => {
+        setIsCreateDialogOpen(false);
+        setFormData({
+          title: "",
+          description: "",
+          clientId: null,
+          category: null,
+          color: null,
+        });
+        setSelectedTemplateId(null);
+      },
+      onError: (error) => {
+        toast.error("Erreur lors de la création depuis le template");
+        console.error("Create from template error:", error);
+      },
+    });
 
   const [deleteTemplateMutation] = useMutation(DELETE_KANBAN_TEMPLATE, {
     onCompleted: () => {
@@ -200,7 +233,9 @@ export const useKanbanBoards = () => {
   const handleDeleteTemplate = async (templateId) => {
     await deleteTemplateMutation({
       variables: { id: templateId, workspaceId },
-      refetchQueries: [{ query: GET_KANBAN_TEMPLATES, variables: { workspaceId } }],
+      refetchQueries: [
+        { query: GET_KANBAN_TEMPLATES, variables: { workspaceId } },
+      ],
     });
   };
 
@@ -214,7 +249,7 @@ export const useKanbanBoards = () => {
       const timer = setTimeout(() => {
         setIsInitialLoading(false);
       }, 100);
-      
+
       return () => clearTimeout(timer);
     }
     // Si on n'a pas de workspaceId, on continue d'afficher le skeleton jusqu'à ce qu'il soit disponible
@@ -225,7 +260,7 @@ export const useKanbanBoards = () => {
     (board) =>
       board.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (board.description &&
-        board.description.toLowerCase().includes(searchTerm.toLowerCase()))
+        board.description.toLowerCase().includes(searchTerm.toLowerCase())),
   );
 
   const handleCreateBoard = async (e) => {
@@ -243,6 +278,8 @@ export const useKanbanBoards = () => {
             description: formData.description.trim() || null,
             templateId: selectedTemplateId,
             clientId: formData.clientId || null,
+            category: formData.category || null,
+            color: formData.color || null,
           },
           workspaceId,
         },
@@ -254,6 +291,8 @@ export const useKanbanBoards = () => {
             title: formData.title.trim(),
             description: formData.description.trim() || null,
             clientId: formData.clientId || null,
+            category: formData.category || null,
+            color: formData.color || null,
           },
           workspaceId,
         },
@@ -275,6 +314,8 @@ export const useKanbanBoards = () => {
           title: formData.title.trim(),
           description: formData.description.trim() || null,
           clientId: formData.clientId || null,
+          category: formData.category || null,
+          color: formData.color || null,
         },
         workspaceId,
       },
@@ -295,6 +336,8 @@ export const useKanbanBoards = () => {
       title: board.title,
       description: board.description || "",
       clientId: board.clientId || null,
+      category: board.category || null,
+      color: board.color || null,
     });
     setIsEditDialogOpen(true);
   };
