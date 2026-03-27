@@ -12,8 +12,6 @@ import {
   AlignLeft,
   Filter,
   Users,
-  ZoomIn,
-  ZoomOut,
   FileText,
   Euro,
   CircleXIcon,
@@ -55,7 +53,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/src/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -82,26 +84,97 @@ import { GanttChart } from "lucide-react";
 
 // Custom tab icons
 const ListViewIcon = ({ className }) => (
-  <svg className={className} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="1" y="2" width="14" height="2" rx="0.5" fill="currentColor" opacity="0.9" />
-    <rect x="1" y="7" width="14" height="2" rx="0.5" fill="currentColor" opacity="0.6" />
-    <rect x="1" y="12" width="14" height="2" rx="0.5" fill="currentColor" opacity="0.35" />
+  <svg
+    className={className}
+    viewBox="0 0 16 16"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <rect
+      x="1"
+      y="2"
+      width="14"
+      height="2"
+      rx="0.5"
+      fill="currentColor"
+      opacity="0.9"
+    />
+    <rect
+      x="1"
+      y="7"
+      width="14"
+      height="2"
+      rx="0.5"
+      fill="currentColor"
+      opacity="0.6"
+    />
+    <rect
+      x="1"
+      y="12"
+      width="14"
+      height="2"
+      rx="0.5"
+      fill="currentColor"
+      opacity="0.35"
+    />
   </svg>
 );
 
 const BoardViewIcon = ({ className }) => (
-  <svg className={className} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg
+    className={className}
+    viewBox="0 0 16 16"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
     <rect x="1" y="1" width="4" height="14" rx="1" fill="#7B68EE" />
-    <rect x="6" y="1" width="4" height="10" rx="1" fill="#7B68EE" opacity="0.6" />
-    <rect x="11" y="1" width="4" height="7" rx="1" fill="#7B68EE" opacity="0.35" />
+    <rect
+      x="6"
+      y="1"
+      width="4"
+      height="10"
+      rx="1"
+      fill="#7B68EE"
+      opacity="0.6"
+    />
+    <rect
+      x="11"
+      y="1"
+      width="4"
+      height="7"
+      rx="1"
+      fill="#7B68EE"
+      opacity="0.35"
+    />
   </svg>
 );
 
 const GanttViewIcon = ({ className }) => (
-  <svg className={className} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg
+    className={className}
+    viewBox="0 0 16 16"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
     <rect x="1" y="2" width="8" height="2.5" rx="0.5" fill="#E8723A" />
-    <rect x="4" y="6.75" width="10" height="2.5" rx="0.5" fill="#E8723A" opacity="0.6" />
-    <rect x="2" y="11.5" width="6" height="2.5" rx="0.5" fill="#E8723A" opacity="0.35" />
+    <rect
+      x="4"
+      y="6.75"
+      width="10"
+      height="2.5"
+      rx="0.5"
+      fill="#E8723A"
+      opacity="0.6"
+    />
+    <rect
+      x="2"
+      y="11.5"
+      width="6"
+      height="2.5"
+      rx="0.5"
+      fill="#E8723A"
+      opacity="0.35"
+    />
   </svg>
 );
 import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
@@ -167,7 +240,9 @@ function InlineBoardTitle({ title, onSave }) {
   const [value, setValue] = React.useState(title);
   const inputRef = React.useRef(null);
 
-  React.useEffect(() => { setValue(title); }, [title]);
+  React.useEffect(() => {
+    setValue(title);
+  }, [title]);
 
   const save = () => {
     const trimmed = value.trim();
@@ -179,15 +254,25 @@ function InlineBoardTitle({ title, onSave }) {
   return (
     <div className="flex items-center gap-1 group/title">
       <div className="relative h-6 flex items-center">
-        <h1 className={`text-base font-semibold leading-6 whitespace-nowrap ${isEditing ? 'invisible' : ''}`}>{isEditing ? value : title}</h1>
+        <h1
+          className={`text-base font-semibold leading-6 whitespace-nowrap ${isEditing ? "invisible" : ""}`}
+        >
+          {isEditing ? value : title}
+        </h1>
         {isEditing && (
           <input
             ref={inputRef}
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') { e.preventDefault(); save(); }
-              if (e.key === 'Escape') { setValue(title); setIsEditing(false); }
+              if (e.key === "Enter") {
+                e.preventDefault();
+                save();
+              }
+              if (e.key === "Escape") {
+                setValue(title);
+                setIsEditing(false);
+              }
             }}
             onBlur={save}
             className="absolute inset-0 text-base font-semibold text-foreground bg-transparent border-none outline-none caret-[#5A50FF] p-0 m-0 leading-6"
@@ -196,7 +281,10 @@ function InlineBoardTitle({ title, onSave }) {
       </div>
       {!isEditing && (
         <button
-          onClick={() => { setIsEditing(true); setTimeout(() => inputRef.current?.focus(), 0); }}
+          onClick={() => {
+            setIsEditing(true);
+            setTimeout(() => inputRef.current?.focus(), 0);
+          }}
           className="opacity-0 group-hover/title:opacity-100 transition-opacity cursor-pointer"
         >
           <Pencil className="h-3 w-3 text-muted-foreground/50 hover:text-muted-foreground" />
@@ -207,25 +295,27 @@ function InlineBoardTitle({ title, onSave }) {
 }
 
 const EMOJI_CATEGORIES = {
-  'Projet': ['📋', '📁', '📂', '🗂️', '📌', '📎', '🔖', '🏷️', '📝', '✏️'],
-  'Status': ['✅', '⏳', '🚧', '❌', '🔄', '⏸️', '▶️', '🏁', '🎯', '🏆'],
-  'Idées': ['💡', '🧩', '🔍', '🧪', '🔬', '📐', '🧮', '💭', '🤔', '🗒️'],
-  'Énergie': ['🚀', '⚡', '🔥', '💪', '🌟', '✨', '💫', '🎉', '🎊', '🪄'],
-  'Dev': ['🛠️', '⚙️', '🔧', '💻', '🖥️', '📱', '🌐', '🔗', '🗄️', '📡'],
-  'Business': ['💼', '📊', '📈', '💰', '🏗️', '🏢', '🤝', '📣', '📢', '🎨'],
-  'Nature': ['🌱', '🌿', '🍀', '🌸', '🌻', '🌈', '☀️', '🌙', '⭐', '🦋'],
-  'Divers': ['📦', '🎁', '🧰', '🔑', '🛡️', '🎮', '🎵', '📷', '🗺️', '🧭'],
+  Projet: ["📋", "📁", "📂", "🗂️", "📌", "📎", "🔖", "🏷️", "📝", "✏️"],
+  Status: ["✅", "⏳", "🚧", "❌", "🔄", "⏸️", "▶️", "🏁", "🎯", "🏆"],
+  Idées: ["💡", "🧩", "🔍", "🧪", "🔬", "📐", "🧮", "💭", "🤔", "🗒️"],
+  Énergie: ["🚀", "⚡", "🔥", "💪", "🌟", "✨", "💫", "🎉", "🎊", "🪄"],
+  Dev: ["🛠️", "⚙️", "🔧", "💻", "🖥️", "📱", "🌐", "🔗", "🗄️", "📡"],
+  Business: ["💼", "📊", "📈", "💰", "🏗️", "🏢", "🤝", "📣", "📢", "🎨"],
+  Nature: ["🌱", "🌿", "🍀", "🌸", "🌻", "🌈", "☀️", "🌙", "⭐", "🦋"],
+  Divers: ["📦", "🎁", "🧰", "🔑", "🛡️", "🎮", "🎵", "📷", "🗺️", "🧭"],
 };
 
 function EmojiPicker({ boardEmoji, onSelect, onClear }) {
-  const [search, setSearch] = React.useState('');
+  const [search, setSearch] = React.useState("");
   const [isOpen, setIsOpen] = React.useState(false);
 
   const filteredCategories = React.useMemo(() => {
     if (!search) return EMOJI_CATEGORIES;
     const filtered = {};
     for (const [cat, emojis] of Object.entries(EMOJI_CATEGORIES)) {
-      const match = emojis.filter(() => cat.toLowerCase().includes(search.toLowerCase()));
+      const match = emojis.filter(() =>
+        cat.toLowerCase().includes(search.toLowerCase()),
+      );
       if (match.length) filtered[cat] = match;
     }
     // Si pas de match par catégorie, chercher tous les emojis
@@ -236,7 +326,13 @@ function EmojiPicker({ boardEmoji, onSelect, onClear }) {
   }, [search]);
 
   return (
-    <Popover open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (open) setSearch(''); }}>
+    <Popover
+      open={isOpen}
+      onOpenChange={(open) => {
+        setIsOpen(open);
+        if (open) setSearch("");
+      }}
+    >
       <PopoverTrigger asChild>
         <button className="flex items-center justify-center h-7 w-7 rounded-md hover:bg-muted/50 transition-colors cursor-pointer text-base">
           {boardEmoji || <Smile className="h-4 w-4 text-muted-foreground/40" />}
@@ -246,7 +342,10 @@ function EmojiPicker({ boardEmoji, onSelect, onClear }) {
         {/* Search */}
         <div className="p-2 pb-1.5">
           <div className="relative">
-            <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
+            <Search
+              size={13}
+              className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground/50"
+            />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -260,12 +359,17 @@ function EmojiPicker({ boardEmoji, onSelect, onClear }) {
         <div className="px-2 pb-2 max-h-[240px] overflow-y-auto space-y-2">
           {Object.entries(filteredCategories).map(([category, emojis]) => (
             <div key={category}>
-              <span className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider px-0.5">{category}</span>
+              <span className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider px-0.5">
+                {category}
+              </span>
               <div className="grid grid-cols-10 gap-0.5 mt-0.5">
-                {emojis.map(e => (
+                {emojis.map((e) => (
                   <button
                     key={e}
-                    onClick={() => { onSelect(e); setIsOpen(false); }}
+                    onClick={() => {
+                      onSelect(e);
+                      setIsOpen(false);
+                    }}
                     className="h-7 w-7 flex items-center justify-center rounded hover:bg-muted cursor-pointer text-base transition-colors"
                   >
                     {e}
@@ -280,7 +384,10 @@ function EmojiPicker({ boardEmoji, onSelect, onClear }) {
         {boardEmoji && (
           <div className="border-t border-border/40 px-2 py-1.5">
             <button
-              onClick={() => { onClear(); setIsOpen(false); }}
+              onClick={() => {
+                onClear();
+                setIsOpen(false);
+              }}
               className="text-[11px] text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
             >
               Supprimer l'icône
@@ -308,13 +415,19 @@ function ExpandableSearch({ searchQuery, setSearchQuery }) {
         if (!searchQuery) setIsOpen(false);
       }
     }
-    document.addEventListener('pointerdown', handleClickOutside, true);
-    return () => document.removeEventListener('pointerdown', handleClickOutside, true);
+    document.addEventListener("pointerdown", handleClickOutside, true);
+    return () =>
+      document.removeEventListener("pointerdown", handleClickOutside, true);
   }, [isOpen, searchQuery]);
 
   if (!isOpen && !searchQuery) {
     return (
-      <Button variant="outline" size="icon" title="Rechercher" onClick={() => setIsOpen(true)}>
+      <Button
+        variant="outline"
+        size="icon"
+        title="Rechercher"
+        onClick={() => setIsOpen(true)}
+      >
         <Search size={14} aria-hidden="true" />
       </Button>
     );
@@ -325,7 +438,11 @@ function ExpandableSearch({ searchQuery, setSearchQuery }) {
       ref={containerRef}
       className="flex items-center gap-2 h-8 w-[220px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-2.5 transition-all duration-200 focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px] animate-in fade-in slide-in-from-right-2"
     >
-      <Search size={14} className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
+      <Search
+        size={14}
+        className="text-muted-foreground/80 shrink-0"
+        aria-hidden="true"
+      />
       <input
         ref={inputRef}
         value={searchQuery}
@@ -333,8 +450,8 @@ function ExpandableSearch({ searchQuery, setSearchQuery }) {
         placeholder="Rechercher..."
         className="flex-1 min-w-0 bg-transparent border-none outline-none text-sm placeholder:text-muted-foreground/50 p-0"
         onKeyDown={(e) => {
-          if (e.key === 'Escape') {
-            setSearchQuery('');
+          if (e.key === "Escape") {
+            setSearchQuery("");
             setIsOpen(false);
           }
         }}
@@ -342,7 +459,10 @@ function ExpandableSearch({ searchQuery, setSearchQuery }) {
       {Boolean(searchQuery) && (
         <button
           className="text-muted-foreground/80 hover:text-foreground cursor-pointer shrink-0 transition-colors outline-none"
-          onClick={() => { setSearchQuery(''); inputRef.current?.focus(); }}
+          onClick={() => {
+            setSearchQuery("");
+            inputRef.current?.focus();
+          }}
         >
           <CircleXIcon size={14} aria-hidden="true" />
         </button>
@@ -448,22 +568,24 @@ function KanbanBoardPageContent({ params }) {
   // Mutation pour mettre à jour le board
   const [updateBoardMutation] = useMutation(UPDATE_BOARD);
   const updateBoardField = (field, value) => {
-    updateBoardMutation({ variables: { input: { id, [field]: value }, workspaceId } });
+    updateBoardMutation({
+      variables: { input: { id, [field]: value }, workspaceId },
+    });
   };
 
   // Emoji & Favori (localStorage — pas de champ backend)
   const [boardEmoji, setBoardEmoji] = React.useState(() => {
-    if (typeof window === 'undefined') return null;
+    if (typeof window === "undefined") return null;
     return localStorage.getItem(`board-emoji-${id}`) || null;
   });
   const [isFavorite, setIsFavorite] = React.useState(() => {
-    if (typeof window === 'undefined') return false;
-    return localStorage.getItem(`board-fav-${id}`) === '1';
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(`board-fav-${id}`) === "1";
   });
   const toggleFavorite = () => {
-    setIsFavorite(prev => {
+    setIsFavorite((prev) => {
       const next = !prev;
-      localStorage.setItem(`board-fav-${id}`, next ? '1' : '0');
+      localStorage.setItem(`board-fav-${id}`, next ? "1" : "0");
       return next;
     });
   };
@@ -477,7 +599,7 @@ function KanbanBoardPageContent({ params }) {
   };
 
   // Priorité, Date, Membres — persistés en base via updateBoard
-  const boardPriority = board?.priority || '';
+  const boardPriority = board?.priority || "";
   const boardDueDate = board?.dueDate ? new Date(board.dueDate) : null;
   const boardMemberIds = board?.boardMembers || [];
 
@@ -486,8 +608,14 @@ function KanbanBoardPageContent({ params }) {
     if (!board?.tasks) return { total: 0, done: 0, percent: 0 };
     const total = board.tasks.length;
     const lastColumn = board?.columns?.[board.columns.length - 1];
-    const done = lastColumn ? board.tasks.filter(t => t.columnId === lastColumn.id).length : 0;
-    return { total, done, percent: total ? Math.round((done / total) * 100) : 0 };
+    const done = lastColumn
+      ? board.tasks.filter((t) => t.columnId === lastColumn.id).length
+      : 0;
+    return {
+      total,
+      done,
+      percent: total ? Math.round((done / total) * 100) : 0,
+    };
   }, [board?.tasks, board?.columns]);
 
   // Colonnes dérivées du board (synchrone, pas de délai useEffect)
@@ -533,9 +661,6 @@ function KanbanBoardPageContent({ params }) {
   const [selectedTaskIds, setSelectedTaskIds] = React.useState(new Set());
 
   // État pour le popover de description du tableau
-
-  // État pour le niveau de zoom du Kanban (0.7 = 70%, 1 = 100%, 1.3 = 130%)
-  const [zoomLevel, setZoomLevel] = React.useState(1);
 
   // État pour la modale de conversion en facture
   const [showConvertModal, setShowConvertModal] = useState(false);
@@ -763,6 +888,18 @@ function KanbanBoardPageContent({ params }) {
     [toggleColumnCollapse],
   );
 
+  // Collecter tous les tags du board pour l'autocomplétion
+  const allBoardTags = React.useMemo(() => {
+    if (!localColumns) return [];
+    const tags = [];
+    localColumns.forEach((column) => {
+      getLocalTasksByColumn(column.id).forEach((task) => {
+        (task.tags || []).forEach((tag) => tags.push(tag));
+      });
+    });
+    return tags;
+  }, [localColumns, getLocalTasksByColumn]);
+
   // Rendu des colonnes (custom DnD via data-attributes)
   const columnsContent = React.useMemo(() => {
     if (!localColumns || localColumns.length === 0) {
@@ -789,13 +926,18 @@ function KanbanBoardPageContent({ params }) {
               onToggleCollapse={handleColumnToggleCollapse}
               isLoading={loading}
               columnIndex={index}
-              zoomLevel={zoomLevel}
+              members={board?.members || []}
+              createTask={createTask}
+              updateTask={updateTask}
+              boardId={id}
+              workspaceId={workspaceId}
+              allBoardTags={allBoardTags}
             />
           );
         })}
 
         {/* Add Column Button */}
-        <Card className="w-72 sm:w-80 h-fit border-2 border-dashed border-border/50 hover:border-foreground/30 transition-colors shadow-none cursor-pointer flex-shrink-0">
+        <Card className="w-[230px] sm:w-[272px] h-fit border border-dashed border-foreground/25 hover:border-foreground/50 transition-colors shadow-none cursor-pointer flex-shrink-0">
           <CardContent className="p-3">
             <Button
               variant="ghost"
@@ -822,7 +964,12 @@ function KanbanBoardPageContent({ params }) {
     handleColumnToggleCollapse,
     loading,
     openAddModal,
-    zoomLevel,
+    board?.members,
+    createTask,
+    updateTask,
+    id,
+    workspaceId,
+    allBoardTags,
   ]);
 
   // Hook pour le drag-to-scroll horizontal (espace vide, hors DnD)
@@ -844,7 +991,6 @@ function KanbanBoardPageContent({ params }) {
     onDragStart: handleDragStart,
     onDragEnd: handleDragEnd,
     scrollElementRef,
-    zoomLevel,
     enabled: isBoard,
   });
 
@@ -921,14 +1067,26 @@ function KanbanBoardPageContent({ params }) {
         <div className="flex items-center gap-3 pt-2 pb-2 px-4 sm:px-6">
           {/* Breadcrumb */}
           <div className="flex items-center gap-1 text-xs text-muted-foreground/50">
-            <span className="hover:text-foreground transition-colors cursor-pointer" onClick={() => router.push('/dashboard/outils/kanban')}>Projets</span>
+            <span
+              className="hover:text-foreground transition-colors cursor-pointer"
+              onClick={() => router.push("/dashboard/outils/kanban")}
+            >
+              Projets
+            </span>
             <ChevronRight className="h-3 w-3" />
           </div>
 
           {/* Emoji + Titre */}
           <div className="flex items-center gap-1">
-            <EmojiPicker boardEmoji={boardEmoji} onSelect={handleEmojiSelect} onClear={clearEmoji} />
-            <InlineBoardTitle title={board.title} onSave={(title) => updateBoardField('title', title)} />
+            <EmojiPicker
+              boardEmoji={boardEmoji}
+              onSelect={handleEmojiSelect}
+              onClear={clearEmoji}
+            />
+            <InlineBoardTitle
+              title={board.title}
+              onSave={(title) => updateBoardField("title", title)}
+            />
           </div>
 
           {/* Description — texte tronqué inline, tooltip au hover */}
@@ -939,8 +1097,14 @@ function KanbanBoardPageContent({ params }) {
                   {board.description}
                 </span>
               </TooltipTrigger>
-              <TooltipContent side="bottom" align="start" className="max-w-[320px]">
-                <p className="text-xs whitespace-pre-wrap break-words">{board.description}</p>
+              <TooltipContent
+                side="bottom"
+                align="start"
+                className="max-w-[320px]"
+              >
+                <p className="text-xs whitespace-pre-wrap break-words">
+                  {board.description}
+                </p>
               </TooltipContent>
             </Tooltip>
           )}
@@ -949,9 +1113,11 @@ function KanbanBoardPageContent({ params }) {
           <button
             onClick={toggleFavorite}
             className="cursor-pointer transition-colors"
-            title={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+            title={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
           >
-            <Star className={`h-3.5 w-3.5 ${isFavorite ? 'text-amber-400 fill-amber-400' : 'text-muted-foreground/40 hover:text-amber-400'} transition-colors`} />
+            <Star
+              className={`h-3.5 w-3.5 ${isFavorite ? "text-amber-400 fill-amber-400" : "text-muted-foreground/40 hover:text-amber-400"} transition-colors`}
+            />
           </button>
 
           {/* Séparateur */}
@@ -959,104 +1125,163 @@ function KanbanBoardPageContent({ params }) {
 
           {/* Priorité / Date / Membres */}
           <div className="flex items-center gap-1 bg-muted/50 rounded-md px-1 py-0.5">
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="h-6 px-1.5 rounded-md hover:bg-muted cursor-pointer transition-colors flex items-center" title="Priorité du projet">
-                <Flag className={`h-3.5 w-3.5 transition-colors ${
-                  boardPriority === 'high' ? 'text-red-500 fill-red-500' :
-                  boardPriority === 'medium' ? 'text-yellow-500 fill-yellow-500' :
-                  boardPriority === 'low' ? 'text-green-500 fill-green-500' :
-                  'text-muted-foreground/40 hover:text-muted-foreground'
-                }`} />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-44 p-0" side="bottom" align="start">
-              <div className="p-1.5 space-y-0.5">
-                {[
-                  { value: 'high', label: 'Urgent', color: 'text-red-500 fill-red-500' },
-                  { value: 'medium', label: 'Moyen', color: 'text-yellow-500 fill-yellow-500' },
-                  { value: 'low', label: 'Faible', color: 'text-green-500 fill-green-500' },
-                  { value: '', label: 'Aucune', color: 'text-gray-400' },
-                ].map((p) => (
-                  <button
-                    key={p.value || 'none'}
-                    onClick={() => updateBoardField('priority', p.value)}
-                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer ${boardPriority === p.value || (!boardPriority && !p.value) ? 'bg-muted/60' : ''}`}
-                  >
-                    <Flag className={`h-3.5 w-3.5 ${p.color}`} />
-                    <span className="text-xs">{p.label}</span>
-                  </button>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-
-          {/* Date d'échéance */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="h-6 px-1.5 rounded-md hover:bg-muted flex items-center gap-1 cursor-pointer transition-colors" title="Échéance du projet">
-                <Calendar className={`h-3.5 w-3.5 transition-colors ${boardDueDate ? 'text-foreground/70' : 'text-muted-foreground/40 hover:text-muted-foreground'}`} />
-                {boardDueDate && (
-                  <span className="text-[11px] text-foreground/60 font-medium">{format(boardDueDate, 'dd MMM', { locale: fr })}</span>
-                )}
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" side="bottom" align="start">
-              <CalendarComponent
-                mode="single"
-                selected={boardDueDate}
-                onSelect={(date) => { if (date) { date.setHours(18, 0, 0, 0); updateBoardField('dueDate', date.toISOString()); } }}
-                locale={fr}
-                fromDate={new Date()}
-                className="border-0 p-2 text-xs [--cell-size:--spacing(8)]"
-              />
-              {boardDueDate && (
-                <div className="px-2 pb-2">
-                  <button onClick={() => updateBoardField('dueDate', null)} className="text-[11px] text-muted-foreground hover:text-foreground cursor-pointer transition-colors">Supprimer la date</button>
-                </div>
-              )}
-            </PopoverContent>
-          </Popover>
-
-          {/* Assigner des membres */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="h-6 px-1.5 rounded-md hover:bg-muted cursor-pointer transition-colors flex items-center gap-1" title="Membres du projet">
-                <UserRoundPlus className={`h-3.5 w-3.5 transition-colors ${boardMemberIds.length > 0 ? 'text-foreground/70' : 'text-muted-foreground/50'}`} />
-                {boardMemberIds.length > 0 && (
-                  <span className="text-[11px] text-foreground/60 font-medium">{boardMemberIds.length}</span>
-                )}
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-60 p-0" side="bottom" align="start">
-              <div className="px-2 pt-2 pb-0.5">
-                <span className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider">Membres du projet</span>
-              </div>
-              <div className="p-1.5 pt-0.5 space-y-0.5 max-h-[280px] overflow-y-auto">
-                {board?.members?.map((member) => {
-                  const memberId = member.userId || member.id;
-                  const isAssigned = boardMemberIds.includes(memberId);
-                  return (
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  className="h-6 px-1.5 rounded-md hover:bg-muted cursor-pointer transition-colors flex items-center"
+                  title="Priorité du projet"
+                >
+                  <Flag
+                    className={`h-3.5 w-3.5 transition-colors ${
+                      boardPriority === "high"
+                        ? "text-red-500 fill-red-500"
+                        : boardPriority === "medium"
+                          ? "text-yellow-500 fill-yellow-500"
+                          : boardPriority === "low"
+                            ? "text-green-500 fill-green-500"
+                            : "text-muted-foreground/40 hover:text-muted-foreground"
+                    }`}
+                  />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-44 p-0" side="bottom" align="start">
+                <div className="p-1.5 space-y-0.5">
+                  {[
+                    {
+                      value: "high",
+                      label: "Urgent",
+                      color: "text-red-500 fill-red-500",
+                    },
+                    {
+                      value: "medium",
+                      label: "Moyen",
+                      color: "text-yellow-500 fill-yellow-500",
+                    },
+                    {
+                      value: "low",
+                      label: "Faible",
+                      color: "text-green-500 fill-green-500",
+                    },
+                    { value: "", label: "Aucune", color: "text-gray-400" },
+                  ].map((p) => (
                     <button
-                      key={memberId}
-                      onClick={() => {
-                        const newMembers = isAssigned
-                          ? boardMemberIds.filter(mid => mid !== memberId)
-                          : [...boardMemberIds, memberId];
-                        updateBoardField('boardMembers', newMembers);
-                      }}
-                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer"
+                      key={p.value || "none"}
+                      onClick={() => updateBoardField("priority", p.value)}
+                      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer ${boardPriority === p.value || (!boardPriority && !p.value) ? "bg-muted/60" : ""}`}
                     >
-                      <div className={`rounded-full flex-shrink-0 ${isAssigned ? 'ring-[1.5px] ring-[#5A50FF] ring-offset-1 ring-offset-background' : ''}`}>
-                        <UserAvatar src={member.image} name={member.name || member.email} size="xs" className="h-5 w-5" />
-                      </div>
-                      <span className="flex-1 text-left text-xs font-medium truncate">{member.name || member.email}</span>
+                      <Flag className={`h-3.5 w-3.5 ${p.color}`} />
+                      <span className="text-xs">{p.label}</span>
                     </button>
-                  );
-                })}
-              </div>
-            </PopoverContent>
-          </Popover>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            {/* Date d'échéance */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  className="h-6 px-1.5 rounded-md hover:bg-muted flex items-center gap-1 cursor-pointer transition-colors"
+                  title="Échéance du projet"
+                >
+                  <Calendar
+                    className={`h-3.5 w-3.5 transition-colors ${boardDueDate ? "text-foreground/70" : "text-muted-foreground/40 hover:text-muted-foreground"}`}
+                  />
+                  {boardDueDate && (
+                    <span className="text-[11px] text-foreground/60 font-medium">
+                      {format(boardDueDate, "dd MMM", { locale: fr })}
+                    </span>
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-auto p-0"
+                side="bottom"
+                align="start"
+              >
+                <CalendarComponent
+                  mode="single"
+                  selected={boardDueDate}
+                  onSelect={(date) => {
+                    if (date) {
+                      date.setHours(18, 0, 0, 0);
+                      updateBoardField("dueDate", date.toISOString());
+                    }
+                  }}
+                  locale={fr}
+                  fromDate={new Date()}
+                  className="border-0 p-2 text-xs [--cell-size:--spacing(8)]"
+                />
+                {boardDueDate && (
+                  <div className="px-2 pb-2">
+                    <button
+                      onClick={() => updateBoardField("dueDate", null)}
+                      className="text-[11px] text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                    >
+                      Supprimer la date
+                    </button>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
+
+            {/* Assigner des membres */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  className="h-6 px-1.5 rounded-md hover:bg-muted cursor-pointer transition-colors flex items-center gap-1"
+                  title="Membres du projet"
+                >
+                  <UserRoundPlus
+                    className={`h-3.5 w-3.5 transition-colors ${boardMemberIds.length > 0 ? "text-foreground/70" : "text-muted-foreground/50"}`}
+                  />
+                  {boardMemberIds.length > 0 && (
+                    <span className="text-[11px] text-foreground/60 font-medium">
+                      {boardMemberIds.length}
+                    </span>
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-60 p-0" side="bottom" align="start">
+                <div className="px-2 pt-2 pb-0.5">
+                  <span className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider">
+                    Membres du projet
+                  </span>
+                </div>
+                <div className="p-1.5 pt-0.5 space-y-0.5 max-h-[280px] overflow-y-auto">
+                  {board?.members?.map((member) => {
+                    const memberId = member.userId || member.id;
+                    const isAssigned = boardMemberIds.includes(memberId);
+                    return (
+                      <button
+                        key={memberId}
+                        onClick={() => {
+                          const newMembers = isAssigned
+                            ? boardMemberIds.filter((mid) => mid !== memberId)
+                            : [...boardMemberIds, memberId];
+                          updateBoardField("boardMembers", newMembers);
+                        }}
+                        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer"
+                      >
+                        <div
+                          className={`rounded-full flex-shrink-0 ${isAssigned ? "ring-[1.5px] ring-[#5A50FF] ring-offset-1 ring-offset-background" : ""}`}
+                        >
+                          <UserAvatar
+                            src={member.image}
+                            name={member.name || member.email}
+                            size="xs"
+                            className="h-5 w-5"
+                          />
+                        </div>
+                        <span className="flex-1 text-left text-xs font-medium truncate">
+                          {member.name || member.email}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Séparateur */}
@@ -1136,7 +1361,10 @@ function KanbanBoardPageContent({ params }) {
 
           <div className="flex items-center gap-2">
             {/* Bouton Recherche expansible */}
-            <ExpandableSearch searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+            <ExpandableSearch
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+            />
 
             {/* Bouton Filtres */}
             <DropdownMenu
@@ -1145,14 +1373,19 @@ function KanbanBoardPageContent({ params }) {
               }}
             >
               <DropdownMenuTrigger asChild>
-                    <Button variant={selectedMemberId ? "primary" : "outline"} size="icon" className="relative" title="Filtres">
-                      <Filter size={14} aria-hidden="true" />
-                      {selectedMemberId && (
-                        <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#5A50FF] text-[9px] font-bold text-white">
-                          1
-                        </span>
-                      )}
-                    </Button>
+                <Button
+                  variant={selectedMemberId ? "primary" : "outline"}
+                  size="icon"
+                  className="relative"
+                  title="Filtres"
+                >
+                  <Filter size={14} aria-hidden="true" />
+                  {selectedMemberId && (
+                    <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#5A50FF] text-[9px] font-bold text-white">
+                      1
+                    </span>
+                  )}
+                </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-[240px]">
                 <DropdownMenuItem
@@ -1184,7 +1417,9 @@ function KanbanBoardPageContent({ params }) {
                             key={member.id}
                             onClick={() =>
                               setSelectedMemberId(
-                                selectedMemberId === member.id ? null : member.id,
+                                selectedMemberId === member.id
+                                  ? null
+                                  : member.id,
                               )
                             }
                             className="flex items-center px-2 py-1.5 cursor-pointer text-sm"
@@ -1197,13 +1432,21 @@ function KanbanBoardPageContent({ params }) {
                               />
                             ) : (
                               <div className="w-6 h-6 rounded-full mr-2 bg-primary/20 flex items-center justify-center text-xs font-medium">
-                                {(member.name || member.email).charAt(0).toUpperCase()}
+                                {(member.name || member.email)
+                                  .charAt(0)
+                                  .toUpperCase()}
                               </div>
                             )}
-                            <span className="flex-1">{member.name || member.email}</span>
-                            <div className={`w-4 h-4 rounded border flex items-center justify-center ${
-                              selectedMemberId === member.id ? "bg-primary border-primary" : "border-muted-foreground/50"
-                            }`}>
+                            <span className="flex-1">
+                              {member.name || member.email}
+                            </span>
+                            <div
+                              className={`w-4 h-4 rounded border flex items-center justify-center ${
+                                selectedMemberId === member.id
+                                  ? "bg-primary border-primary"
+                                  : "border-muted-foreground/50"
+                              }`}
+                            >
                               {selectedMemberId === member.id && (
                                 <span className="text-white text-xs">✓</span>
                               )}
@@ -1236,16 +1479,6 @@ function KanbanBoardPageContent({ params }) {
       {/* Contrôles au même niveau - Lien Déplier, Recherche et Filtre */}
       {isBoard && (
         <div className="sticky left-0 px-4 sm:px-6 py-3 bg-background z-10 flex items-center gap-4">
-          {/* Lien Déplier toutes */}
-          {collapsedColumnsCount > 0 && (
-            <button
-              onClick={expandAll}
-              className="text-sm text-muted-foreground hover:text-foreground cursor-pointer whitespace-nowrap transition-colors"
-            >
-              Déplier toutes ({collapsedColumnsCount})
-            </button>
-          )}
-
           <div className="flex items-center gap-2">
             {/* Bouton Convertir en facture */}
             {billableTasks.length > 0 && (
@@ -1270,51 +1503,12 @@ function KanbanBoardPageContent({ params }) {
               </span>
             </span>
           )}
-
-          {/* Contrôles de zoom */}
-          <div className="flex items-center gap-2 ml-auto">
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-9 w-9"
-                onClick={() =>
-                  setZoomLevel((prev) => Math.max(0.5, prev - 0.1))
-                }
-                disabled={zoomLevel <= 0.5}
-              >
-                <ZoomOut className="h-4 w-4" />
-              </Button>
-              <span className="text-xs text-muted-foreground w-12 text-center">
-                {Math.round(zoomLevel * 100)}%
-              </span>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-9 w-9"
-                onClick={() =>
-                  setZoomLevel((prev) => Math.min(1.5, prev + 0.1))
-                }
-                disabled={zoomLevel >= 1.5}
-              >
-                <ZoomIn className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
         </div>
       )}
 
       {/* Contrôles pour la vue liste */}
       {isList && (collapsedColumnsCount > 0 || billableTasks.length > 0) && (
         <div className="sticky left-0 px-4 sm:px-6 py-3 bg-background z-10 flex items-center gap-4">
-          {collapsedColumnsCount > 0 && (
-            <button
-              onClick={expandAll}
-              className="text-sm text-muted-foreground hover:text-foreground cursor-pointer whitespace-nowrap transition-colors"
-            >
-              Déplier toutes ({collapsedColumnsCount})
-            </button>
-          )}
           {billableTasks.length > 0 && (
             <>
               <Button
@@ -1354,41 +1548,45 @@ function KanbanBoardPageContent({ params }) {
       )}
 
       {/* Board Content - Zone scrollable pour les colonnes */}
-      <div className={`flex-1 overflow-hidden ${isList ? '' : 'px-4 sm:px-6'}`}>
+      <div className="flex-1 overflow-hidden">
         {isList && (
-          <div className="h-full overflow-auto" ref={(node) => { listScrollRef.current = node; }}>
-              <div className="h-6 bg-background sticky top-0 z-[21]" />
-              <KanbanListView
-                columns={localColumns}
-                getTasksByColumn={getLocalTasksByColumn}
-                filterTasks={filterTasks}
-                onEditTask={openEditTaskModal}
-                onDeleteTask={handleDeleteTask}
-                onAddTask={openAddTaskModal}
-                onEditColumn={openEditModal}
-                onDeleteColumn={handleDeleteColumn}
-                members={board?.members || []}
-                selectedTaskIds={selectedTaskIds}
-                setSelectedTaskIds={setSelectedTaskIds}
-                moveTask={moveTask}
-                updateTask={updateTask}
-                createTask={createTask}
-                boardId={id}
-                workspaceId={workspaceId}
-              />
+          <div
+            className="h-full overflow-auto"
+            ref={(node) => {
+              listScrollRef.current = node;
+            }}
+          >
+            <div className="h-6 bg-background sticky top-0 z-[21]" />
+            <KanbanListView
+              columns={localColumns}
+              getTasksByColumn={getLocalTasksByColumn}
+              filterTasks={filterTasks}
+              onEditTask={openEditTaskModal}
+              onDeleteTask={handleDeleteTask}
+              onAddTask={openAddTaskModal}
+              onEditColumn={openEditModal}
+              onDeleteColumn={handleDeleteColumn}
+              members={board?.members || []}
+              selectedTaskIds={selectedTaskIds}
+              setSelectedTaskIds={setSelectedTaskIds}
+              moveTask={moveTask}
+              updateTask={updateTask}
+              createTask={createTask}
+              boardId={id}
+              workspaceId={workspaceId}
+            />
           </div>
         )}
 
         {isBoard && (
           <div
             ref={scrollRef}
-            className="h-full overflow-x-auto overflow-y-hidden pb-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+            className="h-full overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           >
             <div
-              className="h-full w-max min-w-full origin-top-left flex flex-nowrap items-start"
+              className="h-full w-max min-w-full origin-top-left flex flex-nowrap items-start px-4 sm:px-6"
               style={{
-                zoom: zoomLevel,
-                gap: "16px",
+                gap: "10px",
               }}
             >
               {columnsContent ? (
