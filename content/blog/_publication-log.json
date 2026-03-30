@@ -46,5 +46,13 @@
       "gestion-facturation-infirmier-liberal",
       "quest-ce-que-numero-facture"
     ]
+  },
+  {
+    "date": "2026-03-30",
+    "articles": [
+      "facturer-prestations-kinesitherapeute",
+      "obligation-assurance-decennale-artisan",
+      "evoliz-vs-newbi-comparatif"
+    ]
   }
 ]
