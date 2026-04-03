@@ -8,7 +8,6 @@ import {
 import { stripe } from "@better-auth/stripe";
 import Stripe from "stripe";
 import {
-  sendSMSInDevelopment,
   send2FAEmail,
   sendOrganizationInvitationEmail,
 } from "./auth-utils";
@@ -85,58 +84,28 @@ export const phoneNumberPlugin = phoneNumber({
 
 // Configuration du plugin Two Factor
 export const twoFactorPlugin = twoFactor({
-  // Nom de l'application affiché dans les apps d'authentification (Google Authenticator, etc.)
   issuer: "Newbi",
+  skipVerificationOnEnable: false,
 
-  // Configuration TOTP (Time-based One-Time Password)
-  totp: {
-    period: 30, // Période de validité du code en secondes (standard: 30s)
-    digits: 6, // Nombre de chiffres du code (standard: 6)
+  // Configuration TOTP (authenticator app)
+  totpOptions: {
+    period: 30,
+    digits: 6,
   },
 
   // Configuration des codes de secours
-  backupCodes: {
-    amount: 10, // Nombre de codes de secours générés
-    length: 10, // Longueur de chaque code de secours
+  backupCodeOptions: {
+    amount: 10,
+    length: 10,
   },
 
-  // Skip verification lors de l'activation (utile pour dev/test)
-  // En production, laisser à false pour forcer la vérification du premier code
-  skipVerificationOnEnable: false,
-
-  // Configuration OTP (One-Time Password) par email/SMS
+  // Configuration OTP (email)
   otpOptions: {
-    async sendOTP({ user, otp, type }, request) {
-      // ⚠️ IMPORTANT : Cette fonction est appelée UNIQUEMENT pour les codes OTP temporaires
-      // (email/SMS), PAS pour TOTP (authenticator app)
-      // Pour TOTP, Better Auth génère un QR code et ne devrait pas envoyer d'email
-
-      console.log("📧 [2FA OTP] Envoi code OTP demandé");
-      console.log("📧 [2FA OTP] Type:", type);
-      console.log("📧 [2FA OTP] User:", user.email);
-      console.log("📧 [2FA OTP] PhoneNumber:", user.phoneNumber);
-
-      // Si type est explicitement "totp", ne rien envoyer (QR code uniquement)
-      if (type === "totp") {
-        console.log("🔐 [2FA OTP] Type TOTP détecté, pas d'envoi d'email/SMS");
-        return { success: true };
-      }
-
-      // Better Auth ne passe pas automatiquement type="sms"
-      // Il faut détecter manuellement si l'utilisateur a un phoneNumber
-      const shouldUseSMS = user.phoneNumber && user.phoneNumber.trim() !== "";
-
-      if (shouldUseSMS) {
-        // Envoi par SMS
-        console.log("📱 [2FA OTP] Envoi par SMS à:", user.phoneNumber);
-        sendSMSInDevelopment(user.phoneNumber, otp, "2FA SMS");
-      } else {
-        // Envoi par email via Resend
-        console.log("📧 [2FA OTP] Envoi par email à:", user.email);
-        await send2FAEmail(user, otp);
-      }
-
-      return { success: true };
+    period: 300, // Validité du code en secondes (5 minutes)
+    async sendOTP({ user, otp }) {
+      console.log("[2FA OTP] Envoi code OTP à:", user.email);
+      await send2FAEmail(user, otp);
+      console.log("[2FA OTP] Email envoyé avec succès");
     },
   },
 });

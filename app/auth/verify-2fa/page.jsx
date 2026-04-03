@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/src/lib/auth-client";
 import { Button } from "@/src/components/ui/button";
@@ -16,7 +16,7 @@ import {
   Calendar,
   FileChartColumn,
   ChartPie,
-  LoaderCircleIcon,
+  Mail,
 } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 import { cn } from "@/src/lib/utils";
@@ -27,6 +27,41 @@ export default function Verify2FAPage() {
   const [trustDevice, setTrustDevice] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [useBackupCode, setUseBackupCode] = useState(false);
+  const [useEmailOtp, setUseEmailOtp] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+
+  // Envoyer l'OTP par email
+  const sendEmailOtp = useCallback(async () => {
+    setIsSendingOtp(true);
+    try {
+      console.log("[2FA] Appel authClient.twoFactor.sendOtp()...");
+      console.log("[2FA] Cookies disponibles:", document.cookie);
+      const result = await authClient.twoFactor.sendOtp();
+      console.log("[2FA] Résultat sendOtp:", JSON.stringify(result));
+
+      if (result?.error) {
+        console.error("[2FA] Erreur envoi OTP:", result.error);
+        toast.error(result.error.message || "Erreur lors de l'envoi du code par email");
+        return;
+      }
+
+      setOtpSent(true);
+      toast.success("Code de vérification envoyé par email");
+    } catch (err) {
+      console.error("[2FA] Erreur envoi OTP:", err);
+      toast.error("Impossible d'envoyer le code par email: " + err.message);
+    } finally {
+      setIsSendingOtp(false);
+    }
+  }, []);
+
+  // Quand l'utilisateur bascule vers le mode email, envoyer l'OTP
+  useEffect(() => {
+    if (useEmailOtp && !otpSent && !isSendingOtp) {
+      sendEmailOtp();
+    }
+  }, [useEmailOtp, otpSent, isSendingOtp, sendEmailOtp]);
 
   const handleVerifyTOTP = async (otpCode) => {
     if (otpCode.length !== 6) return;
@@ -43,7 +78,7 @@ export default function Verify2FAPage() {
         toast.error(
           "Le code saisi est incorrect. Vérifiez votre application d'authentification et réessayez."
         );
-        setCode(""); // Réinitialiser le code
+        setCode("");
         return;
       }
 
@@ -53,6 +88,38 @@ export default function Verify2FAPage() {
       }
     } catch (err) {
       console.error("Erreur vérification 2FA:", err);
+      toast.error(
+        "Une erreur s'est produite lors de la vérification. Veuillez réessayer."
+      );
+      setCode("");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleVerifyEmailOtp = async (otpCode) => {
+    if (otpCode.length !== 6) return;
+
+    setIsVerifying(true);
+
+    try {
+      const { data, error } = await authClient.twoFactor.verifyOtp({
+        code: otpCode,
+        trustDevice: trustDevice,
+      });
+
+      if (error) {
+        toast.error("Le code saisi est incorrect ou a expiré.");
+        setCode("");
+        return;
+      }
+
+      if (data) {
+        toast.success("Authentification réussie !");
+        router.push("/dashboard");
+      }
+    } catch (err) {
+      console.error("Erreur vérification OTP email:", err);
       toast.error(
         "Une erreur s'est produite lors de la vérification. Veuillez réessayer."
       );
@@ -100,7 +167,16 @@ export default function Verify2FAPage() {
     }
   };
 
-  // Composant pour les icônes décoratives
+  // Handler unifié selon le mode actif
+  const handleVerifyCode = (otpCode) => {
+    if (useEmailOtp) {
+      handleVerifyEmailOtp(otpCode);
+    } else {
+      handleVerifyTOTP(otpCode);
+    }
+  };
+
+  // Composant pour les icones decoratives
   const IconCard = ({ children, className, borderClassName }) => {
     return (
       <div
@@ -121,11 +197,18 @@ export default function Verify2FAPage() {
     );
   };
 
+  // Texte descriptif selon le mode
+  const getDescription = () => {
+    if (useBackupCode) return "Entrez un code de secours pour vous connecter";
+    if (useEmailOtp) return "Entrez le code a 6 chiffres envoye par email";
+    return "Entrez le code a 6 chiffres depuis votre application d'authentification";
+  };
+
   return (
     <section>
       <div className="bg-white dark:bg-background py-24 md:py-32">
         <div className="mx-auto max-w-5xl px-6">
-          {/* Grille d'icônes décoratives */}
+          {/* Grille d'icones decoratives */}
           <div className="relative mx-auto w-fit">
             <div
               role="presentation"
@@ -152,7 +235,11 @@ export default function Verify2FAPage() {
                 borderClassName="shadow-black-950/10 shadow-xl border-black/5 dark:border-white/10"
                 className="dark:bg-white/10"
               >
-                <Shield className="w-6 h-6 text-[#5b4fff]" />
+                {useEmailOtp ? (
+                  <Mail className="w-6 h-6 text-[#5b4fff]" />
+                ) : (
+                  <Shield className="w-6 h-6 text-[#5b4fff]" />
+                )}
               </IconCard>
               <IconCard>
                 <Calendar className="text-gray-200 w-6 h-6" />
@@ -177,9 +264,7 @@ export default function Verify2FAPage() {
                 Vérification en deux étapes
               </h2>
               <p className="text-muted-foreground text-sm">
-                {useBackupCode
-                  ? "Entrez un code de secours pour vous connecter"
-                  : "Entrez le code à 6 chiffres depuis votre application d'authentification"}
+                {getDescription()}
               </p>
             </div>
 
@@ -187,25 +272,33 @@ export default function Verify2FAPage() {
             <div className="space-y-6 pt-4">
               {!useBackupCode ? (
                 <>
-                  {/* Input OTP pour TOTP */}
+                  {/* Input OTP */}
                   <div className="space-y-4">
-                    <div className="flex justify-center">
-                      <OtpInput
-                        value={code}
-                        onChange={(value) => {
-                          setCode(value);
-                          // Vérification automatique quand le code est complet
-                          if (value.length === 6) {
-                            handleVerifyTOTP(value);
-                          }
-                        }}
-                        maxLength={6}
-                        disabled={isVerifying}
-                      />
-                    </div>
+                    {useEmailOtp && isSendingOtp ? (
+                      <div className="flex items-center justify-center gap-2 py-4">
+                        <Loader2 className="h-5 w-5 animate-spin text-[#5b4fff]" />
+                        <span className="text-sm text-muted-foreground">
+                          Envoi du code en cours...
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex justify-center">
+                        <OtpInput
+                          value={code}
+                          onChange={(value) => {
+                            setCode(value);
+                            if (value.length === 6) {
+                              handleVerifyCode(value);
+                            }
+                          }}
+                          maxLength={6}
+                          disabled={isVerifying}
+                        />
+                      </div>
+                    )}
                   </div>
 
-                  {/* Option "Faire confiance à cet appareil" */}
+                  {/* Option "Faire confiance a cet appareil" */}
                   <div className="flex items-center justify-center space-x-2">
                     <Checkbox
                       id="trust-device"
@@ -221,10 +314,10 @@ export default function Verify2FAPage() {
                     </Label>
                   </div>
 
-                  {/* Bouton de vérification */}
+                  {/* Bouton de verification */}
                   <Button
-                    onClick={() => handleVerifyTOTP(code)}
-                    disabled={code.length !== 6 || isVerifying}
+                    onClick={() => handleVerifyCode(code)}
+                    disabled={code.length !== 6 || isVerifying || isSendingOtp}
                     className="w-1/2 bg-[#5b4fff] hover:bg-[#5b4fff]/90 cursor-pointer"
                   >
                     {isVerifying ? (
@@ -237,15 +330,61 @@ export default function Verify2FAPage() {
                     )}
                   </Button>
 
-                  {/* Lien vers codes de secours */}
-                  <div className="text-center pt-2">
+                  {/* Renvoyer le code par email */}
+                  {useEmailOtp && otpSent && (
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOtpSent(false);
+                          setCode("");
+                          sendEmailOtp();
+                        }}
+                        className="text-sm text-[#5b4fff] hover:text-[#5b4fff]/80 underline"
+                        disabled={isSendingOtp || isVerifying}
+                      >
+                        Renvoyer le code
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Liens alternatives */}
+                  <div className="text-center pt-2 space-y-2">
+                    {!useEmailOtp ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUseEmailOtp(true);
+                          setCode("");
+                        }}
+                        className="text-sm text-muted-foreground hover:text-foreground underline block mx-auto"
+                        disabled={isVerifying}
+                      >
+                        Recevoir un code par email
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUseEmailOtp(false);
+                          setOtpSent(false);
+                          setCode("");
+                        }}
+                        className="text-sm text-muted-foreground hover:text-foreground underline block mx-auto"
+                        disabled={isVerifying}
+                      >
+                        Utiliser l'application d'authentification
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => {
                         setUseBackupCode(true);
+                        setUseEmailOtp(false);
+                        setOtpSent(false);
                         setCode("");
                       }}
-                      className="text-sm text-muted-foreground hover:text-foreground underline"
+                      className="text-sm text-muted-foreground hover:text-foreground underline block mx-auto"
                       disabled={isVerifying}
                     >
                       Utiliser un code de secours
@@ -274,7 +413,7 @@ export default function Verify2FAPage() {
                     </p>
                   </div>
 
-                  {/* Option "Faire confiance à cet appareil" */}
+                  {/* Option "Faire confiance a cet appareil" */}
                   <div className="flex items-center justify-center space-x-2">
                     <Checkbox
                       id="trust-device-backup"
@@ -290,7 +429,7 @@ export default function Verify2FAPage() {
                     </Label>
                   </div>
 
-                  {/* Bouton de vérification */}
+                  {/* Bouton de verification */}
                   <Button
                     onClick={handleVerifyBackupCode}
                     disabled={!code || code.length < 10 || isVerifying}
