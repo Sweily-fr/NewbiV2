@@ -3,7 +3,13 @@
 import { Suspense, useState, useEffect, useMemo } from "react";
 import { Button } from "@/src/components/ui/button";
 import { PermissionButton } from "@/src/components/rbac";
-import { Plus, Settings, Bell, ArrowRightFromLine, Download } from "lucide-react";
+import {
+  Plus,
+  Settings,
+  Bell,
+  ArrowRightFromLine,
+  Download,
+} from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import QuoteTable from "./components/quote-table";
 import { QuoteSettingsModal } from "./components/quote-settings-modal";
@@ -37,21 +43,23 @@ function QuotesContent() {
         try {
           const quoteData = JSON.parse(storedData);
           setNewQuoteData(quoteData);
-          
+
           // Afficher le toast avec bouton "Envoyer au client"
           toastManager.add({
             type: "document",
             title: "Devis créé avec succès",
             description: `Devis ${quoteData.number} créé`,
             timeout: 10000,
-            actionProps: quoteData.clientEmail ? {
-              children: "Envoyer au client",
-              onClick: () => {
-                setShowSendEmailModal(true);
-              },
-            } : undefined,
+            actionProps: quoteData.clientEmail
+              ? {
+                  children: "Envoyer au client",
+                  onClick: () => {
+                    setShowSendEmailModal(true);
+                  },
+                }
+              : undefined,
           });
-          
+
           // Supprimer les données du sessionStorage
           sessionStorage.removeItem("newQuoteData");
         } catch (e) {
@@ -144,10 +152,7 @@ function QuotesContent() {
             >
               <Settings size={14} strokeWidth={1.5} aria-hidden="true" />
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => setTriggerImport(true)}
-            >
+            <Button variant="outline" onClick={() => setTriggerImport(true)}>
               <Download size={14} strokeWidth={1.5} aria-hidden="true" />
               Importer
             </Button>
@@ -171,7 +176,7 @@ function QuotesContent() {
             <div className="pr-4">
               <div className="flex items-center gap-1.5 mb-1">
                 <span className="text-xs text-muted-foreground">
-                  Total devisé
+                  Total devis
                 </span>
               </div>
               <div className="flex items-baseline gap-1">
@@ -286,7 +291,6 @@ function QuotesContent() {
         open={isSettingsOpen}
         onOpenChange={setIsSettingsOpen}
       />
-
 
       {/* Modal d'envoi par email pour les nouveaux devis */}
       {newQuoteData && (
