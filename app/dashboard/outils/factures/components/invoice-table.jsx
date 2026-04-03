@@ -121,6 +121,7 @@ export default function InvoiceTable({
   triggerImport,
   onImportTriggered,
   onFilteredDataChange,
+  onBalancesRefetch,
 }) {
   const router = useRouter();
   const inputRef = useRef(null);
@@ -215,13 +216,14 @@ export default function InvoiceTable({
     data: combinedInvoices,
     onRefetch: refetch,
     onRefetchImported: refetchImported,
+    onBalancesRefetch,
     reminderEnabled,
     onOpenReminderSettings,
     excludedClientIds,
-    onOpenSidebar: setInvoiceToOpen, // Passer la fonction pour ouvrir la sidebar au niveau du tableau
-    onOpenImportedSidebar: setSelectedImportedInvoice, // Passer la fonction pour ouvrir la sidebar des factures importées
-    onSendEmail: setSendEmailInvoice, // Passer la fonction pour ouvrir la modal d'envoi au niveau du tableau
-    onSaveAsTemplate: setTemplateInvoice, // Passer la fonction pour ouvrir le dialog de template
+    onOpenSidebar: setInvoiceToOpen,
+    onOpenImportedSidebar: setSelectedImportedInvoice,
+    onSendEmail: setSendEmailInvoice,
+    onSaveAsTemplate: setTemplateInvoice,
   });
 
   // Notifier le parent des données filtrées pour les KPIs
@@ -1040,7 +1042,10 @@ export default function InvoiceTable({
           invoice={invoiceToOpen}
           isOpen={!!invoiceToOpen}
           onClose={() => setInvoiceToOpen(null)}
-          onRefetch={refetch}
+          onRefetch={() => {
+            refetch();
+            onBalancesRefetch?.();
+          }}
         />
       )}
 
@@ -1050,7 +1055,10 @@ export default function InvoiceTable({
           invoice={mobileFullscreenInvoice}
           isOpen={!!mobileFullscreenInvoice}
           onClose={() => setMobileFullscreenInvoice(null)}
-          onRefetch={refetch}
+          onRefetch={() => {
+            refetch();
+            onBalancesRefetch?.();
+          }}
         />
       )}
 
@@ -1073,6 +1081,7 @@ export default function InvoiceTable({
         onImportSuccess={() => {
           refetchImported();
           refetch();
+          onBalancesRefetch?.();
         }}
       />
 
@@ -1083,6 +1092,7 @@ export default function InvoiceTable({
         onOpenChange={(open) => !open && setSelectedImportedInvoice(null)}
         onUpdate={() => {
           refetchImported();
+          onBalancesRefetch?.();
           setSelectedImportedInvoice(null);
         }}
       />
@@ -1143,6 +1153,7 @@ export default function InvoiceTable({
           onSent={() => {
             setSendEmailInvoice(null);
             refetch();
+            onBalancesRefetch?.();
           }}
         />
       )}

@@ -239,6 +239,17 @@ export const GET_INVOICES = gql`
   ${INVOICE_LIST_FRAGMENT}
 `;
 
+export const GET_INVOICE_BALANCES = gql`
+  query GetInvoiceBalances($workspaceId: ID!) {
+    invoiceBalances(workspaceId: $workspaceId) {
+      totalBilled
+      totalPaid
+      overdueAmount
+      overdueCount
+    }
+  }
+`;
+
 export const GET_INVOICE = gql`
   query GetInvoice($id: ID!, $workspaceId: ID!) {
     invoice(id: $id, workspaceId: $workspaceId) {
@@ -685,6 +696,28 @@ export const useInvoices = () => {
       optimizedRefetch,
     ],
   );
+};
+
+// Hook pour récupérer les soldes agrégés (factures créées + importées)
+export const useInvoiceBalances = () => {
+  const { workspaceId } = useRequiredWorkspace();
+
+  const { data, loading, refetch } = useQuery(GET_INVOICE_BALANCES, {
+    variables: { workspaceId },
+    fetchPolicy: "cache-and-network",
+    skip: !workspaceId,
+  });
+
+  return {
+    balances: data?.invoiceBalances || {
+      totalBilled: 0,
+      totalPaid: 0,
+      overdueAmount: 0,
+      overdueCount: 0,
+    },
+    loading,
+    refetch,
+  };
 };
 
 // Hook pour récupérer une facture spécifique

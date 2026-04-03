@@ -28,11 +28,13 @@ function getTextBeforeCursor() {
 }
 
 /**
- * MentionDropdown — rendered inline (no portal) so clicking it does NOT blur the editor.
+ * MentionDropdown — inline (no portal), uses position:fixed to escape overflow containers.
+ * Stays in the same DOM tree so clicking does NOT blur the editor or trigger Radix outside-click.
  */
-function MentionDropdown({ members, query, onSelect }) {
+function MentionDropdown({ members, query, onSelect, anchorRef }) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const listRef = useRef(null);
+  const [pos, setPos] = useState(null);
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
@@ -48,6 +50,14 @@ function MentionDropdown({ members, query, onSelect }) {
   useEffect(() => {
     setSelectedIndex(0);
   }, [query]);
+
+  // Calculate fixed position from anchor
+  useEffect(() => {
+    const anchor = anchorRef?.current;
+    if (!anchor) return;
+    const rect = anchor.getBoundingClientRect();
+    setPos({ left: rect.left, bottom: window.innerHeight - rect.top + 4 });
+  }, [anchorRef, query]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -69,12 +79,18 @@ function MentionDropdown({ members, query, onSelect }) {
     return () => document.removeEventListener("keydown", handleKeyDown, true);
   }, [filtered, selectedIndex, onSelect]);
 
-  if (filtered.length === 0) return null;
+  if (filtered.length === 0 || !pos) return null;
 
   return (
     <div
       ref={listRef}
-      className="absolute bottom-full left-0 mb-1 z-[9999] bg-white dark:bg-[#1a1a1a] border border-[#eeeff1] dark:border-[#232323] rounded-lg shadow-lg py-1 w-64 max-h-48 overflow-y-auto"
+      style={{
+        position: "fixed",
+        left: pos.left,
+        bottom: pos.bottom,
+        zIndex: 9999,
+      }}
+      className="bg-white dark:bg-[#1a1a1a] border border-[#eeeff1] dark:border-[#232323] rounded-lg shadow-lg py-1 w-64 max-h-48 overflow-y-auto"
     >
       {filtered.map((member, index) => (
         <button
@@ -131,12 +147,39 @@ export const MentionCommentInput = forwardRef(function MentionCommentInput(
     isDragOver = false,
     children,
     toolbarSlot,
+    initialContent = "",
+    editMode = false,
+    onCancel,
+    submitLabel,
   },
   ref,
 ) {
   const editorRef = useRef(null);
-  const [isEmpty, setIsEmpty] = useState(true);
+  const wrapperRef = useRef(null);
+  const [isEmpty, setIsEmpty] = useState(!initialContent);
   const [mentionState, setMentionState] = useState(null);
+  const initializedRef = useRef(false);
+
+  // Set initial content for edit mode
+  useEffect(() => {
+    if (initialContent && editorRef.current && !initializedRef.current) {
+      initializedRef.current = true;
+      const isHtml = /<[a-z][\s\S]*>/i.test(initialContent);
+      if (isHtml) {
+        editorRef.current.innerHTML = DOMPurify.sanitize(initialContent);
+      } else {
+        editorRef.current.textContent = initialContent;
+      }
+      setIsEmpty(false);
+      // Focus at the end
+      const range = document.createRange();
+      const selection = window.getSelection();
+      range.selectNodeContents(editorRef.current);
+      range.collapse(false);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  }, [initialContent]);
 
   const checkEmpty = useCallback(() => {
     if (!editorRef.current) return;
@@ -223,6 +266,10 @@ export const MentionCommentInput = forwardRef(function MentionCommentInput(
       e.preventDefault();
       handleSubmit();
     }
+    if (e.key === "Escape" && editMode && onCancel) {
+      e.preventDefault();
+      onCancel();
+    }
   };
 
   const handleInput = () => {
@@ -248,10 +295,12 @@ export const MentionCommentInput = forwardRef(function MentionCommentInput(
     });
 
     onSubmit?.(text, mentionedUserIds, html);
-    editorRef.current.innerHTML = "";
-    setIsEmpty(true);
+    if (!editMode) {
+      editorRef.current.innerHTML = "";
+      setIsEmpty(true);
+    }
     setMentionState(null);
-  }, [disabled, onSubmit]);
+  }, [disabled, onSubmit, editMode]);
 
   // Expose submit to parent via ref
   useImperativeHandle(
@@ -263,19 +312,20 @@ export const MentionCommentInput = forwardRef(function MentionCommentInput(
   );
 
   return (
-    <div className="relative">
-      {/* Dropdown rendered ABOVE the editor, inside the same DOM tree */}
+    <div ref={wrapperRef} className="relative">
+      {/* Dropdown — inline with position:fixed to escape overflow, no portal needed */}
       {mentionState && members.length > 0 && (
         <MentionDropdown
           members={members}
           query={mentionState.query}
           onSelect={insertMention}
+          anchorRef={wrapperRef}
         />
       )}
 
       <div
         className={`relative rounded-lg border border-border/60 bg-white dark:bg-background overflow-hidden transition-all focus-within:border-border ${isDragOver ? "ring-2 ring-primary ring-offset-2" : ""}`}
-        style={{ boxShadow: '0 1px 2px rgba(0, 0, 0, .055)' }}
+        style={{ boxShadow: "0 1px 2px rgba(0, 0, 0, .055)" }}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         onDrop={onDrop}
@@ -312,34 +362,61 @@ export const MentionCommentInput = forwardRef(function MentionCommentInput(
         </div>
 
         {/* Children slot (for pending images, file picker, etc.) */}
-        <div className="px-3.5">
-          {children}
-        </div>
+        <div className="px-3.5">{children}</div>
 
         {/* Toolbar */}
         <div className="flex items-center justify-between px-2 py-1.5">
           <div className="flex items-center gap-0.5">
-            <span className="text-[10px] px-1.5" style={{ color: '#8D8D8D' }}>
-              @ pour mentionner
+            <span className="text-[10px] px-1.5" style={{ color: "#8D8D8D" }}>
+              {editMode ? "Échap pour annuler" : "@ pour mentionner"}
             </span>
           </div>
           <div className="flex items-center gap-0.5">
             {toolbarSlot}
-            <button
-              disabled={isEmpty || disabled || loading}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                handleSubmit();
-              }}
-              className="h-7 w-7 rounded-md flex items-center justify-center hover:bg-muted/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-              style={{ color: '#8D8D8D' }}
-            >
-              {loading ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Send className="h-3.5 w-3.5" />
-              )}
-            </button>
+            {editMode ? (
+              <>
+                <button
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    onCancel?.();
+                  }}
+                  className="h-6 px-2 rounded text-[11px] text-muted-foreground hover:bg-muted/50 transition-colors cursor-pointer"
+                >
+                  Annuler
+                </button>
+                <button
+                  disabled={isEmpty || disabled || loading}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handleSubmit();
+                  }}
+                  className="h-6 px-2.5 rounded text-[11px] text-white font-medium transition-colors cursor-pointer disabled:opacity-40"
+                  style={{ backgroundColor: "#5A50FF" }}
+                >
+                  {loading ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    submitLabel || "Sauvegarder"
+                  )}
+                </button>
+              </>
+            ) : (
+              <button
+                disabled={isEmpty || disabled || loading}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  handleSubmit();
+                }}
+                className="h-7 w-7 rounded-md flex items-center justify-center hover:bg-muted/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                style={{ color: "#8D8D8D" }}
+              >
+                {loading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Send className="h-3.5 w-3.5" />
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>

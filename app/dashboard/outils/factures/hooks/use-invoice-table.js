@@ -204,13 +204,14 @@ export function useInvoiceTable({
   data = [],
   onRefetch,
   onRefetchImported,
+  onBalancesRefetch,
   reminderEnabled = false,
   onOpenReminderSettings,
   excludedClientIds = [],
-  onOpenSidebar, // Callback pour ouvrir la sidebar au niveau du tableau
-  onOpenImportedSidebar, // Callback pour ouvrir la sidebar des factures importées
-  onSendEmail, // Callback pour ouvrir la modal d'envoi au niveau du tableau
-  onSaveAsTemplate, // Callback pour ouvrir le dialog de template au niveau du tableau
+  onOpenSidebar,
+  onOpenImportedSidebar,
+  onSendEmail,
+  onSaveAsTemplate,
 }) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState([]);
@@ -816,8 +817,14 @@ export function useInvoiceTable({
           return (
             <InvoiceRowActions
               row={row}
-              onRefetch={onRefetch}
-              onRefetchImported={onRefetchImported}
+              onRefetch={() => {
+                onRefetch?.();
+                onBalancesRefetch?.();
+              }}
+              onRefetchImported={() => {
+                onRefetchImported?.();
+                onBalancesRefetch?.();
+              }}
               showReminderIcon={
                 reminderEnabled && row.original.status === "PENDING"
               }
@@ -837,6 +844,7 @@ export function useInvoiceTable({
     [
       onRefetch,
       onRefetchImported,
+      onBalancesRefetch,
       reminderEnabled,
       onOpenReminderSettings,
       excludedClientIds,
@@ -844,7 +852,7 @@ export function useInvoiceTable({
       onOpenImportedSidebar,
       onSendEmail,
       onSaveAsTemplate,
-    ], // Inclure toutes les dépendances
+    ],
   );
 
   // Create table instance with optimized settings
@@ -972,6 +980,8 @@ export function useInvoiceTable({
     if (importedInvoices.length > 0 && onRefetchImported) {
       onRefetchImported();
     }
+    // Actualiser les soldes
+    onBalancesRefetch?.();
   };
 
   return {

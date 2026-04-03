@@ -10,7 +10,7 @@ import {
   organizationPlugin,
   multiSessionPlugin,
 } from "./auth-plugins";
-import { beforeSignInHook, afterOAuthHook } from "./auth-hooks";
+import { beforeSignInHook, afterHook } from "./auth-hooks";
 import {
   sendReactivationEmail,
   sendResetPasswordEmail,
@@ -404,6 +404,6 @@ export const auth = betterAuth({
 
   hooks: {
     before: beforeSignInHook,
-    after: afterOAuthHook,
+    after: afterHook,
   },
 });

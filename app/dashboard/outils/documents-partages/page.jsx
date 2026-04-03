@@ -150,11 +150,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/src/components/ui/popover";
-import {
-  Sheet,
-  SheetContent,
-  SheetTitle,
-} from "@/src/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle } from "@/src/components/ui/sheet";
 import {
   Select,
   SelectContent,
@@ -223,6 +219,7 @@ export default function DocumentsPartagesPage() {
   const [selectedFolder, setSelectedFolder] = useState(null); // null = "Documents à classer"
   const [selectedDocuments, setSelectedDocuments] = useState([]);
   const [selectedFolders, setSelectedFolders] = useState([]);
+  const [highlightedFolderId, setHighlightedFolderId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState(() => {
     if (typeof window !== "undefined") {
@@ -371,7 +368,8 @@ export default function DocumentsPartagesPage() {
 
   // Transfert depuis documents partagés
   const [showTransferModal, setShowTransferModal] = useState(false);
-  const [showTransferSuccessDialog, setShowTransferSuccessDialog] = useState(false);
+  const [showTransferSuccessDialog, setShowTransferSuccessDialog] =
+    useState(false);
   const [transferLink, setTransferLink] = useState("");
   const [showDuplicateBanner, setShowDuplicateBanner] = useState(true);
   const [showDuplicatesModal, setShowDuplicatesModal] = useState(false);
@@ -446,8 +444,11 @@ export default function DocumentsPartagesPage() {
   const { update: updateDocument, loading: updateDocLoading } =
     useUpdateSharedDocument();
   const { moveFolder, loading: moveFolderLoading } = useMoveSharedFolder();
-  const { downloadFile, getPreviewUrl, loading: downloadFileLoading } =
-    useDownloadFile();
+  const {
+    downloadFile,
+    getPreviewUrl,
+    loading: downloadFileLoading,
+  } = useDownloadFile();
   const { downloadFolder, loading: downloadFolderLoading } =
     useDownloadFolder();
   const { downloadSelection, loading: downloadSelectionLoading } =
@@ -485,10 +486,11 @@ export default function DocumentsPartagesPage() {
   const { bulkUpdateTags, loading: bulkTagsLoading } = useBulkUpdateTags();
 
   // Automatisations (pour le badge du bouton)
-  const { automations: documentAutomations } = useDocumentAutomations(workspaceId);
+  const { automations: documentAutomations } =
+    useDocumentAutomations(workspaceId);
   const activeAutomationsCount = useMemo(
-    () => documentAutomations?.filter(a => a.isActive).length || 0,
-    [documentAutomations]
+    () => documentAutomations?.filter((a) => a.isActive).length || 0,
+    [documentAutomations],
   );
 
   // État pour la gestion des tags en masse
@@ -503,7 +505,11 @@ export default function DocumentsPartagesPage() {
   const canPreview = (doc) => {
     if (!doc) return false;
     const mimeType = doc.mimeType || "";
-    return mimeType.startsWith("image/") || mimeType.startsWith("video/") || mimeType === "application/pdf";
+    return (
+      mimeType.startsWith("image/") ||
+      mimeType.startsWith("video/") ||
+      mimeType === "application/pdf"
+    );
   };
 
   // Créer les dossiers par défaut si aucun dossier n'existe
@@ -665,9 +671,9 @@ export default function DocumentsPartagesPage() {
 
   // Handler pour le déplacement de dossiers via drag & drop
   const handleTreeMoveFolder = useCallback(
-    async (folderId, targetFolderId) => {
+    async (folderId, targetParentId, { order } = {}) => {
       try {
-        await moveFolder(folderId, targetFolderId, { silent: true });
+        await moveFolder(folderId, targetParentId, { silent: true, order });
         refetchFolders();
         refetchAllDocs();
         refetchDocs();
@@ -732,6 +738,117 @@ export default function DocumentsPartagesPage() {
     [upload, selectedFolder, refetchDocs, refetchAllDocs, refetchFolders],
   );
 
+  // Gestion de l'import de dossier avec création de la structure
+  const handleFolderUpload = useCallback(
+    async (files) => {
+      if (!files || files.length === 0) return;
+
+      const fileArray = Array.from(files);
+      setIsUploading(true);
+      setTotalFilesToUpload(fileArray.length);
+      setUploadingFiles(fileArray.map((f) => f.name));
+      setUploadProgress(0);
+
+      try {
+        // Extraire les chemins de dossiers uniques depuis webkitRelativePath
+        // Ex: "MonDossier/sous-dossier/fichier.pdf" -> ["MonDossier", "MonDossier/sous-dossier"]
+        const folderPaths = new Set();
+        for (const file of fileArray) {
+          const parts = file.webkitRelativePath.split("/");
+          for (let i = 1; i < parts.length; i++) {
+            folderPaths.add(parts.slice(0, i).join("/"));
+          }
+        }
+
+        // Trier par profondeur pour créer les parents d'abord
+        const sortedPaths = Array.from(folderPaths).sort(
+          (a, b) => a.split("/").length - b.split("/").length,
+        );
+
+        // Créer les dossiers et stocker le mapping chemin -> id
+        // Récupérer les dossiers existants pour éviter les doublons
+        const { data: foldersData } = await refetchFolders();
+        let existingFolders =
+          foldersData?.sharedFolders?.folders || folders || [];
+
+        const folderIdMap = {};
+        for (const folderPath of sortedPaths) {
+          const parts = folderPath.split("/");
+          const folderName = parts[parts.length - 1];
+          const parentPath =
+            parts.length > 1 ? parts.slice(0, -1).join("/") : null;
+
+          const parentId = parentPath
+            ? folderIdMap[parentPath]
+            : selectedFolder || null;
+
+          // Vérifier si le dossier existe déjà
+          const existing = existingFolders.find(
+            (f) =>
+              f.name === folderName &&
+              (f.parentId || null) === (parentId || null),
+          );
+
+          if (existing) {
+            folderIdMap[folderPath] = existing.id;
+          } else {
+            const folder = await createFolder(
+              { name: folderName, parentId },
+              { silent: true },
+            );
+            folderIdMap[folderPath] = folder.id;
+            // Ajouter le nouveau dossier à la liste pour les sous-dossiers suivants
+            existingFolders = [...existingFolders, { ...folder, parentId }];
+          }
+        }
+
+        // Uploader chaque fichier dans son dossier correspondant
+        for (let i = 0; i < fileArray.length; i++) {
+          const file = fileArray[i];
+          const parts = file.webkitRelativePath.split("/");
+          const folderPath = parts.slice(0, -1).join("/");
+          const folderId = folderIdMap[folderPath] || selectedFolder;
+
+          setUploadingFiles([file.name]);
+          await upload(file, { folderId });
+          setUploadProgress(Math.round(((i + 1) / fileArray.length) * 100));
+        }
+
+        toast.success("Dossier importé avec succès");
+        refetchDocs();
+        refetchAllDocs();
+        refetchFolders();
+
+        // Mettre en surbrillance le dossier racine importé pour montrer où il se trouve
+        const rootFolderPath = sortedPaths[0];
+        const rootFolderId = folderIdMap[rootFolderPath];
+        if (rootFolderId) {
+          setHighlightedFolderId(rootFolderId);
+          // Retirer la surbrillance après 4 secondes
+          setTimeout(() => setHighlightedFolderId(null), 4000);
+        }
+      } catch (error) {
+        console.error("Erreur upload dossier:", error);
+      } finally {
+        setTimeout(() => {
+          setIsUploading(false);
+          setUploadProgress(0);
+          setUploadingFiles([]);
+          setTotalFilesToUpload(0);
+        }, 500);
+      }
+    },
+    [
+      upload,
+      createFolder,
+      selectedFolder,
+      folders,
+      refetchDocs,
+      refetchAllDocs,
+      refetchFolders,
+    ],
+  );
+
   // Gestion du drag & drop natif
   const handleDragOver = useCallback((e) => {
     e.preventDefault();
@@ -759,10 +876,19 @@ export default function DocumentsPartagesPage() {
   const handleFileInputChange = useCallback(
     (e) => {
       const files = Array.from(e.target.files);
-      handleFileUpload(files);
+      // Détecter si c'est un import de dossier via webkitRelativePath
+      const isFolder =
+        files.length > 0 &&
+        files[0].webkitRelativePath &&
+        files[0].webkitRelativePath.includes("/");
+      if (isFolder) {
+        handleFolderUpload(files);
+      } else {
+        handleFileUpload(files);
+      }
       e.target.value = ""; // Reset input
     },
-    [handleFileUpload],
+    [handleFileUpload, handleFolderUpload],
   );
 
   const openFileDialog = () => {
@@ -918,7 +1044,7 @@ export default function DocumentsPartagesPage() {
       }
       return descendants;
     },
-    [folders]
+    [folders],
   );
 
   const toggleFolderSelection = useCallback(
@@ -957,17 +1083,17 @@ export default function DocumentsPartagesPage() {
         }
       });
     },
-    [getDescendantFolderIds, allDocuments, selectedFolders]
+    [getDescendantFolderIds, allDocuments, selectedFolders],
   );
 
   // Check if any folders have subfolders
   const hasSubfolders = useCallback(
     (folderIds) => {
       return folderIds.some((folderId) =>
-        folders.some((f) => f.parentId === folderId)
+        folders.some((f) => f.parentId === folderId),
       );
     },
-    [folders]
+    [folders],
   );
 
   // Callback quand un transfert est créé depuis les documents partagés
@@ -1011,7 +1137,13 @@ export default function DocumentsPartagesPage() {
 
     // Direct download without dialog
     await downloadSelection({ folderIds, documentIds: docIds });
-  }, [selectedFolders, selectedDocuments, hasSubfolders, fetchSelectionInfo, downloadSelection]);
+  }, [
+    selectedFolders,
+    selectedDocuments,
+    hasSubfolders,
+    fetchSelectionInfo,
+    downloadSelection,
+  ]);
 
   // Execute ZIP download with exclusions
   const handleZipDownloadConfirm = useCallback(async () => {
@@ -1023,14 +1155,19 @@ export default function DocumentsPartagesPage() {
     setShowZipDialog(false);
     setZipSelectionInfo(null);
     setExcludedSubfolders([]);
-  }, [selectedFolders, selectedDocuments, excludedSubfolders, downloadSelection]);
+  }, [
+    selectedFolders,
+    selectedDocuments,
+    excludedSubfolders,
+    downloadSelection,
+  ]);
 
   // Toggle subfolder exclusion
   const toggleSubfolderExclusion = useCallback((subfolderId) => {
     setExcludedSubfolders((prev) =>
       prev.includes(subfolderId)
         ? prev.filter((id) => id !== subfolderId)
-        : [...prev, subfolderId]
+        : [...prev, subfolderId],
     );
   }, []);
 
@@ -1038,17 +1175,19 @@ export default function DocumentsPartagesPage() {
   const handleContentContextMenu = useCallback(
     (e) => {
       // Only show if there's a selection
-      if (selectedFolders.length === 0 && selectedDocuments.length === 0) return;
+      if (selectedFolders.length === 0 && selectedDocuments.length === 0)
+        return;
       e.preventDefault();
       setContentContextMenu({ x: e.clientX, y: e.clientY });
     },
-    [selectedFolders, selectedDocuments]
+    [selectedFolders, selectedDocuments],
   );
 
   // Mobile long-press handlers
   const handleTouchStart = useCallback(
     (e) => {
-      if (selectedFolders.length === 0 && selectedDocuments.length === 0) return;
+      if (selectedFolders.length === 0 && selectedDocuments.length === 0)
+        return;
       longPressTriggeredRef.current = false;
       longPressTimerRef.current = setTimeout(() => {
         longPressTriggeredRef.current = true;
@@ -1056,7 +1195,7 @@ export default function DocumentsPartagesPage() {
         setContentContextMenu({ x: touch.clientX, y: touch.clientY });
       }, 600);
     },
-    [selectedFolders, selectedDocuments]
+    [selectedFolders, selectedDocuments],
   );
 
   const handleTouchMove = useCallback(() => {
@@ -1306,116 +1445,126 @@ export default function DocumentsPartagesPage() {
 
   return (
     <>
-    <div
-      className="h-[calc(100vh-4rem)] flex flex-col overflow-hidden"
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      <input
-        ref={fileInputRef}
-        type="file"
-        multiple
-        onChange={handleFileInputChange}
-        accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.heif,.mp4,.webm,.mov,.avi,.mkv,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"
-        className="hidden"
-      />
-      <input
-        ref={folderInputRef}
-        type="file"
-        webkitdirectory=""
-        directory=""
-        multiple
-        onChange={handleFileInputChange}
-        className="hidden"
-      />
+      <div
+        className="h-[calc(100vh-4rem)] flex flex-col overflow-hidden"
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          onChange={handleFileInputChange}
+          accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.heif,.mp4,.webm,.mov,.avi,.mkv,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"
+          className="hidden"
+        />
+        <input
+          ref={folderInputRef}
+          type="file"
+          webkitdirectory=""
+          directory=""
+          multiple
+          onChange={handleFileInputChange}
+          className="hidden"
+        />
 
-      {/* Header */}
-      <div className="flex-shrink-0 border-b bg-background">
-        <div className="px-3 py-3 sm:px-6 sm:py-4">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <h1 className="text-lg sm:text-2xl font-medium truncate">Documents partagés</h1>
-            </div>
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={activeAutomationsCount > 0 ? "default" : "secondary"}
-                      size="icon"
-                      className="relative"
-                      style={activeAutomationsCount > 0 ? { backgroundColor: '#5b50ff' } : {}}
-                      onClick={() => startTransition(() => setShowAutomationsModal(true))}
+        {/* Header */}
+        <div className="flex-shrink-0 border-b bg-background">
+          <div className="px-3 py-3 sm:px-6 sm:py-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <h1 className="text-lg sm:text-2xl font-medium truncate">
+                  Documents partagés
+                </h1>
+              </div>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={
+                          activeAutomationsCount > 0 ? "default" : "secondary"
+                        }
+                        size="icon"
+                        className="relative"
+                        style={
+                          activeAutomationsCount > 0
+                            ? { backgroundColor: "#5b50ff" }
+                            : {}
+                        }
+                        onClick={() =>
+                          startTransition(() => setShowAutomationsModal(true))
+                        }
+                      >
+                        <Zap className="h-4 w-4" strokeWidth={1.5} />
+                        {activeAutomationsCount > 0 && (
+                          <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-white text-[#5b50ff] text-[10px] font-semibold shadow-sm border">
+                            {activeAutomationsCount}
+                          </span>
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="bottom"
+                      className="bg-[#202020] text-white border-0"
                     >
-                      <Zap className="h-4 w-4" strokeWidth={1.5} />
-                      {activeAutomationsCount > 0 && (
-                        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-white text-[#5b50ff] text-[10px] font-semibold shadow-sm border">
-                          {activeAutomationsCount}
-                        </span>
+                      <p>Automatisations</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        onClick={() => setShowNewFolderModal(true)}
+                      >
+                        <FolderPlus className="h-4 w-4" strokeWidth={1.5} />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="bottom"
+                      className="bg-[#202020] text-white border-0"
+                    >
+                      <p>Nouveau dossier</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      disabled={isUploading || uploadLoading}
+                      className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90 gap-1.5 sm:gap-2"
+                    >
+                      {isUploading || uploadLoading ? (
+                        <LoaderCircle className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Plus size={16} aria-hidden="true" />
                       )}
+                      <span className="hidden sm:inline">Ajouter</span>
+                      <ChevronDown className="h-4 w-4 opacity-50 hidden sm:block" />
                     </Button>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="bottom"
-                    className="bg-[#202020] text-white border-0"
-                  >
-                    <p>Automatisations</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="secondary"
-                      size="icon"
-                      onClick={() => setShowNewFolderModal(true)}
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={openFileDialog}>
+                      <File className="h-4 w-4 mr-2" />
+                      Importer des fichiers
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => folderInputRef.current?.click()}
                     >
-                      <FolderPlus className="h-4 w-4" strokeWidth={1.5} />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="bottom"
-                    className="bg-[#202020] text-white border-0"
-                  >
-                    <p>Nouveau dossier</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    disabled={isUploading || uploadLoading}
-                    className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90 gap-1.5 sm:gap-2"
-                  >
-                    {isUploading || uploadLoading ? (
-                      <LoaderCircle className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Plus size={16} aria-hidden="true" />
-                    )}
-                    <span className="hidden sm:inline">Ajouter</span>
-                    <ChevronDown className="h-4 w-4 opacity-50 hidden sm:block" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={openFileDialog}>
-                    <File className="h-4 w-4 mr-2" />
-                    Importer des fichiers
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => folderInputRef.current?.click()}
-                  >
-                    <Folder className="h-4 w-4 mr-2" />
-                    Importer un dossier
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                      <Folder className="h-4 w-4 mr-2" />
+                      Importer un dossier
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
-          </div>
 
-          {/* Stats */}
-          {/* <div className="flex items-center gap-6 mt-4 text-sm">
+            {/* Stats */}
+            {/* <div className="flex items-center gap-6 mt-4 text-sm">
             <div className="flex items-center gap-1.5 text-muted-foreground">
               <FileText className="h-4 w-4" />
               <span>{stats?.totalDocuments || 0} document(s)</span>
@@ -1429,17 +1578,118 @@ export default function DocumentsPartagesPage() {
               <span>{formatTotalSize(stats?.totalSize || 0)}</span>
             </div>
           </div> */}
+          </div>
         </div>
-      </div>
 
-      {/* Main content */}
-      <div className="flex-1 flex overflow-hidden min-h-0">
-        {/* Mobile Sidebar - Sheet drawer */}
-        {isMobile && (
-          <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
-            <SheetContent side="left" className="w-[280px] p-0 flex flex-col">
-              <SheetTitle className="sr-only">Explorateur de fichiers</SheetTitle>
-              <div className="px-3 pr-12 h-14 border-b flex items-center justify-between">
+        {/* Main content */}
+        <div className="flex-1 flex overflow-hidden min-h-0">
+          {/* Mobile Sidebar - Sheet drawer */}
+          {isMobile && (
+            <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
+              <SheetContent side="left" className="w-[280px] p-0 flex flex-col">
+                <SheetTitle className="sr-only">
+                  Explorateur de fichiers
+                </SheetTitle>
+                <div className="px-3 pr-12 h-14 border-b flex items-center justify-between">
+                  <span className="text-xs font-medium text-muted-foreground/80 uppercase tracking-wide">
+                    Explorateur
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 opacity-60 hover:opacity-100"
+                    onClick={() => {
+                      setNewFolderParentId(selectedFolder);
+                      setShowNewFolderModal(true);
+                    }}
+                  >
+                    <FolderPlus className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  {foldersInitialLoading || allDocsInitialLoading ? (
+                    <div className="space-y-2 p-2">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <Skeleton key={i} className="h-7 w-full" />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="pt-2 pb-2">
+                      <DraggableTree
+                        folders={folders}
+                        documents={allDocuments}
+                        pendingCount={pendingCount}
+                        selectedFolder={selectedFolder}
+                        selectedFolders={selectedFolders}
+                        highlightedFolderId={highlightedFolderId}
+                        onToggleFolderSelection={toggleFolderSelection}
+                        onMove={handleTreeMove}
+                        onMoveFolder={handleTreeMoveFolder}
+                        onSelectFolder={(folderId) => {
+                          setSelectedFolder(folderId);
+                          setShowTrash(false);
+                          setMobileSidebarOpen(false);
+                        }}
+                        onSelectDocument={(docId) => {
+                          setSelectedDocuments([docId]);
+                          setMobileSidebarOpen(false);
+                        }}
+                        onContextMenu={(e, itemId, item) => {
+                          e.preventDefault();
+                          setTreeContextMenu({
+                            x: e.clientX,
+                            y: e.clientY,
+                            itemId,
+                            item,
+                          });
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+                {/* Corbeille button */}
+                <div className="px-2 py-2 border-t">
+                  <button
+                    onClick={() => {
+                      setShowTrash(true);
+                      setSelectedFolder(null);
+                      setMobileSidebarOpen(false);
+                    }}
+                    className={cn(
+                      "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors",
+                      showTrash
+                        ? "bg-accent text-accent-foreground"
+                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                    )}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span>Corbeille</span>
+                    {trashItemsCount > 0 && (
+                      <Badge
+                        variant="secondary"
+                        className="ml-auto font-normal h-5 px-1.5 text-xs"
+                      >
+                        {trashItemsCount}
+                      </Badge>
+                    )}
+                  </button>
+                </div>
+              </SheetContent>
+            </Sheet>
+          )}
+
+          {/* Desktop Sidebar - Tree avec Dossiers et Documents */}
+          {!isMobile && (
+            <div
+              ref={sidebarRef}
+              className="border-r bg-muted/20 flex-shrink-0 flex flex-col relative overflow-hidden min-h-0"
+              style={{
+                width: sidebarWidth,
+                minWidth: sidebarWidth,
+                maxWidth: sidebarWidth,
+              }}
+            >
+              <div className="px-3 h-14 border-b flex items-center justify-between">
                 <span className="text-xs font-medium text-muted-foreground/80 uppercase tracking-wide">
                   Explorateur
                 </span>
@@ -1470,18 +1720,17 @@ export default function DocumentsPartagesPage() {
                       pendingCount={pendingCount}
                       selectedFolder={selectedFolder}
                       selectedFolders={selectedFolders}
+                      highlightedFolderId={highlightedFolderId}
                       onToggleFolderSelection={toggleFolderSelection}
                       onMove={handleTreeMove}
                       onMoveFolder={handleTreeMoveFolder}
                       onSelectFolder={(folderId) => {
                         setSelectedFolder(folderId);
                         setShowTrash(false);
-                        setMobileSidebarOpen(false);
                       }}
-                      onSelectDocument={(docId) => {
-                        setSelectedDocuments([docId]);
-                        setMobileSidebarOpen(false);
-                      }}
+                      onSelectDocument={(docId) =>
+                        setSelectedDocuments([docId])
+                      }
                       onContextMenu={(e, itemId, item) => {
                         e.preventDefault();
                         setTreeContextMenu({
@@ -1492,16 +1741,204 @@ export default function DocumentsPartagesPage() {
                         });
                       }}
                     />
+
+                    {/* Context Menu for tree items - using DropdownMenu for programmatic control */}
+                    {treeContextMenu && (
+                      <DropdownMenu
+                        open={!!treeContextMenu}
+                        onOpenChange={(open) =>
+                          !open && setTreeContextMenu(null)
+                        }
+                      >
+                        <DropdownMenuTrigger asChild>
+                          <div
+                            style={{
+                              position: "fixed",
+                              left: treeContextMenu.x,
+                              top: treeContextMenu.y,
+                              width: 1,
+                              height: 1,
+                              pointerEvents: "none",
+                            }}
+                          />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" side="bottom">
+                          {treeContextMenu.item.isFolder &&
+                            !treeContextMenu.item.isInbox && (
+                              <>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setNewFolderParentId(
+                                      treeContextMenu.itemId,
+                                    );
+                                    setShowNewFolderModal(true);
+                                    setTreeContextMenu(null);
+                                  }}
+                                >
+                                  <FolderPlus className="size-4 mr-2" />
+                                  Nouveau sous-dossier
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    downloadFolder(
+                                      treeContextMenu.itemId,
+                                      treeContextMenu.item.name,
+                                    );
+                                    setTreeContextMenu(null);
+                                  }}
+                                  disabled={downloadFolderLoading}
+                                >
+                                  <Download className="size-4 mr-2" />
+                                  {downloadFolderLoading
+                                    ? "Téléchargement..."
+                                    : "Télécharger en ZIP"}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    const folderId = treeContextMenu.itemId;
+                                    const allFolderIds = [
+                                      folderId,
+                                      ...getDescendantFolderIds(folderId),
+                                    ];
+                                    const folderIdSet = new Set(allFolderIds);
+                                    const docIdsInFolders = allDocuments
+                                      .filter(
+                                        (d) =>
+                                          d.folderId &&
+                                          folderIdSet.has(d.folderId),
+                                      )
+                                      .map((d) => d.id);
+                                    setSelectedFolders(allFolderIds);
+                                    setSelectedDocuments(docIdsInFolders);
+                                    setShowTransferModal(true);
+                                    setTreeContextMenu(null);
+                                  }}
+                                >
+                                  <Send className="size-4 mr-2" />
+                                  Transférer
+                                </DropdownMenuItem>
+                                {/* Gérer la visibilité */}
+                                {treeContextMenu.item.data
+                                  ?.canManageVisibility && (
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      const folder = treeContextMenu.item.data;
+                                      setFolderToEditVisibility(folder);
+                                      setEditVisibility(
+                                        folder.visibility || "public",
+                                      );
+                                      setEditAllowedUserIds(
+                                        folder.allowedUserIds || [],
+                                      );
+                                      setShowVisibilityModal(true);
+                                      setTreeContextMenu(null);
+                                    }}
+                                  >
+                                    {treeContextMenu.item.data?.visibility ===
+                                    "private" ? (
+                                      <Lock className="size-4 mr-2" />
+                                    ) : (
+                                      <Globe className="size-4 mr-2" />
+                                    )}
+                                    Gérer la visibilité
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuSeparator />
+                              </>
+                            )}
+                          {/* Renommer - pas pour inbox */}
+                          {!treeContextMenu.item.isInbox && (
+                            <DropdownMenuItem
+                              onClick={() => {
+                                const isFolder = treeContextMenu.item.isFolder;
+                                const itemId = treeContextMenu.itemId;
+                                const id = isFolder
+                                  ? itemId
+                                  : itemId.replace("doc-", "");
+                                setItemToRename({
+                                  id,
+                                  name: treeContextMenu.item.name,
+                                  type: isFolder ? "folder" : "document",
+                                });
+                                setNewName(treeContextMenu.item.name);
+                                setShowRenameModal(true);
+                                setTreeContextMenu(null);
+                              }}
+                            >
+                              <Pencil className="size-4 mr-2" />
+                              Renommer
+                            </DropdownMenuItem>
+                          )}
+                          {!treeContextMenu.item.isFolder && (
+                            <>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  if (treeContextMenu.item.data) {
+                                    handleDownload(treeContextMenu.item.data);
+                                  }
+                                  setTreeContextMenu(null);
+                                }}
+                              >
+                                <Download className="size-4 mr-2" />
+                                Télécharger
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  const docId = treeContextMenu.itemId.replace(
+                                    "doc-",
+                                    "",
+                                  );
+                                  setSelectedDocuments([docId]);
+                                  setSelectedFolders([]);
+                                  setShowTransferModal(true);
+                                  setTreeContextMenu(null);
+                                }}
+                              >
+                                <Send className="size-4 mr-2" />
+                                Transférer
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                          {/* Supprimer - pas pour inbox */}
+                          {!treeContextMenu.item.isInbox && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={() => {
+                                  if (treeContextMenu.item.isFolder) {
+                                    setFolderToDelete(treeContextMenu.itemId);
+                                    setShowDeleteFolderModal(true);
+                                  } else {
+                                    const docId =
+                                      treeContextMenu.itemId.replace(
+                                        "doc-",
+                                        "",
+                                      );
+                                    setSelectedDocuments([docId]);
+                                    setShowDeleteModal(true);
+                                  }
+                                  setTreeContextMenu(null);
+                                }}
+                              >
+                                <Trash2 className="size-4 mr-2" />
+                                Supprimer
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
                 )}
               </div>
+
               {/* Corbeille button */}
               <div className="px-2 py-2 border-t">
                 <button
                   onClick={() => {
                     setShowTrash(true);
                     setSelectedFolder(null);
-                    setMobileSidebarOpen(false);
                   }}
                   className={cn(
                     "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors",
@@ -1522,1570 +1959,1227 @@ export default function DocumentsPartagesPage() {
                   )}
                 </button>
               </div>
-            </SheetContent>
-          </Sheet>
-        )}
 
-        {/* Desktop Sidebar - Tree avec Dossiers et Documents */}
-        {!isMobile && (
-          <div
-            ref={sidebarRef}
-            className="border-r bg-muted/20 flex-shrink-0 flex flex-col relative overflow-hidden min-h-0"
-            style={{
-              width: sidebarWidth,
-              minWidth: sidebarWidth,
-              maxWidth: sidebarWidth,
-            }}
-          >
-            <div className="px-3 h-14 border-b flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground/80 uppercase tracking-wide">
-                Explorateur
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0 opacity-60 hover:opacity-100"
-                onClick={() => {
-                  setNewFolderParentId(selectedFolder);
-                  setShowNewFolderModal(true);
+              {/* Resize handle */}
+              <div
+                className={cn(
+                  "absolute right-0 top-0 bottom-0 w-[3px] cursor-col-resize hover:bg-primary/10 transition-colors",
+                  isResizing && "bg-primary/20",
+                )}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  setIsResizing(true);
                 }}
-              >
-                <FolderPlus className="h-3.5 w-3.5" />
-              </Button>
+              />
             </div>
-            <div className="flex-1 overflow-y-auto">
-              {foldersInitialLoading || allDocsInitialLoading ? (
-                <div className="space-y-2 p-2">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <Skeleton key={i} className="h-7 w-full" />
-                  ))}
-                </div>
-              ) : (
-                <div className="pt-2 pb-2">
-                  <DraggableTree
-                    folders={folders}
-                    documents={allDocuments}
-                    pendingCount={pendingCount}
-                    selectedFolder={selectedFolder}
-                    selectedFolders={selectedFolders}
-                    onToggleFolderSelection={toggleFolderSelection}
-                    onMove={handleTreeMove}
-                    onMoveFolder={handleTreeMoveFolder}
-                    onSelectFolder={(folderId) => {
-                      setSelectedFolder(folderId);
-                      setShowTrash(false);
-                    }}
-                    onSelectDocument={(docId) => setSelectedDocuments([docId])}
-                    onContextMenu={(e, itemId, item) => {
-                      e.preventDefault();
-                      setTreeContextMenu({
-                        x: e.clientX,
-                        y: e.clientY,
-                        itemId,
-                        item,
-                      });
-                    }}
-                  />
+          )}
 
-                  {/* Context Menu for tree items - using DropdownMenu for programmatic control */}
-                  {treeContextMenu && (
-                    <DropdownMenu
-                      open={!!treeContextMenu}
-                      onOpenChange={(open) => !open && setTreeContextMenu(null)}
-                    >
-                      <DropdownMenuTrigger asChild>
+          {/* Content area */}
+          <div
+            className="flex-1 flex flex-col overflow-hidden min-h-0"
+            onContextMenu={handleContentContextMenu}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            {/* Toolbar */}
+            <div className="flex-shrink-0 px-2 sm:px-4 min-h-12 sm:min-h-14 border-b bg-background flex flex-col justify-center py-1.5 sm:py-2">
+              {/* Upload Progress Bar */}
+              {isUploading && !showTrash && (
+                <div className="mb-2 space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">
+                      Upload en cours...{" "}
+                      {uploadingFiles[0] && `(${uploadingFiles[0]})`}
+                    </span>
+                    <span className="font-medium">{uploadProgress}%</span>
+                  </div>
+                  <Progress value={uploadProgress} className="h-1.5" />
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 sm:gap-4">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  {/* Mobile sidebar toggle + separator */}
+                  {isMobile && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="shrink-0 h-8 w-8"
+                        onClick={() => setMobileSidebarOpen(true)}
+                      >
+                        <PanelLeft className="h-5 w-5" />
+                      </Button>
+                      <Separator orientation="vertical" className="h-5" />
+                    </>
+                  )}
+
+                  {/* Breadcrumb / Trash header */}
+                  {showTrash ? (
+                    <>
+                      <Trash2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="font-normal text-sm sm:text-base">
+                        Corbeille
+                      </span>
+                      <span className="text-xs font-normal text-muted-foreground">
+                        ({trashItemsCount})
+                      </span>
+                    </>
+                  ) : (
+                    <div className="flex items-center gap-1 min-w-0 flex-1 overflow-hidden">
+                      <button
+                        onClick={() => {
+                          setSelectedFolder(null);
+                          setShowTrash(false);
+                        }}
+                        className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                      >
+                        <Home className="h-4 w-4" />
+                      </button>
+                      {breadcrumbPath.map((item, index) => (
                         <div
-                          style={{
-                            position: "fixed",
-                            left: treeContextMenu.x,
-                            top: treeContextMenu.y,
-                            width: 1,
-                            height: 1,
-                            pointerEvents: "none",
-                          }}
-                        />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" side="bottom">
-                        {treeContextMenu.item.isFolder &&
-                          !treeContextMenu.item.isInbox && (
-                            <>
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setNewFolderParentId(treeContextMenu.itemId);
-                                  setShowNewFolderModal(true);
-                                  setTreeContextMenu(null);
-                                }}
-                              >
-                                <FolderPlus className="size-4 mr-2" />
-                                Nouveau sous-dossier
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  downloadFolder(
-                                    treeContextMenu.itemId,
-                                    treeContextMenu.item.name,
-                                  );
-                                  setTreeContextMenu(null);
-                                }}
-                                disabled={downloadFolderLoading}
-                              >
-                                <Download className="size-4 mr-2" />
-                                {downloadFolderLoading
-                                  ? "Téléchargement..."
-                                  : "Télécharger en ZIP"}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedFolders([treeContextMenu.itemId]);
-                                  setSelectedDocuments([]);
-                                  setShowTransferModal(true);
-                                  setTreeContextMenu(null);
-                                }}
-                              >
-                                <Send className="size-4 mr-2" />
-                                Transférer
-                              </DropdownMenuItem>
-                              {/* Download selection as ZIP when multiple folders are selected */}
-                              {selectedFolders.length > 1 && (
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    setTreeContextMenu(null);
-                                    handleZipDownload();
-                                  }}
-                                  disabled={downloadSelectionLoading}
-                                >
-                                  <Package className="size-4 mr-2" />
-                                  {downloadSelectionLoading
-                                    ? "Préparation..."
-                                    : `Télécharger la sélection (${selectedFolders.length})`}
-                                </DropdownMenuItem>
-                              )}
-                              {/* Gérer la visibilité */}
-                              {treeContextMenu.item.data?.canManageVisibility && (
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    const folder = treeContextMenu.item.data;
-                                    setFolderToEditVisibility(folder);
-                                    setEditVisibility(folder.visibility || "public");
-                                    setEditAllowedUserIds(folder.allowedUserIds || []);
-                                    setShowVisibilityModal(true);
-                                    setTreeContextMenu(null);
-                                  }}
-                                >
-                                  {treeContextMenu.item.data?.visibility === "private" ? (
-                                    <Lock className="size-4 mr-2" />
-                                  ) : (
-                                    <Globe className="size-4 mr-2" />
-                                  )}
-                                  Gérer la visibilité
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuSeparator />
-                            </>
-                          )}
-                        {/* Renommer - pas pour inbox */}
-                        {!treeContextMenu.item.isInbox && (
-                          <DropdownMenuItem
+                          key={item.id || "inbox"}
+                          className="flex items-center gap-1 min-w-0"
+                        >
+                          <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                          <button
                             onClick={() => {
-                              const isFolder = treeContextMenu.item.isFolder;
-                              const itemId = treeContextMenu.itemId;
-                              const id = isFolder
-                                ? itemId
-                                : itemId.replace("doc-", "");
-                              setItemToRename({
-                                id,
-                                name: treeContextMenu.item.name,
-                                type: isFolder ? "folder" : "document",
-                              });
-                              setNewName(treeContextMenu.item.name);
-                              setShowRenameModal(true);
-                              setTreeContextMenu(null);
+                              setSelectedFolder(item.id);
+                              setShowTrash(false);
                             }}
+                            className={cn(
+                              "truncate max-w-[80px] sm:max-w-[150px] text-xs sm:text-sm transition-colors",
+                              index === breadcrumbPath.length - 1
+                                ? "font-medium text-foreground"
+                                : "text-muted-foreground hover:text-foreground",
+                            )}
                           >
-                            <Pencil className="size-4 mr-2" />
-                            Renommer
-                          </DropdownMenuItem>
-                        )}
-                        {!treeContextMenu.item.isFolder && (
-                          <>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                if (treeContextMenu.item.data) {
-                                  handleDownload(treeContextMenu.item.data);
-                                }
-                                setTreeContextMenu(null);
-                              }}
-                            >
-                              <Download className="size-4 mr-2" />
-                              Télécharger
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                const docId = treeContextMenu.itemId.replace("doc-", "");
-                                setSelectedDocuments([docId]);
-                                setSelectedFolders([]);
-                                setShowTransferModal(true);
-                                setTreeContextMenu(null);
-                              }}
-                            >
-                              <Send className="size-4 mr-2" />
-                              Transférer
-                            </DropdownMenuItem>
-                          </>
-                        )}
-                        {/* Supprimer - pas pour inbox */}
-                        {!treeContextMenu.item.isInbox && (
-                            <>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="text-destructive focus:text-destructive"
-                                onClick={() => {
-                                  if (treeContextMenu.item.isFolder) {
-                                    setFolderToDelete(treeContextMenu.itemId);
-                                    setShowDeleteFolderModal(true);
-                                  } else {
-                                    const docId = treeContextMenu.itemId.replace(
-                                      "doc-",
-                                      "",
-                                    );
-                                    setSelectedDocuments([docId]);
-                                    setShowDeleteModal(true);
-                                  }
-                                  setTreeContextMenu(null);
-                                }}
-                              >
-                                <Trash2 className="size-4 mr-2" />
-                                Supprimer
-                              </DropdownMenuItem>
-                            </>
-                          )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                            {item.name}
+                          </button>
+                        </div>
+                      ))}
+                      <span className="text-xs text-muted-foreground ml-1 shrink-0">
+                        ({filteredDocuments.length}
+                        {hasMore ? "+" : ""})
+                      </span>
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
 
-            {/* Corbeille button */}
-            <div className="px-2 py-2 border-t">
-              <button
-                onClick={() => {
-                  setShowTrash(true);
-                  setSelectedFolder(null);
-                }}
-                className={cn(
-                  "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors",
-                  showTrash
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                )}
-              >
-                <Trash2 className="h-4 w-4" />
-                <span>Corbeille</span>
-                {trashItemsCount > 0 && (
-                  <Badge
-                    variant="secondary"
-                    className="ml-auto font-normal h-5 px-1.5 text-xs"
-                  >
-                    {trashItemsCount}
-                  </Badge>
-                )}
-              </button>
-            </div>
-
-            {/* Resize handle */}
-            <div
-              className={cn(
-                "absolute right-0 top-0 bottom-0 w-[3px] cursor-col-resize hover:bg-primary/10 transition-colors",
-                isResizing && "bg-primary/20",
-              )}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                setIsResizing(true);
-              }}
-            />
-          </div>
-        )}
-
-        {/* Content area */}
-        <div
-          className="flex-1 flex flex-col overflow-hidden min-h-0"
-          onContextMenu={handleContentContextMenu}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          {/* Toolbar */}
-          <div className="flex-shrink-0 px-2 sm:px-4 min-h-12 sm:min-h-14 border-b bg-background flex flex-col justify-center py-1.5 sm:py-2">
-            {/* Upload Progress Bar */}
-            {isUploading && !showTrash && (
-              <div className="mb-2 space-y-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">
-                    Upload en cours...{" "}
-                    {uploadingFiles[0] && `(${uploadingFiles[0]})`}
-                  </span>
-                  <span className="font-medium">{uploadProgress}%</span>
-                </div>
-                <Progress value={uploadProgress} className="h-1.5" />
-              </div>
-            )}
-
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 sm:gap-4">
-              <div className="flex items-center gap-2 min-w-0 flex-1">
-                {/* Mobile sidebar toggle + separator */}
-                {isMobile && (
-                  <>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="shrink-0 h-8 w-8"
-                      onClick={() => setMobileSidebarOpen(true)}
-                    >
-                      <PanelLeft className="h-5 w-5" />
-                    </Button>
-                    <Separator orientation="vertical" className="h-5" />
-                  </>
-                )}
-
-                {/* Breadcrumb / Trash header */}
-                {showTrash ? (
-                  <>
-                    <Trash2 className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span className="font-normal text-sm sm:text-base">Corbeille</span>
-                    <span className="text-xs font-normal text-muted-foreground">
-                      ({trashItemsCount})
-                    </span>
-                  </>
-                ) : (
-                  <div className="flex items-center gap-1 min-w-0 flex-1 overflow-hidden">
-                    <button
-                      onClick={() => {
-                        setSelectedFolder(null);
-                        setShowTrash(false);
-                      }}
-                      className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors shrink-0"
-                    >
-                      <Home className="h-4 w-4" />
-                    </button>
-                    {breadcrumbPath.map((item, index) => (
-                      <div
-                        key={item.id || "inbox"}
-                        className="flex items-center gap-1 min-w-0"
-                      >
-                        <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-                        <button
-                          onClick={() => {
-                            setSelectedFolder(item.id);
-                            setShowTrash(false);
-                          }}
-                          className={cn(
-                            "truncate max-w-[80px] sm:max-w-[150px] text-xs sm:text-sm transition-colors",
-                            index === breadcrumbPath.length - 1
-                              ? "font-medium text-foreground"
-                              : "text-muted-foreground hover:text-foreground",
-                          )}
-                        >
-                          {item.name}
-                        </button>
-                      </div>
-                    ))}
-                    <span className="text-xs text-muted-foreground ml-1 shrink-0">
-                      ({filteredDocuments.length}
-                      {hasMore ? "+" : ""})
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
-                {showTrash ? (
-                  /* Trash actions */
-                  <>
-                    {selectedTrashCount > 0 && (
-                      <>
-                        <span className="text-xs font-normal text-muted-foreground hidden sm:inline">
-                          {selectedTrashCount} sélectionné(s)
-                        </span>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="secondary"
-                                size="icon"
-                                onClick={handleRestoreItems}
-                                disabled={restoreLoading}
+                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
+                  {showTrash ? (
+                    /* Trash actions */
+                    <>
+                      {selectedTrashCount > 0 && (
+                        <>
+                          <span className="text-xs font-normal text-muted-foreground hidden sm:inline">
+                            {selectedTrashCount} sélectionné(s)
+                          </span>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="secondary"
+                                  size="icon"
+                                  onClick={handleRestoreItems}
+                                  disabled={restoreLoading}
+                                >
+                                  {restoreLoading ? (
+                                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <RotateCcw
+                                      className="h-4 w-4"
+                                      strokeWidth={1.5}
+                                    />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="bottom"
+                                className="bg-[#202020] text-white border-0"
                               >
-                                {restoreLoading ? (
-                                  <LoaderCircle className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <RotateCcw
+                                <p>Restaurer</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() =>
+                                    setShowPermanentDeleteModal(true)
+                                  }
+                                  className="bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
+                                >
+                                  <Trash2
                                     className="h-4 w-4"
                                     strokeWidth={1.5}
                                   />
-                                )}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent
-                              side="bottom"
-                              className="bg-[#202020] text-white border-0"
-                            >
-                              <p>Restaurer</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="bottom"
+                                className="bg-[#202020] text-white border-0"
+                              >
+                                <p>Supprimer définitivement</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </>
+                      )}
+                      {trashItemsCount > 0 && (
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() =>
-                                  setShowPermanentDeleteModal(true)
-                                }
-                                className="bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowEmptyTrashModal(true)}
+                                className="text-destructive hover:text-destructive"
                               >
-                                <Trash2 className="h-4 w-4" strokeWidth={1.5} />
+                                <Trash2 className="h-4 w-4 sm:mr-1.5" />
+                                <span className="hidden sm:inline">
+                                  Vider la corbeille
+                                </span>
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent
                               side="bottom"
-                              className="bg-[#202020] text-white border-0"
+                              className="bg-[#202020] text-white border-0 sm:hidden"
                             >
-                              <p>Supprimer définitivement</p>
+                              <p>Vider la corbeille</p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
-                      </>
-                    )}
-                    {trashItemsCount > 0 && (
+                      )}
+                    </>
+                  ) : (
+                    /* Normal document actions */
+                    <>
+                      {totalSelectionCount > 0 && (
+                        <>
+                          <span className="text-xs font-normal text-muted-foreground hidden sm:inline">
+                            {totalSelectionCount} sélectionné(s)
+                            {selectedFolders.length > 0 &&
+                              selectedDocuments.length > 0 && (
+                                <span className="ml-0.5">
+                                  ({selectedFolders.length} dossier
+                                  {selectedFolders.length > 1 ? "s" : ""},{" "}
+                                  {selectedDocuments.length} doc
+                                  {selectedDocuments.length > 1 ? "s" : ""})
+                                </span>
+                              )}
+                          </span>
+                          {/* ZIP download button */}
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="secondary"
+                                  size="icon"
+                                  onClick={handleZipDownload}
+                                  disabled={
+                                    downloadSelectionLoading ||
+                                    selectionInfoLoading
+                                  }
+                                >
+                                  {downloadSelectionLoading ||
+                                  selectionInfoLoading ? (
+                                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Package
+                                      className="h-4 w-4"
+                                      strokeWidth={1.5}
+                                    />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="bottom"
+                                className="bg-[#202020] text-white border-0"
+                              >
+                                <p>Télécharger en ZIP</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          {selectedDocuments.length > 0 && (
+                            <>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="secondary"
+                                      size="icon"
+                                      onClick={() => setShowMoveModal(true)}
+                                    >
+                                      <FolderInput
+                                        className="h-4 w-4"
+                                        strokeWidth={1.5}
+                                      />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent
+                                    side="bottom"
+                                    className="bg-[#202020] text-white border-0"
+                                  >
+                                    <p>Déplacer</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => setShowDeleteModal(true)}
+                                      className="bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
+                                    >
+                                      <Trash2
+                                        className="h-4 w-4"
+                                        strokeWidth={1.5}
+                                      />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent
+                                    side="bottom"
+                                    className="bg-[#202020] text-white border-0"
+                                  >
+                                    <p>Supprimer</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="secondary"
+                                      size="icon"
+                                      onClick={() => setShowBulkTagsModal(true)}
+                                    >
+                                      <Tag
+                                        className="h-4 w-4"
+                                        strokeWidth={1.5}
+                                      />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent
+                                    side="bottom"
+                                    className="bg-[#202020] text-white border-0"
+                                  >
+                                    <p>Gérer les tags</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </>
+                          )}
+                          {/* Clear selection */}
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    setSelectedDocuments([]);
+                                    setSelectedFolders([]);
+                                  }}
+                                  className="h-8 w-8"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="bottom"
+                                className="bg-[#202020] text-white border-0"
+                              >
+                                <p>Tout désélectionner</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </>
+                      )}
+
+                      {/* Doublons */}
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setShowEmptyTrashModal(true)}
-                              className="text-destructive hover:text-destructive"
+                              variant={
+                                allDuplicateCount > 0 ? "secondary" : "ghost"
+                              }
+                              size="icon"
+                              className="relative"
+                              onClick={() => setShowDuplicatesModal(true)}
+                              disabled={allDocsLoading}
                             >
-                              <Trash2 className="h-4 w-4 sm:mr-1.5" />
-                              <span className="hidden sm:inline">Vider la corbeille</span>
+                              <Copy className="h-4 w-4" strokeWidth={1.5} />
+                              {allDuplicateCount > 0 && (
+                                <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-[#5a50ff] text-white text-[10px] font-semibold shadow-sm">
+                                  {allDuplicateCount}
+                                </span>
+                              )}
                             </Button>
-                          </TooltipTrigger>
-                          <TooltipContent
-                            side="bottom"
-                            className="bg-[#202020] text-white border-0 sm:hidden"
-                          >
-                            <p>Vider la corbeille</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    )}
-                  </>
-                ) : (
-                  /* Normal document actions */
-                  <>
-                    {totalSelectionCount > 0 && (
-                      <>
-                        <span className="text-xs font-normal text-muted-foreground hidden sm:inline">
-                          {totalSelectionCount} sélectionné(s)
-                          {selectedFolders.length > 0 && selectedDocuments.length > 0 && (
-                            <span className="ml-0.5">
-                              ({selectedFolders.length} dossier{selectedFolders.length > 1 ? "s" : ""}, {selectedDocuments.length} doc{selectedDocuments.length > 1 ? "s" : ""})
-                            </span>
-                          )}
-                        </span>
-                        {/* ZIP download button */}
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="secondary"
-                                size="icon"
-                                onClick={handleZipDownload}
-                                disabled={downloadSelectionLoading || selectionInfoLoading}
-                              >
-                                {downloadSelectionLoading || selectionInfoLoading ? (
-                                  <LoaderCircle className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Package className="h-4 w-4" strokeWidth={1.5} />
-                                )}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent
-                              side="bottom"
-                              className="bg-[#202020] text-white border-0"
-                            >
-                              <p>Télécharger en ZIP</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                        {selectedDocuments.length > 0 && (
-                          <>
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="secondary"
-                                    size="icon"
-                                    onClick={() => setShowMoveModal(true)}
-                                  >
-                                    <FolderInput
-                                      className="h-4 w-4"
-                                      strokeWidth={1.5}
-                                    />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent
-                                  side="bottom"
-                                  className="bg-[#202020] text-white border-0"
-                                >
-                                  <p>Déplacer</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setShowDeleteModal(true)}
-                                    className="bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
-                                  >
-                                    <Trash2 className="h-4 w-4" strokeWidth={1.5} />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent
-                                  side="bottom"
-                                  className="bg-[#202020] text-white border-0"
-                                >
-                                  <p>Supprimer</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="secondary"
-                                    size="icon"
-                                    onClick={() => setShowBulkTagsModal(true)}
-                                  >
-                                    <Tag className="h-4 w-4" strokeWidth={1.5} />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent
-                                  side="bottom"
-                                  className="bg-[#202020] text-white border-0"
-                                >
-                                  <p>Gérer les tags</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </>
-                        )}
-                        {/* Clear selection */}
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => {
-                                  setSelectedDocuments([]);
-                                  setSelectedFolders([]);
-                                }}
-                                className="h-8 w-8"
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent
-                              side="bottom"
-                              className="bg-[#202020] text-white border-0"
-                            >
-                              <p>Tout désélectionner</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </>
-                    )}
-
-                    {/* Doublons */}
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant={allDuplicateCount > 0 ? "secondary" : "ghost"}
-                            size="icon"
-                            className="relative"
-                            onClick={() => setShowDuplicatesModal(true)}
-                            disabled={allDocsLoading}
-                          >
-                            <Copy className="h-4 w-4" strokeWidth={1.5} />
-                            {allDuplicateCount > 0 && (
-                              <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-[#5a50ff] text-white text-[10px] font-semibold shadow-sm">
-                                {allDuplicateCount}
-                              </span>
-                            )}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent
-                          side="bottom"
-                          className="bg-[#202020] text-white border-0"
-                        >
-                          <p>Doublons</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-
-                    {/* Tri */}
-                    <TooltipProvider>
-                      <DropdownMenu>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="secondary" size="icon">
-                                <ArrowUpDown
-                                  className="h-4 w-4"
-                                  strokeWidth={1.5}
-                                />
-                              </Button>
-                            </DropdownMenuTrigger>
                           </TooltipTrigger>
                           <TooltipContent
                             side="bottom"
                             className="bg-[#202020] text-white border-0"
                           >
-                            <p>Trier</p>
+                            <p>Doublons</p>
                           </TooltipContent>
                         </Tooltip>
-                        <DropdownMenuContent align="end" className="w-40">
-                          <DropdownMenuItem
-                            onClick={() => handleSort("name")}
-                            className="justify-between"
-                          >
-                            Nom
-                            {getSortIcon("name")}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleSort("createdAt")}
-                            className="justify-between"
-                          >
-                            Date
-                            {getSortIcon("createdAt")}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleSort("fileSize")}
-                            className="justify-between"
-                          >
-                            Taille
-                            {getSortIcon("fileSize")}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TooltipProvider>
+                      </TooltipProvider>
 
-                    {/* Recherche */}
-                    <div className="relative hidden sm:block">
-                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Rechercher..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-8 w-32 md:w-48 h-8 text-sm"
-                      />
-                    </div>
-                    {/* Mobile search icon toggle */}
-                    {isMobile && (
+                      {/* Tri */}
+                      <TooltipProvider>
+                        <DropdownMenu>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="secondary" size="icon">
+                                  <ArrowUpDown
+                                    className="h-4 w-4"
+                                    strokeWidth={1.5}
+                                  />
+                                </Button>
+                              </DropdownMenuTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent
+                              side="bottom"
+                              className="bg-[#202020] text-white border-0"
+                            >
+                              <p>Trier</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <DropdownMenuContent align="end" className="w-40">
+                            <DropdownMenuItem
+                              onClick={() => handleSort("name")}
+                              className="justify-between"
+                            >
+                              Nom
+                              {getSortIcon("name")}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleSort("createdAt")}
+                              className="justify-between"
+                            >
+                              Date
+                              {getSortIcon("createdAt")}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleSort("fileSize")}
+                              className="justify-between"
+                            >
+                              Taille
+                              {getSortIcon("fileSize")}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TooltipProvider>
+
+                      {/* Recherche */}
+                      <div className="relative hidden sm:block">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Rechercher..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="pl-8 w-32 md:w-48 h-8 text-sm"
+                        />
+                      </div>
+                      {/* Mobile search icon toggle */}
+                      {isMobile && (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 sm:hidden"
+                            >
+                              <Search className="h-4 w-4" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-64 p-2" align="end">
+                            <Input
+                              placeholder="Rechercher..."
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              className="h-8 text-sm"
+                              autoFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      )}
+
+                      {/* Filtres avancés */}
                       <Popover>
                         <PopoverTrigger asChild>
-                          <Button variant="outline" size="icon" className="h-8 w-8 sm:hidden">
-                            <Search className="h-4 w-4" />
+                          <Button
+                            variant={hasActiveFilters ? "default" : "outline"}
+                            size="sm"
+                            className="h-8 gap-1.5"
+                          >
+                            {hasActiveFilters ? (
+                              <FilterX className="h-4 w-4" />
+                            ) : (
+                              <Filter className="h-4 w-4" />
+                            )}
+                            <span className="hidden sm:inline">Filtres</span>
+                            {hasActiveFilters && (
+                              <Badge
+                                variant="secondary"
+                                className="ml-0.5 sm:ml-1 h-5 px-1.5 text-xs"
+                              >
+                                {
+                                  [
+                                    filterFileType,
+                                    filterDateFrom || filterDateTo,
+                                    filterMinSize || filterMaxSize,
+                                    filterStatus,
+                                  ].filter(Boolean).length
+                                }
+                              </Badge>
+                            )}
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-64 p-2" align="end">
-                          <Input
-                            placeholder="Rechercher..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="h-8 text-sm"
-                            autoFocus
-                          />
+                        <PopoverContent className="w-80" align="end">
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <h4 className="font-medium text-sm">
+                                Filtres avancés
+                              </h4>
+                              {hasActiveFilters && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={clearFilters}
+                                  className="h-7 text-xs"
+                                >
+                                  Réinitialiser
+                                </Button>
+                              )}
+                            </div>
+
+                            {/* Type de fichier */}
+                            <div className="space-y-2">
+                              <Label className="text-xs">Type de fichier</Label>
+                              <Select
+                                value={filterFileType}
+                                onValueChange={setFilterFileType}
+                              >
+                                <SelectTrigger className="h-8 text-sm">
+                                  <SelectValue placeholder="Tous les types" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="">
+                                    Tous les types
+                                  </SelectItem>
+                                  <SelectItem value="image">Images</SelectItem>
+                                  <SelectItem value="video">Vidéos</SelectItem>
+                                  <SelectItem value="pdf">PDF</SelectItem>
+                                  <SelectItem value="document">
+                                    Documents
+                                  </SelectItem>
+                                  <SelectItem value="spreadsheet">
+                                    Tableurs
+                                  </SelectItem>
+                                  <SelectItem value="other">Autres</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {/* Statut */}
+                            <div className="space-y-2">
+                              <Label className="text-xs">Statut</Label>
+                              <Select
+                                value={filterStatus}
+                                onValueChange={setFilterStatus}
+                              >
+                                <SelectTrigger className="h-8 text-sm">
+                                  <SelectValue placeholder="Tous les statuts" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="">
+                                    Tous les statuts
+                                  </SelectItem>
+                                  <SelectItem value="pending">
+                                    En attente
+                                  </SelectItem>
+                                  <SelectItem value="classified">
+                                    Classé
+                                  </SelectItem>
+                                  <SelectItem value="archived">
+                                    Archivé
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {/* Date */}
+                            <div className="space-y-2">
+                              <Label className="text-xs">Période</Label>
+                              <div className="grid grid-cols-2 gap-2">
+                                <Input
+                                  type="date"
+                                  value={filterDateFrom}
+                                  onChange={(e) =>
+                                    setFilterDateFrom(e.target.value)
+                                  }
+                                  className="h-8 text-sm"
+                                  placeholder="Du"
+                                />
+                                <Input
+                                  type="date"
+                                  value={filterDateTo}
+                                  onChange={(e) =>
+                                    setFilterDateTo(e.target.value)
+                                  }
+                                  className="h-8 text-sm"
+                                  placeholder="Au"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Taille */}
+                            <div className="space-y-2">
+                              <Label className="text-xs">Taille (Ko)</Label>
+                              <div className="grid grid-cols-2 gap-2">
+                                <Input
+                                  type="number"
+                                  value={filterMinSize}
+                                  onChange={(e) =>
+                                    setFilterMinSize(e.target.value)
+                                  }
+                                  className="h-8 text-sm"
+                                  placeholder="Min"
+                                  min="0"
+                                />
+                                <Input
+                                  type="number"
+                                  value={filterMaxSize}
+                                  onChange={(e) =>
+                                    setFilterMaxSize(e.target.value)
+                                  }
+                                  className="h-8 text-sm"
+                                  placeholder="Max"
+                                  min="0"
+                                />
+                              </div>
+                            </div>
+                          </div>
                         </PopoverContent>
                       </Popover>
-                    )}
-
-                    {/* Filtres avancés */}
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={hasActiveFilters ? "default" : "outline"}
-                          size="sm"
-                          className="h-8 gap-1.5"
-                        >
-                          {hasActiveFilters ? (
-                            <FilterX className="h-4 w-4" />
-                          ) : (
-                            <Filter className="h-4 w-4" />
-                          )}
-                          <span className="hidden sm:inline">Filtres</span>
-                          {hasActiveFilters && (
-                            <Badge
-                              variant="secondary"
-                              className="ml-0.5 sm:ml-1 h-5 px-1.5 text-xs"
-                            >
-                              {
-                                [
-                                  filterFileType,
-                                  filterDateFrom || filterDateTo,
-                                  filterMinSize || filterMaxSize,
-                                  filterStatus,
-                                ].filter(Boolean).length
-                              }
-                            </Badge>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-80" align="end">
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-medium text-sm">
-                              Filtres avancés
-                            </h4>
-                            {hasActiveFilters && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={clearFilters}
-                                className="h-7 text-xs"
-                              >
-                                Réinitialiser
-                              </Button>
-                            )}
-                          </div>
-
-                          {/* Type de fichier */}
-                          <div className="space-y-2">
-                            <Label className="text-xs">Type de fichier</Label>
-                            <Select
-                              value={filterFileType}
-                              onValueChange={setFilterFileType}
-                            >
-                              <SelectTrigger className="h-8 text-sm">
-                                <SelectValue placeholder="Tous les types" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="">Tous les types</SelectItem>
-                                <SelectItem value="image">Images</SelectItem>
-                                <SelectItem value="video">Vidéos</SelectItem>
-                                <SelectItem value="pdf">PDF</SelectItem>
-                                <SelectItem value="document">
-                                  Documents
-                                </SelectItem>
-                                <SelectItem value="spreadsheet">
-                                  Tableurs
-                                </SelectItem>
-                                <SelectItem value="other">Autres</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          {/* Statut */}
-                          <div className="space-y-2">
-                            <Label className="text-xs">Statut</Label>
-                            <Select
-                              value={filterStatus}
-                              onValueChange={setFilterStatus}
-                            >
-                              <SelectTrigger className="h-8 text-sm">
-                                <SelectValue placeholder="Tous les statuts" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="">
-                                  Tous les statuts
-                                </SelectItem>
-                                <SelectItem value="pending">
-                                  En attente
-                                </SelectItem>
-                                <SelectItem value="classified">
-                                  Classé
-                                </SelectItem>
-                                <SelectItem value="archived">
-                                  Archivé
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          {/* Date */}
-                          <div className="space-y-2">
-                            <Label className="text-xs">Période</Label>
-                            <div className="grid grid-cols-2 gap-2">
-                              <Input
-                                type="date"
-                                value={filterDateFrom}
-                                onChange={(e) =>
-                                  setFilterDateFrom(e.target.value)
-                                }
-                                className="h-8 text-sm"
-                                placeholder="Du"
-                              />
-                              <Input
-                                type="date"
-                                value={filterDateTo}
-                                onChange={(e) =>
-                                  setFilterDateTo(e.target.value)
-                                }
-                                className="h-8 text-sm"
-                                placeholder="Au"
-                              />
-                            </div>
-                          </div>
-
-                          {/* Taille */}
-                          <div className="space-y-2">
-                            <Label className="text-xs">Taille (Ko)</Label>
-                            <div className="grid grid-cols-2 gap-2">
-                              <Input
-                                type="number"
-                                value={filterMinSize}
-                                onChange={(e) =>
-                                  setFilterMinSize(e.target.value)
-                                }
-                                className="h-8 text-sm"
-                                placeholder="Min"
-                                min="0"
-                              />
-                              <Input
-                                type="number"
-                                value={filterMaxSize}
-                                onChange={(e) =>
-                                  setFilterMaxSize(e.target.value)
-                                }
-                                className="h-8 text-sm"
-                                placeholder="Max"
-                                min="0"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  </>
-                )}
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Documents list / Trash view */}
-          <div className="flex-1 overflow-y-auto">
-            {showTrash ? (
-              /* Trash view */
-              trashInitialLoading ? (
-                <div className="space-y-2 p-2 sm:p-4">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <Skeleton key={i} className="h-14 w-full rounded-lg" />
-                  ))}
-                </div>
-              ) : trashItemsCount === 0 ? (
-                <div className="h-full min-h-[400px] flex items-center justify-center">
-                  <div className="flex flex-col items-center gap-2 text-muted-foreground/60">
-                    <Trash2 className="h-8 w-8" />
-                    <p className="text-sm">La corbeille est vide</p>
-                    <p className="text-xs">
-                      Les éléments supprimés apparaîtront ici pendant 30 jours
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  {/* Header */}
-                  <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
-                    <span className="w-6 hidden sm:block"></span>
-                    <Checkbox
-                      checked={
-                        selectedTrashFolders.length === trashFolders.length &&
-                        selectedTrashDocuments.length ===
-                          orphanTrashDocuments.length &&
-                        trashItemsCount > 0
-                      }
-                      onCheckedChange={() => {
-                        if (
-                          selectedTrashFolders.length === trashFolders.length &&
-                          selectedTrashDocuments.length ===
-                            orphanTrashDocuments.length
-                        ) {
-                          setSelectedTrashFolders([]);
-                          setSelectedTrashDocuments([]);
-                        } else {
-                          setSelectedTrashFolders(
-                            trashFolders.map((f) => f.id),
-                          );
-                          setSelectedTrashDocuments(
-                            orphanTrashDocuments.map((d) => d.id),
-                          );
-                        }
-                      }}
-                      className="h-4 w-4"
-                    />
-                    <span className="flex-1">Nom</span>
-                    <span className="w-24 text-right hidden sm:block">Taille</span>
-                    <span className="w-40 text-right hidden lg:block">Supprimé le</span>
-                    <span className="w-24 text-right hidden md:block">Jours restants</span>
-                    <span className="w-8 sm:w-10"></span>
-                  </div>
-
-                  {/* Trashed folders with their contents */}
-                  {trashFolders.map((folder) => {
-                    const docsInFolder = getDocumentsInTrashFolder(folder.id);
-                    const isExpanded = expandedTrashFolders.includes(folder.id);
-                    const hasDocuments = docsInFolder.length > 0;
-
-                    return (
-                      <div key={`folder-${folder.id}`}>
-                        {/* Folder row */}
-                        <div
-                          className={cn(
-                            "flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2.5 sm:py-3 hover:bg-accent/50 transition-colors group border-b",
-                            selectedTrashFolders.includes(folder.id) &&
-                              "bg-accent/30",
-                          )}
-                        >
-                          {/* Expand/collapse button */}
-                          <button
-                            onClick={() =>
-                              hasDocuments &&
-                              toggleTrashFolderExpanded(folder.id)
-                            }
-                            className={cn(
-                              "w-6 h-6 flex items-center justify-center rounded hover:bg-accent hidden sm:flex",
-                              !hasDocuments && "invisible",
-                            )}
-                          >
-                            <ChevronRight
-                              className={cn(
-                                "h-4 w-4 transition-transform",
-                                isExpanded && "rotate-90",
-                              )}
-                            />
-                          </button>
-                          <Checkbox
-                            checked={selectedTrashFolders.includes(folder.id)}
-                            onCheckedChange={() =>
-                              toggleTrashFolderSelection(folder.id)
-                            }
-                            className="h-4 w-4"
-                          />
-                          <div
-                            className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0"
-                            onClick={() =>
-                              hasDocuments &&
-                              toggleTrashFolderExpanded(folder.id)
-                            }
-                          >
-                            {isExpanded ? (
-                              <FolderOpen
-                                className="h-4 w-4 flex-shrink-0"
-                                style={{ color: folder.color }}
-                              />
-                            ) : (
-                              <Folder
-                                className="h-4 w-4 flex-shrink-0"
-                                style={{ color: folder.color }}
-                              />
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-normal truncate">
-                                {folder.name}
-                                {hasDocuments && (
-                                  <span className="ml-2 text-xs text-muted-foreground">
-                                    ({docsInFolder.length} fichier
-                                    {docsInFolder.length > 1 ? "s" : ""})
-                                  </span>
-                                )}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                Dossier
-                              </p>
-                            </div>
-                          </div>
-                          <span className="w-24 text-right text-sm text-muted-foreground hidden sm:block">
-                            {hasDocuments
-                              ? formatFileSize(
-                                  docsInFolder.reduce(
-                                    (acc, d) => acc + d.fileSize,
-                                    0,
-                                  ),
-                                )
-                              : "—"}
-                          </span>
-                          <span className="w-40 text-right text-sm text-muted-foreground hidden lg:block">
-                            {format(
-                              new Date(folder.trashedAt),
-                              "d MMM yyyy HH:mm",
-                              {
-                                locale: fr,
-                              },
-                            )}
-                          </span>
-                          <span className="w-24 text-right hidden md:block">
-                            <Badge
-                              variant={
-                                folder.daysUntilPermanentDeletion <= 7
-                                  ? "destructive"
-                                  : "secondary"
-                              }
-                              className="text-xs"
-                            >
-                              {folder.daysUntilPermanentDeletion}j
-                            </Badge>
-                          </span>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 sm:opacity-0 sm:group-hover:opacity-100"
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedTrashFolders([folder.id]);
-                                  setSelectedTrashDocuments([]);
-                                  handleRestoreItems();
-                                }}
-                              >
-                                <RotateCcw className="h-4 w-4 mr-2" />
-                                Restaurer
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedTrashFolders([folder.id]);
-                                  setSelectedTrashDocuments([]);
-                                  setShowPermanentDeleteModal(true);
-                                }}
-                                className="text-destructive focus:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Supprimer définitivement
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-
-                        {/* Documents inside folder (when expanded) */}
-                        {isExpanded &&
-                          docsInFolder.map((doc) => (
-                            <div
-                              key={`doc-${doc.id}`}
-                              className={cn(
-                                "flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 sm:py-2.5 hover:bg-accent/30 transition-colors group border-b bg-muted/20",
-                                selectedTrashDocuments.includes(doc.id) &&
-                                  "bg-accent/20",
-                              )}
-                            >
-                              <span className="w-6 hidden sm:block"></span>
-                              <span className="w-4 border-l-2 border-b-2 border-muted-foreground/30 h-4 rounded-bl-sm hidden sm:block"></span>
-                              <Checkbox
-                                checked={selectedTrashDocuments.includes(
-                                  doc.id,
-                                )}
-                                onCheckedChange={() =>
-                                  toggleTrashDocumentSelection(doc.id)
-                                }
-                                className="h-4 w-4"
-                              />
-                              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                                {getFileIcon(doc.mimeType, doc.fileExtension)}
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-normal truncate">
-                                    {doc.name}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground sm:hidden">
-                                    {formatFileSize(doc.fileSize)}
-                                  </p>
-                                </div>
-                              </div>
-                              <span className="w-24 text-right text-sm text-muted-foreground hidden sm:block">
-                                {formatFileSize(doc.fileSize)}
-                              </span>
-                              <span className="w-40 text-right text-sm text-muted-foreground hidden lg:block">
-                                —
-                              </span>
-                              <span className="w-24 text-right hidden md:block">—</span>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 w-8 p-0 sm:opacity-0 sm:group-hover:opacity-100"
-                                  >
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      setSelectedTrashDocuments([doc.id]);
-                                      setSelectedTrashFolders([]);
-                                      handleRestoreItems();
-                                    }}
-                                  >
-                                    <RotateCcw className="h-4 w-4 mr-2" />
-                                    Restaurer
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      setSelectedTrashDocuments([doc.id]);
-                                      setSelectedTrashFolders([]);
-                                      setShowPermanentDeleteModal(true);
-                                    }}
-                                    className="text-destructive focus:text-destructive"
-                                  >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Supprimer définitivement
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-                          ))}
-                      </div>
-                    );
-                  })}
-
-                  {/* Orphan trashed documents (not in a trashed folder) */}
-                  {orphanTrashDocuments.map((doc) => (
-                    <div
-                      key={`doc-${doc.id}`}
-                      className={cn(
-                        "flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2.5 sm:py-3 hover:bg-accent/50 transition-colors group border-b",
-                        selectedTrashDocuments.includes(doc.id) &&
-                          "bg-accent/30",
-                      )}
-                    >
-                      <span className="w-6 hidden sm:block"></span>
-                      <Checkbox
-                        checked={selectedTrashDocuments.includes(doc.id)}
-                        onCheckedChange={() =>
-                          toggleTrashDocumentSelection(doc.id)
-                        }
-                        className="h-4 w-4"
-                      />
-                      <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                        {getFileIcon(doc.mimeType, doc.fileExtension)}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-normal truncate">
-                            {doc.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground sm:hidden">
-                            {formatFileSize(doc.fileSize)}
-                          </p>
-                          {doc.description && (
-                            <p className="text-xs text-muted-foreground truncate hidden sm:block">
-                              {doc.description}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <span className="w-24 text-right text-sm text-muted-foreground hidden sm:block">
-                        {formatFileSize(doc.fileSize)}
-                      </span>
-                      <span className="w-40 text-right text-sm text-muted-foreground hidden lg:block">
-                        {format(new Date(doc.trashedAt), "d MMM yyyy HH:mm", {
-                          locale: fr,
-                        })}
-                      </span>
-                      <span className="w-24 text-right hidden md:block">
-                        <Badge
-                          variant={
-                            doc.daysUntilPermanentDeletion <= 7
-                              ? "destructive"
-                              : "secondary"
-                          }
-                          className="text-xs"
-                        >
-                          {doc.daysUntilPermanentDeletion}j
-                        </Badge>
-                      </span>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 sm:opacity-0 sm:group-hover:opacity-100"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedTrashDocuments([doc.id]);
-                              setSelectedTrashFolders([]);
-                              handleRestoreItems();
-                            }}
-                          >
-                            <RotateCcw className="h-4 w-4 mr-2" />
-                            Restaurer
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedTrashDocuments([doc.id]);
-                              setSelectedTrashFolders([]);
-                              setShowPermanentDeleteModal(true);
-                            }}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Supprimer définitivement
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  ))}
-                </div>
-              )
-            ) : (
-              /* Regular documents view */
-              <>
-                {/* Zone de drop */}
-                {isDragActive && (
-                  <div className="absolute inset-0 z-50 bg-primary/5 border border-dashed border-primary/40 rounded-lg flex items-center justify-center m-4">
-                    <div className="text-center">
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                        <Upload className="h-5 w-5 text-primary" />
-                      </div>
-                      <p className="text-sm font-medium text-foreground">
-                        Déposez vos fichiers ici
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        PDF, Images, Documents
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {showDuplicateBanner && duplicateGroups.length > 0 && !showTrash && (
-                  <div className="mx-2 sm:mx-4 mt-2 p-3 bg-[#5a50ff]/5 dark:bg-[#5a50ff]/10 border border-[#5a50ff]/20 dark:border-[#5a50ff]/30 rounded-lg flex items-center gap-3">
-                    <AlertTriangle className="h-4 w-4 text-[#5a50ff] flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[#5a50ff] dark:text-[#8b83ff]">
-                        {duplicateCount} doublon{duplicateCount > 1 ? "s" : ""} détecté{duplicateCount > 1 ? "s" : ""}
-                      </p>
-                      <p className="text-xs text-[#5a50ff]/70 dark:text-[#8b83ff]/70 mt-0.5">
-                        {duplicateGroups.length} groupe{duplicateGroups.length > 1 ? "s" : ""} de fichiers identiques (même taille et type).
-                        Sélectionnez les doublons à supprimer.
-                      </p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-shrink-0 border-[#5a50ff]/30 text-[#5a50ff] hover:bg-[#5a50ff]/10 dark:border-[#5a50ff]/40 dark:text-[#8b83ff] dark:hover:bg-[#5a50ff]/20"
-                      onClick={() => {
-                        const idsToSelect = [];
-                        duplicateGroups.forEach((group) => {
-                          const sorted = [...group].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-                          sorted.slice(1).forEach((doc) => idsToSelect.push(doc.id));
-                        });
-                        setSelectedDocuments(idsToSelect);
-                      }}
-                    >
-                      <Copy className="h-3.5 w-3.5 mr-1.5" />
-                      Sélectionner les doublons
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-[#5a50ff] hover:text-[#4a40ef] flex-shrink-0"
-                      onClick={() => setShowDuplicateBanner(false)}
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                )}
-
-                {docsInitialLoading ? (
+            {/* Documents list / Trash view */}
+            <div className="flex-1 overflow-y-auto">
+              {showTrash ? (
+                /* Trash view */
+                trashInitialLoading ? (
                   <div className="space-y-2 p-2 sm:p-4">
                     {[1, 2, 3, 4, 5].map((i) => (
                       <Skeleton key={i} className="h-14 w-full rounded-lg" />
                     ))}
                   </div>
-                ) : filteredDocuments.length === 0 ? (
+                ) : trashItemsCount === 0 ? (
                   <div className="h-full min-h-[400px] flex items-center justify-center">
                     <div className="flex flex-col items-center gap-2 text-muted-foreground/60">
-                      <FileText className="h-5 w-5" />
-                      <p className="text-sm">
-                        {searchQuery ? "Aucun résultat" : "Aucun document"}
+                      <Trash2 className="h-8 w-8" />
+                      <p className="text-sm">La corbeille est vide</p>
+                      <p className="text-xs">
+                        Les éléments supprimés apparaîtront ici pendant 30 jours
                       </p>
                     </div>
                   </div>
-                ) : viewMode === "list" ? (
-                  /* Vue liste */
+                ) : (
                   <div>
                     {/* Header */}
                     <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
+                      <span className="w-6 hidden sm:block"></span>
                       <Checkbox
                         checked={
-                          selectedDocuments.length ===
-                            filteredDocuments.length &&
-                          filteredDocuments.length > 0
+                          selectedTrashFolders.length === trashFolders.length &&
+                          selectedTrashDocuments.length ===
+                            orphanTrashDocuments.length &&
+                          trashItemsCount > 0
                         }
-                        onCheckedChange={toggleSelectAll}
+                        onCheckedChange={() => {
+                          if (
+                            selectedTrashFolders.length ===
+                              trashFolders.length &&
+                            selectedTrashDocuments.length ===
+                              orphanTrashDocuments.length
+                          ) {
+                            setSelectedTrashFolders([]);
+                            setSelectedTrashDocuments([]);
+                          } else {
+                            setSelectedTrashFolders(
+                              trashFolders.map((f) => f.id),
+                            );
+                            setSelectedTrashDocuments(
+                              orphanTrashDocuments.map((d) => d.id),
+                            );
+                          }
+                        }}
                         className="h-4 w-4"
                       />
-                      <button
-                        className="flex-1 flex items-center gap-1 hover:text-foreground transition-colors text-left"
-                        onClick={() => handleSort("name")}
-                      >
-                        Nom
-                        {getSortIcon("name")}
-                      </button>
-                      <button
-                        className="w-24 hidden sm:flex items-center gap-1 justify-end hover:text-foreground transition-colors"
-                        onClick={() => handleSort("fileSize")}
-                      >
+                      <span className="flex-1">Nom</span>
+                      <span className="w-24 text-right hidden sm:block">
                         Taille
-                        {getSortIcon("fileSize")}
-                      </button>
-                      <button
-                        className="w-24 sm:w-32 hidden md:flex items-center gap-1 justify-end hover:text-foreground transition-colors"
-                        onClick={() => handleSort("createdAt")}
-                      >
-                        Date
-                        {getSortIcon("createdAt")}
-                      </button>
+                      </span>
+                      <span className="w-40 text-right hidden lg:block">
+                        Supprimé le
+                      </span>
+                      <span className="w-24 text-right hidden md:block">
+                        Jours restants
+                      </span>
                       <span className="w-8 sm:w-10"></span>
                     </div>
 
-                    {/* Documents */}
-                    <div className="divide-y">
-                      {filteredDocuments.map((doc) => (
-                        <div
-                          key={doc.id}
-                          className={cn(
-                            "flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2.5 sm:py-3 hover:bg-accent/50 transition-colors group cursor-pointer select-none",
-                            selectedDocuments.includes(doc.id) &&
-                              "bg-accent/30",
-                          )}
-                          onClick={(e) => handleDocumentClick(doc.id, e)}
-                          onDoubleClick={() => {
-                            if (canPreview(doc)) {
-                              setPreviewDocument(doc);
-                            } else {
-                              handleDownload(doc);
-                            }
-                          }}
-                        >
-                          <Checkbox
-                            checked={selectedDocuments.includes(doc.id)}
-                            onCheckedChange={() =>
-                              toggleDocumentSelection(doc.id)
-                            }
-                            onClick={(e) => e.stopPropagation()}
-                            className="h-4 w-4"
-                          />
-                          <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                            {getFileIcon(doc.mimeType, doc.fileExtension)}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5 sm:gap-2">
-                                <p className="text-sm font-normal truncate">
-                                  {doc.name}
-                                </p>
-                                {/* Badge doublon */}
-                                {duplicateDocIds.has(doc.id) && (
-                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 dark:text-[#8b83ff] flex-shrink-0">
-                                    <Copy className="h-2.5 w-2.5" />
-                                    Doublon
-                                  </span>
-                                )}
-                                {/* Tags inline - hide on mobile */}
-                                {doc.tags && doc.tags.length > 0 && (
-                                  <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
-                                    {doc.tags.slice(0, 2).map((tag) => (
-                                      <span
-                                        key={tag}
-                                        className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20"
-                                      >
-                                        {tag}
-                                      </span>
-                                    ))}
-                                    {doc.tags.length > 2 && (
-                                      <span className="text-[10px] text-muted-foreground">
-                                        +{doc.tags.length - 2}
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
-                                {/* Comments indicator */}
-                                {doc.comments && doc.comments.length > 0 && (
-                                  <div className="flex items-center gap-0.5 text-muted-foreground flex-shrink-0">
-                                    <MessageSquare className="h-3 w-3" />
-                                    <span className="text-[10px]">
-                                      {doc.comments.length}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                              {/* Show file size inline on mobile */}
-                              <p className="text-xs text-muted-foreground sm:hidden">
-                                {formatFileSize(doc.fileSize)}
-                              </p>
-                              {doc.description && (
-                                <p className="text-xs text-muted-foreground truncate hidden sm:block">
-                                  {doc.description}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          <span className="w-24 text-right text-sm text-muted-foreground hidden sm:block">
-                            {formatFileSize(doc.fileSize)}
-                          </span>
-                          <span className="w-24 sm:w-32 text-right text-sm text-muted-foreground hidden md:block">
-                            {format(new Date(doc.createdAt), "d MMM yyyy", {
-                              locale: fr,
-                            })}
-                          </span>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 sm:opacity-0 sm:group-hover:opacity-100"
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => handleOpenDetails(doc)}
-                              >
-                                <Info className="h-4 w-4 mr-2" />
-                                Détails
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => handleDownload(doc)}
-                              >
-                                <Download className="h-4 w-4 mr-2" />
-                                Télécharger
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedDocuments([doc.id]);
-                                  setSelectedFolders([]);
-                                  setShowTransferModal(true);
-                                }}
-                              >
-                                <Send className="h-4 w-4 mr-2" />
-                                Transférer
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  if (canPreview(doc)) {
-                                    setPreviewDocument(doc);
-                                  } else {
-                                    handleDownload(doc);
-                                  }
-                                }}
-                              >
-                                <Eye className="h-4 w-4 mr-2" />
-                                Aperçu
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedDocuments([doc.id]);
-                                  setShowMoveModal(true);
-                                }}
-                              >
-                                <FolderInput className="h-4 w-4 mr-2" />
-                                Déplacer
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedDocuments([doc.id]);
-                                  setShowDeleteModal(true);
-                                }}
-                                className="text-destructive focus:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Supprimer
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      ))}
-                    </div>
+                    {/* Trashed folders with their contents */}
+                    {trashFolders.map((folder) => {
+                      const docsInFolder = getDocumentsInTrashFolder(folder.id);
+                      const isExpanded = expandedTrashFolders.includes(
+                        folder.id,
+                      );
+                      const hasDocuments = docsInFolder.length > 0;
 
-                    {/* Load More Button - List View */}
-                    {hasMore && (
-                      <div className="flex justify-center py-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={loadMore}
-                          disabled={docsLoading}
-                          className="gap-2"
-                        >
-                          {docsLoading ? (
-                            <LoaderCircle className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Plus className="h-4 w-4" />
-                          )}
-                          Charger plus de documents
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  /* Vue grille */
-                  <div className="px-2 sm:px-4 py-2">
-                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4">
-                      {filteredDocuments.map((doc) => (
-                        <div
-                          key={doc.id}
-                          className={cn(
-                            "group relative border rounded-lg sm:rounded-xl p-3 sm:p-4 hover:border-[#5b4eff]/50 hover:shadow-sm transition-all cursor-pointer select-none",
-                            selectedDocuments.includes(doc.id) &&
-                              "border-[#5b4eff] bg-[#5b4eff]/5",
-                          )}
-                          onClick={(e) => handleDocumentClick(doc.id, e)}
-                          onDoubleClick={(e) => {
-                            e.stopPropagation();
-                            if (canPreview(doc)) {
-                              setPreviewDocument(doc);
-                            } else {
-                              handleDownload(doc);
-                            }
-                          }}
-                        >
-                          <div className="absolute top-2 left-2">
+                      return (
+                        <div key={`folder-${folder.id}`}>
+                          {/* Folder row */}
+                          <div
+                            className={cn(
+                              "flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2.5 sm:py-3 hover:bg-accent/50 transition-colors group border-b",
+                              selectedTrashFolders.includes(folder.id) &&
+                                "bg-accent/30",
+                            )}
+                          >
+                            {/* Expand/collapse button */}
+                            <button
+                              onClick={() =>
+                                hasDocuments &&
+                                toggleTrashFolderExpanded(folder.id)
+                              }
+                              className={cn(
+                                "w-6 h-6 flex items-center justify-center rounded hover:bg-accent hidden sm:flex",
+                                !hasDocuments && "invisible",
+                              )}
+                            >
+                              <ChevronRight
+                                className={cn(
+                                  "h-4 w-4 transition-transform",
+                                  isExpanded && "rotate-90",
+                                )}
+                              />
+                            </button>
                             <Checkbox
-                              checked={selectedDocuments.includes(doc.id)}
+                              checked={selectedTrashFolders.includes(folder.id)}
                               onCheckedChange={() =>
-                                toggleDocumentSelection(doc.id)
+                                toggleTrashFolderSelection(folder.id)
                               }
                               className="h-4 w-4"
-                              onClick={(e) => e.stopPropagation()}
                             />
-                          </div>
-                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div
+                              className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0"
+                              onClick={() =>
+                                hasDocuments &&
+                                toggleTrashFolderExpanded(folder.id)
+                              }
+                            >
+                              {isExpanded ? (
+                                <FolderOpen
+                                  className="h-4 w-4 flex-shrink-0"
+                                  style={{ color: folder.color }}
+                                />
+                              ) : (
+                                <Folder
+                                  className="h-4 w-4 flex-shrink-0"
+                                  style={{ color: folder.color }}
+                                />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-normal truncate">
+                                  {folder.name}
+                                  {hasDocuments && (
+                                    <span className="ml-2 text-xs text-muted-foreground">
+                                      ({docsInFolder.length} fichier
+                                      {docsInFolder.length > 1 ? "s" : ""})
+                                    </span>
+                                  )}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  Dossier
+                                </p>
+                              </div>
+                            </div>
+                            <span className="w-24 text-right text-sm text-muted-foreground hidden sm:block">
+                              {hasDocuments
+                                ? formatFileSize(
+                                    docsInFolder.reduce(
+                                      (acc, d) => acc + d.fileSize,
+                                      0,
+                                    ),
+                                  )
+                                : "—"}
+                            </span>
+                            <span className="w-40 text-right text-sm text-muted-foreground hidden lg:block">
+                              {format(
+                                new Date(folder.trashedAt),
+                                "d MMM yyyy HH:mm",
+                                {
+                                  locale: fr,
+                                },
+                              )}
+                            </span>
+                            <span className="w-24 text-right hidden md:block">
+                              <Badge
+                                variant={
+                                  folder.daysUntilPermanentDeletion <= 7
+                                    ? "destructive"
+                                    : "secondary"
+                                }
+                                className="text-xs"
+                              >
+                                {folder.daysUntilPermanentDeletion}j
+                              </Badge>
+                            </span>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-6 w-6 p-0"
-                                  onClick={(e) => e.stopPropagation()}
+                                  className="h-8 w-8 p-0 sm:opacity-0 sm:group-hover:opacity-100"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedTrashFolders([folder.id]);
+                                    setSelectedTrashDocuments([]);
+                                    handleRestoreItems();
+                                  }}
+                                >
+                                  <RotateCcw className="h-4 w-4 mr-2" />
+                                  Restaurer
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedTrashFolders([folder.id]);
+                                    setSelectedTrashDocuments([]);
+                                    setShowPermanentDeleteModal(true);
+                                  }}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Supprimer définitivement
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+
+                          {/* Documents inside folder (when expanded) */}
+                          {isExpanded &&
+                            docsInFolder.map((doc) => (
+                              <div
+                                key={`doc-${doc.id}`}
+                                className={cn(
+                                  "flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 sm:py-2.5 hover:bg-accent/30 transition-colors group border-b bg-muted/20",
+                                  selectedTrashDocuments.includes(doc.id) &&
+                                    "bg-accent/20",
+                                )}
+                              >
+                                <span className="w-6 hidden sm:block"></span>
+                                <span className="w-4 border-l-2 border-b-2 border-muted-foreground/30 h-4 rounded-bl-sm hidden sm:block"></span>
+                                <Checkbox
+                                  checked={selectedTrashDocuments.includes(
+                                    doc.id,
+                                  )}
+                                  onCheckedChange={() =>
+                                    toggleTrashDocumentSelection(doc.id)
+                                  }
+                                  className="h-4 w-4"
+                                />
+                                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                                  {getFileIcon(doc.mimeType, doc.fileExtension)}
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-normal truncate">
+                                      {doc.name}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground sm:hidden">
+                                      {formatFileSize(doc.fileSize)}
+                                    </p>
+                                  </div>
+                                </div>
+                                <span className="w-24 text-right text-sm text-muted-foreground hidden sm:block">
+                                  {formatFileSize(doc.fileSize)}
+                                </span>
+                                <span className="w-40 text-right text-sm text-muted-foreground hidden lg:block">
+                                  —
+                                </span>
+                                <span className="w-24 text-right hidden md:block">
+                                  —
+                                </span>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-8 w-8 p-0 sm:opacity-0 sm:group-hover:opacity-100"
+                                    >
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setSelectedTrashDocuments([doc.id]);
+                                        setSelectedTrashFolders([]);
+                                        handleRestoreItems();
+                                      }}
+                                    >
+                                      <RotateCcw className="h-4 w-4 mr-2" />
+                                      Restaurer
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setSelectedTrashDocuments([doc.id]);
+                                        setSelectedTrashFolders([]);
+                                        setShowPermanentDeleteModal(true);
+                                      }}
+                                      className="text-destructive focus:text-destructive"
+                                    >
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      Supprimer définitivement
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            ))}
+                        </div>
+                      );
+                    })}
+
+                    {/* Orphan trashed documents (not in a trashed folder) */}
+                    {orphanTrashDocuments.map((doc) => (
+                      <div
+                        key={`doc-${doc.id}`}
+                        className={cn(
+                          "flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2.5 sm:py-3 hover:bg-accent/50 transition-colors group border-b",
+                          selectedTrashDocuments.includes(doc.id) &&
+                            "bg-accent/30",
+                        )}
+                      >
+                        <span className="w-6 hidden sm:block"></span>
+                        <Checkbox
+                          checked={selectedTrashDocuments.includes(doc.id)}
+                          onCheckedChange={() =>
+                            toggleTrashDocumentSelection(doc.id)
+                          }
+                          className="h-4 w-4"
+                        />
+                        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                          {getFileIcon(doc.mimeType, doc.fileExtension)}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-normal truncate">
+                              {doc.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground sm:hidden">
+                              {formatFileSize(doc.fileSize)}
+                            </p>
+                            {doc.description && (
+                              <p className="text-xs text-muted-foreground truncate hidden sm:block">
+                                {doc.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <span className="w-24 text-right text-sm text-muted-foreground hidden sm:block">
+                          {formatFileSize(doc.fileSize)}
+                        </span>
+                        <span className="w-40 text-right text-sm text-muted-foreground hidden lg:block">
+                          {format(new Date(doc.trashedAt), "d MMM yyyy HH:mm", {
+                            locale: fr,
+                          })}
+                        </span>
+                        <span className="w-24 text-right hidden md:block">
+                          <Badge
+                            variant={
+                              doc.daysUntilPermanentDeletion <= 7
+                                ? "destructive"
+                                : "secondary"
+                            }
+                            className="text-xs"
+                          >
+                            {doc.daysUntilPermanentDeletion}j
+                          </Badge>
+                        </span>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 sm:opacity-0 sm:group-hover:opacity-100"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedTrashDocuments([doc.id]);
+                                setSelectedTrashFolders([]);
+                                handleRestoreItems();
+                              }}
+                            >
+                              <RotateCcw className="h-4 w-4 mr-2" />
+                              Restaurer
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedTrashDocuments([doc.id]);
+                                setSelectedTrashFolders([]);
+                                setShowPermanentDeleteModal(true);
+                              }}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Supprimer définitivement
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    ))}
+                  </div>
+                )
+              ) : (
+                /* Regular documents view */
+                <>
+                  {/* Zone de drop */}
+                  {isDragActive && (
+                    <div className="absolute inset-0 z-50 bg-primary/5 border border-dashed border-primary/40 rounded-lg flex items-center justify-center m-4">
+                      <div className="text-center">
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                          <Upload className="h-5 w-5 text-primary" />
+                        </div>
+                        <p className="text-sm font-medium text-foreground">
+                          Déposez vos fichiers ici
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          PDF, Images, Documents
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {showDuplicateBanner &&
+                    duplicateGroups.length > 0 &&
+                    !showTrash && (
+                      <div className="mx-2 sm:mx-4 mt-2 p-3 bg-[#5a50ff]/5 dark:bg-[#5a50ff]/10 border border-[#5a50ff]/20 dark:border-[#5a50ff]/30 rounded-lg flex items-center gap-3">
+                        <AlertTriangle className="h-4 w-4 text-[#5a50ff] flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-[#5a50ff] dark:text-[#8b83ff]">
+                            {duplicateCount} doublon
+                            {duplicateCount > 1 ? "s" : ""} détecté
+                            {duplicateCount > 1 ? "s" : ""}
+                          </p>
+                          <p className="text-xs text-[#5a50ff]/70 dark:text-[#8b83ff]/70 mt-0.5">
+                            {duplicateGroups.length} groupe
+                            {duplicateGroups.length > 1 ? "s" : ""} de fichiers
+                            identiques (même taille et type). Sélectionnez les
+                            doublons à supprimer.
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-shrink-0 border-[#5a50ff]/30 text-[#5a50ff] hover:bg-[#5a50ff]/10 dark:border-[#5a50ff]/40 dark:text-[#8b83ff] dark:hover:bg-[#5a50ff]/20"
+                          onClick={() => {
+                            const idsToSelect = [];
+                            duplicateGroups.forEach((group) => {
+                              const sorted = [...group].sort(
+                                (a, b) =>
+                                  new Date(a.createdAt) - new Date(b.createdAt),
+                              );
+                              sorted
+                                .slice(1)
+                                .forEach((doc) => idsToSelect.push(doc.id));
+                            });
+                            setSelectedDocuments(idsToSelect);
+                          }}
+                        >
+                          <Copy className="h-3.5 w-3.5 mr-1.5" />
+                          Sélectionner les doublons
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-[#5a50ff] hover:text-[#4a40ef] flex-shrink-0"
+                          onClick={() => setShowDuplicateBanner(false)}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    )}
+
+                  {docsInitialLoading ? (
+                    <div className="space-y-2 p-2 sm:p-4">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <Skeleton key={i} className="h-14 w-full rounded-lg" />
+                      ))}
+                    </div>
+                  ) : filteredDocuments.length === 0 ? (
+                    <div className="h-full min-h-[400px] flex items-center justify-center">
+                      <div className="flex flex-col items-center gap-2 text-muted-foreground/60">
+                        <FileText className="h-5 w-5" />
+                        <p className="text-sm">
+                          {searchQuery ? "Aucun résultat" : "Aucun document"}
+                        </p>
+                      </div>
+                    </div>
+                  ) : viewMode === "list" ? (
+                    /* Vue liste */
+                    <div>
+                      {/* Header */}
+                      <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
+                        <Checkbox
+                          checked={
+                            selectedDocuments.length ===
+                              filteredDocuments.length &&
+                            filteredDocuments.length > 0
+                          }
+                          onCheckedChange={toggleSelectAll}
+                          className="h-4 w-4"
+                        />
+                        <button
+                          className="flex-1 flex items-center gap-1 hover:text-foreground transition-colors text-left"
+                          onClick={() => handleSort("name")}
+                        >
+                          Nom
+                          {getSortIcon("name")}
+                        </button>
+                        <button
+                          className="w-24 hidden sm:flex items-center gap-1 justify-end hover:text-foreground transition-colors"
+                          onClick={() => handleSort("fileSize")}
+                        >
+                          Taille
+                          {getSortIcon("fileSize")}
+                        </button>
+                        <button
+                          className="w-24 sm:w-32 hidden md:flex items-center gap-1 justify-end hover:text-foreground transition-colors"
+                          onClick={() => handleSort("createdAt")}
+                        >
+                          Date
+                          {getSortIcon("createdAt")}
+                        </button>
+                        <span className="w-8 sm:w-10"></span>
+                      </div>
+
+                      {/* Documents */}
+                      <div className="divide-y">
+                        {filteredDocuments.map((doc) => (
+                          <div
+                            key={doc.id}
+                            className={cn(
+                              "flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2.5 sm:py-3 hover:bg-accent/50 transition-colors group cursor-pointer select-none",
+                              selectedDocuments.includes(doc.id) &&
+                                "bg-accent/30",
+                            )}
+                            onClick={(e) => handleDocumentClick(doc.id, e)}
+                            onDoubleClick={() => {
+                              if (canPreview(doc)) {
+                                setPreviewDocument(doc);
+                              } else {
+                                handleDownload(doc);
+                              }
+                            }}
+                          >
+                            <Checkbox
+                              checked={selectedDocuments.includes(doc.id)}
+                              onCheckedChange={() =>
+                                toggleDocumentSelection(doc.id)
+                              }
+                              onClick={(e) => e.stopPropagation()}
+                              className="h-4 w-4"
+                            />
+                            <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                              {getFileIcon(doc.mimeType, doc.fileExtension)}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5 sm:gap-2">
+                                  <p className="text-sm font-normal truncate">
+                                    {doc.name}
+                                  </p>
+                                  {/* Badge doublon */}
+                                  {duplicateDocIds.has(doc.id) && (
+                                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 dark:text-[#8b83ff] flex-shrink-0">
+                                      <Copy className="h-2.5 w-2.5" />
+                                      Doublon
+                                    </span>
+                                  )}
+                                  {/* Tags inline - hide on mobile */}
+                                  {doc.tags && doc.tags.length > 0 && (
+                                    <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
+                                      {doc.tags.slice(0, 2).map((tag) => (
+                                        <span
+                                          key={tag}
+                                          className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20"
+                                        >
+                                          {tag}
+                                        </span>
+                                      ))}
+                                      {doc.tags.length > 2 && (
+                                        <span className="text-[10px] text-muted-foreground">
+                                          +{doc.tags.length - 2}
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                  {/* Comments indicator */}
+                                  {doc.comments && doc.comments.length > 0 && (
+                                    <div className="flex items-center gap-0.5 text-muted-foreground flex-shrink-0">
+                                      <MessageSquare className="h-3 w-3" />
+                                      <span className="text-[10px]">
+                                        {doc.comments.length}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                                {/* Show file size inline on mobile */}
+                                <p className="text-xs text-muted-foreground sm:hidden">
+                                  {formatFileSize(doc.fileSize)}
+                                </p>
+                                {doc.description && (
+                                  <p className="text-xs text-muted-foreground truncate hidden sm:block">
+                                    {doc.description}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <span className="w-24 text-right text-sm text-muted-foreground hidden sm:block">
+                              {formatFileSize(doc.fileSize)}
+                            </span>
+                            <span className="w-24 sm:w-32 text-right text-sm text-muted-foreground hidden md:block">
+                              {format(new Date(doc.createdAt), "d MMM yyyy", {
+                                locale: fr,
+                              })}
+                            </span>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 sm:opacity-0 sm:group-hover:opacity-100"
                                 >
                                   <MoreHorizontal className="h-4 w-4" />
                                 </Button>
@@ -3114,13 +3208,35 @@ export default function DocumentsPartagesPage() {
                                   <Send className="h-4 w-4 mr-2" />
                                   Transférer
                                 </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    if (canPreview(doc)) {
+                                      setPreviewDocument(doc);
+                                    } else {
+                                      handleDownload(doc);
+                                    }
+                                  }}
+                                >
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  Aperçu
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedDocuments([doc.id]);
+                                    setShowMoveModal(true);
+                                  }}
+                                >
+                                  <FolderInput className="h-4 w-4 mr-2" />
+                                  Déplacer
+                                </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   onClick={() => {
                                     setSelectedDocuments([doc.id]);
                                     setShowDeleteModal(true);
                                   }}
-                                  className="text-destructive"
+                                  className="text-destructive focus:text-destructive"
                                 >
                                   <Trash2 className="h-4 w-4 mr-2" />
                                   Supprimer
@@ -3128,1446 +3244,1660 @@ export default function DocumentsPartagesPage() {
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
-                          <div className="flex flex-col items-center pt-4">
-                            <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center mb-3 relative overflow-hidden">
-                              {doc.mimeType?.startsWith("image/") ? (
-                                <img
-                                  src={getPreviewUrl(doc.id) || doc.fileUrl}
-                                  alt={doc.name}
-                                  loading="lazy"
-                                  className="w-full h-full object-cover rounded-lg"
-                                />
-                              ) : (
-                                getFileIcon(doc.mimeType, doc.fileExtension)
+                        ))}
+                      </div>
+
+                      {/* Load More Button - List View */}
+                      {hasMore && (
+                        <div className="flex justify-center py-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={loadMore}
+                            disabled={docsLoading}
+                            className="gap-2"
+                          >
+                            {docsLoading ? (
+                              <LoaderCircle className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Plus className="h-4 w-4" />
+                            )}
+                            Charger plus de documents
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    /* Vue grille */
+                    <div className="px-2 sm:px-4 py-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4">
+                        {filteredDocuments.map((doc) => (
+                          <div
+                            key={doc.id}
+                            className={cn(
+                              "group relative border rounded-lg sm:rounded-xl p-3 sm:p-4 hover:border-[#5b4eff]/50 hover:shadow-sm transition-all cursor-pointer select-none",
+                              selectedDocuments.includes(doc.id) &&
+                                "border-[#5b4eff] bg-[#5b4eff]/5",
+                            )}
+                            onClick={(e) => handleDocumentClick(doc.id, e)}
+                            onDoubleClick={(e) => {
+                              e.stopPropagation();
+                              if (canPreview(doc)) {
+                                setPreviewDocument(doc);
+                              } else {
+                                handleDownload(doc);
+                              }
+                            }}
+                          >
+                            <div className="absolute top-2 left-2">
+                              <Checkbox
+                                checked={selectedDocuments.includes(doc.id)}
+                                onCheckedChange={() =>
+                                  toggleDocumentSelection(doc.id)
+                                }
+                                className="h-4 w-4"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            </div>
+                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    onClick={() => handleOpenDetails(doc)}
+                                  >
+                                    <Info className="h-4 w-4 mr-2" />
+                                    Détails
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => handleDownload(doc)}
+                                  >
+                                    <Download className="h-4 w-4 mr-2" />
+                                    Télécharger
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setSelectedDocuments([doc.id]);
+                                      setSelectedFolders([]);
+                                      setShowTransferModal(true);
+                                    }}
+                                  >
+                                    <Send className="h-4 w-4 mr-2" />
+                                    Transférer
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setSelectedDocuments([doc.id]);
+                                      setShowDeleteModal(true);
+                                    }}
+                                    className="text-destructive"
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Supprimer
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                            <div className="flex flex-col items-center pt-4">
+                              <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center mb-3 relative overflow-hidden">
+                                {doc.mimeType?.startsWith("image/") ? (
+                                  <img
+                                    src={getPreviewUrl(doc.id) || doc.fileUrl}
+                                    alt={doc.name}
+                                    loading="lazy"
+                                    className="w-full h-full object-cover rounded-lg"
+                                  />
+                                ) : (
+                                  getFileIcon(doc.mimeType, doc.fileExtension)
+                                )}
+                                {/* Comments/Tags indicator on grid card */}
+                                {((doc.tags && doc.tags.length > 0) ||
+                                  (doc.comments &&
+                                    doc.comments.length > 0)) && (
+                                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-[#5b4eff] rounded-full flex items-center justify-center">
+                                    <span className="text-[8px] text-white font-medium">
+                                      {(doc.tags?.length || 0) +
+                                        (doc.comments?.length || 0)}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                              <p className="text-sm font-medium text-center truncate w-full">
+                                {doc.name}
+                              </p>
+                              {duplicateDocIds.has(doc.id) && (
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 dark:text-[#8b83ff] mt-1">
+                                  <Copy className="h-2.5 w-2.5" />
+                                  Doublon
+                                </span>
                               )}
-                              {/* Comments/Tags indicator on grid card */}
-                              {((doc.tags && doc.tags.length > 0) ||
-                                (doc.comments && doc.comments.length > 0)) && (
-                                <div className="absolute -top-1 -right-1 w-4 h-4 bg-[#5b4eff] rounded-full flex items-center justify-center">
-                                  <span className="text-[8px] text-white font-medium">
-                                    {(doc.tags?.length || 0) +
-                                      (doc.comments?.length || 0)}
-                                  </span>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {formatFileSize(doc.fileSize)}
+                              </p>
+                              {/* Tags on grid */}
+                              {doc.tags && doc.tags.length > 0 && (
+                                <div className="flex flex-wrap justify-center gap-1 mt-1.5">
+                                  {doc.tags.slice(0, 2).map((tag) => (
+                                    <span
+                                      key={tag}
+                                      className="inline-flex items-center px-1 py-0 rounded text-[9px] font-medium bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20"
+                                    >
+                                      {tag}
+                                    </span>
+                                  ))}
                                 </div>
                               )}
                             </div>
-                            <p className="text-sm font-medium text-center truncate w-full">
-                              {doc.name}
-                            </p>
-                            {duplicateDocIds.has(doc.id) && (
-                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 dark:text-[#8b83ff] mt-1">
-                                <Copy className="h-2.5 w-2.5" />
-                                Doublon
-                              </span>
-                            )}
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {formatFileSize(doc.fileSize)}
-                            </p>
-                            {/* Tags on grid */}
-                            {doc.tags && doc.tags.length > 0 && (
-                              <div className="flex flex-wrap justify-center gap-1 mt-1.5">
-                                {doc.tags.slice(0, 2).map((tag) => (
-                                  <span
-                                    key={tag}
-                                    className="inline-flex items-center px-1 py-0 rounded text-[9px] font-medium bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20"
-                                  >
-                                    {tag}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
                           </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Load More Button - Grid View */}
-                    {hasMore && (
-                      <div className="flex justify-center py-4 col-span-full">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={loadMore}
-                          disabled={docsLoading}
-                          className="gap-2"
-                        >
-                          {docsLoading ? (
-                            <LoaderCircle className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Plus className="h-4 w-4" />
-                          )}
-                          Charger plus de documents
-                        </Button>
+                        ))}
                       </div>
-                    )}
-                  </div>
-                )}
-              </>
-            )}
+
+                      {/* Load More Button - Grid View */}
+                      {hasMore && (
+                        <div className="flex justify-center py-4 col-span-full">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={loadMore}
+                            disabled={docsLoading}
+                            className="gap-2"
+                          >
+                            {docsLoading ? (
+                              <LoaderCircle className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Plus className="h-4 w-4" />
+                            )}
+                            Charger plus de documents
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Modal nouveau dossier */}
-      <Dialog
-        open={showNewFolderModal}
-        onOpenChange={(open) => {
-          setShowNewFolderModal(open);
-          if (!open) {
-            setNewFolderName("");
-            setNewFolderParentId(null);
-            setNewFolderVisibility("public");
-            setNewFolderAllowedUserIds([]);
-          }
-        }}
-      >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Nouveau dossier</DialogTitle>
-            <DialogDescription>
-              {newFolderParentId ? (
-                <>
-                  Créer un sous-dossier dans{" "}
-                  <span className="font-medium text-foreground">
-                    {folders.find((f) => f.id === newFolderParentId)?.name ||
-                      "dossier sélectionné"}
-                  </span>
-                </>
-              ) : (
-                "Créez un dossier pour organiser vos documents"
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-3">
-            {newFolderParentId && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 px-3 py-2 rounded-md">
-                <FolderClosed className="h-4 w-4" />
-                <span>
-                  Dans : {folders.find((f) => f.id === newFolderParentId)?.name}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-5 w-5 p-0 ml-auto"
-                  onClick={() => setNewFolderParentId(null)}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </div>
-            )}
-            <Input
-              placeholder="Nom du dossier"
-              value={newFolderName}
-              onChange={(e) => setNewFolderName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleCreateFolder()}
-              autoFocus
-            />
-
-            {/* Visibilité */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Visibilité</Label>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant={newFolderVisibility === "public" ? "default" : "outline"}
-                  size="sm"
-                  className={newFolderVisibility === "public" ? "bg-[#5b4eff] hover:bg-[#4a3ecc]" : ""}
-                  onClick={() => {
-                    setNewFolderVisibility("public");
-                    setNewFolderAllowedUserIds([]);
-                  }}
-                >
-                  <Globe className="size-4 mr-1.5" />
-                  Public
-                </Button>
-                <Button
-                  type="button"
-                  variant={newFolderVisibility === "private" ? "default" : "outline"}
-                  size="sm"
-                  className={newFolderVisibility === "private" ? "bg-[#5b4eff] hover:bg-[#4a3ecc]" : ""}
-                  onClick={() => setNewFolderVisibility("private")}
-                >
-                  <Lock className="size-4 mr-1.5" />
-                  Privé
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {newFolderVisibility === "public"
-                  ? "Visible par tous les membres du workspace."
-                  : "Visible uniquement par vous et les membres sélectionnés."}
-              </p>
-            </div>
-
-            {newFolderVisibility === "private" && (
-              <MemberSelector
-                selectedMembers={newFolderAllowedUserIds}
-                onMembersChange={setNewFolderAllowedUserIds}
-              />
-            )}
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowNewFolderModal(false)}
-            >
-              Annuler
-            </Button>
-            <Button
-              onClick={handleCreateFolder}
-              disabled={!newFolderName.trim() || createFolderLoading}
-              className="bg-[#5b4eff] hover:bg-[#4a3ecc]"
-            >
-              {createFolderLoading ? (
-                <LoaderCircle className="h-4 w-4 animate-spin" />
-              ) : (
-                "Créer"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal visibilité */}
-      <Dialog
-        open={showVisibilityModal}
-        onOpenChange={(open) => {
-          setShowVisibilityModal(open);
-          if (!open) {
-            setFolderToEditVisibility(null);
-            setEditVisibility("public");
-            setEditAllowedUserIds([]);
-          }
-        }}
-      >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Gérer la visibilité</DialogTitle>
-            <DialogDescription>
-              {folderToEditVisibility && (
-                <>
-                  Modifier la visibilité du dossier{" "}
-                  <span className="font-medium text-foreground">
-                    {folderToEditVisibility.name}
-                  </span>
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-3">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Visibilité</Label>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant={editVisibility === "public" ? "default" : "outline"}
-                  size="sm"
-                  className={editVisibility === "public" ? "bg-[#5b4eff] hover:bg-[#4a3ecc]" : ""}
-                  onClick={() => {
-                    setEditVisibility("public");
-                    setEditAllowedUserIds([]);
-                  }}
-                >
-                  <Globe className="size-4 mr-1.5" />
-                  Public
-                </Button>
-                <Button
-                  type="button"
-                  variant={editVisibility === "private" ? "default" : "outline"}
-                  size="sm"
-                  className={editVisibility === "private" ? "bg-[#5b4eff] hover:bg-[#4a3ecc]" : ""}
-                  onClick={() => setEditVisibility("private")}
-                >
-                  <Lock className="size-4 mr-1.5" />
-                  Privé
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {editVisibility === "public"
-                  ? "Visible par tous les membres du workspace."
-                  : "Visible uniquement par vous et les membres sélectionnés."}
-              </p>
-            </div>
-
-            {editVisibility === "private" && (
-              <MemberSelector
-                selectedMembers={editAllowedUserIds}
-                onMembersChange={setEditAllowedUserIds}
-              />
-            )}
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowVisibilityModal(false)}
-            >
-              Annuler
-            </Button>
-            <Button
-              onClick={async () => {
-                if (!folderToEditVisibility) return;
-                try {
-                  await updateVisibility(
-                    folderToEditVisibility.id,
-                    editVisibility,
-                    editVisibility === "private" ? editAllowedUserIds : [],
-                  );
-                  setShowVisibilityModal(false);
-                  setFolderToEditVisibility(null);
-                  refetchFolders();
-                } catch (error) {
-                  console.error("Erreur mise à jour visibilité:", error);
-                }
-              }}
-              disabled={updateVisibilityLoading}
-              className="bg-[#5b4eff] hover:bg-[#4a3ecc]"
-            >
-              {updateVisibilityLoading ? (
-                <LoaderCircle className="h-4 w-4 animate-spin" />
-              ) : (
-                "Enregistrer"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal déplacer */}
-      <Dialog open={showMoveModal} onOpenChange={setShowMoveModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Déplacer vers</DialogTitle>
-            <DialogDescription>
-              Sélectionnez le dossier de destination
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-1">
-            <button
-              onClick={() => handleMoveDocuments(null)}
-              disabled={moveLoading}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent transition-colors"
-            >
-              <Inbox className="h-4 w-4" />
-              <span>Documents à classer</span>
-            </button>
-            {(() => {
-              // Filtrer les dossiers supprimés (sécurité côté frontend)
-              const activeFolders = folders.filter(f => !f.trashedAt);
-              // Construire l'arbre de dossiers
-              const childrenMap = {};
-              activeFolders.forEach((f) => {
-                const pid = f.parentId || 'root';
-                if (!childrenMap[pid]) childrenMap[pid] = [];
-                childrenMap[pid].push(f);
-              });
-              Object.values(childrenMap).forEach((children) => {
-                children.sort((a, b) => (a.order || 0) - (b.order || 0));
-              });
-              const treeItems = [];
-              function traverse(parentId, depth, ancestorHasMore) {
-                const children = childrenMap[parentId] || [];
-                children.forEach((folder, index) => {
-                  const isLast = index === children.length - 1;
-                  treeItems.push({ ...folder, depth, isLast, guides: [...ancestorHasMore] });
-                  traverse(folder.id, depth + 1, [...ancestorHasMore, !isLast]);
-                });
-              }
-              traverse('root', 0, []);
-
-              return treeItems.map((folder) => {
-                // Générer le préfixe arborescence
-                let prefix = '';
-                for (let i = 0; i < folder.guides.length; i++) {
-                  if (i === folder.guides.length - 1) {
-                    prefix += folder.isLast ? '└─ ' : '├─ ';
-                  } else {
-                    prefix += folder.guides[i] ? '│  ' : '   ';
-                  }
-                }
-                return (
-                  <button
-                    key={folder.id}
-                    onClick={() => handleMoveDocuments(folder.id)}
-                    disabled={moveLoading}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent transition-colors"
-                  >
-                    {folder.depth > 0 && (
-                      <span className="text-muted-foreground font-mono text-xs whitespace-pre flex-shrink-0">
-                        {prefix}
-                      </span>
-                    )}
-                    <Folder className="h-4 w-4 flex-shrink-0" style={{ color: folder.color }} />
-                    <span className="truncate">{folder.name}</span>
-                  </button>
-                );
-              });
-            })()}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal supprimer documents (vers corbeille) */}
-      <AlertDialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Mettre à la corbeille ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {selectedDocuments.length} document(s) seront déplacé(s) vers la
-              corbeille. Vous pourrez les restaurer pendant 30 jours.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteDocuments}
-              disabled={deleteLoading}
-              className="bg-destructive hover:bg-destructive/90"
-            >
-              {deleteLoading ? (
-                <LoaderCircle className="h-4 w-4 animate-spin" />
-              ) : (
-                "Mettre à la corbeille"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Modal supprimer dossier (vers corbeille) */}
-      <AlertDialog
-        open={showDeleteFolderModal}
-        onOpenChange={setShowDeleteFolderModal}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              Mettre ce dossier à la corbeille ?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Le dossier et tous les documents qu'il contient seront déplacés
-              vers la corbeille. Vous pourrez les restaurer pendant 30 jours.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteFolder}
-              disabled={deleteFolderLoading}
-              className="bg-destructive hover:bg-destructive/90"
-            >
-              {deleteFolderLoading ? (
-                <LoaderCircle className="h-4 w-4 animate-spin" />
-              ) : (
-                "Mettre à la corbeille"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Modal gestion tags en masse */}
-      <Dialog
-        open={showBulkTagsModal}
-        onOpenChange={(open) => {
-          setShowBulkTagsModal(open);
-          if (!open) {
-            setBulkTagsToAdd("");
-            setBulkTagsToRemove([]);
-          }
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Gérer les tags</DialogTitle>
-            <DialogDescription>
-              Ajoutez ou supprimez des tags pour {selectedDocuments.length}{" "}
-              document(s) sélectionné(s)
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            {/* Ajouter des tags */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Ajouter des tags</Label>
-              <Input
-                value={bulkTagsToAdd}
-                onChange={(e) => setBulkTagsToAdd(e.target.value)}
-                placeholder="Entrez des tags séparés par des virgules"
-                className="h-9"
-              />
-              <p className="text-xs text-muted-foreground">
-                Ex: facture, 2024, important
-              </p>
-            </div>
-
-            {/* Tags existants à supprimer */}
-            {(() => {
-              // Collecter tous les tags uniques des documents sélectionnés
-              const selectedDocs = documents.filter((d) =>
-                selectedDocuments.includes(d.id),
-              );
-              const allTags = [
-                ...new Set(selectedDocs.flatMap((d) => d.tags || [])),
-              ];
-              if (allTags.length === 0) return null;
-
-              return (
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">
-                    Supprimer des tags existants
-                  </Label>
-                  <div className="flex flex-wrap gap-2">
-                    {allTags.map((tag) => (
-                      <Badge
-                        key={tag}
-                        variant={
-                          bulkTagsToRemove.includes(tag)
-                            ? "destructive"
-                            : "secondary"
-                        }
-                        className="cursor-pointer"
-                        onClick={() => {
-                          setBulkTagsToRemove((prev) =>
-                            prev.includes(tag)
-                              ? prev.filter((t) => t !== tag)
-                              : [...prev, tag],
-                          );
-                        }}
-                      >
-                        {tag}
-                        {bulkTagsToRemove.includes(tag) && (
-                          <X className="ml-1 h-3 w-3" />
-                        )}
-                      </Badge>
-                    ))}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Cliquez sur un tag pour le marquer à supprimer
-                  </p>
-                </div>
-              );
-            })()}
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowBulkTagsModal(false)}
-            >
-              Annuler
-            </Button>
-            <Button
-              onClick={async () => {
-                const addTags = bulkTagsToAdd
-                  .split(",")
-                  .map((t) => t.trim())
-                  .filter((t) => t.length > 0);
-                const removeTags = bulkTagsToRemove;
-
-                if (addTags.length === 0 && removeTags.length === 0) {
-                  toast.error("Veuillez ajouter ou supprimer au moins un tag");
-                  return;
-                }
-
-                try {
-                  await bulkUpdateTags(selectedDocuments, {
-                    addTags: addTags.length > 0 ? addTags : undefined,
-                    removeTags: removeTags.length > 0 ? removeTags : undefined,
-                  });
-                  setShowBulkTagsModal(false);
-                  setBulkTagsToAdd("");
-                  setBulkTagsToRemove([]);
-                  setSelectedDocuments([]);
-                  refetchDocs();
-                } catch (error) {
-                  // Error is handled by the hook
-                }
-              }}
-              disabled={bulkTagsLoading}
-            >
-              {bulkTagsLoading ? (
-                <LoaderCircle className="h-4 w-4 animate-spin mr-2" />
-              ) : null}
-              Appliquer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal renommer */}
-      <Dialog open={showRenameModal} onOpenChange={setShowRenameModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              Renommer{" "}
-              {itemToRename?.type === "folder" ? "le dossier" : "le document"}
-            </DialogTitle>
-            <DialogDescription>
-              Entrez le nouveau nom pour "{itemToRename?.name}"
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Input
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              placeholder="Nouveau nom"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && newName.trim()) {
-                  handleRename();
-                }
-              }}
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRenameModal(false)}>
-              Annuler
-            </Button>
-            <Button
-              onClick={handleRename}
-              disabled={
-                !newName.trim() ||
-                newName === itemToRename?.name ||
-                renameDocLoading ||
-                renameFolderLoading
-              }
-            >
-              {renameDocLoading || renameFolderLoading ? (
-                <LoaderCircle className="h-4 w-4 animate-spin mr-2" />
-              ) : null}
-              Renommer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Document Details Panel */}
-      <Dialog
-        open={showDetailsPanel}
-        onOpenChange={(open) => {
-          setShowDetailsPanel(open);
-          if (!open) {
-            setSelectedDocumentDetails(null);
-            setNewTag("");
-          }
-        }}
-      >
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              {selectedDocumentDetails &&
-                getFileIcon(
-                  selectedDocumentDetails.mimeType,
-                  selectedDocumentDetails.fileExtension,
-                  "size-5",
-                )}
-              <span className="truncate">{selectedDocumentDetails?.name}</span>
-            </DialogTitle>
-            <DialogDescription>
-              Détails et métadonnées du document
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedDocumentDetails && (
-            <div className="space-y-4 py-2">
-              {/* File Info */}
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <File className="h-4 w-4" />
-                  <span>Taille</span>
-                </div>
-                <div>{formatFileSize(selectedDocumentDetails.fileSize)}</div>
-
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Calendar className="h-4 w-4" />
-                  <span>Ajouté le</span>
-                </div>
-                <div>
-                  {format(
-                    new Date(selectedDocumentDetails.createdAt),
-                    "d MMMM yyyy à HH:mm",
-                    { locale: fr },
-                  )}
-                </div>
-
-                {selectedDocumentDetails.uploadedByName && (
+        {/* Modal nouveau dossier */}
+        <Dialog
+          open={showNewFolderModal}
+          onOpenChange={(open) => {
+            setShowNewFolderModal(open);
+            if (!open) {
+              setNewFolderName("");
+              setNewFolderParentId(null);
+              setNewFolderVisibility("public");
+              setNewFolderAllowedUserIds([]);
+            }
+          }}
+        >
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Nouveau dossier</DialogTitle>
+              <DialogDescription>
+                {newFolderParentId ? (
                   <>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <User className="h-4 w-4" />
-                      <span>Par</span>
-                    </div>
-                    <div>{selectedDocumentDetails.uploadedByName}</div>
-                  </>
-                )}
-              </div>
-
-              <Separator />
-
-              {/* Tags Section */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <Tag className="h-4 w-4" />
-                  Tags
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {(selectedDocumentDetails.tags || []).length > 0 ? (
-                    (selectedDocumentDetails.tags || []).map((tag) => (
-                      <Badge
-                        key={tag}
-                        variant="secondary"
-                        className="gap-1 pr-1"
-                      >
-                        {tag}
-                        <button
-                          onClick={() => handleRemoveTag(tag)}
-                          className="ml-1 hover:text-destructive transition-colors"
-                          disabled={updateDocLoading}
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ))
-                  ) : (
-                    <span className="text-xs text-muted-foreground">
-                      Aucun tag
+                    Créer un sous-dossier dans{" "}
+                    <span className="font-medium text-foreground">
+                      {folders.find((f) => f.id === newFolderParentId)?.name ||
+                        "dossier sélectionné"}
                     </span>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Ajouter un tag..."
-                    value={newTag}
-                    onChange={(e) => setNewTag(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleAddTag()}
-                    className="h-8 text-sm"
-                  />
+                  </>
+                ) : (
+                  "Créez un dossier pour organiser vos documents"
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 space-y-3">
+              {newFolderParentId && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 px-3 py-2 rounded-md">
+                  <FolderClosed className="h-4 w-4" />
+                  <span>
+                    Dans :{" "}
+                    {folders.find((f) => f.id === newFolderParentId)?.name}
+                  </span>
                   <Button
+                    variant="ghost"
                     size="sm"
-                    onClick={handleAddTag}
-                    disabled={!newTag.trim() || updateDocLoading}
-                    className="h-8"
+                    className="h-5 w-5 p-0 ml-auto"
+                    onClick={() => setNewFolderParentId(null)}
                   >
-                    {updateDocLoading ? (
-                      <LoaderCircle className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Plus className="h-3 w-3" />
-                    )}
+                    <X className="h-3 w-3" />
                   </Button>
                 </div>
+              )}
+              <Input
+                placeholder="Nom du dossier"
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleCreateFolder()}
+                autoFocus
+              />
+
+              {/* Visibilité */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Visibilité</Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={
+                      newFolderVisibility === "public" ? "default" : "outline"
+                    }
+                    size="sm"
+                    className={
+                      newFolderVisibility === "public"
+                        ? "bg-[#5b4eff] hover:bg-[#4a3ecc]"
+                        : ""
+                    }
+                    onClick={() => {
+                      setNewFolderVisibility("public");
+                      setNewFolderAllowedUserIds([]);
+                    }}
+                  >
+                    <Globe className="size-4 mr-1.5" />
+                    Public
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={
+                      newFolderVisibility === "private" ? "default" : "outline"
+                    }
+                    size="sm"
+                    className={
+                      newFolderVisibility === "private"
+                        ? "bg-[#5b4eff] hover:bg-[#4a3ecc]"
+                        : ""
+                    }
+                    onClick={() => setNewFolderVisibility("private")}
+                  >
+                    <Lock className="size-4 mr-1.5" />
+                    Privé
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {newFolderVisibility === "public"
+                    ? "Visible par tous les membres du workspace."
+                    : "Visible uniquement par vous et les membres sélectionnés."}
+                </p>
               </div>
 
-              <Separator />
+              {newFolderVisibility === "private" && (
+                <MemberSelector
+                  selectedMembers={newFolderAllowedUserIds}
+                  onMembersChange={setNewFolderAllowedUserIds}
+                />
+              )}
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowNewFolderModal(false)}
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={handleCreateFolder}
+                disabled={!newFolderName.trim() || createFolderLoading}
+                className="bg-[#5b4eff] hover:bg-[#4a3ecc]"
+              >
+                {createFolderLoading ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Créer"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-              {/* Comments Section */}
+        {/* Modal visibilité */}
+        <Dialog
+          open={showVisibilityModal}
+          onOpenChange={(open) => {
+            setShowVisibilityModal(open);
+            if (!open) {
+              setFolderToEditVisibility(null);
+              setEditVisibility("public");
+              setEditAllowedUserIds([]);
+            }
+          }}
+        >
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Gérer la visibilité</DialogTitle>
+              <DialogDescription>
+                {folderToEditVisibility && (
+                  <>
+                    Modifier la visibilité du dossier{" "}
+                    <span className="font-medium text-foreground">
+                      {folderToEditVisibility.name}
+                    </span>
+                  </>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 space-y-3">
               <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <MessageSquare className="h-4 w-4" />
-                  Commentaires
-                  {(selectedDocumentDetails.comments || []).length > 0 && (
-                    <Badge variant="secondary" className="text-xs">
-                      {selectedDocumentDetails.comments.length}
-                    </Badge>
-                  )}
+                <Label className="text-sm font-medium">Visibilité</Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={
+                      editVisibility === "public" ? "default" : "outline"
+                    }
+                    size="sm"
+                    className={
+                      editVisibility === "public"
+                        ? "bg-[#5b4eff] hover:bg-[#4a3ecc]"
+                        : ""
+                    }
+                    onClick={() => {
+                      setEditVisibility("public");
+                      setEditAllowedUserIds([]);
+                    }}
+                  >
+                    <Globe className="size-4 mr-1.5" />
+                    Public
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={
+                      editVisibility === "private" ? "default" : "outline"
+                    }
+                    size="sm"
+                    className={
+                      editVisibility === "private"
+                        ? "bg-[#5b4eff] hover:bg-[#4a3ecc]"
+                        : ""
+                    }
+                    onClick={() => setEditVisibility("private")}
+                  >
+                    <Lock className="size-4 mr-1.5" />
+                    Privé
+                  </Button>
                 </div>
-                <ScrollArea className="max-h-40">
-                  {(selectedDocumentDetails.comments || []).length > 0 ? (
-                    <div className="space-y-2">
-                      {selectedDocumentDetails.comments.map((comment, idx) => (
-                        <div
-                          key={idx}
-                          className="bg-muted/50 rounded-lg p-3 text-sm"
+                <p className="text-xs text-muted-foreground">
+                  {editVisibility === "public"
+                    ? "Visible par tous les membres du workspace."
+                    : "Visible uniquement par vous et les membres sélectionnés."}
+                </p>
+              </div>
+
+              {editVisibility === "private" && (
+                <MemberSelector
+                  selectedMembers={editAllowedUserIds}
+                  onMembersChange={setEditAllowedUserIds}
+                />
+              )}
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowVisibilityModal(false)}
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={async () => {
+                  if (!folderToEditVisibility) return;
+                  try {
+                    await updateVisibility(
+                      folderToEditVisibility.id,
+                      editVisibility,
+                      editVisibility === "private" ? editAllowedUserIds : [],
+                    );
+                    setShowVisibilityModal(false);
+                    setFolderToEditVisibility(null);
+                    refetchFolders();
+                  } catch (error) {
+                    console.error("Erreur mise à jour visibilité:", error);
+                  }
+                }}
+                disabled={updateVisibilityLoading}
+                className="bg-[#5b4eff] hover:bg-[#4a3ecc]"
+              >
+                {updateVisibilityLoading ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Enregistrer"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal déplacer */}
+        <Dialog open={showMoveModal} onOpenChange={setShowMoveModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Déplacer vers</DialogTitle>
+              <DialogDescription>
+                Sélectionnez le dossier de destination
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 space-y-1 max-h-[60vh] overflow-y-auto">
+              <button
+                onClick={() => handleMoveDocuments(null)}
+                disabled={moveLoading}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent transition-colors"
+              >
+                <Inbox className="h-4 w-4" />
+                <span>Documents à classer</span>
+              </button>
+              {(() => {
+                // Filtrer les dossiers supprimés (sécurité côté frontend)
+                const activeFolders = folders.filter((f) => !f.trashedAt);
+                // Construire l'arbre de dossiers
+                const childrenMap = {};
+                activeFolders.forEach((f) => {
+                  const pid = f.parentId || "root";
+                  if (!childrenMap[pid]) childrenMap[pid] = [];
+                  childrenMap[pid].push(f);
+                });
+                Object.values(childrenMap).forEach((children) => {
+                  children.sort((a, b) => (a.order || 0) - (b.order || 0));
+                });
+                const treeItems = [];
+                function traverse(parentId, depth, ancestorHasMore) {
+                  const children = childrenMap[parentId] || [];
+                  children.forEach((folder, index) => {
+                    const isLast = index === children.length - 1;
+                    treeItems.push({
+                      ...folder,
+                      depth,
+                      isLast,
+                      guides: [...ancestorHasMore],
+                    });
+                    traverse(folder.id, depth + 1, [
+                      ...ancestorHasMore,
+                      !isLast,
+                    ]);
+                  });
+                }
+                traverse("root", 0, []);
+
+                return treeItems.map((folder) => {
+                  // Générer le préfixe arborescence
+                  let prefix = "";
+                  for (let i = 0; i < folder.guides.length; i++) {
+                    if (i === folder.guides.length - 1) {
+                      prefix += folder.isLast ? "└─ " : "├─ ";
+                    } else {
+                      prefix += folder.guides[i] ? "│  " : "   ";
+                    }
+                  }
+                  return (
+                    <button
+                      key={folder.id}
+                      onClick={() => handleMoveDocuments(folder.id)}
+                      disabled={moveLoading}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent transition-colors"
+                    >
+                      {folder.depth > 0 && (
+                        <span className="text-muted-foreground font-mono text-xs whitespace-pre flex-shrink-0">
+                          {prefix}
+                        </span>
+                      )}
+                      <Folder
+                        className="h-4 w-4 flex-shrink-0"
+                        style={{ color: folder.color }}
+                      />
+                      <span className="truncate">{folder.name}</span>
+                    </button>
+                  );
+                });
+              })()}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal supprimer documents (vers corbeille) */}
+        <AlertDialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Mettre à la corbeille ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {selectedDocuments.length} document(s) seront déplacé(s) vers la
+                corbeille. Vous pourrez les restaurer pendant 30 jours.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteDocuments}
+                disabled={deleteLoading}
+                className="bg-destructive hover:bg-destructive/90"
+              >
+                {deleteLoading ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Mettre à la corbeille"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Modal supprimer dossier (vers corbeille) */}
+        <AlertDialog
+          open={showDeleteFolderModal}
+          onOpenChange={setShowDeleteFolderModal}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Mettre ce dossier à la corbeille ?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Le dossier et tous les documents qu'il contient seront déplacés
+                vers la corbeille. Vous pourrez les restaurer pendant 30 jours.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteFolder}
+                disabled={deleteFolderLoading}
+                className="bg-destructive hover:bg-destructive/90"
+              >
+                {deleteFolderLoading ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Mettre à la corbeille"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Modal gestion tags en masse */}
+        <Dialog
+          open={showBulkTagsModal}
+          onOpenChange={(open) => {
+            setShowBulkTagsModal(open);
+            if (!open) {
+              setBulkTagsToAdd("");
+              setBulkTagsToRemove([]);
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Gérer les tags</DialogTitle>
+              <DialogDescription>
+                Ajoutez ou supprimez des tags pour {selectedDocuments.length}{" "}
+                document(s) sélectionné(s)
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              {/* Ajouter des tags */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Ajouter des tags</Label>
+                <Input
+                  value={bulkTagsToAdd}
+                  onChange={(e) => setBulkTagsToAdd(e.target.value)}
+                  placeholder="Entrez des tags séparés par des virgules"
+                  className="h-9"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Ex: facture, 2024, important
+                </p>
+              </div>
+
+              {/* Tags existants à supprimer */}
+              {(() => {
+                // Collecter tous les tags uniques des documents sélectionnés
+                const selectedDocs = documents.filter((d) =>
+                  selectedDocuments.includes(d.id),
+                );
+                const allTags = [
+                  ...new Set(selectedDocs.flatMap((d) => d.tags || [])),
+                ];
+                if (allTags.length === 0) return null;
+
+                return (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      Supprimer des tags existants
+                    </Label>
+                    <div className="flex flex-wrap gap-2">
+                      {allTags.map((tag) => (
+                        <Badge
+                          key={tag}
+                          variant={
+                            bulkTagsToRemove.includes(tag)
+                              ? "destructive"
+                              : "secondary"
+                          }
+                          className="cursor-pointer"
+                          onClick={() => {
+                            setBulkTagsToRemove((prev) =>
+                              prev.includes(tag)
+                                ? prev.filter((t) => t !== tag)
+                                : [...prev, tag],
+                            );
+                          }}
                         >
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="font-medium text-xs">
-                              {comment.authorName || "Utilisateur"}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {format(
-                                new Date(comment.createdAt),
-                                "d MMM yyyy",
-                                { locale: fr },
-                              )}
-                            </span>
-                          </div>
-                          <p className="text-muted-foreground">
-                            {comment.text}
-                          </p>
-                        </div>
+                          {tag}
+                          {bulkTagsToRemove.includes(tag) && (
+                            <X className="ml-1 h-3 w-3" />
+                          )}
+                        </Badge>
                       ))}
                     </div>
-                  ) : (
                     <p className="text-xs text-muted-foreground">
-                      Aucun commentaire
+                      Cliquez sur un tag pour le marquer à supprimer
                     </p>
-                  )}
-                </ScrollArea>
-              </div>
+                  </div>
+                );
+              })()}
             </div>
-          )}
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowBulkTagsModal(false)}
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={async () => {
+                  const addTags = bulkTagsToAdd
+                    .split(",")
+                    .map((t) => t.trim())
+                    .filter((t) => t.length > 0);
+                  const removeTags = bulkTagsToRemove;
 
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleDownload(selectedDocumentDetails)}
-              className="gap-1"
-            >
-              <Download className="h-4 w-4" />
-              Télécharger
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                const url = getPreviewUrl(selectedDocumentDetails?.id);
-                if (url) window.open(url, "_blank");
-              }}
-              className="gap-1"
-            >
-              <ExternalLink className="h-4 w-4" />
-              Ouvrir
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                  if (addTags.length === 0 && removeTags.length === 0) {
+                    toast.error(
+                      "Veuillez ajouter ou supprimer au moins un tag",
+                    );
+                    return;
+                  }
 
-      {/* Modal vider la corbeille */}
-      <AlertDialog
-        open={showEmptyTrashModal}
-        onOpenChange={setShowEmptyTrashModal}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-destructive" />
-              Vider la corbeille ?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Cette action est irréversible. Tous les éléments de la corbeille (
-              {trashFolders.length} dossier(s) contenant{" "}
-              {
-                trashDocuments.filter(
-                  (d) =>
-                    d.originalFolderId &&
-                    trashedFolderIds.includes(d.originalFolderId),
-                ).length
-              }{" "}
-              fichier(s)
-              {orphanTrashDocuments.length > 0 &&
-                ` et ${orphanTrashDocuments.length} document(s) individuels`}
-              ) seront définitivement supprimés.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleEmptyTrash}
-              disabled={emptyTrashLoading}
-              className="bg-destructive hover:bg-destructive/90"
-            >
-              {emptyTrashLoading ? (
-                <LoaderCircle className="h-4 w-4 animate-spin" />
-              ) : (
-                "Vider la corbeille"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+                  try {
+                    await bulkUpdateTags(selectedDocuments, {
+                      addTags: addTags.length > 0 ? addTags : undefined,
+                      removeTags:
+                        removeTags.length > 0 ? removeTags : undefined,
+                    });
+                    setShowBulkTagsModal(false);
+                    setBulkTagsToAdd("");
+                    setBulkTagsToRemove([]);
+                    setSelectedDocuments([]);
+                    refetchDocs();
+                  } catch (error) {
+                    // Error is handled by the hook
+                  }
+                }}
+                disabled={bulkTagsLoading}
+              >
+                {bulkTagsLoading ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                Appliquer
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-      {/* Modal suppression définitive */}
-      <AlertDialog
-        open={showPermanentDeleteModal}
-        onOpenChange={setShowPermanentDeleteModal}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-destructive" />
-              Supprimer définitivement ?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Cette action est irréversible.{" "}
-              {selectedTrashDocuments.length > 0 &&
-                `${selectedTrashDocuments.length} document(s)`}
-              {selectedTrashDocuments.length > 0 &&
-                selectedTrashFolders.length > 0 &&
-                " et "}
-              {selectedTrashFolders.length > 0 &&
-                `${selectedTrashFolders.length} dossier(s)`}{" "}
-              seront définitivement supprimé(s).
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handlePermanentDelete}
-              disabled={
-                permanentDeleteDocsLoading || permanentDeleteFoldersLoading
-              }
-              className="bg-destructive hover:bg-destructive/90"
-            >
-              {permanentDeleteDocsLoading || permanentDeleteFoldersLoading ? (
-                <LoaderCircle className="h-4 w-4 animate-spin" />
-              ) : (
-                "Supprimer définitivement"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        {/* Modal renommer */}
+        <Dialog open={showRenameModal} onOpenChange={setShowRenameModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                Renommer{" "}
+                {itemToRename?.type === "folder" ? "le dossier" : "le document"}
+              </DialogTitle>
+              <DialogDescription>
+                Entrez le nouveau nom pour "{itemToRename?.name}"
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <Input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Nouveau nom"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && newName.trim()) {
+                    handleRename();
+                  }
+                }}
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowRenameModal(false)}
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={handleRename}
+                disabled={
+                  !newName.trim() ||
+                  newName === itemToRename?.name ||
+                  renameDocLoading ||
+                  renameFolderLoading
+                }
+              >
+                {renameDocLoading || renameFolderLoading ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                Renommer
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-      {/* Modal prévisualisation de document */}
-      <Dialog
-        open={!!previewDocument}
-        onOpenChange={(open) => !open && setPreviewDocument(null)}
-      >
-        <DialogContent className="max-w-[95vw] sm:max-w-6xl h-[90vh] sm:h-[85vh] flex flex-col p-0">
-          <DialogHeader className="px-3 pt-3 pb-2 sm:px-6 sm:pt-6 sm:pb-4 border-b pr-12 sm:pr-14">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                {previewDocument &&
+        {/* Document Details Panel */}
+        <Dialog
+          open={showDetailsPanel}
+          onOpenChange={(open) => {
+            setShowDetailsPanel(open);
+            if (!open) {
+              setSelectedDocumentDetails(null);
+              setNewTag("");
+            }
+          }}
+        >
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                {selectedDocumentDetails &&
                   getFileIcon(
-                    previewDocument.mimeType,
-                    previewDocument.fileExtension,
-                    "h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0",
+                    selectedDocumentDetails.mimeType,
+                    selectedDocumentDetails.fileExtension,
+                    "size-5",
                   )}
-                <div className="min-w-0">
-                  <DialogTitle className="truncate text-sm sm:text-base font-normal">
-                    {previewDocument?.name || previewDocument?.originalName}
-                  </DialogTitle>
-                  <DialogDescription className="text-xs mt-0.5 sm:mt-1">
-                    {previewDocument &&
-                      formatFileSize(previewDocument.fileSize)}{" "}
-                    •{" "}
-                    {previewDocument &&
-                      format(
-                        new Date(previewDocument.createdAt),
-                        "dd MMM yyyy",
-                        { locale: fr },
+                <span className="truncate">
+                  {selectedDocumentDetails?.name}
+                </span>
+              </DialogTitle>
+              <DialogDescription>
+                Détails et métadonnées du document
+              </DialogDescription>
+            </DialogHeader>
+
+            {selectedDocumentDetails && (
+              <div className="space-y-4 py-2">
+                {/* File Info */}
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <File className="h-4 w-4" />
+                    <span>Taille</span>
+                  </div>
+                  <div>{formatFileSize(selectedDocumentDetails.fileSize)}</div>
+
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Calendar className="h-4 w-4" />
+                    <span>Ajouté le</span>
+                  </div>
+                  <div>
+                    {format(
+                      new Date(selectedDocumentDetails.createdAt),
+                      "d MMMM yyyy à HH:mm",
+                      { locale: fr },
+                    )}
+                  </div>
+
+                  {selectedDocumentDetails.uploadedByName && (
+                    <>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <User className="h-4 w-4" />
+                        <span>Par</span>
+                      </div>
+                      <div>{selectedDocumentDetails.uploadedByName}</div>
+                    </>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* Tags Section */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Tag className="h-4 w-4" />
+                    Tags
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(selectedDocumentDetails.tags || []).length > 0 ? (
+                      (selectedDocumentDetails.tags || []).map((tag) => (
+                        <Badge
+                          key={tag}
+                          variant="secondary"
+                          className="gap-1 pr-1"
+                        >
+                          {tag}
+                          <button
+                            onClick={() => handleRemoveTag(tag)}
+                            className="ml-1 hover:text-destructive transition-colors"
+                            disabled={updateDocLoading}
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-xs text-muted-foreground">
+                        Aucun tag
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Ajouter un tag..."
+                      value={newTag}
+                      onChange={(e) => setNewTag(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleAddTag()}
+                      className="h-8 text-sm"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={handleAddTag}
+                      disabled={!newTag.trim() || updateDocLoading}
+                      className="h-8"
+                    >
+                      {updateDocLoading ? (
+                        <LoaderCircle className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Plus className="h-3 w-3" />
                       )}
-                  </DialogDescription>
+                    </Button>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Comments Section */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <MessageSquare className="h-4 w-4" />
+                    Commentaires
+                    {(selectedDocumentDetails.comments || []).length > 0 && (
+                      <Badge variant="secondary" className="text-xs">
+                        {selectedDocumentDetails.comments.length}
+                      </Badge>
+                    )}
+                  </div>
+                  <ScrollArea className="max-h-40">
+                    {(selectedDocumentDetails.comments || []).length > 0 ? (
+                      <div className="space-y-2">
+                        {selectedDocumentDetails.comments.map(
+                          (comment, idx) => (
+                            <div
+                              key={idx}
+                              className="bg-muted/50 rounded-lg p-3 text-sm"
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="font-medium text-xs">
+                                  {comment.authorName || "Utilisateur"}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {format(
+                                    new Date(comment.createdAt),
+                                    "d MMM yyyy",
+                                    { locale: fr },
+                                  )}
+                                </span>
+                              </div>
+                              <p className="text-muted-foreground">
+                                {comment.text}
+                              </p>
+                            </div>
+                          ),
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        Aucun commentaire
+                      </p>
+                    )}
+                  </ScrollArea>
                 </div>
               </div>
-              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const url = getPreviewUrl(previewDocument?.id);
-                    if (url) window.open(url, "_blank");
-                  }}
-                  className="h-8 px-2 sm:px-3"
-                >
-                  <ExternalLink className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Ouvrir</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDownload(previewDocument)}
-                  className="h-8 px-2 sm:px-3"
-                >
-                  <Download className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Télécharger</span>
-                </Button>
-              </div>
-            </div>
-          </DialogHeader>
-          <div className="flex-1 overflow-hidden bg-muted/30">
-            {previewDocument?.mimeType?.startsWith("image/") ? (
-              <div className="h-full flex items-center justify-center p-4">
-                <img
-                  src={getPreviewUrl(previewDocument.id) || previewDocument.fileUrl}
-                  alt={previewDocument.name}
-                  className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
-                />
-              </div>
-            ) : previewDocument?.mimeType?.startsWith("video/") ? (
-              <div className="h-full flex items-center justify-center p-4">
-                <video
-                  src={getPreviewUrl(previewDocument.id) || previewDocument.fileUrl}
-                  controls
-                  className="max-h-full max-w-full rounded-lg shadow-lg"
-                >
-                  Votre navigateur ne supporte pas la lecture vidéo.
-                </video>
-              </div>
-            ) : previewDocument?.mimeType === "application/pdf" ? (
-              <iframe
-                src={getPreviewUrl(previewDocument.id) || previewDocument.fileUrl}
-                className="w-full h-full border-0"
-                title={previewDocument.name}
-              />
-            ) : (
-              <div className="h-full flex items-center justify-center">
-                <div className="text-center text-muted-foreground">
-                  <File className="h-16 w-16 mx-auto mb-4" />
-                  <p>Prévisualisation non disponible pour ce type de fichier</p>
+            )}
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleDownload(selectedDocumentDetails)}
+                className="gap-1"
+              >
+                <Download className="h-4 w-4" />
+                Télécharger
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const url = getPreviewUrl(selectedDocumentDetails?.id);
+                  if (url) window.open(url, "_blank");
+                }}
+                className="gap-1"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Ouvrir
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal vider la corbeille */}
+        <AlertDialog
+          open={showEmptyTrashModal}
+          onOpenChange={setShowEmptyTrashModal}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                Vider la corbeille ?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Cette action est irréversible. Tous les éléments de la corbeille
+                ({trashFolders.length} dossier(s) contenant{" "}
+                {
+                  trashDocuments.filter(
+                    (d) =>
+                      d.originalFolderId &&
+                      trashedFolderIds.includes(d.originalFolderId),
+                  ).length
+                }{" "}
+                fichier(s)
+                {orphanTrashDocuments.length > 0 &&
+                  ` et ${orphanTrashDocuments.length} document(s) individuels`}
+                ) seront définitivement supprimés.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleEmptyTrash}
+                disabled={emptyTrashLoading}
+                className="bg-destructive hover:bg-destructive/90"
+              >
+                {emptyTrashLoading ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Vider la corbeille"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Modal suppression définitive */}
+        <AlertDialog
+          open={showPermanentDeleteModal}
+          onOpenChange={setShowPermanentDeleteModal}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                Supprimer définitivement ?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Cette action est irréversible.{" "}
+                {selectedTrashDocuments.length > 0 &&
+                  `${selectedTrashDocuments.length} document(s)`}
+                {selectedTrashDocuments.length > 0 &&
+                  selectedTrashFolders.length > 0 &&
+                  " et "}
+                {selectedTrashFolders.length > 0 &&
+                  `${selectedTrashFolders.length} dossier(s)`}{" "}
+                seront définitivement supprimé(s).
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handlePermanentDelete}
+                disabled={
+                  permanentDeleteDocsLoading || permanentDeleteFoldersLoading
+                }
+                className="bg-destructive hover:bg-destructive/90"
+              >
+                {permanentDeleteDocsLoading || permanentDeleteFoldersLoading ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Supprimer définitivement"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Modal prévisualisation de document */}
+        <Dialog
+          open={!!previewDocument}
+          onOpenChange={(open) => !open && setPreviewDocument(null)}
+        >
+          <DialogContent className="max-w-[95vw] sm:max-w-6xl h-[90vh] sm:h-[85vh] flex flex-col p-0">
+            <DialogHeader className="px-3 pt-3 pb-2 sm:px-6 sm:pt-6 sm:pb-4 border-b pr-12 sm:pr-14">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                  {previewDocument &&
+                    getFileIcon(
+                      previewDocument.mimeType,
+                      previewDocument.fileExtension,
+                      "h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0",
+                    )}
+                  <div className="min-w-0">
+                    <DialogTitle className="truncate text-sm sm:text-base font-normal">
+                      {previewDocument?.name || previewDocument?.originalName}
+                    </DialogTitle>
+                    <DialogDescription className="text-xs mt-0.5 sm:mt-1">
+                      {previewDocument &&
+                        formatFileSize(previewDocument.fileSize)}{" "}
+                      •{" "}
+                      {previewDocument &&
+                        format(
+                          new Date(previewDocument.createdAt),
+                          "dd MMM yyyy",
+                          { locale: fr },
+                        )}
+                    </DialogDescription>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                   <Button
                     variant="outline"
-                    className="mt-4"
+                    size="sm"
                     onClick={() => {
                       const url = getPreviewUrl(previewDocument?.id);
                       if (url) window.open(url, "_blank");
                     }}
+                    className="h-8 px-2 sm:px-3"
                   >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Ouvrir dans un nouvel onglet
+                    <ExternalLink className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Ouvrir</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDownload(previewDocument)}
+                    className="h-8 px-2 sm:px-3"
+                  >
+                    <Download className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Télécharger</span>
                   </Button>
                 </div>
               </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Content area context menu */}
-      {contentContextMenu && (
-        <DropdownMenu
-          open={!!contentContextMenu}
-          onOpenChange={(open) => !open && setContentContextMenu(null)}
-        >
-          <DropdownMenuTrigger asChild>
-            <div
-              style={{
-                position: "fixed",
-                left: contentContextMenu.x,
-                top: contentContextMenu.y,
-                width: 1,
-                height: 1,
-                pointerEvents: "none",
-              }}
-            />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" side="bottom">
-            <DropdownMenuItem
-              onClick={() => {
-                setContentContextMenu(null);
-                handleZipDownload();
-              }}
-              disabled={downloadSelectionLoading || selectionInfoLoading}
-            >
-              <Package className="size-4 mr-2" />
-              {downloadSelectionLoading
-                ? "Préparation..."
-                : `Télécharger en ZIP (${totalSelectionCount})`}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                setContentContextMenu(null);
-                setShowTransferModal(true);
-              }}
-            >
-              <Send className="size-4 mr-2" />
-              {`Transférer (${totalSelectionCount})`}
-            </DropdownMenuItem>
-            {selectedDocuments.length > 0 && (
-              <>
-                <DropdownMenuItem
-                  onClick={() => {
-                    setContentContextMenu(null);
-                    setShowMoveModal(true);
-                  }}
-                >
-                  <FolderInput className="size-4 mr-2" />
-                  Déplacer
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-destructive focus:text-destructive"
-                  onClick={() => {
-                    setContentContextMenu(null);
-                    setShowDeleteModal(true);
-                  }}
-                >
-                  <Trash2 className="size-4 mr-2" />
-                  Supprimer
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
-
-      {/* ZIP Configuration Dialog */}
-      <Dialog open={showZipDialog} onOpenChange={setShowZipDialog}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Configurer le téléchargement ZIP</DialogTitle>
-            <DialogDescription>
-              Sélectionnez les sous-dossiers à inclure dans l'archive.
-            </DialogDescription>
-          </DialogHeader>
-          {zipSelectionInfo && (
-            <div className="space-y-4 max-h-[400px] overflow-y-auto">
-              {/* Folders tree */}
-              {zipSelectionInfo.folders.map((folder) => (
-                <div key={folder.id} className="space-y-1">
-                  <div className="flex items-center gap-2 py-1">
-                    <FolderClosed className="size-4 text-primary/70 shrink-0" />
-                    <span className="font-medium text-sm">{folder.name}</span>
-                    <span className="text-xs text-muted-foreground ml-auto">
-                      {folder.filesCount} fichier{folder.filesCount > 1 ? "s" : ""} — {formatFileSize(folder.totalSize)}
-                    </span>
-                  </div>
-                  {folder.subfolders.length > 0 && (
-                    <div className="ml-6 space-y-0.5">
-                      {folder.subfolders.map((sub) => (
-                        <label
-                          key={sub.id}
-                          className="flex items-center gap-2 py-1 px-2 rounded hover:bg-accent/40 cursor-pointer"
-                        >
-                          <button
-                            onClick={() => toggleSubfolderExclusion(sub.id)}
-                            className={cn(
-                              "size-4 rounded border flex items-center justify-center shrink-0 transition-colors",
-                              !excludedSubfolders.includes(sub.id)
-                                ? "bg-primary border-primary text-primary-foreground"
-                                : "border-muted-foreground/40"
-                            )}
-                          >
-                            {!excludedSubfolders.includes(sub.id) && (
-                              <Check className="size-3" strokeWidth={2.5} />
-                            )}
-                          </button>
-                          <FolderClosed className="size-3.5 text-muted-foreground/70 shrink-0" />
-                          <span className={cn(
-                            "text-sm flex-1",
-                            excludedSubfolders.includes(sub.id) && "text-muted-foreground line-through"
-                          )}>
-                            {sub.name}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {sub.filesCount} fichier{sub.filesCount > 1 ? "s" : ""} — {formatFileSize(sub.size)}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
+            </DialogHeader>
+            <div className="flex-1 overflow-hidden bg-muted/30">
+              {previewDocument?.mimeType?.startsWith("image/") ? (
+                <div className="h-full flex items-center justify-center p-4">
+                  <img
+                    src={
+                      getPreviewUrl(previewDocument.id) ||
+                      previewDocument.fileUrl
+                    }
+                    alt={previewDocument.name}
+                    className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
+                  />
                 </div>
-              ))}
-
-              {/* Individual documents */}
-              {zipSelectionInfo.documents.length > 0 && (
-                <div className="space-y-1">
-                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    Documents individuels
-                  </div>
-                  {zipSelectionInfo.documents.map((doc) => (
-                    <div
-                      key={doc.id}
-                      className="flex items-center gap-2 py-1 px-2"
-                    >
-                      <File className="size-3.5 text-muted-foreground/70 shrink-0" />
-                      <span className="text-sm truncate flex-1">{doc.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {formatFileSize(doc.size)}
-                      </span>
-                    </div>
-                  ))}
+              ) : previewDocument?.mimeType?.startsWith("video/") ? (
+                <div className="h-full flex items-center justify-center p-4">
+                  <video
+                    src={
+                      getPreviewUrl(previewDocument.id) ||
+                      previewDocument.fileUrl
+                    }
+                    controls
+                    className="max-h-full max-w-full rounded-lg shadow-lg"
+                  >
+                    Votre navigateur ne supporte pas la lecture vidéo.
+                  </video>
                 </div>
-              )}
-
-              {/* Summary */}
-              <Separator />
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Total</span>
-                <span className="font-medium">
-                  {zipSelectionInfo.totalFiles - zipSelectionInfo.folders.reduce(
-                    (sum, f) => sum + f.subfolders.filter((s) => excludedSubfolders.includes(s.id)).reduce((acc, s) => acc + s.filesCount, 0),
-                    0
-                  )} fichier(s) — {formatFileSize(
-                    zipSelectionInfo.totalSize - zipSelectionInfo.folders.reduce(
-                      (sum, f) => sum + f.subfolders.filter((s) => excludedSubfolders.includes(s.id)).reduce((acc, s) => acc + s.size, 0),
-                      0
-                    )
-                  )}
-                </span>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowZipDialog(false);
-                setZipSelectionInfo(null);
-              }}
-            >
-              Annuler
-            </Button>
-            <Button
-              onClick={handleZipDownloadConfirm}
-              disabled={downloadSelectionLoading}
-              className="bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-            >
-              {downloadSelectionLoading ? (
-                <LoaderCircle className="h-4 w-4 animate-spin mr-2" />
+              ) : previewDocument?.mimeType === "application/pdf" ? (
+                <iframe
+                  src={
+                    getPreviewUrl(previewDocument.id) || previewDocument.fileUrl
+                  }
+                  className="w-full h-full border-0"
+                  title={previewDocument.name}
+                />
               ) : (
-                <Download className="h-4 w-4 mr-2" />
-              )}
-              Télécharger
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Mobile floating action bar */}
-      {isMobile && totalSelectionCount > 0 && !showTrash && (
-        <div className="fixed bottom-4 left-4 right-4 z-50 bg-background border rounded-xl shadow-lg px-4 py-3 flex items-center justify-between gap-2">
-          <span className="text-sm font-medium">
-            {totalSelectionCount} sélectionné{totalSelectionCount > 1 ? "s" : ""}
-          </span>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleZipDownload}
-              disabled={downloadSelectionLoading || selectionInfoLoading}
-            >
-              {downloadSelectionLoading || selectionInfoLoading ? (
-                <LoaderCircle className="h-4 w-4 animate-spin" />
-              ) : (
-                <Download className="h-4 w-4" />
-              )}
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setShowTransferModal(true)}
-            >
-              <Send className="h-4 w-4" />
-            </Button>
-            {selectedDocuments.length > 0 && (
-              <>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setShowMoveModal(true)}
-                >
-                  <FolderInput className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowDeleteModal(true)}
-                  className="bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setSelectedDocuments([]);
-                setSelectedFolders([]);
-              }}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
-    </div>
-    <DocumentAutomationsModal
-      open={showAutomationsModal}
-      onOpenChange={setShowAutomationsModal}
-      onDocumentsChanged={() => { refetchFolders(); refetchDocs(); refetchAllDocs(); refetchTrash(); }}
-    />
-
-    {/* Modal de transfert depuis documents partagés */}
-    <TransferFromDocsModal
-      open={showTransferModal}
-      onOpenChange={setShowTransferModal}
-      selectedDocumentIds={selectedDocuments}
-      selectedFolderIds={selectedFolders}
-      documents={documents}
-      folders={folders}
-      allDocuments={allDocuments}
-      workspaceId={workspaceId}
-      onTransferCreated={handleTransferCreated}
-    />
-
-    {/* Dialog succès transfert avec QR code */}
-    <Dialog open={showTransferSuccessDialog} onOpenChange={setShowTransferSuccessDialog}>
-      <DialogContent className="max-w-xs p-6 gap-0">
-        <div className="flex flex-col items-center space-y-6">
-          <div className="text-center space-y-2">
-            <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-              Transfert créé
-            </DialogTitle>
-            <DialogDescription className="text-sm text-gray-500 dark:text-gray-400">
-              Scannez pour accéder aux fichiers
-            </DialogDescription>
-          </div>
-
-          <QrCode.Root value={transferLink} encoding={{ ecc: "M" }}>
-            <QrCode.Frame className="w-48 h-48 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-lg">
-              <QrCode.Pattern className="fill-gray-900 dark:fill-white" />
-            </QrCode.Frame>
-          </QrCode.Root>
-
-          <div className="text-center space-y-2">
-            <div className="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-              <ExternalLink className="w-4 h-4 flex-shrink-0" />
-              <span className="font-mono text-xs break-all">
-                {transferLink.replace(/^https?:\/\//, "")}
-              </span>
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Pointez votre caméra sur le QR code
-            </p>
-          </div>
-
-          <div className="flex gap-2 w-full">
-            <Button
-              variant="outline"
-              onClick={copyTransferLink}
-              className="flex-1 font-normal h-9 text-sm"
-            >
-              <Link2 className="w-4 h-4 mr-1.5" />
-              Copier
-            </Button>
-            <Button
-              onClick={() => {
-                openTransferLink();
-                setShowTransferSuccessDialog(false);
-              }}
-              className="flex-1 font-normal h-9 text-sm bg-[#5a50ff] hover:bg-[#5a50ff]/90"
-            >
-              <ExternalLink className="w-4 h-4 mr-1.5" />
-              Ouvrir
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-
-    {/* Modale des doublons */}
-    <Dialog open={showDuplicatesModal} onOpenChange={setShowDuplicatesModal}>
-      <DialogContent className="max-w-4xl sm:max-w-4xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Copy className="h-5 w-5 text-[#5a50ff]" />
-            Doublons détectés
-            {allDuplicateCount > 0 && (
-              <Badge variant="secondary" className="bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 dark:text-[#8b83ff]">
-                {allDuplicateCount} doublon{allDuplicateCount > 1 ? "s" : ""}
-              </Badge>
-            )}
-          </DialogTitle>
-          <DialogDescription>
-            {allDuplicateGroups.length > 0
-              ? `${allDuplicateGroups.length} groupe${allDuplicateGroups.length > 1 ? "s" : ""} de fichiers similaires (même taille et type) détecté${allDuplicateGroups.length > 1 ? "s" : ""} dans tous vos documents.`
-              : "Aucun doublon détecté dans vos documents."}
-          </DialogDescription>
-        </DialogHeader>
-
-        <ScrollArea className="flex-1 -mx-6 px-6">
-          {allDuplicateGroups.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-              <CheckCircle2 className="h-12 w-12 mb-3 text-green-500" />
-              <p className="text-sm font-medium">Aucun doublon</p>
-              <p className="text-xs mt-1">Tous vos documents sont uniques.</p>
-            </div>
-          ) : (
-            <div className="space-y-4 pb-4">
-              {allDuplicateGroups.map((group, groupIndex) => (
-                <div
-                  key={groupIndex}
-                  className="border rounded-lg overflow-hidden"
-                >
-                  <div className="bg-muted/50 px-3 py-2 flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="font-medium">
-                        {group.length} fichiers similaires
-                      </span>
-                      <span className="text-muted-foreground">
-                        · {formatFileSize(group[0]?.fileSize)} · {group[0]?.mimeType || group[0]?.fileExtension}
-                      </span>
-                    </div>
+                <div className="h-full flex items-center justify-center">
+                  <div className="text-center text-muted-foreground">
+                    <File className="h-16 w-16 mx-auto mb-4" />
+                    <p>
+                      Prévisualisation non disponible pour ce type de fichier
+                    </p>
                     <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 text-xs text-[#5a50ff] hover:text-[#4a40ef] hover:bg-[#5a50ff]/5 dark:text-[#8b83ff] dark:hover:bg-[#5a50ff]/10"
+                      variant="outline"
+                      className="mt-4"
                       onClick={() => {
-                        const sorted = [...group].sort(
-                          (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
-                        );
-                        const duplicateIds = sorted.slice(1).map((d) => d.id);
-                        setSelectedDocuments(duplicateIds);
-                        setSelectedFolders([]);
-                        setShowDuplicatesModal(false);
+                        const url = getPreviewUrl(previewDocument?.id);
+                        if (url) window.open(url, "_blank");
                       }}
                     >
-                      Sélectionner les doublons
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Ouvrir dans un nouvel onglet
                     </Button>
                   </div>
-                  <div className="divide-y">
-                    {[...group]
-                      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
-                      .map((doc, docIndex) => (
-                        <div
-                          key={doc.id}
-                          className={cn(
-                            "flex items-center gap-3 px-3 py-2 text-sm",
-                            docIndex === 0 && "bg-green-50/50 dark:bg-green-900/10",
-                          )}
-                        >
-                          {getFileIcon(doc.mimeType, doc.fileExtension, "h-4 w-4 flex-shrink-0 text-muted-foreground")}
-                          <div className="flex-1 min-w-0">
-                            <p className="truncate font-medium">{doc.originalName}</p>
-                            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                              <Folder className="h-3 w-3" />
-                              {getFolderName(doc.folderId)}
-                              <span>·</span>
-                              {format(new Date(doc.createdAt), "dd MMM yyyy", { locale: fr })}
-                            </p>
-                          </div>
-                          {docIndex === 0 && (
-                            <Badge variant="outline" className="text-[10px] h-5 border-green-300 text-green-700 dark:border-green-700 dark:text-green-400 flex-shrink-0">
-                              Original
-                            </Badge>
-                          )}
-                        </div>
-                      ))}
-                  </div>
                 </div>
-              ))}
+              )}
             </div>
-          )}
-        </ScrollArea>
+          </DialogContent>
+        </Dialog>
 
-        {allDuplicateGroups.length > 0 && (
-          <DialogFooter className="sm:justify-between gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowDuplicatesModal(false)}
-              className="font-normal"
-            >
-              Fermer
-            </Button>
-            <Button
-              variant="default"
-              className="bg-[#5a50ff] hover:bg-[#4a40ef] text-white font-normal"
-              onClick={() => {
-                const allDuplicateIds = [];
-                allDuplicateGroups.forEach((group) => {
-                  const sorted = [...group].sort(
-                    (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
-                  );
-                  sorted.slice(1).forEach((d) => allDuplicateIds.push(d.id));
-                });
-                setSelectedDocuments(allDuplicateIds);
-                setSelectedFolders([]);
-                setShowDuplicatesModal(false);
-              }}
-            >
-              Sélectionner tous les doublons ({allDuplicateCount})
-            </Button>
-          </DialogFooter>
+        {/* Content area context menu */}
+        {contentContextMenu && (
+          <DropdownMenu
+            open={!!contentContextMenu}
+            onOpenChange={(open) => !open && setContentContextMenu(null)}
+          >
+            <DropdownMenuTrigger asChild>
+              <div
+                style={{
+                  position: "fixed",
+                  left: contentContextMenu.x,
+                  top: contentContextMenu.y,
+                  width: 1,
+                  height: 1,
+                  pointerEvents: "none",
+                }}
+              />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" side="bottom">
+              <DropdownMenuItem
+                onClick={() => {
+                  setContentContextMenu(null);
+                  handleZipDownload();
+                }}
+                disabled={downloadSelectionLoading || selectionInfoLoading}
+              >
+                <Package className="size-4 mr-2" />
+                {downloadSelectionLoading
+                  ? "Préparation..."
+                  : `Télécharger en ZIP (${totalSelectionCount})`}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setContentContextMenu(null);
+                  setShowTransferModal(true);
+                }}
+              >
+                <Send className="size-4 mr-2" />
+                {`Transférer (${totalSelectionCount})`}
+              </DropdownMenuItem>
+              {selectedDocuments.length > 0 && (
+                <>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setContentContextMenu(null);
+                      setShowMoveModal(true);
+                    }}
+                  >
+                    <FolderInput className="size-4 mr-2" />
+                    Déplacer
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={() => {
+                      setContentContextMenu(null);
+                      setShowDeleteModal(true);
+                    }}
+                  >
+                    <Trash2 className="size-4 mr-2" />
+                    Supprimer
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
-      </DialogContent>
-    </Dialog>
+
+        {/* ZIP Configuration Dialog */}
+        <Dialog open={showZipDialog} onOpenChange={setShowZipDialog}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Configurer le téléchargement ZIP</DialogTitle>
+              <DialogDescription>
+                Sélectionnez les sous-dossiers à inclure dans l'archive.
+              </DialogDescription>
+            </DialogHeader>
+            {zipSelectionInfo && (
+              <div className="space-y-4 max-h-[400px] overflow-y-auto">
+                {/* Folders tree */}
+                {zipSelectionInfo.folders.map((folder) => (
+                  <div key={folder.id} className="space-y-1">
+                    <div className="flex items-center gap-2 py-1">
+                      <FolderClosed className="size-4 text-primary/70 shrink-0" />
+                      <span className="font-medium text-sm">{folder.name}</span>
+                      <span className="text-xs text-muted-foreground ml-auto">
+                        {folder.filesCount} fichier
+                        {folder.filesCount > 1 ? "s" : ""} —{" "}
+                        {formatFileSize(folder.totalSize)}
+                      </span>
+                    </div>
+                    {folder.subfolders.length > 0 && (
+                      <div className="ml-6 space-y-0.5">
+                        {folder.subfolders.map((sub) => (
+                          <label
+                            key={sub.id}
+                            className="flex items-center gap-2 py-1 px-2 rounded hover:bg-accent/40 cursor-pointer"
+                          >
+                            <button
+                              onClick={() => toggleSubfolderExclusion(sub.id)}
+                              className={cn(
+                                "size-4 rounded border flex items-center justify-center shrink-0 transition-colors",
+                                !excludedSubfolders.includes(sub.id)
+                                  ? "bg-primary border-primary text-primary-foreground"
+                                  : "border-muted-foreground/40",
+                              )}
+                            >
+                              {!excludedSubfolders.includes(sub.id) && (
+                                <Check className="size-3" strokeWidth={2.5} />
+                              )}
+                            </button>
+                            <FolderClosed className="size-3.5 text-muted-foreground/70 shrink-0" />
+                            <span
+                              className={cn(
+                                "text-sm flex-1",
+                                excludedSubfolders.includes(sub.id) &&
+                                  "text-muted-foreground line-through",
+                              )}
+                            >
+                              {sub.name}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {sub.filesCount} fichier
+                              {sub.filesCount > 1 ? "s" : ""} —{" "}
+                              {formatFileSize(sub.size)}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {/* Individual documents */}
+                {zipSelectionInfo.documents.length > 0 && (
+                  <div className="space-y-1">
+                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      Documents individuels
+                    </div>
+                    {zipSelectionInfo.documents.map((doc) => (
+                      <div
+                        key={doc.id}
+                        className="flex items-center gap-2 py-1 px-2"
+                      >
+                        <File className="size-3.5 text-muted-foreground/70 shrink-0" />
+                        <span className="text-sm truncate flex-1">
+                          {doc.name}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {formatFileSize(doc.size)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Summary */}
+                <Separator />
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Total</span>
+                  <span className="font-medium">
+                    {zipSelectionInfo.totalFiles -
+                      zipSelectionInfo.folders.reduce(
+                        (sum, f) =>
+                          sum +
+                          f.subfolders
+                            .filter((s) => excludedSubfolders.includes(s.id))
+                            .reduce((acc, s) => acc + s.filesCount, 0),
+                        0,
+                      )}{" "}
+                    fichier(s) —{" "}
+                    {formatFileSize(
+                      zipSelectionInfo.totalSize -
+                        zipSelectionInfo.folders.reduce(
+                          (sum, f) =>
+                            sum +
+                            f.subfolders
+                              .filter((s) => excludedSubfolders.includes(s.id))
+                              .reduce((acc, s) => acc + s.size, 0),
+                          0,
+                        ),
+                    )}
+                  </span>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowZipDialog(false);
+                  setZipSelectionInfo(null);
+                }}
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={handleZipDownloadConfirm}
+                disabled={downloadSelectionLoading}
+                className="bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+              >
+                {downloadSelectionLoading ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Download className="h-4 w-4 mr-2" />
+                )}
+                Télécharger
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Mobile floating action bar */}
+        {isMobile && totalSelectionCount > 0 && !showTrash && (
+          <div className="fixed bottom-4 left-4 right-4 z-50 bg-background border rounded-xl shadow-lg px-4 py-3 flex items-center justify-between gap-2">
+            <span className="text-sm font-medium">
+              {totalSelectionCount} sélectionné
+              {totalSelectionCount > 1 ? "s" : ""}
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleZipDownload}
+                disabled={downloadSelectionLoading || selectionInfoLoading}
+              >
+                {downloadSelectionLoading || selectionInfoLoading ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowTransferModal(true)}
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+              {selectedDocuments.length > 0 && (
+                <>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setShowMoveModal(true)}
+                  >
+                    <FolderInput className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowDeleteModal(true)}
+                    className="bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSelectedDocuments([]);
+                  setSelectedFolders([]);
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+      <DocumentAutomationsModal
+        open={showAutomationsModal}
+        onOpenChange={setShowAutomationsModal}
+        onDocumentsChanged={() => {
+          refetchFolders();
+          refetchDocs();
+          refetchAllDocs();
+          refetchTrash();
+        }}
+      />
+
+      {/* Modal de transfert depuis documents partagés */}
+      <TransferFromDocsModal
+        open={showTransferModal}
+        onOpenChange={setShowTransferModal}
+        selectedDocumentIds={selectedDocuments}
+        selectedFolderIds={selectedFolders}
+        documents={documents}
+        folders={folders}
+        allDocuments={allDocuments}
+        workspaceId={workspaceId}
+        onTransferCreated={handleTransferCreated}
+      />
+
+      {/* Dialog succès transfert avec QR code */}
+      <Dialog
+        open={showTransferSuccessDialog}
+        onOpenChange={setShowTransferSuccessDialog}
+      >
+        <DialogContent className="max-w-xs p-6 gap-0">
+          <div className="flex flex-col items-center space-y-6">
+            <div className="text-center space-y-2">
+              <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                Transfert créé
+              </DialogTitle>
+              <DialogDescription className="text-sm text-gray-500 dark:text-gray-400">
+                Scannez pour accéder aux fichiers
+              </DialogDescription>
+            </div>
+
+            <QrCode.Root value={transferLink} encoding={{ ecc: "M" }}>
+              <QrCode.Frame className="w-48 h-48 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-lg">
+                <QrCode.Pattern className="fill-gray-900 dark:fill-white" />
+              </QrCode.Frame>
+            </QrCode.Root>
+
+            <div className="text-center space-y-2">
+              <div className="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                <ExternalLink className="w-4 h-4 flex-shrink-0" />
+                <span className="font-mono text-xs break-all">
+                  {transferLink.replace(/^https?:\/\//, "")}
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Pointez votre caméra sur le QR code
+              </p>
+            </div>
+
+            <div className="flex gap-2 w-full">
+              <Button
+                variant="outline"
+                onClick={copyTransferLink}
+                className="flex-1 font-normal h-9 text-sm"
+              >
+                <Link2 className="w-4 h-4 mr-1.5" />
+                Copier
+              </Button>
+              <Button
+                onClick={() => {
+                  openTransferLink();
+                  setShowTransferSuccessDialog(false);
+                }}
+                className="flex-1 font-normal h-9 text-sm bg-[#5a50ff] hover:bg-[#5a50ff]/90"
+              >
+                <ExternalLink className="w-4 h-4 mr-1.5" />
+                Ouvrir
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modale des doublons */}
+      <Dialog open={showDuplicatesModal} onOpenChange={setShowDuplicatesModal}>
+        <DialogContent className="max-w-4xl sm:max-w-4xl max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Copy className="h-5 w-5 text-[#5a50ff]" />
+              Doublons détectés
+              {allDuplicateCount > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 dark:text-[#8b83ff]"
+                >
+                  {allDuplicateCount} doublon{allDuplicateCount > 1 ? "s" : ""}
+                </Badge>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              {allDuplicateGroups.length > 0
+                ? `${allDuplicateGroups.length} groupe${allDuplicateGroups.length > 1 ? "s" : ""} de fichiers similaires (même taille et type) détecté${allDuplicateGroups.length > 1 ? "s" : ""} dans tous vos documents.`
+                : "Aucun doublon détecté dans vos documents."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <ScrollArea className="flex-1 -mx-6 px-6">
+            {allDuplicateGroups.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                <CheckCircle2 className="h-12 w-12 mb-3 text-green-500" />
+                <p className="text-sm font-medium">Aucun doublon</p>
+                <p className="text-xs mt-1">Tous vos documents sont uniques.</p>
+              </div>
+            ) : (
+              <div className="space-y-4 pb-4">
+                {allDuplicateGroups.map((group, groupIndex) => (
+                  <div
+                    key={groupIndex}
+                    className="border rounded-lg overflow-hidden"
+                  >
+                    <div className="bg-muted/50 px-3 py-2 flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="font-medium">
+                          {group.length} fichiers similaires
+                        </span>
+                        <span className="text-muted-foreground">
+                          · {formatFileSize(group[0]?.fileSize)} ·{" "}
+                          {group[0]?.mimeType || group[0]?.fileExtension}
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs text-[#5a50ff] hover:text-[#4a40ef] hover:bg-[#5a50ff]/5 dark:text-[#8b83ff] dark:hover:bg-[#5a50ff]/10"
+                        onClick={() => {
+                          const sorted = [...group].sort(
+                            (a, b) =>
+                              new Date(a.createdAt) - new Date(b.createdAt),
+                          );
+                          const duplicateIds = sorted.slice(1).map((d) => d.id);
+                          setSelectedDocuments(duplicateIds);
+                          setSelectedFolders([]);
+                          setShowDuplicatesModal(false);
+                        }}
+                      >
+                        Sélectionner les doublons
+                      </Button>
+                    </div>
+                    <div className="divide-y">
+                      {[...group]
+                        .sort(
+                          (a, b) =>
+                            new Date(a.createdAt) - new Date(b.createdAt),
+                        )
+                        .map((doc, docIndex) => (
+                          <div
+                            key={doc.id}
+                            className={cn(
+                              "flex items-center gap-3 px-3 py-2 text-sm",
+                              docIndex === 0 &&
+                                "bg-green-50/50 dark:bg-green-900/10",
+                            )}
+                          >
+                            {getFileIcon(
+                              doc.mimeType,
+                              doc.fileExtension,
+                              "h-4 w-4 flex-shrink-0 text-muted-foreground",
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="truncate font-medium">
+                                {doc.originalName}
+                              </p>
+                              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                                <Folder className="h-3 w-3" />
+                                {getFolderName(doc.folderId)}
+                                <span>·</span>
+                                {format(
+                                  new Date(doc.createdAt),
+                                  "dd MMM yyyy",
+                                  { locale: fr },
+                                )}
+                              </p>
+                            </div>
+                            {docIndex === 0 && (
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] h-5 border-green-300 text-green-700 dark:border-green-700 dark:text-green-400 flex-shrink-0"
+                              >
+                                Original
+                              </Badge>
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+
+          {allDuplicateGroups.length > 0 && (
+            <DialogFooter className="sm:justify-between gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowDuplicatesModal(false)}
+                className="font-normal"
+              >
+                Fermer
+              </Button>
+              <Button
+                variant="default"
+                className="bg-[#5a50ff] hover:bg-[#4a40ef] text-white font-normal"
+                onClick={() => {
+                  const allDuplicateIds = [];
+                  allDuplicateGroups.forEach((group) => {
+                    const sorted = [...group].sort(
+                      (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+                    );
+                    sorted.slice(1).forEach((d) => allDuplicateIds.push(d.id));
+                  });
+                  setSelectedDocuments(allDuplicateIds);
+                  setSelectedFolders([]);
+                  setShowDuplicatesModal(false);
+                }}
+              >
+                Sélectionner tous les doublons ({allDuplicateCount})
+              </Button>
+            </DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

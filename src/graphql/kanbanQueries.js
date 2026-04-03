@@ -708,12 +708,14 @@ export const UPDATE_COMMENT = gql`
     $taskId: ID!
     $commentId: ID!
     $content: String!
+    $mentionedUserIds: [ID!]
     $workspaceId: ID
   ) {
     updateComment(
       taskId: $taskId
       commentId: $commentId
       content: $content
+      mentionedUserIds: $mentionedUserIds
       workspaceId: $workspaceId
     ) {
       ...TaskFields

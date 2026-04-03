@@ -39,21 +39,53 @@ export const beforeSignInHook = createAuthMiddleware(async (ctx) => {
     }
     // Sinon, logger mais ne pas bloquer la connexion
     console.error(
-      "⚠️ Impossible de vérifier le statut du compte, connexion autorisée"
+      "⚠️ Impossible de vérifier le statut du compte, connexion autorisée",
     );
   }
 });
 
-// Hook après connexion OAuth - SIMPLIFIÉ
-// ✅ La création d'organisation est gérée par databaseHooks.user.create.after
-// Ce hook sert uniquement à logger et vérifier
-export const afterOAuthHook = createAuthMiddleware(async (ctx) => {
-  // Filtrer uniquement les callbacks OAuth
+// Hook après — combine OAuth callback + nettoyage members après suppression user
+export const afterHook = createAuthMiddleware(async (ctx) => {
+  // ========================================
+  // 1. Nettoyage des members après suppression d'un user (admin/remove-user)
+  // ========================================
+  if (ctx.path === "/admin/remove-user") {
+    const userId = ctx.body?.userId;
+    if (userId) {
+      try {
+        const { getMongoDb } = await import("./mongodb");
+        const { ObjectId } = await import("mongodb");
+        const db = await getMongoDb();
+
+        // Supprimer tous les members liés à ce userId
+        // On cherche avec les deux formats (string et ObjectId) par sécurité
+        const userObjectId = new ObjectId(userId);
+        const deletedMembers = await db.collection("member").deleteMany({
+          $or: [{ userId: userObjectId }, { userId: userId }],
+        });
+
+        if (deletedMembers.deletedCount > 0) {
+          console.log(
+            `🧹 [USER DELETE] ${deletedMembers.deletedCount} member(s) orphelin(s) supprimé(s) pour userId: ${userId}`,
+          );
+        }
+      } catch (error) {
+        console.error(
+          "❌ [USER DELETE] Erreur nettoyage members orphelins:",
+          error,
+        );
+      }
+    }
+    return;
+  }
+
+  // ========================================
+  // 2. OAuth callback — vérification des organisations
+  // ========================================
   if (!ctx.path?.includes("/callback/")) {
     return;
   }
 
-  // Utiliser newSession comme nous l'avons vu dans les logs
   const newSession = ctx.context.newSession;
 
   if (newSession && newSession.user && newSession.session) {
@@ -61,10 +93,9 @@ export const afterOAuthHook = createAuthMiddleware(async (ctx) => {
     const userId = newSession.session.userId;
 
     console.log(
-      `✅ [OAuth] Connexion OAuth réussie pour ${user.email} (${userId})`
+      `✅ [OAuth] Connexion OAuth réussie pour ${user.email} (${userId})`,
     );
 
-    // ✅ Vérification uniquement (la création est gérée par user.create.after)
     try {
       const existingMemberships = await ctx.context.adapter.findMany({
         model: "member",
@@ -78,17 +109,17 @@ export const afterOAuthHook = createAuthMiddleware(async (ctx) => {
 
       if (existingMemberships && existingMemberships.length > 0) {
         console.log(
-          `✅ [OAuth] Utilisateur ${userId} a ${existingMemberships.length} organisation(s)`
+          `✅ [OAuth] Utilisateur ${userId} a ${existingMemberships.length} organisation(s)`,
         );
       } else {
         console.log(
-          `⚠️ [OAuth] Aucune organisation trouvée pour ${userId} - devrait être créée par user.create.after`
+          `⚠️ [OAuth] Aucune organisation trouvée pour ${userId} - devrait être créée par user.create.after`,
         );
       }
     } catch (checkError) {
       console.error(
         "❌ [OAuth] Erreur vérification organisations:",
-        checkError
+        checkError,
       );
     }
   }

@@ -1674,6 +1674,7 @@ export function KanbanListView({
   workspaceId,
 }) {
   const [collapsedColumns, setCollapsedColumns] = useState(new Set());
+  const [expandedEmptyColumns, setExpandedEmptyColumns] = useState(new Set());
   const [inlineAddColumnId, setInlineAddColumnId] = useState(null);
   const [isAnyPopoverOpen, setIsAnyPopoverOpen] = useState(false);
   const popoverOpenRef = useRef(false);
@@ -1740,15 +1741,29 @@ export function KanbanListView({
   };
 
   const toggleColumn = (columnId) => {
-    setCollapsedColumns((prev) => {
-      const next = new Set(prev);
-      if (next.has(columnId)) {
-        next.delete(columnId);
-      } else {
-        next.add(columnId);
-      }
-      return next;
-    });
+    const tasks = getFilteredTasksByColumn(columnId);
+    if (tasks.length === 0) {
+      // Pour les colonnes vides, gérer via expandedEmptyColumns
+      setExpandedEmptyColumns((prev) => {
+        const next = new Set(prev);
+        if (next.has(columnId)) {
+          next.delete(columnId);
+        } else {
+          next.add(columnId);
+        }
+        return next;
+      });
+    } else {
+      setCollapsedColumns((prev) => {
+        const next = new Set(prev);
+        if (next.has(columnId)) {
+          next.delete(columnId);
+        } else {
+          next.add(columnId);
+        }
+        return next;
+      });
+    }
   };
 
   // Ouvrir automatiquement une section quand on drag dessus
@@ -1756,6 +1771,11 @@ export function KanbanListView({
     setCollapsedColumns((prev) => {
       const next = new Set(prev);
       next.delete(columnId);
+      return next;
+    });
+    setExpandedEmptyColumns((prev) => {
+      const next = new Set(prev);
+      next.add(columnId);
       return next;
     });
   };
@@ -1817,7 +1837,9 @@ export function KanbanListView({
         const tasks = getFilteredTasksByColumn(column.id);
         const isCollapsed =
           collapsedColumns.has(column.id) ||
-          (tasks.length === 0 && !collapsedColumns.has(column.id));
+          (tasks.length === 0 &&
+            !expandedEmptyColumns.has(column.id) &&
+            inlineAddColumnId !== column.id);
 
         return (
           <div key={column.id} className="space-y-0">
@@ -1929,6 +1951,7 @@ export function KanbanListView({
                                   columns.map((c) => c.id),
                                 );
                                 setCollapsedColumns(allCollapsed);
+                                setExpandedEmptyColumns(new Set());
                               }}
                               className="gap-2"
                             >
@@ -2085,6 +2108,7 @@ export function KanbanListView({
                                   columns.map((c) => c.id),
                                 );
                                 setCollapsedColumns(allCollapsed);
+                                setExpandedEmptyColumns(new Set());
                               }}
                               className="gap-2"
                             >

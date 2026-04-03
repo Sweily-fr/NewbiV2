@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Clock, Euro, RotateCcw, Pencil } from "lucide-react";
+import { Clock, Euro, RotateCcw, Pencil, Play, Square } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
+import { Label } from "@/src/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -11,23 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/src/components/ui/alert-dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/src/components/ui/popover";
-import { Label } from "@/src/components/ui/label";
 
 /**
  * Timer local pour le mode création de tâche (pas de mutations serveur)
@@ -39,9 +23,8 @@ export function LocalTimerControls({ timeTracking, onTimeTrackingChange }) {
   const [currentTime, setCurrentTime] = useState(0);
   const [hourlyRate, setHourlyRate] = useState("");
   const [roundingOption, setRoundingOption] = useState("none");
-  const [manualHours, setManualHours] = useState("");
-  const [manualMinutes, setManualMinutes] = useState("");
-  const [manualPopoverOpen, setManualPopoverOpen] = useState(false);
+  const [manualInput, setManualInput] = useState("");
+  const [showManual, setShowManual] = useState(false);
   const startTimeRef = useRef(null);
 
   // Synchroniser avec les props initiales
@@ -73,8 +56,6 @@ export function LocalTimerControls({ timeTracking, onTimeTrackingChange }) {
     }
   }, [isRunning, totalSeconds]);
 
-  // Remonter les données au parent à chaque changement
-  // On passe currentStartTime pour que le parent puisse calculer le temps final à la création
   const notifyParent = (updates = {}) => {
     const data = {
       totalSeconds: updates.totalSeconds ?? totalSeconds,
@@ -96,7 +77,6 @@ export function LocalTimerControls({ timeTracking, onTimeTrackingChange }) {
 
   const handleStartStop = () => {
     if (isRunning) {
-      // Stop
       const elapsed = startTimeRef.current
         ? Math.floor((Date.now() - startTimeRef.current) / 1000)
         : 0;
@@ -110,7 +90,6 @@ export function LocalTimerControls({ timeTracking, onTimeTrackingChange }) {
         currentStartTime: null,
       });
     } else {
-      // Start
       startTimeRef.current = Date.now();
       setIsRunning(true);
       notifyParent({ isRunning: true, currentStartTime: startTimeRef.current });
@@ -125,17 +104,18 @@ export function LocalTimerControls({ timeTracking, onTimeTrackingChange }) {
     notifyParent({ totalSeconds: 0, isRunning: false, currentStartTime: null });
   };
 
-  const handleAddManualTime = () => {
-    const h = parseInt(manualHours) || 0;
-    const m = parseInt(manualMinutes) || 0;
+  const handleManualAdd = () => {
+    const match = manualInput.match(/^(\d+)h?\s*(\d*)m?$/i);
+    if (!match) return;
+    const h = parseInt(match[1]) || 0;
+    const m = parseInt(match[2]) || 0;
     const seconds = h * 3600 + m * 60;
     if (seconds <= 0) return;
 
     const newTotal = totalSeconds + seconds;
     setTotalSeconds(newTotal);
-    setManualHours("");
-    setManualMinutes("");
-    setManualPopoverOpen(false);
+    setManualInput("");
+    setShowManual(false);
     notifyParent({ totalSeconds: newTotal });
   };
 
@@ -160,6 +140,12 @@ export function LocalTimerControls({ timeTracking, onTimeTrackingChange }) {
     return `${hours}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
+  const formatShort = (s) => {
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  };
+
   const calculatePrice = () => {
     if (!hourlyRate || currentTime <= 0) return null;
     const hours = currentTime / 3600;
@@ -173,174 +159,156 @@ export function LocalTimerControls({ timeTracking, onTimeTrackingChange }) {
   const hasTime = currentTime > 0;
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <Clock className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-normal">Gestion du temps</span>
-        </div>
+    <div className="w-full">
+      {/* Header — temps total */}
+      <div className="px-4 pt-3 pb-2 flex items-center justify-between">
+        <span className="text-sm font-medium text-foreground">Temps suivi</span>
+        <span className="text-sm font-mono tabular-nums text-foreground font-semibold">
+          {formatShort(currentTime)}
+        </span>
+      </div>
 
-        {/* Bouton start/stop */}
-        <button
-          onClick={handleStartStop}
-          className={`w-5 h-5 rounded-full flex items-center justify-center transition-all flex-shrink-0 ${
-            isRunning
-              ? "bg-red-500 hover:bg-red-600 animate-pulse"
-              : "bg-gray-300 hover:bg-gray-400"
-          }`}
-          title={isRunning ? "Arrêter le timer" : "Démarrer le timer"}
-        >
-          <div
-            className={`w-2 h-2 rounded-full ${isRunning ? "bg-white" : "bg-gray-600"}`}
-          />
-        </button>
-
-        {/* Affichage du temps */}
-        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/50 rounded-md border border-border flex-shrink-0">
-          <span className="text-sm font-mono tabular-nums">
+      {/* Timer principal */}
+      <div className="px-4 pb-3">
+        <div className="flex items-center gap-2 h-10 rounded-lg border border-border bg-background px-3">
+          <span className="flex-1 text-sm font-mono tabular-nums text-foreground/80">
             {formatTime(currentTime)}
           </span>
-          {!isRunning && (
-            <Popover
-              open={manualPopoverOpen}
-              onOpenChange={setManualPopoverOpen}
-            >
-              <PopoverTrigger asChild>
-                <button
-                  className="ml-1 text-muted-foreground hover:text-blue-500 transition-colors"
-                  title="Ajouter du temps manuellement"
-                >
-                  <Pencil className="h-3 w-3" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-64" align="start">
-                <div className="space-y-3">
-                  <p className="text-sm font-medium">Ajouter du temps</p>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1">
-                      <Label
-                        htmlFor="local-manual-hours"
-                        className="text-xs text-muted-foreground"
-                      >
-                        Heures
-                      </Label>
-                      <Input
-                        id="local-manual-hours"
-                        type="number"
-                        min="0"
-                        max="99"
-                        value={manualHours}
-                        onChange={(e) => setManualHours(e.target.value)}
-                        placeholder="0"
-                        className="h-8"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <Label
-                        htmlFor="local-manual-minutes"
-                        className="text-xs text-muted-foreground"
-                      >
-                        Minutes
-                      </Label>
-                      <Input
-                        id="local-manual-minutes"
-                        type="number"
-                        min="0"
-                        max="59"
-                        value={manualMinutes}
-                        onChange={(e) => setManualMinutes(e.target.value)}
-                        placeholder="0"
-                        className="h-8"
-                      />
-                    </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    className="w-full"
-                    onClick={handleAddManualTime}
-                    disabled={!manualHours && !manualMinutes}
-                  >
-                    Ajouter
-                  </Button>
-                </div>
-              </PopoverContent>
-            </Popover>
-          )}
+          <button
+            onClick={handleStartStop}
+            className={`h-7 w-7 rounded-full flex items-center justify-center transition-all flex-shrink-0 ${
+              isRunning
+                ? "bg-red-500 hover:bg-red-600"
+                : "bg-[#5A50FF] hover:bg-[#4a42d4]"
+            }`}
+            title={isRunning ? "Arrêter" : "Démarrer"}
+          >
+            {isRunning ? (
+              <Square className="h-3 w-3 fill-white text-white" />
+            ) : (
+              <Play className="h-3 w-3 fill-white text-white ml-0.5" />
+            )}
+          </button>
         </div>
+      </div>
 
-        {/* Bouton réinitialiser */}
-        {hasTime && !isRunning && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <button
-                className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
-                title="Réinitialiser le timer"
+      {/* Séparateur */}
+      <div className="border-t border-border/40" />
+
+      {/* Ajouter manuellement */}
+      <div className="px-4 py-2.5">
+        {!showManual ? (
+          <button
+            onClick={() => setShowManual(true)}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer flex items-center gap-1.5"
+            disabled={isRunning}
+          >
+            <Pencil className="h-3 w-3" />
+            Ajouter du temps manuellement
+          </button>
+        ) : (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <input
+                value={manualInput}
+                onChange={(e) => setManualInput(e.target.value)}
+                placeholder="Ex: 1h 30m"
+                className="flex-1 h-8 rounded-md border border-input bg-background px-2.5 text-sm outline-none focus:ring-1 focus:ring-[#5A50FF]/30 focus:border-ring placeholder:text-muted-foreground/40"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleManualAdd();
+                  if (e.key === "Escape") setShowManual(false);
+                }}
+              />
+              <Button
+                size="sm"
+                className="h-8 px-3 text-xs bg-[#5A50FF] hover:bg-[#4a42d4] text-white"
+                onClick={handleManualAdd}
+                disabled={!manualInput.trim()}
               >
-                <RotateCcw className="h-3.5 w-3.5" />
-              </button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Réinitialiser le timer ?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Le temps enregistré ({formatTime(currentTime)}) sera remis à
-                  zéro. Cette action est irréversible.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleReset}
-                  className="bg-red-600 hover:bg-red-700"
-                >
-                  Réinitialiser
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
-
-        {/* Prix à l'heure */}
-        <div className="relative flex-shrink-0">
-          <Input
-            type="number"
-            min="0"
-            step="0.01"
-            value={hourlyRate}
-            onChange={(e) => handleHourlyRateChange(e.target.value)}
-            onBlur={handleHourlyRateBlur}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleHourlyRateBlur();
-            }}
-            placeholder="0.00"
-            className="w-28 sm:w-32 h-9 pr-10"
-            title="Prix à l'heure"
-          />
-          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
-            €/h
-          </span>
-        </div>
-
-        {/* Arrondi */}
-        <Select value={roundingOption} onValueChange={handleRoundingChange}>
-          <SelectTrigger className="w-32 sm:w-40 h-9 flex-shrink-0">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">Proportionnel</SelectItem>
-            <SelectItem value="up">Arrondir ↑</SelectItem>
-            <SelectItem value="down">Arrondir ↓</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* Prix estimé */}
-        {price && (
-          <div className="px-3 py-1.5 bg-muted/50 rounded-md border border-border inline-flex items-center gap-1.5 flex-shrink-0 ml-auto">
-            <Euro className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-semibold">{price}€</span>
+                Ajouter
+              </Button>
+            </div>
+            <button
+              onClick={() => setShowManual(false)}
+              className="text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            >
+              Annuler
+            </button>
           </div>
         )}
       </div>
+
+      {/* Séparateur */}
+      <div className="border-t border-border/40" />
+
+      {/* Facturation */}
+      <div className="px-4 py-2.5 space-y-2.5">
+        <div className="flex items-center gap-2">
+          <div className="flex-1">
+            <Label className="text-[11px] text-muted-foreground/60 uppercase tracking-wider">
+              Taux horaire
+            </Label>
+            <div className="relative mt-0.5">
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={hourlyRate}
+                onChange={(e) => handleHourlyRateChange(e.target.value)}
+                onBlur={handleHourlyRateBlur}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleHourlyRateBlur();
+                }}
+                placeholder="0.00"
+                className="h-8 pr-8 text-sm"
+              />
+              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground/50 pointer-events-none">
+                €/h
+              </span>
+            </div>
+          </div>
+          <div className="flex-1">
+            <Label className="text-[11px] text-muted-foreground/60 uppercase tracking-wider">
+              Arrondi
+            </Label>
+            <Select value={roundingOption} onValueChange={handleRoundingChange}>
+              <SelectTrigger className="h-8 text-sm mt-0.5">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Proportionnel</SelectItem>
+                <SelectItem value="up">Arrondir ↑</SelectItem>
+                <SelectItem value="down">Arrondir ↓</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Prix estimé */}
+        {price && (
+          <div className="flex items-center justify-between px-2.5 py-1.5 bg-muted/40 rounded-md">
+            <span className="text-xs text-muted-foreground">Estimation</span>
+            <span className="text-sm font-semibold">{price} €</span>
+          </div>
+        )}
+      </div>
+
+      {/* Reset */}
+      {hasTime && !isRunning && (
+        <>
+          <div className="border-t border-border/40" />
+          <div className="px-4 py-2">
+            <button
+              onClick={handleReset}
+              className="text-xs text-red-500 hover:text-red-600 transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              <RotateCcw className="h-3 w-3" />
+              Réinitialiser le temps
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -155,7 +155,7 @@ export function MobileSettingsModal({
           />
         );
       case "notifications":
-        return <NotificationsSection />;
+        return <NotificationsSection onClose={onClose} />;
       case "security":
         return (
           <SecuritySection
@@ -189,7 +189,6 @@ export function MobileSettingsModal({
           <h1 className="text-base font-medium text-foreground">
             {showNavigation ? "Paramètres" : currentTab?.label}
           </h1>
-
         </div>
       </div>
 
@@ -219,7 +218,9 @@ export function MobileSettingsModal({
           }`}
         >
           <div className="h-full overflow-y-auto">
-            <div className={`px-4 pt-4 ${hasSaveFooter ? "pb-24" : "pb-8"}`}>{renderContent()}</div>
+            <div className={`px-4 pt-4 ${hasSaveFooter ? "pb-24" : "pb-8"}`}>
+              {renderContent()}
+            </div>
           </div>
         </div>
       </div>

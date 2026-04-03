@@ -4,7 +4,13 @@ import { useState, useMemo, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
-import { useClient, useClients, useDeleteClient, useBlockClient, useUnblockClient } from "@/src/hooks/useClients";
+import {
+  useClient,
+  useClients,
+  useDeleteClient,
+  useBlockClient,
+  useUnblockClient,
+} from "@/src/hooks/useClients";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
 import { useQuotes } from "@/src/graphql/quoteQueries";
@@ -40,7 +46,12 @@ function ClientDetailContent() {
   const isValid = isValidObjectId(id);
 
   const { workspaceId } = useWorkspace();
-  const { client, loading: clientLoading, error: clientError } = useClient(isValid ? id : null);
+  const {
+    client,
+    loading: clientLoading,
+    error: clientError,
+    refetch: refetchClient,
+  } = useClient(isValid ? id : null);
   const { clients: allClients } = useClients(1, 1000);
   const { invoices } = useInvoices();
   const { quotes } = useQuotes();
@@ -126,6 +137,7 @@ function ClientDetailContent() {
     if (result) {
       toast.success("Rappel créé avec succès");
       setIsReminderDialogOpen(false);
+      refetchClient();
     }
   };
 
@@ -141,7 +153,9 @@ function ClientDetailContent() {
     return (
       <div className="flex flex-col items-center justify-center h-[calc(100vh-64px)] gap-4">
         <p className="text-muted-foreground">
-          {clientError ? "Erreur lors du chargement du client" : "Client introuvable"}
+          {clientError
+            ? "Erreur lors du chargement du client"
+            : "Client introuvable"}
         </p>
         <Button
           variant="outline"
@@ -184,7 +198,12 @@ function ClientDetailContent() {
           />
         </div>
 
-        <ClientDetailSidebar client={client} invoices={invoices || []} workspaceId={workspaceId} onEdit={() => setIsEditModalOpen(true)} />
+        <ClientDetailSidebar
+          client={client}
+          invoices={invoices || []}
+          workspaceId={workspaceId}
+          onEdit={() => setIsEditModalOpen(true)}
+        />
       </div>
 
       {/* Edit modal */}
@@ -210,17 +229,27 @@ function ClientDetailContent() {
       />
 
       {/* Block dialog */}
-      <AlertDialog open={isBlockDialogOpen} onOpenChange={(open) => { setIsBlockDialogOpen(open); if (!open) setBlockReason(""); }}>
+      <AlertDialog
+        open={isBlockDialogOpen}
+        onOpenChange={(open) => {
+          setIsBlockDialogOpen(open);
+          if (!open) setBlockReason("");
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Bloquer ce contact ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Le contact &quot;{client.name}&quot; sera bloqué et déplacé dans les contacts bloqués.
-              Il ne pourra plus être utilisé dans vos documents et communications.
+              Le contact &quot;{client.name}&quot; sera bloqué et déplacé dans
+              les contacts bloqués. Il ne pourra plus être utilisé dans vos
+              documents et communications.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="px-1">
-            <Label htmlFor="block-reason" className="text-sm font-medium mb-1.5 block">
+            <Label
+              htmlFor="block-reason"
+              className="text-sm font-medium mb-1.5 block"
+            >
               Raison du blocage (optionnel)
             </Label>
             <Textarea
@@ -242,13 +271,16 @@ function ClientDetailContent() {
       </AlertDialog>
 
       {/* Delete dialog */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer ce contact ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action ne peut pas être annulée. Le contact &quot;{client.name}&quot;
-              sera définitivement supprimé.
+              Cette action ne peut pas être annulée. Le contact &quot;
+              {client.name}&quot; sera définitivement supprimé.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

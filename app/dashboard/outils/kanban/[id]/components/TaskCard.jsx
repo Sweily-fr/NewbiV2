@@ -693,13 +693,9 @@ const TaskCard = memo(
                             size="xs"
                           />
                         ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-6 w-6 p-0 rounded-sm text-muted-foreground hover:text-foreground"
-                          >
+                          <span className="inline-flex items-center justify-center h-6 w-6 rounded-sm border border-input bg-background text-muted-foreground hover:text-foreground">
                             <Users className="h-3 w-3 text-[#8D8D8D]" />
-                          </Button>
+                          </span>
                         )}
                       </button>
                     </PopoverTrigger>
@@ -810,13 +806,9 @@ const TaskCard = memo(
                             }
                           })()
                         ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-6 w-6 p-0 rounded-sm text-muted-foreground hover:text-foreground"
-                          >
+                          <span className="inline-flex items-center justify-center h-6 w-6 rounded-sm border border-input bg-background text-muted-foreground hover:text-foreground">
                             <Calendar className="h-3 w-3 text-[#8D8D8D]" />
-                          </Button>
+                          </span>
                         )}
                       </button>
                     </PopoverTrigger>
@@ -911,13 +903,9 @@ const TaskCard = memo(
                             </span>
                           </Badge>
                         ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-6 w-6 p-0 rounded-sm text-muted-foreground hover:text-foreground"
-                          >
+                          <span className="inline-flex items-center justify-center h-6 w-6 rounded-sm border border-input bg-background text-muted-foreground hover:text-foreground">
                             <Flag className="h-3 w-3 text-[#8D8D8D]" />
-                          </Button>
+                          </span>
                         )}
                       </button>
                     </PopoverTrigger>
