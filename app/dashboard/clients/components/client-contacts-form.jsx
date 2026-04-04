@@ -12,6 +12,8 @@ import {
   Mail,
   Phone,
   Briefcase,
+  Building2,
+  MapPin,
   ChevronDown,
   ChevronUp,
   Copy,
@@ -28,6 +30,8 @@ export default function ClientContactsForm({
   const [expandedContact, setExpandedContact] = useState(null);
   const [newContact, setNewContact] = useState({
     position: "",
+    department: "",
+    location: "",
     firstName: "",
     lastName: "",
     email: "",
@@ -88,6 +92,8 @@ export default function ClientContactsForm({
     // Réinitialiser le formulaire
     setNewContact({
       position: "",
+      department: "",
+      location: "",
       firstName: "",
       lastName: "",
       email: "",
@@ -190,9 +196,12 @@ export default function ClientContactsForm({
                       <span className="font-medium text-sm">
                         {getContactDisplayName(contact)}
                       </span>
-                      {contact.position && (
+                      {(contact.position || contact.department) && (
                         <span className="text-xs text-muted-foreground ml-2">
-                          — {contact.position}
+                          —{" "}
+                          {[contact.position, contact.department]
+                            .filter(Boolean)
+                            .join(" · ")}
                         </span>
                       )}
                     </div>
@@ -238,7 +247,7 @@ export default function ClientContactsForm({
                     <div className="grid grid-cols-2 gap-3 pt-3">
                       <div className="space-y-1.5">
                         <Label className="text-xs font-normal text-muted-foreground">
-                          Poste
+                          Fonction
                         </Label>
                         <Input
                           value={contact.position || ""}
@@ -250,6 +259,40 @@ export default function ClientContactsForm({
                             )
                           }
                           placeholder="Ex: Directeur commercial"
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-normal text-muted-foreground">
+                          Service rattaché
+                        </Label>
+                        <Input
+                          value={contact.department || ""}
+                          onChange={(e) =>
+                            handleUpdateContact(
+                              contact.id,
+                              "department",
+                              e.target.value,
+                            )
+                          }
+                          placeholder="Ex: Direction commerciale"
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <div className="col-span-2 space-y-1.5">
+                        <Label className="text-xs font-normal text-muted-foreground">
+                          Localisation
+                        </Label>
+                        <Input
+                          value={contact.location || ""}
+                          onChange={(e) =>
+                            handleUpdateContact(
+                              contact.id,
+                              "location",
+                              e.target.value,
+                            )
+                          }
+                          placeholder="Ex: Paris, Bureau 3A"
                           className="h-8 text-sm"
                         />
                       </div>
@@ -406,13 +449,35 @@ export default function ClientContactsForm({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs font-normal">Poste</Label>
+              <Label className="text-xs font-normal">Fonction</Label>
               <Input
                 value={newContact.position}
                 onChange={(e) =>
                   setNewContact({ ...newContact, position: e.target.value })
                 }
                 placeholder="Ex: Directeur commercial"
+                className="h-9"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-normal">Service rattaché</Label>
+              <Input
+                value={newContact.department}
+                onChange={(e) =>
+                  setNewContact({ ...newContact, department: e.target.value })
+                }
+                placeholder="Ex: Direction commerciale"
+                className="h-9"
+              />
+            </div>
+            <div className="col-span-2 space-y-1.5">
+              <Label className="text-xs font-normal">Localisation</Label>
+              <Input
+                value={newContact.location}
+                onChange={(e) =>
+                  setNewContact({ ...newContact, location: e.target.value })
+                }
+                placeholder="Ex: Paris, Bureau 3A"
                 className="h-9"
               />
             </div>

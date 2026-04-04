@@ -105,11 +105,7 @@ import { SendDocumentModal } from "./send-document-modal";
 import { SaveInvoiceTemplateDialog } from "./SaveInvoiceTemplateDialog";
 import { ImportInvoiceModal } from "./import-invoice-modal";
 import { ImportedInvoiceSidebar } from "./imported-invoice-sidebar";
-import {
-  useImportedInvoices,
-  IMPORTED_INVOICE_STATUS_LABELS,
-  IMPORTED_INVOICE_STATUS_COLORS,
-} from "@/src/graphql/importedInvoiceQueries";
+import { useImportedInvoices } from "@/src/graphql/importedInvoiceQueries";
 import { useEmailTrackingSubscription } from "@/src/graphql/documentEmailQueries";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
@@ -209,6 +205,8 @@ export default function InvoiceTable({
     setClientFilter,
     dateFilter,
     setDateFilter,
+    typeFilter,
+    setTypeFilter,
     selectedRows,
     handleDeleteSelected,
     isDeleting,
@@ -234,6 +232,7 @@ export default function InvoiceTable({
     dateFilter: dateFilter
       ? { from: dateFilter.from?.getTime(), to: dateFilter.to?.getTime() }
       : null,
+    typeFilter,
   });
   const dataLength = combinedInvoices.length;
   useEffect(() => {
@@ -426,6 +425,8 @@ export default function InvoiceTable({
             setClientFilter={setClientFilter}
             dateFilter={dateFilter}
             setDateFilter={setDateFilter}
+            typeFilter={typeFilter}
+            setTypeFilter={setTypeFilter}
             invoices={invoices || []}
             table={table}
           />
@@ -524,7 +525,7 @@ export default function InvoiceTable({
       <div className="hidden md:flex md:flex-col flex-1 min-h-0 overflow-hidden">
         {/* Header fixe */}
         <div className="flex-shrink-0 border-b border-border">
-          <table className="w-full table-fixed">
+          <table className="w-full">
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
@@ -549,7 +550,7 @@ export default function InvoiceTable({
         </div>
         {/* Table Body - Scrollable */}
         <div className="flex-1 overflow-auto">
-          <table className="w-full table-fixed">
+          <table className="w-full">
             <tbody>
               {loading ? (
                 Array.from({ length: 8 }).map((_, i) => (

@@ -1,16 +1,22 @@
-'use client';
+"use client";
 
-import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
-import { toast } from '@/src/components/ui/sonner';
-import { Button } from '@/src/components/ui/button';
-import { Switch } from '@/src/components/ui/switch';
-import { Label } from '@/src/components/ui/label';
+import React, {
+  useState,
+  useMemo,
+  useRef,
+  useCallback,
+  useEffect,
+} from "react";
+import { toast } from "@/src/components/ui/sonner";
+import { Button } from "@/src/components/ui/button";
+import { Switch } from "@/src/components/ui/switch";
+import { Label } from "@/src/components/ui/label";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/src/components/ui/dialog';
+} from "@/src/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -19,19 +25,19 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from '@/src/components/ui/select';
+} from "@/src/components/ui/select";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/src/components/ui/popover';
+} from "@/src/components/ui/popover";
 import {
   Command,
   CommandInput,
   CommandList,
   CommandEmpty,
   CommandItem,
-} from '@/src/components/ui/command';
+} from "@/src/components/ui/command";
 import {
   Zap,
   Trash2,
@@ -46,14 +52,18 @@ import {
   Check,
   ChevronsUpDown,
   Crown,
-} from 'lucide-react';
-import { cn } from '@/src/lib/utils';
-import { getPlanLimits } from '@/src/lib/plan-limits';
-import { useDashboardLayoutContext } from '@/src/contexts/dashboard-layout-context';
-import { useWorkspace } from '@/src/hooks/useWorkspace';
-import { useSharedFolders } from '@/src/hooks/useSharedDocuments';
-import { useClients } from '@/src/hooks/useClients';
-import { useApolloClient } from '@apollo/client';
+} from "lucide-react";
+import { cn } from "@/src/lib/utils";
+import { getPlanLimits } from "@/src/lib/plan-limits";
+import { useDashboardLayoutContext } from "@/src/contexts/dashboard-layout-context";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
+import {
+  useSharedFolders,
+  GET_SHARED_DOCUMENTS,
+  GET_SHARED_FOLDERS,
+} from "@/src/hooks/useSharedDocuments";
+import { useClients } from "@/src/hooks/useClients";
+import { useApolloClient } from "@apollo/client";
 import {
   useDocumentAutomations,
   useCreateDocumentAutomation,
@@ -62,47 +72,98 @@ import {
   useToggleDocumentAutomation,
   useRunDocumentAutomation,
   GET_AUTOMATION_PROGRESS,
-} from '@/src/hooks/useDocumentAutomations';
+} from "@/src/hooks/useDocumentAutomations";
 
 const TRIGGER_OPTIONS = [
   // Factures
-  { value: 'INVOICE_DRAFT', label: 'Facture brouillon', group: 'Facture' },
-  { value: 'INVOICE_SENT', label: 'Facture en attente', group: 'Facture' },
-  { value: 'INVOICE_PAID', label: 'Facture terminée', group: 'Facture' },
-  { value: 'INVOICE_OVERDUE', label: 'Facture en retard', group: 'Facture' },
-  { value: 'INVOICE_CANCELED', label: 'Facture refusée', group: 'Facture' },
-  { value: 'INVOICE_IMPORTED', label: 'Facture importée', group: 'Facture' },
+  { value: "INVOICE_DRAFT", label: "Facture brouillon", group: "Facture" },
+  { value: "INVOICE_SENT", label: "Facture en attente", group: "Facture" },
+  { value: "INVOICE_PAID", label: "Facture terminée", group: "Facture" },
+  { value: "INVOICE_OVERDUE", label: "Facture en retard", group: "Facture" },
+  { value: "INVOICE_CANCELED", label: "Facture refusée", group: "Facture" },
+  { value: "INVOICE_IMPORTED", label: "Facture importée", group: "Facture" },
   // Devis
-  { value: 'QUOTE_DRAFT', label: 'Devis brouillon', group: 'Devis' },
-  { value: 'QUOTE_SENT', label: 'Devis en attente', group: 'Devis' },
-  { value: 'QUOTE_ACCEPTED', label: 'Devis accepté', group: 'Devis' },
-  { value: 'QUOTE_CANCELED', label: 'Devis refusé', group: 'Devis' },
-  { value: 'QUOTE_IMPORTED', label: 'Devis importé', group: 'Devis' },
+  { value: "QUOTE_DRAFT", label: "Devis brouillon", group: "Devis" },
+  { value: "QUOTE_SENT", label: "Devis en attente", group: "Devis" },
+  { value: "QUOTE_ACCEPTED", label: "Devis accepté", group: "Devis" },
+  { value: "QUOTE_CANCELED", label: "Devis refusé", group: "Devis" },
+  { value: "QUOTE_IMPORTED", label: "Devis importé", group: "Devis" },
   // Avoir
-  { value: 'CREDIT_NOTE_CREATED', label: 'Avoir créé', group: 'Avoir' },
+  { value: "CREDIT_NOTE_CREATED", label: "Avoir créé", group: "Avoir" },
   // Bon de commande
-  { value: 'PURCHASE_ORDER_DRAFT', label: 'BC brouillon', group: 'Bon de commande' },
-  { value: 'PURCHASE_ORDER_CONFIRMED', label: 'BC confirmé', group: 'Bon de commande' },
-  { value: 'PURCHASE_ORDER_IN_PROGRESS', label: 'BC en cours', group: 'Bon de commande' },
-  { value: 'PURCHASE_ORDER_DELIVERED', label: 'BC livré', group: 'Bon de commande' },
-  { value: 'PURCHASE_ORDER_CANCELED', label: 'BC annulé', group: 'Bon de commande' },
+  {
+    value: "PURCHASE_ORDER_DRAFT",
+    label: "BC brouillon",
+    group: "Bon de commande",
+  },
+  {
+    value: "PURCHASE_ORDER_CONFIRMED",
+    label: "BC confirmé",
+    group: "Bon de commande",
+  },
+  {
+    value: "PURCHASE_ORDER_IN_PROGRESS",
+    label: "BC en cours",
+    group: "Bon de commande",
+  },
+  {
+    value: "PURCHASE_ORDER_DELIVERED",
+    label: "BC livré",
+    group: "Bon de commande",
+  },
+  {
+    value: "PURCHASE_ORDER_CANCELED",
+    label: "BC annulé",
+    group: "Bon de commande",
+  },
   // Facture d'achat
-  { value: 'PURCHASE_INVOICE_TO_PROCESS', label: "Fact. achat à traiter", group: "Facture d'achat" },
-  { value: 'PURCHASE_INVOICE_TO_PAY', label: "Fact. achat à payer", group: "Facture d'achat" },
-  { value: 'PURCHASE_INVOICE_PENDING', label: "Fact. achat en attente", group: "Facture d'achat" },
-  { value: 'PURCHASE_INVOICE_PAID', label: "Fact. achat payée", group: "Facture d'achat" },
-  { value: 'PURCHASE_INVOICE_OVERDUE', label: "Fact. achat en retard", group: "Facture d'achat" },
-  { value: 'PURCHASE_INVOICE_ARCHIVED', label: "Fact. achat archivée", group: "Facture d'achat" },
+  {
+    value: "PURCHASE_INVOICE_TO_PROCESS",
+    label: "Fact. achat à traiter",
+    group: "Facture d'achat",
+  },
+  {
+    value: "PURCHASE_INVOICE_TO_PAY",
+    label: "Fact. achat à payer",
+    group: "Facture d'achat",
+  },
+  {
+    value: "PURCHASE_INVOICE_PENDING",
+    label: "Fact. achat en attente",
+    group: "Facture d'achat",
+  },
+  {
+    value: "PURCHASE_INVOICE_PAID",
+    label: "Fact. achat payée",
+    group: "Facture d'achat",
+  },
+  {
+    value: "PURCHASE_INVOICE_OVERDUE",
+    label: "Fact. achat en retard",
+    group: "Facture d'achat",
+  },
+  {
+    value: "PURCHASE_INVOICE_ARCHIVED",
+    label: "Fact. achat archivée",
+    group: "Facture d'achat",
+  },
   // Transaction
-  { value: 'TRANSACTION_RECEIPT', label: 'Justificatif de transaction', group: 'Transaction' },
+  {
+    value: "TRANSACTION_RECEIPT",
+    label: "Justificatif de transaction",
+    group: "Transaction",
+  },
 ];
 
 const CURRENT_YEAR = new Date().getFullYear();
-const YEAR_OPTIONS = Array.from({ length: CURRENT_YEAR - 2000 + 1 }, (_, i) => CURRENT_YEAR - i);
+const YEAR_OPTIONS = Array.from(
+  { length: CURRENT_YEAR - 2000 + 1 },
+  (_, i) => CURRENT_YEAR - i,
+);
 
 // Retourne le label complet pour un trigger
 function getTriggerFullLabel(value) {
-  const opt = TRIGGER_OPTIONS.find(t => t.value === value);
+  const opt = TRIGGER_OPTIONS.find((t) => t.value === value);
   return opt?.label || value;
 }
 
@@ -122,9 +183,13 @@ const TRIGGER_GROUPS = (() => {
 
 const GROUPED_TRIGGER_OPTIONS = TRIGGER_GROUPS.map((g) => (
   <SelectGroup key={g.label}>
-    <SelectLabel className="text-xs text-muted-foreground font-semibold">{g.label}</SelectLabel>
+    <SelectLabel className="text-xs text-muted-foreground font-semibold">
+      {g.label}
+    </SelectLabel>
     {g.items.map((t) => (
-      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+      <SelectItem key={t.value} value={t.value}>
+        {t.label}
+      </SelectItem>
     ))}
   </SelectGroup>
 ));
@@ -135,7 +200,7 @@ function buildFolderTree(folders) {
   const childrenMap = {};
 
   folders.forEach((f) => {
-    const pid = f.parentId || 'root';
+    const pid = f.parentId || "root";
     if (!childrenMap[pid]) childrenMap[pid] = [];
     childrenMap[pid].push(f);
   });
@@ -158,18 +223,18 @@ function buildFolderTree(folders) {
     });
   }
 
-  traverse('root', 0, []);
+  traverse("root", 0, []);
   return result;
 }
 
 // Génère le préfixe arborescence : │  ├─ └─
 function getTreePrefix(guides, isLast) {
-  let prefix = '';
+  let prefix = "";
   for (let i = 0; i < guides.length; i++) {
     if (i === guides.length - 1) {
-      prefix += isLast ? '└─ ' : '├─ ';
+      prefix += isLast ? "└─ " : "├─ ";
     } else {
-      prefix += guides[i] ? '│  ' : '   ';
+      prefix += guides[i] ? "│  " : "   ";
     }
   }
   return prefix;
@@ -182,18 +247,24 @@ function FolderTreeSelect({ folders, value, onValueChange, placeholder }) {
   return (
     <Select value={value} onValueChange={onValueChange}>
       <SelectTrigger className="w-[200px] [&_[data-tree-guide]]:hidden">
-        <SelectValue placeholder={placeholder || 'Dossier...'} />
+        <SelectValue placeholder={placeholder || "Dossier..."} />
       </SelectTrigger>
       <SelectContent>
         {treeItems.map((f) => (
           <SelectItem key={f.id} value={f.id}>
             <div className="flex items-center gap-1.5">
               {f.depth > 0 && (
-                <span data-tree-guide="" className="text-muted-foreground font-mono text-xs whitespace-pre flex-shrink-0">
+                <span
+                  data-tree-guide=""
+                  className="text-muted-foreground font-mono text-xs whitespace-pre flex-shrink-0"
+                >
                   {getTreePrefix(f.guides, f.isLast)}
                 </span>
               )}
-              <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: f.color || '#6366f1' }} />
+              <div
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ backgroundColor: f.color || "#6366f1" }}
+              />
               <span className="truncate">{f.name}</span>
             </div>
           </SelectItem>
@@ -204,7 +275,14 @@ function FolderTreeSelect({ folders, value, onValueChange, placeholder }) {
 }
 
 // Combobox client avec recherche intégrée dans le dropdown
-function ClientCombobox({ value, valueName, onSelect, clients, search, onSearchChange }) {
+function ClientCombobox({
+  value,
+  valueName,
+  onSelect,
+  clients,
+  search,
+  onSearchChange,
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -216,13 +294,13 @@ function ClientCombobox({ value, valueName, onSelect, clients, search, onSearchC
           className={cn(
             "flex h-8 w-full items-center justify-between rounded-lg border border-input bg-background px-2.5 text-xs",
             "hover:bg-accent/50 transition-colors",
-            !value && "text-muted-foreground"
+            !value && "text-muted-foreground",
           )}
         >
           {value ? (
             <span className="flex items-center gap-1.5 truncate">
               <User className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              {valueName || 'Client'}
+              {valueName || "Client"}
             </span>
           ) : (
             <span>Sélectionner un client...</span>
@@ -230,7 +308,11 @@ function ClientCombobox({ value, valueName, onSelect, clients, search, onSearchC
           <ChevronsUpDown className="h-3 w-3 text-muted-foreground flex-shrink-0 ml-1" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start" sideOffset={4}>
+      <PopoverContent
+        className="w-[--radix-popover-trigger-width] p-0"
+        align="start"
+        sideOffset={4}
+      >
         <Command shouldFilter={false}>
           <CommandInput
             placeholder="Rechercher un client..."
@@ -239,7 +321,9 @@ function ClientCombobox({ value, valueName, onSelect, clients, search, onSearchC
             className="text-xs h-8"
           />
           <CommandList>
-            <CommandEmpty className="py-3 text-xs text-center">Aucun client trouvé</CommandEmpty>
+            <CommandEmpty className="py-3 text-xs text-center">
+              Aucun client trouvé
+            </CommandEmpty>
             {clients.map((c) => (
               <CommandItem
                 key={c.id}
@@ -267,23 +351,33 @@ function ClientCombobox({ value, valueName, onSelect, clients, search, onSearchC
 // Popover pour les réglages avancés d'une automatisation
 function SettingsPopover({ config, onSave }) {
   const [open, setOpen] = useState(false);
-  const [createSubfolder, setCreateSubfolder] = useState(config?.createSubfolder || false);
-  const [subfolderType, setSubfolderType] = useState(config?.subfolderPattern || 'year');
-  const [filterYear, setFilterYear] = useState(config?.filterYear || CURRENT_YEAR);
-  const [filterClientId, setFilterClientId] = useState(config?.filterClientId || '');
-  const [filterClientName, setFilterClientName] = useState(config?.filterClientName || '');
-  const [clientSearch, setClientSearch] = useState('');
+  const [createSubfolder, setCreateSubfolder] = useState(
+    config?.createSubfolder || false,
+  );
+  const [subfolderType, setSubfolderType] = useState(
+    config?.subfolderPattern || "year",
+  );
+  const [filterYear, setFilterYear] = useState(
+    config?.filterYear || CURRENT_YEAR,
+  );
+  const [filterClientId, setFilterClientId] = useState(
+    config?.filterClientId || "",
+  );
+  const [filterClientName, setFilterClientName] = useState(
+    config?.filterClientName || "",
+  );
+  const [clientSearch, setClientSearch] = useState("");
   const { clients } = useClients(1, 50, clientSearch);
 
   // Re-sync state from config when popover opens
   useEffect(() => {
     if (open) {
       setCreateSubfolder(config?.createSubfolder || false);
-      setSubfolderType(config?.subfolderPattern || 'year');
+      setSubfolderType(config?.subfolderPattern || "year");
       setFilterYear(config?.filterYear || CURRENT_YEAR);
-      setFilterClientId(config?.filterClientId || '');
-      setFilterClientName(config?.filterClientName || '');
-      setClientSearch('');
+      setFilterClientId(config?.filterClientId || "");
+      setFilterClientName(config?.filterClientName || "");
+      setClientSearch("");
     }
   }, [open, config]);
 
@@ -291,9 +385,9 @@ function SettingsPopover({ config, onSave }) {
     onSave({
       createSubfolder,
       subfolderPattern: subfolderType,
-      filterYear: subfolderType === 'year' ? filterYear : null,
-      filterClientId: subfolderType === 'client' ? filterClientId : null,
-      filterClientName: subfolderType === 'client' ? filterClientName : null,
+      filterYear: subfolderType === "year" ? filterYear : null,
+      filterClientId: subfolderType === "client" ? filterClientId : null,
+      filterClientName: subfolderType === "client" ? filterClientName : null,
     });
     setOpen(false);
   };
@@ -310,7 +404,7 @@ function SettingsPopover({ config, onSave }) {
             "h-8 w-8 flex-shrink-0",
             hasAdvancedConfig
               ? "text-[#5b50ff] hover:text-[#5b50ff] hover:bg-[#5b50ff]/10"
-              : "text-muted-foreground hover:text-foreground"
+              : "text-muted-foreground hover:text-foreground",
           )}
         >
           <Settings2 className="h-4 w-4" />
@@ -346,12 +440,12 @@ function SettingsPopover({ config, onSave }) {
                 <div className="flex rounded-lg border border-input overflow-hidden">
                   <button
                     type="button"
-                    onClick={() => setSubfolderType('year')}
+                    onClick={() => setSubfolderType("year")}
                     className={cn(
                       "flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors",
-                      subfolderType === 'year'
+                      subfolderType === "year"
                         ? "bg-[#5b50ff] text-white"
-                        : "hover:bg-accent/50 text-muted-foreground"
+                        : "hover:bg-accent/50 text-muted-foreground",
                     )}
                   >
                     <CalendarDays className="h-3 w-3" />
@@ -359,12 +453,12 @@ function SettingsPopover({ config, onSave }) {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setSubfolderType('client')}
+                    onClick={() => setSubfolderType("client")}
                     className={cn(
                       "flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors border-l border-input",
-                      subfolderType === 'client'
+                      subfolderType === "client"
                         ? "bg-[#5b50ff] text-white"
-                        : "hover:bg-accent/50 text-muted-foreground"
+                        : "hover:bg-accent/50 text-muted-foreground",
                     )}
                   >
                     <User className="h-3 w-3" />
@@ -373,21 +467,30 @@ function SettingsPopover({ config, onSave }) {
                 </div>
 
                 {/* Year selector */}
-                {subfolderType === 'year' && (
-                  <Select value={String(filterYear)} onValueChange={(v) => setFilterYear(Number(v))}>
+                {subfolderType === "year" && (
+                  <Select
+                    value={String(filterYear)}
+                    onValueChange={(v) => setFilterYear(Number(v))}
+                  >
                     <SelectTrigger className="h-8 text-xs">
                       <SelectValue placeholder="Année..." />
                     </SelectTrigger>
                     <SelectContent className="z-[99] max-h-60">
                       {YEAR_OPTIONS.map((y) => (
-                        <SelectItem key={y} value={String(y)} className="text-xs">{y}</SelectItem>
+                        <SelectItem
+                          key={y}
+                          value={String(y)}
+                          className="text-xs"
+                        >
+                          {y}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 )}
 
                 {/* Client combobox with integrated search */}
-                {subfolderType === 'client' && (
+                {subfolderType === "client" && (
                   <ClientCombobox
                     value={filterClientId}
                     valueName={filterClientName}
@@ -420,17 +523,26 @@ function SettingsPopover({ config, onSave }) {
   );
 }
 
-export default function DocumentAutomationsModal({ open, onOpenChange, onDocumentsChanged }) {
+export default function DocumentAutomationsModal({
+  open,
+  onOpenChange,
+  onDocumentsChanged,
+}) {
   const { workspaceId } = useWorkspace();
   const { subscription } = useDashboardLayoutContext();
   const planLimits = getPlanLimits(subscription?.plan);
   const automationLimit = planLimits.documentAutomations; // 0 = no access, -1 = unlimited, N = max
   const client = useApolloClient();
-  const { automations, loading: automationsLoading, refetch } = useDocumentAutomations(workspaceId);
+  const {
+    automations,
+    loading: automationsLoading,
+    refetch,
+  } = useDocumentAutomations(workspaceId);
   const { folders, loading: foldersLoading } = useSharedFolders();
   const hasLoadedOnce = useRef(false);
   if (!automationsLoading && !foldersLoading) hasLoadedOnce.current = true;
-  const { createAutomation, loading: createLoading } = useCreateDocumentAutomation();
+  const { createAutomation, loading: createLoading } =
+    useCreateDocumentAutomation();
   const { updateAutomation } = useUpdateDocumentAutomation();
   const { deleteAutomation } = useDeleteDocumentAutomation();
   const { toggleAutomation } = useToggleDocumentAutomation();
@@ -442,18 +554,19 @@ export default function DocumentAutomationsModal({ open, onOpenChange, onDocumen
 
   // New automation row state
   const [showNewRow, setShowNewRow] = useState(false);
-  const [newTrigger, setNewTrigger] = useState('');
-  const [newFolderId, setNewFolderId] = useState('');
+  const [newTrigger, setNewTrigger] = useState("");
+  const [newFolderId, setNewFolderId] = useState("");
   const [newActionConfig, setNewActionConfig] = useState({});
 
   const handleCreate = async () => {
     if (!newTrigger || !newFolderId) {
-      toast.error('Sélectionnez un déclencheur et un dossier');
+      toast.error("Sélectionnez un déclencheur et un dossier");
       return;
     }
     try {
       const triggerLabel = getTriggerFullLabel(newTrigger);
-      const folderName = folders.find(f => f.id === newFolderId)?.name || 'Dossier';
+      const folderName =
+        folders.find((f) => f.id === newFolderId)?.name || "Dossier";
       const created = await createAutomation(workspaceId, {
         name: `${triggerLabel} → ${folderName}`,
         triggerType: newTrigger,
@@ -462,9 +575,9 @@ export default function DocumentAutomationsModal({ open, onOpenChange, onDocumen
           ...newActionConfig,
         },
       });
-      toast.success('Automatisation créée');
-      setNewTrigger('');
-      setNewFolderId('');
+      toast.success("Automatisation créée");
+      setNewTrigger("");
+      setNewFolderId("");
       setNewActionConfig({});
       setShowNewRow(false);
       refetch();
@@ -474,7 +587,7 @@ export default function DocumentAutomationsModal({ open, onOpenChange, onDocumen
         processExistingDocuments(created.id);
       }
     } catch {
-      toast.error('Erreur lors de la création');
+      toast.error("Erreur lors de la création");
     }
   };
 
@@ -485,23 +598,26 @@ export default function DocumentAutomationsModal({ open, onOpenChange, onDocumen
     }
   }, []);
 
-  const startPolling = useCallback((automationId) => {
-    stopPolling();
-    pollRef.current = setInterval(async () => {
-      try {
-        const { data } = await client.query({
-          query: GET_AUTOMATION_PROGRESS,
-          variables: { workspaceId, automationId },
-          fetchPolicy: 'no-cache',
-        });
-        if (data?.documentAutomationProgress) {
-          setProgress(data.documentAutomationProgress);
+  const startPolling = useCallback(
+    (automationId) => {
+      stopPolling();
+      pollRef.current = setInterval(async () => {
+        try {
+          const { data } = await client.query({
+            query: GET_AUTOMATION_PROGRESS,
+            variables: { workspaceId, automationId },
+            fetchPolicy: "no-cache",
+          });
+          if (data?.documentAutomationProgress) {
+            setProgress(data.documentAutomationProgress);
+          }
+        } catch {
+          // Ignorer les erreurs de polling
         }
-      } catch {
-        // Ignorer les erreurs de polling
-      }
-    }, 1500);
-  }, [client, workspaceId, stopPolling]);
+      }, 1500);
+    },
+    [client, workspaceId, stopPolling],
+  );
 
   const processExistingDocuments = async (automationId) => {
     try {
@@ -516,23 +632,31 @@ export default function DocumentAutomationsModal({ open, onOpenChange, onDocumen
 
       const { successCount, failCount, status, message } = result;
 
-      if (status === 'NO_DOCUMENTS') {
-        toast.info('Aucun document existant à traiter');
-      } else if (status === 'COMPLETED') {
+      if (status === "NO_DOCUMENTS") {
+        toast.info("Aucun document existant à traiter");
+      } else if (status === "COMPLETED") {
         toast.success(message || `${successCount} document(s) traité(s)`);
-      } else if (status === 'PARTIAL') {
-        toast.warning(message || `${successCount} succès, ${failCount} échec(s)`);
-      } else if (status === 'FAILED') {
-        toast.error(message || 'Échec du traitement');
+      } else if (status === "PARTIAL") {
+        toast.warning(
+          message || `${successCount} succès, ${failCount} échec(s)`,
+        );
+      } else if (status === "FAILED") {
+        toast.error(message || "Échec du traitement");
       } else {
-        toast.info(message || 'Traitement terminé');
+        toast.info(message || "Traitement terminé");
       }
 
       refetch();
-      if (status !== 'NO_DOCUMENTS') onDocumentsChanged?.();
+      if (status !== "NO_DOCUMENTS") {
+        // Rafraîchir toutes les instances actives des queries documents partagés
+        await client.refetchQueries({
+          include: [GET_SHARED_DOCUMENTS, GET_SHARED_FOLDERS],
+        });
+        onDocumentsChanged?.();
+      }
     } catch (err) {
       const gqlMessage = err?.graphQLErrors?.[0]?.message || err?.message;
-      toast.error(gqlMessage || 'Erreur lors du traitement');
+      toast.error(gqlMessage || "Erreur lors du traitement");
     } finally {
       stopPolling();
       setRunningId(null);
@@ -542,25 +666,27 @@ export default function DocumentAutomationsModal({ open, onOpenChange, onDocumen
 
   const handleUpdateTrigger = async (id, triggerType) => {
     try {
-      const automation = automations.find(a => a.id === id);
+      const automation = automations.find((a) => a.id === id);
       const triggerLabel = getTriggerFullLabel(triggerType);
-      const folderName = automation?.actionConfig?.targetFolder?.name || 'Dossier';
+      const folderName =
+        automation?.actionConfig?.targetFolder?.name || "Dossier";
       await updateAutomation(workspaceId, id, {
         name: `${triggerLabel} → ${folderName}`,
         triggerType,
       });
       refetch();
     } catch {
-      toast.error('Erreur lors de la mise à jour');
+      toast.error("Erreur lors de la mise à jour");
     }
   };
 
   const handleUpdateFolder = async (id, targetFolderId) => {
     try {
-      const automation = automations.find(a => a.id === id);
+      const automation = automations.find((a) => a.id === id);
       const currentConfig = automation?.actionConfig || {};
       const triggerLabel = getTriggerFullLabel(automation?.triggerType);
-      const folderName = folders.find(f => f.id === targetFolderId)?.name || 'Dossier';
+      const folderName =
+        folders.find((f) => f.id === targetFolderId)?.name || "Dossier";
       await updateAutomation(workspaceId, id, {
         name: `${triggerLabel} → ${folderName}`,
         actionConfig: {
@@ -577,17 +703,17 @@ export default function DocumentAutomationsModal({ open, onOpenChange, onDocumen
       });
       refetch();
     } catch {
-      toast.error('Erreur lors de la mise à jour');
+      toast.error("Erreur lors de la mise à jour");
     }
   };
 
   const handleUpdateAdvanced = async (id, input) => {
     try {
       await updateAutomation(workspaceId, id, input);
-      toast.success('Options mises à jour');
+      toast.success("Options mises à jour");
       refetch();
     } catch {
-      toast.error('Erreur lors de la mise à jour');
+      toast.error("Erreur lors de la mise à jour");
     }
   };
 
@@ -596,28 +722,29 @@ export default function DocumentAutomationsModal({ open, onOpenChange, onDocumen
       await toggleAutomation(workspaceId, id);
       refetch();
     } catch {
-      toast.error('Erreur lors du basculement');
+      toast.error("Erreur lors du basculement");
     }
   };
 
   const handleDelete = async (id) => {
     try {
       await deleteAutomation(workspaceId, id);
-      toast.success('Automatisation supprimée');
+      toast.success("Automatisation supprimée");
       refetch();
     } catch {
-      toast.error('Erreur lors de la suppression');
+      toast.error("Erreur lors de la suppression");
     }
   };
 
-  const isLoading = !hasLoadedOnce.current && (automationsLoading || foldersLoading);
+  const isLoading =
+    !hasLoadedOnce.current && (automationsLoading || foldersLoading);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl overflow-x-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Zap className="w-5 h-5" style={{ color: '#5b50ff' }} />
+            <Zap className="w-5 h-5" style={{ color: "#5b50ff" }} />
             Automatisations
           </DialogTitle>
         </DialogHeader>
@@ -632,9 +759,13 @@ export default function DocumentAutomationsModal({ open, onOpenChange, onDocumen
               <Crown className="h-5 w-5 text-[#5b50ff]" />
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-medium">Fonctionnalité non disponible</p>
+              <p className="text-sm font-medium">
+                Fonctionnalité non disponible
+              </p>
               <p className="text-sm text-muted-foreground max-w-sm">
-                Les automatisations de documents ne sont pas incluses dans le plan Freelance. Passez au plan PME ou Entreprise pour automatiser le classement de vos documents.
+                Les automatisations de documents ne sont pas incluses dans le
+                plan Freelance. Passez au plan PME ou Entreprise pour
+                automatiser le classement de vos documents.
               </p>
             </div>
           </div>
@@ -646,45 +777,58 @@ export default function DocumentAutomationsModal({ open, onOpenChange, onDocumen
           <div className="space-y-3">
             {/* Existing automations */}
             {automations.map((automation) => (
-              <div key={automation.id} className="flex items-center gap-2 min-w-0">
-                <span className="text-sm text-muted-foreground flex-shrink-0">Quand</span>
+              <div
+                key={automation.id}
+                className="flex items-center gap-2 min-w-0"
+              >
+                <span className="text-sm text-muted-foreground flex-shrink-0">
+                  Quand
+                </span>
                 <Select
                   value={automation.triggerType}
-                  onValueChange={(value) => handleUpdateTrigger(automation.id, value)}
+                  onValueChange={(value) =>
+                    handleUpdateTrigger(automation.id, value)
+                  }
                 >
                   <SelectTrigger className="w-[220px]">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    {GROUPED_TRIGGER_OPTIONS}
-                  </SelectContent>
+                  <SelectContent>{GROUPED_TRIGGER_OPTIONS}</SelectContent>
                 </Select>
 
                 <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
 
-                <span className="text-sm text-muted-foreground flex-shrink-0">dans</span>
+                <span className="text-sm text-muted-foreground flex-shrink-0">
+                  dans
+                </span>
 
                 <FolderTreeSelect
                   folders={folders}
                   value={automation.actionConfig?.targetFolderId}
-                  onValueChange={(value) => handleUpdateFolder(automation.id, value)}
+                  onValueChange={(value) =>
+                    handleUpdateFolder(automation.id, value)
+                  }
                 />
 
                 <SettingsPopover
                   config={automation.actionConfig}
-                  onSave={(advancedConfig) => handleUpdateAdvanced(automation.id, {
-                    actionConfig: {
-                      targetFolderId: automation.actionConfig?.targetFolderId,
-                      ...advancedConfig,
-                    },
-                  })}
+                  onSave={(advancedConfig) =>
+                    handleUpdateAdvanced(automation.id, {
+                      actionConfig: {
+                        targetFolderId: automation.actionConfig?.targetFolderId,
+                        ...advancedConfig,
+                      },
+                    })
+                  }
                 />
 
                 <div className="flex items-center gap-2 ml-auto flex-shrink-0">
                   {runningId === automation.id ? (
                     <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      {progress ? `${progress.current}/${progress.total}` : 'Traitement...'}
+                      {progress
+                        ? `${progress.current}/${progress.total}`
+                        : "Traitement..."}
                     </span>
                   ) : (
                     <Button
@@ -698,11 +842,13 @@ export default function DocumentAutomationsModal({ open, onOpenChange, onDocumen
                     </Button>
                   )}
 
-                  {automation.stats?.totalExecutions > 0 && (
-                    <span className="text-xs text-muted-foreground flex-shrink-0">
-                      {automation.stats.totalExecutions}x
-                    </span>
-                  )}
+                  {automation.matchingDocumentsCount != null &&
+                    automation.matchingDocumentsCount > 0 && (
+                      <span className="text-xs text-muted-foreground flex-shrink-0">
+                        {automation.matchingDocumentsCount} doc
+                        {automation.matchingDocumentsCount > 1 ? "s" : ""}
+                      </span>
+                    )}
 
                   <Switch
                     checked={automation.isActive}
@@ -725,19 +871,21 @@ export default function DocumentAutomationsModal({ open, onOpenChange, onDocumen
             {/* New automation row (visible when adding) */}
             {showNewRow && (
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground flex-shrink-0">Quand</span>
+                <span className="text-sm text-muted-foreground flex-shrink-0">
+                  Quand
+                </span>
                 <Select value={newTrigger} onValueChange={setNewTrigger}>
                   <SelectTrigger className="w-[220px]">
                     <SelectValue placeholder="Déclencheur..." />
                   </SelectTrigger>
-                  <SelectContent>
-                    {GROUPED_TRIGGER_OPTIONS}
-                  </SelectContent>
+                  <SelectContent>{GROUPED_TRIGGER_OPTIONS}</SelectContent>
                 </Select>
 
                 <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
 
-                <span className="text-sm text-muted-foreground flex-shrink-0">dans</span>
+                <span className="text-sm text-muted-foreground flex-shrink-0">
+                  dans
+                </span>
 
                 <FolderTreeSelect
                   folders={folders}
@@ -748,7 +896,9 @@ export default function DocumentAutomationsModal({ open, onOpenChange, onDocumen
 
                 <SettingsPopover
                   config={newActionConfig}
-                  onSave={(advancedConfig) => setNewActionConfig(advancedConfig)}
+                  onSave={(advancedConfig) =>
+                    setNewActionConfig(advancedConfig)
+                  }
                 />
 
                 <div className="flex items-center gap-2 ml-auto flex-shrink-0">
@@ -757,14 +907,23 @@ export default function DocumentAutomationsModal({ open, onOpenChange, onDocumen
                     disabled={createLoading || !newTrigger || !newFolderId}
                     size="sm"
                   >
-                    {createLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Créer'}
+                    {createLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Créer"
+                    )}
                   </Button>
 
                   <Button
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 text-muted-foreground"
-                    onClick={() => { setShowNewRow(false); setNewTrigger(''); setNewFolderId(''); setNewActionConfig({}); }}
+                    onClick={() => {
+                      setShowNewRow(false);
+                      setNewTrigger("");
+                      setNewFolderId("");
+                      setNewActionConfig({});
+                    }}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -775,28 +934,33 @@ export default function DocumentAutomationsModal({ open, onOpenChange, onDocumen
         )}
 
         {/* Footer */}
-        {!isLoading && automationLimit !== 0 && (() => {
-          const isLimitReached = automationLimit > 0 && automations.length >= automationLimit;
-          return (
-            <div className="border-t pt-3 -mb-3">
-              {isLimitReached ? (
-                <p className="text-sm text-muted-foreground py-1">
-                  Limite atteinte ({automations.length}/{automationLimit}). Passez au plan Entreprise pour des automatisations illimitées.
-                </p>
-              ) : (
-                <Button
-                  variant="ghost"
-                  className="text-muted-foreground"
-                  onClick={() => setShowNewRow(true)}
-                  disabled={showNewRow}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Ajouter une automatisation
-                </Button>
-              )}
-            </div>
-          );
-        })()}
+        {!isLoading &&
+          automationLimit !== 0 &&
+          (() => {
+            const isLimitReached =
+              automationLimit > 0 && automations.length >= automationLimit;
+            return (
+              <div className="border-t pt-3 -mb-3">
+                {isLimitReached ? (
+                  <p className="text-sm text-muted-foreground py-1">
+                    Limite atteinte ({automations.length}/{automationLimit}).
+                    Passez au plan Entreprise pour des automatisations
+                    illimitées.
+                  </p>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    className="text-muted-foreground"
+                    onClick={() => setShowNewRow(true)}
+                    disabled={showNewRow}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Ajouter une automatisation
+                  </Button>
+                )}
+              </div>
+            );
+          })()}
       </DialogContent>
     </Dialog>
   );

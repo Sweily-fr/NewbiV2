@@ -824,10 +824,16 @@ function KanbanBoardPageContent({ params }) {
         };
       });
       sessionStorage.setItem("kanbanInvoiceItems", JSON.stringify(items));
+      if (board?.client) {
+        sessionStorage.setItem(
+          "kanbanInvoiceClient",
+          JSON.stringify(board.client),
+        );
+      }
       setShowConvertModal(false);
       router.push("/dashboard/outils/factures/new");
     },
-    [router, getEffectiveSeconds],
+    [router, getEffectiveSeconds, board],
   );
 
   const {

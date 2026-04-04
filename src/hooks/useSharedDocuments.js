@@ -429,6 +429,7 @@ export function useSharedDocuments(filter = {}) {
         sortOrder,
       },
       skip: !workspaceId,
+      fetchPolicy: "cache-and-network",
       notifyOnNetworkStatusChange: true,
     },
   );
@@ -484,6 +485,7 @@ export function useSharedFolders() {
   const { data, loading, error, refetch } = useQuery(GET_SHARED_FOLDERS, {
     variables: { workspaceId },
     skip: !workspaceId,
+    fetchPolicy: "cache-and-network",
     notifyOnNetworkStatusChange: true,
   });
 

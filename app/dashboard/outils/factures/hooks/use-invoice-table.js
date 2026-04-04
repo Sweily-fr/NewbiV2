@@ -19,6 +19,7 @@ import {
   XCircle,
   Archive,
   Mail,
+  Upload,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
@@ -156,6 +157,12 @@ const clientFilterFn = (row, columnId, filterValue) => {
   return clientName && filterValue.includes(clientName);
 };
 
+// Custom filter function for invoice type (normal vs imported)
+const typeFilterFn = (row, columnId, filterValue) => {
+  if (!filterValue) return true;
+  return row.original._type === filterValue;
+};
+
 // Custom filter function for date range
 const dateFilterFn = (row, columnId, filterValue) => {
   if (!filterValue?.from && !filterValue?.to) return true;
@@ -217,6 +224,7 @@ export function useInvoiceTable({
   const [statusFilter, setStatusFilter] = useState([]);
   const [clientFilter, setClientFilter] = useState([]);
   const [dateFilter, setDateFilter] = useState(null);
+  const [typeFilter, setTypeFilter] = useState("");
 
   // Hook pour la suppression de factures
   const { deleteInvoice, loading: isDeleting } = useDeleteInvoice();
@@ -226,6 +234,17 @@ export function useInvoiceTable({
   // Define columns
   const columns = useMemo(
     () => [
+      {
+        id: "_type",
+        accessorKey: "_type",
+        filterFn: "invoiceType",
+        enableColumnFilter: true,
+        enableHiding: false,
+        enableSorting: false,
+        header: () => null,
+        cell: () => null,
+        size: 0,
+      },
       {
         id: "select",
         header: ({ table }) => (
@@ -300,22 +319,34 @@ export function useInvoiceTable({
           const clientName =
             client?.name || (isImported ? "Client inconnu" : "Non défini");
           return (
-            <div className="min-h-[40px] flex flex-col justify-center">
-              <div
-                className="font-normal max-w-[100px] md:max-w-none truncate"
-                title={clientName}
-              >
-                {client?.name || (
-                  <span className="text-muted-foreground italic">
-                    {isImported ? "Client inconnu" : "Non défini"}
-                  </span>
+            <div className="min-h-[40px] flex items-center gap-2">
+              {isImported && (
+                <span
+                  className="flex-shrink-0 inline-flex items-center justify-center w-5 h-5 rounded bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
+                  title="Facture importée"
+                >
+                  <Upload className="w-3 h-3" />
+                </span>
+              )}
+              <div className="flex flex-col justify-center min-w-0">
+                <div
+                  className="font-normal max-w-[100px] md:max-w-none truncate"
+                  title={clientName}
+                >
+                  {client?.name || (
+                    <span className="text-muted-foreground italic">
+                      {isImported ? "Client inconnu" : "Non défini"}
+                    </span>
+                  )}
+                </div>
+                {!isImported && (
+                  <div className="text-xs text-muted-foreground truncate max-w-[100px] md:max-w-none">
+                    {invoice.number || (
+                      <span className="italic">Brouillon</span>
+                    )}
+                  </div>
                 )}
               </div>
-              {!isImported && (
-                <div className="text-xs text-muted-foreground truncate max-w-[100px] md:max-w-none">
-                  {invoice.number || <span className="italic">Brouillon</span>}
-                </div>
-              )}
             </div>
           );
         },
@@ -888,6 +919,7 @@ export function useInvoiceTable({
           ? [{ id: "client", value: clientFilter }]
           : []),
         ...(dateFilter ? [{ id: "issueDate", value: dateFilter }] : []),
+        ...(typeFilter ? [{ id: "_type", value: typeFilter }] : []),
       ],
     },
     // Use the memoized filter function
@@ -895,6 +927,7 @@ export function useInvoiceTable({
       status: memoizedStatusFilter,
       client: clientFilterFn,
       dateRange: dateFilterFn,
+      invoiceType: typeFilterFn,
     },
     initialState: {
       pagination: {
@@ -994,6 +1027,8 @@ export function useInvoiceTable({
     setClientFilter,
     dateFilter,
     setDateFilter,
+    typeFilter,
+    setTypeFilter,
     selectedRows,
     handleDeleteSelected,
     isDeleting: isDeleting || isDeletingImported,

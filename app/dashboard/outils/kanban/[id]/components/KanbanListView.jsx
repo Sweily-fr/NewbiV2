@@ -14,7 +14,6 @@ import {
   Clock,
   Users,
   UserRoundPlus,
-  Building2,
   X,
   Search,
   Check,
@@ -1091,7 +1090,7 @@ function InlineAddTask({
       ref={rowRef}
       className="grid px-4 sm:px-6 py-1.5 items-center bg-muted/30 relative overflow-hidden after:absolute after:bottom-0 after:left-6 after:right-6 after:sm:left-8 after:sm:right-8 after:h-px after:bg-border/60 after:content-['']"
       style={{
-        gridTemplateColumns: "2.5fr 1fr 1fr 1fr 1fr 1fr 80px",
+        gridTemplateColumns: "2.5fr 1fr 1fr 1fr 1fr 80px",
         gap: "2rem",
       }}
     >
@@ -1631,7 +1630,7 @@ function TaskRow({
       data-dnd-list-column={column.id}
       data-dnd-list-index={index}
       style={{
-        gridTemplateColumns: "2.5fr 1fr 1fr 1fr 1fr 1fr 80px",
+        gridTemplateColumns: "2.5fr 1fr 1fr 1fr 1fr 80px",
         gap: "2rem",
         ...(isSelected ? { backgroundColor: "#5A50FF0D" } : {}),
       }}
@@ -2147,7 +2146,7 @@ export function KanbanListView({
                   <div
                     className="grid px-4 sm:px-6 py-2 text-xs font-medium text-muted-foreground/70 tracking-wide relative after:absolute after:bottom-0 after:left-6 after:right-6 sm:after:left-8 sm:after:right-8 after:h-px after:bg-border/60 after:content-['']"
                     style={{
-                      gridTemplateColumns: "2.5fr 1fr 1fr 1fr 1fr 1fr 80px",
+                      gridTemplateColumns: "2.5fr 1fr 1fr 1fr 1fr 80px",
                       gap: "2rem",
                     }}
                   >
@@ -2159,7 +2158,6 @@ export function KanbanListView({
                     <div className="flex items-center">Status</div>
                     <div className="flex items-center">Échéance</div>
                     <div className="flex items-center">Priorité</div>
-                    <div className="flex items-center">Client</div>
                     <div className="flex items-center justify-center">
                       Actions
                     </div>
@@ -2509,24 +2507,6 @@ export function KanbanListView({
                                   </button>
                                 }
                               />
-                            </div>
-
-                            {/* Client */}
-                            <div className="flex items-center min-w-0">
-                              {task.client ? (
-                                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground truncate">
-                                  <Building2 className="h-3.5 w-3.5 flex-shrink-0" />
-                                  <span className="truncate">
-                                    {task.client.type === "INDIVIDUAL"
-                                      ? `${task.client.firstName || ""} ${task.client.lastName || task.client.name || ""}`.trim()
-                                      : task.client.name || ""}
-                                  </span>
-                                </span>
-                              ) : (
-                                <span className="text-xs text-muted-foreground/50">
-                                  -
-                                </span>
-                              )}
                             </div>
 
                             {/* Actions */}

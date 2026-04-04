@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect, useMemo } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { Button } from "@/src/components/ui/button";
 import { PermissionButton } from "@/src/components/rbac";
 import {
@@ -17,7 +17,7 @@ import QuoteExportButton from "./components/quote-export-button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { CompanyInfoGuard } from "@/src/components/company-info-guard";
-import { useQuotes, QUOTE_STATUS } from "@/src/graphql/quoteQueries";
+import { useQuotes, useQuoteBalances } from "@/src/graphql/quoteQueries";
 import { useToastManager } from "@/src/components/ui/toast-manager";
 import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/send-document-modal";
 
@@ -82,50 +82,15 @@ function QuotesContent() {
     router.push("/dashboard/outils/devis/new");
   };
 
-  // Récupérer les devis pour les stats
-  const { quotes, loading: quotesLoading } = useQuotes();
+  // Récupérer les devis pour l'export
+  const { quotes } = useQuotes();
 
-  // Calculer les statistiques
-  const quoteStats = useMemo(() => {
-    if (!quotes || quotes.length === 0) {
-      return {
-        totalQuoted: 0,
-        totalAccepted: 0,
-        pendingAmount: 0,
-        pendingCount: 0,
-      };
-    }
-
-    let totalQuoted = 0;
-    let totalAccepted = 0;
-    let pendingAmount = 0;
-    let pendingCount = 0;
-
-    quotes.forEach((quote) => {
-      // Exclure les brouillons du total devisé
-      if (quote.status !== QUOTE_STATUS.DRAFT) {
-        totalQuoted += quote.totalHT || 0;
-      }
-
-      // Total accepté = devis acceptés
-      if (quote.status === QUOTE_STATUS.ACCEPTED) {
-        totalAccepted += quote.totalHT || 0;
-      }
-
-      // Devis en attente
-      if (quote.status === QUOTE_STATUS.SENT) {
-        pendingAmount += quote.totalHT || 0;
-        pendingCount++;
-      }
-    });
-
-    return {
-      totalQuoted,
-      totalAccepted,
-      pendingAmount,
-      pendingCount,
-    };
-  }, [quotes]);
+  // Soldes agrégés côté serveur (devis créés + importés)
+  const {
+    balances: quoteStats,
+    loading: balancesLoading,
+    refetch: refetchBalances,
+  } = useQuoteBalances();
 
   // Formater les montants
   const formatAmount = (amount) => {
@@ -181,7 +146,7 @@ function QuotesContent() {
               </div>
               <div className="flex items-baseline gap-1">
                 <span className="text-lg font-medium tracking-tight">
-                  {quotesLoading
+                  {balancesLoading
                     ? "..."
                     : `${formatAmount(quoteStats.totalQuoted)} €`}
                 </span>
@@ -201,7 +166,7 @@ function QuotesContent() {
               </div>
               <div className="flex items-baseline gap-1">
                 <span className="text-lg font-medium tracking-tight">
-                  {quotesLoading
+                  {balancesLoading
                     ? "..."
                     : `${formatAmount(quoteStats.totalAccepted)} €`}
                 </span>
@@ -224,7 +189,7 @@ function QuotesContent() {
             </div>
             <div className="flex items-baseline gap-1">
               <span className="text-lg font-medium tracking-tight">
-                {quotesLoading
+                {balancesLoading
                   ? "..."
                   : `${formatAmount(quoteStats.pendingAmount)} €`}
               </span>
@@ -240,6 +205,7 @@ function QuotesContent() {
             quoteIdToOpen={quoteIdToOpen}
             triggerImport={triggerImport}
             onImportTriggered={() => setTriggerImport(false)}
+            onBalancesRefetch={refetchBalances}
           />
         </Suspense>
       </div>
@@ -282,6 +248,7 @@ function QuotesContent() {
             quoteIdToOpen={quoteIdToOpen}
             triggerImport={triggerImport}
             onImportTriggered={() => setTriggerImport(false)}
+            onBalancesRefetch={refetchBalances}
           />
         </Suspense>
       </div>

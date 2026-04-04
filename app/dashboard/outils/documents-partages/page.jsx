@@ -211,6 +211,46 @@ const formatTotalSize = (bytes) => {
   return `${mb.toFixed(1)} Mo`;
 };
 
+// Composant image avec loader pour les aperçus (utile pour les HEIC qui nécessitent une conversion côté serveur)
+function PreviewImage({ src, alt, className, containerClassName }) {
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
+
+  // Reset quand la source change (nouveau document ou rechargement)
+  useEffect(() => {
+    setLoaded(false);
+    setError(false);
+  }, [src]);
+
+  return (
+    <div className={cn("relative", containerClassName)}>
+      {!loaded && !error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted rounded-lg">
+          <LoaderCircle className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      )}
+      {error ? (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted rounded-lg">
+          <FileImage className="h-5 w-5 text-muted-foreground" />
+        </div>
+      ) : (
+        <img
+          src={src}
+          alt={alt}
+          loading="lazy"
+          className={cn(
+            className,
+            "transition-opacity duration-300",
+            !loaded && "opacity-0",
+          )}
+          onLoad={() => setLoaded(true)}
+          onError={() => setError(true)}
+        />
+      )}
+    </div>
+  );
+}
+
 export default function DocumentsPartagesPage() {
   const isMobile = useIsMobile();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -926,8 +966,8 @@ export default function DocumentsPartagesPage() {
       toggleDocumentSelection(docId);
       lastSelectedIndexRef.current = currentIndex;
     } else {
-      // Clic simple - sélectionne uniquement ce document
-      setSelectedDocuments([docId]);
+      // Clic simple - toggle (ajouter/retirer de la sélection)
+      toggleDocumentSelection(docId);
       lastSelectedIndexRef.current = currentIndex;
     }
   };
@@ -3352,11 +3392,11 @@ export default function DocumentsPartagesPage() {
                             <div className="flex flex-col items-center pt-4">
                               <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center mb-3 relative overflow-hidden">
                                 {doc.mimeType?.startsWith("image/") ? (
-                                  <img
+                                  <PreviewImage
                                     src={getPreviewUrl(doc.id) || doc.fileUrl}
                                     alt={doc.name}
-                                    loading="lazy"
                                     className="w-full h-full object-cover rounded-lg"
+                                    containerClassName="w-full h-full"
                                   />
                                 ) : (
                                   getFileIcon(doc.mimeType, doc.fileExtension)
@@ -4341,13 +4381,14 @@ export default function DocumentsPartagesPage() {
             <div className="flex-1 overflow-hidden bg-muted/30">
               {previewDocument?.mimeType?.startsWith("image/") ? (
                 <div className="h-full flex items-center justify-center p-4">
-                  <img
+                  <PreviewImage
                     src={
                       getPreviewUrl(previewDocument.id) ||
                       previewDocument.fileUrl
                     }
                     alt={previewDocument.name}
                     className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
+                    containerClassName="max-h-full max-w-full flex items-center justify-center"
                   />
                 </div>
               ) : previewDocument?.mimeType?.startsWith("video/") ? (

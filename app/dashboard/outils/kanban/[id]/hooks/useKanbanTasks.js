@@ -53,8 +53,6 @@ export const useKanbanTasks = (boardId, board) => {
     dueDate: "",
     tags: [],
     checklist: [],
-    clientId: null,
-    client: null,
     assignedMembers: [],
     images: [], // Images de la tâche
     newTag: "",
@@ -523,7 +521,6 @@ export const useKanbanTasks = (boardId, board) => {
               completed: item.completed || false,
             })),
             assignedMembers: assignedMembers,
-            clientId: taskForm.clientId || null,
             ...(taskForm.timeTracking &&
             (taskForm.timeTracking.totalSeconds > 0 ||
               taskForm.timeTracking.hourlyRate ||
@@ -595,7 +592,6 @@ export const useKanbanTasks = (boardId, board) => {
           completed: item.completed || false,
         })),
         assignedMembers: assignedMembers,
-        clientId: taskForm.clientId || null,
       };
 
       await updateTask({
@@ -674,8 +670,6 @@ export const useKanbanTasks = (boardId, board) => {
             completed: Boolean(item?.completed),
           }))
         : [],
-      clientId: task?.clientId || null,
-      client: task?.client || null,
       assignedMembers: Array.isArray(task?.assignedMembers)
         ? task.assignedMembers
         : [],

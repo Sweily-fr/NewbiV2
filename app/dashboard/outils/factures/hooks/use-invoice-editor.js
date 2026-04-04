@@ -929,7 +929,7 @@ export function useInvoiceEditor({
     numberLoading,
     hasDocumentsForPrefix,
     existingInvoice?.status,
-  ]); // eslint-disable-line react-hooks/exhaustive-deps
+  ]);
 
   // Auto-remplir companyInfo avec les données de l'organisation
   useEffect(() => {
@@ -1117,8 +1117,15 @@ export function useInvoiceEditor({
           const items = JSON.parse(kanbanItems);
           setValue("items", items);
           sessionStorage.removeItem("kanbanInvoiceItems");
+          const kanbanClient = sessionStorage.getItem("kanbanInvoiceClient");
+          if (kanbanClient) {
+            const client = JSON.parse(kanbanClient);
+            setValue("client", client);
+            sessionStorage.removeItem("kanbanInvoiceClient");
+          }
         } catch {
           sessionStorage.removeItem("kanbanInvoiceItems");
+          sessionStorage.removeItem("kanbanInvoiceClient");
         }
       }
     }

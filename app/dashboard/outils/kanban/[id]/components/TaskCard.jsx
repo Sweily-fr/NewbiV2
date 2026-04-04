@@ -10,7 +10,6 @@ import {
   AlignLeft,
   Paperclip,
   ZoomIn,
-  Building2,
   Tag,
   X,
   CornerDownLeft,
@@ -452,15 +451,6 @@ const TaskCard = memo(
       }
     };
 
-    // Nom du client assigné
-    const clientDisplayName = useMemo(() => {
-      if (!task.client) return null;
-      if (task.client.type === "INDIVIDUAL") {
-        return `${task.client.firstName || ""} ${task.client.lastName || task.client.name || ""}`.trim();
-      }
-      return task.client.name || null;
-    }, [task.client]);
-
     // Calcul de la progression - memoized
     const checklistProgress = useMemo(() => {
       if (
@@ -607,16 +597,6 @@ const TaskCard = memo(
               <h4 className="font-medium text-sm text-foreground truncate">
                 {task.title}
               </h4>
-            )}
-
-            {/* Client assigné */}
-            {clientDisplayName && (
-              <div className="mt-1.5">
-                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                  <Building2 className="h-3 w-3 flex-shrink-0" />
-                  <span className="truncate">{clientDisplayName}</span>
-                </span>
-              </div>
             )}
 
             {/* Pied de carte - Organisé sur 2 lignes */}
@@ -1037,7 +1017,6 @@ const TaskCard = memo(
       prevProps.task.columnId === nextProps.task.columnId &&
       prevProps.task.priority === nextProps.task.priority &&
       prevProps.task.dueDate === nextProps.task.dueDate &&
-      prevProps.task.clientId === nextProps.task.clientId &&
       prevProps.task.updatedAt === nextProps.task.updatedAt &&
       prevProps.isDragging === nextProps.isDragging &&
       JSON.stringify(prevProps.task.tags) ===

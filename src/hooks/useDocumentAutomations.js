@@ -32,6 +32,7 @@ const GET_DOCUMENT_AUTOMATIONS = gql`
         lastDocumentId
         failedExecutions
       }
+      matchingDocumentsCount
       createdAt
       updatedAt
     }
@@ -69,6 +70,7 @@ const GET_DOCUMENT_AUTOMATION = gql`
         lastDocumentId
         failedExecutions
       }
+      matchingDocumentsCount
       createdAt
       updatedAt
     }
@@ -135,6 +137,7 @@ const CREATE_DOCUMENT_AUTOMATION = gql`
         lastExecutedAt
         failedExecutions
       }
+      matchingDocumentsCount
       createdAt
       updatedAt
     }
@@ -177,6 +180,7 @@ const UPDATE_DOCUMENT_AUTOMATION = gql`
         lastExecutedAt
         failedExecutions
       }
+      matchingDocumentsCount
       createdAt
       updatedAt
     }

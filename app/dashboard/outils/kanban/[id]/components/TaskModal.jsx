@@ -18,7 +18,6 @@ import {
   Columns,
   Tag,
   Paperclip,
-  Building2,
   Play,
   Square,
 } from "lucide-react";
@@ -66,7 +65,6 @@ import { cn } from "@/src/lib/utils";
 // Sub-components extracted for maintainability
 import { PendingCommentsView } from "./task-modal/PendingCommentsView";
 import { DescriptionEditor } from "./task-modal/DescriptionEditor";
-import { TaskClientSelector } from "./task-modal/TaskClientSelector";
 import { TaskModalHeader } from "./task-modal/TaskModalHeader";
 
 /**
@@ -1162,32 +1160,6 @@ export function TaskModal({
                     </div>
                   </div>
 
-                  {/* Client */}
-                  <div className="flex items-center gap-4 py-2.5">
-                    <Label
-                      className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2"
-                      style={{ color: "#8D8D8D" }}
-                    >
-                      <Building2 className="h-4 w-4" />
-                      Client
-                    </Label>
-                    <div className="flex-1">
-                      <TaskClientSelector
-                        clientId={taskForm.clientId}
-                        clientName={
-                          taskForm.client
-                            ? taskForm.client.type === "INDIVIDUAL"
-                              ? `${taskForm.client.firstName || ""} ${taskForm.client.lastName || taskForm.client.name || ""}`.trim()
-                              : taskForm.client.name || ""
-                            : null
-                        }
-                        onChange={(clientId, client) =>
-                          setTaskForm({ ...taskForm, clientId, client })
-                        }
-                      />
-                    </div>
-                  </div>
-
                   {/* Gestion du temps */}
                   <div className="flex items-center gap-4 py-2.5">
                     <Label
@@ -2066,27 +2038,6 @@ export function TaskModal({
                       </DropdownMenu>
                     </div>
                   </div>
-                </div>
-
-                {/* Client assigné */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-normal flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-muted-foreground" />
-                    Client
-                  </Label>
-                  <TaskClientSelector
-                    clientId={taskForm.clientId}
-                    clientName={
-                      taskForm.client
-                        ? taskForm.client.type === "INDIVIDUAL"
-                          ? `${taskForm.client.firstName || ""} ${taskForm.client.lastName || taskForm.client.name || ""}`.trim()
-                          : taskForm.client.name || ""
-                        : null
-                    }
-                    onChange={(clientId, client) =>
-                      setTaskForm({ ...taskForm, clientId, client })
-                    }
-                  />
                 </div>
 
                 {/* Timer et facturation */}
