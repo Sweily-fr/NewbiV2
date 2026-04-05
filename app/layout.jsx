@@ -6,7 +6,7 @@ import { ThemeProvider } from "@/src/components/theme-provider";
 import { ApolloWrapper } from "@/src/providers/apollo-provider";
 import { Toaster } from "@/src/components/ui/sonner";
 import { DevAnimationTrigger } from "@/src/components/dev-animation-trigger";
-// import CookieManager from "@/src/components/cookies/CookieManager";
+import CookieManager from "@/src/components/cookies/CookieManager";
 import "@/src/utils/clearApolloCache"; // Nettoyage du cache Apollo
 
 export const viewport = {
@@ -103,6 +103,17 @@ export default function RootLayout({ children }) {
       translate="no"
     >
       <head>
+        {/* Google Tag Manager */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-5HP9SHS9');`,
+          }}
+        />
+        {/* End Google Tag Manager */}
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta
@@ -165,6 +176,16 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body className="font-sans antialiased">
+        {/* Google Tag Manager (noscript) */}
+        <noscript>
+          <iframe
+            src="https://www.googletagmanager.com/ns.html?id=GTM-5HP9SHS9"
+            height="0"
+            width="0"
+            style={{ display: "none", visibility: "hidden" }}
+          />
+        </noscript>
+        {/* End Google Tag Manager (noscript) */}
         {/* TikTok Pixel Code */}
         <Script
           id="tiktok-pixel"
@@ -185,7 +206,7 @@ export default function RootLayout({ children }) {
         <ApolloWrapper>
           <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
             {children}
-            {/* <CookieManager /> */}
+            <CookieManager />
           </ThemeProvider>
         </ApolloWrapper>
         <Toaster />
