@@ -6,9 +6,13 @@ export const CREATE_CLIENT = gql`
       id
       name
       email
+      phone
       type
       firstName
       lastName
+      contactFunction
+      contactDepartment
+      contactLocation
       address {
         street
         city
@@ -29,6 +33,8 @@ export const CREATE_CLIENT = gql`
       contacts {
         id
         position
+        department
+        location
         firstName
         lastName
         email
@@ -88,9 +94,13 @@ export const UPDATE_CLIENT = gql`
       id
       name
       email
+      phone
       type
       firstName
       lastName
+      contactFunction
+      contactDepartment
+      contactLocation
       address {
         street
         city
@@ -111,6 +121,8 @@ export const UPDATE_CLIENT = gql`
       contacts {
         id
         position
+        department
+        location
         firstName
         lastName
         email

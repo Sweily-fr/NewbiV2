@@ -14,7 +14,6 @@ import {
   Clock,
   Users,
   UserRoundPlus,
-  Building2,
   X,
   Search,
   Check,
@@ -297,6 +296,7 @@ function StatusPopoverContent({
   task,
   moveTask,
   workspaceId,
+  onClose,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const filtered = columns.filter((c) =>
@@ -326,20 +326,20 @@ function StatusPopoverContent({
         {filtered.map((col) => (
           <button
             key={col.id}
-            onClick={async (e) => {
+            onClick={(e) => {
               e.stopPropagation();
-              try {
-                await moveTask({
-                  variables: {
-                    id: task.id,
-                    columnId: col.id,
-                    position: 0,
-                    workspaceId,
-                  },
-                });
-              } catch (error) {
+              // Fermer le Popover AVANT le moveTask pour éviter un portal orphelin
+              onClose?.();
+              moveTask({
+                variables: {
+                  id: task.id,
+                  columnId: col.id,
+                  position: 0,
+                  workspaceId,
+                },
+              }).catch((error) => {
                 console.error("Erreur lors du déplacement de la tâche:", error);
-              }
+              });
             }}
             className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors cursor-pointer ${
               col.id === column.id ? "bg-muted/60" : ""
@@ -734,11 +734,14 @@ function StatusPopoverWrapper({
 }) {
   const triggerRef = useRef(null);
   const [popoverSide, setPopoverSide] = useState("bottom");
+  const [open, setOpen] = useState(false);
 
   return (
     <Popover
-      onOpenChange={(open) => {
-        if (open) {
+      open={open}
+      onOpenChange={(isOpen) => {
+        setOpen(isOpen);
+        if (isOpen) {
           if (popoverOpenRef) popoverOpenRef.current = true;
           if (triggerRef.current) {
             const rect = triggerRef.current.getBoundingClientRect();
@@ -778,6 +781,7 @@ function StatusPopoverWrapper({
           task={task}
           moveTask={moveTask}
           workspaceId={workspaceId}
+          onClose={() => setOpen(false)}
         />
       </PopoverContent>
     </Popover>
@@ -1091,7 +1095,7 @@ function InlineAddTask({
       ref={rowRef}
       className="grid px-4 sm:px-6 py-1.5 items-center bg-muted/30 relative overflow-hidden after:absolute after:bottom-0 after:left-6 after:right-6 after:sm:left-8 after:sm:right-8 after:h-px after:bg-border/60 after:content-['']"
       style={{
-        gridTemplateColumns: "2.5fr 1fr 1fr 1fr 1fr 1fr 80px",
+        gridTemplateColumns: "2.5fr 1fr 1fr 1fr 1fr 80px",
         gap: "2rem",
       }}
     >
@@ -1631,7 +1635,7 @@ function TaskRow({
       data-dnd-list-column={column.id}
       data-dnd-list-index={index}
       style={{
-        gridTemplateColumns: "2.5fr 1fr 1fr 1fr 1fr 1fr 80px",
+        gridTemplateColumns: "2.5fr 1fr 1fr 1fr 1fr 80px",
         gap: "2rem",
         ...(isSelected ? { backgroundColor: "#5A50FF0D" } : {}),
       }}
@@ -1674,6 +1678,7 @@ export function KanbanListView({
   workspaceId,
 }) {
   const [collapsedColumns, setCollapsedColumns] = useState(new Set());
+  const [expandedEmptyColumns, setExpandedEmptyColumns] = useState(new Set());
   const [inlineAddColumnId, setInlineAddColumnId] = useState(null);
   const [isAnyPopoverOpen, setIsAnyPopoverOpen] = useState(false);
   const popoverOpenRef = useRef(false);
@@ -1740,15 +1745,29 @@ export function KanbanListView({
   };
 
   const toggleColumn = (columnId) => {
-    setCollapsedColumns((prev) => {
-      const next = new Set(prev);
-      if (next.has(columnId)) {
-        next.delete(columnId);
-      } else {
-        next.add(columnId);
-      }
-      return next;
-    });
+    const tasks = getFilteredTasksByColumn(columnId);
+    if (tasks.length === 0) {
+      // Pour les colonnes vides, gérer via expandedEmptyColumns
+      setExpandedEmptyColumns((prev) => {
+        const next = new Set(prev);
+        if (next.has(columnId)) {
+          next.delete(columnId);
+        } else {
+          next.add(columnId);
+        }
+        return next;
+      });
+    } else {
+      setCollapsedColumns((prev) => {
+        const next = new Set(prev);
+        if (next.has(columnId)) {
+          next.delete(columnId);
+        } else {
+          next.add(columnId);
+        }
+        return next;
+      });
+    }
   };
 
   // Ouvrir automatiquement une section quand on drag dessus
@@ -1756,6 +1775,11 @@ export function KanbanListView({
     setCollapsedColumns((prev) => {
       const next = new Set(prev);
       next.delete(columnId);
+      return next;
+    });
+    setExpandedEmptyColumns((prev) => {
+      const next = new Set(prev);
+      next.add(columnId);
       return next;
     });
   };
@@ -1817,7 +1841,9 @@ export function KanbanListView({
         const tasks = getFilteredTasksByColumn(column.id);
         const isCollapsed =
           collapsedColumns.has(column.id) ||
-          (tasks.length === 0 && !collapsedColumns.has(column.id));
+          (tasks.length === 0 &&
+            !expandedEmptyColumns.has(column.id) &&
+            inlineAddColumnId !== column.id);
 
         return (
           <div key={column.id} className="space-y-0">
@@ -1929,6 +1955,7 @@ export function KanbanListView({
                                   columns.map((c) => c.id),
                                 );
                                 setCollapsedColumns(allCollapsed);
+                                setExpandedEmptyColumns(new Set());
                               }}
                               className="gap-2"
                             >
@@ -2085,6 +2112,7 @@ export function KanbanListView({
                                   columns.map((c) => c.id),
                                 );
                                 setCollapsedColumns(allCollapsed);
+                                setExpandedEmptyColumns(new Set());
                               }}
                               className="gap-2"
                             >
@@ -2123,7 +2151,7 @@ export function KanbanListView({
                   <div
                     className="grid px-4 sm:px-6 py-2 text-xs font-medium text-muted-foreground/70 tracking-wide relative after:absolute after:bottom-0 after:left-6 after:right-6 sm:after:left-8 sm:after:right-8 after:h-px after:bg-border/60 after:content-['']"
                     style={{
-                      gridTemplateColumns: "2.5fr 1fr 1fr 1fr 1fr 1fr 80px",
+                      gridTemplateColumns: "2.5fr 1fr 1fr 1fr 1fr 80px",
                       gap: "2rem",
                     }}
                   >
@@ -2135,7 +2163,6 @@ export function KanbanListView({
                     <div className="flex items-center">Status</div>
                     <div className="flex items-center">Échéance</div>
                     <div className="flex items-center">Priorité</div>
-                    <div className="flex items-center">Client</div>
                     <div className="flex items-center justify-center">
                       Actions
                     </div>
@@ -2485,24 +2512,6 @@ export function KanbanListView({
                                   </button>
                                 }
                               />
-                            </div>
-
-                            {/* Client */}
-                            <div className="flex items-center min-w-0">
-                              {task.client ? (
-                                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground truncate">
-                                  <Building2 className="h-3.5 w-3.5 flex-shrink-0" />
-                                  <span className="truncate">
-                                    {task.client.type === "INDIVIDUAL"
-                                      ? `${task.client.firstName || ""} ${task.client.lastName || task.client.name || ""}`.trim()
-                                      : task.client.name || ""}
-                                  </span>
-                                </span>
-                              ) : (
-                                <span className="text-xs text-muted-foreground/50">
-                                  -
-                                </span>
-                              )}
                             </div>
 
                             {/* Actions */}

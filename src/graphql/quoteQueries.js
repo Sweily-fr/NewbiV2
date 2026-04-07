@@ -239,6 +239,17 @@ export const QUOTE_LIST_FRAGMENT = gql`
 
 // ==================== QUERIES ====================
 
+export const GET_QUOTE_BALANCES = gql`
+  query GetQuoteBalances($workspaceId: ID!) {
+    quoteBalances(workspaceId: $workspaceId) {
+      totalQuoted
+      totalAccepted
+      pendingAmount
+      pendingCount
+    }
+  }
+`;
+
 export const GET_QUOTES = gql`
   query GetQuotes(
     $workspaceId: ID!
@@ -459,6 +470,28 @@ import { toast } from "@/src/components/ui/sonner";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useErrorHandler } from "@/src/hooks/useErrorHandler";
 
+// Hook pour récupérer les soldes agrégés (devis créés + importés)
+export const useQuoteBalances = () => {
+  const { workspaceId } = useRequiredWorkspace();
+
+  const { data, loading, refetch } = useQuery(GET_QUOTE_BALANCES, {
+    variables: { workspaceId },
+    fetchPolicy: "cache-and-network",
+    skip: !workspaceId,
+  });
+
+  return {
+    balances: data?.quoteBalances || {
+      totalQuoted: 0,
+      totalAccepted: 0,
+      pendingAmount: 0,
+      pendingCount: 0,
+    },
+    loading,
+    refetch,
+  };
+};
+
 // Hook optimisé pour récupérer la liste des devis
 export const useQuotes = (filters = {}) => {
   const {
@@ -535,6 +568,7 @@ export const useQuote = (id) => {
     variables: { workspaceId, id },
     skip: !id || !workspaceId,
     errorPolicy: "all",
+    fetchPolicy: "network-only",
   });
 
   return {

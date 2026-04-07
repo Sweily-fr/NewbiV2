@@ -87,7 +87,6 @@ export const NOTIFICATION_RECEIVED_SUBSCRIPTION = gql`
       data {
         taskId
         taskTitle
-        taskDescription
         boardId
         boardName
         columnName

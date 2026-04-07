@@ -111,10 +111,17 @@ export default function QuoteTable({
   quoteIdToOpen,
   triggerImport,
   onImportTriggered,
+  onBalancesRefetch,
 }) {
   const inputRef = useRef(null);
-  const { quotes, loading, error, refetch } = useQuotes();
+  const { quotes, loading, error, refetch: refetchQuotes } = useQuotes();
   const { workspaceId } = useRequiredWorkspace();
+
+  // Wrapper pour rafraîchir les devis ET les soldes
+  const refetch = useCallback(() => {
+    refetchQuotes();
+    onBalancesRefetch?.();
+  }, [refetchQuotes, onBalancesRefetch]);
 
   // Subscription temps réel pour le tracking d'ouverture d'email
   useEmailTrackingSubscription({
@@ -1000,7 +1007,10 @@ export default function QuoteTable({
         onOpenChange={(open) => {
           if (!open) setSelectedImportedQuote(null);
         }}
-        onUpdate={() => refetchImported()}
+        onUpdate={() => {
+          refetchImported();
+          onBalancesRefetch?.();
+        }}
       />
 
       {/* Modal d'envoi par email - géré au niveau du tableau pour éviter les re-renders */}

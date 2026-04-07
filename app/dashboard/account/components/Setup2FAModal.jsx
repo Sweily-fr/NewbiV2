@@ -24,7 +24,6 @@ import QRCodeReact from "react-qr-code";
 
 export function Setup2FAModal({ isOpen, onClose }) {
   const [selectedMethod, setSelectedMethod] = useState(null);
-  const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
   const [step, setStep] = useState(1);
@@ -42,7 +41,7 @@ export function Setup2FAModal({ isOpen, onClose }) {
     {
       id: "email",
       name: "E-mail",
-      description: "Recevoir un code par e-mail",
+      description: "Recevoir un code par e-mail à chaque connexion",
       icon: Mail,
     },
   ];
@@ -62,62 +61,69 @@ export function Setup2FAModal({ isOpen, onClose }) {
         return;
       }
 
-      if (selectedMethod.id === "sms") {
-        if (!phoneNumber) {
-          toast.error("Veuillez saisir votre numéro de téléphone");
-          setIsLoading(false);
-          return;
-        }
+      // enable() active toujours le TOTP + génère les backup codes
+      const { data, error } = await authClient.twoFactor.enable({
+        password: password,
+        issuer: "Newbi",
+      });
 
-        const { data, error } = await authClient.twoFactor.enable({
-          password: password,
-          issuer: "Newbi",
-        });
+      if (error) {
+        toast.error(error.message || "Erreur lors de l'activation");
+        return;
+      }
 
-        if (error) {
-          toast.error(error.message || "Erreur lors de l'activation");
-          return;
-        }
+      // Sauvegarder les backup codes
+      if (data?.backupCodes) {
+        setBackupCodes(data.backupCodes);
+      }
 
-        toast.success("Code envoyé par SMS");
-      } else if (selectedMethod.id === "email") {
-        const { data, error } = await authClient.twoFactor.enable({
-          password: password,
-          issuer: "Newbi",
-          type: "otp",
-        });
-
-        if (error) {
-          toast.error(error.message || "Erreur lors de l'activation");
-          return;
-        }
-
-        toast.success("Code envoyé par e-mail");
-      } else {
-        const { data, error } = await authClient.twoFactor.enable({
-          password: password,
-          issuer: "Newbi",
-          type: "totp",
-        });
-
-        if (error) {
-          toast.error(error.message || "Erreur lors de l'activation");
-          return;
-        }
-
-        if (data && data.totpURI) {
+      if (selectedMethod.id === "authenticator") {
+        // Authenticator : afficher le QR code
+        if (data?.totpURI) {
           setTotpUri(data.totpURI);
-          setBackupCodes(data.backupCodes || []);
-          return;
         } else {
           toast.error("Impossible de générer le QR code");
           return;
         }
-      }
+      } else if (selectedMethod.id === "email") {
+        // Email : envoyer un OTP via notre API custom
+        const res = await fetch("/api/auth/send-2fa-setup-otp", {
+          method: "POST",
+          credentials: "include",
+        });
 
-      setStep(3);
+        if (!res.ok) {
+          const err = await res.json();
+          toast.error(err.error || "Erreur lors de l'envoi du code");
+          return;
+        }
+
+        toast.success("Code de vérification envoyé par e-mail");
+        setStep(3);
+      }
     } catch (error) {
+      console.error("Erreur setup 2FA:", error);
       toast.error("Erreur lors de la configuration");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/auth/send-2fa-setup-otp", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        toast.error(err.error || "Erreur lors du renvoi");
+        return;
+      }
+      toast.success("Code renvoyé par e-mail");
+    } catch (err) {
+      toast.error("Impossible de renvoyer le code");
     } finally {
       setIsLoading(false);
     }
@@ -129,15 +135,28 @@ export function Setup2FAModal({ isOpen, onClose }) {
     setIsLoading(true);
 
     try {
-      const isTotp = selectedMethod?.id === "authenticator";
-      const { data, error } = isTotp
-        ? await authClient.twoFactor.verifyTotp({ code: code })
-        : await authClient.twoFactor.verifyOtp({ code: code });
+      if (selectedMethod?.id === "authenticator") {
+        const { data, error } = await authClient.twoFactor.verifyTotp({ code: code });
+        if (error) {
+          toast.error(error.message || "Code incorrect");
+          setVerificationCode("");
+          return;
+        }
+      } else {
+        // Email : vérifier via notre API custom
+        const res = await fetch("/api/auth/verify-2fa-setup-otp", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code }),
+        });
 
-      if (error) {
-        toast.error(error.message || "Code incorrect");
-        setVerificationCode("");
-        return;
+        if (!res.ok) {
+          const err = await res.json();
+          toast.error(err.error || "Code incorrect");
+          setVerificationCode("");
+          return;
+        }
       }
 
       toast.success("Vérification en 2 étapes activée");
@@ -152,7 +171,6 @@ export function Setup2FAModal({ isOpen, onClose }) {
 
   const handleClose = () => {
     setSelectedMethod(null);
-    setPhoneNumber("");
     setPassword("");
     setVerificationCode("");
     setStep(1);
@@ -161,7 +179,7 @@ export function Setup2FAModal({ isOpen, onClose }) {
     onClose();
   };
 
-  // ── Step 1 : Choix de la méthode ──
+  // ── Step 1 : Choix de la methode ──
   const renderStep1 = () => (
     <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
       <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
@@ -231,23 +249,7 @@ export function Setup2FAModal({ isOpen, onClose }) {
           </p>
         </div>
 
-        {/* SMS */}
-        {selectedMethod?.id === "sms" && (
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
-              Numéro de téléphone
-            </label>
-            <Input
-              type="tel"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              placeholder="+33 6 12 34 56 78"
-              className="h-9"
-            />
-          </div>
-        )}
-
-        {/* Authenticator */}
+        {/* Authenticator - QR Code */}
         {selectedMethod?.id === "authenticator" && (
           <div className="space-y-3">
             {totpUri ? (
@@ -271,14 +273,14 @@ export function Setup2FAModal({ isOpen, onClose }) {
           </div>
         )}
 
-        {/* Email */}
+        {/* Email - Info */}
         {selectedMethod?.id === "email" && (
           <div className="flex items-center gap-3 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5">
             <div className="w-8 h-8 rounded-lg bg-white dark:bg-[#1a1a1a] border border-[#eeeff1] dark:border-[#232323] flex items-center justify-center flex-shrink-0">
               <Mail className="h-4 w-4 text-gray-400" />
             </div>
             <p className="text-xs text-gray-400">
-              Les codes seront envoyés à votre adresse e-mail actuelle.
+              Un code de vérification sera envoyé à votre adresse e-mail pour confirmer l'activation.
             </p>
           </div>
         )}
@@ -309,7 +311,7 @@ export function Setup2FAModal({ isOpen, onClose }) {
     </div>
   );
 
-  // ── Step 3 : Vérification ──
+  // ── Step 3 : Verification ──
   const renderStep3 = () => (
     <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
       <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
@@ -327,7 +329,9 @@ export function Setup2FAModal({ isOpen, onClose }) {
 
       <div className="px-5 pt-4 pb-5 space-y-4">
         <p className="text-xs text-gray-400 text-center">
-          Saisissez le code à 6 chiffres que vous avez reçu.
+          {selectedMethod?.id === "email"
+            ? "Saisissez le code à 6 chiffres envoyé par e-mail."
+            : "Saisissez le code à 6 chiffres de votre application."}
         </p>
 
         <div className="flex justify-center">
@@ -348,6 +352,19 @@ export function Setup2FAModal({ isOpen, onClose }) {
           <div className="flex items-center justify-center gap-2">
             <LoaderCircle className="h-3.5 w-3.5 animate-spin text-gray-400" />
             <span className="text-xs text-gray-400">Vérification...</span>
+          </div>
+        )}
+
+        {selectedMethod?.id === "email" && (
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={handleResendOtp}
+              disabled={isLoading}
+              className="text-xs text-[#5a50ff] hover:text-[#4a40ee] underline"
+            >
+              Renvoyer le code
+            </button>
           </div>
         )}
       </div>

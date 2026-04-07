@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { PreviewImage } from "@/src/components/ui/preview-image";
 import { useMutation } from "@apollo/client";
 import { PROCESS_DOCUMENT_OCR } from "@/src/graphql/mutations/ocr";
 import {
@@ -797,10 +798,11 @@ export function PurchaseInvoiceUploadDrawer({
                             >
                               <div className="w-full h-52 bg-gray-50 dark:bg-gray-900 flex items-center justify-center overflow-hidden">
                                 {isImage ? (
-                                  <img
+                                  <PreviewImage
                                     src={blobUrl}
                                     alt={r.file.name}
                                     className="w-full h-full object-contain"
+                                    containerClassName="w-full h-full"
                                   />
                                 ) : isPdf ? (
                                   <iframe

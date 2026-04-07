@@ -36,6 +36,7 @@ import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitatio
 import { useNotificationPreferences } from "@/src/hooks/useNotificationPreferences";
 import { useActivityNotifications } from "@/src/hooks/useActivityNotifications";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   AtSign,
   Activity,
@@ -151,7 +152,8 @@ const notificationCategories = {
   },
 };
 
-export function NotificationsSection() {
+export function NotificationsSection({ onClose }) {
+  const router = useRouter();
   const [invitations, setInvitations] = useState([]);
   const [sentInvitations, setSentInvitations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -716,6 +718,15 @@ export function NotificationsSection() {
                     onClick={() => {
                       if (!notification.read)
                         markActivityAsRead(notification.id);
+                      if (notification.data?.url) {
+                        if (onClose) onClose();
+                        try {
+                          const url = new URL(notification.data.url);
+                          router.push(url.pathname + url.search);
+                        } catch {
+                          router.push(notification.data.url);
+                        }
+                      }
                     }}
                   >
                     {/* Avatar */}

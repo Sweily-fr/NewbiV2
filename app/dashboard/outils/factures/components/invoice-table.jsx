@@ -105,11 +105,7 @@ import { SendDocumentModal } from "./send-document-modal";
 import { SaveInvoiceTemplateDialog } from "./SaveInvoiceTemplateDialog";
 import { ImportInvoiceModal } from "./import-invoice-modal";
 import { ImportedInvoiceSidebar } from "./imported-invoice-sidebar";
-import {
-  useImportedInvoices,
-  IMPORTED_INVOICE_STATUS_LABELS,
-  IMPORTED_INVOICE_STATUS_COLORS,
-} from "@/src/graphql/importedInvoiceQueries";
+import { useImportedInvoices } from "@/src/graphql/importedInvoiceQueries";
 import { useEmailTrackingSubscription } from "@/src/graphql/documentEmailQueries";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
@@ -121,6 +117,7 @@ export default function InvoiceTable({
   triggerImport,
   onImportTriggered,
   onFilteredDataChange,
+  onBalancesRefetch,
 }) {
   const router = useRouter();
   const inputRef = useRef(null);
@@ -208,6 +205,8 @@ export default function InvoiceTable({
     setClientFilter,
     dateFilter,
     setDateFilter,
+    typeFilter,
+    setTypeFilter,
     selectedRows,
     handleDeleteSelected,
     isDeleting,
@@ -215,13 +214,14 @@ export default function InvoiceTable({
     data: combinedInvoices,
     onRefetch: refetch,
     onRefetchImported: refetchImported,
+    onBalancesRefetch,
     reminderEnabled,
     onOpenReminderSettings,
     excludedClientIds,
-    onOpenSidebar: setInvoiceToOpen, // Passer la fonction pour ouvrir la sidebar au niveau du tableau
-    onOpenImportedSidebar: setSelectedImportedInvoice, // Passer la fonction pour ouvrir la sidebar des factures importées
-    onSendEmail: setSendEmailInvoice, // Passer la fonction pour ouvrir la modal d'envoi au niveau du tableau
-    onSaveAsTemplate: setTemplateInvoice, // Passer la fonction pour ouvrir le dialog de template
+    onOpenSidebar: setInvoiceToOpen,
+    onOpenImportedSidebar: setSelectedImportedInvoice,
+    onSendEmail: setSendEmailInvoice,
+    onSaveAsTemplate: setTemplateInvoice,
   });
 
   // Notifier le parent des données filtrées pour les KPIs
@@ -232,6 +232,7 @@ export default function InvoiceTable({
     dateFilter: dateFilter
       ? { from: dateFilter.from?.getTime(), to: dateFilter.to?.getTime() }
       : null,
+    typeFilter,
   });
   const dataLength = combinedInvoices.length;
   useEffect(() => {
@@ -424,6 +425,8 @@ export default function InvoiceTable({
             setClientFilter={setClientFilter}
             dateFilter={dateFilter}
             setDateFilter={setDateFilter}
+            typeFilter={typeFilter}
+            setTypeFilter={setTypeFilter}
             invoices={invoices || []}
             table={table}
           />
@@ -526,20 +529,22 @@ export default function InvoiceTable({
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header, index, arr) => (
-                    <th
-                      key={header.id}
-                      style={{ width: header.getSize() }}
-                      className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                    </th>
-                  ))}
+                  {headerGroup.headers
+                    .filter((h) => h.id !== "_type")
+                    .map((header, index, arr) => (
+                      <th
+                        key={header.id}
+                        style={{ width: header.getSize() }}
+                        className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
+                      </th>
+                    ))}
                 </tr>
               ))}
             </thead>
@@ -612,18 +617,21 @@ export default function InvoiceTable({
                       }
                     }}
                   >
-                    {row.getVisibleCells().map((cell, index, arr) => (
-                      <td
-                        key={cell.id}
-                        style={{ width: cell.column.getSize() }}
-                        className={`p-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </td>
-                    ))}
+                    {row
+                      .getVisibleCells()
+                      .filter((c) => c.column.id !== "_type")
+                      .map((cell, index, arr) => (
+                        <td
+                          key={cell.id}
+                          style={{ width: cell.column.getSize() }}
+                          className={`p-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </td>
+                      ))}
                   </tr>
                 ))
               ) : (
@@ -1040,7 +1048,10 @@ export default function InvoiceTable({
           invoice={invoiceToOpen}
           isOpen={!!invoiceToOpen}
           onClose={() => setInvoiceToOpen(null)}
-          onRefetch={refetch}
+          onRefetch={() => {
+            refetch();
+            onBalancesRefetch?.();
+          }}
         />
       )}
 
@@ -1050,7 +1061,10 @@ export default function InvoiceTable({
           invoice={mobileFullscreenInvoice}
           isOpen={!!mobileFullscreenInvoice}
           onClose={() => setMobileFullscreenInvoice(null)}
-          onRefetch={refetch}
+          onRefetch={() => {
+            refetch();
+            onBalancesRefetch?.();
+          }}
         />
       )}
 
@@ -1073,6 +1087,7 @@ export default function InvoiceTable({
         onImportSuccess={() => {
           refetchImported();
           refetch();
+          onBalancesRefetch?.();
         }}
       />
 
@@ -1083,6 +1098,7 @@ export default function InvoiceTable({
         onOpenChange={(open) => !open && setSelectedImportedInvoice(null)}
         onUpdate={() => {
           refetchImported();
+          onBalancesRefetch?.();
           setSelectedImportedInvoice(null);
         }}
       />
@@ -1143,6 +1159,7 @@ export default function InvoiceTable({
           onSent={() => {
             setSendEmailInvoice(null);
             refetch();
+            onBalancesRefetch?.();
           }}
         />
       )}

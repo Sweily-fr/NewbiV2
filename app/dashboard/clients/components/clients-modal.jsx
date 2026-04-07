@@ -10,6 +10,10 @@ import {
   Copy,
   Bell,
   X,
+  Phone,
+  MapPin,
+  Briefcase,
+  Building2,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/src/lib/utils";
@@ -119,6 +123,10 @@ export default function ClientsModal({
       firstName: "",
       lastName: "",
       email: "",
+      phone: "",
+      contactFunction: "",
+      contactDepartment: "",
+      contactLocation: "",
       address: {
         street: "",
         city: "",
@@ -332,6 +340,10 @@ export default function ClientsModal({
         firstName: fullClient.firstName || "",
         lastName: fullClient.lastName || "",
         email: fullClient.email || "",
+        phone: fullClient.phone || "",
+        contactFunction: fullClient.contactFunction || "",
+        contactDepartment: fullClient.contactDepartment || "",
+        contactLocation: fullClient.contactLocation || "",
         address: {
           street: fullClient.address?.street || "",
           city: fullClient.address?.city || "",
@@ -358,6 +370,10 @@ export default function ClientsModal({
         firstName: "",
         lastName: "",
         email: "",
+        phone: "",
+        contactFunction: "",
+        contactDepartment: "",
+        contactLocation: "",
         address: {
           street: "",
           city: "",
@@ -445,6 +461,10 @@ export default function ClientsModal({
         firstName: "",
         lastName: "",
         email: "", // À compléter manuellement
+        phone: "",
+        contactFunction: "",
+        contactDepartment: "",
+        contactLocation: "",
         address: clientData.address,
         shippingAddress: clientData.shippingAddress,
         siret: clientData.siret,
@@ -534,6 +554,8 @@ export default function ClientsModal({
       const contactsArray = clientContacts.map((contact) => ({
         id: contact.id?.startsWith("temp-") ? undefined : contact.id,
         position: contact.position || "",
+        department: contact.department || "",
+        location: contact.location || "",
         firstName: contact.firstName || "",
         lastName: contact.lastName || "",
         email: contact.email || "",
@@ -598,6 +620,10 @@ export default function ClientsModal({
           firstName: "",
           lastName: "",
           email: "",
+          phone: "",
+          contactFunction: "",
+          contactDepartment: "",
+          contactLocation: "",
           address: {
             street: "",
             city: "",
@@ -1005,6 +1031,54 @@ export default function ClientsModal({
                       </div>
                     )}
 
+                    {/* Informations contact principal (entreprises) */}
+                    {clientType === "COMPANY" && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                            Fonction
+                          </Label>
+                          <Input
+                            placeholder="Ex: Directeur commercial"
+                            {...register("contactFunction")}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                            Service rattaché
+                          </Label>
+                          <Input
+                            placeholder="Ex: Direction commerciale"
+                            {...register("contactDepartment")}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {clientType === "COMPANY" && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                            Localisation du contact
+                          </Label>
+                          <Input
+                            placeholder="Ex: Paris, Bureau 3A"
+                            {...register("contactLocation")}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                            Téléphone entreprise
+                          </Label>
+                          <Input
+                            type="tel"
+                            placeholder="01 23 45 67 89"
+                            {...register("phone")}
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     {/* Email pour particuliers (ligne séparée) */}
                     {clientType === "INDIVIDUAL" && (
                       <div className="space-y-2">
@@ -1274,10 +1348,6 @@ export default function ClientsModal({
                     {/* Informations entreprise (pour les entreprises) */}
                     {clientType === "COMPANY" && (
                       <div className="space-y-3 border-t pt-4">
-                        {/* <Label className="text-base font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
-                          Informations entreprise
-                        </Label> */}
-
                         <div className="space-y-2">
                           <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
                             {isInternational
@@ -1778,6 +1848,54 @@ export default function ClientsModal({
                               {errors.email.message}
                             </p>
                           )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Informations contact principal (entreprises) */}
+                    {clientType === "COMPANY" && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                            Fonction
+                          </Label>
+                          <Input
+                            placeholder="Ex: Directeur commercial"
+                            {...register("contactFunction")}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                            Service rattaché
+                          </Label>
+                          <Input
+                            placeholder="Ex: Direction commerciale"
+                            {...register("contactDepartment")}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {clientType === "COMPANY" && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                            Localisation du contact
+                          </Label>
+                          <Input
+                            placeholder="Ex: Paris, Bureau 3A"
+                            {...register("contactLocation")}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                            Téléphone entreprise
+                          </Label>
+                          <Input
+                            type="tel"
+                            placeholder="01 23 45 67 89"
+                            {...register("phone")}
+                          />
                         </div>
                       </div>
                     )}

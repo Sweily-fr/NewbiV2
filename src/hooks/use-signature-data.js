@@ -515,14 +515,17 @@ function SignatureProviderContent({ children }) {
   );
 
   // Hook pour récupérer une signature spécifique
+  // fetchPolicy: 'network-only' pour toujours charger les données fraîches depuis le serveur
+  // (évite les problèmes de cache Apollo quand on navigue depuis la preview modal)
   const [
     getSignature,
     {
       data: signatureQueryData,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       error: signatureQueryError,
       loading: loadingSignature,
     },
-  ] = useLazyQuery(GET_EMAIL_SIGNATURE);
+  ] = useLazyQuery(GET_EMAIL_SIGNATURE, { fetchPolicy: "network-only" });
 
   const [signatureData, setSignatureData] = useState(defaultSignatureData);
   const [editingSignatureId, setEditingSignatureId] = useState(null);
@@ -632,35 +635,47 @@ function SignatureProviderContent({ children }) {
         socialNetworks: (() => {
           const fetchedNetworks = fetchedSignature.socialNetworks || {};
           const normalized = {};
+          const supportedPlatforms = [
+            "facebook",
+            "instagram",
+            "linkedin",
+            "x",
+            "github",
+            "youtube",
+          ];
 
-          // Parcourir les réseaux récupérés du backend
-          Object.keys(fetchedNetworks).forEach((platform) => {
+          // Parcourir uniquement les plateformes supportées (exclure __typename etc.)
+          supportedPlatforms.forEach((platform) => {
             const value = fetchedNetworks[platform];
             if (value) {
               // Convertir objet { url: "..." } en chaîne directe
-              normalized[platform] = typeof value === "object" && value.url
-                ? value.url
-                : value;
+              normalized[platform] =
+                typeof value === "object" && value.url ? value.url : value;
             }
           });
 
           return normalized;
         })(),
         // S'assurer que elementsOrder est un tableau valide
-        elementsOrder: (fetchedSignature.elementsOrder && fetchedSignature.elementsOrder.length > 0)
-          ? fetchedSignature.elementsOrder
-          : defaultSignatureData.elementsOrder,
+        elementsOrder:
+          fetchedSignature.elementsOrder &&
+          fetchedSignature.elementsOrder.length > 0
+            ? fetchedSignature.elementsOrder
+            : defaultSignatureData.elementsOrder,
         // S'assurer que horizontalLayout est un objet valide avec les 3 colonnes
         horizontalLayout: {
-          leftColumn: fetchedSignature.horizontalLayout?.leftColumn?.length > 0
-            ? fetchedSignature.horizontalLayout.leftColumn
-            : defaultSignatureData.horizontalLayout.leftColumn,
-          rightColumn: fetchedSignature.horizontalLayout?.rightColumn?.length > 0
-            ? fetchedSignature.horizontalLayout.rightColumn
-            : defaultSignatureData.horizontalLayout.rightColumn,
-          bottomRow: fetchedSignature.horizontalLayout?.bottomRow?.length > 0
-            ? fetchedSignature.horizontalLayout.bottomRow
-            : defaultSignatureData.horizontalLayout.bottomRow,
+          leftColumn:
+            fetchedSignature.horizontalLayout?.leftColumn?.length > 0
+              ? fetchedSignature.horizontalLayout.leftColumn
+              : defaultSignatureData.horizontalLayout.leftColumn,
+          rightColumn:
+            fetchedSignature.horizontalLayout?.rightColumn?.length > 0
+              ? fetchedSignature.horizontalLayout.rightColumn
+              : defaultSignatureData.horizontalLayout.rightColumn,
+          bottomRow:
+            fetchedSignature.horizontalLayout?.bottomRow?.length > 0
+              ? fetchedSignature.horizontalLayout.bottomRow
+              : defaultSignatureData.horizontalLayout.bottomRow,
         },
         socialColors: {
           ...defaultSignatureData.socialColors,
@@ -908,7 +923,9 @@ function SignatureProviderContent({ children }) {
     const companyPhone = organization?.companyPhone || "";
     const addressParts = [
       organization?.addressStreet,
-      [organization?.addressZipCode, organization?.addressCity].filter(Boolean).join(" "),
+      [organization?.addressZipCode, organization?.addressCity]
+        .filter(Boolean)
+        .join(" "),
       organization?.addressCountry,
     ].filter(Boolean);
     const address = addressParts.join(", ");
@@ -944,20 +961,33 @@ function SignatureProviderContent({ children }) {
   }, [organization?.logo, signatureData.logo, organization]);
 
   // Fonction pour appliquer un preset de template (appelée depuis les pages)
-  const applyTemplatePreset = React.useCallback((templateId) => {
-    console.log("🎨 [PRESET] Application du preset pour:", templateId);
-    const presetData = applyPresetFunction(defaultSignatureData, templateId);
-    setSignatureData(presetData);
-    console.log("✅ [PRESET] Preset appliqué:", presetData.templateId, "photoVisible:", presetData.photoVisible, "separatorVerticalEnabled:", presetData.separatorVerticalEnabled);
-    return presetData;
-  }, [defaultSignatureData]);
+  const applyTemplatePreset = React.useCallback(
+    (templateId) => {
+      console.log("🎨 [PRESET] Application du preset pour:", templateId);
+      const presetData = applyPresetFunction(defaultSignatureData, templateId);
+      setSignatureData(presetData);
+      console.log(
+        "✅ [PRESET] Preset appliqué:",
+        presetData.templateId,
+        "photoVisible:",
+        presetData.photoVisible,
+        "separatorVerticalEnabled:",
+        presetData.separatorVerticalEnabled,
+      );
+      return presetData;
+    },
+    [defaultSignatureData],
+  );
 
   // Fonction pour vérifier et appliquer le preset depuis sessionStorage
   const checkAndApplyTemplatePreset = React.useCallback(() => {
     if (typeof window !== "undefined") {
       const newTemplate = sessionStorage.getItem("newSignatureTemplate");
       if (newTemplate) {
-        console.log("🎨 [SESSION] Template trouvé dans sessionStorage:", newTemplate);
+        console.log(
+          "🎨 [SESSION] Template trouvé dans sessionStorage:",
+          newTemplate,
+        );
         sessionStorage.removeItem("newSignatureTemplate");
         applyTemplatePreset(newTemplate);
         return true;
@@ -1117,20 +1147,21 @@ function SignatureProviderContent({ children }) {
   const updateWidget = React.useCallback((widgetId, newProps) => {
     setWidgets((prev) =>
       prev.map((w) =>
-        w.id === widgetId
-          ? { ...w, props: { ...w.props, ...newProps } }
-          : w
-      )
+        w.id === widgetId ? { ...w, props: { ...w.props, ...newProps } } : w,
+      ),
     );
   }, []);
 
   // Delete a widget
-  const deleteWidget = React.useCallback((widgetId) => {
-    setWidgets((prev) => prev.filter((w) => w.id !== widgetId));
-    if (selectedWidgetId === widgetId) {
-      setSelectedWidgetId(null);
-    }
-  }, [selectedWidgetId]);
+  const deleteWidget = React.useCallback(
+    (widgetId) => {
+      setWidgets((prev) => prev.filter((w) => w.id !== widgetId));
+      if (selectedWidgetId === widgetId) {
+        setSelectedWidgetId(null);
+      }
+    },
+    [selectedWidgetId],
+  );
 
   // Reorder widgets (for drag & drop)
   const reorderWidgets = React.useCallback((newWidgets) => {
@@ -1156,6 +1187,9 @@ function SignatureProviderContent({ children }) {
   // ========== Container System State (Unified Hierarchical Structure) ==========
   // rootContainer is the single root container that holds the entire signature structure
   const [rootContainer, setRootContainer] = useState(null);
+  const rootContainerRef = useRef(null);
+  // Keep ref in sync with state for use in callbacks without stale closures
+  rootContainerRef.current = rootContainer;
   const [selectedContainerId, setSelectedContainerId] = useState(null);
   const [selectedElementId, setSelectedElementId] = useState(null);
   const [hoveredContainerId, setHoveredContainerId] = useState(null);
@@ -1174,111 +1208,132 @@ function SignatureProviderContent({ children }) {
   }, []);
 
   // Helper function to find parent of a container
-  const findParentContainer = React.useCallback((container, containerId, parent = null) => {
-    if (!container) return null;
-    if (container.id === containerId) return parent;
-    if (container.children) {
-      for (const child of container.children) {
-        const found = findParentContainer(child, containerId, container);
-        if (found) return found;
+  const findParentContainer = React.useCallback(
+    (container, containerId, parent = null) => {
+      if (!container) return null;
+      if (container.id === containerId) return parent;
+      if (container.children) {
+        for (const child of container.children) {
+          const found = findParentContainer(child, containerId, container);
+          if (found) return found;
+        }
       }
-    }
-    return null;
-  }, []);
+      return null;
+    },
+    [],
+  );
 
   // Helper function to update a container recursively
-  const updateContainerRecursive = React.useCallback((container, containerId, updates) => {
-    if (!container) return container;
-    if (container.id === containerId) {
-      return { ...container, ...updates };
-    }
-    if (container.children) {
-      return {
-        ...container,
-        children: container.children.map(child =>
-          updateContainerRecursive(child, containerId, updates)
-        ),
-      };
-    }
-    return container;
-  }, []);
+  const updateContainerRecursive = React.useCallback(
+    (container, containerId, updates) => {
+      if (!container) return container;
+      if (container.id === containerId) {
+        return { ...container, ...updates };
+      }
+      if (container.children) {
+        return {
+          ...container,
+          children: container.children.map((child) =>
+            updateContainerRecursive(child, containerId, updates),
+          ),
+        };
+      }
+      return container;
+    },
+    [],
+  );
 
   // Helper function to delete a container recursively
-  const deleteContainerRecursive = React.useCallback((container, containerId) => {
-    if (!container) return container;
-    if (container.id === containerId) return null;
-    if (container.children) {
-      const newChildren = container.children
-        .map(child => deleteContainerRecursive(child, containerId))
-        .filter(Boolean);
-      return { ...container, children: newChildren };
-    }
-    return container;
-  }, []);
+  const deleteContainerRecursive = React.useCallback(
+    (container, containerId) => {
+      if (!container) return container;
+      if (container.id === containerId) return null;
+      if (container.children) {
+        const newChildren = container.children
+          .map((child) => deleteContainerRecursive(child, containerId))
+          .filter(Boolean);
+        return { ...container, children: newChildren };
+      }
+      return container;
+    },
+    [],
+  );
 
   // Helper function to update element in a container recursively
-  const updateElementRecursive = React.useCallback((container, containerId, elementId, newProps) => {
-    if (!container) return container;
-    if (container.id === containerId && container.elements) {
-      return {
-        ...container,
-        elements: container.elements.map(el =>
-          el.id === elementId ? { ...el, props: { ...el.props, ...newProps } } : el
-        ),
-      };
-    }
-    if (container.children) {
-      return {
-        ...container,
-        children: container.children.map(child =>
-          updateElementRecursive(child, containerId, elementId, newProps)
-        ),
-      };
-    }
-    return container;
-  }, []);
+  const updateElementRecursive = React.useCallback(
+    (container, containerId, elementId, newProps) => {
+      if (!container) return container;
+      if (container.id === containerId && container.elements) {
+        return {
+          ...container,
+          elements: container.elements.map((el) =>
+            el.id === elementId
+              ? { ...el, props: { ...el.props, ...newProps } }
+              : el,
+          ),
+        };
+      }
+      if (container.children) {
+        return {
+          ...container,
+          children: container.children.map((child) =>
+            updateElementRecursive(child, containerId, elementId, newProps),
+          ),
+        };
+      }
+      return container;
+    },
+    [],
+  );
 
   // Helper function to delete element from a container recursively
-  const deleteElementRecursive = React.useCallback((container, containerId, elementId) => {
-    if (!container) return container;
-    if (container.id === containerId && container.elements) {
-      return {
-        ...container,
-        elements: container.elements.filter(el => el.id !== elementId),
-      };
-    }
-    if (container.children) {
-      return {
-        ...container,
-        children: container.children.map(child =>
-          deleteElementRecursive(child, containerId, elementId)
-        ),
-      };
-    }
-    return container;
-  }, []);
+  const deleteElementRecursive = React.useCallback(
+    (container, containerId, elementId) => {
+      if (!container) return container;
+      if (container.id === containerId && container.elements) {
+        return {
+          ...container,
+          elements: container.elements.filter((el) => el.id !== elementId),
+        };
+      }
+      if (container.children) {
+        return {
+          ...container,
+          children: container.children.map((child) =>
+            deleteElementRecursive(child, containerId, elementId),
+          ),
+        };
+      }
+      return container;
+    },
+    [],
+  );
 
   // Helper function to add a child container to a parent
-  const addChildToContainerRecursive = React.useCallback((container, parentId, newChild, position = 'end') => {
-    if (!container) return container;
-    if (container.id === parentId) {
-      const children = container.children || [];
-      const newChildren = position === 'start'
-        ? [newChild, ...children]
-        : [...children, newChild];
-      return { ...container, children: newChildren };
-    }
-    // Recurse into children if they exist
-    if (container.children && container.children.length > 0) {
-      return {
-        ...container,
-        children: container.children.map(child =>
-          addChildToContainerRecursive(child, parentId, newChild, position)
-        ),
-      };
-    }
-    return container;
-  }, []);
+  const addChildToContainerRecursive = React.useCallback(
+    (container, parentId, newChild, position = "end") => {
+      if (!container) return container;
+      if (container.id === parentId) {
+        const children = container.children || [];
+        const newChildren =
+          position === "start"
+            ? [newChild, ...children]
+            : [...children, newChild];
+        return { ...container, children: newChildren };
+      }
+      // Recurse into children if they exist
+      if (container.children && container.children.length > 0) {
+        return {
+          ...container,
+          children: container.children.map((child) =>
+            addChildToContainerRecursive(child, parentId, newChild, position),
+          ),
+        };
+      }
+      return container;
+    },
+    [],
+  );
 
   // Set the root container (used when loading a template)
   const setRootContainerData = React.useCallback((newRoot) => {
@@ -1287,34 +1342,45 @@ function SignatureProviderContent({ children }) {
 
   // Update root container directly
   const updateRootContainer = React.useCallback((updates) => {
-    setRootContainer(prev => prev ? { ...prev, ...updates } : prev);
+    setRootContainer((prev) => (prev ? { ...prev, ...updates } : prev));
   }, []);
 
   // Add a child container to a parent container
-  const addContainer = React.useCallback((parentId, newContainer, position = 'end') => {
-    setRootContainer(prev =>
-      addChildToContainerRecursive(prev, parentId, newContainer, position)
-    );
-  }, [addChildToContainerRecursive]);
+  const addContainer = React.useCallback(
+    (parentId, newContainer, position = "end") => {
+      setRootContainer((prev) =>
+        addChildToContainerRecursive(prev, parentId, newContainer, position),
+      );
+    },
+    [addChildToContainerRecursive],
+  );
 
   // Update a container's properties
-  const updateContainer = React.useCallback((containerId, updates) => {
-    setRootContainer(prev => updateContainerRecursive(prev, containerId, updates));
-  }, [updateContainerRecursive]);
+  const updateContainer = React.useCallback(
+    (containerId, updates) => {
+      setRootContainer((prev) =>
+        updateContainerRecursive(prev, containerId, updates),
+      );
+    },
+    [updateContainerRecursive],
+  );
 
   // Delete a container
-  const deleteContainer = React.useCallback((containerId) => {
-    // Don't allow deleting the root container
-    if (rootContainer && rootContainer.id === containerId) {
-      console.warn('Cannot delete root container');
-      return;
-    }
-    setRootContainer(prev => deleteContainerRecursive(prev, containerId));
-    if (selectedContainerId === containerId) {
-      setSelectedContainerId(null);
-      setSelectedElementId(null);
-    }
-  }, [rootContainer, selectedContainerId, deleteContainerRecursive]);
+  const deleteContainer = React.useCallback(
+    (containerId) => {
+      // Don't allow deleting the root container
+      if (rootContainer && rootContainer.id === containerId) {
+        console.warn("Cannot delete root container");
+        return;
+      }
+      setRootContainer((prev) => deleteContainerRecursive(prev, containerId));
+      if (selectedContainerId === containerId) {
+        setSelectedContainerId(null);
+        setSelectedElementId(null);
+      }
+    },
+    [rootContainer, selectedContainerId, deleteContainerRecursive],
+  );
 
   // Select a container
   const selectContainer = React.useCallback((containerId) => {
@@ -1338,69 +1404,93 @@ function SignatureProviderContent({ children }) {
 
   // Get the selected element
   const getSelectedElement = React.useCallback(() => {
-    if (!selectedContainerId || !selectedElementId || !rootContainer) return null;
+    if (!selectedContainerId || !selectedElementId || !rootContainer)
+      return null;
     const container = findContainerById(rootContainer, selectedContainerId);
     if (!container || !container.elements) return null;
     return container.elements.find((el) => el.id === selectedElementId) || null;
-  }, [rootContainer, selectedContainerId, selectedElementId, findContainerById]);
+  }, [
+    rootContainer,
+    selectedContainerId,
+    selectedElementId,
+    findContainerById,
+  ]);
 
   // Mapping from element type to typography field
   const elementTypeToTypographyField = {
-    'name': 'fullName',
-    'position': 'position',
-    'company': 'company',
-    'phone': 'phone',
-    'mobile': 'mobile',
-    'email': 'email',
-    'website': 'website',
-    'address': 'address',
+    name: "fullName",
+    position: "position",
+    company: "company",
+    phone: "phone",
+    mobile: "mobile",
+    email: "email",
+    website: "website",
+    address: "address",
   };
 
   // Update an element within a container
-  const updateElement = React.useCallback((containerId, elementId, newProps) => {
-    setRootContainer(prev => {
-      // Find the element to get its type for typography sync
-      const container = findContainerById(prev, containerId);
-      if (container && container.elements) {
-        const element = container.elements.find(el => el.id === elementId);
-        if (element) {
-          const typographyField = elementTypeToTypographyField[element.type];
-          // If this element type has a corresponding typography field, sync the typography
-          if (typographyField) {
-            const typographyProps = {};
-            const propsToSync = ['fontFamily', 'fontWeight', 'fontStyle', 'fontSize', 'color', 'textDecoration'];
-            propsToSync.forEach(prop => {
-              if (newProps[prop] !== undefined) {
-                typographyProps[prop] = newProps[prop];
-              }
-            });
-            // Update signatureData.typography if we have typography-related props
-            if (Object.keys(typographyProps).length > 0) {
-              setSignatureData(prevData => ({
-                ...prevData,
-                typography: {
-                  ...prevData.typography,
-                  [typographyField]: {
-                    ...prevData.typography?.[typographyField],
-                    ...typographyProps,
+  const updateElement = React.useCallback(
+    (containerId, elementId, newProps) => {
+      // Update the container structure
+      setRootContainer((prev) =>
+        updateElementRecursive(prev, containerId, elementId, newProps),
+      );
+
+      // Sync typography to signatureData separately (not inside setRootContainer's updater)
+      const currentRoot = rootContainerRef.current;
+      if (currentRoot) {
+        const container = findContainerById(currentRoot, containerId);
+        if (container && container.elements) {
+          const element = container.elements.find((el) => el.id === elementId);
+          if (element) {
+            const typographyField = elementTypeToTypographyField[element.type];
+            if (typographyField) {
+              const typographyProps = {};
+              const propsToSync = [
+                "fontFamily",
+                "fontWeight",
+                "fontStyle",
+                "fontSize",
+                "color",
+                "textDecoration",
+              ];
+              propsToSync.forEach((prop) => {
+                if (newProps[prop] !== undefined) {
+                  typographyProps[prop] = newProps[prop];
+                }
+              });
+              if (Object.keys(typographyProps).length > 0) {
+                setSignatureData((prevData) => ({
+                  ...prevData,
+                  typography: {
+                    ...prevData.typography,
+                    [typographyField]: {
+                      ...prevData.typography?.[typographyField],
+                      ...typographyProps,
+                    },
                   },
-                },
-              }));
+                }));
+              }
             }
           }
         }
       }
-      return updateElementRecursive(prev, containerId, elementId, newProps);
-    });
-  }, [updateElementRecursive, findContainerById]);
+    },
+    [updateElementRecursive, findContainerById],
+  );
 
   // Delete an element from a container
-  const deleteElement = React.useCallback((containerId, elementId) => {
-    setRootContainer(prev => deleteElementRecursive(prev, containerId, elementId));
-    if (selectedElementId === elementId) {
-      setSelectedElementId(null);
-    }
-  }, [selectedElementId, deleteElementRecursive]);
+  const deleteElement = React.useCallback(
+    (containerId, elementId) => {
+      setRootContainer((prev) =>
+        deleteElementRecursive(prev, containerId, elementId),
+      );
+      if (selectedElementId === elementId) {
+        setSelectedElementId(null);
+      }
+    },
+    [selectedElementId, deleteElementRecursive],
+  );
 
   // Clear root container
   const clearRootContainer = React.useCallback(() => {
@@ -1416,277 +1506,354 @@ function SignatureProviderContent({ children }) {
   }, []);
 
   // Get container depth (for UI indentation)
-  const getContainerDepth = React.useCallback((containerId) => {
-    const findDepth = (container, targetId, depth = 0) => {
-      if (!container) return -1;
-      if (container.id === targetId) return depth;
-      if (container.children) {
-        for (const child of container.children) {
-          const found = findDepth(child, targetId, depth + 1);
-          if (found !== -1) return found;
+  const getContainerDepth = React.useCallback(
+    (containerId) => {
+      const findDepth = (container, targetId, depth = 0) => {
+        if (!container) return -1;
+        if (container.id === targetId) return depth;
+        if (container.children) {
+          for (const child of container.children) {
+            const found = findDepth(child, targetId, depth + 1);
+            if (found !== -1) return found;
+          }
         }
-      }
-      return -1;
-    };
-    return findDepth(rootContainer, containerId);
-  }, [rootContainer]);
+        return -1;
+      };
+      return findDepth(rootContainer, containerId);
+    },
+    [rootContainer],
+  );
 
   // Check if a container is a descendant of another container
-  const isDescendantOf = React.useCallback((container, ancestorId, targetId) => {
-    if (!container) return false;
-    if (container.id === targetId) return true;
-    if (container.children) {
-      return container.children.some(child => isDescendantOf(child, ancestorId, targetId));
-    }
-    return false;
-  }, []);
+  const isDescendantOf = React.useCallback(
+    (container, ancestorId, targetId) => {
+      if (!container) return false;
+      if (container.id === targetId) return true;
+      if (container.children) {
+        return container.children.some((child) =>
+          isDescendantOf(child, ancestorId, targetId),
+        );
+      }
+      return false;
+    },
+    [],
+  );
 
   // Move a container to a new parent
-  const moveContainer = React.useCallback((containerId, newParentId, position = 'end') => {
-    console.log("🔄 [moveContainer] Called with:", { containerId, newParentId, position });
-
-    if (!rootContainer) {
-      console.log("🔄 [moveContainer] No rootContainer, aborting");
-      return;
-    }
-
-    // Can't move to itself
-    if (containerId === newParentId) {
-      console.log("🔄 [moveContainer] Cannot move to itself, aborting");
-      return;
-    }
-
-    // Find the container to move
-    const containerToMove = findContainerById(rootContainer, containerId);
-    if (!containerToMove) {
-      console.log("🔄 [moveContainer] Container not found:", containerId);
-      return;
-    }
-
-    // Can't move a container into one of its descendants
-    if (isDescendantOf(containerToMove, containerId, newParentId)) {
-      console.log("🔄 [moveContainer] Cannot move into descendant, aborting");
-      return;
-    }
-
-    console.log("🔄 [moveContainer] Moving container:", containerToMove);
-
-    // Remove from current location
-    let updatedRoot = deleteContainerRecursive(rootContainer, containerId);
-    console.log("🔄 [moveContainer] After delete:", updatedRoot);
-
-    // Add to new parent
-    updatedRoot = addChildToContainerRecursive(updatedRoot, newParentId, containerToMove, position);
-    console.log("🔄 [moveContainer] After add to new parent:", updatedRoot);
-
-    setRootContainer(updatedRoot);
-
-    // Clear selection after move
-    setSelectedContainerId(null);
-  }, [rootContainer, findContainerById, isDescendantOf, deleteContainerRecursive, addChildToContainerRecursive]);
-
-  // Helper function to find and extract an element from a container
-  const findAndRemoveElement = React.useCallback((container, sourceContainerId, elementId) => {
-    if (!container) return { container, element: null };
-
-    if (container.id === sourceContainerId && container.elements) {
-      const element = container.elements.find(el => el.id === elementId);
-      if (element) {
-        return {
-          container: {
-            ...container,
-            elements: container.elements.filter(el => el.id !== elementId),
-          },
-          element,
-        };
-      }
-    }
-
-    if (container.children) {
-      let foundElement = null;
-      const newChildren = container.children.map(child => {
-        if (foundElement) return child;
-        const result = findAndRemoveElement(child, sourceContainerId, elementId);
-        if (result.element) {
-          foundElement = result.element;
-          return result.container;
-        }
-        return child;
+  const moveContainer = React.useCallback(
+    (containerId, newParentId, position = "end") => {
+      console.log("🔄 [moveContainer] Called with:", {
+        containerId,
+        newParentId,
+        position,
       });
 
-      return {
-        container: { ...container, children: newChildren },
-        element: foundElement,
-      };
-    }
+      if (!rootContainer) {
+        console.log("🔄 [moveContainer] No rootContainer, aborting");
+        return;
+      }
 
-    return { container, element: null };
-  }, []);
+      // Can't move to itself
+      if (containerId === newParentId) {
+        console.log("🔄 [moveContainer] Cannot move to itself, aborting");
+        return;
+      }
+
+      // Find the container to move
+      const containerToMove = findContainerById(rootContainer, containerId);
+      if (!containerToMove) {
+        console.log("🔄 [moveContainer] Container not found:", containerId);
+        return;
+      }
+
+      // Can't move a container into one of its descendants
+      if (isDescendantOf(containerToMove, containerId, newParentId)) {
+        console.log("🔄 [moveContainer] Cannot move into descendant, aborting");
+        return;
+      }
+
+      console.log("🔄 [moveContainer] Moving container:", containerToMove);
+
+      // Remove from current location
+      let updatedRoot = deleteContainerRecursive(rootContainer, containerId);
+      console.log("🔄 [moveContainer] After delete:", updatedRoot);
+
+      // Add to new parent
+      updatedRoot = addChildToContainerRecursive(
+        updatedRoot,
+        newParentId,
+        containerToMove,
+        position,
+      );
+      console.log("🔄 [moveContainer] After add to new parent:", updatedRoot);
+
+      setRootContainer(updatedRoot);
+
+      // Clear selection after move
+      setSelectedContainerId(null);
+    },
+    [
+      rootContainer,
+      findContainerById,
+      isDescendantOf,
+      deleteContainerRecursive,
+      addChildToContainerRecursive,
+    ],
+  );
+
+  // Helper function to find and extract an element from a container
+  const findAndRemoveElement = React.useCallback(
+    (container, sourceContainerId, elementId) => {
+      if (!container) return { container, element: null };
+
+      if (container.id === sourceContainerId && container.elements) {
+        const element = container.elements.find((el) => el.id === elementId);
+        if (element) {
+          return {
+            container: {
+              ...container,
+              elements: container.elements.filter((el) => el.id !== elementId),
+            },
+            element,
+          };
+        }
+      }
+
+      if (container.children) {
+        let foundElement = null;
+        const newChildren = container.children.map((child) => {
+          if (foundElement) return child;
+          const result = findAndRemoveElement(
+            child,
+            sourceContainerId,
+            elementId,
+          );
+          if (result.element) {
+            foundElement = result.element;
+            return result.container;
+          }
+          return child;
+        });
+
+        return {
+          container: { ...container, children: newChildren },
+          element: foundElement,
+        };
+      }
+
+      return { container, element: null };
+    },
+    [],
+  );
 
   // Helper function to add element to a container
-  const addElementToContainer = React.useCallback((container, targetContainerId, element) => {
-    if (!container) return container;
+  const addElementToContainer = React.useCallback(
+    (container, targetContainerId, element) => {
+      if (!container) return container;
 
-    if (container.id === targetContainerId) {
-      const elements = container.elements || [];
-      return {
-        ...container,
-        elements: [...elements, element],
-      };
-    }
+      if (container.id === targetContainerId) {
+        const elements = container.elements || [];
+        return {
+          ...container,
+          elements: [...elements, element],
+        };
+      }
 
-    if (container.children) {
-      return {
-        ...container,
-        children: container.children.map(child =>
-          addElementToContainer(child, targetContainerId, element)
-        ),
-      };
-    }
+      if (container.children) {
+        return {
+          ...container,
+          children: container.children.map((child) =>
+            addElementToContainer(child, targetContainerId, element),
+          ),
+        };
+      }
 
-    return container;
-  }, []);
+      return container;
+    },
+    [],
+  );
 
   // Move an element from one container to another
-  const moveElement = React.useCallback((elementId, sourceContainerId, targetContainerId) => {
-    if (!rootContainer || sourceContainerId === targetContainerId) return;
+  const moveElement = React.useCallback(
+    (elementId, sourceContainerId, targetContainerId) => {
+      if (!rootContainer || sourceContainerId === targetContainerId) return;
 
-    // Remove element from source container and get the element
-    const { container: updatedRoot, element } = findAndRemoveElement(
-      rootContainer,
-      sourceContainerId,
-      elementId
-    );
+      // Remove element from source container and get the element
+      const { container: updatedRoot, element } = findAndRemoveElement(
+        rootContainer,
+        sourceContainerId,
+        elementId,
+      );
 
-    if (!element) return;
+      if (!element) return;
 
-    // Add element to target container
-    const finalRoot = addElementToContainer(updatedRoot, targetContainerId, element);
+      // Add element to target container
+      const finalRoot = addElementToContainer(
+        updatedRoot,
+        targetContainerId,
+        element,
+      );
 
-    setRootContainer(finalRoot);
+      setRootContainer(finalRoot);
 
-    // Clear selection after move
-    setSelectedElementId(null);
-    setSelectedContainerId(null);
-  }, [rootContainer, findAndRemoveElement, addElementToContainer]);
+      // Clear selection after move
+      setSelectedElementId(null);
+      setSelectedContainerId(null);
+    },
+    [rootContainer, findAndRemoveElement, addElementToContainer],
+  );
 
   // Reorder containers within the same parent
-  const reorderContainer = React.useCallback((draggedContainerId, targetContainerId, position) => {
-    if (!rootContainer) return;
-    console.log("🔄 [reorderContainer] Called with:", { draggedContainerId, targetContainerId, position });
+  const reorderContainer = React.useCallback(
+    (draggedContainerId, targetContainerId, position) => {
+      if (!rootContainer) return;
+      console.log("🔄 [reorderContainer] Called with:", {
+        draggedContainerId,
+        targetContainerId,
+        position,
+      });
 
-    // Find parent of both containers (they must have the same parent)
-    const findParentOfContainer = (container, targetId, parent = null) => {
-      if (!container) return null;
-      if (container.id === targetId) return parent;
-      if (container.children) {
-        for (const child of container.children) {
-          const found = findParentOfContainer(child, targetId, container);
-          if (found) return found;
+      // Find parent of both containers (they must have the same parent)
+      const findParentOfContainer = (container, targetId, parent = null) => {
+        if (!container) return null;
+        if (container.id === targetId) return parent;
+        if (container.children) {
+          for (const child of container.children) {
+            const found = findParentOfContainer(child, targetId, container);
+            if (found) return found;
+          }
         }
+        return null;
+      };
+
+      const draggedParent = findParentOfContainer(
+        rootContainer,
+        draggedContainerId,
+        null,
+      );
+      const targetParent = findParentOfContainer(
+        rootContainer,
+        targetContainerId,
+        null,
+      );
+
+      // Both containers must have the same parent
+      if (
+        !draggedParent ||
+        !targetParent ||
+        draggedParent.id !== targetParent.id
+      ) {
+        console.log(
+          "🔄 [reorderContainer] Different parents, using moveContainer instead",
+        );
+        // If different parents, move into the target container
+        moveContainer(draggedContainerId, targetContainerId);
+        return;
       }
-      return null;
-    };
 
-    const draggedParent = findParentOfContainer(rootContainer, draggedContainerId, null);
-    const targetParent = findParentOfContainer(rootContainer, targetContainerId, null);
+      console.log("🔄 [reorderContainer] Same parent:", draggedParent.id);
 
-    // Both containers must have the same parent
-    if (!draggedParent || !targetParent || draggedParent.id !== targetParent.id) {
-      console.log("🔄 [reorderContainer] Different parents, using moveContainer instead");
-      // If different parents, move into the target container
-      moveContainer(draggedContainerId, targetContainerId);
-      return;
-    }
+      // Reorder within the parent
+      const reorderInParent = (container) => {
+        if (container.id === draggedParent.id && container.children) {
+          const children = [...container.children];
+          const draggedIndex = children.findIndex(
+            (c) => c.id === draggedContainerId,
+          );
+          const targetIndex = children.findIndex(
+            (c) => c.id === targetContainerId,
+          );
 
-    console.log("🔄 [reorderContainer] Same parent:", draggedParent.id);
+          if (draggedIndex === -1 || targetIndex === -1) return container;
 
-    // Reorder within the parent
-    const reorderInParent = (container) => {
-      if (container.id === draggedParent.id && container.children) {
-        const children = [...container.children];
-        const draggedIndex = children.findIndex(c => c.id === draggedContainerId);
-        const targetIndex = children.findIndex(c => c.id === targetContainerId);
+          // Remove dragged container
+          const [draggedContainer] = children.splice(draggedIndex, 1);
 
-        if (draggedIndex === -1 || targetIndex === -1) return container;
+          // Calculate new index based on position
+          let newIndex = targetIndex;
+          if (draggedIndex < targetIndex) {
+            newIndex = position === "after" ? targetIndex : targetIndex - 1;
+          } else {
+            newIndex = position === "after" ? targetIndex + 1 : targetIndex;
+          }
 
-        // Remove dragged container
-        const [draggedContainer] = children.splice(draggedIndex, 1);
+          // Insert at new position
+          children.splice(newIndex, 0, draggedContainer);
 
-        // Calculate new index based on position
-        let newIndex = targetIndex;
-        if (draggedIndex < targetIndex) {
-          newIndex = position === 'after' ? targetIndex : targetIndex - 1;
-        } else {
-          newIndex = position === 'after' ? targetIndex + 1 : targetIndex;
+          return { ...container, children };
         }
 
-        // Insert at new position
-        children.splice(newIndex, 0, draggedContainer);
+        // Recursively search
+        if (container.children) {
+          return {
+            ...container,
+            children: container.children.map((child) => reorderInParent(child)),
+          };
+        }
 
-        return { ...container, children };
-      }
+        return container;
+      };
 
-      // Recursively search
-      if (container.children) {
-        return {
-          ...container,
-          children: container.children.map(child => reorderInParent(child))
-        };
-      }
-
-      return container;
-    };
-
-    const updatedRoot = reorderInParent(rootContainer);
-    setRootContainer(updatedRoot);
-  }, [rootContainer, moveContainer]);
+      const updatedRoot = reorderInParent(rootContainer);
+      setRootContainer(updatedRoot);
+    },
+    [rootContainer, moveContainer],
+  );
 
   // Reorder elements within the same container
-  const reorderElement = React.useCallback((containerId, draggedElementId, targetElementId, position) => {
-    if (!rootContainer) return;
+  const reorderElement = React.useCallback(
+    (containerId, draggedElementId, targetElementId, position) => {
+      if (!rootContainer) return;
 
-    const reorderInContainer = (container) => {
-      if (container.id === containerId && container.elements) {
-        const elements = [...container.elements];
-        const draggedIndex = elements.findIndex(el => el.id === draggedElementId);
-        const targetIndex = elements.findIndex(el => el.id === targetElementId);
+      const reorderInContainer = (container) => {
+        if (container.id === containerId && container.elements) {
+          const elements = [...container.elements];
+          const draggedIndex = elements.findIndex(
+            (el) => el.id === draggedElementId,
+          );
+          const targetIndex = elements.findIndex(
+            (el) => el.id === targetElementId,
+          );
 
-        if (draggedIndex === -1 || targetIndex === -1) return container;
+          if (draggedIndex === -1 || targetIndex === -1) return container;
 
-        // Remove dragged element
-        const [draggedElement] = elements.splice(draggedIndex, 1);
+          // Remove dragged element
+          const [draggedElement] = elements.splice(draggedIndex, 1);
 
-        // Calculate new index based on position
-        let newIndex = targetIndex;
-        if (draggedIndex < targetIndex) {
-          // If dragging forward, adjust for removed element
-          newIndex = position === 'after' ? targetIndex : targetIndex - 1;
-        } else {
-          // If dragging backward
-          newIndex = position === 'after' ? targetIndex + 1 : targetIndex;
+          // Calculate new index based on position
+          let newIndex = targetIndex;
+          if (draggedIndex < targetIndex) {
+            // If dragging forward, adjust for removed element
+            newIndex = position === "after" ? targetIndex : targetIndex - 1;
+          } else {
+            // If dragging backward
+            newIndex = position === "after" ? targetIndex + 1 : targetIndex;
+          }
+
+          // Insert at new position
+          elements.splice(newIndex, 0, draggedElement);
+
+          return { ...container, elements };
         }
 
-        // Insert at new position
-        elements.splice(newIndex, 0, draggedElement);
+        // Recursively search children
+        if (container.children) {
+          return {
+            ...container,
+            children: container.children.map((child) =>
+              reorderInContainer(child),
+            ),
+          };
+        }
 
-        return { ...container, elements };
-      }
+        return container;
+      };
 
-      // Recursively search children
-      if (container.children) {
-        return {
-          ...container,
-          children: container.children.map(child => reorderInContainer(child))
-        };
-      }
-
-      return container;
-    };
-
-    const updatedRoot = reorderInContainer(rootContainer);
-    setRootContainer(updatedRoot);
-  }, [rootContainer]);
+      const updatedRoot = reorderInContainer(rootContainer);
+      setRootContainer(updatedRoot);
+    },
+    [rootContainer],
+  );
 
   // ========== Backward Compatibility Aliases ==========
   // These aliases maintain compatibility with existing code that uses "block" terminology
@@ -1706,17 +1873,35 @@ function SignatureProviderContent({ children }) {
   // Cet effet restaure la disposition personnalisée des blocs sauvegardée
   useEffect(() => {
     if (isEditMode && signatureQueryData?.getEmailSignature) {
-      console.log("🔍 [SIGNATURE_DATA] Données GraphQL reçues - containerStructure:", signatureQueryData.getEmailSignature.containerStructure);
-      console.log("🔍 [SIGNATURE_DATA] Données GraphQL reçues - templateId:", signatureQueryData.getEmailSignature.templateId);
-      console.log("🔍 [SIGNATURE_DATA] Données GraphQL reçues - position:", signatureQueryData.getEmailSignature.position);
-      console.log("🔍 [SIGNATURE_DATA] Données GraphQL reçues - socialNetworks:", signatureQueryData.getEmailSignature.socialNetworks);
+      console.log(
+        "🔍 [SIGNATURE_DATA] Données GraphQL reçues - containerStructure:",
+        signatureQueryData.getEmailSignature.containerStructure,
+      );
+      console.log(
+        "🔍 [SIGNATURE_DATA] Données GraphQL reçues - templateId:",
+        signatureQueryData.getEmailSignature.templateId,
+      );
+      console.log(
+        "🔍 [SIGNATURE_DATA] Données GraphQL reçues - position:",
+        signatureQueryData.getEmailSignature.position,
+      );
+      console.log(
+        "🔍 [SIGNATURE_DATA] Données GraphQL reçues - socialNetworks:",
+        signatureQueryData.getEmailSignature.socialNetworks,
+      );
 
       if (signatureQueryData.getEmailSignature.containerStructure) {
-        const savedContainerStructure = signatureQueryData.getEmailSignature.containerStructure;
-        console.log("🔄 [SIGNATURE_DATA] Restauration de la structure des conteneurs:", savedContainerStructure);
+        const savedContainerStructure =
+          signatureQueryData.getEmailSignature.containerStructure;
+        console.log(
+          "🔄 [SIGNATURE_DATA] Restauration de la structure des conteneurs:",
+          savedContainerStructure,
+        );
         setRootContainer(savedContainerStructure);
       } else {
-        console.log("⚠️ [SIGNATURE_DATA] Aucune containerStructure sauvegardée, utilisation du template par défaut");
+        console.log(
+          "⚠️ [SIGNATURE_DATA] Aucune containerStructure sauvegardée, utilisation du template par défaut",
+        );
       }
     }
   }, [isEditMode, signatureQueryData]);
@@ -1774,8 +1959,10 @@ function SignatureProviderContent({ children }) {
     deleteElement,
     clearRootContainer,
     clearSelection,
-    findContainerById: (containerId) => findContainerById(rootContainer, containerId),
-    findParentContainer: (containerId) => findParentContainer(rootContainer, containerId, null),
+    findContainerById: (containerId) =>
+      findContainerById(rootContainer, containerId),
+    findParentContainer: (containerId) =>
+      findParentContainer(rootContainer, containerId, null),
     getContainerDepth,
     moveContainer,
     moveElement,

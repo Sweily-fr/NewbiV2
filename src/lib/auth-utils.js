@@ -41,12 +41,19 @@ export function sendSMSInDevelopment(phoneNumber, code, context = "SMS") {
 // Fonction pour envoyer un email 2FA
 export async function send2FAEmail(user, otp) {
   try {
-    await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       to: user.email,
       subject: "Code de vérification 2FA - Newbi",
       html: emailTemplates.twoFactor(otp),
       from: "Newbi <noreply@newbi.sweily.fr>",
     });
+
+    if (error) {
+      console.error(`[2FA EMAIL] Erreur Resend API:`, error);
+      throw new Error(`Échec envoi email 2FA: ${error.message}`);
+    }
+
+    console.log(`[2FA EMAIL] Email envoyé avec succès, id:`, data?.id);
   } catch (error) {
     console.error(`[2FA EMAIL] Erreur lors de l'envoi:`, error);
     throw error;

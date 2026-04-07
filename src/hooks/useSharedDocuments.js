@@ -429,6 +429,7 @@ export function useSharedDocuments(filter = {}) {
         sortOrder,
       },
       skip: !workspaceId,
+      fetchPolicy: "cache-and-network",
       notifyOnNetworkStatusChange: true,
     },
   );
@@ -484,6 +485,7 @@ export function useSharedFolders() {
   const { data, loading, error, refetch } = useQuery(GET_SHARED_FOLDERS, {
     variables: { workspaceId },
     skip: !workspaceId,
+    fetchPolicy: "cache-and-network",
     notifyOnNetworkStatusChange: true,
   });
 
@@ -999,18 +1001,24 @@ export function useUpdateSharedDocument() {
   return { update, loading };
 }
 
-// Hook pour déplacer un dossier (changer son parent)
+// Hook pour déplacer un dossier (changer son parent et/ou son ordre)
 export function useMoveSharedFolder() {
   const { workspaceId } = useWorkspace();
   const [updateMutation, { loading }] = useMutation(UPDATE_SHARED_FOLDER);
 
-  const moveFolder = async (folderId, newParentId, { silent = false } = {}) => {
+  const moveFolder = async (
+    folderId,
+    newParentId,
+    { silent = false, order } = {},
+  ) => {
     try {
+      const input = { parentId: newParentId };
+      if (order !== undefined) input.order = order;
       const result = await updateMutation({
         variables: {
           id: folderId,
           workspaceId,
-          input: { parentId: newParentId },
+          input,
         },
         refetchQueries: [
           { query: GET_SHARED_FOLDERS, variables: { workspaceId } },
@@ -1019,7 +1027,7 @@ export function useMoveSharedFolder() {
             variables: { workspaceId, filter: {}, limit: 50, offset: 0 },
           },
         ],
-        awaitRefetchQueries: false, // Don't wait for refetch to complete
+        awaitRefetchQueries: true,
       });
 
       if (result.data?.updateSharedFolder?.success) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { PreviewImage } from "@/src/components/ui/preview-image";
 import {
   XIcon,
   Euro,
@@ -679,10 +680,11 @@ export function AddTransactionDrawer({
                         title="Preview du reçu"
                       />
                     ) : (
-                      <img
-                        className="h-full w-full object-contain"
+                      <PreviewImage
                         src={uploadedFileUrl || previewUrl}
                         alt="Preview du reçu"
+                        className="h-full w-full object-contain"
+                        containerClassName="h-full w-full"
                       />
                     )}
                     {/* Overlay avec icône */}

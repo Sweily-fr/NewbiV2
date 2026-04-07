@@ -27,6 +27,7 @@ import {
   Users,
   FileCheck,
   Calendar as CalendarIcon,
+  FileType,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { format } from "date-fns";
@@ -35,10 +36,6 @@ import {
   INVOICE_STATUS_LABELS,
   INVOICE_STATUS_COLORS,
 } from "@/src/graphql/invoiceQueries";
-import {
-  IMPORTED_INVOICE_STATUS_LABELS,
-  IMPORTED_INVOICE_STATUS_COLORS,
-} from "@/src/graphql/importedInvoiceQueries";
 
 export default function InvoiceFilters({
   statusFilter,
@@ -47,6 +44,8 @@ export default function InvoiceFilters({
   setClientFilter,
   dateFilter,
   setDateFilter,
+  typeFilter,
+  setTypeFilter,
   invoices = [],
   table,
   className,
@@ -85,8 +84,9 @@ export default function InvoiceFilters({
   const activeFiltersCount = useMemo(() => {
     let count = selectedStatuses.length + selectedClients.length;
     if (dateFilter?.from || dateFilter?.to) count++;
+    if (typeFilter) count++;
     return count;
-  }, [selectedStatuses.length, selectedClients.length, dateFilter]);
+  }, [selectedStatuses.length, selectedClients.length, dateFilter, typeFilter]);
 
   // Fonctions pour les plages de dates rapides
   const setQuickDateRange = (range) => {
@@ -137,13 +137,9 @@ export default function InvoiceFilters({
     }
   };
 
-  // Tout sélectionner / tout désélectionner les statuts (normales + importées)
-  const allStatusKeys = [
-    ...Object.keys(INVOICE_STATUS_LABELS),
-    ...Object.keys(IMPORTED_INVOICE_STATUS_LABELS),
-  ];
-  const allStatusesSelected =
-    selectedStatuses.length === allStatusKeys.length;
+  // Tout sélectionner / tout désélectionner les statuts
+  const allStatusKeys = Object.keys(INVOICE_STATUS_LABELS);
+  const allStatusesSelected = selectedStatuses.length === allStatusKeys.length;
 
   const toggleAllStatuses = () => {
     if (allStatusesSelected) {
@@ -184,13 +180,13 @@ export default function InvoiceFilters({
       .getAllColumns()
       .filter(
         (column) =>
-          typeof column.accessorFn !== "undefined" && column.getCanHide()
+          typeof column.accessorFn !== "undefined" && column.getCanHide(),
       );
   }, [table]);
 
   // Calculer le nombre de colonnes visibles
   const visibleColumnsCount = hideableColumns.filter((column) =>
-    column.getIsVisible()
+    column.getIsVisible(),
   ).length;
 
   // Vérifier si toutes les colonnes sont visibles
@@ -222,6 +218,7 @@ export default function InvoiceFilters({
             setClientFilter("");
             setDateFilter(null);
             setDateRange({ from: null, to: null });
+            setTypeFilter?.("");
           }}
           className="cursor-pointer"
         >
@@ -372,6 +369,52 @@ export default function InvoiceFilters({
           </DropdownMenuSubContent>
         </DropdownMenuSub>
 
+        {/* Type Filter - Newbi / Importée */}
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger className="whitespace-nowrap">
+            <FileType className="h-4 w-4 mr-2" />
+            Type de facture
+            {typeFilter && (
+              <Badge variant="secondary" className="ml-auto">
+                1
+              </Badge>
+            )}
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent className="w-[220px]">
+            <div
+              className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
+              onClick={() => setTypeFilter?.("")}
+            >
+              <Checkbox
+                checked={!typeFilter}
+                className="mr-2 pointer-events-none"
+              />
+              <span>Toutes</span>
+            </div>
+            <DropdownMenuSeparator />
+            <div
+              className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
+              onClick={() => setTypeFilter?.("normal")}
+            >
+              <Checkbox
+                checked={typeFilter === "normal"}
+                className="mr-2 pointer-events-none"
+              />
+              <span>Créées sur Newbi</span>
+            </div>
+            <div
+              className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
+              onClick={() => setTypeFilter?.("imported")}
+            >
+              <Checkbox
+                checked={typeFilter === "imported"}
+                className="mr-2 pointer-events-none"
+              />
+              <span>Importées</span>
+            </div>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+
         {/* Status Filter - Nested Dropdown */}
         <DropdownMenuSub>
           <DropdownMenuSubTrigger className="whitespace-nowrap">
@@ -414,32 +457,6 @@ export default function InvoiceFilters({
                 </Badge>
               </div>
             ))}
-            <DropdownMenuSeparator />
-            <div className="px-2 py-1 text-xs text-muted-foreground font-medium">
-              Factures importées
-            </div>
-            {Object.entries(IMPORTED_INVOICE_STATUS_LABELS).map(
-              ([value, label]) => (
-                <div
-                  key={`imported-${value}`}
-                  className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
-                  onClick={() => toggleStatus(value)}
-                >
-                  <Checkbox
-                    checked={selectedStatuses.includes(value)}
-                    className="mr-2 pointer-events-none"
-                  />
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      IMPORTED_INVOICE_STATUS_COLORS[value] || "bg-gray-100"
-                    )}
-                  >
-                    {label}
-                  </Badge>
-                </div>
-              )
-            )}
           </DropdownMenuSubContent>
         </DropdownMenuSub>
 
@@ -474,7 +491,7 @@ export default function InvoiceFilters({
               .filter(
                 (column) =>
                   typeof column.accessorFn !== "undefined" &&
-                  column.getCanHide()
+                  column.getCanHide(),
               )
               .map((column) => {
                 const getColumnLabel = () => {

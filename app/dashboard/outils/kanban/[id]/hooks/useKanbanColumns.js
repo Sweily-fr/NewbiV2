@@ -6,6 +6,7 @@ import {
   CREATE_COLUMN,
   UPDATE_COLUMN,
   DELETE_COLUMN,
+  GET_BOARD,
 } from "@/src/graphql/kanbanQueries";
 
 export const useKanbanColumns = (boardId, refetchBoard) => {
@@ -22,50 +23,100 @@ export const useKanbanColumns = (boardId, refetchBoard) => {
   const [createColumn, { loading: createLoading }] = useMutation(
     CREATE_COLUMN,
     {
+      update: (cache, { data }) => {
+        if (!data?.createColumn) return;
+        const newColumn = data.createColumn;
+        try {
+          const cacheData = cache.readQuery({
+            query: GET_BOARD,
+            variables: { id: boardId, workspaceId },
+          });
+          if (!cacheData?.board) return;
+          const columnExists = cacheData.board.columns.some(
+            (c) => c.id === newColumn.id,
+          );
+          if (!columnExists) {
+            cache.writeQuery({
+              query: GET_BOARD,
+              variables: { id: boardId, workspaceId },
+              data: {
+                board: {
+                  ...cacheData.board,
+                  columns: [...cacheData.board.columns, newColumn].sort(
+                    (a, b) => a.order - b.order,
+                  ),
+                },
+              },
+            });
+          }
+        } catch {
+          // Cache miss — pas grave, la subscription prendra le relais
+        }
+      },
       onCompleted: () => {
-        // Plus de toast ici - la subscription temps réel s'en charge
         setIsAddColumnOpen(false);
         setColumnForm({ title: "", color: "#3b82f6" });
-        // Plus besoin de refetch() - la subscription s'en charge
+        toast.success("Colonne créée avec succès");
       },
       onError: (error) => {
         console.error("Erreur lors de la création de la colonne:", error);
         toast.error("Erreur lors de la création de la colonne");
       },
-    }
+    },
   );
 
   const [updateColumn, { loading: updateLoading }] = useMutation(
     UPDATE_COLUMN,
     {
+      update: (cache, { data }) => {
+        if (!data?.updateColumn) return;
+        const updatedCol = data.updateColumn;
+        try {
+          const cacheData = cache.readQuery({
+            query: GET_BOARD,
+            variables: { id: boardId, workspaceId },
+          });
+          if (!cacheData?.board) return;
+          cache.writeQuery({
+            query: GET_BOARD,
+            variables: { id: boardId, workspaceId },
+            data: {
+              board: {
+                ...cacheData.board,
+                columns: cacheData.board.columns.map((c) =>
+                  c.id === updatedCol.id ? { ...c, ...updatedCol } : c,
+                ),
+              },
+            },
+          });
+        } catch {
+          // Cache miss
+        }
+      },
       onCompleted: () => {
-        // Afficher le toast immédiatement
         toast.success("Colonne modifiée avec succès");
-        // Fermer le modal et réinitialiser le formulaire
         setIsEditColumnOpen(false);
         setEditingColumn(null);
         setColumnForm({ title: "", color: "#3b82f6" });
-        // Plus de refetch - la subscription temps réel s'en charge
       },
       onError: (error) => {
         console.error("Erreur lors de la modification de la colonne:", error);
         toast.error("Erreur lors de la modification de la colonne");
       },
-    }
+    },
   );
 
   const [deleteColumn, { loading: deleteLoading }] = useMutation(
     DELETE_COLUMN,
     {
       onCompleted: () => {
-        // Plus de toast ici - la subscription temps réel s'en charge
-        // Plus besoin de refetch() - la subscription s'en charge
+        toast.success("Colonne supprimée avec succès");
       },
       onError: (error) => {
         console.error("Erreur lors de la suppression de la colonne:", error);
         toast.error("Erreur lors de la suppression de la colonne");
       },
-    }
+    },
   );
 
   // Column form handlers
@@ -149,6 +200,29 @@ export const useKanbanColumns = (boardId, refetchBoard) => {
         variables: {
           id: columnId,
           workspaceId,
+        },
+        update: (cache) => {
+          try {
+            const cacheData = cache.readQuery({
+              query: GET_BOARD,
+              variables: { id: boardId, workspaceId },
+            });
+            if (!cacheData?.board) return;
+            cache.writeQuery({
+              query: GET_BOARD,
+              variables: { id: boardId, workspaceId },
+              data: {
+                board: {
+                  ...cacheData.board,
+                  columns: cacheData.board.columns.filter(
+                    (c) => c.id !== columnId,
+                  ),
+                },
+              },
+            });
+          } catch {
+            // Cache miss
+          }
         },
       });
       setIsDeleteColumnDialogOpen(false);

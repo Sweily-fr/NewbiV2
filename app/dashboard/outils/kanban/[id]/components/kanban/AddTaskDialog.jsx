@@ -41,6 +41,7 @@ const AddTaskDialog = ({
             ...formData,
             columnId: formData.columnId || columnId,
             boardId: boardId,
+            position: 0,
           },
         },
       });

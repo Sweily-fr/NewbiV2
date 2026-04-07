@@ -10,7 +10,6 @@ import {
   AlignLeft,
   Paperclip,
   ZoomIn,
-  Building2,
   Tag,
   X,
   CornerDownLeft,
@@ -452,15 +451,6 @@ const TaskCard = memo(
       }
     };
 
-    // Nom du client assigné
-    const clientDisplayName = useMemo(() => {
-      if (!task.client) return null;
-      if (task.client.type === "INDIVIDUAL") {
-        return `${task.client.firstName || ""} ${task.client.lastName || task.client.name || ""}`.trim();
-      }
-      return task.client.name || null;
-    }, [task.client]);
-
     // Calcul de la progression - memoized
     const checklistProgress = useMemo(() => {
       if (
@@ -609,16 +599,6 @@ const TaskCard = memo(
               </h4>
             )}
 
-            {/* Client assigné */}
-            {clientDisplayName && (
-              <div className="mt-1.5">
-                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                  <Building2 className="h-3 w-3 flex-shrink-0" />
-                  <span className="truncate">{clientDisplayName}</span>
-                </span>
-              </div>
-            )}
-
             {/* Pied de carte - Organisé sur 2 lignes */}
             <div className="mt-auto pt-2 sm:pt-3 space-y-1.5">
               {/* Ligne 1: Icônes (description, checklist) */}
@@ -693,13 +673,9 @@ const TaskCard = memo(
                             size="xs"
                           />
                         ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-6 w-6 p-0 rounded-sm text-muted-foreground hover:text-foreground"
-                          >
+                          <span className="inline-flex items-center justify-center h-6 w-6 rounded-sm border border-input bg-background text-muted-foreground hover:text-foreground">
                             <Users className="h-3 w-3 text-[#8D8D8D]" />
-                          </Button>
+                          </span>
                         )}
                       </button>
                     </PopoverTrigger>
@@ -810,13 +786,9 @@ const TaskCard = memo(
                             }
                           })()
                         ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-6 w-6 p-0 rounded-sm text-muted-foreground hover:text-foreground"
-                          >
+                          <span className="inline-flex items-center justify-center h-6 w-6 rounded-sm border border-input bg-background text-muted-foreground hover:text-foreground">
                             <Calendar className="h-3 w-3 text-[#8D8D8D]" />
-                          </Button>
+                          </span>
                         )}
                       </button>
                     </PopoverTrigger>
@@ -911,13 +883,9 @@ const TaskCard = memo(
                             </span>
                           </Badge>
                         ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-6 w-6 p-0 rounded-sm text-muted-foreground hover:text-foreground"
-                          >
+                          <span className="inline-flex items-center justify-center h-6 w-6 rounded-sm border border-input bg-background text-muted-foreground hover:text-foreground">
                             <Flag className="h-3 w-3 text-[#8D8D8D]" />
-                          </Button>
+                          </span>
                         )}
                       </button>
                     </PopoverTrigger>
@@ -1049,7 +1017,6 @@ const TaskCard = memo(
       prevProps.task.columnId === nextProps.task.columnId &&
       prevProps.task.priority === nextProps.task.priority &&
       prevProps.task.dueDate === nextProps.task.dueDate &&
-      prevProps.task.clientId === nextProps.task.clientId &&
       prevProps.task.updatedAt === nextProps.task.updatedAt &&
       prevProps.isDragging === nextProps.isDragging &&
       JSON.stringify(prevProps.task.tags) ===

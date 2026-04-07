@@ -45,6 +45,7 @@ export const useClient = (id) => {
     data,
     loading: queryLoading,
     error,
+    refetch,
   } = useQuery(GET_CLIENT, {
     variables: { workspaceId, id },
     skip: !id || !workspaceId,
@@ -55,6 +56,7 @@ export const useClient = (id) => {
     loading:
       (workspaceLoading && !workspaceId) || (queryLoading && !data?.client),
     error,
+    refetch,
   };
 };
 

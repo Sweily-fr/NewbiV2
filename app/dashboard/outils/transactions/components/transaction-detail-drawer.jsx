@@ -77,6 +77,7 @@ import { VisuallyHidden } from "@/src/components/ui/visually-hidden";
 import CategorySearchSelect from "./category-search-select";
 import { useUnlinkTransactionFromInvoice } from "@/src/hooks/useReconciliationGraphQL";
 import { useRouter } from "next/navigation";
+import { PreviewImage } from "@/src/components/ui/preview-image";
 
 const paymentMethodIcons = {
   CARD: CreditCard,
@@ -1115,10 +1116,11 @@ export function TransactionDetailDrawer({
                             <FileText className="h-5 w-5 text-gray-600" />
                           </div>
                         ) : (
-                          <img
+                          <PreviewImage
                             src={previewUrl}
                             alt="Preview"
                             className="w-full h-full object-cover"
+                            containerClassName="w-full h-full"
                           />
                         )}
                       </div>
@@ -1183,11 +1185,11 @@ export function TransactionDetailDrawer({
                                 title="Preview du justificatif"
                               />
                             ) : isImage ? (
-                              <img
-                                className="h-full w-full object-contain"
+                              <PreviewImage
                                 src={file.url}
                                 alt={file.filename || "Justificatif"}
-                                loading="lazy"
+                                className="h-full w-full object-contain"
+                                containerClassName="h-full w-full"
                               />
                             ) : (
                               <div className="flex flex-col items-center gap-2 text-muted-foreground">
@@ -1280,13 +1282,13 @@ export function TransactionDetailDrawer({
                                     title="Preview du justificatif"
                                   />
                                 ) : (
-                                  <img
-                                    className="h-full w-full object-contain"
+                                  <PreviewImage
                                     src={file.url}
                                     alt={
                                       file.originalFilename || "Justificatif"
                                     }
-                                    loading="lazy"
+                                    className="h-full w-full object-contain"
+                                    containerClassName="h-full w-full"
                                   />
                                 )}
                                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
@@ -1659,15 +1661,17 @@ export function TransactionDetailDrawer({
                 }}
               />
             ) : (
-              <img
+              <PreviewImage
                 src={receiptViewerUrl}
                 alt="Justificatif"
                 className="max-w-none transition-transform duration-200"
+                containerClassName="flex items-center justify-center w-full h-full"
+                loaderSize="h-8 w-8"
+                draggable={false}
                 style={{
                   transform: `scale(${receiptZoom}) rotate(${receiptRotation}deg)`,
                   transformOrigin: "center center",
                 }}
-                draggable={false}
               />
             )}
           </div>

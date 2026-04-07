@@ -32,7 +32,10 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { Button } from "@/src/components/ui/button";
 import { useSession } from "@/src/lib/auth-client";
-import { useActiveOrganization, getActiveOrganization } from "@/src/lib/organization-client";
+import {
+  useActiveOrganization,
+  getActiveOrganization,
+} from "@/src/lib/organization-client";
 import { toast } from "@/src/components/ui/sonner";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import {
@@ -210,7 +213,7 @@ export function SettingsModal({
       // Vérifier les permissions avant de sauvegarder
       if (!canManageOrgSettings) {
         toast.error(
-          "Vous n'avez pas la permission de modifier les paramètres de l'organisation"
+          "Vous n'avez pas la permission de modifier les paramètres de l'organisation",
         );
         return;
       }
@@ -335,7 +338,7 @@ export function SettingsModal({
       case "preferences":
         return <PreferencesSection />;
       case "notifications":
-        return <NotificationsSection />;
+        return <NotificationsSection onClose={() => onOpenChange(false)} />;
       case "generale":
         return (
           <GeneraleSection
@@ -515,7 +518,10 @@ export function SettingsModal({
             Paramètres de l'application
           </DialogTitle>
 
-          <form onSubmit={handleSubmit(handleSaveAll)} className="h-full overflow-hidden">
+          <form
+            onSubmit={handleSubmit(handleSaveAll)}
+            className="h-full overflow-hidden"
+          >
             {/* Desktop Layout */}
             <div className="flex h-full overflow-hidden">
               {/* Sidebar Desktop */}

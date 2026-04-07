@@ -99,43 +99,18 @@ export function SecuritySection({
       let error = null;
 
       try {
-        const result = await authClient.multiSession.listDeviceSessions();
-        // Better Auth retourne directement les données, pas un objet { data, error }
+        const result = await authClient.listSessions();
         if (result && typeof result === "object") {
           if (result.data !== undefined) {
             data = result.data;
             error = result.error;
           } else {
-            // Si c'est directement les données
             data = result;
           }
         }
       } catch (err) {
         console.log("Erreur API client:", err);
         error = err;
-      }
-
-      // Si ça ne fonctionne pas, essayer avec l'API REST directement
-      if (error || !data || (Array.isArray(data) && data.length === 0)) {
-        try {
-          const response = await fetch("/api/auth/list-device-sessions", {
-            method: "GET",
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          });
-
-          if (response.ok) {
-            const restData = await response.json();
-            data = restData;
-            error = null;
-          }
-        } catch (restError) {
-          console.log(
-            "🔍 API REST non disponible, utilisation des données client",
-          );
-        }
       }
 
       if (error) {

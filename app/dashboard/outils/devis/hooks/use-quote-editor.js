@@ -16,6 +16,7 @@ import {
   useQuote,
   useCheckQuoteNumber,
 } from "@/src/graphql/quoteQueries";
+import { useClient } from "@/src/graphql/clientQueries";
 import { useQuoteNumber } from "./use-quote-number";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
 
@@ -34,6 +35,13 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
   // GraphQL hooks
   const { quote: existingQuote, loading: loadingQuote } = useQuote(quoteId);
+
+  // Récupérer le client frais depuis la collection Client
+  const clientIdForFresh =
+    mode !== "create" && existingQuote?.client?.id
+      ? existingQuote.client.id
+      : null;
+  const { client: freshClient } = useClient(clientIdForFresh);
 
   // Prefix state pour le filtrage du numéro par préfixe
   const [currentPrefix, setCurrentPrefix] = useState("");
@@ -794,6 +802,60 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     }
   }, [existingQuote, mode, reset]);
 
+  // Synchroniser les données client avec la collection Client (données à jour)
+  useEffect(() => {
+    if (!isFormInitialized || !freshClient || mode === "create") return;
+    const currentClient = getValues("client");
+    if (!currentClient?.id) return;
+
+    // Comparer les champs clés
+    const needsUpdate =
+      currentClient.email !== freshClient.email ||
+      currentClient.name !== freshClient.name ||
+      currentClient.firstName !== freshClient.firstName ||
+      currentClient.lastName !== freshClient.lastName ||
+      currentClient.siret !== freshClient.siret ||
+      currentClient.vatNumber !== freshClient.vatNumber ||
+      JSON.stringify({
+        street: currentClient.address?.street,
+        city: currentClient.address?.city,
+        postalCode: currentClient.address?.postalCode,
+        country: currentClient.address?.country,
+      }) !==
+        JSON.stringify({
+          street: freshClient.address?.street,
+          city: freshClient.address?.city,
+          postalCode: freshClient.address?.postalCode,
+          country: freshClient.address?.country,
+        });
+
+    if (needsUpdate) {
+      setValue(
+        "client",
+        {
+          ...currentClient,
+          name: freshClient.name,
+          firstName: freshClient.firstName,
+          lastName: freshClient.lastName,
+          email: freshClient.email,
+          address: {
+            street: freshClient.address?.street || "",
+            city: freshClient.address?.city || "",
+            postalCode: freshClient.address?.postalCode || "",
+            country: freshClient.address?.country || "France",
+          },
+          siret: freshClient.siret,
+          vatNumber: freshClient.vatNumber,
+          hasDifferentShippingAddress:
+            freshClient.hasDifferentShippingAddress || false,
+          shippingAddress: freshClient.shippingAddress || null,
+          isInternational: freshClient.isInternational || false,
+        },
+        { shouldDirty: false },
+      );
+    }
+  }, [freshClient, isFormInitialized, mode, getValues, setValue]);
+
   // Set next quote number for new quotes and draft editing
   useEffect(() => {
     if (!isFormInitialized || numberLoading || !nextQuoteNumber) return;
@@ -837,7 +899,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     numberLoading,
     hasDocumentsForPrefix,
     existingQuote?.status,
-  ]); // eslint-disable-line react-hooks/exhaustive-deps
+  ]);
 
   // Effet pour charger les données d'organisation au démarrage
   useEffect(() => {

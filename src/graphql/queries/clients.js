@@ -1,15 +1,29 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 export const GET_CLIENTS = gql`
-  query GetClients($workspaceId: String!, $page: Int, $limit: Int, $search: String) {
-    clients(workspaceId: $workspaceId, page: $page, limit: $limit, search: $search) {
+  query GetClients(
+    $workspaceId: String!
+    $page: Int
+    $limit: Int
+    $search: String
+  ) {
+    clients(
+      workspaceId: $workspaceId
+      page: $page
+      limit: $limit
+      search: $search
+    ) {
       items {
         id
         name
         email
+        phone
         type
         firstName
         lastName
+        contactFunction
+        contactDepartment
+        contactLocation
         address {
           street
           city
@@ -30,6 +44,8 @@ export const GET_CLIENTS = gql`
         contacts {
           id
           position
+          department
+          location
           firstName
           lastName
           email
@@ -59,9 +75,13 @@ export const GET_CLIENT = gql`
       id
       name
       email
+      phone
       type
       firstName
       lastName
+      contactFunction
+      contactDepartment
+      contactLocation
       address {
         street
         city
@@ -82,6 +102,8 @@ export const GET_CLIENT = gql`
       contacts {
         id
         position
+        department
+        location
         firstName
         lastName
         email

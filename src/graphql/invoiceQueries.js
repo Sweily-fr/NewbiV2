@@ -239,6 +239,17 @@ export const GET_INVOICES = gql`
   ${INVOICE_LIST_FRAGMENT}
 `;
 
+export const GET_INVOICE_BALANCES = gql`
+  query GetInvoiceBalances($workspaceId: ID!) {
+    invoiceBalances(workspaceId: $workspaceId) {
+      totalBilled
+      totalPaid
+      overdueAmount
+      overdueCount
+    }
+  }
+`;
+
 export const GET_INVOICE = gql`
   query GetInvoice($id: ID!, $workspaceId: ID!) {
     invoice(id: $id, workspaceId: $workspaceId) {
@@ -687,6 +698,28 @@ export const useInvoices = () => {
   );
 };
 
+// Hook pour récupérer les soldes agrégés (factures créées + importées)
+export const useInvoiceBalances = () => {
+  const { workspaceId } = useRequiredWorkspace();
+
+  const { data, loading, refetch } = useQuery(GET_INVOICE_BALANCES, {
+    variables: { workspaceId },
+    fetchPolicy: "cache-and-network",
+    skip: !workspaceId,
+  });
+
+  return {
+    balances: data?.invoiceBalances || {
+      totalBilled: 0,
+      totalPaid: 0,
+      overdueAmount: 0,
+      overdueCount: 0,
+    },
+    loading,
+    refetch,
+  };
+};
+
 // Hook pour récupérer une facture spécifique
 export const useInvoice = (id) => {
   const {
@@ -704,6 +737,7 @@ export const useInvoice = (id) => {
     variables: { id, workspaceId },
     skip: !id || !workspaceId,
     errorPolicy: "all",
+    fetchPolicy: "network-only",
   });
 
   return useMemo(
@@ -805,6 +839,7 @@ export const useCreateInvoice = () => {
     refetchQueries: [
       { query: GET_INVOICES, variables: { workspaceId } },
       { query: GET_INVOICE_STATS, variables: { workspaceId } },
+      { query: GET_INVOICE_BALANCES, variables: { workspaceId } },
     ],
     awaitRefetchQueries: true,
     // onError désactivé - les erreurs sont gérées dans les composants appelants
@@ -857,9 +892,9 @@ export const useUpdateInvoice = () => {
         variables: { id: data.updateInvoice.id, workspaceId },
         data: { invoice: data.updateInvoice },
       });
-      // Stats invalidées car les totaux peuvent changer
+      // Stats et soldes invalidés car les totaux peuvent changer
       client.refetchQueries({
-        include: [GET_INVOICE_STATS],
+        include: [GET_INVOICE_STATS, GET_INVOICE_BALANCES],
       });
     },
     // onError désactivé - les erreurs sont gérées dans les composants appelants
@@ -928,9 +963,9 @@ export const useDeleteInvoice = () => {
         variables: { id, workspaceId },
       });
 
-      // Invalider le cache des factures
+      // Invalider le cache des factures et des soldes (inclut overdueAmount)
       client.refetchQueries({
-        include: [GET_INVOICES, GET_INVOICE_STATS],
+        include: [GET_INVOICES, GET_INVOICE_STATS, GET_INVOICE_BALANCES],
       });
 
       // Toast désactivé ici - géré dans les composants (invoice-row-actions, etc.)
@@ -985,9 +1020,9 @@ export const useMarkInvoiceAsPaid = () => {
         variables: { id: data.markInvoiceAsPaid.id, workspaceId },
         data: { invoice: data.markInvoiceAsPaid },
       });
-      // Stats invalidées car le statut change
+      // Stats et soldes invalidés car le statut change (affecte overdueAmount)
       client.refetchQueries({
-        include: [GET_INVOICE_STATS],
+        include: [GET_INVOICE_STATS, GET_INVOICE_BALANCES],
       });
     },
     onError: (error) => {
@@ -1037,9 +1072,9 @@ export const useChangeInvoiceStatus = () => {
           variables: { id: data.changeInvoiceStatus.id, workspaceId },
           data: { invoice: data.changeInvoiceStatus },
         });
-        // Stats invalidées car le statut change
+        // Stats et soldes invalidés car le statut change (affecte overdueAmount)
         client.refetchQueries({
-          include: [GET_INVOICE_STATS],
+          include: [GET_INVOICE_STATS, GET_INVOICE_BALANCES],
         });
       },
       onError: (error) => {
@@ -1123,7 +1158,7 @@ export const useCreateLinkedInvoice = () => {
         // Invalider les caches pour rafraîchir les données
         try {
           await client.refetchQueries({
-            include: [GET_INVOICES, GET_INVOICE_STATS],
+            include: [GET_INVOICES, GET_INVOICE_STATS, GET_INVOICE_BALANCES],
           });
 
           // Invalider aussi les requêtes de devis

@@ -121,17 +121,17 @@ export const generateDynamicFooter = (companyInfo, variant = "standard") => {
     // Utiliser directement l'adresse string dans les variantes
     switch (variant) {
       case "standard-compact":
-        return `${name}${legalForm ? ` • ${legalForm}` : ""}${capitalSocial ? ` au capital de ${capitalSocial}` : ""}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • Siège: ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""}`;
+        return `${name}${legalForm ? ` • ${legalForm}` : ""}${capitalSocial ? ` au capital de ${capitalSocial}€` : ""}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • Siège: ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""}`;
 
       case "standard-lisible":
         // Construire la partie forme juridique + capital
         let legalInfo = "";
         if (legalForm && capitalSocial) {
-          legalInfo = ` • ${legalForm} au capital de ${capitalSocial}`;
+          legalInfo = ` • ${legalForm} au capital de ${capitalSocial}€`;
         } else if (legalForm) {
           legalInfo = ` • ${legalForm}`;
         } else if (capitalSocial) {
-          legalInfo = ` • Capital: ${capitalSocial}`;
+          legalInfo = ` • Capital: ${capitalSocial}€`;
         }
         return `${name}${legalInfo}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • Siège: ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""}`;
 
@@ -145,10 +145,10 @@ export const generateDynamicFooter = (companyInfo, variant = "standard") => {
         return `${name}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""} • Autoliquidation TVA, art. 283-2 CGI: TVA due par le client`;
 
       case "btp":
-        return `${name}${legalForm ? ` • ${legalForm}` : ""}${capitalSocial ? ` au capital de ${capitalSocial}` : ""}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""}\nAssurance RC décennale: [Nom assureur], police [N°], couverture: [Zone]`;
+        return `${name}${legalForm ? ` • ${legalForm}` : ""}${capitalSocial ? ` au capital de ${capitalSocial}€` : ""}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""}\nAssurance RC décennale: [Nom assureur], police [N°], couverture: [Zone]`;
 
       case "b2c":
-        return `${name}${legalForm ? ` • ${legalForm}` : ""}${capitalSocial ? ` au capital de ${capitalSocial}` : ""}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""}\nMédiation à la consommation: [Nom du médiateur] • [Site/contact]`;
+        return `${name}${legalForm ? ` • ${legalForm}` : ""}${capitalSocial ? ` au capital de ${capitalSocial}€` : ""}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""}\nMédiation à la consommation: [Nom du médiateur] • [Site/contact]`;
 
       default:
         if (isMicroEntreprise) {
@@ -171,17 +171,17 @@ export const generateDynamicFooter = (companyInfo, variant = "standard") => {
 
   switch (variant) {
     case "standard-compact":
-      return `${name}${legalForm ? ` • ${legalForm}` : ""}${capitalSocial ? ` au capital de ${capitalSocial}` : ""}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • Siège: ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""}`;
+      return `${name}${legalForm ? ` • ${legalForm}` : ""}${capitalSocial ? ` au capital de ${capitalSocial}€` : ""}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • Siège: ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""}`;
 
     case "standard-lisible":
       // Construire la partie forme juridique + capital
       let legalInfoMain = "";
       if (legalForm && capitalSocial) {
-        legalInfoMain = ` • ${legalForm} au capital de ${capitalSocial}`;
+        legalInfoMain = ` • ${legalForm} au capital de ${capitalSocial}€`;
       } else if (legalForm) {
         legalInfoMain = ` • ${legalForm}`;
       } else if (capitalSocial) {
-        legalInfoMain = ` • Capital: ${capitalSocial}`;
+        legalInfoMain = ` • Capital: ${capitalSocial}€`;
       }
       return `${name}${legalInfoMain}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • Siège: ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""}`;
 
@@ -205,11 +205,11 @@ export const generateDynamicFooter = (companyInfo, variant = "standard") => {
 
     case "btp":
       // Ajout pour le BTP (à compléter avec les vraies données d'assurance)
-      return `${name}${legalForm ? ` • ${legalForm}` : ""}${capitalSocial ? ` au capital de ${capitalSocial}` : ""}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""}\nAssurance RC décennale: [Nom assureur], police [N°], couverture: [Zone]`;
+      return `${name}${legalForm ? ` • ${legalForm}` : ""}${capitalSocial ? ` au capital de ${capitalSocial}€` : ""}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""}\nAssurance RC décennale: [Nom assureur], police [N°], couverture: [Zone]`;
 
     case "b2c":
       // Ajout pour B2C avec médiation
-      return `${name}${legalForm ? ` • ${legalForm}` : ""}${capitalSocial ? ` au capital de ${capitalSocial}` : ""}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""}\nMédiation à la consommation: [Nom du médiateur] • [Site/contact]`;
+      return `${name}${legalForm ? ` • ${legalForm}` : ""}${capitalSocial ? ` au capital de ${capitalSocial}€` : ""}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""}\nMédiation à la consommation: [Nom du médiateur] • [Site/contact]`;
 
     default:
       // Auto-détection basée sur le régime fiscal

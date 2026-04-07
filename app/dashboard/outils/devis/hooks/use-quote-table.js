@@ -29,6 +29,7 @@ import { EmailTrackingStatus } from "@/src/components/email-tracking-status";
 import { toast } from "@/src/components/ui/sonner";
 
 // Custom filter functions
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const multiColumnFilterFn = (row, columnId, filterValue) => {
   const searchableContent = [
     row.original.number,
@@ -323,7 +324,6 @@ export function useQuoteTable({
           );
         },
         size: 200,
-        filterFn: multiColumnFilterFn,
       },
       {
         accessorKey: "issueDate",

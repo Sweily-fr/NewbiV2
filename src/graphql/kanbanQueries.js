@@ -37,6 +37,12 @@ export const GET_BOARDS = gql`
         lastName
         type
       }
+      columns {
+        id
+        title
+        color
+        order
+      }
       totalBillableAmount
       members {
         id
@@ -51,6 +57,7 @@ export const GET_BOARDS = gql`
       category
       emoji
       color
+      status
       isFavorite
       createdAt
       updatedAt
@@ -293,6 +300,12 @@ export const UPDATE_BOARD = gql`
         lastName
         type
       }
+      columns {
+        id
+        title
+        color
+        order
+      }
       priority
       dueDate
       boardMembers
@@ -300,6 +313,7 @@ export const UPDATE_BOARD = gql`
       category
       color
       emoji
+      status
       createdAt
       updatedAt
     }
@@ -708,12 +722,14 @@ export const UPDATE_COMMENT = gql`
     $taskId: ID!
     $commentId: ID!
     $content: String!
+    $mentionedUserIds: [ID!]
     $workspaceId: ID
   ) {
     updateComment(
       taskId: $taskId
       commentId: $commentId
       content: $content
+      mentionedUserIds: $mentionedUserIds
       workspaceId: $workspaceId
     ) {
       ...TaskFields
@@ -769,6 +785,11 @@ export const BOARD_FRAGMENT = gql`
     taskCount
     totalTimeSpent
     templateName
+    category
+    emoji
+    color
+    status
+    isFavorite
     createdAt
     updatedAt
   }

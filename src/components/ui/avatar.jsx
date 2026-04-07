@@ -1,60 +1,47 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import * as AvatarPrimitive from "@radix-ui/react-avatar"
+import * as React from "react";
+import * as AvatarPrimitive from "@radix-ui/react-avatar";
 
-import { cn } from "@/src/lib/utils"
+import { cn } from "@/src/lib/utils";
 
-function Avatar({
-  className,
-  ...props
-}) {
+function Avatar({ className, ...props }) {
   return (
     <AvatarPrimitive.Root
       data-slot="avatar"
       className={cn(
         "relative flex size-8 shrink-0 overflow-hidden rounded-full",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
-function AvatarImage({
-  className,
-  ...props
-}) {
+function AvatarImage({ className, ...props }) {
   return (
     <AvatarPrimitive.Image
       data-slot="avatar-image"
-      className={cn("aspect-square size-full", className)}
+      className={cn("aspect-square size-full object-cover", className)}
       {...props}
     />
-  )
+  );
 }
 
-function AvatarFallback({
-  className,
-  ...props
-}) {
+function AvatarFallback({ className, ...props }) {
   return (
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
       className={cn(
         "bg-muted flex size-full items-center justify-center rounded-full",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
-function AvatarGroup({
-  className,
-  children,
-  ...props
-}) {
+function AvatarGroup({ className, children, ...props }) {
   return (
     <div
       data-slot="avatar-group"
@@ -63,26 +50,22 @@ function AvatarGroup({
     >
       {children}
     </div>
-  )
+  );
 }
 
-function AvatarGroupCount({
-  className,
-  children,
-  ...props
-}) {
+function AvatarGroupCount({ className, children, ...props }) {
   return (
     <div
       data-slot="avatar-group-count"
       className={cn(
         "relative flex size-8 shrink-0 items-center justify-center rounded-full border-2 border-background bg-muted text-xs font-medium",
-        className
+        className,
       )}
       {...props}
     >
       {children}
     </div>
-  )
+  );
 }
 
-export { Avatar, AvatarImage, AvatarFallback, AvatarGroup, AvatarGroupCount }
+export { Avatar, AvatarImage, AvatarFallback, AvatarGroup, AvatarGroupCount };
