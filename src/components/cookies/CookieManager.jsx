@@ -16,9 +16,9 @@ export default function CookieManager() {
 
   useEffect(() => {
     if (!isMounted) return;
-    
+
     // Check if user has already made a choice
-    const cookieConsent = localStorage.getItem('cookie_consent');
+    const cookieConsent = localStorage.getItem("cookie_consent");
     if (!cookieConsent) {
       // Small delay for better UX
       setTimeout(() => {
@@ -32,10 +32,13 @@ export default function CookieManager() {
       setShowPreferencesModal(true);
     };
 
-    window.addEventListener('openCookiePreferences', handleOpenPreferences);
+    window.addEventListener("openCookiePreferences", handleOpenPreferences);
 
     return () => {
-      window.removeEventListener('openCookiePreferences', handleOpenPreferences);
+      window.removeEventListener(
+        "openCookiePreferences",
+        handleOpenPreferences,
+      );
     };
   }, [isMounted]);
 
@@ -46,8 +49,9 @@ export default function CookieManager() {
       analytics: true,
       marketing: true,
     };
-    localStorage.setItem('cookie_consent', JSON.stringify(allAccepted));
-    localStorage.setItem('cookie_consent_date', new Date().toISOString());
+    localStorage.setItem("cookie_consent", JSON.stringify(allAccepted));
+    localStorage.setItem("cookie_consent_date", new Date().toISOString());
+    window.dispatchEvent(new Event("cookieConsentUpdated"));
     closeBanner();
   };
 
@@ -58,8 +62,9 @@ export default function CookieManager() {
       analytics: false,
       marketing: false,
     };
-    localStorage.setItem('cookie_consent', JSON.stringify(onlyNecessary));
-    localStorage.setItem('cookie_consent_date', new Date().toISOString());
+    localStorage.setItem("cookie_consent", JSON.stringify(onlyNecessary));
+    localStorage.setItem("cookie_consent_date", new Date().toISOString());
+    window.dispatchEvent(new Event("cookieConsentUpdated"));
     closeBanner();
   };
 
@@ -77,7 +82,7 @@ export default function CookieManager() {
   const handlePreferencesClose = () => {
     setShowPreferencesModal(false);
     // Check if preferences were saved, if so close the banner
-    const cookieConsent = localStorage.getItem('cookie_consent');
+    const cookieConsent = localStorage.getItem("cookie_consent");
     if (cookieConsent) {
       closeBanner();
     }
@@ -89,16 +94,21 @@ export default function CookieManager() {
       {isVisible && (
         <div
           className={`fixed bottom-4 right-4 z-50 transition-all duration-300 ease-in-out ${
-            isAnimating ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
+            isAnimating
+              ? "translate-y-0 opacity-100"
+              : "translate-y-full opacity-0"
           }`}
         >
           <div className="bg-background max-w-[400px] rounded-md border p-4 shadow-lg">
             <div className="flex gap-2">
               <div className="flex grow flex-col gap-3">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium">Nous respectons votre vie privée 🍪</p>
+                  <p className="text-sm font-medium">
+                    Nous respectons votre vie privée 🍪
+                  </p>
                   <p className="text-muted-foreground text-sm">
-                    Nous utilisons des cookies pour améliorer votre expérience et afficher du contenu personnalisé.
+                    Nous utilisons des cookies pour améliorer votre expérience
+                    et afficher du contenu personnalisé.
                   </p>
                 </div>
                 <div className="flex gap-2 flex-wrap">
@@ -108,9 +118,9 @@ export default function CookieManager() {
                   <Button size="sm" variant="outline" onClick={handleDecline}>
                     Refuser
                   </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
+                  <Button
+                    size="sm"
+                    variant="outline"
                     onClick={handleCustomize}
                     className="gap-1"
                   >
@@ -137,9 +147,9 @@ export default function CookieManager() {
       )}
 
       {/* Preferences Modal */}
-      <CookiePreferencesModal 
-        isOpen={showPreferencesModal} 
-        onClose={handlePreferencesClose} 
+      <CookiePreferencesModal
+        isOpen={showPreferencesModal}
+        onClose={handlePreferencesClose}
       />
     </>
   );

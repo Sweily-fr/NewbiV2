@@ -1,7 +1,13 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { Button } from "@/src/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { Switch } from "@/src/components/ui/switch";
 import { X } from "lucide-react";
 
@@ -15,8 +21,8 @@ const CookiePreferencesModal = ({ isOpen, onClose }) => {
 
   // Load preferences when modal opens
   useEffect(() => {
-    if (isOpen && typeof window !== 'undefined') {
-      const saved = localStorage.getItem('cookie_consent');
+    if (isOpen && typeof window !== "undefined") {
+      const saved = localStorage.getItem("cookie_consent");
       if (saved) {
         setPreferences(JSON.parse(saved));
       } else {
@@ -31,79 +37,84 @@ const CookiePreferencesModal = ({ isOpen, onClose }) => {
   }, [isOpen]);
 
   const handlePreferenceChange = (key, value) => {
-    if (key === 'necessary') return; // Cannot disable necessary cookies
-    setPreferences(prev => ({
+    if (key === "necessary") return; // Cannot disable necessary cookies
+    setPreferences((prev) => ({
       ...prev,
-      [key]: value
+      [key]: value,
     }));
   };
 
   const handleSavePreferences = () => {
-    localStorage.setItem('cookie_consent', JSON.stringify(preferences));
-    localStorage.setItem('cookie_consent_date', new Date().toISOString());
+    localStorage.setItem("cookie_consent", JSON.stringify(preferences));
+    localStorage.setItem("cookie_consent_date", new Date().toISOString());
+    window.dispatchEvent(new Event("cookieConsentUpdated"));
     onClose();
   };
 
   const cookieTypes = [
     {
-      key: 'necessary',
-      name: 'Cookies nécessaires',
-      description: 'Ces cookies sont essentiels au fonctionnement du site et ne peuvent pas être désactivés. Ils permettent d\'assurer la sécurité du site et de mémoriser vos préférences de base.',
-      note: 'Ces cookies sont nécessaires au fonctionnement du site et ne peuvent pas être désactivés.',
+      key: "necessary",
+      name: "Cookies nécessaires",
+      description:
+        "Ces cookies sont essentiels au fonctionnement du site et ne peuvent pas être désactivés. Ils permettent d'assurer la sécurité du site et de mémoriser vos préférences de base.",
+      note: "Ces cookies sont nécessaires au fonctionnement du site et ne peuvent pas être désactivés.",
       cookies: [
         {
-          name: 'auth_token',
-          provider: 'Newbi',
-          purpose: 'Authentification et sécurité',
-          expiration: 'Session'
+          name: "auth_token",
+          provider: "Newbi",
+          purpose: "Authentification et sécurité",
+          expiration: "Session",
         },
         {
-          name: 'cookie_consent',
-          provider: 'Newbi',
-          purpose: 'Stockage des préférences de cookies',
-          expiration: '1 an'
-        }
-      ]
+          name: "cookie_consent",
+          provider: "Newbi",
+          purpose: "Stockage des préférences de cookies",
+          expiration: "1 an",
+        },
+      ],
     },
     {
-      key: 'functional',
-      name: 'Cookies fonctionnels',
-      description: 'Ces cookies permettent d\'améliorer les fonctionnalités et la personnalisation de votre expérience sur notre site.',
+      key: "functional",
+      name: "Cookies fonctionnels",
+      description:
+        "Ces cookies permettent d'améliorer les fonctionnalités et la personnalisation de votre expérience sur notre site.",
       cookies: [
         {
-          name: 'user_preferences',
-          provider: 'Newbi',
-          purpose: 'Mémorisation des préférences utilisateur',
-          expiration: '6 mois'
-        }
-      ]
+          name: "user_preferences",
+          provider: "Newbi",
+          purpose: "Mémorisation des préférences utilisateur",
+          expiration: "6 mois",
+        },
+      ],
     },
     {
-      key: 'analytics',
-      name: 'Cookies analytiques',
-      description: 'Ces cookies nous aident à comprendre comment vous utilisez notre site pour l\'améliorer.',
+      key: "analytics",
+      name: "Cookies analytiques",
+      description:
+        "Ces cookies nous aident à comprendre comment vous utilisez notre site pour l'améliorer.",
       cookies: [
         {
-          name: '_ga',
-          provider: 'Google Analytics',
-          purpose: 'Analyse du trafic et du comportement',
-          expiration: '2 ans'
-        }
-      ]
+          name: "_ga",
+          provider: "Google Analytics",
+          purpose: "Analyse du trafic et du comportement",
+          expiration: "2 ans",
+        },
+      ],
     },
     {
-      key: 'marketing',
-      name: 'Cookies marketing',
-      description: 'Ces cookies sont utilisés pour vous proposer des publicités personnalisées.',
+      key: "marketing",
+      name: "Cookies marketing",
+      description:
+        "Ces cookies sont utilisés pour vous proposer des publicités personnalisées.",
       cookies: [
         {
-          name: 'marketing_id',
-          provider: 'Partenaires publicitaires',
-          purpose: 'Publicité ciblée',
-          expiration: '1 an'
-        }
-      ]
-    }
+          name: "marketing_id",
+          provider: "Partenaires publicitaires",
+          purpose: "Publicité ciblée",
+          expiration: "1 an",
+        },
+      ],
+    },
   ];
 
   if (!isOpen) return null;
@@ -127,16 +138,21 @@ const CookiePreferencesModal = ({ isOpen, onClose }) => {
             <X className="h-4 w-4" />
           </Button>
         </CardHeader>
-        
+
         <CardContent className="space-y-6">
           <div className="text-sm text-gray-600 leading-relaxed">
             <p className="mb-4">
-              Ce centre de préférences vous permet de personnaliser l'utilisation des cookies sur notre site. 
-              Nous utilisons différents types de cookies pour optimiser votre expérience et nos services. 
-              Pour plus d'informations, consultez notre{" "}
-              <a href="/politique-de-confidentialite" className="text-blue-600 hover:text-blue-800 underline">
+              Ce centre de préférences vous permet de personnaliser
+              l'utilisation des cookies sur notre site. Nous utilisons
+              différents types de cookies pour optimiser votre expérience et nos
+              services. Pour plus d'informations, consultez notre{" "}
+              <a
+                href="/politique-de-confidentialite"
+                className="text-blue-600 hover:text-blue-800 underline"
+              >
                 politique de confidentialité
-              </a>.
+              </a>
+              .
             </p>
           </div>
 
@@ -147,13 +163,15 @@ const CookiePreferencesModal = ({ isOpen, onClose }) => {
                   <h3 className="text-lg font-semibold">{type.name}</h3>
                   <Switch
                     checked={preferences[type.key]}
-                    onCheckedChange={(checked) => handlePreferenceChange(type.key, checked)}
-                    disabled={type.key === 'necessary'}
+                    onCheckedChange={(checked) =>
+                      handlePreferenceChange(type.key, checked)
+                    }
+                    disabled={type.key === "necessary"}
                   />
                 </div>
-                
+
                 <p className="text-sm text-gray-600 mb-4">{type.description}</p>
-                
+
                 {type.note && (
                   <p className="text-xs text-blue-600 mb-4">{type.note}</p>
                 )}
@@ -164,10 +182,18 @@ const CookiePreferencesModal = ({ isOpen, onClose }) => {
                     <table className="w-full text-xs">
                       <thead>
                         <tr className="border-b">
-                          <th className="text-left py-2 px-2 font-medium text-gray-500">NOM</th>
-                          <th className="text-left py-2 px-2 font-medium text-gray-500">FOURNISSEUR</th>
-                          <th className="text-left py-2 px-2 font-medium text-gray-500">OBJECTIF</th>
-                          <th className="text-left py-2 px-2 font-medium text-gray-500">EXPIRATION</th>
+                          <th className="text-left py-2 px-2 font-medium text-gray-500">
+                            NOM
+                          </th>
+                          <th className="text-left py-2 px-2 font-medium text-gray-500">
+                            FOURNISSEUR
+                          </th>
+                          <th className="text-left py-2 px-2 font-medium text-gray-500">
+                            OBJECTIF
+                          </th>
+                          <th className="text-left py-2 px-2 font-medium text-gray-500">
+                            EXPIRATION
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
