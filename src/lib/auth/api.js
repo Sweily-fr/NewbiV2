@@ -37,7 +37,7 @@ export async function registerUser(formData) {
     const { data, error } = await authClient.signUp.email({
       email: formData.email,
       password: formData.password,
-      name: formData.name,
+      name: formData.name || "",
       // Supprimer passwordConfirmation car non supporté par l'API
       callbackURL: "/dashboard",
     });
