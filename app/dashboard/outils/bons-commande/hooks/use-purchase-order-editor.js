@@ -827,7 +827,12 @@ export function usePurchaseOrderEditor({
       currentClient.lastName !== freshClient.lastName ||
       currentClient.siret !== freshClient.siret ||
       currentClient.vatNumber !== freshClient.vatNumber ||
-      JSON.stringify(currentClient.address) !==
+      JSON.stringify({
+        street: currentClient.address?.street,
+        city: currentClient.address?.city,
+        postalCode: currentClient.address?.postalCode,
+        country: currentClient.address?.country,
+      }) !==
         JSON.stringify({
           street: freshClient.address?.street,
           city: freshClient.address?.city,
