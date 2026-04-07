@@ -15,6 +15,7 @@ import {
   useUpdatePurchaseOrder,
   usePurchaseOrder,
 } from "@/src/graphql/purchaseOrderQueries";
+import { useClient } from "@/src/graphql/clientQueries";
 import { usePurchaseOrderNumber } from "./use-purchase-order-number";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
 
@@ -53,6 +54,13 @@ export function usePurchaseOrderEditor({
     purchaseOrder: existingPurchaseOrder,
     loading: loadingPurchaseOrder,
   } = usePurchaseOrder(purchaseOrderId);
+
+  // Récupérer le client frais depuis la collection Client
+  const clientIdForFresh =
+    mode !== "create" && existingPurchaseOrder?.client?.id
+      ? existingPurchaseOrder.client.id
+      : null;
+  const { client: freshClient } = useClient(clientIdForFresh);
 
   // Prefix state pour le filtrage du numéro par préfixe
   const [currentPrefix, setCurrentPrefix] = useState(
@@ -806,6 +814,54 @@ export function usePurchaseOrderEditor({
     }
   }, [existingPurchaseOrder, mode, reset]);
 
+  // Synchroniser les données client avec la collection Client (données à jour)
+  useEffect(() => {
+    if (!isFormInitialized || !freshClient || mode === "create") return;
+    const currentClient = getValues("client");
+    if (!currentClient?.id) return;
+
+    const needsUpdate =
+      currentClient.email !== freshClient.email ||
+      currentClient.name !== freshClient.name ||
+      currentClient.firstName !== freshClient.firstName ||
+      currentClient.lastName !== freshClient.lastName ||
+      currentClient.siret !== freshClient.siret ||
+      currentClient.vatNumber !== freshClient.vatNumber ||
+      JSON.stringify(currentClient.address) !==
+        JSON.stringify({
+          street: freshClient.address?.street,
+          city: freshClient.address?.city,
+          postalCode: freshClient.address?.postalCode,
+          country: freshClient.address?.country,
+        });
+
+    if (needsUpdate) {
+      setValue(
+        "client",
+        {
+          ...currentClient,
+          name: freshClient.name,
+          firstName: freshClient.firstName,
+          lastName: freshClient.lastName,
+          email: freshClient.email,
+          address: {
+            street: freshClient.address?.street || "",
+            city: freshClient.address?.city || "",
+            postalCode: freshClient.address?.postalCode || "",
+            country: freshClient.address?.country || "France",
+          },
+          siret: freshClient.siret,
+          vatNumber: freshClient.vatNumber,
+          hasDifferentShippingAddress:
+            freshClient.hasDifferentShippingAddress || false,
+          shippingAddress: freshClient.shippingAddress || null,
+          isInternational: freshClient.isInternational || false,
+        },
+        { shouldDirty: false },
+      );
+    }
+  }, [freshClient, isFormInitialized, mode, getValues, setValue]);
+
   // Set next purchase order number for new orders and draft editing
   useEffect(() => {
     if (!isFormInitialized || numberLoading || !nextPurchaseOrderNumber) return;
@@ -841,7 +897,7 @@ export function usePurchaseOrderEditor({
     numberLoading,
     hasDocumentsForPrefix,
     existingPurchaseOrder?.status,
-  ]); // eslint-disable-line react-hooks/exhaustive-deps
+  ]);
 
   // Mettre à jour companyInfo quand organization est chargée
   useEffect(() => {

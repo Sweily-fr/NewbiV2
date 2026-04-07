@@ -1,46 +1,64 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Paperclip, X, Loader2, Upload, ZoomIn, FileText, FileSpreadsheet } from 'lucide-react';
-import { Button } from '@/src/components/ui/button';
-import { cn } from '@/src/lib/utils';
+import React, { useState, useCallback, useRef, useEffect } from "react";
+import {
+  Paperclip,
+  X,
+  Loader2,
+  Upload,
+  ZoomIn,
+  FileText,
+  FileSpreadsheet,
+} from "lucide-react";
+import { Button } from "@/src/components/ui/button";
+import { cn } from "@/src/lib/utils";
+import { PreviewImage } from "@/src/components/ui/preview-image";
 import {
   Dialog,
   DialogContent,
   DialogTrigger,
   DialogTitle,
-} from '@/src/components/ui/dialog';
-import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
+} from "@/src/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 const VALID_TYPES = [
-  'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'text/plain', 'text/csv'
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "text/plain",
+  "text/csv",
 ];
 
-const ACCEPT_STRING = "image/jpeg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,text/csv,.doc,.docx,.xls,.xlsx,.pdf,.txt,.csv";
+const ACCEPT_STRING =
+  "image/jpeg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,text/csv,.doc,.docx,.xls,.xlsx,.pdf,.txt,.csv";
 
 function isImageType(contentType) {
-  return contentType?.startsWith('image/');
+  return contentType?.startsWith("image/");
 }
 
 function formatFileSize(bytes) {
-  if (!bytes) return '';
+  if (!bytes) return "";
   if (bytes < 1024) return `${bytes} o`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
 }
 
 function getFileExtension(fileName) {
-  return fileName?.split('.').pop()?.toLowerCase() || '';
+  return fileName?.split(".").pop()?.toLowerCase() || "";
 }
 
 function getFileIcon(file) {
-  const contentType = file.contentType || file.type || '';
+  const contentType = file.contentType || file.type || "";
   const ext = getFileExtension(file.fileName || file.name);
-  if (contentType.includes('excel') || contentType.includes('spreadsheet') || ['xls', 'xlsx', 'csv'].includes(ext)) {
+  if (
+    contentType.includes("excel") ||
+    contentType.includes("spreadsheet") ||
+    ["xls", "xlsx", "csv"].includes(ext)
+  ) {
     return FileSpreadsheet;
   }
   return FileText;
@@ -54,10 +72,11 @@ function ImagePreview({ file, onDelete, isDeleting }) {
       <Dialog open={isZoomed} onOpenChange={setIsZoomed}>
         <DialogTrigger asChild>
           <div className="relative cursor-pointer overflow-hidden rounded-lg border border-border hover:border-primary/50 transition-colors">
-            <img
+            <PreviewImage
               src={file.url || file._localUrl}
               alt={file.fileName || file.name}
               className="w-full h-24 object-cover"
+              containerClassName="w-full h-24"
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
               <ZoomIn className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -68,10 +87,12 @@ function ImagePreview({ file, onDelete, isDeleting }) {
           <VisuallyHidden>
             <DialogTitle>Aperçu de l&apos;image</DialogTitle>
           </VisuallyHidden>
-          <img
+          <PreviewImage
             src={file.url || file._localUrl}
             alt={file.fileName || file.name}
             className="w-full h-auto max-h-[80vh] object-contain"
+            containerClassName="w-full flex items-center justify-center"
+            loaderSize="h-8 w-8"
           />
         </DialogContent>
       </Dialog>
@@ -151,7 +172,7 @@ export function TaskImageUpload({
   localMode = false,
   pendingFiles = [],
   onAddFiles,
-  onRemoveFile
+  onRemoveFile,
 }) {
   const [isDragging, setIsDragging] = useState(false);
   const [deletingImageId, setDeletingImageId] = useState(null);
@@ -169,7 +190,10 @@ export function TaskImageUpload({
       return;
     }
 
-    if (pendingFiles === prevPendingFilesRef.current && localPreviews.length === pendingFiles.length) {
+    if (
+      pendingFiles === prevPendingFilesRef.current &&
+      localPreviews.length === pendingFiles.length
+    ) {
       return;
     }
     prevPendingFilesRef.current = pendingFiles;
@@ -200,24 +224,27 @@ export function TaskImageUpload({
     setLocalPreviews(previews);
 
     return () => {
-      previews.forEach(p => {
+      previews.forEach((p) => {
         if (p._localUrl) URL.revokeObjectURL(p._localUrl);
       });
     };
   }, [localMode, pendingFiles]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filterValidFiles = useCallback((files) => {
-    return Array.from(files).filter(file => VALID_TYPES.includes(file.type));
+    return Array.from(files).filter((file) => VALID_TYPES.includes(file.type));
   }, []);
 
-  const handleDragEnter = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dragCounterRef.current++;
-    if (!disabled && !isUploading) {
-      setIsDragging(true);
-    }
-  }, [disabled, isUploading]);
+  const handleDragEnter = useCallback(
+    (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dragCounterRef.current++;
+      if (!disabled && !isUploading) {
+        setIsDragging(true);
+      }
+    },
+    [disabled, isUploading],
+  );
 
   const handleDragLeave = useCallback((e) => {
     e.preventDefault();
@@ -233,70 +260,88 @@ export function TaskImageUpload({
     e.stopPropagation();
   }, []);
 
-  const handleDrop = useCallback(async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dragCounterRef.current = 0;
-    setIsDragging(false);
+  const handleDrop = useCallback(
+    async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dragCounterRef.current = 0;
+      setIsDragging(false);
 
-    if (disabled || isUploading) return;
+      if (disabled || isUploading) return;
 
-    const files = filterValidFiles(e.dataTransfer.files);
-    if (files.length === 0) return;
+      const files = filterValidFiles(e.dataTransfer.files);
+      if (files.length === 0) return;
 
-    const remainingSlots = maxImages - totalFiles;
-    const filesToProcess = files.slice(0, remainingSlots);
+      const remainingSlots = maxImages - totalFiles;
+      const filesToProcess = files.slice(0, remainingSlots);
 
-    if (localMode) {
-      if (onAddFiles && filesToProcess.length > 0) {
-        onAddFiles(filesToProcess);
+      if (localMode) {
+        if (onAddFiles && filesToProcess.length > 0) {
+          onAddFiles(filesToProcess);
+        }
+      } else {
+        if (onUpload && filesToProcess.length > 0) {
+          await onUpload(filesToProcess);
+        }
       }
-    } else {
-      if (onUpload && filesToProcess.length > 0) {
-        await onUpload(filesToProcess);
+    },
+    [
+      disabled,
+      isUploading,
+      totalFiles,
+      maxImages,
+      onUpload,
+      localMode,
+      onAddFiles,
+      filterValidFiles,
+    ],
+  );
+
+  const handleFileSelect = useCallback(
+    async (e) => {
+      const files = filterValidFiles(e.target.files || []);
+      if (files.length === 0) return;
+
+      const remainingSlots = maxImages - totalFiles;
+      const filesToProcess = files.slice(0, remainingSlots);
+
+      if (localMode) {
+        if (onAddFiles && filesToProcess.length > 0) {
+          onAddFiles(filesToProcess);
+        }
+      } else {
+        if (onUpload && filesToProcess.length > 0) {
+          await onUpload(filesToProcess);
+        }
       }
-    }
-  }, [disabled, isUploading, totalFiles, maxImages, onUpload, localMode, onAddFiles, filterValidFiles]);
 
-  const handleFileSelect = useCallback(async (e) => {
-    const files = filterValidFiles(e.target.files || []);
-    if (files.length === 0) return;
-
-    const remainingSlots = maxImages - totalFiles;
-    const filesToProcess = files.slice(0, remainingSlots);
-
-    if (localMode) {
-      if (onAddFiles && filesToProcess.length > 0) {
-        onAddFiles(filesToProcess);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
       }
-    } else {
-      if (onUpload && filesToProcess.length > 0) {
-        await onUpload(filesToProcess);
+    },
+    [totalFiles, maxImages, onUpload, localMode, onAddFiles, filterValidFiles],
+  );
+
+  const handleDelete = useCallback(
+    async (idOrIndex) => {
+      if (localMode) {
+        if (onRemoveFile) {
+          onRemoveFile(idOrIndex);
+        }
+        return;
       }
-    }
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  }, [totalFiles, maxImages, onUpload, localMode, onAddFiles, filterValidFiles]);
+      if (!onDelete) return;
 
-  const handleDelete = useCallback(async (idOrIndex) => {
-    if (localMode) {
-      if (onRemoveFile) {
-        onRemoveFile(idOrIndex);
+      setDeletingImageId(idOrIndex);
+      try {
+        await onDelete(idOrIndex);
+      } finally {
+        setDeletingImageId(null);
       }
-      return;
-    }
-
-    if (!onDelete) return;
-
-    setDeletingImageId(idOrIndex);
-    try {
-      await onDelete(idOrIndex);
-    } finally {
-      setDeletingImageId(null);
-    }
-  }, [onDelete, localMode, onRemoveFile]);
+    },
+    [onDelete, localMode, onRemoveFile],
+  );
 
   const handleClick = useCallback(() => {
     if (!disabled && !isUploading && fileInputRef.current) {
@@ -305,8 +350,12 @@ export function TaskImageUpload({
   }, [disabled, isUploading]);
 
   const displayFiles = localMode ? localPreviews : images;
-  const imageFiles = displayFiles.filter(f => isImageType(f.contentType || f.type));
-  const documentFiles = displayFiles.filter(f => !isImageType(f.contentType || f.type));
+  const imageFiles = displayFiles.filter((f) =>
+    isImageType(f.contentType || f.type),
+  );
+  const documentFiles = displayFiles.filter(
+    (f) => !isImageType(f.contentType || f.type),
+  );
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -348,22 +397,33 @@ export function TaskImageUpload({
                   />
                 </div>
               </div>
-              <span className="text-xs text-muted-foreground tabular-nums flex-shrink-0">{uploadProgress}%</span>
+              <span className="text-xs text-muted-foreground tabular-nums flex-shrink-0">
+                {uploadProgress}%
+              </span>
             </div>
           ) : (
-            <div className={cn(
-              "flex items-center justify-center gap-2",
-              compact ? "flex-row" : "flex-col gap-1.5"
-            )}>
+            <div
+              className={cn(
+                "flex items-center justify-center gap-2",
+                compact ? "flex-row" : "flex-col gap-1.5",
+              )}
+            >
               {isDragging ? (
                 <Upload className="h-5 w-5 text-primary" />
               ) : (
-                <Paperclip className={cn("text-muted-foreground/60", compact ? "h-4 w-4" : "h-5 w-5")} />
+                <Paperclip
+                  className={cn(
+                    "text-muted-foreground/60",
+                    compact ? "h-4 w-4" : "h-5 w-5",
+                  )}
+                />
               )}
-              <p className={cn(
-                "text-muted-foreground",
-                compact ? "text-xs" : "text-sm"
-              )}>
+              <p
+                className={cn(
+                  "text-muted-foreground",
+                  compact ? "text-xs" : "text-sm",
+                )}
+              >
                 {isDragging ? "Déposez les fichiers ici" : placeholder}
               </p>
               {!compact && totalFiles > 0 && (
@@ -383,7 +443,9 @@ export function TaskImageUpload({
             <ImagePreview
               key={file.id ?? file._localIndex ?? `img-${index}`}
               file={file}
-              onDelete={localMode ? handleDelete : (onDelete ? handleDelete : null)}
+              onDelete={
+                localMode ? handleDelete : onDelete ? handleDelete : null
+              }
               isDeleting={deletingImageId === (file.id ?? file._localIndex)}
             />
           ))}
@@ -397,7 +459,9 @@ export function TaskImageUpload({
             <DocumentPreview
               key={file.id ?? file._localIndex ?? `doc-${index}`}
               file={file}
-              onDelete={localMode ? handleDelete : (onDelete ? handleDelete : null)}
+              onDelete={
+                localMode ? handleDelete : onDelete ? handleDelete : null
+              }
               isDeleting={deletingImageId === (file.id ?? file._localIndex)}
             />
           ))}
@@ -417,23 +481,26 @@ export function TaskImageUploadInline({
   onUpload,
   isUploading = false,
   disabled = false,
-  className
+  className,
 }) {
   const fileInputRef = useRef(null);
 
-  const handleFileSelect = useCallback(async (e) => {
-    const files = Array.from(e.target.files || []).filter(
-      file => VALID_TYPES.includes(file.type)
-    );
+  const handleFileSelect = useCallback(
+    async (e) => {
+      const files = Array.from(e.target.files || []).filter((file) =>
+        VALID_TYPES.includes(file.type),
+      );
 
-    if (files.length > 0 && onUpload) {
-      await onUpload(files);
-    }
+      if (files.length > 0 && onUpload) {
+        await onUpload(files);
+      }
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  }, [onUpload]);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    },
+    [onUpload],
+  );
 
   return (
     <div className={cn("inline-flex", className)}>

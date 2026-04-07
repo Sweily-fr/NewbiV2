@@ -18,7 +18,6 @@ import {
   ListChecks,
   Star,
   MoreHorizontal,
-  Tag,
 } from "lucide-react";
 import {
   Tooltip,
@@ -82,6 +81,68 @@ function formatRelativeDate(dateStr) {
   return date.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
 
+// Dropdown pour changer le status du board (valeurs = noms des colonnes)
+function BoardStatusDropdown({ board, onChangeStatus }) {
+  const columns = [...(board.columns || [])].sort((a, b) => a.order - b.order);
+  const currentStatus = board.status;
+  const currentCol = columns.find((c) => c.title === currentStatus);
+
+  if (columns.length === 0)
+    return <span className="text-muted-foreground/40">-</span>;
+
+  return (
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger asChild>
+        <button
+          className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity"
+          style={
+            currentCol
+              ? {
+                  backgroundColor: `${currentCol.color}20`,
+                  color: currentCol.color,
+                  border: `1px solid ${currentCol.color}30`,
+                }
+              : {
+                  backgroundColor: "hsl(var(--muted))",
+                  color: "hsl(var(--muted-foreground))",
+                  border: "1px solid hsl(var(--border))",
+                }
+          }
+          onClick={(e) => e.stopPropagation()}
+        >
+          {currentCol && (
+            <span
+              className="h-2 w-2 rounded-full flex-shrink-0"
+              style={{ backgroundColor: currentCol.color }}
+            />
+          )}
+          {currentStatus || "Non défini"}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-44">
+        {columns.map((col) => (
+          <DropdownMenuItem
+            key={col.id}
+            className={`gap-2 cursor-pointer ${
+              currentStatus === col.title ? "bg-muted font-medium" : ""
+            }`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onChangeStatus(board.id, col.title);
+            }}
+          >
+            <span
+              className="h-2.5 w-2.5 rounded-full flex-shrink-0"
+              style={{ backgroundColor: col.color }}
+            />
+            {col.title}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 // Custom filter function for multi-column search
 const multiColumnFilterFn = (row, columnId, filterValue) => {
   const board = row.original;
@@ -103,6 +164,7 @@ export function useKanbanBoardsTable({
   clientFilter = null,
   categoryFilter = null,
   onToggleFavorite,
+  onChangeStatus,
 }) {
   const [globalFilter, setGlobalFilter] = useState("");
 
@@ -182,11 +244,6 @@ export function useKanbanBoardsTable({
         header: () => <span className="font-normal">Nom de la liste</span>,
         cell: ({ row }) => {
           const board = row.original;
-          const clientName = board.client
-            ? board.client.type === "INDIVIDUAL"
-              ? `${board.client.firstName || ""} ${board.client.lastName || ""}`.trim()
-              : board.client.name
-            : null;
           return (
             <div className="min-h-[40px] flex flex-col justify-center min-w-0">
               <div className="flex items-center gap-2 min-w-0">
@@ -196,11 +253,6 @@ export function useKanbanBoardsTable({
                 <TruncatedText className="font-normal">
                   {board.title}
                 </TruncatedText>
-                {clientName && (
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-normal bg-muted text-muted-foreground flex-shrink-0">
-                    {clientName}
-                  </span>
-                )}
               </div>
               {board.description && (
                 <div className="font-normal text-xs text-muted-foreground truncate">
@@ -242,35 +294,16 @@ export function useKanbanBoardsTable({
         enableHiding: false,
       },
       {
-        accessorKey: "category",
-        header: () => <span className="font-normal">Catégorie</span>,
-        cell: ({ row }) => {
-          const category = row.getValue("category");
-          const color = row.original.color;
-          if (!category)
-            return <span className="text-muted-foreground/40">-</span>;
-          return (
-            <span
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-normal"
-              style={
-                color
-                  ? {
-                      backgroundColor: `${color}15`,
-                      color: color,
-                      border: `1px solid ${color}30`,
-                    }
-                  : {
-                      backgroundColor: "hsl(var(--muted))",
-                      color: "hsl(var(--muted-foreground))",
-                    }
-              }
-            >
-              <Tag className="h-3 w-3" />
-              {category}
-            </span>
-          );
-        },
-        size: 130,
+        id: "status",
+        header: () => <span className="font-normal">Status</span>,
+        cell: ({ row }) => (
+          <BoardStatusDropdown
+            board={row.original}
+            onChangeStatus={onChangeStatus}
+          />
+        ),
+        size: 200,
+        enableSorting: false,
       },
       {
         accessorKey: "taskCount",
@@ -430,6 +463,7 @@ export function useKanbanBoardsTable({
       formatDate,
       hasBillableAmount,
       onToggleFavorite,
+      onChangeStatus,
     ],
   );
 

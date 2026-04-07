@@ -23,6 +23,7 @@ const CREATE_EMAIL_SIGNATURE = gql`
       id
       signatureName
       isDefault
+      position
       createdAt
     }
   }
@@ -35,6 +36,7 @@ const UPDATE_EMAIL_SIGNATURE = gql`
       id
       signatureName
       isDefault
+      position
       updatedAt
     }
   }
@@ -55,7 +57,7 @@ const hslToHex = (hslString) => {
   if (!hslString || hslString.startsWith("#")) return hslString;
 
   const hslMatch = hslString.match(
-    /hsl\((\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)%,\s*(\d+(?:\.\d+)?)%\)/
+    /hsl\((\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)%,\s*(\d+(?:\.\d+)?)%\)/,
   );
   if (!hslMatch) return hslString;
 
@@ -142,10 +144,12 @@ const normalizeFontWeight = (weight) => {
 export default function SaveSignatureModal({ existingSignatureId = null }) {
   const router = useRouter();
   const client = useApolloClient();
-  const { signatureData, showSaveModal, closeSaveModal, rootContainer } = useSignatureData();
+  const { signatureData, showSaveModal, closeSaveModal, rootContainer } =
+    useSignatureData();
 
-
-  const [signatureName, setSignatureName] = useState(signatureData.signatureName || "");
+  const [signatureName, setSignatureName] = useState(
+    signatureData.signatureName || "",
+  );
   const [saveStatus, setSaveStatus] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
 
@@ -191,7 +195,7 @@ export default function SaveSignatureModal({ existingSignatureId = null }) {
         setErrorMessage("Erreur lors de la création de la signature");
         toast.error("Erreur lors de la création de la signature");
       },
-    }
+    },
   );
 
   const [updateSignature, { loading: updating }] = useMutation(
@@ -215,7 +219,7 @@ export default function SaveSignatureModal({ existingSignatureId = null }) {
         setErrorMessage("Erreur lors de la mise à jour de la signature");
         toast.error("Erreur lors de la mise à jour de la signature");
       },
-    }
+    },
   );
 
   const isLoading = creating || updating;
@@ -259,8 +263,12 @@ export default function SaveSignatureModal({ existingSignatureId = null }) {
         position: signatureData.colors?.position || "#666666",
         company: signatureData.colors?.company || "#2563eb",
         contact: signatureData.colors?.contact || "#666666",
-        separatorVertical: hslToHex(signatureData.colors?.separatorVertical || "#e0e0e0"),
-        separatorHorizontal: hslToHex(signatureData.colors?.separatorHorizontal || "#e0e0e0"),
+        separatorVertical: hslToHex(
+          signatureData.colors?.separatorVertical || "#e0e0e0",
+        ),
+        separatorHorizontal: hslToHex(
+          signatureData.colors?.separatorHorizontal || "#e0e0e0",
+        ),
       },
       nameSpacing: signatureData.nameSpacing || 4,
       nameAlignment: signatureData.nameAlignment || "left",
@@ -282,7 +290,8 @@ export default function SaveSignatureModal({ existingSignatureId = null }) {
       separatorVerticalWidth: signatureData.separatorVerticalWidth || 1,
       separatorHorizontalWidth: signatureData.separatorHorizontalWidth || 1,
       separatorVerticalEnabled: signatureData.separatorVerticalEnabled ?? true,
-      separatorHorizontalEnabled: signatureData.separatorHorizontalEnabled ?? false,
+      separatorHorizontalEnabled:
+        signatureData.separatorHorizontalEnabled ?? false,
       templateId: signatureData.templateId || "template1",
       // Sauvegarder la structure des conteneurs (disposition personnalisée des blocs)
       containerStructure: rootContainer || null,
@@ -301,69 +310,104 @@ export default function SaveSignatureModal({ existingSignatureId = null }) {
         separatorTop: signatureData.spacings?.separatorTop ?? 12,
         separatorBottom: signatureData.spacings?.separatorBottom ?? 12,
         logoToSocial: signatureData.spacings?.logoToSocial ?? 12,
-        verticalSeparatorLeft: signatureData.spacings?.verticalSeparatorLeft ?? 22,
-        verticalSeparatorRight: signatureData.spacings?.verticalSeparatorRight ?? 22,
+        verticalSeparatorLeft:
+          signatureData.spacings?.verticalSeparatorLeft ?? 22,
+        verticalSeparatorRight:
+          signatureData.spacings?.verticalSeparatorRight ?? 22,
       },
       detailedSpacing: signatureData.detailedSpacing ?? false,
       paddings: {
         photo: {
           top: signatureData.paddings?.photo?.top ?? 0,
           right: signatureData.paddings?.photo?.right ?? 0,
-          bottom: signatureData.paddings?.photo?.bottom ?? signatureData.spacings?.global ?? 8,
+          bottom:
+            signatureData.paddings?.photo?.bottom ??
+            signatureData.spacings?.global ??
+            8,
           left: signatureData.paddings?.photo?.left ?? 0,
         },
         name: {
           top: signatureData.paddings?.name?.top ?? 0,
           right: signatureData.paddings?.name?.right ?? 0,
-          bottom: signatureData.paddings?.name?.bottom ?? signatureData.spacings?.global ?? 8,
+          bottom:
+            signatureData.paddings?.name?.bottom ??
+            signatureData.spacings?.global ??
+            8,
           left: signatureData.paddings?.name?.left ?? 0,
         },
         position: {
           top: signatureData.paddings?.position?.top ?? 0,
           right: signatureData.paddings?.position?.right ?? 0,
-          bottom: signatureData.paddings?.position?.bottom ?? signatureData.spacings?.global ?? 8,
+          bottom:
+            signatureData.paddings?.position?.bottom ??
+            signatureData.spacings?.global ??
+            8,
           left: signatureData.paddings?.position?.left ?? 0,
         },
         company: {
           top: signatureData.paddings?.company?.top ?? 0,
           right: signatureData.paddings?.company?.right ?? 0,
-          bottom: signatureData.paddings?.company?.bottom ?? signatureData.spacings?.global ?? 8,
+          bottom:
+            signatureData.paddings?.company?.bottom ??
+            signatureData.spacings?.global ??
+            8,
           left: signatureData.paddings?.company?.left ?? 0,
         },
         phone: {
           top: signatureData.paddings?.phone?.top ?? 0,
           right: signatureData.paddings?.phone?.right ?? 0,
-          bottom: signatureData.paddings?.phone?.bottom ?? signatureData.spacings?.global ?? 8,
+          bottom:
+            signatureData.paddings?.phone?.bottom ??
+            signatureData.spacings?.global ??
+            8,
           left: signatureData.paddings?.phone?.left ?? 0,
         },
         mobile: {
           top: signatureData.paddings?.mobile?.top ?? 0,
           right: signatureData.paddings?.mobile?.right ?? 0,
-          bottom: signatureData.paddings?.mobile?.bottom ?? signatureData.spacings?.global ?? 8,
+          bottom:
+            signatureData.paddings?.mobile?.bottom ??
+            signatureData.spacings?.global ??
+            8,
           left: signatureData.paddings?.mobile?.left ?? 0,
         },
         email: {
           top: signatureData.paddings?.email?.top ?? 0,
           right: signatureData.paddings?.email?.right ?? 0,
-          bottom: signatureData.paddings?.email?.bottom ?? signatureData.spacings?.global ?? 8,
+          bottom:
+            signatureData.paddings?.email?.bottom ??
+            signatureData.spacings?.global ??
+            8,
           left: signatureData.paddings?.email?.left ?? 0,
         },
         website: {
           top: signatureData.paddings?.website?.top ?? 0,
           right: signatureData.paddings?.website?.right ?? 0,
-          bottom: signatureData.paddings?.website?.bottom ?? signatureData.spacings?.global ?? 8,
+          bottom:
+            signatureData.paddings?.website?.bottom ??
+            signatureData.spacings?.global ??
+            8,
           left: signatureData.paddings?.website?.left ?? 0,
         },
         address: {
           top: signatureData.paddings?.address?.top ?? 0,
           right: signatureData.paddings?.address?.right ?? 0,
-          bottom: signatureData.paddings?.address?.bottom ?? signatureData.spacings?.global ?? 8,
+          bottom:
+            signatureData.paddings?.address?.bottom ??
+            signatureData.spacings?.global ??
+            8,
           left: signatureData.paddings?.address?.left ?? 0,
         },
         separatorHorizontal: {
-          top: signatureData.paddings?.separatorHorizontal?.top ?? signatureData.spacings?.global ?? 8,
+          top:
+            signatureData.paddings?.separatorHorizontal?.top ??
+            signatureData.spacings?.global ??
+            8,
           right: signatureData.paddings?.separatorHorizontal?.right ?? 0,
-          bottom: signatureData.paddings?.separatorHorizontal?.bottom ?? signatureData.spacings?.global ?? 8,
+          bottom:
+            signatureData.paddings?.separatorHorizontal?.bottom ??
+            signatureData.spacings?.global ??
+            8,
           left: signatureData.paddings?.separatorHorizontal?.left ?? 0,
         },
         separatorVertical: {
@@ -373,13 +417,19 @@ export default function SaveSignatureModal({ existingSignatureId = null }) {
           left: signatureData.paddings?.separatorVertical?.left ?? 4,
         },
         logo: {
-          top: signatureData.paddings?.logo?.top ?? signatureData.spacings?.global ?? 8,
+          top:
+            signatureData.paddings?.logo?.top ??
+            signatureData.spacings?.global ??
+            8,
           right: signatureData.paddings?.logo?.right ?? 0,
           bottom: signatureData.paddings?.logo?.bottom ?? 0,
           left: signatureData.paddings?.logo?.left ?? 0,
         },
         social: {
-          top: signatureData.paddings?.social?.top ?? signatureData.spacings?.global ?? 8,
+          top:
+            signatureData.paddings?.social?.top ??
+            signatureData.spacings?.global ??
+            8,
           right: signatureData.paddings?.social?.right ?? 0,
           bottom: signatureData.paddings?.social?.bottom ?? 0,
           left: signatureData.paddings?.social?.left ?? 0,
@@ -388,13 +438,25 @@ export default function SaveSignatureModal({ existingSignatureId = null }) {
       socialNetworks: (() => {
         const networks = {};
         const socialData = signatureData.socialNetworks || {};
-        const supportedNetworks = ["facebook", "instagram", "linkedin", "x", "github", "youtube"];
+        const supportedNetworks = [
+          "facebook",
+          "instagram",
+          "linkedin",
+          "x",
+          "github",
+          "youtube",
+        ];
         supportedNetworks.forEach((platform) => {
           const value = socialData[platform];
           if (value) {
             // Gérer le cas où la valeur est un objet { url: "..." } ou une chaîne directe
             const url = typeof value === "string" ? value : value?.url;
-            if (url && typeof url === "string" && url.trim() !== "" && url !== "#") {
+            if (
+              url &&
+              typeof url === "string" &&
+              url.trim() !== "" &&
+              url !== "#"
+            ) {
               networks[platform] = url;
             }
           }
@@ -421,68 +483,105 @@ export default function SaveSignatureModal({ existingSignatureId = null }) {
       },
       typography: {
         fullName: {
-          fontFamily: signatureData.typography?.fullName?.fontFamily || "Arial, sans-serif",
+          fontFamily:
+            signatureData.typography?.fullName?.fontFamily ||
+            "Arial, sans-serif",
           fontSize: signatureData.typography?.fullName?.fontSize || 16,
           color: validateColor(signatureData.typography?.fullName?.color),
-          fontWeight: normalizeFontWeight(signatureData.typography?.fullName?.fontWeight),
+          fontWeight: normalizeFontWeight(
+            signatureData.typography?.fullName?.fontWeight,
+          ),
           fontStyle: signatureData.typography?.fullName?.fontStyle || "normal",
-          textDecoration: signatureData.typography?.fullName?.textDecoration || "none",
+          textDecoration:
+            signatureData.typography?.fullName?.textDecoration || "none",
         },
         position: {
-          fontFamily: signatureData.typography?.position?.fontFamily || "Arial, sans-serif",
+          fontFamily:
+            signatureData.typography?.position?.fontFamily ||
+            "Arial, sans-serif",
           fontSize: signatureData.typography?.position?.fontSize || 14,
           color: validateColor(signatureData.typography?.position?.color),
-          fontWeight: normalizeFontWeight(signatureData.typography?.position?.fontWeight),
+          fontWeight: normalizeFontWeight(
+            signatureData.typography?.position?.fontWeight,
+          ),
           fontStyle: signatureData.typography?.position?.fontStyle || "normal",
-          textDecoration: signatureData.typography?.position?.textDecoration || "none",
+          textDecoration:
+            signatureData.typography?.position?.textDecoration || "none",
         },
         company: {
-          fontFamily: signatureData.typography?.company?.fontFamily || "Arial, sans-serif",
+          fontFamily:
+            signatureData.typography?.company?.fontFamily ||
+            "Arial, sans-serif",
           fontSize: signatureData.typography?.company?.fontSize || 14,
           color: validateColor(signatureData.typography?.company?.color),
-          fontWeight: normalizeFontWeight(signatureData.typography?.company?.fontWeight),
+          fontWeight: normalizeFontWeight(
+            signatureData.typography?.company?.fontWeight,
+          ),
           fontStyle: signatureData.typography?.company?.fontStyle || "normal",
-          textDecoration: signatureData.typography?.company?.textDecoration || "none",
+          textDecoration:
+            signatureData.typography?.company?.textDecoration || "none",
         },
         email: {
-          fontFamily: signatureData.typography?.email?.fontFamily || "Arial, sans-serif",
+          fontFamily:
+            signatureData.typography?.email?.fontFamily || "Arial, sans-serif",
           fontSize: signatureData.typography?.email?.fontSize || 12,
           color: validateColor(signatureData.typography?.email?.color),
-          fontWeight: normalizeFontWeight(signatureData.typography?.email?.fontWeight),
+          fontWeight: normalizeFontWeight(
+            signatureData.typography?.email?.fontWeight,
+          ),
           fontStyle: signatureData.typography?.email?.fontStyle || "normal",
-          textDecoration: signatureData.typography?.email?.textDecoration || "none",
+          textDecoration:
+            signatureData.typography?.email?.textDecoration || "none",
         },
         phone: {
-          fontFamily: signatureData.typography?.phone?.fontFamily || "Arial, sans-serif",
+          fontFamily:
+            signatureData.typography?.phone?.fontFamily || "Arial, sans-serif",
           fontSize: signatureData.typography?.phone?.fontSize || 12,
           color: validateColor(signatureData.typography?.phone?.color),
-          fontWeight: normalizeFontWeight(signatureData.typography?.phone?.fontWeight),
+          fontWeight: normalizeFontWeight(
+            signatureData.typography?.phone?.fontWeight,
+          ),
           fontStyle: signatureData.typography?.phone?.fontStyle || "normal",
-          textDecoration: signatureData.typography?.phone?.textDecoration || "none",
+          textDecoration:
+            signatureData.typography?.phone?.textDecoration || "none",
         },
         mobile: {
-          fontFamily: signatureData.typography?.mobile?.fontFamily || "Arial, sans-serif",
+          fontFamily:
+            signatureData.typography?.mobile?.fontFamily || "Arial, sans-serif",
           fontSize: signatureData.typography?.mobile?.fontSize || 12,
           color: validateColor(signatureData.typography?.mobile?.color),
-          fontWeight: normalizeFontWeight(signatureData.typography?.mobile?.fontWeight),
+          fontWeight: normalizeFontWeight(
+            signatureData.typography?.mobile?.fontWeight,
+          ),
           fontStyle: signatureData.typography?.mobile?.fontStyle || "normal",
-          textDecoration: signatureData.typography?.mobile?.textDecoration || "none",
+          textDecoration:
+            signatureData.typography?.mobile?.textDecoration || "none",
         },
         website: {
-          fontFamily: signatureData.typography?.website?.fontFamily || "Arial, sans-serif",
+          fontFamily:
+            signatureData.typography?.website?.fontFamily ||
+            "Arial, sans-serif",
           fontSize: signatureData.typography?.website?.fontSize || 12,
           color: validateColor(signatureData.typography?.website?.color),
-          fontWeight: normalizeFontWeight(signatureData.typography?.website?.fontWeight),
+          fontWeight: normalizeFontWeight(
+            signatureData.typography?.website?.fontWeight,
+          ),
           fontStyle: signatureData.typography?.website?.fontStyle || "normal",
-          textDecoration: signatureData.typography?.website?.textDecoration || "none",
+          textDecoration:
+            signatureData.typography?.website?.textDecoration || "none",
         },
         address: {
-          fontFamily: signatureData.typography?.address?.fontFamily || "Arial, sans-serif",
+          fontFamily:
+            signatureData.typography?.address?.fontFamily ||
+            "Arial, sans-serif",
           fontSize: signatureData.typography?.address?.fontSize || 12,
           color: validateColor(signatureData.typography?.address?.color),
-          fontWeight: normalizeFontWeight(signatureData.typography?.address?.fontWeight),
+          fontWeight: normalizeFontWeight(
+            signatureData.typography?.address?.fontWeight,
+          ),
           fontStyle: signatureData.typography?.address?.fontStyle || "normal",
-          textDecoration: signatureData.typography?.address?.textDecoration || "none",
+          textDecoration:
+            signatureData.typography?.address?.textDecoration || "none",
         },
       },
       fontFamily: signatureData.fontFamily || "Arial, sans-serif",
@@ -492,7 +591,13 @@ export default function SaveSignatureModal({ existingSignatureId = null }) {
         contact: signatureData.fontSize?.contact || 12,
       },
       elementsOrder: signatureData.elementsOrder || [
-        "photo", "fullName", "position", "separator", "contact", "logo", "social"
+        "photo",
+        "fullName",
+        "position",
+        "separator",
+        "contact",
+        "logo",
+        "social",
       ],
       horizontalLayout: signatureData.horizontalLayout || {
         leftColumn: ["photo", "fullName", "position"],
@@ -507,7 +612,7 @@ export default function SaveSignatureModal({ existingSignatureId = null }) {
     const isDuplicate = existingSignatures.some(
       (sig) =>
         sig.signatureName.toLowerCase() === signatureName.toLowerCase() &&
-        sig.id !== existingSignatureId
+        sig.id !== existingSignatureId,
     );
 
     if (isDuplicate) {
@@ -528,7 +633,10 @@ export default function SaveSignatureModal({ existingSignatureId = null }) {
 
     // Debug: vérifier que containerStructure est bien inclus
     console.log("💾 [SaveSignatureModal] rootContainer:", rootContainer);
-    console.log("💾 [SaveSignatureModal] containerStructure in finalData:", finalData.containerStructure);
+    console.log(
+      "💾 [SaveSignatureModal] containerStructure in finalData:",
+      finalData.containerStructure,
+    );
 
     try {
       if (existingSignatureId) {
@@ -549,7 +657,8 @@ export default function SaveSignatureModal({ existingSignatureId = null }) {
       }
     } catch (error) {
       toast.error("Erreur lors de la sauvegarde", {
-        description: error.message || "Une erreur est survenue lors de la sauvegarde.",
+        description:
+          error.message || "Une erreur est survenue lors de la sauvegarde.",
       });
       setSaveStatus("error");
       setErrorMessage("Erreur lors de la sauvegarde");

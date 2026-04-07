@@ -89,6 +89,7 @@ export function TaskModal({
   removePendingComment,
   updatePendingComment,
   openEditTaskModal,
+  updateTask,
 }) {
   // Navigation prev/next entre tâches
   const { prevTask, nextTask, currentIndex, totalTasks } = useMemo(() => {
@@ -378,6 +379,34 @@ export function TaskModal({
       triggerAutoSave();
     }, 300);
   }, [triggerAutoSave]);
+
+  // Toggle membre : mise à jour partielle pour éviter d'envoyer tous les champs
+  const handleMemberToggle = useCallback(
+    (memberId) => {
+      const current = taskForm.assignedMembers || [];
+      const newMembers = current.includes(memberId)
+        ? current.filter((id) => id !== memberId)
+        : [...current, memberId];
+
+      const updatedForm = { ...taskForm, assignedMembers: newMembers };
+      setTaskForm(updatedForm);
+
+      // En mode édition, envoyer uniquement assignedMembers au serveur
+      if (isEditing && updateTask && taskForm.id) {
+        // Mettre à jour initialFormRef pour empêcher l'auto-save de re-trigger
+        initialFormRef.current = JSON.stringify(updatedForm);
+        if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
+
+        updateTask({
+          variables: {
+            input: { id: taskForm.id, assignedMembers: newMembers },
+            workspaceId,
+          },
+        });
+      }
+    },
+    [taskForm, setTaskForm, isEditing, updateTask, workspaceId],
+  );
 
   // Gestion de la date d'échéance
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -1125,17 +1154,7 @@ export function TaskModal({
                               return (
                                 <button
                                   key={member.id}
-                                  onClick={() => {
-                                    const current =
-                                      taskForm.assignedMembers || [];
-                                    const newMembers = isSelected
-                                      ? current.filter((id) => id !== member.id)
-                                      : [...current, member.id];
-                                    setTaskForm({
-                                      ...taskForm,
-                                      assignedMembers: newMembers,
-                                    });
-                                  }}
+                                  onClick={() => handleMemberToggle(member.id)}
                                   className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer"
                                 >
                                   <div
@@ -2002,21 +2021,9 @@ export function TaskModal({
                               checked={(
                                 taskForm.assignedMembers || []
                               ).includes(member.id)}
-                              onCheckedChange={() => {
-                                const currentMembers =
-                                  taskForm.assignedMembers || [];
-                                const newMembers = currentMembers.includes(
-                                  member.id,
-                                )
-                                  ? currentMembers.filter(
-                                      (id) => id !== member.id,
-                                    )
-                                  : [...currentMembers, member.id];
-                                setTaskForm({
-                                  ...taskForm,
-                                  assignedMembers: newMembers,
-                                });
-                              }}
+                              onCheckedChange={() =>
+                                handleMemberToggle(member.id)
+                              }
                               className="flex items-center gap-3 cursor-pointer"
                             >
                               <UserAvatar

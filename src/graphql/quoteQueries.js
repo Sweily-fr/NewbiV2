@@ -568,6 +568,7 @@ export const useQuote = (id) => {
     variables: { workspaceId, id },
     skip: !id || !workspaceId,
     errorPolicy: "all",
+    fetchPolicy: "network-only",
   });
 
   return {

@@ -53,6 +53,7 @@ import { Checkbox } from "@/src/components/ui/checkbox";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
 import { Separator } from "@/src/components/ui/separator";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { PreviewImage } from "@/src/components/ui/preview-image";
 import {
   Dialog,
   DialogContent,
@@ -212,44 +213,7 @@ const formatTotalSize = (bytes) => {
 };
 
 // Composant image avec loader pour les aperçus (utile pour les HEIC qui nécessitent une conversion côté serveur)
-function PreviewImage({ src, alt, className, containerClassName }) {
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
-
-  // Reset quand la source change (nouveau document ou rechargement)
-  useEffect(() => {
-    setLoaded(false);
-    setError(false);
-  }, [src]);
-
-  return (
-    <div className={cn("relative", containerClassName)}>
-      {!loaded && !error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-muted rounded-lg">
-          <LoaderCircle className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
-      )}
-      {error ? (
-        <div className="absolute inset-0 flex items-center justify-center bg-muted rounded-lg">
-          <FileImage className="h-5 w-5 text-muted-foreground" />
-        </div>
-      ) : (
-        <img
-          src={src}
-          alt={alt}
-          loading="lazy"
-          className={cn(
-            className,
-            "transition-opacity duration-300",
-            !loaded && "opacity-0",
-          )}
-          onLoad={() => setLoaded(true)}
-          onError={() => setError(true)}
-        />
-      )}
-    </div>
-  );
-}
+// PreviewImage importé depuis @/src/components/ui/preview-image
 
 export default function DocumentsPartagesPage() {
   const isMobile = useIsMobile();
@@ -4388,7 +4352,8 @@ export default function DocumentsPartagesPage() {
                     }
                     alt={previewDocument.name}
                     className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
-                    containerClassName="max-h-full max-w-full flex items-center justify-center"
+                    containerClassName="h-full w-full flex items-center justify-center"
+                    loaderSize="h-8 w-8"
                   />
                 </div>
               ) : previewDocument?.mimeType?.startsWith("video/") ? (

@@ -103,12 +103,16 @@ export const useKanbanBoards = () => {
             }
           } else if (type === "UPDATED" && board) {
             // Mettre à jour le board existant
+            // On préserve columns du cache car le field resolver
+            // peut ne pas les résoudre correctement en contexte subscription
             cache.writeQuery({
               query: GET_BOARDS,
               variables: { workspaceId },
               data: {
                 boards: existingBoards.boards.map((b) =>
-                  b.id === board.id ? { ...b, ...board } : b,
+                  b.id === board.id
+                    ? { ...b, ...board, columns: board.columns ?? b.columns }
+                    : b,
                 ),
               },
             });

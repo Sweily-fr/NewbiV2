@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/src/components/ui/button";
 import Link from "next/link";
+import { trackEvent } from "@/src/utils/trackEvent";
 import { TresorerieAnimation } from "./TresorerieAnimation";
 import { Smartphone } from "lucide-react";
 
@@ -48,7 +49,16 @@ export function HeroSection() {
                   Essayer gratuitement
                 </Button>
               </Link>
-              <Link href="/contact">
+              <a
+                href="https://meet.brevo.com/sweily/newbi"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={async (e) => {
+                  e.preventDefault();
+                  await trackEvent({ eventName: "Schedule" });
+                  window.open("https://meet.brevo.com/sweily/newbi", "_blank");
+                }}
+              >
                 <Button
                   size="lg"
                   variant="outline"
@@ -56,7 +66,7 @@ export function HeroSection() {
                 >
                   Demander une demo
                 </Button>
-              </Link>
+              </a>
             </div>
 
             {/* <p className="text-gray-500 text-sm pt-2">

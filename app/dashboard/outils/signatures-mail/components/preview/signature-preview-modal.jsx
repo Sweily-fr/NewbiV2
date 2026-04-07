@@ -16,6 +16,21 @@ import { toast } from "@/src/components/ui/sonner";
 import { generateSignatureHTML } from "../../utils/standalone-signature-generator";
 import { generateSignatureHTMLFromContainer } from "../../utils/container-html-generator";
 
+// Nettoyer les champs __typename ajoutés par Apollo Client
+function cleanTypename(obj) {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj !== "object") return obj;
+  if (Array.isArray(obj)) return obj.map(cleanTypename);
+
+  const cleaned = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (key !== "__typename") {
+      cleaned[key] = cleanTypename(value);
+    }
+  }
+  return cleaned;
+}
+
 // Query pour récupérer une signature complète avec tous les champs nécessaires
 const GET_EMAIL_SIGNATURE = gql`
   query GetEmailSignature($id: ID!) {
@@ -302,71 +317,76 @@ const GET_EMAIL_SIGNATURE = gql`
   }
 `;
 
-// Transformer les données de la signature pour le générateur standalone
+// Transformer les données de la signature pour le générateur
 function transformSignatureData(signature) {
+  // Nettoyer les données Apollo (__typename) pour éviter les artefacts
+  const clean = cleanTypename(signature);
+
+  // Construire l'objet colors sans spread qui pourrait écraser les defaults avec null
+  const colors = {
+    name: clean.colors?.name || clean.primaryColor || "#2563eb",
+    position: clean.colors?.position || "rgb(102,102,102)",
+    company: clean.colors?.company || clean.primaryColor || "#2563eb",
+    contact: clean.colors?.contact || "rgb(102,102,102)",
+    separatorVertical: clean.colors?.separatorVertical || "#e0e0e0",
+    separatorHorizontal: clean.colors?.separatorHorizontal || "#e0e0e0",
+  };
+
   return {
-    signatureId: signature.id,
-    signatureName: signature.signatureName,
+    signatureId: clean.id,
+    signatureName: clean.signatureName,
     fullName:
-      signature.firstName && signature.lastName
-        ? `${signature.firstName} ${signature.lastName}`
-        : signature.firstName || signature.lastName || "",
-    firstName: signature.firstName || "",
-    lastName: signature.lastName || "",
-    position: signature.position || "",
-    company: signature.companyName || "",
-    companyName: signature.companyName || "",
-    email: signature.email || "",
-    phone: signature.phone || "",
-    mobile: signature.mobile || "",
-    website: signature.website || "",
-    address: signature.address || "",
-    photo: signature.photo || "",
-    photoKey: signature.photoKey || "",
-    photoVisible: signature.photoVisible !== false,
-    logo: signature.logo || "",
-    logoKey: signature.logoKey || "",
-    banner: signature.banner || "",
-    bannerKey: signature.bannerKey || "",
-    imageSize: signature.imageSize || 80,
-    imageShape: signature.imageShape || "circle",
-    logoSize: signature.logoSize || 60,
-    primaryColor: signature.primaryColor || "#2563eb",
-    fontFamily: signature.fontFamily || "Arial, sans-serif",
-    nameAlignment: signature.nameAlignment || "left",
-    orientation: signature.orientation || "vertical",
-    detailedSpacing: signature.detailedSpacing || false,
+      clean.firstName && clean.lastName
+        ? `${clean.firstName} ${clean.lastName}`
+        : clean.firstName || clean.lastName || "",
+    firstName: clean.firstName || "",
+    lastName: clean.lastName || "",
+    position: clean.position || "",
+    company: clean.companyName || "",
+    companyName: clean.companyName || "",
+    email: clean.email || "",
+    phone: clean.phone || "",
+    mobile: clean.mobile || "",
+    website: clean.website || "",
+    address: clean.address || "",
+    photo: clean.photo || "",
+    photoKey: clean.photoKey || "",
+    photoVisible: clean.photoVisible !== false,
+    logo: clean.logo || "",
+    logoKey: clean.logoKey || "",
+    banner: clean.banner || "",
+    bannerKey: clean.bannerKey || "",
+    imageSize: clean.imageSize || 80,
+    imageShape: clean.imageShape || "circle",
+    logoSize: clean.logoSize || 60,
+    primaryColor: clean.primaryColor || "#2563eb",
+    fontFamily: clean.fontFamily || "Arial, sans-serif",
+    nameAlignment: clean.nameAlignment || "left",
+    orientation: clean.orientation || "vertical",
+    detailedSpacing: clean.detailedSpacing || false,
 
     // Séparateurs - utiliser les valeurs sauvegardées
-    separatorVerticalEnabled: signature.separatorVerticalEnabled ?? false,
-    separatorHorizontalEnabled: signature.separatorHorizontalEnabled ?? false,
-    separatorVerticalWidth: signature.separatorVerticalWidth || 1,
-    separatorHorizontalWidth: signature.separatorHorizontalWidth || 1,
+    separatorVerticalEnabled: clean.separatorVerticalEnabled ?? false,
+    separatorHorizontalEnabled: clean.separatorHorizontalEnabled ?? false,
+    separatorVerticalWidth: clean.separatorVerticalWidth || 1,
+    separatorHorizontalWidth: clean.separatorHorizontalWidth || 1,
 
     // Layout
-    elementsOrder: signature.elementsOrder || null,
-    horizontalLayout: signature.horizontalLayout || null,
+    elementsOrder: clean.elementsOrder || null,
+    horizontalLayout: clean.horizontalLayout || null,
 
-    // Couleurs
-    colors: {
-      name: signature.primaryColor || "#2563eb",
-      position: signature.colors?.position || "rgb(102,102,102)",
-      company: signature.colors?.company || signature.primaryColor || "#2563eb",
-      contact: signature.colors?.contact || "rgb(102,102,102)",
-      separatorVertical: signature.colors?.separatorVertical || "#e0e0e0",
-      separatorHorizontal: signature.colors?.separatorHorizontal || "#e0e0e0",
-      ...signature.colors
-    },
+    // Couleurs (sans spread pour éviter les null)
+    colors,
 
     // Tailles de police
-    fontSize: signature.fontSize || {
+    fontSize: clean.fontSize || {
       name: 16,
       position: 14,
       contact: 12,
     },
 
     // Espacements
-    spacings: signature.spacings || {
+    spacings: clean.spacings || {
       global: 12,
       photoBottom: 16,
       nameBottom: 8,
@@ -385,24 +405,27 @@ function transformSignatureData(signature) {
     },
 
     // Paddings détaillés
-    paddings: signature.paddings || null,
+    paddings: clean.paddings || null,
 
     // Réseaux sociaux
-    socialNetworks: signature.socialNetworks || {},
-    socialGlobalColor: signature.socialGlobalColor || null,
-    socialSize: signature.socialSize || 24,
-    socialColors: signature.socialColors || {},
-    customSocialIcons: signature.customSocialIcons || {},
+    socialNetworks: clean.socialNetworks || {},
+    socialGlobalColor: clean.socialGlobalColor || null,
+    socialSize: clean.socialSize || 24,
+    socialColors: clean.socialColors || {},
+    customSocialIcons: clean.customSocialIcons || {},
 
     // Typography détaillée
-    typography: signature.typography || {},
+    typography: clean.typography || {},
   };
 }
 
 // Générer le HTML de la signature en utilisant le bon moteur de rendu
 function generatePreviewHTML(signatureData, containerStructure) {
   if (containerStructure) {
-    return generateSignatureHTMLFromContainer(containerStructure, signatureData);
+    return generateSignatureHTMLFromContainer(
+      containerStructure,
+      signatureData,
+    );
   }
   return generateSignatureHTML(signatureData);
 }
@@ -422,10 +445,51 @@ export default function SignaturePreviewModal({
   const [containerStructure, setContainerStructure] = useState(null);
   const previewRef = useRef(null);
 
+  // Copie avec execCommand pour une meilleure compatibilité email (Gmail/Outlook)
+  const copyWithExecCommand = (html) => {
+    const container = document.createElement("div");
+    container.style.position = "fixed";
+    container.style.left = "0";
+    container.style.top = "0";
+    container.style.width = "1px";
+    container.style.height = "1px";
+    container.style.overflow = "hidden";
+    container.style.opacity = "0.01";
+    container.setAttribute("contenteditable", "true");
+    container.innerHTML = html;
+    document.body.appendChild(container);
+
+    const range = document.createRange();
+    range.selectNodeContents(container);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    container.focus();
+
+    let success = false;
+    try {
+      success = document.execCommand("copy");
+    } catch (err) {
+      console.error("[copyWithExecCommand] error:", err);
+    }
+
+    selection.removeAllRanges();
+    document.body.removeChild(container);
+    return success;
+  };
+
   const copySignatureToClipboard = async (data, container) => {
     try {
       const signatureHTML = generatePreviewHTML(data, container);
 
+      // Essayer d'abord avec execCommand (meilleure compatibilité email)
+      const execSuccess = copyWithExecCommand(signatureHTML);
+      if (execSuccess) {
+        toast.success("Signature copiée avec succès !");
+        return;
+      }
+
+      // Fallback vers l'API Clipboard moderne
       await navigator.clipboard.write([
         new ClipboardItem({
           "text/html": new Blob([signatureHTML], { type: "text/html" }),
@@ -450,7 +514,9 @@ export default function SignaturePreviewModal({
 
   const handleEdit = () => {
     onClose();
-    router.push(`/dashboard/outils/signatures-mail/new?edit=true&id=${signatureId}`);
+    router.push(
+      `/dashboard/outils/signatures-mail/new?edit=true&id=${signatureId}`,
+    );
   };
 
   useEffect(() => {
@@ -459,11 +525,16 @@ export default function SignaturePreviewModal({
         const signature = data.getEmailSignature;
         const transformedData = transformSignatureData(signature);
         setSignatureData(transformedData);
-        setContainerStructure(signature.containerStructure || null);
+        // Nettoyer __typename de la containerStructure pour éviter les problèmes de rendu
+        setContainerStructure(
+          signature.containerStructure
+            ? cleanTypename(signature.containerStructure)
+            : null,
+        );
       } catch (error) {
         console.error(
           "Erreur lors de la transformation de la signature:",
-          error
+          error,
         );
         setSignatureData(null);
         setContainerStructure(null);
@@ -497,7 +568,9 @@ export default function SignaturePreviewModal({
 
           {error && (
             <div className="flex items-center justify-center py-10">
-              <p className="text-sm text-muted-foreground">Erreur lors du chargement</p>
+              <p className="text-sm text-muted-foreground">
+                Erreur lors du chargement
+              </p>
             </div>
           )}
 
@@ -509,7 +582,12 @@ export default function SignaturePreviewModal({
                 className="px-5 py-6 cursor-pointer hover:bg-accent/50 transition-colors"
                 onClick={handleEdit}
                 title="Cliquer pour modifier"
-                dangerouslySetInnerHTML={{ __html: generatePreviewHTML(signatureData, containerStructure) }}
+                dangerouslySetInnerHTML={{
+                  __html: generatePreviewHTML(
+                    signatureData,
+                    containerStructure,
+                  ),
+                }}
               />
 
               {/* Footer */}
@@ -523,7 +601,10 @@ export default function SignaturePreviewModal({
                     size="sm"
                     onClick={async () => {
                       try {
-                        await copySignatureToClipboard(signatureData, containerStructure);
+                        await copySignatureToClipboard(
+                          signatureData,
+                          containerStructure,
+                        );
                       } catch (error) {
                         console.error("Erreur lors de la copie:", error);
                       }

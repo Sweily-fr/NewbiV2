@@ -36,7 +36,11 @@ import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { ResourceNotFound } from "@/src/components/resource-not-found";
 import { SendDocumentModal } from "./send-document-modal";
 import { SaveInvoiceTemplateDialog } from "./SaveInvoiceTemplateDialog";
-import { useInvoiceTemplates, GET_INVOICE_TEMPLATES, DELETE_INVOICE_TEMPLATE } from "@/src/graphql/invoiceQueries";
+import {
+  useInvoiceTemplates,
+  GET_INVOICE_TEMPLATES,
+  DELETE_INVOICE_TEMPLATE,
+} from "@/src/graphql/invoiceQueries";
 import { useMutation } from "@apollo/client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import {
@@ -59,7 +63,8 @@ export default function ModernInvoiceEditor({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const clientIdFromUrl = mode === "create" ? searchParams.get("clientId") : null;
+  const clientIdFromUrl =
+    mode === "create" ? searchParams.get("clientId") : null;
   const { client: preselectedClient } = useClient(clientIdFromUrl);
   const [showSettings, setShowSettings] = useState(false);
   const [organization, setOrganization] = useState(null);
@@ -70,7 +75,7 @@ export default function ModernInvoiceEditor({
   const [showSendEmailModal, setShowSendEmailModal] = useState(false);
   const [createdInvoiceData, setCreatedInvoiceData] = useState(null);
   const [previousSituationInvoices, setPreviousSituationInvoices] = useState(
-    []
+    [],
   );
   const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
   const [showManageTemplates, setShowManageTemplates] = useState(false);
@@ -81,7 +86,9 @@ export default function ModernInvoiceEditor({
   const { workspaceId } = useWorkspace();
   const { templates, loading: templatesLoading } = useInvoiceTemplates();
   const [deleteTemplateMutation] = useMutation(DELETE_INVOICE_TEMPLATE, {
-    refetchQueries: [{ query: GET_INVOICE_TEMPLATES, variables: { workspaceId } }],
+    refetchQueries: [
+      { query: GET_INVOICE_TEMPLATES, variables: { workspaceId } },
+    ],
     onCompleted: () => toast.success("Modèle supprimé"),
     onError: () => toast.error("Erreur lors de la suppression du modèle"),
   });
@@ -141,7 +148,7 @@ export default function ModernInvoiceEditor({
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedFormData(formData);
-    }, 300); // Attendre 300ms après la dernière modification
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [formData]);
@@ -305,9 +312,18 @@ export default function ModernInvoiceEditor({
   // Même logique que le useEffect "create" dans use-invoice-editor.js (lignes 886-936)
   const getBlankInvoiceFields = () => ({
     items: [],
-    headerNotes: organization?.invoiceHeaderNotes || organization?.documentHeaderNotes || "",
-    footerNotes: organization?.invoiceFooterNotes || organization?.documentFooterNotes || "",
-    termsAndConditions: organization?.invoiceTermsAndConditions || organization?.documentTermsAndConditions || "",
+    headerNotes:
+      organization?.invoiceHeaderNotes ||
+      organization?.documentHeaderNotes ||
+      "",
+    footerNotes:
+      organization?.invoiceFooterNotes ||
+      organization?.documentFooterNotes ||
+      "",
+    termsAndConditions:
+      organization?.invoiceTermsAndConditions ||
+      organization?.documentTermsAndConditions ||
+      "",
     termsAndConditionsLink: "",
     termsAndConditionsLinkTitle: "",
     customFields: [],
@@ -315,9 +331,18 @@ export default function ModernInvoiceEditor({
     discountType: "PERCENTAGE",
     invoiceType: "standard",
     appearance: {
-      textColor: organization?.invoiceTextColor || organization?.documentTextColor || "#000000",
-      headerTextColor: organization?.invoiceHeaderTextColor || organization?.documentHeaderTextColor || "#ffffff",
-      headerBgColor: organization?.invoiceHeaderBgColor || organization?.documentHeaderBgColor || "#5b50FF",
+      textColor:
+        organization?.invoiceTextColor ||
+        organization?.documentTextColor ||
+        "#000000",
+      headerTextColor:
+        organization?.invoiceHeaderTextColor ||
+        organization?.documentHeaderTextColor ||
+        "#ffffff",
+      headerBgColor:
+        organization?.invoiceHeaderBgColor ||
+        organization?.documentHeaderBgColor ||
+        "#5b50FF",
     },
     clientPositionRight: organization?.invoiceClientPositionRight || false,
     isReverseCharge: false,
@@ -327,7 +352,12 @@ export default function ModernInvoiceEditor({
       bic: organization?.bankBic || "",
       bankName: organization?.bankName || "",
     },
-    shipping: { billShipping: false, shippingAddress: null, shippingAmountHT: 0, shippingVatRate: 20 },
+    shipping: {
+      billShipping: false,
+      shippingAddress: null,
+      shippingAmountHT: 0,
+      shippingVatRate: 20,
+    },
     retenueGarantie: 0,
     escompte: 0,
     operationType: null,
@@ -340,7 +370,10 @@ export default function ModernInvoiceEditor({
 
     // "Aucun modèle" → remettre à zéro
     if (!templateId || templateId === "none") {
-      form.reset({ ...preserved, ...getBlankInvoiceFields() }, { keepDefaultValues: false });
+      form.reset(
+        { ...preserved, ...getBlankInvoiceFields() },
+        { keepDefaultValues: false },
+      );
       toast.success("Modèle retiré — facture remise à zéro");
       return;
     }
@@ -348,45 +381,67 @@ export default function ModernInvoiceEditor({
     const template = templates.find((t) => t.id === templateId);
     if (!template) return;
 
-    form.reset({
-      ...preserved,
-      items: template.items?.map((item) => ({
-        description: item.description,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        vatRate: item.vatRate,
-        unit: item.unit || '',
-        discount: item.discount || 0,
-        discountType: item.discountType || 'PERCENTAGE',
-        details: item.details || '',
-        vatExemptionText: item.vatExemptionText || '',
-        progressPercentage: item.progressPercentage != null ? item.progressPercentage : 100,
-      })) || [],
-      headerNotes: template.headerNotes ?? "",
-      footerNotes: template.footerNotes ?? "",
-      termsAndConditions: template.termsAndConditions ?? "",
-      termsAndConditionsLink: template.termsAndConditionsLink ?? "",
-      termsAndConditionsLinkTitle: template.termsAndConditionsLinkTitle ?? "",
-      customFields: template.customFields?.length ? template.customFields : [],
-      discount: template.discount ?? 0,
-      discountType: template.discountType ?? "PERCENTAGE",
-      invoiceType: template.invoiceType ?? "standard",
-      appearance: template.appearance ?? { textColor: "#000000", headerTextColor: "#ffffff", headerBgColor: "#5b50FF" },
-      clientPositionRight: template.clientPositionRight ?? false,
-      isReverseCharge: template.isReverseCharge ?? false,
-      showBankDetails: template.showBankDetails ?? false,
-      bankDetails: template.bankDetails ?? { iban: "", bic: "", bankName: "" },
-      shipping: template.shipping ?? { billShipping: false, shippingAddress: null, shippingAmountHT: 0, shippingVatRate: 20 },
-      retenueGarantie: template.retenueGarantie ?? 0,
-      escompte: template.escompte ?? 0,
-      operationType: template.operationType ?? null,
-    }, { keepDefaultValues: false });
+    form.reset(
+      {
+        ...preserved,
+        items:
+          template.items?.map((item) => ({
+            description: item.description,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            vatRate: item.vatRate,
+            unit: item.unit || "",
+            discount: item.discount || 0,
+            discountType: item.discountType || "PERCENTAGE",
+            details: item.details || "",
+            vatExemptionText: item.vatExemptionText || "",
+            progressPercentage:
+              item.progressPercentage != null ? item.progressPercentage : 100,
+          })) || [],
+        headerNotes: template.headerNotes ?? "",
+        footerNotes: template.footerNotes ?? "",
+        termsAndConditions: template.termsAndConditions ?? "",
+        termsAndConditionsLink: template.termsAndConditionsLink ?? "",
+        termsAndConditionsLinkTitle: template.termsAndConditionsLinkTitle ?? "",
+        customFields: template.customFields?.length
+          ? template.customFields
+          : [],
+        discount: template.discount ?? 0,
+        discountType: template.discountType ?? "PERCENTAGE",
+        invoiceType: template.invoiceType ?? "standard",
+        appearance: template.appearance ?? {
+          textColor: "#000000",
+          headerTextColor: "#ffffff",
+          headerBgColor: "#5b50FF",
+        },
+        clientPositionRight: template.clientPositionRight ?? false,
+        isReverseCharge: template.isReverseCharge ?? false,
+        showBankDetails: template.showBankDetails ?? false,
+        bankDetails: template.bankDetails ?? {
+          iban: "",
+          bic: "",
+          bankName: "",
+        },
+        shipping: template.shipping ?? {
+          billShipping: false,
+          shippingAddress: null,
+          shippingAmountHT: 0,
+          shippingVatRate: 20,
+        },
+        retenueGarantie: template.retenueGarantie ?? 0,
+        escompte: template.escompte ?? 0,
+        operationType: template.operationType ?? null,
+      },
+      { keepDefaultValues: false },
+    );
 
     toast.success(`Modèle "${template.name}" appliqué`);
   };
 
   const handleDeleteTemplate = async (templateId) => {
-    await deleteTemplateMutation({ variables: { id: templateId, workspaceId } });
+    await deleteTemplateMutation({
+      variables: { id: templateId, workspaceId },
+    });
   };
 
   // Handler pour fermer la modal après envoi d'email
@@ -493,7 +548,10 @@ export default function ModernInvoiceEditor({
             {/* Template selector (create mode only) */}
             {isCreating && templates.length > 0 && (
               <div className="flex items-center gap-2 mb-4">
-                <Select value={selectedTemplateId} onValueChange={handleTemplateSelect}>
+                <Select
+                  value={selectedTemplateId}
+                  onValueChange={handleTemplateSelect}
+                >
                   <SelectTrigger className="flex-1">
                     <SelectValue placeholder="Appliquer un modèle..." />
                   </SelectTrigger>
@@ -501,14 +559,23 @@ export default function ModernInvoiceEditor({
                     <SelectItem value="none">Aucun modèle</SelectItem>
                     {templates.map((t) => (
                       <SelectItem key={t.id} value={t.id}>
-                        {t.name} ({t.items?.length || 0} article{(t.items?.length || 0) > 1 ? 's' : ''} — {t.invoiceType || 'standard'})
+                        {t.name} ({t.items?.length || 0} article
+                        {(t.items?.length || 0) > 1 ? "s" : ""} —{" "}
+                        {t.invoiceType || "standard"})
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <Popover open={showManageTemplates} onOpenChange={setShowManageTemplates}>
+                <Popover
+                  open={showManageTemplates}
+                  onOpenChange={setShowManageTemplates}
+                >
                   <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-2 font-normal">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 font-normal"
+                    >
                       <SlidersHorizontal className="w-4 h-4" />
                       Gérer les modèles
                     </Button>
@@ -517,11 +584,18 @@ export default function ModernInvoiceEditor({
                     <div className="space-y-2">
                       <h4 className="font-medium text-sm">Gérer les modèles</h4>
                       {templates.length === 0 && (
-                        <p className="text-sm text-muted-foreground">Aucun modèle</p>
+                        <p className="text-sm text-muted-foreground">
+                          Aucun modèle
+                        </p>
                       )}
                       {templates.map((t) => (
-                        <div key={t.id} className="flex items-center justify-between gap-2 py-1">
-                          <span className="text-sm truncate flex-1">{t.name}</span>
+                        <div
+                          key={t.id}
+                          className="flex items-center justify-between gap-2 py-1"
+                        >
+                          <span className="text-sm truncate flex-1">
+                            {t.name}
+                          </span>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -653,7 +727,7 @@ export default function ModernInvoiceEditor({
           onSent={handleEmailModalClose}
           onClose={() =>
             router.push(
-              createdInvoiceData.redirectUrl || "/dashboard/outils/factures"
+              createdInvoiceData.redirectUrl || "/dashboard/outils/factures",
             )
           }
           pdfRef={pdfRef}

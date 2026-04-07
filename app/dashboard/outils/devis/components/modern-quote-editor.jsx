@@ -139,7 +139,7 @@ export default function ModernQuoteEditor({
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedFormData(formData);
-    }, 300); // Attendre 300ms après la dernière modification
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [formData]);

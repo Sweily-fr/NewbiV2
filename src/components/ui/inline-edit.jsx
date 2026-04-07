@@ -28,6 +28,9 @@ export function InlineEdit({
   const [error, setError] = useState("");
   const containerRef = useRef(null);
   const editableRef = useRef(null);
+  // Ref to always have the latest onChange/onSave/validation callbacks
+  const callbacksRef = useRef({ onChange, onSave, validation });
+  callbacksRef.current = { onChange, onSave, validation };
 
   useEffect(() => {
     setEditValue(value || "");
@@ -38,7 +41,22 @@ export function InlineEdit({
     const handleClickOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         if (state === "editing") {
-          handleSave();
+          // Read the latest value directly from the DOM ref
+          const newValue = editableRef.current?.innerText || "";
+
+          // Validate using latest callback
+          if (callbacksRef.current.validation) {
+            const validationResult = callbacksRef.current.validation(newValue);
+            if (validationResult !== true) {
+              setError(validationResult);
+              return;
+            }
+          }
+
+          callbacksRef.current.onChange(newValue);
+          setState("normal");
+          setError("");
+          callbacksRef.current.onSave?.(newValue);
         } else if (state === "selected") {
           setState("normal");
         }
@@ -47,7 +65,8 @@ export function InlineEdit({
 
     if (state !== "normal") {
       document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [state]);
 
@@ -85,20 +104,20 @@ export function InlineEdit({
   const handleSave = useCallback(() => {
     const newValue = editableRef.current?.innerText || editValue;
 
-    // Validation
-    if (validation) {
-      const validationResult = validation(newValue);
+    // Validation - use ref for latest callback
+    if (callbacksRef.current.validation) {
+      const validationResult = callbacksRef.current.validation(newValue);
       if (validationResult !== true) {
         setError(validationResult);
         return;
       }
     }
 
-    onChange(newValue);
+    callbacksRef.current.onChange(newValue);
     setState("normal");
     setError("");
-    onSave?.(newValue);
-  }, [editValue, onChange, onSave, validation]);
+    callbacksRef.current.onSave?.(newValue);
+  }, [editValue]);
 
   const handleCancel = () => {
     setEditValue(value || "");
@@ -163,7 +182,15 @@ export function InlineEdit({
         ${state === "normal" ? "hover:outline hover:outline-1 hover:outline-[#5b4fff]" : ""}
       `}
       style={getContainerStyle()}
-      title={disabled ? "" : state === "normal" ? "Cliquez pour sélectionner" : state === "selected" ? "Double-cliquez pour éditer" : ""}
+      title={
+        disabled
+          ? ""
+          : state === "normal"
+            ? "Cliquez pour sélectionner"
+            : state === "selected"
+              ? "Double-cliquez pour éditer"
+              : ""
+      }
     >
       {state === "editing" ? (
         <>

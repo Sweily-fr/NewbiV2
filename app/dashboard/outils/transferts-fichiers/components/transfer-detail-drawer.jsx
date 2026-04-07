@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Drawer, DrawerClose, DrawerContent, DrawerTitle } from "@/src/components/ui/drawer";
+import { PreviewImage } from "@/src/components/ui/preview-image";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerTitle,
+} from "@/src/components/ui/drawer";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import {
@@ -73,7 +79,18 @@ function getFileIcon(filename, size = "w-5 h-5") {
 function isImageFile(file) {
   if (file?.mimeType?.startsWith("image/")) return true;
   const ext = getFileExtension(file?.originalName);
-  return ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "bmp", "svg", "tiff"].includes(ext);
+  return [
+    "jpg",
+    "jpeg",
+    "png",
+    "gif",
+    "webp",
+    "heic",
+    "heif",
+    "bmp",
+    "svg",
+    "tiff",
+  ].includes(ext);
 }
 
 // Vérifier si c'est un PDF
@@ -145,7 +162,7 @@ export function TransferDetailDrawer({
   const openLightbox = (file, index) => {
     // Trouver l'index dans les fichiers prévisualisables
     const previewIndex = previewableFiles.findIndex(
-      (f) => (f.id || f.fileId) === (file.id || file.fileId)
+      (f) => (f.id || f.fileId) === (file.id || file.fileId),
     );
     setLightboxIndex(previewIndex >= 0 ? previewIndex : 0);
     setLightboxOpen(true);
@@ -304,12 +321,17 @@ export function TransferDetailDrawer({
               </div>
 
               {/* Contenu */}
-              <div className="flex items-center justify-center p-4 bg-gray-50" style={{ minHeight: "60vh" }}>
+              <div
+                className="flex items-center justify-center p-4 bg-gray-50"
+                style={{ minHeight: "60vh" }}
+              >
                 {isImageFile(lightboxFile) ? (
-                  <img
+                  <PreviewImage
                     src={getPreviewUrl(transfer.id, lightboxFile)}
                     alt={lightboxFile.originalName}
                     className="max-w-full max-h-[75vh] object-contain rounded-lg"
+                    containerClassName="flex items-center justify-center w-full"
+                    loaderSize="h-8 w-8"
                   />
                 ) : isPdfFile(lightboxFile) ? (
                   <iframe
@@ -375,7 +397,9 @@ export function TransferDetailDrawer({
                       className="text-destructive cursor-pointer text-xs"
                     >
                       <Trash2 className="mr-2 h-4 w-4 text-red-500" />
-                      <span className="text-red-500">Supprimer le transfert</span>
+                      <span className="text-red-500">
+                        Supprimer le transfert
+                      </span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -410,7 +434,9 @@ export function TransferDetailDrawer({
                         <div
                           className={cn(
                             "transition-all",
-                            copied ? "scale-100 opacity-100" : "scale-0 opacity-0"
+                            copied
+                              ? "scale-100 opacity-100"
+                              : "scale-0 opacity-0",
                           )}
                         >
                           <Check
@@ -422,7 +448,9 @@ export function TransferDetailDrawer({
                         <div
                           className={cn(
                             "absolute transition-all",
-                            copied ? "scale-0 opacity-0" : "scale-100 opacity-100"
+                            copied
+                              ? "scale-0 opacity-0"
+                              : "scale-100 opacity-100",
                           )}
                         >
                           <Copy aria-hidden="true" size={16} />
@@ -510,7 +538,6 @@ export function TransferDetailDrawer({
                       </span>
                     </div>
                   </div>
-
                 </div>
 
                 {/* Prévisualisation */}
@@ -528,23 +555,22 @@ export function TransferDetailDrawer({
                       return (
                         <button
                           key={file.id || index}
-                          onClick={() => canPreview && openLightbox(file, index)}
+                          onClick={() =>
+                            canPreview && openLightbox(file, index)
+                          }
                           className={cn(
                             "w-32 h-40 rounded-lg border border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden flex-shrink-0 transition-all relative group",
                             canPreview
                               ? "cursor-pointer hover:border-gray-400 hover:shadow-sm"
-                              : "cursor-default"
+                              : "cursor-default",
                           )}
                         >
                           {isImg ? (
-                            <img
+                            <PreviewImage
                               src={previewUrl}
                               alt={file.originalName}
                               className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.target.style.display = "none";
-                                e.target.parentElement.querySelector('.preview-fallback').style.display = "flex";
-                              }}
+                              containerClassName="w-full h-full"
                             />
                           ) : isPdf ? (
                             <iframe
@@ -555,7 +581,9 @@ export function TransferDetailDrawer({
                           ) : null}
                           <div
                             className="preview-fallback text-center p-2 items-center justify-center"
-                            style={{ display: isImg || isPdf ? "none" : "flex" }}
+                            style={{
+                              display: isImg || isPdf ? "none" : "flex",
+                            }}
                           >
                             {getFileIcon(file.originalName, "w-8 h-8")}
                           </div>

@@ -890,7 +890,7 @@ const TaskActivityComponent = ({
                                       </span>
                                     </div>
                                     <div className="flex gap-1">
-                                      {item.userId === currentUser?.id && (
+                                      {item.userId === session?.user?.id && (
                                         <Button
                                           size="xs"
                                           variant="ghost"
@@ -1226,7 +1226,7 @@ const TaskActivityComponent = ({
                               </span>
                             </div>
                             <div className="flex gap-1">
-                              {comment.userId === currentUser?.id && (
+                              {comment.userId === session?.user?.id && (
                                 <Button
                                   size="xs"
                                   variant="ghost"
