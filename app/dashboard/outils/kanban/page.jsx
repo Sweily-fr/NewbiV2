@@ -97,7 +97,11 @@ import * as XLSX from "xlsx";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useMutation } from "@apollo/client";
-import { TOGGLE_BOARD_FAVORITE } from "@/src/graphql/kanbanQueries";
+import {
+  TOGGLE_BOARD_FAVORITE,
+  UPDATE_BOARD,
+  GET_BOARDS,
+} from "@/src/graphql/kanbanQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useKanbanBoards } from "./hooks/useKanbanBoards";
 import { useKanbanBoardsTable } from "./hooks/useKanbanBoardsTable";
@@ -117,6 +121,13 @@ function KanbanPageContent() {
   const [toggleFavoriteMutation] = useMutation(TOGGLE_BOARD_FAVORITE);
   const handleToggleFavorite = (boardId) => {
     toggleFavoriteMutation({ variables: { boardId, workspaceId } });
+  };
+
+  const [updateBoardMutation] = useMutation(UPDATE_BOARD);
+  const handleChangeStatus = (boardId, newStatus) => {
+    updateBoardMutation({
+      variables: { input: { id: boardId, status: newStatus }, workspaceId },
+    });
   };
 
   const {
@@ -175,6 +186,7 @@ function KanbanPageContent() {
     clientFilter,
     categoryFilter,
     onToggleFavorite: handleToggleFavorite,
+    onChangeStatus: handleChangeStatus,
   });
 
   // Stats
@@ -268,7 +280,7 @@ function KanbanPageContent() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* Header */}
       <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6 flex-shrink-0">
         <div>
@@ -793,11 +805,9 @@ function KanbanPageContent() {
             {table.getRowModel().rows.map((row) => {
               const board = row.original;
               const isFav = board.isFavorite;
-              const clientName = board.client
-                ? board.client.type === "INDIVIDUAL"
-                  ? `${board.client.firstName || ""} ${board.client.lastName || ""}`.trim()
-                  : board.client.name
-                : null;
+              const boardColumns = [...(board.columns || [])].sort(
+                (a, b) => a.order - b.order,
+              );
               const members = board.members || [];
               return (
                 <div
@@ -837,11 +847,23 @@ function KanbanPageContent() {
                     </p>
                   )}
 
-                  {/* Client */}
-                  {clientName && (
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground mb-3">
-                      {clientName}
-                    </span>
+                  {/* Status (colonnes) */}
+                  {boardColumns.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-3">
+                      {boardColumns.map((col) => (
+                        <span
+                          key={col.id}
+                          className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium"
+                          style={{
+                            backgroundColor: `${col.color}20`,
+                            color: col.color,
+                            border: `1px solid ${col.color}30`,
+                          }}
+                        >
+                          {col.title}
+                        </span>
+                      ))}
+                    </div>
                   )}
 
                   {/* Stats */}

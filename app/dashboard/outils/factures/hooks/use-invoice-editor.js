@@ -11,6 +11,7 @@ import {
   useInvoice,
   useCheckInvoiceNumber,
 } from "@/src/graphql/invoiceQueries";
+import { useClient } from "@/src/graphql/clientQueries";
 import { useInvoiceNumber } from "./use-invoice-number";
 import { useUser } from "@/src/lib/auth/hooks";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
@@ -56,6 +57,13 @@ export function useInvoiceEditor({
   // GraphQL hooks
   const { invoice: existingInvoice, loading: loadingInvoice } =
     useInvoice(invoiceId);
+
+  // Récupérer le client frais depuis la collection Client
+  const clientIdForFresh =
+    mode !== "create" && existingInvoice?.client?.id
+      ? existingInvoice.client.id
+      : null;
+  const { client: freshClient } = useClient(clientIdForFresh);
 
   // Prefix state pour le filtrage du numéro par préfixe
   const [currentPrefix, setCurrentPrefix] = useState(
@@ -876,9 +884,17 @@ export function useInvoiceEditor({
 
       const invoiceData = transformInvoiceToFormData(existingInvoice);
 
-      // Pour les brouillons, vider le numéro DRAFT-xxx — le useEffect séquentiel le remplira
+      // Pour les brouillons, extraire la partie numérique du numéro DRAFT-xxx
+      // pour conserver le bon numéro affiché (ex: DRAFT-0010 → 0010)
       if (existingInvoice.status === "DRAFT") {
-        invoiceData.number = "";
+        const draftNum = invoiceData.number;
+        if (draftNum && draftNum.startsWith("DRAFT-")) {
+          // Retirer le préfixe DRAFT- et un éventuel suffixe timestamp (-123456)
+          const cleanNum = draftNum.replace("DRAFT-", "").replace(/-\d+$/, "");
+          invoiceData.number = /^\d+$/.test(cleanNum) ? cleanNum : "";
+        } else if (!draftNum || draftNum.startsWith("TEMP-")) {
+          invoiceData.number = "";
+        }
         // Mettre à jour le prefix immédiatement pour que useInvoiceNumber query le bon prefix
         if (invoiceData.prefix) {
           setCurrentPrefix(invoiceData.prefix);
@@ -892,6 +908,54 @@ export function useInvoiceEditor({
       }, 100);
     }
   }, [existingInvoice, mode, reset]);
+
+  // Synchroniser les données client avec la collection Client (données à jour)
+  useEffect(() => {
+    if (!isFormInitialized || !freshClient || mode === "create") return;
+    const currentClient = getValues("client");
+    if (!currentClient?.id) return;
+
+    const needsUpdate =
+      currentClient.email !== freshClient.email ||
+      currentClient.name !== freshClient.name ||
+      currentClient.firstName !== freshClient.firstName ||
+      currentClient.lastName !== freshClient.lastName ||
+      currentClient.siret !== freshClient.siret ||
+      currentClient.vatNumber !== freshClient.vatNumber ||
+      JSON.stringify(currentClient.address) !==
+        JSON.stringify({
+          street: freshClient.address?.street,
+          city: freshClient.address?.city,
+          postalCode: freshClient.address?.postalCode,
+          country: freshClient.address?.country,
+        });
+
+    if (needsUpdate) {
+      setValue(
+        "client",
+        {
+          ...currentClient,
+          name: freshClient.name,
+          firstName: freshClient.firstName,
+          lastName: freshClient.lastName,
+          email: freshClient.email,
+          address: {
+            street: freshClient.address?.street || "",
+            city: freshClient.address?.city || "",
+            postalCode: freshClient.address?.postalCode || "",
+            country: freshClient.address?.country || "France",
+          },
+          siret: freshClient.siret,
+          vatNumber: freshClient.vatNumber,
+          hasDifferentShippingAddress:
+            freshClient.hasDifferentShippingAddress || false,
+          shippingAddress: freshClient.shippingAddress || null,
+          isInternational: freshClient.isInternational || false,
+        },
+        { shouldDirty: false },
+      );
+    }
+  }, [freshClient, isFormInitialized, mode, getValues, setValue]);
 
   // Set next invoice number for new invoices and draft editing
   // Source unique de vérité pour le numéro de facture
@@ -910,12 +974,8 @@ export function useInvoiceEditor({
         shouldValidate: false,
         shouldDirty: false,
       });
-    } else if (
-      !currentNumber ||
-      currentNumber.startsWith("DRAFT-") ||
-      currentNumber === "0001"
-    ) {
-      // Nouveau préfixe → utiliser invoiceStartNumber de l'org si disponible, sinon "0001"
+    } else if (!currentNumber || currentNumber.startsWith("DRAFT-")) {
+      // Nouveau préfixe et pas de numéro → utiliser invoiceStartNumber de l'org si disponible, sinon "0001"
       const startNumber = organization?.invoiceStartNumber || formattedNumber;
       setValue("number", startNumber, {
         shouldValidate: false,

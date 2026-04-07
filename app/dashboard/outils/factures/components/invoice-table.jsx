@@ -525,24 +525,26 @@ export default function InvoiceTable({
       <div className="hidden md:flex md:flex-col flex-1 min-h-0 overflow-hidden">
         {/* Header fixe */}
         <div className="flex-shrink-0 border-b border-border">
-          <table className="w-full">
+          <table className="w-full table-fixed">
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header, index, arr) => (
-                    <th
-                      key={header.id}
-                      style={{ width: header.getSize() }}
-                      className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                    </th>
-                  ))}
+                  {headerGroup.headers
+                    .filter((h) => h.id !== "_type")
+                    .map((header, index, arr) => (
+                      <th
+                        key={header.id}
+                        style={{ width: header.getSize() }}
+                        className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
+                      </th>
+                    ))}
                 </tr>
               ))}
             </thead>
@@ -550,7 +552,7 @@ export default function InvoiceTable({
         </div>
         {/* Table Body - Scrollable */}
         <div className="flex-1 overflow-auto">
-          <table className="w-full">
+          <table className="w-full table-fixed">
             <tbody>
               {loading ? (
                 Array.from({ length: 8 }).map((_, i) => (
@@ -615,18 +617,21 @@ export default function InvoiceTable({
                       }
                     }}
                   >
-                    {row.getVisibleCells().map((cell, index, arr) => (
-                      <td
-                        key={cell.id}
-                        style={{ width: cell.column.getSize() }}
-                        className={`p-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </td>
-                    ))}
+                    {row
+                      .getVisibleCells()
+                      .filter((c) => c.column.id !== "_type")
+                      .map((cell, index, arr) => (
+                        <td
+                          key={cell.id}
+                          style={{ width: cell.column.getSize() }}
+                          className={`p-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </td>
+                      ))}
                   </tr>
                 ))
               ) : (

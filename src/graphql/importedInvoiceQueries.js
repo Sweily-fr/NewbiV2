@@ -414,6 +414,7 @@ export function useBatchImportInvoices() {
 const IMPORTED_INVOICE_REFETCH = [
   "GetImportedInvoices",
   "GetImportedInvoiceStats",
+  "GetInvoiceBalances",
 ];
 
 export function useUpdateImportedInvoice() {

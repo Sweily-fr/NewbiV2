@@ -1662,6 +1662,7 @@ function KanbanBoardPageContent({ params }) {
         toggleChecklistItem={toggleChecklistItem}
         removeChecklistItem={removeChecklistItem}
         openEditTaskModal={openEditTaskModal}
+        updateTask={updateTask}
       />
 
       <AlertDialog

@@ -159,13 +159,24 @@ export const useKanbanTasks = (boardId, board) => {
               (t) => t.id === newTask.id,
             );
             if (!taskExists) {
+              // Incrémenter la position des tâches existantes dans la même colonne
+              const updatedTasks = (cacheData.board.tasks || []).map((t) => {
+                if (
+                  t.columnId === newTask.columnId &&
+                  t.position !== undefined &&
+                  t.position >= (newTask.position ?? 0)
+                ) {
+                  return { ...t, position: t.position + 1 };
+                }
+                return t;
+              });
               cache.writeQuery({
                 query: GET_BOARD,
                 variables: { id: boardId, workspaceId },
                 data: {
                   board: {
                     ...cacheData.board,
-                    tasks: [...(cacheData.board.tasks || []), newTask],
+                    tasks: [newTask, ...updatedTasks],
                   },
                 },
               });

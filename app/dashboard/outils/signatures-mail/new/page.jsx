@@ -1864,7 +1864,8 @@ export default function NewSignaturePage() {
     const isEditableElement = (el) => {
       if (!el) return false;
       const tag = el.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT")
+        return true;
       if (el.isContentEditable) return true;
       return false;
     };
@@ -1938,7 +1939,10 @@ export default function NewSignaturePage() {
   };
 
   // Afficher un indicateur de chargement pendant le chargement des données d'édition
-  if (isEditMode && loadingSignature) {
+  // On attend que :
+  // 1. loadingSignature soit terminé (network-only → toujours true pendant le fetch)
+  // 2. signatureData.id soit défini (preuve que les données GraphQL ont été mergées)
+  if (isEditMode && (loadingSignature || !signatureData?.id)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center space-y-4">
@@ -1958,14 +1962,14 @@ export default function NewSignaturePage() {
     setCopySuccess(false);
     try {
       const result = await copyToClipboard();
-      console.log('[handleCopyFromToolbar] Result:', result);
+      console.log("[handleCopyFromToolbar] Result:", result);
       if (result.success) {
         setCopySuccess(true);
         // Reset après 2 secondes
         setTimeout(() => setCopySuccess(false), 2000);
       }
     } catch (error) {
-      console.error('[handleCopyFromToolbar] Error:', error);
+      console.error("[handleCopyFromToolbar] Error:", error);
     } finally {
       setIsCopying(false);
     }

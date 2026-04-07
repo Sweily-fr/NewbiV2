@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import Link from "next/link";
+import { trackEvent } from "@/src/utils/trackEvent";
 
 // Icône étoile pour les ratings
 const StarIcon = () => (
@@ -86,12 +87,19 @@ export default function HeroSection() {
 
             {/* Boutons CTA */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
-              <Link
+              <a
                 href="https://meet.brevo.com/sweily/newbi"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={async (e) => {
+                  e.preventDefault();
+                  await trackEvent({ eventName: "Schedule" });
+                  window.open("https://meet.brevo.com/sweily/newbi", "_blank");
+                }}
                 className="block rounded-xl px-8 py-3 text-center text-base font-normal transition duration-150 active:scale-[0.98] bg-[#202020] text-white dark:bg-white dark:text-black w-full sm:w-auto"
               >
                 Demander une Demo
-              </Link>
+              </a>
               <Link
                 href="/#pricing"
                 className="block rounded-xl px-8 py-3 text-center text-base font-normal active:scale-[0.98] border border-gray-200 bg-white text-black transition duration-200 hover:bg-gray-100 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white dark:hover:bg-neutral-800 w-full sm:w-auto"

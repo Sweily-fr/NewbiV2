@@ -296,6 +296,7 @@ function StatusPopoverContent({
   task,
   moveTask,
   workspaceId,
+  onClose,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const filtered = columns.filter((c) =>
@@ -325,20 +326,20 @@ function StatusPopoverContent({
         {filtered.map((col) => (
           <button
             key={col.id}
-            onClick={async (e) => {
+            onClick={(e) => {
               e.stopPropagation();
-              try {
-                await moveTask({
-                  variables: {
-                    id: task.id,
-                    columnId: col.id,
-                    position: 0,
-                    workspaceId,
-                  },
-                });
-              } catch (error) {
+              // Fermer le Popover AVANT le moveTask pour éviter un portal orphelin
+              onClose?.();
+              moveTask({
+                variables: {
+                  id: task.id,
+                  columnId: col.id,
+                  position: 0,
+                  workspaceId,
+                },
+              }).catch((error) => {
                 console.error("Erreur lors du déplacement de la tâche:", error);
-              }
+              });
             }}
             className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors cursor-pointer ${
               col.id === column.id ? "bg-muted/60" : ""
@@ -733,11 +734,14 @@ function StatusPopoverWrapper({
 }) {
   const triggerRef = useRef(null);
   const [popoverSide, setPopoverSide] = useState("bottom");
+  const [open, setOpen] = useState(false);
 
   return (
     <Popover
-      onOpenChange={(open) => {
-        if (open) {
+      open={open}
+      onOpenChange={(isOpen) => {
+        setOpen(isOpen);
+        if (isOpen) {
           if (popoverOpenRef) popoverOpenRef.current = true;
           if (triggerRef.current) {
             const rect = triggerRef.current.getBoundingClientRect();
@@ -777,6 +781,7 @@ function StatusPopoverWrapper({
           task={task}
           moveTask={moveTask}
           workspaceId={workspaceId}
+          onClose={() => setOpen(false)}
         />
       </PopoverContent>
     </Popover>

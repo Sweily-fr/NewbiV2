@@ -479,39 +479,11 @@ export default function TransferPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto max-w-full px-10 py-20">
-        {/* Main Card Skeleton */}
-        <Skeleton className="h-full w-1/2 mb-2" />
-        <Skeleton className="h-full w-1/2" />
-        {/* <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-4">
-                <Skeleton className="h-12 w-12 rounded-full" />
-                <div>
-                  <Skeleton className="h-6 w-32 mb-2" />
-                  <Skeleton className="h-4 w-24" />
-                </div>
-              </div>
-              <Skeleton className="h-8 w-20" />
-            </div>
-
-            <div className="grid grid-cols-3 gap-4 mb-6">
-              <div className="text-center">
-                <Skeleton className="h-4 w-16 mx-auto mb-2" />
-                <Skeleton className="h-6 w-12 mx-auto" />
-              </div>
-              <div className="text-center">
-                <Skeleton className="h-4 w-20 mx-auto mb-2" />
-                <Skeleton className="h-6 w-16 mx-auto" />
-              </div>
-              <div className="text-center">
-                <Skeleton className="h-4 w-24 mx-auto mb-2" />
-                <Skeleton className="h-6 w-8 mx-auto" />
-              </div>
-            </div>
-          </CardContent>
-        </Card> */}
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="flex flex-col items-center gap-3">
+          <LoaderCircle className="w-8 h-8 text-gray-400 animate-spin" />
+          <p className="text-sm text-gray-400">Chargement du transfert…</p>
+        </div>
       </div>
     );
   }
