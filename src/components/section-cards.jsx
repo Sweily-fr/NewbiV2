@@ -1,14 +1,13 @@
 import {
-  IconFileInvoice,
-  IconFileDescription,
-  IconReceipt,
-  IconMailForward,
-  IconArticle,
-  IconLayoutKanban,
-  IconTransfer,
-  IconShieldLock,
-  IconLock,
-} from "@tabler/icons-react";
+  FileInput,
+  FileText as FileDescription,
+  Receipt,
+  Forward,
+  Newspaper,
+  KanbanSquare,
+  ArrowLeftRight,
+  ShieldCheck,
+} from "lucide-react";
 import Link from "next/link";
 import {
   Card,
@@ -121,7 +120,7 @@ const cards = [
   {
     title: "Factures",
     subtitle: "Créez et gérez facilement toutes vos factures professionnelles.",
-    icon: <IconFileInvoice size={15} />,
+    icon: <FileInput size={15} />,
     href: "/dashboard/outils/factures",
     status: "available",
     bgIconColor: "#8681FF",
@@ -132,7 +131,7 @@ const cards = [
   {
     title: "Devis",
     subtitle: "Créez et suivez efficacement tous vos devis clients.",
-    icon: <IconFileDescription size={15} />,
+    icon: <FileDescription size={15} />,
     href: "/dashboard/outils/devis",
     status: "available",
     bgIconColor: "#FFC782",
@@ -143,7 +142,7 @@ const cards = [
   {
     title: "Transactions",
     subtitle: "Gérez toutes vos transactions financières en un seul endroit.",
-    icon: <IconReceipt size={15} />,
+    icon: <Receipt size={15} />,
     href: "/dashboard/outils/transactions",
     status: "available",
     bgIconColor: "#5B4FFF",
@@ -154,7 +153,7 @@ const cards = [
   {
     title: "Signatures de mail",
     subtitle: "Créez et gérez professionnellement vos signatures d'email.",
-    icon: <IconMailForward size={15} />,
+    icon: <Forward size={15} />,
     href: "/dashboard/outils/signatures-mail",
     status: "available",
     bgIconColor: "#8BA6FF",
@@ -165,7 +164,7 @@ const cards = [
   {
     title: "Transferer des fichiers",
     subtitle: "Transférez et partagez rapidement tous vos fichiers importants.",
-    icon: <IconTransfer size={15} />,
+    icon: <ArrowLeftRight size={15} />,
     href: "/dashboard/outils/transferts-fichiers",
     status: "available",
     bgIconColor: "#FF9F65",
@@ -176,7 +175,7 @@ const cards = [
   {
     title: "Gestion de Projet",
     subtitle: "Créez et gérez efficacement toutes vos tâches quotidiennes.",
-    icon: <IconLayoutKanban size={15} />,
+    icon: <KanbanSquare size={15} />,
     href: "/dashboard/outils/kanban",
     status: "available",
     bgIconColor: "#FF7D65",
@@ -187,21 +186,21 @@ const cards = [
   // {
   //   title: "Article SEO",
   //   subtitle: "Créez et gérez vos articles SEO.",
-  //   icon: <IconArticle size={20} />,
+  //   icon: <Newspaper size={20} />,
   //   href: "/dashboard/outils/optimiseur-seo-blog",
   //   status: "available",
   // },
   // {
   //   title: "Mentions légales",
   //   subtitle: "Créez et gérez vos mentions légales.",
-  //   icon: <IconShieldLock size={20} />,
+  //   icon: <ShieldCheck size={20} />,
   //   href: "/dashboard/outils/mentions-legales",
   //   status: "available",
   // },
   // {
   //   title: "Politique de confidentialité",
   //   subtitle: "Créez et gérez vos politiques.",
-  //   icon: <IconLock size={20} />,
+  //   icon: <Lock size={20} />,
   //   href: "/dashboard/outils/politique-de-confidentialite",
   //   status: "available",
   // },

@@ -3,30 +3,6 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import {
-  IconCamera,
-  IconChartBar,
-  IconDashboard,
-  IconDatabase,
-  IconFileAi,
-  IconFileDescription,
-  IconFileWord,
-  IconFolder,
-  IconHelp,
-  IconInnerShadowTop,
-  IconListDetails,
-  IconRobot,
-  IconReport,
-  IconSearch,
-  IconSettings,
-  IconUsers,
-  IconHeart,
-  IconCalendar,
-  IconCirclePlusFilled,
-  GalleryVerticalEnd,
-  AudioWaveform,
-  Command,
-} from "@tabler/icons-react";
 
 import {
   CircleGauge,
@@ -77,17 +53,17 @@ const data = {
   teams: [
     {
       name: "Sweily",
-      logo: IconUsers,
+      logo: Users,
       plan: "Enterprise",
     },
     {
       name: "Newbi",
-      logo: IconUsers,
+      logo: Users,
       plan: "Startup",
     },
     {
       name: "Cabinet comptable",
-      logo: IconUsers,
+      logo: Users,
       plan: "Pro",
     },
   ],

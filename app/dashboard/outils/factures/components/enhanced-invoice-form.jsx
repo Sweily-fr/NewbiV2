@@ -478,6 +478,7 @@ export default function EnhancedInvoiceForm({
     updateNestedField("companyInfo", "address", companyInfo.address);
     updateNestedField("companyInfo", "email", companyInfo.email);
     updateNestedField("companyInfo", "phone", companyInfo.phone);
+    updateNestedField("companyInfo", "siren", companyInfo.siren);
     updateNestedField("companyInfo", "siret", companyInfo.siret);
     updateNestedField("companyInfo", "vatNumber", companyInfo.vatNumber);
     updateNestedField("companyInfo", "website", companyInfo.website);

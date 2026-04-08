@@ -1,8 +1,7 @@
 "use client";
 import React from "react";
 import { useSession } from "@/src/lib/auth-client";
-import { FaFacebook, FaInstagram, FaLinkedin, FaTwitter } from "react-icons/fa";
-import { Heart } from "lucide-react";
+import { Heart, Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { getAssetUrl } from "@/src/lib/image-utils";
 import Link from "next/link";
@@ -40,10 +39,10 @@ const defaultSections = [
 ];
 
 const defaultSocialLinks = [
-  { icon: <FaInstagram className="size-5" />, href: "#", label: "Instagram" },
-  { icon: <FaFacebook className="size-5" />, href: "#", label: "Facebook" },
-  { icon: <FaTwitter className="size-5" />, href: "#", label: "Twitter" },
-  { icon: <FaLinkedin className="size-5" />, href: "#", label: "LinkedIn" },
+  { icon: <Instagram className="size-5" />, href: "#", label: "Instagram" },
+  { icon: <Facebook className="size-5" />, href: "#", label: "Facebook" },
+  { icon: <Twitter className="size-5" />, href: "#", label: "Twitter" },
+  { icon: <Linkedin className="size-5" />, href: "#", label: "LinkedIn" },
 ];
 
 const defaultLegalLinks = [

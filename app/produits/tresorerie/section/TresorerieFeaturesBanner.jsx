@@ -30,7 +30,7 @@ export default function TresorerieFeaturesBanner() {
 
   return (
     <section className="w-full bg-[#F5F5F5] mt-20 py-16 lg:py-20">
-      <div className="max-w-7xl mx-auto px-6 lg:px-12">
+      <div className="max-w-6xl mx-auto px-6 lg:px-12">
         <div className="flex flex-col items-center text-center gap-8">
           {/* Title */}
           <h2 className="text-3xl md:text-4xl font-normal tracking-[-0.015em] text-balance text-gray-950 dark:text-gray-50 mb-4">

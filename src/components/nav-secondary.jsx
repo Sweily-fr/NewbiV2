@@ -3,7 +3,6 @@
 import * as React from "react";
 import { useState } from "react";
 import Link from "next/link";
-import { Icon } from "@tabler/icons-react";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 // DÉSACTIVÉ: SuperPDP API pas encore active
 // import { useEInvoicingSettings } from "@/src/hooks/useEInvoicing";
@@ -41,14 +40,6 @@ import {
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
 
-import {
-  IconDots,
-  IconFolder,
-  IconTrash,
-  IconSettings,
-  IconRobot,
-  IconUsers,
-} from "@tabler/icons-react";
 
 import {
   DropdownMenu,
@@ -216,13 +207,13 @@ function SettingsDropdownMenu() {
           >
             {isActive() ? (
               <>
-                <IconUsers className="size-4 text-[#505154]" />
+                <Users className="size-4 text-[#505154]" />
                 <span className="text-[13px]">Collaborateurs</span>
               </>
             ) : (
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
-                  <IconUsers className="size-4 text-[#505154]" />
+                  <Users className="size-4 text-[#505154]" />
                   <span className="text-[13px]">Collaborateurs</span>
                 </div>
                 <Crown className="w-3 h-3 text-[#5b4fff]" />

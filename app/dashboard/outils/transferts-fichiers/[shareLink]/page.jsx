@@ -14,15 +14,15 @@ import { Label } from "@/src/components/ui/label";
 import { Badge } from "@/src/components/ui/badge";
 import { Progress } from "@/src/components/ui/progress";
 import {
-  IconDownload,
-  IconLock,
-  IconClock,
-  IconFile,
-  IconAlertCircle,
-  IconCheck,
-  IconCreditCard,
-} from "@tabler/icons-react";
-import { LoaderCircle } from "lucide-react";
+  Download,
+  Lock,
+  Clock,
+  File,
+  CircleAlert,
+  Check,
+  CreditCard,
+  LoaderCircle,
+} from "lucide-react";
 import { useQuery, useMutation } from "@apollo/client";
 import {
   GET_TRANSFER_BY_LINK,
@@ -182,7 +182,7 @@ function TransferPageContent() {
       <div className="min-h-screen flex items-center justify-center p-6">
         <Card className="w-full max-w-md">
           <CardContent className="p-6 text-center">
-            <IconAlertCircle
+            <CircleAlert
               className="mx-auto mb-4 text-destructive"
               size={48}
             />
@@ -230,7 +230,7 @@ function TransferPageContent() {
           <CardContent className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="flex items-center space-x-3">
-                <IconClock className="text-muted-foreground" size={20} />
+                <Clock className="text-muted-foreground" size={20} />
                 <div>
                   <p className="text-sm text-muted-foreground">Expire le</p>
                   <p className="font-medium">
@@ -247,7 +247,7 @@ function TransferPageContent() {
               </div>
 
               <div className="flex items-center space-x-3">
-                <IconDownload className="text-muted-foreground" size={20} />
+                <Download className="text-muted-foreground" size={20} />
                 <div>
                   <p className="text-sm text-muted-foreground">
                     Téléchargements
@@ -261,7 +261,7 @@ function TransferPageContent() {
               </div>
 
               <div className="flex items-center space-x-3">
-                <IconFile className="text-muted-foreground" size={20} />
+                <File className="text-muted-foreground" size={20} />
                 <div>
                   <p className="text-sm text-muted-foreground">Taille totale</p>
                   <p className="font-medium">
@@ -278,7 +278,7 @@ function TransferPageContent() {
           <Card className="border-orange-200 bg-orange-50">
             <CardContent className="p-6">
               <div className="flex items-center space-x-3 mb-4">
-                <IconCreditCard className="text-orange-600" size={24} />
+                <CreditCard className="text-orange-600" size={24} />
                 <div>
                   <h3 className="font-semibold text-orange-800">
                     Paiement requis
@@ -307,7 +307,7 @@ function TransferPageContent() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center space-x-3 mb-4">
-                <IconLock size={20} />
+                <Lock size={20} />
                 <h3 className="font-semibold">Protection par mot de passe</h3>
               </div>
               <div className="space-y-3">
@@ -336,7 +336,7 @@ function TransferPageContent() {
               <CardTitle>Fichiers disponibles</CardTitle>
               {canDownload && transferData.files.length > 1 && (
                 <Button onClick={handleDownloadAll} disabled={isDownloading}>
-                  <IconDownload size={16} className="mr-2" />
+                  <Download size={16} className="mr-2" />
                   Tout télécharger
                 </Button>
               )}
@@ -350,7 +350,7 @@ function TransferPageContent() {
                   className="flex items-center justify-between p-4 border rounded-lg"
                 >
                   <div className="flex items-center space-x-3">
-                    <IconFile size={20} className="text-muted-foreground" />
+                    <File size={20} className="text-muted-foreground" />
                     <div>
                       <p className="font-medium">{file.name}</p>
                       <p className="text-sm text-muted-foreground">
@@ -364,7 +364,7 @@ function TransferPageContent() {
                     disabled={!canDownload || isDownloading}
                     variant={canDownload ? "default" : "secondary"}
                   >
-                    <IconDownload size={16} className="mr-2" />
+                    <Download size={16} className="mr-2" />
                     Télécharger
                   </Button>
                 </div>
@@ -397,7 +397,7 @@ function TransferPageContent() {
           <Card className="border-red-200 bg-red-50">
             <CardContent className="p-6">
               <div className="flex items-center space-x-3">
-                <IconAlertCircle className="text-red-600" size={20} />
+                <CircleAlert className="text-red-600" size={20} />
                 <div>
                   <h3 className="font-semibold text-red-800">
                     Transfert expiré
@@ -419,7 +419,7 @@ function TransferPageContent() {
           <Card className="border-orange-200 bg-orange-50">
             <CardContent className="p-6">
               <div className="flex items-center space-x-3">
-                <IconAlertCircle className="text-orange-600" size={20} />
+                <CircleAlert className="text-orange-600" size={20} />
                 <div>
                   <h3 className="font-semibold text-orange-800">
                     Limite de téléchargements atteinte

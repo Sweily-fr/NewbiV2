@@ -311,7 +311,7 @@ export default function AgentStudioSection() {
 
   return (
     <section className="lg:py-32 relative overflow-hidden">
-      <div className="max-w-7xl px-4 md:px-8 mx-auto">
+      <div className="max-w-6xl px-4 md:px-8 mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 border-y border-neutral-200 dark:border-neutral-800 divide-y md:divide-y-0 md:divide-x divide-neutral-200 dark:divide-neutral-800">
           {/* Facturation & Comptabilité */}
           <div>

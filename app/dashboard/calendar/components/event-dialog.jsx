@@ -2,13 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  RiCalendarLine,
-  RiDeleteBinLine,
-  RiCheckLine,
-  RiLoader4Line,
-} from "@remixicon/react";
-import {
   CalendarDays,
+  Calendar as RiCalendarLine,
   Clock,
   MapPin,
   AlignLeft,
@@ -18,6 +13,7 @@ import {
   Pencil,
   Trash2,
   Loader2,
+  Check as RiCheckLine,
 } from "lucide-react";
 import { format, isBefore } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -755,7 +751,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                             className="shrink-0 h-7 text-xs"
                           >
                             {isPushing ? (
-                              <RiLoader4Line
+                              <Loader2
                                 size={14}
                                 className="animate-spin"
                               />
@@ -791,7 +787,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                       onClick={handleDelete}
                       className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-1.5"
                     >
-                      <RiDeleteBinLine size={16} />
+                      <Trash2 size={16} />
                       Supprimer
                     </Button>
                   ) : (

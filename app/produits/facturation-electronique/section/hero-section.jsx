@@ -9,64 +9,73 @@ export function HeroSection() {
   return (
     <>
       <main className="overflow-hidden">
-        <section className="min-h-[80vh] lg:min-h-screen flex items-center bg-white pt-48 sm:pt-40 lg:pt-24 mb-10 lg:mb-20 px-4 sm:px-6 lg:px-12">
-          <div className="mx-auto max-w-7xl w-full">
+        <section className="min-h-0 lg:min-h-screen flex items-center bg-white pt-28 sm:pt-32 lg:pt-24 mb-6 lg:mb-20 px-4 sm:px-6 lg:px-12">
+          <div className="mx-auto max-w-6xl w-full">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               {/* Contenu texte à gauche */}
               <div className="space-y-4 lg:space-y-6 text-center lg:text-left">
-                <h1 className="text-balance font-normal text-4xl sm:text-5xl md:text-5xl lg:text-[3.2rem] leading-tight tracking-tight">
-                  Passez à la facturation électronique
+                <div className="inline-flex items-center gap-2 rounded-lg bg-[#cdcaff] text-[#1D1D1B] px-3 py-1.5 text-sm font-semibold relative overflow-hidden">
+                  <span className="relative z-10">Facturation électronique 100% conforme</span>
+                  <div
+                    className="absolute inset-0 z-0"
+                    style={{
+                      background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%)",
+                      backgroundSize: "200% 100%",
+                      animation: "shineTag 3s ease-in-out infinite",
+                    }}
+                  />
+                  <style>{`
+                    @keyframes shineTag {
+                      0% { background-position: 200% 0; }
+                      100% { background-position: -200% 0; }
+                    }
+                  `}</style>
+                </div>
+                <h1 className="text-balance font-medium text-4xl sm:text-5xl md:text-5xl lg:text-[3.5rem] leading-tight tracking-tight">
+                  Votre facturation conforme, sans effort
                 </h1>
 
-                <h2 className="text-sm sm:text-md font-normal tracking-tight text-gray-600 dark:text-gray-300 mb-6 lg:mb-8 max-w-xl mx-auto lg:mx-0">
-                  Anticipez la réforme 2026 et envoyez vos factures au format
-                  électronique.{" "}
+                <h2 className="text-base sm:text-lg font-normal tracking-tight text-gray-600 dark:text-gray-300 mb-6 lg:mb-8 max-w-md mx-auto lg:mx-0">
+                  Anticipez la réforme 2026.{" "}
                   <strong className="font-medium text-gray-900">
-                    Conformité garantie avec les nouvelles obligations légales
+                    Conformité garantie
                   </strong>{" "}
-                  grâce à notre solution intégrée.
+                  avec les nouvelles obligations légales.
                 </h2>
-
-                {/* Logo facturation électronique */}
-                <div className="flex justify-center lg:justify-start">
-                  <img
-                    src="/logo_Compatible_Facturation_electronique-footer.png"
-                    alt="Solution compatible Facturation électronique"
-                    className="h-16 sm:h-18 lg:h-20 w-auto object-contain"
-                  />
-                </div>
 
                 {/* Boutons CTA */}
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2 lg:pt-4 justify-center lg:justify-start">
-                  <Link href="/auth/signup">
+                  <Link href="/auth/signup" className="w-full sm:w-auto">
                     <Button
                       size="lg"
-                      className="bg-[#1D1D1B] hover:bg-[#2D2D2B] text-white font-normal rounded-lg px-6"
+                      className="bg-[#1D1D1B] hover:bg-[#2D2D2B] text-white font-normal text-base rounded-lg px-6 w-full sm:w-auto"
                     >
-                      Démarrer la facturation électronique
+                      Essayer 30 jours offerts
+                    </Button>
+                  </Link>
+                  <Link href="https://meet.brevo.com/sweily/newbi" className="w-full sm:w-auto">
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="font-normal text-base rounded-lg px-6 w-full sm:w-auto"
+                    >
+                      Demander une démo
                     </Button>
                   </Link>
                 </div>
-                <div className="flex flex-col gap-1">
-                  <p className="text-gray-500 text-sm pt-2">
-                    Facturation électronique incluse sans surcoût dans toutes
-                    les offres newbi.
-                  </p>
-                  <p className="text-gray-500 text-xs pt-2">
-                    🇫🇷 newbi, votre partenaire facture électronique conforme
-                  </p>
-                </div>
+                <p className="text-gray-400 text-xs pt-3 text-center lg:text-left">
+                  Plusieurs entreprises nous font déjà confiance · Incluse dans toutes les offres Newbi
+                </p>
               </div>
 
               {/* Animation SVG à droite */}
-              <div className="relative flex items-center justify-center lg:items-end lg:justify-end overflow-visible pt-8 lg:pt-24">
-                <div className="relative w-full lg:w-[700px] xl:w-[800px] lg:-mr-32 xl:-mr-48">
+              <div className="hidden lg:flex relative items-end justify-end overflow-visible pt-24">
+                <div className="relative w-[700px] xl:w-[800px] -mr-48 xl:-mr-64">
                   <FacturationElectroniqueAnimation />
 
                   {/* iPhone Animation en bas à gauche */}
                   <div className="absolute -bottom-8 -left-10 xl:-left-15 w-[160px] xl:w-[180px] z-50">
                     <FacturesAnimationIphone />
-                    {/* Gradient flou en bas de l'iPhone */}
                     <div
                       className="absolute bottom-0 left-0 right-0 h-40 pointer-events-none"
                       style={{
@@ -84,6 +93,18 @@ export function HeroSection() {
                         "linear-gradient(to top, #ffffff 0%, #ffffff 40%, transparent 100%)",
                     }}
                   />
+
+                  {/* Badge facturation électronique */}
+                  <Link
+                    href="/produits/facturation-electronique"
+                    className="absolute -top-8 left-1/3 z-50 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex items-center px-2 py-1.5 gap-2 hover:shadow-md transition-shadow"
+                  >
+                    <img
+                      src="/logo_Compatible_Facturation_electronique-footer.png"
+                      alt="Conforme Facturation électronique 2026"
+                      className="h-20 w-auto object-contain"
+                    />
+                  </Link>
                 </div>
               </div>
             </div>

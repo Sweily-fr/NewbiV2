@@ -109,6 +109,7 @@ export function SettingsModal({
       },
       // Informations légales
       legal: {
+        siren: "",
         siret: "",
         vatNumber: "",
         rcs: "",
@@ -157,6 +158,7 @@ export function SettingsModal({
     },
     // Informations légales
     legal: {
+      siren: org.siren || "",
       siret: org.siret || "",
       vatNumber: org.vatNumber || "",
       rcs: org.rcs || "",
@@ -246,6 +248,7 @@ export function SettingsModal({
         bankBic: sanitizeInput(formData.bankDetails?.bic || ""),
 
         // Informations légales
+        siren: sanitizeInput(formData.legal?.siren || ""),
         siret: sanitizeInput(formData.legal?.siret || ""),
         vatNumber: sanitizeInput(formData.legal?.vatNumber || ""),
         rcs: sanitizeInput(formData.legal?.rcs || ""),

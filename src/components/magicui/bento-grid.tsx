@@ -1,7 +1,7 @@
 import { ComponentPropsWithoutRef, ReactNode } from "react";
 import { Button } from "@/src/components/ui/button";
 import { cn } from "@/src/lib/utils";
-import { ArrowRightIcon } from "@radix-ui/react-icons";
+import { ArrowRight as ArrowRightIcon } from "lucide-react";
 
 interface BentoGridProps extends ComponentPropsWithoutRef<"div"> {
   children: ReactNode;

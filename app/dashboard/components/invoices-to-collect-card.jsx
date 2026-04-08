@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/ui/card";
-import { Diamond } from "lucide-react";
+import { Diamond, Paperclip } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 
 const formatCurrency = (amount) =>
@@ -56,22 +56,21 @@ function getDueLabel(dueDate) {
   if (diffDays < 0) {
     const absDays = Math.abs(diffDays);
     if (absDays === 1) {
-      return { label: "Échéance dépassée depuis hier", overdue: true, overduePart: "hier" };
+      return { label: "Retard · hier", overdue: true };
     }
     return {
-      label: `Échéance dépassée il y a ${absDays} jours`,
+      label: `Retard · ${absDays}j`,
       overdue: true,
-      overduePart: `il y a ${absDays} jours`,
     };
   }
 
   if (diffDays === 0) {
-    return { label: "Échéance aujourd'hui", overdue: false };
+    return { label: "Éch. aujourd'hui", overdue: false };
   }
   if (diffDays === 1) {
-    return { label: "Échéance demain", overdue: false };
+    return { label: "Éch. demain", overdue: false };
   }
-  return { label: `Échéance dans ${diffDays} jours`, overdue: false };
+  return { label: `Éch. ${diffDays}j`, overdue: false };
 }
 
 export function InvoicesToCollectCard({ className, invoices = [], isLoading }) {
@@ -118,7 +117,6 @@ export function InvoicesToCollectCard({ className, invoices = [], isLoading }) {
         invoiceCount: group.invoices.length,
         overdue: dueInfo.overdue,
         dueLabel: dueInfo.label,
-        overduePart: dueInfo.overduePart,
         earliestDueDate: group.earliestDueDate,
       };
     });
@@ -202,29 +200,21 @@ export function InvoicesToCollectCard({ className, invoices = [], isLoading }) {
                 key={client.clientId}
                 className="flex items-center justify-between"
               >
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-3 min-w-0">
                   <div className="h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 bg-gray-100">
                     <span className="text-xs font-medium text-gray-500">
                       {client.initials}
                     </span>
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-sm font-normal truncate max-w-[180px]">
+                    <span className="text-sm font-normal truncate">
                       {client.name}
                     </span>
-                    <span className="text-xs text-muted-foreground">
-                      {client.overdue ? (
-                        <>
-                          {"Échéance dépassée "}
-                          <span className="text-red-500">
-                            {client.overduePart}
-                          </span>
-                          {" "}
-                          <Diamond className="inline h-2 w-2 text-red-500 fill-red-500" />
-                        </>
-                      ) : (
-                        client.dueLabel
+                    <span className={`text-xs ${client.overdue ? "text-red-500" : "text-muted-foreground"}`}>
+                      {client.overdue && (
+                        <Diamond className="inline h-2 w-2 text-red-500 fill-red-500 mr-1" />
                       )}
+                      {client.dueLabel}
                     </span>
                   </div>
                 </div>
@@ -232,9 +222,12 @@ export function InvoicesToCollectCard({ className, invoices = [], isLoading }) {
                   <span className="text-sm font-medium">
                     {formatCurrency(client.amount)}
                   </span>
-                  <p className="text-xs text-muted-foreground">
-                    {client.invoiceCount} facture{client.invoiceCount > 1 ? "s" : ""}
-                  </p>
+                  <div className="flex items-center justify-end gap-1 mt-0.5 text-muted-foreground">
+                    <Paperclip className="h-3 w-3" />
+                    <span className="text-[10px]">
+                      {client.invoiceCount}
+                    </span>
+                  </div>
                 </div>
               </div>
             ))}

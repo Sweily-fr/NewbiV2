@@ -64,6 +64,7 @@ export const CREDIT_NOTE_FRAGMENT = gql`
       phone
       website
       logo
+      siren
       siret
       vatNumber
       transactionCategory

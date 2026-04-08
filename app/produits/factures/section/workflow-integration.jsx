@@ -5,7 +5,7 @@ export default function WorkflowIntegration() {
   return (
     <div className="mx-2 mt-20 rounded-[15px] md:rounded-[20px] lg:rounded-[20px] bg-gray-900 py-32">
       <div className="px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl lg:max-w-7xl">
+        <div className="mx-auto max-w-2xl lg:max-w-6xl">
           <h2
             data-dark="true"
             className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase data-dark:text-gray-400"

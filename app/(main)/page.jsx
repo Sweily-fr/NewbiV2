@@ -13,6 +13,9 @@ import {
   ComponentsSection,
   ComplianceSection,
   GovernanceSection,
+  NewGovernanceSection,
+  EInvoicingSection,
+  MetiersSection,
   PricingSection,
   FeaturedOnSection,
   NewPricingSection,
@@ -32,13 +35,16 @@ export default function Home() {
         <HeroSection />
         <TrustedBySection />
         {/* <AgentStudioSection /> */}
-        <ComponentsSection />
+        {/* <ComponentsSection /> */}
         {/* <ComplianceSection /> */}
+        <NewGovernanceSection />
+        <EInvoicingSection />
         <GovernanceSection />
+        <MetiersSection />
         {/* <NewPricingSection /> */}
+        {/* <TestimonialsSplit /> */}
         <PricingSection />
         <FeaturedOnSection />
-        <TestimonialsSplit />
         <FAQSection />
       </div>
     </>

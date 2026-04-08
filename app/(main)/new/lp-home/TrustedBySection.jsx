@@ -2,45 +2,30 @@
 import React from "react";
 
 const logos = [
-  { name: "Company 1", src: "/lp/company/1.png", height: "h-10" },
-  { name: "Company 2", src: "/lp/company/2.png", height: "h-10" },
-  { name: "Company 3", src: "/lp/company/3.png", height: "h-10" },
-  { name: "Company 4", src: "/lp/company/4.png", height: "h-10" },
-  { name: "Company 5", src: "/lp/company/5.png", height: "h-10" },
-  { name: "Company 6", src: "/lp/company/6.png", height: "h-10" },
-  { name: "Company 1", src: "/lp/company/1.png", height: "h-10" },
-  { name: "Company 2", src: "/lp/company/2.png", height: "h-10" },
+  { name: "L'Héritage", src: "/lp/company/4.png", height: "h-12" },
+  { name: "New3dge", src: "/lp/company/1.png", height: "h-5" },
+  { name: "Mardy Studio", src: "/lp/company/5.png", height: "h-6" },
 ];
 
-export default function TrustedBySection() {
+export default function TrustedBySection({ variant = "home" }) {
   return (
-    <section className="bg-[#FDFDFD]">
-      <div className="border-gray-200 grid grid-cols-2 border-t border-b md:grid-cols-4">
-        {logos.map((logo, index) => {
-          const isLastRow = index >= 4;
-          const isLastInRow = (index + 1) % 4 === 0;
-          const isSecondInMobileRow = (index + 1) % 2 === 0;
-
-          return (
-            <div
-              key={`${logo.name}-${index}`}
-              className={`group relative overflow-hidden border-gray-200
-                ${isSecondInMobileRow ? "border-r-0 md:border-r" : "border-r"}
-                ${isLastRow ? "md:border-b-0" : "border-b"}
-                ${isLastInRow ? "md:border-r-0" : "md:border-r"}
-              `}
-            >
-              <div className="bg-indigo-500/5 absolute inset-x-0 bottom-0 h-full translate-y-full transition-all duration-200 group-hover:translate-y-0"></div>
-              <div className="group flex min-h-32 items-center justify-center p-4 py-10 grayscale hover:grayscale-0 transition-all duration-300">
-                <img
-                  alt={logo.name}
-                  className={`object-contain transition-all duration-500 dark:invert dark:filter ${logo.height} w-auto`}
-                  src={logo.src}
-                />
-              </div>
-            </div>
-          );
-        })}
+    <section className={`relative z-10 ${variant === "home" ? "bg-[#FDFDFD] -mt-10 md:-mt-16" : "bg-transparent"}`}>
+      <div className="max-w-[800px] mx-auto">
+        <div className="py-6">
+          <p className="text-center text-lg text-black dark:text-white mb-8">
+            Ils nous font <span className="font-medium">confiance</span>
+          </p>
+          <div className="flex items-center justify-center gap-6 sm:gap-12 md:gap-20 px-6 overflow-hidden">
+            {logos.map((logo) => (
+              <img
+                key={logo.name}
+                src={logo.src}
+                alt={logo.name}
+                className={`${logo.height} w-auto object-contain`}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );

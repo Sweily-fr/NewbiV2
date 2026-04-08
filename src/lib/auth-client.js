@@ -18,6 +18,12 @@ import {
 
 export const authClient = createAuthClient({
   baseURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000",
+  // Désactiver le refetch automatique de session au retour de focus (visibilitychange).
+  // Sans ça, chaque Cmd+Tab re-fetch la session → cascade de re-renders
+  // sur tous les composants utilisant useSession/useWorkspace (dont le PDF preview).
+  sessionOptions: {
+    refetchOnWindowFocus: false,
+  },
   plugins: [
     adminClient({
       ac,

@@ -1,181 +1,100 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowUpRight } from "lucide-react";
+import React, { useState } from "react";
 
-const testimonials = [
+const reviews = [
   {
-    id: 1,
-    quote:
-      "Avant newbi, je passais des heures sur Excel pour mes factures et devis. Aujourd'hui, tout est automatisé et professionnel. Un vrai gain de temps pour mon entreprise de bâtiment.",
-    name: "Mustafa Gokmen",
-    role: "Directeur général",
-    company: "MGE couverture",
-    image: "/lp/factures/41682668-4F07-4D9F-B672-DC469853793A.PNG",
+    text: "Tout est automatisé et professionnel. Un vrai gain de temps pour mon entreprise de bâtiment.",
+    rating: 5,
+    name: "Mustafa G.",
+    role: "Artisan BTP",
   },
   {
-    id: 2,
-    quote:
-      "Every pixel tells a story. Working together elevated our entire brand experience.",
-    name: "Marcus Webb",
-    role: "Creative Lead",
-    company: "Stripe",
-    image:
-      "https://plus.unsplash.com/premium_photo-1689568126014-06fea9d5d341?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTN8fGF2YXRhcnN8ZW58MHx8MHx8fDA%3D",
+    text: "Interface facile à utiliser. Service client hyperréactif. Rapport qualité/prix excellent.",
+    rating: 5,
+    name: "Franck L.",
+    role: "Nettoyage bâtiments",
   },
   {
-    id: 3,
-    quote:
-      "Transforms complex problems into elegant, intuitive solutions that users love.",
-    name: "Elena Voss",
-    role: "Head of Product",
-    company: "Linear",
-    image:
-      "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8YXZhdGFyc3xlbnwwfHwwfHx8MA%3D%3D",
+    text: "Le logiciel est indispensable pour une bonne gestion, très facile à prendre en main.",
+    rating: 5,
+    name: "Roy M.",
+    role: "Artisan",
   },
 ];
 
+const stats = [
+  { value: "+1 000", label: "entreprises accompagnées" },
+  { value: "+10M €", label: "facturés sur Newbi" },
+  { value: "+3 ans", label: "d'expertise en facturation" },
+];
+
+function Stars({ count }) {
+  return (
+    <div className="flex items-center gap-0.5">
+      {[...Array(count)].map((_, i) => (
+        <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill="#FBBF24">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+        </svg>
+      ))}
+      <span className="ml-1.5 text-sm font-semibold text-gray-950">
+        {count} / 5
+      </span>
+    </div>
+  );
+}
+
 export default function TestimonialsSplit() {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [isHovering, setIsHovering] = useState(false);
-
-  const active = testimonials[activeIndex];
-
-  const nextTestimonial = () => {
-    setActiveIndex((prev) => (prev + 1) % testimonials.length);
-  };
+  const [active, setActive] = useState(0);
 
   return (
-    <section className="w-full py-20 pb-12 lg:pb-32 bg-[#202020]">
-      <div className="w-full max-w-7xl mx-auto px-6 lg:px-12">
-        <div
-          className="relative flex flex-col lg:grid lg:grid-cols-[1fr_auto] gap-8 lg:gap-12 items-center cursor-pointer group"
-          onClick={nextTestimonial}
-          onMouseEnter={() => setIsHovering(true)}
-          onMouseLeave={() => setIsHovering(false)}
-        >
-          {/* Left: Quote Content */}
-          <div className="space-y-6 lg:space-y-8 w-full">
-            {/* Company Tag */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={active.company}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3 }}
-                className="inline-flex items-center gap-2 text-xs tracking-[0.2em] uppercase text-gray-400"
-              >
-                <span className="w-8 h-px bg-gray-500" />
-                {active.company}
-              </motion.div>
-            </AnimatePresence>
+    <section className="w-full py-16 lg:py-24 bg-[#FDFDFD]">
+      <div className="max-w-6xl mx-auto px-4 md:px-8">
+        {/* Header */}
+        <div className="text-center mb-10 max-w-2xl mx-auto">
+          <span className="inline-block text-xs font-semibold uppercase tracking-wider text-[#5A50FF] mb-3">
+            Recommandé par toute une communauté
+          </span>
+          <h2 className="text-3xl md:text-[2.5rem] font-medium tracking-[-0.015em] text-gray-950 mb-4">
+            Vous en parlez mieux que nous
+          </h2>
+          <p className="text-base text-gray-600">
+            Découvrez pourquoi des centaines d'indépendants ont choisi{" "}
+            <strong>Newbi</strong> pour piloter leur activité au quotidien.
+          </p>
+        </div>
 
-            {/* Quote */}
-            <div className="relative overflow-hidden">
-              <AnimatePresence mode="wait">
-                <motion.blockquote
-                  key={active.id}
-                  initial={{ opacity: 0, y: 40 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -40 }}
-                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                  className="text-3xl md:text-4xl font-light leading-[1.3] tracking-tight text-white"
-                >
-                  {active.quote}
-                </motion.blockquote>
-              </AnimatePresence>
-            </div>
-
-            {/* Author Info */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={active.name}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3, delay: 0.2 }}
-                className="flex items-center gap-4"
-              >
-                <div className="w-10 h-px bg-gray-500" />
-                <div>
-                  <p className="text-sm font-medium text-white">
-                    {active.name}
-                  </p>
-                  <p className="text-xs text-gray-400">{active.role}</p>
-                </div>
-              </motion.div>
-            </AnimatePresence>
+        {/* Carousel */}
+        <div className="max-w-2xl mx-auto mb-16">
+          <div className="rounded-2xl bg-white border border-gray-100 shadow-sm p-6 lg:p-8">
+            <p className="text-base font-medium text-gray-950 mb-4 leading-relaxed">
+              "{reviews[active].text}"
+            </p>
+            <Stars count={reviews[active].rating} />
+            <p className="text-sm font-medium text-gray-950 mt-3">
+              {reviews[active].name}{" "}
+              <span className="text-gray-500 font-normal">
+                — {reviews[active].role}
+              </span>
+            </p>
           </div>
 
-          {/* Right: Visual Element */}
-          <div className="relative w-full lg:w-64 h-64 lg:h-80">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={active.id}
-                initial={{ opacity: 0, filter: "blur(20px)", scale: 1.05 }}
-                animate={{ opacity: 1, filter: "blur(0px)", scale: 1 }}
-                exit={{ opacity: 0, filter: "blur(20px)", scale: 0.95 }}
-                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className="absolute inset-0"
-              >
-                <div className="w-full h-full rounded-2xl overflow-hidden border border-gray-600">
-                  <img
-                    src={active.image || "/placeholder.svg"}
-                    alt={active.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              </motion.div>
-            </AnimatePresence>
-
-            {/* Click indicator */}
-            <motion.div
-              animate={{
-                opacity: isHovering ? 1 : 0,
-                scale: isHovering ? 1 : 0.8,
-              }}
-              transition={{ duration: 0.2 }}
-              className="absolute -bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-2 text-xs text-gray-400"
-            >
-              <span>Next</span>
-              <ArrowUpRight className="w-3 h-3" />
-            </motion.div>
-          </div>
-
-          {/* Progress Dots */}
-          <div className="relative lg:absolute lg:-bottom-16 lg:left-0 flex items-center gap-3 justify-center lg:justify-start mt-8 lg:mt-0">
-            {testimonials.map((_, index) => (
+          {/* Dots */}
+          <div className="flex items-center justify-center gap-2 mt-6">
+            {reviews.map((_, i) => (
               <button
-                key={index}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveIndex(index);
-                }}
-                className="relative p-1 group/dot"
-              >
-                <span
-                  className={`
-                    block w-2 h-2 rounded-full transition-all duration-300
-                    ${
-                      index === activeIndex
-                        ? "bg-white scale-100"
-                        : "bg-gray-500 scale-75 hover:bg-gray-400 hover:scale-100"
-                    }
-                  `}
-                />
-                {index === activeIndex && (
-                  <motion.span
-                    layoutId="activeDot"
-                    className="absolute inset-0 border border-white/30 rounded-full"
-                    transition={{ duration: 0.3 }}
-                  />
-                )}
-              </button>
+                key={i}
+                onClick={() => setActive(i)}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  i === active
+                    ? "bg-[#5A50FF] scale-110"
+                    : "bg-gray-300 hover:bg-gray-400"
+                }`}
+              />
             ))}
           </div>
         </div>
+
       </div>
     </section>
   );

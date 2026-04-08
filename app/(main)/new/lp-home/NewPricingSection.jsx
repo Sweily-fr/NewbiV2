@@ -303,7 +303,7 @@ export default function NewPricingSection() {
 
   return (
     <section className="py-20 relative bg-white overflow-visible">
-      <div className="max-w-7xl mx-auto px-4 md:px-8 overflow-visible">
+      <div className="max-w-6xl mx-auto px-4 md:px-8 overflow-visible">
         <div id="comparison-table" className="relative">
           {/* Masque pour cacher le contenu qui scroll derrière le header */}
           <div className="sticky top-0 h-0 z-30 overflow-hidden">

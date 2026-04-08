@@ -49,7 +49,7 @@ const FranceIcon = () => (
 
 export default function HeroSection() {
   return (
-    <div className="relative w-full overflow-x-clip bg-[#FDFDFD] px-5 pb-20 md:pb-54 lg:pb-0">
+    <div className="relative w-full overflow-x-clip bg-[#FDFDFD] px-5 pb-6 md:pb-10 lg:pb-0">
       {/* Conteneur principal avec max-width comme Qonto */}
       <div className="max-w-[1200px] mx-auto relative lg:block flex flex-col md:flex-row">
         {/* Grille pour le contenu texte - Structure Qonto */}
@@ -73,7 +73,7 @@ export default function HeroSection() {
             </p>
 
             {/* Titre principal H1 */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-normal tracking-tight text-black dark:text-white mb-6">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-medium tracking-tight text-black dark:text-white mb-6">
               La plateforme tout-en-un pour <br className="hidden sm:block" />{" "}
               piloter votre <span className="text-indigo-600">entreprise</span>
             </h1>

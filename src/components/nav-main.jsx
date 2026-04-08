@@ -6,14 +6,6 @@ import { useQuery } from "@apollo/client";
 import { GET_BOARDS } from "@/src/graphql/kanbanQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import {
-  IconReceipt,
-  IconFileText,
-  IconLayoutKanban,
-  IconMail,
-  IconFileUpload,
-  IconCreditCard,
-} from "@tabler/icons-react";
-import {
   Crown,
   ChevronRight,
   ShoppingCart,
