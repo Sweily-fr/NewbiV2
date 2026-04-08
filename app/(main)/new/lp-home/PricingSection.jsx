@@ -178,7 +178,7 @@ function MobileSection({ section }) {
   );
 }
 
-export default function PricingSection() {
+export default function PricingSection({ variant = "home" }) {
   const [isAnnual, setIsAnnual] = useState(false);
   const headerRef = useRef(null);
   const [headerHeight, setHeaderHeight] = useState(0);
@@ -193,11 +193,11 @@ export default function PricingSection() {
   }, []);
 
   return (
-    <div id="pricing" className="w-full pt-20 lg:pt-24 pb-10">
-      <div className="container mx-auto max-w-6xl">
+    <div id="pricing" className="w-full pt-16 lg:pt-20 pb-10">
+      <div className={`mx-auto px-4 ${variant === "home" ? "container max-w-6xl" : "max-w-6xl"}`}>
         {/* Titre centré */}
-        <div className="text-center mb-14">
-          <h2 className="text-3xl md:text-4xl font-normal tracking-[-0.02em] text-gray-950 dark:text-gray-50 mb-3">
+        <div className="text-center mb-2">
+          <h2 className="text-3xl md:text-[2.5rem] font-medium tracking-[-0.015em] text-gray-950 dark:text-gray-50 mb-3">
             Profitez de 30 jours offerts
           </h2>
           <p className="text-[15px] text-gray-500 dark:text-gray-400">
@@ -208,7 +208,7 @@ export default function PricingSection() {
         {/* ===================== DESKTOP ===================== */}
         <div className="hidden lg:block">
           {/* Header sticky — même grille que le tableau */}
-          <div ref={headerRef} className="sticky top-0 z-20 bg-[#FDFDFD] dark:bg-background pt-[88px]">
+          <div ref={headerRef} className={`sticky top-0 z-20 dark:bg-background pt-[88px] ${variant === "home" ? "bg-[#FDFDFD]" : "bg-white"}`}>
             <div className="grid grid-cols-[220px_1fr_1fr_1fr] items-end">
               {/* Colonne gauche : billing toggle */}
               <div className="pb-2">
@@ -269,8 +269,8 @@ export default function PricingSection() {
                     href="/auth/signup"
                     className={`inline-flex items-center justify-center px-6 py-2 rounded-lg text-[13px] font-medium transition-colors ${
                       plan.highlighted
-                        ? "bg-gray-900 text-white border border-gray-900 hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:border-white dark:hover:bg-gray-100"
-                        : "border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900"
+                        ? "bg-[#5A50FF] text-white border border-[#5A50FF] hover:bg-[#4A40EF]"
+                        : "bg-[#202020] text-white border border-[#202020] hover:bg-[#333333]"
                     }`}
                   >
                     {plan.cta}
@@ -288,7 +288,7 @@ export default function PricingSection() {
             <div key={sIdx}>
               {/* Titre de section */}
               <div
-                className="sticky z-10 bg-[#FDFDFD] dark:bg-background pt-10"
+                className={`sticky z-10 dark:bg-background pt-10 ${variant === "home" ? "bg-[#FDFDFD]" : "bg-white"}`}
                 style={{ top: headerHeight ? `${headerHeight}px` : '200px' }}
               >
                 <h4 className="text-[17px] font-medium text-gray-900 dark:text-gray-100">
@@ -408,8 +408,8 @@ export default function PricingSection() {
                   href="/auth/signup"
                   className={`mt-5 flex items-center justify-center w-full py-2.5 rounded-lg text-[15px] font-medium transition-colors ${
                     plan.highlighted
-                      ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
-                      : "border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900"
+                      ? "bg-[#5A50FF] text-white border border-[#5A50FF] hover:bg-[#4A40EF]"
+                      : "bg-[#202020] text-white border border-[#202020] hover:bg-[#333333]"
                   }`}
                 >
                   {plan.cta}

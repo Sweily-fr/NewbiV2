@@ -5,8 +5,11 @@ import { HeroSection } from "./section/hero-section";
 import { Poppins } from "next/font/google";
 import FAQ from "./section/faq";
 import TrustedBySection from "@/app/(main)/new/lp-home/TrustedBySection";
+import FactElecGovernanceSection from "./section/FactElecGovernanceSection";
+import PricingSection from "@/app/(main)/new/lp-home/PricingSection";
 import FacturationElectroniqueComponentsSection from "./section/FacturationElectroniqueComponentsSection";
 import { FacturationBanner } from "@/app/produits/factures/section/FacturationBanner";
+import EInvoicingSection from "@/app/(main)/new/lp-home/EInvoicingSection";
 
 // Configuration de Poppins uniquement pour les landing pages
 const poppins = Poppins({
@@ -41,8 +44,11 @@ export default function FacturationElectroniquePage() {
         <main>
           {/* Hero Section */}
           <HeroSection />
-          <TrustedBySection />
-          <FacturationElectroniqueComponentsSection />
+          <TrustedBySection variant="default" />
+          <FactElecGovernanceSection />
+          <EInvoicingSection maxWidth="max-w-6xl" />
+          <PricingSection variant="default" />
+          {/* <FacturationElectroniqueComponentsSection /> */}
           <FAQ />
         </main>
         <Footer7 />

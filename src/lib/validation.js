@@ -11,6 +11,7 @@ export const LEGAL_FORMS_EI_MICRO = ['EI', 'Auto-entrepreneur'];
 export const getRequiredFields = (legalForm, isVatSubject = false, hasCommercialActivity = false) => {
   const required = {
     // Only required if legal form is selected
+    siren: !!legalForm,
     siret: !!legalForm,
     fiscalRegime: !!legalForm,
     activityCategory: !!legalForm,
@@ -46,6 +47,7 @@ export const getRequiredFields = (legalForm, isVatSubject = false, hasCommercial
 export const getVisibleFields = (legalForm, isVatSubject = false, hasCommercialActivity = false) => {
   const visible = {
     // Always visible fields
+    siren: true,
     siret: true,
     fiscalRegime: true,
     activityCategory: true,
@@ -130,9 +132,14 @@ export const VALIDATION_PATTERNS = {
   },
 
   // Informations légales - Synchronisé avec le backend (validators.js)
+  siren: {
+    pattern: /^\d{9}$/,
+    message: "Le SIREN doit contenir 9 chiffres",
+  },
+
   siret: {
-    pattern: /^\d{9}$|^\d{14}$/,
-    message: "Le SIREN doit contenir 9 chiffres ou le SIRET 14 chiffres",
+    pattern: /^\d{14}$/,
+    message: "Le SIRET doit contenir 14 chiffres",
   },
 
   vatNumber: {

@@ -34,7 +34,7 @@ export default function FeaturedOnSection() {
           <span className="inline-block text-xs font-semibold uppercase tracking-wider text-[#5A50FF] mb-3">
             Ils parlent de nous
           </span>
-          <h2 className="text-3xl md:text-4xl font-normal tracking-[-0.015em] text-balance text-gray-950 dark:text-gray-50 mb-4">
+          <h2 className="text-3xl md:text-[2.5rem] font-medium tracking-[-0.015em] text-balance text-gray-950 dark:text-gray-50 mb-4">
             Reconnu par les plateformes de référence
           </h2>
           <p className="text-md font-normal tracking-tight text-gray-600 dark:text-gray-300 mx-auto mb-8 max-w-2xl">

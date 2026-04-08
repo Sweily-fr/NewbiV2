@@ -46,6 +46,7 @@ export const UPDATE_COMPANY = gql`
           postalCode
           country
         }
+        siren
         siret
         vatNumber
         rcs

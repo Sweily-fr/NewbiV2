@@ -22,6 +22,13 @@ import {
   Eye,
   EyeOff,
   CornerDownLeft,
+  Clock,
+  Shield,
+  CreditCard,
+  Plus,
+  Bell,
+  Lock,
+  Droplet,
 } from "lucide-react";
 import { FileUploadItem } from "./file-upload-item";
 
@@ -46,16 +53,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
-import {
-  IconClock,
-  IconShield,
-  IconCreditCard,
-  IconPlus,
-  IconBell,
-  IconLock,
-  IconEye,
-  IconDroplet,
-} from "@tabler/icons-react";
 import { isImageFile, countWatermarkableFiles } from "../utils/watermark";
 
 // Format bytes utility function
@@ -738,7 +735,7 @@ export default function FileUploadNew({
             {/* Expiration */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <IconClock className="size-4 text-muted-foreground" />
+                <Clock className="size-4 text-muted-foreground" />
                 <Label className="text-sm font-normal">Durée de validité</Label>
               </div>
               <Select
@@ -763,7 +760,7 @@ export default function FileUploadNew({
           <Separator />
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <IconCreditCard className="size-4 text-muted-foreground" />
+              <CreditCard className="size-4 text-muted-foreground" />
               <Label className="text-sm font-normal">Paiement requis</Label>
             </div>
 
@@ -874,7 +871,7 @@ export default function FileUploadNew({
             {/* Notifications */}
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <IconBell className="size-4 text-muted-foreground" />
+                <Bell className="size-4 text-muted-foreground" />
                 <Label className="text-sm font-normal">Notifications</Label>
               </div>
 
@@ -920,7 +917,7 @@ export default function FileUploadNew({
             {/* Protection */}
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <IconLock className="size-4 text-muted-foreground" />
+                <Lock className="size-4 text-muted-foreground" />
                 <Label className="text-sm font-normal">Protection</Label>
               </div>
 
@@ -973,7 +970,7 @@ export default function FileUploadNew({
             {/* Prévisualisation */}
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <IconEye className="size-4 text-muted-foreground" />
+                <Eye className="size-4 text-muted-foreground" />
                 <Label className="text-sm font-normal">Prévisualisation</Label>
               </div>
 
@@ -1001,7 +998,7 @@ export default function FileUploadNew({
             {/* Filigrane */}
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <IconDroplet className="size-4 text-muted-foreground" />
+                <Droplet className="size-4 text-muted-foreground" />
                 <Label className="text-sm font-normal">Filigrane</Label>
                 {watermarkableCount > 0 && (
                   <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">

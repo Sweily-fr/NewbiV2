@@ -19,19 +19,19 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
-  IconChevronDown,
-  IconChevronLeft,
-  IconChevronRight,
-  IconChevronsLeft,
-  IconChevronsRight,
-  IconCircleCheckFilled,
-  IconDotsVertical,
-  IconGripVertical,
-  IconLayoutColumns,
-  IconPlus,
-  IconTrendingUp,
-} from "@tabler/icons-react";
-import { LoaderCircle } from "lucide-react";
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  CircleCheck,
+  EllipsisVertical,
+  GripVertical,
+  Columns3,
+  Plus,
+  TrendingUp,
+  LoaderCircle,
+} from "lucide-react";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -128,7 +128,7 @@ function DragHandle({ id }) {
       size="icon"
       className="text-muted-foreground size-7 hover:bg-transparent"
     >
-      <IconGripVertical className="text-muted-foreground size-3" />
+      <GripVertical className="text-muted-foreground size-3" />
       <span className="sr-only">Drag to reorder</span>
     </Button>
   );
@@ -191,7 +191,7 @@ const columns = [
     cell: ({ row }) => (
       <Badge variant="outline" className="text-muted-foreground px-1.5">
         {row.original.status === "Done" ? (
-          <IconCircleCheckFilled className="fill-green-600 dark:fill-green-400" />
+          <CircleCheck className="fill-green-600 dark:fill-green-400" />
         ) : (
           <LoaderCircle className="h-4 w-4 animate-spin" />
         )}
@@ -297,7 +297,7 @@ const columns = [
               className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
               size="icon"
             >
-              <IconDotsVertical />
+              <EllipsisVertical />
               <span className="sr-only">Open menu</span>
             </Button>
           </DropdownMenuTrigger>
@@ -411,7 +411,7 @@ export function DataTable({ data: initialData, textButton, link, onEdit, onDelet
       cell: ({ row }) => (
         <Badge variant="outline" className="text-muted-foreground px-1.5">
           {row.original.status === "Done" ? (
-            <IconCircleCheckFilled className="fill-green-600 dark:fill-green-400" />
+            <CircleCheck className="fill-green-600 dark:fill-green-400" />
           ) : (
             <LoaderCircle className="h-4 w-4 animate-spin" />
           )}
@@ -456,7 +456,7 @@ export function DataTable({ data: initialData, textButton, link, onEdit, onDelet
                 className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
                 size="icon"
               >
-                <IconDotsVertical />
+                <EllipsisVertical />
                 <span className="sr-only">Open menu</span>
               </Button>
             </DropdownMenuTrigger>
@@ -571,10 +571,10 @@ export function DataTable({ data: initialData, textButton, link, onEdit, onDelet
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
-                <IconLayoutColumns />
+                <Columns3 />
                 <span className="hidden lg:inline">Colonnes</span>
                 <span className="lg:hidden">Colonnes</span>
-                <IconChevronDown />
+                <ChevronDown />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -608,7 +608,7 @@ export function DataTable({ data: initialData, textButton, link, onEdit, onDelet
             size="sm"
             onClick={() => redirect(link)}
           >
-            <IconPlus />
+            <Plus />
             <span className="hidden lg:inline">{textButton}</span>
           </Button>
         </div>
@@ -711,7 +711,7 @@ export function DataTable({ data: initialData, textButton, link, onEdit, onDelet
                 disabled={!table.getCanPreviousPage()}
               >
                 <span className="sr-only">Aller à la première page</span>
-                <IconChevronsLeft />
+                <ChevronsLeft />
               </Button>
               <Button
                 variant="outline"
@@ -721,7 +721,7 @@ export function DataTable({ data: initialData, textButton, link, onEdit, onDelet
                 disabled={!table.getCanPreviousPage()}
               >
                 <span className="sr-only">Aller à la page précédente</span>
-                <IconChevronLeft />
+                <ChevronLeft />
               </Button>
               <Button
                 variant="outline"
@@ -731,7 +731,7 @@ export function DataTable({ data: initialData, textButton, link, onEdit, onDelet
                 disabled={!table.getCanNextPage()}
               >
                 <span className="sr-only">Aller à la page suivante</span>
-                <IconChevronRight />
+                <ChevronRight />
               </Button>
               <Button
                 variant="outline"
@@ -741,7 +741,7 @@ export function DataTable({ data: initialData, textButton, link, onEdit, onDelet
                 disabled={!table.getCanNextPage()}
               >
                 <span className="sr-only">Aller à la dernière page</span>
-                <IconChevronsRight />
+                <ChevronsRight />
               </Button>
             </div>
           </div>
@@ -850,7 +850,7 @@ function TableCellViewer({ item }) {
               <div className="grid gap-2">
                 <div className="flex gap-2 leading-none font-medium">
                   Augmentation de 5.2% ce mois-ci{" "}
-                  <IconTrendingUp className="size-4" />
+                  <TrendingUp className="size-4" />
                 </div>
                 <div className="text-muted-foreground">
                   Affichage des visiteurs totaux sur les 6 derniers mois. C'est

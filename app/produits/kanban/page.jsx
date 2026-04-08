@@ -6,8 +6,12 @@ import { Poppins } from "next/font/google";
 import FAQ from "./section/faq";
 import { generateNextMetadata } from "@/src/utils/seo-data";
 import TrustedBySection from "@/app/(main)/new/lp-home/TrustedBySection";
-import KanbanComponentsSection from "./section/KanbanComponentsSection";
-import { TestimonialsSplit } from "./section/TestimonialsSplit";
+import KanbanGovernanceSection from "./section/KanbanGovernanceSection";
+import HowItWorksSection from "./section/HowItWorksSection";
+import WallOfFeatures from "./section/WallOfFeatures";
+import TeamsTabSection from "./section/TeamsTabSection";
+import CtaSection from "./section/CtaSection";
+import PricingSection from "@/app/(main)/new/lp-home/PricingSection";
 
 const poppins = Poppins({
   weight: ["400", "500", "600", "700"],
@@ -25,9 +29,15 @@ export default function KanbanPage() {
         <NewHeroNavbar hasBanner={false} />
         <main>
           <HeroSection />
-          <TrustedBySection />
-          <KanbanComponentsSection />
-          <TestimonialsSplit />
+          <TrustedBySection variant="default" />
+          <WallOfFeatures />
+          <TeamsTabSection />
+          {/* <KanbanGovernanceSection /> */}
+          <HowItWorksSection />
+          <CtaSection />
+          <div className="mt-10 md:mt-16">
+            <PricingSection variant="default" />
+          </div>
           <FAQ />
           {/* <section className="min-h-screen py-20 flex flex-col justify-between">
           <div className="mx-auto max-w-6xl px-6 lg:px-12">

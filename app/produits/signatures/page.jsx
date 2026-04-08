@@ -6,6 +6,10 @@ import { Poppins } from "next/font/google";
 import FAQ from "./section/faq";
 import { generateNextMetadata } from "@/src/utils/seo-data";
 import TrustedBySection from "@/app/(main)/new/lp-home/TrustedBySection";
+import SignaturesGovernanceSection from "./section/SignaturesGovernanceSection";
+import HowItWorksSection from "./section/HowItWorksSection";
+import MetiersSection from "@/app/(main)/new/lp-home/MetiersSection";
+import PricingSection from "@/app/(main)/new/lp-home/PricingSection";
 import SignaturesComponentsSection from "./section/SignaturesComponentsSection";
 import { TestimonialsSplit } from "./section/TestimonialsSplit";
 
@@ -25,9 +29,43 @@ export default function SignaturesPage() {
         <NewHeroNavbar hasBanner={false} />
         <main>
           <HeroSection />
-          <TrustedBySection />
-          <SignaturesComponentsSection />
-          <TestimonialsSplit />
+          <TrustedBySection variant="default" />
+          <SignaturesGovernanceSection />
+          <HowItWorksSection />
+          <MetiersSection
+            badge="Pour chaque profil"
+            title="Une signature adaptée à votre métier"
+            subtitle="Freelance, startup ou grande entreprise — créez des signatures qui reflètent votre identité professionnelle."
+            items={[
+              {
+                title: "Freelances",
+                desc: "Montrez votre expertise avec une signature qui inspire confiance dès le premier email.",
+                image: "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=600&q=80",
+              },
+              {
+                title: "Agences & Studios",
+                desc: "Uniformisez les signatures de toute votre équipe pour une image de marque cohérente.",
+                image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&q=80",
+              },
+              {
+                title: "Startups",
+                desc: "Renforcez votre crédibilité avec des signatures professionnelles dès le lancement.",
+                image: "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=600&q=80",
+              },
+              {
+                title: "TPE & PME",
+                desc: "Gérez les signatures de tous vos collaborateurs depuis un seul espace centralisé.",
+                image: "https://images.unsplash.com/photo-1556740758-90de374c12ad?w=600&q=80",
+              },
+            ]}
+            bottomTitle=""
+            bottomText=""
+            ctaText=""
+            maxWidth="max-w-6xl"
+          />
+          <PricingSection variant="default" />
+          {/* <SignaturesComponentsSection /> */}
+          {/* <TestimonialsSplit /> */}
           <FAQ />
           {/* <section className="min-h-screen py-20 flex flex-col justify-between">
           <div className="mx-auto max-w-6xl px-6 lg:px-12">

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect, useCallback } from "react";
+import { Suspense, useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/src/components/ui/button";
 import { PermissionButton } from "@/src/components/rbac";
 import {
@@ -28,7 +28,7 @@ import InvoiceExportButton from "./components/invoice-export-button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { CompanyInfoGuard } from "@/src/components/company-info-guard";
-import { useInvoiceBalances } from "@/src/graphql/invoiceQueries";
+import { INVOICE_STATUS } from "@/src/graphql/invoiceQueries";
 import { useToastManager } from "@/src/components/ui/toast-manager";
 import { SendDocumentModal } from "./components/send-document-modal";
 
@@ -58,20 +58,18 @@ function InvoicesContent() {
           const data = JSON.parse(invoiceData);
           setNewDocumentData(data);
           setDocumentType("invoice");
-
+          
           toastManager.add({
             type: "document",
             title: "Facture créée avec succès",
             description: `Facture ${data.number} créée`,
             timeout: 10000,
-            actionProps: data.clientEmail
-              ? {
-                  children: "Envoyer au client",
-                  onClick: () => setShowSendEmailModal(true),
-                }
-              : undefined,
+            actionProps: data.clientEmail ? {
+              children: "Envoyer au client",
+              onClick: () => setShowSendEmailModal(true),
+            } : undefined,
           });
-
+          
           sessionStorage.removeItem("newInvoiceData");
         } catch (e) {
           sessionStorage.removeItem("newInvoiceData");
@@ -86,20 +84,18 @@ function InvoicesContent() {
           const data = JSON.parse(creditNoteData);
           setNewDocumentData(data);
           setDocumentType("creditNote");
-
+          
           toastManager.add({
             type: "document",
             title: "Avoir créé avec succès",
             description: `Avoir ${data.number} créé`,
             timeout: 10000,
-            actionProps: data.clientEmail
-              ? {
-                  children: "Envoyer au client",
-                  onClick: () => setShowSendEmailModal(true),
-                }
-              : undefined,
+            actionProps: data.clientEmail ? {
+              children: "Envoyer au client",
+              onClick: () => setShowSendEmailModal(true),
+            } : undefined,
           });
-
+          
           sessionStorage.removeItem("newCreditNoteData");
         } catch (e) {
           sessionStorage.removeItem("newCreditNoteData");
@@ -127,12 +123,74 @@ function InvoicesContent() {
     setFilteredData(data);
   }, []);
 
-  // Soldes agrégés côté serveur (factures créées + importées)
-  const {
-    balances: invoiceStats,
-    loading: balancesLoading,
-    refetch: refetchBalances,
-  } = useInvoiceBalances();
+  // Calculer les statistiques à partir des données filtrées
+  const invoiceStats = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let totalBilled = 0;
+    let totalPaid = 0;
+    let overdueAmount = 0;
+    let overdueCount = 0;
+
+    if (!filteredData) return { totalBilled, totalPaid, overdueAmount, overdueCount };
+
+    filteredData.forEach((item) => {
+      if (item._type === "imported") {
+        // Factures importées (OCR)
+        const amount = item.totalHT ?? 0;
+        if (item.status === "VALIDATED" || item.status === "COMPLETED") {
+          totalBilled += amount;
+        }
+        if (item.status === "COMPLETED") {
+          totalPaid += amount;
+        }
+        // Retard pour les factures importées validées avec échéance dépassée
+        if (item.status === "VALIDATED" && item.dueDate) {
+          const dueDateValue = typeof item.dueDate === 'string' && /^\d+$/.test(item.dueDate)
+            ? parseInt(item.dueDate, 10)
+            : item.dueDate;
+          const dueDate = new Date(dueDateValue);
+          dueDate.setHours(0, 0, 0, 0);
+          if (dueDate < today) {
+            overdueAmount += amount;
+            overdueCount++;
+          }
+        }
+        return;
+      } else {
+        // Factures normales
+        const invoiceAmount = item.finalTotalHT ?? item.totalHT ?? 0;
+
+        if (item.status !== INVOICE_STATUS.DRAFT) {
+          totalBilled += invoiceAmount;
+        }
+
+        if (item.status === INVOICE_STATUS.COMPLETED) {
+          totalPaid += invoiceAmount;
+        }
+
+        if (item.status === INVOICE_STATUS.PENDING && item.dueDate) {
+          const dueDateValue = typeof item.dueDate === 'string' && /^\d+$/.test(item.dueDate)
+            ? parseInt(item.dueDate, 10)
+            : item.dueDate;
+          const dueDate = new Date(dueDateValue);
+          dueDate.setHours(0, 0, 0, 0);
+          if (dueDate < today) {
+            overdueAmount += invoiceAmount;
+            overdueCount++;
+          }
+        }
+      }
+    });
+
+    return {
+      totalBilled,
+      totalPaid,
+      overdueAmount,
+      overdueCount,
+    };
+  }, [filteredData]);
 
   // Formater les montants
   const formatAmount = (amount) => {
@@ -169,7 +227,10 @@ function InvoicesContent() {
             >
               <Settings size={14} strokeWidth={1.5} aria-hidden="true" />
             </Button>
-            <Button variant="outline" onClick={() => setTriggerImport(true)}>
+            <Button
+              variant="outline"
+              onClick={() => setTriggerImport(true)}
+            >
               <Download size={14} strokeWidth={1.5} aria-hidden="true" />
               Importer
             </Button>
@@ -211,7 +272,7 @@ function InvoicesContent() {
               </div>
               <div className="flex items-baseline gap-1">
                 <span className="text-lg font-medium tracking-tight">
-                  {balancesLoading
+                  {filteredData === null
                     ? "..."
                     : `${formatAmount(invoiceStats.totalBilled)} €`}
                 </span>
@@ -242,7 +303,7 @@ function InvoicesContent() {
               </div>
               <div className="flex items-baseline gap-1">
                 <span className="text-lg font-medium tracking-tight">
-                  {balancesLoading
+                  {filteredData === null
                     ? "..."
                     : `${formatAmount(invoiceStats.totalPaid)} €`}
                 </span>
@@ -278,7 +339,7 @@ function InvoicesContent() {
             </div>
             <div className="flex items-baseline gap-1">
               <span className="text-lg font-medium tracking-tight">
-                {balancesLoading
+                {filteredData === null
                   ? "..."
                   : `${formatAmount(invoiceStats.overdueAmount)} €`}
               </span>
@@ -296,7 +357,6 @@ function InvoicesContent() {
             triggerImport={triggerImport}
             onImportTriggered={() => setTriggerImport(false)}
             onFilteredDataChange={handleFilteredDataChange}
-            onBalancesRefetch={refetchBalances}
           />
         </Suspense>
       </div>
@@ -361,6 +421,7 @@ function InvoicesContent() {
         open={isAutoReminderOpen}
         onOpenChange={setIsAutoReminderOpen}
       />
+
 
       {/* Modal d'envoi par email pour les nouvelles factures/avoirs */}
       {newDocumentData && (

@@ -48,7 +48,7 @@ export function TestimonialsSplit() {
 
   return (
     <section className="w-full py-20 pb-12 lg:pb-32 bg-white">
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
+      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-12">
         <div
           className="relative flex flex-col lg:grid lg:grid-cols-[1fr_auto] gap-8 lg:gap-12 items-center cursor-pointer group"
           onClick={nextTestimonial}

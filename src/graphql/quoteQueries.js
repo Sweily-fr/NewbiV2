@@ -61,6 +61,7 @@ export const QUOTE_FRAGMENT = gql`
       phone
       website
       logo
+      siren
       siret
       vatNumber
       transactionCategory

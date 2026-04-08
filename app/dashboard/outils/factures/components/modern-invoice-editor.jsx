@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { FormProvider } from "react-hook-form";
 import {
   ArrowLeft,
@@ -145,13 +145,18 @@ export default function ModernInvoiceEditor({
     loadedInvoice?.status === "SENT" || loadedInvoice?.status === "PAID";
 
   // Debounce pour la preview (évite les saccades)
+  // Stabiliser par contenu pour éviter les re-renders inutiles (trackpad scroll, etc.)
+  const formDataKey = useMemo(() => {
+    try { return JSON.stringify(formData); } catch { return ""; }
+  }, [formData]);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedFormData(formData);
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [formData]);
+  }, [formDataKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Détecter les changements d'organisation pour les modes edit/view
   useOrganizationChange({
@@ -210,6 +215,7 @@ export default function ModernInvoiceEditor({
         name: updatedCompany.companyName,
         email: updatedCompany.companyEmail,
         phone: updatedCompany.companyPhone,
+        siren: updatedCompany.siren,
         siret: updatedCompany.siret,
         vatNumber: updatedCompany.vatNumber,
         address: {

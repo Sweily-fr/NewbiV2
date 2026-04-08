@@ -286,8 +286,40 @@ export function InformationsLegalesSection({
             </Select>
           </div>
 
-          {/* SIRET et RCS */}
+          {/* SIREN, SIRET et RCS */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex flex-col gap-1">
+              <RequiredLabel htmlFor="siren" isRequired={requiredFields.siren} tooltip="9 chiffres sans espaces">
+                Numéro SIREN
+              </RequiredLabel>
+              <Input
+                id="siren"
+                placeholder="123456789"
+                className="w-full"
+                disabled={!canManageOrgSettings}
+                {...register("legal.siren", {
+                  required: requiredFields.siren
+                    ? "Le numéro SIREN est requis"
+                    : false,
+                  pattern: {
+                    value: VALIDATION_PATTERNS.siren.pattern,
+                    message: VALIDATION_PATTERNS.siren.message,
+                  },
+                  validate: (value) => {
+                    if (value && detectInjectionAttempt(value)) {
+                      return "Caractères non autorisés détectés";
+                    }
+                    return true;
+                  },
+                })}
+              />
+              {errors.legal?.siren && (
+                <p className="text-sm text-red-500">
+                  {errors.legal.siren.message}
+                </p>
+              )}
+            </div>
+
             <div className="flex flex-col gap-1">
               <RequiredLabel htmlFor="siret" isRequired={requiredFields.siret} tooltip="14 chiffres sans espaces">
                 Numéro SIRET
@@ -319,7 +351,10 @@ export function InformationsLegalesSection({
                 </p>
               )}
             </div>
+          </div>
 
+          {/* RCS */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {visibleFields.rcs && (
               <div className="flex flex-col gap-1">
                 <RequiredLabel htmlFor="rcs" isRequired={requiredFields.rcs} tooltip="Format: RCS Ville 123 456 789">

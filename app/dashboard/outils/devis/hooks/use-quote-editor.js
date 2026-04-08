@@ -915,6 +915,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
             setValue("companyInfo.phone", organization.companyPhone || "");
             setValue("companyInfo.website", organization.website || "");
             setValue("companyInfo.logo", organization.logo || "");
+            setValue("companyInfo.siren", organization.siren || "");
             setValue("companyInfo.siret", organization.siret || "");
             setValue("companyInfo.vatNumber", organization.vatNumber || "");
             setValue("companyInfo.rcs", organization.rcs || "");
@@ -1959,6 +1960,7 @@ function getInitialFormData(mode, initialData, session) {
       email: "",
       phone: "",
       website: "",
+      siren: "",
       siret: "",
       vatNumber: "",
       address: "",

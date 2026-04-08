@@ -13,6 +13,7 @@ import { Button } from "@/src/components/ui/button";
 import {
   ArrowUpDown,
   FileText,
+  FileUp,
   Clock,
   CheckCircle,
   Send,
@@ -709,7 +710,7 @@ export function useInvoiceTable({
           return (
             <span
               className={cn(
-                "inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium",
+                "inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap",
                 config.className,
               )}
             >
@@ -718,8 +719,36 @@ export function useInvoiceTable({
             </span>
           );
         },
-        size: 100,
+        size: 120,
         filterFn: statusFilterFn,
+      },
+      {
+        id: "source",
+        header: () => (
+          <div className="flex items-center font-normal">Source</div>
+        ),
+        meta: {
+          label: "Source",
+        },
+        cell: ({ row }) => {
+          const isImported = row.original._type === "imported";
+          if (isImported) {
+            return (
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium",
+                  "bg-violet-100 text-violet-700 dark:bg-violet-900/20 dark:text-violet-400",
+                )}
+              >
+                <FileUp className="w-3 h-3" />
+                Importée
+              </span>
+            );
+          }
+          return null;
+        },
+        size: 100,
+        enableSorting: false,
       },
       {
         id: "emailTracking",

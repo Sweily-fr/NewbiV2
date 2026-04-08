@@ -58,7 +58,7 @@ export default function FAQSection() {
   return (
     <div className="mx-auto w-full max-w-3xl space-y-7 px-4 pt-16 pb-16">
       <div className="space-y-2 text-center">
-        <h2 className="text-3xl md:text-4xl font-normal tracking-[-0.015em] text-balance text-gray-950 dark:text-gray-50 mb-4">
+        <h2 className="text-3xl md:text-[2.5rem] font-medium tracking-[-0.015em] text-balance text-gray-950 dark:text-gray-50 mb-4">
           Questions fréquentes
         </h2>
         <p className="text-md font-normal tracking-tight text-gray-600 dark:text-gray-300 mx-auto mb-8 max-w-2xl">

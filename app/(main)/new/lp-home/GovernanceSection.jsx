@@ -65,13 +65,13 @@ const images = [
 export default function GovernanceSection() {
   return (
     <section className="pt-10 md:pt-20 lg:pt-22 lg-pb-10 relative overflow-hidden">
-      <div className="max-w-[1400px] px-4 md:px-8 mx-auto">
+      <div className="max-w-6xl px-4 md:px-8 mx-auto">
         {/* Section Header */}
         <div className="text-center mb-12 md:mb-16">
           <span className="inline-block text-xs font-semibold uppercase tracking-wider text-[#5A50FF] mb-3">
             ET CE N'EST PAS TOUT
           </span>
-          <h2 className="text-3xl md:text-4xl font-normal tracking-[-0.015em] text-balance text-gray-950 dark:text-gray-50 mb-4">
+          <h2 className="text-3xl md:text-[2.5rem] font-medium tracking-[-0.015em] text-balance text-gray-950 dark:text-gray-50 mb-4">
             Des outils supplémentaires pour aller plus loin
           </h2>
           <p className="text-md font-normal tracking-tight text-gray-600 dark:text-gray-300 mx-auto mb-8 max-w-2xl">
