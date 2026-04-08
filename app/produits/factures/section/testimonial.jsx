@@ -112,7 +112,7 @@ const TestimonialsSection = () => {
 
   return (
     <section className="py-20 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 md:px-8">
+      <div className="max-w-6xl mx-auto px-4 md:px-8">
         <div className="text-center mb-16">
           <h2 className="text-2xl sm:text-4xl font-medium text-gray-900 mb-4">
             Vos retours font notre force

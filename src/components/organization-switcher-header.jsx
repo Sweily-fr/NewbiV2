@@ -52,7 +52,6 @@ import {
   Layers,
   LayersPlus,
 } from "lucide-react";
-import { IconBuilding } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/src/lib/auth-client";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";

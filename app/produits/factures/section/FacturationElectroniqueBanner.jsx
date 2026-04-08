@@ -7,7 +7,7 @@ import { ArrowRight } from "lucide-react";
 export default function FacturationElectroniqueBanner() {
   return (
     <section className="w-full bg-[#F5F5F5] mt-20 py-16 lg:py-20">
-      <div className="max-w-7xl mx-auto px-6 lg:px-12">
+      <div className="max-w-6xl mx-auto px-6 lg:px-12">
         <div className="flex flex-col items-center text-center gap-8">
           {/* Image */}
           <div className="flex justify-center">

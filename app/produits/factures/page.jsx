@@ -7,7 +7,12 @@ import FAQ from "./section/faq";
 import { generateNextMetadata } from "@/src/utils/seo-data";
 import { FacturationBanner } from "./section/FacturationBanner";
 import TrustedBySection from "@/app/(main)/new/lp-home/TrustedBySection";
+import EInvoicingSection from "@/app/(main)/new/lp-home/EInvoicingSection";
+import MetiersSection from "@/app/(main)/new/lp-home/MetiersSection";
+import PricingSection from "@/app/(main)/new/lp-home/PricingSection";
 import FacturesComponentsSection from "./section/FacturesComponentsSection";
+import FacturesGovernanceSection from "./section/FacturesGovernanceSection";
+import ComparisonSection from "./section/ComparisonSection";
 import FacturationElectroniqueBanner from "./section/FacturationElectroniqueBanner";
 import { TestimonialsSplit } from "./section/TestimonialsSplit";
 import EncaissementBanner from "./section/EncaissementBanner";
@@ -32,11 +37,46 @@ export default function FacturesPage() {
         <main>
           {/* Hero Section */}
           <HeroSection />
-          <TrustedBySection />
-          <FacturesComponentsSection />
-          <EncaissementBanner />
-          <TestimonialsSplit />
-          <FacturationElectroniqueBanner />
+          <TrustedBySection variant="default" />
+          <FacturesGovernanceSection />
+          <EInvoicingSection maxWidth="max-w-6xl" />
+          <MetiersSection
+            badge="Tout-en-un"
+            title="Un outil complet pour centraliser votre gestion"
+            subtitle="Bien plus qu'un logiciel de facturation : Newbi regroupe tous les outils dont vous avez besoin pour piloter votre activité efficacement."
+            items={[
+              {
+                title: "Factures & Devis",
+                desc: "Créez, envoyez et suivez vos factures et devis conformes en quelques clics.",
+                image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=600&q=80",
+              },
+              {
+                title: "Suivi bancaire",
+                desc: "Connectez vos comptes et synchronisez vos transactions automatiquement.",
+                image: "https://images.unsplash.com/photo-1601597111158-2fceff292cdc?w=600&q=80",
+              },
+              {
+                title: "Gestion des dépenses",
+                desc: "Scannez vos justificatifs et catégorisez vos dépenses sans effort.",
+                image: "https://images.unsplash.com/photo-1554224155-1696413565d3?w=600&q=80",
+              },
+              {
+                title: "Projets & Clients",
+                desc: "Organisez vos projets, gérez votre fichier clients et collaborez efficacement.",
+                image: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&q=80",
+              },
+            ]}
+            bottomTitle=""
+            bottomText=""
+            ctaText=""
+            maxWidth="max-w-6xl"
+          />
+          <PricingSection variant="default" />
+          <ComparisonSection />
+          {/* <FacturesComponentsSection /> */}
+          {/* <EncaissementBanner /> */}
+          {/* <TestimonialsSplit /> */}
+          {/* <FacturationElectroniqueBanner /> */}
           {/* <SectionAvantages />
           <BusinessAgility /> */}
           {/* <TestimonialsSection /> */}

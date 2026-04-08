@@ -4,13 +4,13 @@ import { useState, useEffect } from "react";
 import {
   Download,
   FileText,
+  FileSpreadsheet,
   Building,
   Building2,
   ArrowRightFromLine,
   Info,
   Lock,
 } from "lucide-react";
-import { BsFiletypeCsv, BsFiletypeXlsx } from "react-icons/bs";
 import { Button } from "@/src/components/ui/button";
 import {
   DropdownMenu,
@@ -48,7 +48,7 @@ const FORMAT_CONFIG = {
   csv: {
     label: "CSV",
     icon: ({ className }) => (
-      <BsFiletypeCsv className={className} style={{ color: "#22C55E" }} />
+      <FileText className={className} style={{ color: "#22C55E" }} />
     ),
     description:
       "Sélectionnez une plage de dates pour filtrer les factures à exporter.",
@@ -56,7 +56,7 @@ const FORMAT_CONFIG = {
   excel: {
     label: "Excel",
     icon: ({ className }) => (
-      <BsFiletypeXlsx className={className} style={{ color: "#16A34A" }} />
+      <FileSpreadsheet className={className} style={{ color: "#16A34A" }} />
     ),
     description:
       "Sélectionnez une plage de dates pour filtrer les factures à exporter.",
@@ -194,14 +194,14 @@ export default function InvoiceExportButton({
         <DropdownMenuContent align="end" className="w-[220px]">
           <DropdownMenuLabel>Formats standards</DropdownMenuLabel>
           <DropdownMenuItem onClick={() => handleFormatSelect("csv")}>
-            <BsFiletypeCsv
+            <FileText
               className="mr-2 h-4 w-4"
               style={{ color: "#22C55E" }}
             />
             CSV
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleFormatSelect("excel")}>
-            <BsFiletypeXlsx
+            <FileSpreadsheet
               className="mr-2 h-4 w-4"
               style={{ color: "#16A34A" }}
             />

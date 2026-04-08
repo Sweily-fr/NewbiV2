@@ -54,12 +54,6 @@ const menuItems = [
             href: "/produits/gestion-des-achats",
           },
           {
-            name: "Synchronisation bancaire",
-            description: "Connectez vos comptes bancaires en temps réel",
-            icon: <CreditCard size={18} />,
-            href: "/produits/synchronisation-bancaire",
-          },
-          {
             name: "Facturation électronique",
             description: "Conformité 2026 garantie avec l'e-invoicing",
             icon: <Receipt size={18} />,
@@ -208,7 +202,7 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
               "bg-[#FDFDFD] dark:bg-background border-b border-gray-200 dark:border-neutral-800"
           )}
         >
-          <div className="relative flex flex-wrap items-center justify-between gap-6 lg:gap-0 py-4 max-w-7xl mx-auto">
+          <div className="relative flex flex-wrap items-center justify-between gap-6 lg:gap-0 py-4 max-w-6xl mx-auto">
             <div className="flex w-full justify-between lg:w-auto">
               <Link
                 href="/"

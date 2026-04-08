@@ -69,6 +69,7 @@ export const INVOICE_FRAGMENT = gql`
       phone
       website
       logo
+      siren
       siret
       vatNumber
       transactionCategory
@@ -499,6 +500,7 @@ export const CREATE_LINKED_INVOICE = gql`
         isDeposit
         companyInfo {
           name
+          siren
           siret
           vatNumber
         }
@@ -512,6 +514,7 @@ export const CREATE_LINKED_INVOICE = gql`
           finalTotalTTC
           isDeposit
           companyInfo {
+            siren
             siret
             vatNumber
           }

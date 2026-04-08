@@ -6,6 +6,10 @@ import { Poppins } from "next/font/google";
 import FAQ from "./section/faq";
 import { TresorerieBanner } from "./section/TresorerieBanner";
 import TrustedBySection from "@/app/(main)/new/lp-home/TrustedBySection";
+import TresorerieGovernanceSection from "./section/TresorerieGovernanceSection";
+import EInvoicingSection from "@/app/(main)/new/lp-home/EInvoicingSection";
+import PricingSection from "@/app/(main)/new/lp-home/PricingSection";
+import BankSecuritySection from "./section/BankSecuritySection";
 import TresorerieComponentsSection from "./section/TresorerieComponentsSection";
 import TresorerieInfoBanner from "./section/TresorerieInfoBanner";
 import { TestimonialsSplit } from "./section/TestimonialsSplit";
@@ -44,10 +48,14 @@ export default function TresoreriePage() {
         <main>
           {/* Hero Section */}
           <HeroSection />
-          <TrustedBySection />
-          <TresorerieComponentsSection />
-          <TresorerieFeaturesBanner />
-          <TestimonialsSplit />
+          <TrustedBySection variant="default" />
+          <TresorerieGovernanceSection />
+          <EInvoicingSection maxWidth="max-w-6xl" />
+          <BankSecuritySection />
+          <PricingSection variant="default" />
+          {/* <TresorerieComponentsSection /> */}
+          {/* <TresorerieFeaturesBanner /> */}
+          {/* <TestimonialsSplit /> */}
           {/* <TresorerieInfoBanner /> */}
           <FAQ />
         </main>

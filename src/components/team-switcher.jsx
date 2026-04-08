@@ -65,7 +65,7 @@ import {
   MapPin,
   Globe,
 } from "lucide-react";
-import { IconBuilding } from "@tabler/icons-react";
+import { Building } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -614,7 +614,7 @@ function SortableOrganizationItem({
             {CustomIcon ? (
               <CustomIcon className="size-3.5 shrink-0 text-white" />
             ) : (
-              <IconBuilding className="size-3.5 shrink-0 text-white" />
+              <Building className="size-3.5 shrink-0 text-white" />
             )}
           </div>
           {/* Icône Grip sans bordure (visible au hover) */}

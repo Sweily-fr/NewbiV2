@@ -43,7 +43,7 @@ export default function FAQ() {
   return (
     <div className="mx-auto w-full max-w-3xl space-y-7 px-4 pt-16 pb-16">
       <div className="space-y-2 text-center">
-        <h2 className="text-3xl md:text-4xl tracking-tight font-normal">
+        <h2 className="text-3xl md:text-[2.5rem] font-medium tracking-[-0.015em] text-balance text-gray-950">
           Questions fréquentes
         </h2>
         <p className="text-muted-foreground max-w-2xl mx-auto">

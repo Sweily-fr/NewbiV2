@@ -25,7 +25,7 @@ export function TresorerieBanner() {
         isScrolled ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100"
       }`}
     >
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+      <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 flex-1">
           <div className="bg-white/10 flex size-8 shrink-0 items-center justify-center rounded-full">
             <TrendingUp className="text-white" size={14} />

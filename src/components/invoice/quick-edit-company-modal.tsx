@@ -45,6 +45,7 @@ export function QuickEditCompanyModal({
           companyName: org?.companyName || "",
           companyEmail: org?.companyEmail || "",
           companyPhone: org?.companyPhone || "",
+          siren: org?.siren || "",
           siret: org?.siret || "",
           vatNumber: org?.vatNumber || "",
           addressStreet: org?.addressStreet || "",
@@ -70,6 +71,7 @@ export function QuickEditCompanyModal({
         companyName: data.companyName,
         companyEmail: data.companyEmail,
         companyPhone: data.companyPhone,
+        siren: data.siren,
         siret: data.siret,
         vatNumber: data.vatNumber,
         addressStreet: data.addressStreet,
@@ -126,6 +128,12 @@ export function QuickEditCompanyModal({
               label="Téléphone"
               {...register("companyPhone")}
               error={errors.companyPhone?.message as string}
+            />
+
+            <InputWithError
+              label="SIREN"
+              {...register("siren")}
+              error={errors.siren?.message as string}
             />
 
             <InputWithError

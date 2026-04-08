@@ -19,12 +19,7 @@ import {
 } from "@/src/components/ui/select";
 import { Switch } from "@/src/components/ui/switch";
 import { Textarea } from "@/src/components/ui/textarea";
-import {
-  IconClock,
-  IconCreditCard,
-  IconMail,
-  IconShield,
-} from "@tabler/icons-react";
+import { Clock, CreditCard, Mail, Shield } from "lucide-react";
 
 const TransferOptionsForm = ({ options, onOptionsChange, className }) => {
   const handleChange = (field, value) => {
@@ -47,7 +42,7 @@ const TransferOptionsForm = ({ options, onOptionsChange, className }) => {
       <Card>
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center space-x-2 text-lg">
-            <IconClock size={20} />
+            <Clock size={20} />
             <span>Durée de validité</span>
           </CardTitle>
         </CardHeader>
@@ -77,7 +72,7 @@ const TransferOptionsForm = ({ options, onOptionsChange, className }) => {
       <Card>
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center space-x-2 text-lg">
-            <IconCreditCard size={20} />
+            <CreditCard size={20} />
             <span>Paiement requis</span>
           </CardTitle>
         </CardHeader>
@@ -160,7 +155,7 @@ const TransferOptionsForm = ({ options, onOptionsChange, className }) => {
       <Card>
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center space-x-2 text-lg">
-            <IconMail size={20} />
+            <Mail size={20} />
             <span>Notifications</span>
           </CardTitle>
         </CardHeader>
@@ -205,7 +200,7 @@ const TransferOptionsForm = ({ options, onOptionsChange, className }) => {
       <Card>
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center space-x-2 text-lg">
-            <IconShield size={20} />
+            <Shield size={20} />
             <span>Sécurité</span>
           </CardTitle>
         </CardHeader>
