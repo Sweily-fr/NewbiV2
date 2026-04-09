@@ -40,7 +40,10 @@ export function FacturationBanner() {
             <Button size="sm">Découvrir</Button>
           </Link>
           <button
-            onClick={() => setIsVisible(false)}
+            onClick={() => {
+              setIsVisible(false);
+              window.dispatchEvent(new CustomEvent("banner-closed"));
+            }}
             className="p-1 hover:bg-white/10 rounded transition-colors"
             aria-label="Fermer le banner"
           >
