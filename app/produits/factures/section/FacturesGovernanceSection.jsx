@@ -62,7 +62,7 @@ export default function FacturesGovernanceSection() {
                 toujours irréprochables.
               </p>
             </div>
-            <div className="relative flex-1 overflow-hidden">
+            <div className="relative flex-1 min-h-[280px] sm:min-h-[200px] md:min-h-0 overflow-hidden">
               <img
                 src="/lp/factures/facture-preview.png"
                 alt="Facture professionnelle Newbi"

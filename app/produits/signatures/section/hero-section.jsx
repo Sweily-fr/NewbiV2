@@ -2,13 +2,12 @@
 import React from "react";
 import { Button } from "@/src/components/ui/button";
 import Link from "next/link";
-import { SignaturesAnimation } from "./SignaturesAnimation";
 
 export function HeroSection() {
   return (
     <>
       <main className="overflow-hidden">
-        <section className="min-h-[80vh] lg:min-h-screen flex items-center bg-white pt-48 sm:pt-40 lg:pt-24 mb-10 lg:mb-20 px-4 sm:px-6 lg:px-12">
+        <section className="lg:min-h-screen flex items-start lg:items-center bg-white pt-44 sm:pt-48 lg:pt-24 mb-6 lg:mb-20 px-4 sm:px-6 lg:px-12">
           <div className="mx-auto max-w-6xl w-full">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               <div className="space-y-4 lg:space-y-6 text-center lg:text-left">
@@ -39,21 +38,20 @@ export function HeroSection() {
                 </p>
               </div>
 
-              <div className="relative flex items-center justify-center lg:items-end lg:justify-end overflow-visible pt-8 lg:pt-24">
-                <div className="relative w-full lg:w-[700px] xl:w-[800px] lg:-mr-48 xl:-mr-64">
+              <div className="relative flex items-center justify-center lg:items-end lg:justify-end pt-8 lg:pt-24 lg:overflow-visible">
+                <div className="relative w-full lg:w-[700px] xl:w-[800px] lg:-mr-48 xl:-mr-64 scale-[1.7] sm:scale-[1.5] lg:scale-100 origin-top translate-x-[45%] sm:translate-x-[25%] lg:translate-x-0">
                   <img src="/lp/signatures/signatures-hero.png" alt="Signatures email Newbi" className="w-full h-auto" />
                   <div
-                    className="absolute bottom-0 left-0 right-0 h-16 lg:h-22 pointer-events-none"
+                    className="absolute bottom-0 left-0 right-0 h-48 lg:h-22 pointer-events-none"
                     style={{
                       background:
-                        "linear-gradient(to top, #ffffff 0%, #ffffff 40%, transparent 100%)",
+                        "linear-gradient(to top, #ffffff 0%, #ffffff 55%, rgba(255,255,255,0.8) 75%, transparent 100%)",
                     }}
                   />
 
                   {/* Signature card flottante */}
                   <div className="absolute bottom-8 -left-16 z-50 bg-white rounded-2xl shadow-lg border border-neutral-100 p-5 w-[280px] hidden lg:block">
                     <div className="flex gap-4">
-                      {/* Left - Avatar + socials */}
                       <div className="flex flex-col items-center gap-2 shrink-0">
                         <img
                           src="/lp/signatures/avatar-signature.jpg"
@@ -71,21 +69,16 @@ export function HeroSection() {
                           ))}
                         </div>
                       </div>
-
-                      {/* Right - Info */}
                       <div className="flex-1 min-w-0">
                         <p className="text-[13px] font-bold text-neutral-900">Alexandre Dupont</p>
                         <p className="text-[10px] font-semibold text-[#5A50FF]">Co-fondateur &amp; CEO</p>
                         <p className="text-[9px] text-neutral-400 mt-0.5">Newbi · Facturation intelligente</p>
-
                         <div className="w-6 h-[1.5px] bg-[#5A50FF] rounded my-2" />
-
                         <div className="flex flex-col gap-1">
                           <p className="text-[9px] text-neutral-500">alex@newbi.fr</p>
                           <p className="text-[9px] text-neutral-500">+33 6 12 34 56 78</p>
                           <p className="text-[9px] text-neutral-500">www.newbi.fr</p>
                         </div>
-
                         <div className="mt-2">
                           <div className="inline-flex items-center gap-1 bg-[#5A50FF] text-white text-[8px] font-semibold px-3 py-1.5 rounded-lg">
                             Prendre rendez-vous
