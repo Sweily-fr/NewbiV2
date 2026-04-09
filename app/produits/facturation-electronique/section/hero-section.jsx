@@ -9,7 +9,7 @@ export function HeroSection() {
   return (
     <>
       <main className="overflow-hidden">
-        <section className="min-h-0 lg:min-h-screen flex items-center bg-white pt-28 sm:pt-32 lg:pt-24 mb-6 lg:mb-20 px-4 sm:px-6 lg:px-12">
+        <section className="lg:min-h-screen flex items-start lg:items-center bg-white pt-44 sm:pt-48 lg:pt-24 mb-6 lg:mb-20 px-4 sm:px-6 lg:px-12">
           <div className="mx-auto max-w-6xl w-full">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               {/* Contenu texte à gauche */}
@@ -69,12 +69,12 @@ export function HeroSection() {
               </div>
 
               {/* Animation SVG à droite */}
-              <div className="hidden lg:flex relative items-end justify-end overflow-visible pt-24">
-                <div className="relative w-[700px] xl:w-[800px] -mr-48 xl:-mr-64">
+              <div className="relative flex items-center justify-center lg:items-end lg:justify-end pt-8 lg:pt-24 lg:overflow-visible">
+                <div className="relative w-full lg:w-[700px] xl:w-[800px] lg:-mr-48 xl:-mr-64 scale-[1.7] sm:scale-[1.5] lg:scale-100 origin-top translate-x-[45%] sm:translate-x-[25%] lg:translate-x-0">
                   <FacturationElectroniqueAnimation />
 
                   {/* iPhone Animation en bas à gauche */}
-                  <div className="absolute -bottom-8 -left-10 xl:-left-15 w-[160px] xl:w-[180px] z-50">
+                  <div className="absolute -bottom-8 -left-10 xl:-left-15 w-[160px] xl:w-[180px] z-50 hidden lg:block">
                     <FacturesAnimationIphone />
                     <div
                       className="absolute bottom-0 left-0 right-0 h-40 pointer-events-none"
@@ -87,17 +87,17 @@ export function HeroSection() {
 
                   {/* Gradient flou en bas du Mac */}
                   <div
-                    className="absolute bottom-0 left-0 right-0 h-22 pointer-events-none z-40"
+                    className="absolute bottom-0 left-0 right-0 h-48 lg:h-22 pointer-events-none z-40"
                     style={{
                       background:
-                        "linear-gradient(to top, #ffffff 0%, #ffffff 40%, transparent 100%)",
+                        "linear-gradient(to top, #ffffff 0%, #ffffff 55%, rgba(255,255,255,0.8) 75%, transparent 100%)",
                     }}
                   />
 
                   {/* Badge facturation électronique */}
                   <Link
                     href="/produits/facturation-electronique"
-                    className="absolute -top-8 left-1/3 z-50 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex items-center px-2 py-1.5 gap-2 hover:shadow-md transition-shadow"
+                    className="absolute -top-8 left-1/3 z-50 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hidden lg:flex items-center px-2 py-1.5 gap-2 hover:shadow-md transition-shadow"
                   >
                     <img
                       src="/logo_Compatible_Facturation_electronique-footer.png"

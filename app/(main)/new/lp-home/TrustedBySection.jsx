@@ -15,7 +15,8 @@ export default function TrustedBySection({ variant = "home" }) {
           <p className="text-center text-lg text-black dark:text-white mb-8">
             Ils nous font <span className="font-medium">confiance</span>
           </p>
-          <div className="flex items-center justify-center gap-6 sm:gap-12 md:gap-20 px-6 overflow-hidden">
+          {/* Desktop */}
+          <div className="hidden sm:flex items-center justify-center gap-12 md:gap-20 px-6">
             {logos.map((logo) => (
               <img
                 key={logo.name}
@@ -24,6 +25,26 @@ export default function TrustedBySection({ variant = "home" }) {
                 className={`${logo.height} w-auto object-contain`}
               />
             ))}
+          </div>
+          {/* Mobile: 2 + 1 centered */}
+          <div className="flex flex-col items-center gap-6 px-6 sm:hidden">
+            <div className="flex items-center justify-center gap-10">
+              {logos.slice(0, 2).map((logo) => (
+                <img
+                  key={logo.name}
+                  src={logo.src}
+                  alt={logo.name}
+                  className={`${logo.height} w-auto object-contain`}
+                />
+              ))}
+            </div>
+            {logos.length > 2 && (
+              <img
+                src={logos[2].src}
+                alt={logos[2].name}
+                className={`${logos[2].height} w-auto object-contain`}
+              />
+            )}
           </div>
         </div>
       </div>

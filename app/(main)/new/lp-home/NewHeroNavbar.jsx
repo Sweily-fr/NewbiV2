@@ -171,6 +171,16 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
   const [openDropdown, setOpenDropdown] = React.useState(null);
   const [mobileDropdownOpen, setMobileDropdownOpen] = React.useState(null);
 
+  // Lock body scroll when mobile menu is open
+  React.useEffect(() => {
+    if (menuState) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [menuState]);
+
   React.useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
@@ -386,12 +396,12 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
         {/* Mobile menu overlay - Fullscreen */}
         {menuState && (
           <div
-            className={`lg:hidden fixed inset-0 bg-white z-50 overflow-hidden transition-all duration-300 ${hasBanner && !isScrolled ? "top-[152px] sm:top-[130px]" : "top-[72px]"}`}
+            className={`lg:hidden fixed inset-0 bg-[#FDFDFD] z-50 overflow-hidden transition-all duration-300 ${hasBanner && !isScrolled ? "top-[148px] sm:top-[126px]" : "top-[65px]"}`}
           >
             <div className="flex flex-col h-full">
               {/* Menu content - Scrollable */}
               <div className="flex-1 overflow-y-auto">
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-gray-200/60">
                   {menuItems.map((item, index) => (
                     <div key={index}>
                       {item.hasDropdown ? (
@@ -403,13 +413,13 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                                 mobileDropdownOpen === index ? null : index
                               )
                             }
-                            className="flex items-center justify-between w-full px-6 py-5 text-left border-b border-gray-100"
+                            className="flex items-center justify-between w-full px-6 py-3.5 text-left"
                           >
-                            <span className="text-xl font-normal text-black">
+                            <span className="text-base font-normal text-black">
                               {item.name}
                             </span>
                             <svg
-                              className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${mobileDropdownOpen === index ? "rotate-180" : ""}`}
+                              className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${mobileDropdownOpen === index ? "rotate-180" : ""}`}
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -425,7 +435,7 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
 
                           {/* Accordion Content */}
                           {mobileDropdownOpen === index && (
-                            <div className="bg-gray-50 border-b border-gray-100">
+                            <div className="">
                               {item.dropdownColumns?.map((column, colIdx) => (
                                 <div key={colIdx} className="px-6 py-4">
                                   <h3 className="text-xs font-normal text-gray-400 uppercase tracking-wider mb-4">
@@ -466,25 +476,12 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                       ) : (
                         <Link
                           href={item.href}
-                          className="flex items-center justify-between w-full px-6 py-5 border-b border-gray-100"
+                          className="flex items-center w-full px-6 py-3.5"
                           onClick={() => setMenuState(false)}
                         >
-                          <span className="text-xl font-normal text-black">
+                          <span className="text-base font-normal text-black">
                             {item.name}
                           </span>
-                          <svg
-                            className="w-5 h-5 text-gray-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 9l-7 7-7-7"
-                            />
-                          </svg>
                         </Link>
                       )}
                     </div>
@@ -493,7 +490,7 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
               </div>
 
               {/* Buttons at bottom - Fixed */}
-              <div className="px-6 pb-8 pt-6 bg-gray-50 border-t border-gray-100">
+              <div className="px-6 pb-8 pt-6 border-t border-gray-100">
                 <div className="flex flex-col space-y-3">
                   {isLoggedIn ? (
                     <Button
@@ -514,7 +511,7 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                       <Button
                         asChild
                         size="lg"
-                        className="w-full rounded-xl py-6 text-base bg-[#202020]"
+                        className="w-full rounded-lg py-2 text-sm bg-[#202020]"
                       >
                         <Link
                           href="/auth/signup"
@@ -527,8 +524,8 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                       <Button
                         asChild
                         variant="outline"
-                        size="lg"
-                        className="w-full rounded-xl py-6 text-base border-gray-300"
+                        size="default"
+                        className="w-full rounded-lg py-2 text-sm border-gray-300"
                       >
                         <Link
                           href="/auth/login"

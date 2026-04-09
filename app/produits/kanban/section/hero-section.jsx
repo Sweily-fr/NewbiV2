@@ -9,7 +9,7 @@ export function HeroSection() {
   return (
     <>
       <main className="overflow-hidden">
-        <section className="min-h-0 lg:min-h-screen flex items-center bg-white pt-28 sm:pt-32 lg:pt-24 mb-6 lg:mb-20 px-4 sm:px-6 lg:px-12">
+        <section className="lg:min-h-screen flex items-start lg:items-center bg-white pt-44 sm:pt-48 lg:pt-24 mb-6 lg:mb-20 px-4 sm:px-6 lg:px-12">
           <div className="mx-auto max-w-6xl w-full">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               <div className="space-y-4 lg:space-y-6 text-center lg:text-left">
@@ -63,8 +63,8 @@ export function HeroSection() {
                 </p>
               </div>
 
-              <div className="hidden lg:flex relative items-end justify-end overflow-visible pt-4">
-                <div className="relative w-[900px] xl:w-[950px] -mr-64 xl:-mr-80" style={{ transform: "scale(0.85) translateY(30px)", transformOrigin: "top right" }}>
+              <div className="relative flex items-center justify-center lg:items-end lg:justify-end pt-8 lg:pt-4 lg:overflow-visible overflow-hidden -mb-[250px] sm:-mb-[200px] lg:mb-0">
+                <div className="relative w-[900px] xl:w-[950px] lg:-mr-64 xl:-mr-80 scale-[0.45] sm:scale-[0.55] lg:scale-[0.85] origin-top-left lg:origin-top -translate-x-[15%] sm:-translate-x-[10%] lg:translate-x-0" style={{ translateY: "30px", transformOrigin: "top right" }}>
                   <KanbanBoard />
                 </div>
               </div>
