@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import Link from "next/link";
+import { MobileDragDropAnimation } from "./MobileDragDropAnimation";
 
 export default function HowItWorksSection() {
   return (
@@ -37,15 +38,18 @@ export default function HowItWorksSection() {
                 Essayer maintenant
               </Link>
             </div>
-            {/* Interface screenshot with dashed overlay */}
-            <div className="relative mt-6 -mx-4 lg:mt-0 lg:mx-0 lg:absolute lg:bottom-0 lg:right-0 lg:w-[150%] lg:translate-x-[40%] lg:translate-y-[15%]">
+            {/* Mobile: animation */}
+            <div className="lg:hidden mt-4">
+              <MobileDragDropAnimation />
+            </div>
+            {/* Desktop: screenshot with dashed overlay */}
+            <div className="hidden lg:block lg:absolute lg:bottom-0 lg:right-0 lg:w-[150%] lg:translate-x-[40%] lg:translate-y-[15%]">
               <div className="relative">
                 <img
                   src="/lp/transfers/transfers-hero.png"
                   alt="Interface transfert Newbi"
-                  className="w-full h-auto rounded-xl lg:rounded-tl-xl"
+                  className="w-full h-auto rounded-tl-xl"
                 />
-                {/* Dashed upload zone overlay */}
                 <div className="absolute top-[6%] left-[9%] w-[44%] h-[48%] flex items-center justify-center">
                   <div className="w-[80%] h-[70%] border border-dashed border-neutral-300 rounded-xl flex flex-col items-center justify-center gap-2 bg-white/50">
                     <div className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center">

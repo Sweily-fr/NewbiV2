@@ -175,7 +175,7 @@ function DashboardCard() {
         <img
           src="/sectionNewGov1.png"
           alt="Dashboard newbi"
-          className="absolute left-10 top-2 w-[140%] max-w-none rounded-tl-2xl object-cover object-left-top shadow-xs border border-neutral-200"
+          className="absolute left-10 bottom-0 w-[140%] max-w-none rounded-tl-2xl object-cover object-left-top shadow-xs border border-neutral-200"
         />
       </div>
     </div>
@@ -243,8 +243,8 @@ function TresorerieCard() {
         </p>
       </div>
       <div className="relative h-80 sm:h-60 flex flex-col md:h-80 overflow-hidden">
-        <div className="flex-1 flex items-center justify-center px-8">
-          <svg viewBox="0 0 400 200" className="w-full max-w-xl" fill="none">
+        <div className="flex-1 flex items-center justify-center px-2 sm:px-8">
+          <svg viewBox="0 0 400 200" className="w-full max-w-none sm:max-w-xl" fill="none">
             {/* Durée totale du cycle: 6s (1s grille + 2s courbe + 1s pause + 2s fade out/reset) */}
 
             {/* Grille de fond - lignes apparaissent de bas en haut avec rebond */}

@@ -156,17 +156,24 @@ export default function HeroSection() {
             </div>
 
             {/* Mobile: Image mockup + label facturation électronique superposé */}
-            <div className="lg:hidden mt-10 relative">
+            <div className="lg:hidden mt-10 relative overflow-hidden">
               <div className="relative">
                 <img
                   src="/mockup-mac-hero-section.png"
                   alt="Dashboard Newbi sur Mac"
                   style={{
-                    width: "140%",
+                    width: "120%",
                     maxWidth: "none",
-                    marginLeft: "15%",
+                    marginLeft: "5%",
                   }}
                   className="object-contain rounded-md"
+                />
+                {/* Gradient fade bottom */}
+                <div
+                  className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
+                  style={{
+                    background: "linear-gradient(to top, #ffffff 0%, #ffffff 30%, transparent 100%)",
+                  }}
                 />
               </div>
               {/* Label superposé en bas à gauche */}
