@@ -170,6 +170,14 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [openDropdown, setOpenDropdown] = React.useState(null);
   const [mobileDropdownOpen, setMobileDropdownOpen] = React.useState(null);
+  const [bannerVisible, setBannerVisible] = React.useState(hasBanner);
+
+  // Listen for banner close event
+  React.useEffect(() => {
+    const handleBannerClosed = () => setBannerVisible(false);
+    window.addEventListener("banner-closed", handleBannerClosed);
+    return () => window.removeEventListener("banner-closed", handleBannerClosed);
+  }, []);
 
   // Lock body scroll when mobile menu is open
   React.useEffect(() => {
@@ -198,7 +206,7 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
       <nav
         data-state={menuState && "active"}
         className={`fixed left-0 w-full z-100 transition-all duration-300 ${
-          hasBanner
+          bannerVisible
             ? isScrolled
               ? "top-0"
               : "top-[80px] sm:top-[58px]"
@@ -396,7 +404,7 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
         {/* Mobile menu overlay - Fullscreen */}
         {menuState && (
           <div
-            className={`lg:hidden fixed inset-0 bg-[#FDFDFD] z-50 overflow-hidden transition-all duration-300 ${hasBanner && !isScrolled ? "top-[148px] sm:top-[126px]" : "top-[65px]"}`}
+            className={`lg:hidden fixed inset-0 bg-[#FDFDFD] z-50 overflow-hidden transition-all duration-300 ${bannerVisible && !isScrolled ? "top-[148px] sm:top-[126px]" : "top-[65px]"}`}
           >
             <div className="flex flex-col h-full">
               {/* Menu content - Scrollable */}
