@@ -42,7 +42,9 @@ export default function Verify2FAPage() {
 
       if (result?.error) {
         console.error("[2FA] Erreur envoi OTP:", result.error);
-        toast.error(result.error.message || "Erreur lors de l'envoi du code par email");
+        toast.error(
+          result.error.message || "Erreur lors de l'envoi du code par email",
+        );
         return;
       }
 
@@ -53,6 +55,19 @@ export default function Verify2FAPage() {
       toast.error("Impossible d'envoyer le code par email: " + err.message);
     } finally {
       setIsSendingOtp(false);
+    }
+  }, []);
+
+  // Au chargement, lire la méthode préférée mémorisée lors du setup 2FA.
+  // Si l'utilisateur avait choisi email, on bascule directement en mode
+  // email — ce qui déclenche ensuite l'envoi automatique de l'OTP via
+  // l'effet ci-dessous. But : éviter d'avoir à cliquer "Recevoir un code
+  // par email" à chaque connexion.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const preferredMethod = localStorage.getItem("newbi-2fa-method");
+    if (preferredMethod === "email") {
+      setUseEmailOtp(true);
     }
   }, []);
 
@@ -76,7 +91,7 @@ export default function Verify2FAPage() {
 
       if (error) {
         toast.error(
-          "Le code saisi est incorrect. Vérifiez votre application d'authentification et réessayez."
+          "Le code saisi est incorrect. Vérifiez votre application d'authentification et réessayez.",
         );
         setCode("");
         return;
@@ -89,7 +104,7 @@ export default function Verify2FAPage() {
     } catch (err) {
       console.error("Erreur vérification 2FA:", err);
       toast.error(
-        "Une erreur s'est produite lors de la vérification. Veuillez réessayer."
+        "Une erreur s'est produite lors de la vérification. Veuillez réessayer.",
       );
       setCode("");
     } finally {
@@ -121,7 +136,7 @@ export default function Verify2FAPage() {
     } catch (err) {
       console.error("Erreur vérification OTP email:", err);
       toast.error(
-        "Une erreur s'est produite lors de la vérification. Veuillez réessayer."
+        "Une erreur s'est produite lors de la vérification. Veuillez réessayer.",
       );
       setCode("");
     } finally {
@@ -145,7 +160,7 @@ export default function Verify2FAPage() {
 
       if (error) {
         toast.error(
-          "Le code de secours saisi est incorrect ou a déjà été utilisé."
+          "Le code de secours saisi est incorrect ou a déjà été utilisé.",
         );
         setCode("");
         return;
@@ -159,7 +174,7 @@ export default function Verify2FAPage() {
     } catch (err) {
       console.error("Erreur vérification code de secours:", err);
       toast.error(
-        "Une erreur s'est produite lors de la vérification. Veuillez réessayer."
+        "Une erreur s'est produite lors de la vérification. Veuillez réessayer.",
       );
       setCode("");
     } finally {
@@ -182,14 +197,14 @@ export default function Verify2FAPage() {
       <div
         className={cn(
           "bg-background relative flex size-20 rounded-xl dark:bg-transparent",
-          className
+          className,
         )}
       >
         <div
           role="presentation"
           className={cn(
             "absolute inset-0 rounded-xl border border-black/5 dark:border-white/10",
-            borderClassName
+            borderClassName,
           )}
         />
         <div className="relative z-20 m-auto size-fit *:size-6">{children}</div>
@@ -356,6 +371,10 @@ export default function Verify2FAPage() {
                         onClick={() => {
                           setUseEmailOtp(true);
                           setCode("");
+                          // Mémoriser la préférence pour les prochaines connexions
+                          if (typeof window !== "undefined") {
+                            localStorage.setItem("newbi-2fa-method", "email");
+                          }
                         }}
                         className="text-sm text-muted-foreground hover:text-foreground underline block mx-auto"
                         disabled={isVerifying}
@@ -369,6 +388,10 @@ export default function Verify2FAPage() {
                           setUseEmailOtp(false);
                           setOtpSent(false);
                           setCode("");
+                          // Mémoriser la préférence pour les prochaines connexions
+                          if (typeof window !== "undefined") {
+                            localStorage.setItem("newbi-2fa-method", "totp");
+                          }
                         }}
                         className="text-sm text-muted-foreground hover:text-foreground underline block mx-auto"
                         disabled={isVerifying}
