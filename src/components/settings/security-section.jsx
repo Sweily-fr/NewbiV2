@@ -315,6 +315,11 @@ export function SecuritySection({
         return;
       }
 
+      // Nettoyer la préférence de méthode 2FA mémorisée localement
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("newbi-2fa-method");
+      }
+
       toast.success("Authentification à deux facteurs désactivée");
       setShowDisable2FADialog(false);
       setDisable2FAPassword("");
