@@ -1,56 +1,74 @@
-import { useMemo } from 'react';
-import { useQuery } from '@apollo/client';
+import { useMemo } from "react";
+import { useQuery } from "@apollo/client";
 import { GET_NEXT_INVOICE_NUMBER } from "@/src/graphql/invoiceQueries";
-import { useRequiredWorkspace } from '@/src/hooks/useWorkspace';
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
-export const useInvoiceNumber = (prefix) => {
+export const useInvoiceNumber = (prefix, { autoNumbering = false } = {}) => {
   const { workspaceId, loading: workspaceLoading } = useRequiredWorkspace();
 
   const { data, loading, error } = useQuery(GET_NEXT_INVOICE_NUMBER, {
-    variables: { workspaceId, prefix },
-    fetchPolicy: 'cache-and-network',
+    variables: { workspaceId, prefix, autoNumbering },
+    fetchPolicy: "network-only",
     skip: !workspaceId || !prefix,
+    notifyOnNetworkStatusChange: true,
   });
 
   const computed = useMemo(() => {
     const nextNumberStr = data?.nextInvoiceNumber;
     if (!nextNumberStr) {
-      return { lastNumber: 0, anyDocumentsExist: false, hasDocumentsForPrefix: false };
+      return { lastNumber: 0, hasDocumentsForPrefix: false, hasData: false };
     }
 
-    // Le backend retourne le prochain numéro formaté (ex: "0005")
-    // Extraire la partie numérique
-    const numericPart = nextNumberStr.replace(/\D/g, '');
+    const numericPart = nextNumberStr.replace(/\D/g, "");
     const nextNum = parseInt(numericPart, 10) || 1;
     const lastNumber = nextNum - 1;
 
     return {
       lastNumber,
-      anyDocumentsExist: lastNumber > 0,
       hasDocumentsForPrefix: lastNumber > 0,
+      hasData: true,
     };
   }, [data]);
 
   const isLoading = loading || workspaceLoading;
-  const nextInvoiceNumber = computed.lastNumber + 1;
+  // Ne retourner la valeur que quand les données sont fraîches (pas en loading)
+  const nextInvoiceNumber =
+    computed.hasData && !isLoading ? computed.lastNumber + 1 : null;
 
   const validateInvoiceNumber = (number) => {
     const num = parseInt(number, 10);
     if (isNaN(num) || num <= 0) {
-      return { isValid: false, message: 'Le numéro doit être une valeur numérique positive' };
+      return {
+        isValid: false,
+        message: "Le numéro doit être une valeur numérique positive",
+      };
     }
 
-    // Nouveau préfixe ou aucun document → numéro libre
-    if (!computed.anyDocumentsExist || !computed.hasDocumentsForPrefix) {
+    if (autoNumbering) {
+      if (nextInvoiceNumber && num !== nextInvoiceNumber) {
+        return {
+          isValid: false,
+          message: `Le numéro doit être ${String(nextInvoiceNumber).padStart(4, "0")} (numérotation automatique)`,
+        };
+      }
       return { isValid: true };
     }
 
-    // Doit être exactement le suivant dans la séquence
+    if (!computed.hasDocumentsForPrefix) {
+      return { isValid: true };
+    }
+
     if (num <= computed.lastNumber) {
-      return { isValid: false, message: `Le numéro doit être supérieur à ${String(computed.lastNumber).padStart(4, '0')}` };
+      return {
+        isValid: false,
+        message: `Le numéro doit être supérieur à ${String(computed.lastNumber).padStart(4, "0")}`,
+      };
     }
     if (num > computed.lastNumber + 1) {
-      return { isValid: false, message: `Le numéro doit être ${String(computed.lastNumber + 1).padStart(4, '0')} pour maintenir la séquence` };
+      return {
+        isValid: false,
+        message: `Le numéro doit être ${String(computed.lastNumber + 1).padStart(4, "0")} pour maintenir la séquence`,
+      };
     }
 
     return { isValid: true };
@@ -62,9 +80,10 @@ export const useInvoiceNumber = (prefix) => {
     validateInvoiceNumber,
     isLoading,
     error,
-    hasExistingInvoices: () => computed.anyDocumentsExist,
-    hasDocumentsForPrefix: computed.hasDocumentsForPrefix,
-    getFormattedNextNumber: () => String(nextInvoiceNumber).padStart(4, '0'),
+    hasExistingInvoices: () => computed.hasDocumentsForPrefix,
+    hasDocumentsForPrefix: !isLoading && computed.hasDocumentsForPrefix,
+    getFormattedNextNumber: () =>
+      nextInvoiceNumber ? String(nextInvoiceNumber).padStart(4, "0") : null,
   };
 };
 

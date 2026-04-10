@@ -81,22 +81,42 @@ export default function QuoteSettingsView({
   const data = watch();
 
   // Hooks pour la numérotation séquentielle (filtrés par préfixe courant)
-  const quoteNumberHook = useQuoteNumber(
+  const autoNumbering = data.autoNumbering || false;
+
+  // Deux hooks par type : per-prefix (toujours actif) et global (quand autoNumbering)
+  const quotePerPrefixHook = useQuoteNumber(
     isPurchaseOrder ? undefined : data.prefix,
+    { autoNumbering: false },
   );
-  const purchaseOrderNumberHook = usePurchaseOrderNumber(
+  const quoteGlobalHook = useQuoteNumber(
+    isPurchaseOrder ? undefined : data.prefix,
+    { autoNumbering: true },
+  );
+  const poPerPrefixHook = usePurchaseOrderNumber(
     isPurchaseOrder ? data.prefix : undefined,
+    { autoNumbering: false },
+  );
+  const poGlobalHook = usePurchaseOrderNumber(
+    isPurchaseOrder ? data.prefix : undefined,
+    { autoNumbering: true },
   );
 
-  const numberHook = isPurchaseOrder
-    ? purchaseOrderNumberHook
-    : quoteNumberHook;
+  // Sélectionner le bon hook selon le mode
+  const perPrefixHook = isPurchaseOrder ? poPerPrefixHook : quotePerPrefixHook;
+  const numberHook = autoNumbering
+    ? isPurchaseOrder
+      ? poGlobalHook
+      : quoteGlobalHook
+    : perPrefixHook;
   const nextNumber = isPurchaseOrder
     ? numberHook.nextNumber
     : numberHook.nextQuoteNumber;
   const isLoadingNumber = numberHook.isLoading;
   // Champ numéro éditable uniquement si aucun document finalisé n'existe pour ce préfixe
-  const isFirstDocument = !numberHook.hasDocumentsForPrefix;
+  // En mode autoNumbering, le numéro est toujours verrouillé
+  const isFirstDocument = autoNumbering
+    ? false
+    : !perPrefixHook.hasDocumentsForPrefix;
 
   // Auto-initialiser le préfixe si vide (au montage uniquement)
   useEffect(() => {
@@ -110,26 +130,29 @@ export default function QuoteSettingsView({
 
   // Synchroniser le numéro depuis le hook de numérotation
   useEffect(() => {
-    if (isLoadingNumber || !nextNumber) return;
+    if (isLoadingNumber || nextNumber == null) return;
     const formattedNumber = String(nextNumber).padStart(4, "0");
 
-    if (!isFirstDocument) {
-      // Préfixe existant → forcer le numéro séquentiel (champ verrouillé)
+    if (autoNumbering || perPrefixHook.hasDocumentsForPrefix) {
+      // Auto-numbering activé ou préfixe existant → forcer le numéro séquentiel
       setValue("number", formattedNumber, { shouldValidate: false });
     } else if (!data.number) {
-      // Nouveau préfixe, champ vide → proposer le défaut
+      // Nouveau préfixe, pas de numéro → proposer 0001
       setValue("number", formattedNumber, { shouldValidate: false });
     }
-  }, [nextNumber, isLoadingNumber, isFirstDocument]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [
+    nextNumber,
+    isLoadingNumber,
+    perPrefixHook.hasDocumentsForPrefix,
+    autoNumbering,
+  ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle prefix changes with auto-fill for MM and AAAA
   const handlePrefixChange = (e) => {
     const value = e.target.value;
     const cursorPosition = e.target.selectionStart;
 
-    // Réinitialiser le numéro au défaut quand le préfixe change
-    // Le useEffect écrasera avec le séquentiel si le préfixe a des documents
-    setValue("number", "0001", { shouldValidate: false });
+    // Le useEffect synchronisera le numéro quand le hook aura rechargé avec le nouveau préfixe
 
     // Auto-fill MM (month)
     if (value.includes("MM")) {
@@ -381,6 +404,28 @@ export default function QuoteSettingsView({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 p-0">
+              {/* Toggle numérotation automatique */}
+              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-muted">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-medium">
+                    Numérotation séquentielle continue
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Le numéro suit une séquence unique, même lors d'un
+                    changement de préfixe.
+                  </p>
+                </div>
+                <Switch
+                  checked={autoNumbering}
+                  onCheckedChange={(checked) => {
+                    setValue("autoNumbering", checked, {
+                      shouldValidate: false,
+                    });
+                  }}
+                  className="data-[state=checked]:bg-[#5b4fff]"
+                />
+              </div>
+
               {/* Préfixe et numéro */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -523,9 +568,11 @@ export default function QuoteSettingsView({
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground">
-                      {isFirstDocument
-                        ? `Premier ${documentLabel} — vous pouvez choisir le numéro de départ.`
-                        : "Numéro attribué automatiquement de manière séquentielle."}
+                      {autoNumbering
+                        ? "Numéro attribué automatiquement — séquence continue indépendante du préfixe."
+                        : isFirstDocument
+                          ? `Premier ${documentLabel} — vous pouvez choisir le numéro de départ.`
+                          : "Numéro attribué automatiquement de manière séquentielle."}
                     </p>
                     {data.number && data.number.startsWith("DRAFT-") && (
                       <p className="text-xs text-blue-600">

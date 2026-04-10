@@ -44,7 +44,10 @@ const decimalToHM = (decimal) => {
 
 // Convertir { hours, minutes } en décimal pour le calcul
 const hmToDecimal = (hours, minutes) => {
-  return Math.max(0, (parseInt(hours) || 0)) + Math.max(0, Math.min(59, parseInt(minutes) || 0)) / 60;
+  return (
+    Math.max(0, parseInt(hours) || 0) +
+    Math.max(0, Math.min(59, parseInt(minutes) || 0)) / 60
+  );
 };
 
 // Formater une quantité décimale en "Xh Ymin"
@@ -60,7 +63,7 @@ const calculateItemTotal = (
   unitPrice,
   discount,
   discountType,
-  progressPercentage = 100
+  progressPercentage = 100,
 ) => {
   let subtotal = (quantity || 1) * (unitPrice || 0);
 
@@ -131,7 +134,7 @@ export default function ItemsSection({
   // Helper pour vérifier si un champ a une erreur
   const hasFieldError = (itemIndex, fieldName) => {
     return validationErrors.some(
-      (error) => error.index === itemIndex && error.fields.includes(fieldName)
+      (error) => error.index === itemIndex && error.fields.includes(fieldName),
     );
   };
 
@@ -169,7 +172,7 @@ export default function ItemsSection({
         unitPrice,
         discount,
         discountType,
-        100
+        100,
       ),
     });
   };
@@ -318,12 +321,16 @@ export default function ItemsSection({
                   >
                     <AccordionTrigger className="w-full justify-start gap-3 text-[15px] leading-6 hover:no-underline focus-visible:ring-0 py-3 [&[data-state=open]>svg]:rotate-180">
                       <div className="flex items-center justify-between w-full gap-3">
-                        <div className="flex-1 text-left">
-                          <div className="font-normal">{description}</div>
+                        <div className="flex-1 text-left min-w-0 overflow-hidden">
+                          <div className="font-normal break-all [overflow-wrap:anywhere]">
+                            {description}
+                          </div>
                           <div className="text-sm mt-1 space-y-1">
                             <div className="flex items-center gap-2 text-muted-foreground">
                               <span className="font-normal">
-                                {unit === "heure" ? formatHourMinute(quantity) : `${quantity}${unit ? ` ${unit}` : ""}`}
+                                {unit === "heure"
+                                  ? formatHourMinute(quantity)
+                                  : `${quantity}${unit ? ` ${unit}` : ""}`}
                               </span>
                               <span className="font-normal">•</span>
                               <span className="font-normal">
@@ -538,19 +545,37 @@ export default function ItemsSection({
                                       }),
                                 }}
                                 render={({ field }) => {
-                                  const currentUnit = watch(`items.${index}.unit`);
+                                  const currentUnit = watch(
+                                    `items.${index}.unit`,
+                                  );
                                   const recalcTotal = (newQuantity) => {
                                     field.onChange(newQuantity);
-                                    const unitPrice = watch(`items.${index}.unitPrice`) || 0;
-                                    const discount = watch(`items.${index}.discount`) || 0;
-                                    const discountType = watch(`items.${index}.discountType`) || "percentage";
-                                    const progressPercentage = watch(`items.${index}.progressPercentage`) ?? 100;
-                                    const total = calculateItemTotal(newQuantity, unitPrice, discount, discountType, progressPercentage);
-                                    setValue(`items.${index}.total`, total, { shouldDirty: true });
+                                    const unitPrice =
+                                      watch(`items.${index}.unitPrice`) || 0;
+                                    const discount =
+                                      watch(`items.${index}.discount`) || 0;
+                                    const discountType =
+                                      watch(`items.${index}.discountType`) ||
+                                      "percentage";
+                                    const progressPercentage =
+                                      watch(
+                                        `items.${index}.progressPercentage`,
+                                      ) ?? 100;
+                                    const total = calculateItemTotal(
+                                      newQuantity,
+                                      unitPrice,
+                                      discount,
+                                      discountType,
+                                      progressPercentage,
+                                    );
+                                    setValue(`items.${index}.total`, total, {
+                                      shouldDirty: true,
+                                    });
                                   };
 
                                   if (currentUnit === "heure") {
-                                    const { hours: h, minutes: m } = decimalToHM(field.value);
+                                    const { hours: h, minutes: m } =
+                                      decimalToHM(field.value);
                                     return (
                                       <div className="flex items-center gap-1.5">
                                         <div className="relative flex-1">
@@ -559,17 +584,39 @@ export default function ItemsSection({
                                             min={0}
                                             value={h}
                                             onChange={(e) => {
-                                              const newH = Math.max(0, parseInt(e.target.value) || 0);
+                                              const newH = Math.max(
+                                                0,
+                                                parseInt(e.target.value) || 0,
+                                              );
                                               recalcTotal(hmToDecimal(newH, m));
                                             }}
-                                            onBlur={() => { field.onBlur(); unmarkFieldAsEditing?.(index, "quantity"); }}
-                                            onFocus={() => markFieldAsEditing?.(index, "quantity")}
-                                            disabled={!canEdit || isItemFieldLocked}
+                                            onBlur={() => {
+                                              field.onBlur();
+                                              unmarkFieldAsEditing?.(
+                                                index,
+                                                "quantity",
+                                              );
+                                            }}
+                                            onFocus={() =>
+                                              markFieldAsEditing?.(
+                                                index,
+                                                "quantity",
+                                              )
+                                            }
+                                            disabled={
+                                              !canEdit || isItemFieldLocked
+                                            }
                                             className={`w-full h-8 rounded-[9px] border border-[#e6e7ea] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-2 pr-6 text-center text-sm font-medium tabular-nums outline-none transition-[border] duration-[80ms] ${
-                                              errors?.items?.[index]?.quantity || hasFieldError(index, "quantity") ? "border-destructive" : ""
+                                              errors?.items?.[index]
+                                                ?.quantity ||
+                                              hasFieldError(index, "quantity")
+                                                ? "border-destructive"
+                                                : ""
                                             }`}
                                           />
-                                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">h</span>
+                                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
+                                            h
+                                          </span>
                                         </div>
                                         <div className="relative flex-1">
                                           <input
@@ -578,46 +625,74 @@ export default function ItemsSection({
                                             max={59}
                                             value={m}
                                             onChange={(e) => {
-                                              const newM = Math.max(0, Math.min(59, parseInt(e.target.value) || 0));
+                                              const newM = Math.max(
+                                                0,
+                                                Math.min(
+                                                  59,
+                                                  parseInt(e.target.value) || 0,
+                                                ),
+                                              );
                                               recalcTotal(hmToDecimal(h, newM));
                                             }}
-                                            onBlur={() => { field.onBlur(); unmarkFieldAsEditing?.(index, "quantity"); }}
-                                            onFocus={() => markFieldAsEditing?.(index, "quantity")}
-                                            disabled={!canEdit || isItemFieldLocked}
+                                            onBlur={() => {
+                                              field.onBlur();
+                                              unmarkFieldAsEditing?.(
+                                                index,
+                                                "quantity",
+                                              );
+                                            }}
+                                            onFocus={() =>
+                                              markFieldAsEditing?.(
+                                                index,
+                                                "quantity",
+                                              )
+                                            }
+                                            disabled={
+                                              !canEdit || isItemFieldLocked
+                                            }
                                             className={`w-full h-8 rounded-[9px] border border-[#e6e7ea] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-2 pr-8 text-center text-sm font-medium tabular-nums outline-none transition-[border] duration-[80ms] ${
-                                              errors?.items?.[index]?.quantity || hasFieldError(index, "quantity") ? "border-destructive" : ""
+                                              errors?.items?.[index]
+                                                ?.quantity ||
+                                              hasFieldError(index, "quantity")
+                                                ? "border-destructive"
+                                                : ""
                                             }`}
                                           />
-                                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">min</span>
+                                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
+                                            min
+                                          </span>
                                         </div>
                                       </div>
                                     );
                                   }
 
                                   return (
-                                  <QuantityInput
-                                    id={`item-quantity-${index}`}
-                                    value={field.value}
-                                    onChange={(e) => {
-                                      const newQuantity =
-                                        parseFloat(e.target.value) || 1;
-                                      recalcTotal(newQuantity);
-                                    }}
-                                    onBlur={() => {
-                                      field.onBlur();
-                                      unmarkFieldAsEditing?.(index, "quantity");
-                                    }}
-                                    disabled={!canEdit || isItemFieldLocked}
-                                    onFocus={() =>
-                                      markFieldAsEditing?.(index, "quantity")
-                                    }
-                                    className={`w-full ${
-                                      errors?.items?.[index]?.quantity ||
-                                      hasFieldError(index, "quantity")
-                                        ? "border-destructive"
-                                        : ""
-                                    }`}
-                                  />
+                                    <QuantityInput
+                                      id={`item-quantity-${index}`}
+                                      value={field.value}
+                                      onChange={(e) => {
+                                        const newQuantity =
+                                          parseFloat(e.target.value) || 1;
+                                        recalcTotal(newQuantity);
+                                      }}
+                                      onBlur={() => {
+                                        field.onBlur();
+                                        unmarkFieldAsEditing?.(
+                                          index,
+                                          "quantity",
+                                        );
+                                      }}
+                                      disabled={!canEdit || isItemFieldLocked}
+                                      onFocus={() =>
+                                        markFieldAsEditing?.(index, "quantity")
+                                      }
+                                      className={`w-full ${
+                                        errors?.items?.[index]?.quantity ||
+                                        hasFieldError(index, "quantity")
+                                          ? "border-destructive"
+                                          : ""
+                                      }`}
+                                    />
                                   );
                                 }}
                               />
@@ -653,7 +728,7 @@ export default function ItemsSection({
                                     value={field.value || "none"}
                                     onValueChange={(value) =>
                                       field.onChange(
-                                        value === "none" ? "" : value
+                                        value === "none" ? "" : value,
                                       )
                                     }
                                     disabled={!canEdit || isItemFieldLocked}
@@ -745,7 +820,7 @@ export default function ItemsSection({
                                       "percentage";
                                     const progressPercentage =
                                       watch(
-                                        `items.${index}.progressPercentage`
+                                        `items.${index}.progressPercentage`,
                                       ) ?? 100;
 
                                     const total = calculateItemTotal(
@@ -753,7 +828,7 @@ export default function ItemsSection({
                                       unitPrice,
                                       discount,
                                       discountType,
-                                      progressPercentage
+                                      progressPercentage,
                                     );
                                     setValue(`items.${index}.total`, total, {
                                       shouldDirty: true,
@@ -842,7 +917,7 @@ export default function ItemsSection({
                                         className={`w-full ${
                                           hasFieldError(
                                             index,
-                                            "vatExemptionText"
+                                            "vatExemptionText",
                                           )
                                             ? "border-destructive"
                                             : ""
@@ -929,7 +1004,7 @@ export default function ItemsSection({
                                 setValue(`items.${index}.discount`, 0);
                                 setValue(
                                   `items.${index}.discountType`,
-                                  "PERCENTAGE"
+                                  "PERCENTAGE",
                                 );
                               }}
                               disabled={!canEdit}
@@ -953,7 +1028,7 @@ export default function ItemsSection({
                                   setValue(`items.${index}.discount`, 0);
                                   setValue(
                                     `items.${index}.discountType`,
-                                    "PERCENTAGE"
+                                    "PERCENTAGE",
                                   );
                                   // Recalculer le total
                                   const quantity =
@@ -962,14 +1037,14 @@ export default function ItemsSection({
                                     watch(`items.${index}.unitPrice`) || 0;
                                   const progressPercentage =
                                     watch(
-                                      `items.${index}.progressPercentage`
+                                      `items.${index}.progressPercentage`,
                                     ) ?? 100;
                                   const total = calculateItemTotal(
                                     quantity,
                                     unitPrice,
                                     0,
                                     "PERCENTAGE",
-                                    progressPercentage
+                                    progressPercentage,
                                   );
                                   setValue(`items.${index}.total`, total, {
                                     shouldDirty: true,
@@ -1006,11 +1081,11 @@ export default function ItemsSection({
                                     // Sanitize input
                                     let sanitizedValue = e.target.value.replace(
                                       /,/g,
-                                      "."
+                                      ".",
                                     );
                                     sanitizedValue = sanitizedValue.replace(
                                       /[^\d.]/g,
-                                      ""
+                                      "",
                                     );
                                     const parts = sanitizedValue.split(".");
                                     if (parts.length > 2) {
@@ -1043,7 +1118,7 @@ export default function ItemsSection({
                                       {
                                         shouldDirty: true,
                                         shouldValidate: true,
-                                      }
+                                      },
                                     );
 
                                     const quantity =
@@ -1052,7 +1127,7 @@ export default function ItemsSection({
                                       watch(`items.${index}.unitPrice`) || 0;
                                     const progressPercentage =
                                       watch(
-                                        `items.${index}.progressPercentage`
+                                        `items.${index}.progressPercentage`,
                                       ) ?? 100;
 
                                     const total = calculateItemTotal(
@@ -1060,7 +1135,7 @@ export default function ItemsSection({
                                       unitPrice,
                                       discountValue,
                                       discountType,
-                                      progressPercentage
+                                      progressPercentage,
                                     );
                                     setValue(`items.${index}.total`, total, {
                                       shouldDirty: true,
@@ -1087,52 +1162,49 @@ export default function ItemsSection({
                                           {
                                             shouldDirty: true,
                                             shouldValidate: true,
-                                          }
+                                          },
                                         );
 
                                         // Recalculer le total
                                         const discount =
                                           parseFloat(
-                                            watch(`items.${index}.discount`)
+                                            watch(`items.${index}.discount`),
                                           ) || 0;
                                         const quantity =
                                           parseFloat(
-                                            watch(`items.${index}.quantity`)
+                                            watch(`items.${index}.quantity`),
                                           ) || 1;
                                         const unitPrice =
                                           parseFloat(
-                                            watch(`items.${index}.unitPrice`)
+                                            watch(`items.${index}.unitPrice`),
                                           ) || 0;
-                                        const progressPercentage =
-                                          (() => {
-                                            const p = parseFloat(
-                                              watch(
-                                                `items.${index}.progressPercentage`
-                                              )
-                                            );
-                                            return isNaN(p) ? 100 : p;
-                                          })();
+                                        const progressPercentage = (() => {
+                                          const p = parseFloat(
+                                            watch(
+                                              `items.${index}.progressPercentage`,
+                                            ),
+                                          );
+                                          return isNaN(p) ? 100 : p;
+                                        })();
 
                                         const total = calculateItemTotal(
                                           quantity,
                                           unitPrice,
                                           discount,
                                           value,
-                                          progressPercentage
+                                          progressPercentage,
                                         );
                                         setValue(
                                           `items.${index}.total`,
                                           total,
                                           {
                                             shouldDirty: true,
-                                          }
+                                          },
                                         );
                                       }}
                                       disabled={!canEdit}
                                     >
-                                      <SelectTrigger
-                                        className="w-auto min-w-[60px] rounded-s-none border-s-0"
-                                      >
+                                      <SelectTrigger className="w-auto min-w-[60px] rounded-s-none border-s-0">
                                         <SelectValue />
                                       </SelectTrigger>
                                       <SelectContent>

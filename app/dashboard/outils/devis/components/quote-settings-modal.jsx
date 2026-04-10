@@ -81,6 +81,7 @@ const getDemoQuoteData = (formData, organization) => {
         country:
           formData?.addressCountry || organization?.addressCountry || "France",
       },
+      siren: organization?.siren || "987654321",
       siret: organization?.siret || "98765432109876",
       vatNumber: organization?.vatNumber || "FR98765432109",
       logo: organization?.logo || null,
@@ -147,8 +148,11 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
   const [isLoading, setIsLoading] = useState(true);
   const [initialValues, setInitialValues] = useState(null);
   const [currentPrefix, setCurrentPrefix] = useState("");
-  const { validateQuoteNumber, hasDocumentsForPrefix } =
-    useQuoteNumber(currentPrefix);
+  const [currentAutoNumbering, setCurrentAutoNumbering] = useState(false);
+  const { validateQuoteNumber, hasDocumentsForPrefix } = useQuoteNumber(
+    currentPrefix,
+    { autoNumbering: currentAutoNumbering },
+  );
 
   // Charger les données de l'organisation dès l'ouverture
   useEffect(() => {
@@ -164,6 +168,7 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
             // Numérotation - préfixe par défaut (le numéro sera auto-rempli par le hook useQuoteNumber)
             prefix: org?.quotePrefix || generateQuotePrefix(),
             number: org?.quoteStartNumber || "",
+            autoNumbering: org?.quoteAutoNumbering || false,
             // Informations de l'entreprise
             companyName: org?.companyName || "",
             companyEmail: org?.companyEmail || "",
@@ -237,6 +242,7 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
     defaultValues: initialValues || {
       prefix: generateQuotePrefix(),
       number: "",
+      autoNumbering: false,
       companyName: "",
       companyEmail: "",
       companyPhone: "",
@@ -272,12 +278,20 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
   // Observer tous les changements du formulaire
   const formData = form.watch();
 
-  // Suivre le préfixe pour la validation de numérotation
+  // Suivre le préfixe et l'autoNumbering pour la validation de numérotation
   useEffect(() => {
     if (formData?.prefix && formData.prefix !== currentPrefix) {
       setCurrentPrefix(formData.prefix);
     }
-  }, [formData?.prefix, currentPrefix]);
+    if ((formData?.autoNumbering || false) !== currentAutoNumbering) {
+      setCurrentAutoNumbering(formData?.autoNumbering || false);
+    }
+  }, [
+    formData?.prefix,
+    formData?.autoNumbering,
+    currentPrefix,
+    currentAutoNumbering,
+  ]);
 
   // Debounce pour la preview (évite les saccades)
   useEffect(() => {
@@ -340,6 +354,7 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
         // Préfixe de numérotation
         quotePrefix: formValues.prefix || "",
         quoteStartNumber: formValues.number || "",
+        quoteAutoNumbering: formValues.autoNumbering || false,
 
         // Position du client dans le PDF (devis)
         quoteClientPositionRight: formValues.clientPositionRight || false,

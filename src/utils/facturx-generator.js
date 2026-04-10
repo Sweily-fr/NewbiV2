@@ -4,7 +4,7 @@
  * Compatible SuperPDP / PPF (réforme facturation électronique 2026)
  */
 
-import { PDFDocument, PDFName, PDFString } from 'pdf-lib';
+import { PDFDocument, PDFName, PDFString } from "pdf-lib";
 
 /**
  * Génère le XML Factur-X à partir des données de facture ou avoir
@@ -12,7 +12,7 @@ import { PDFDocument, PDFName, PDFString } from 'pdf-lib';
  * @param {string} documentType - Type de document ('invoice' ou 'creditNote')
  * @returns {string} - XML Factur-X formaté
  */
-export function generateFacturXXML(invoiceData, documentType = 'invoice') {
+export function generateFacturXXML(invoiceData, documentType = "invoice") {
   const {
     number,
     issueDate,
@@ -32,49 +32,57 @@ export function generateFacturXXML(invoiceData, documentType = 'invoice') {
   } = invoiceData;
 
   // Type de document : 380 = Facture, 381 = Avoir
-  const typeCode = documentType === 'creditNote' ? '381' : '380';
+  const typeCode = documentType === "creditNote" ? "381" : "380";
 
   // Formater les dates au format YYYYMMDD
   const formatDateXML = (date) => {
-    if (!date) return '';
+    if (!date) return "";
 
     // Gérer les timestamps en string ou number
     let d;
-    if (typeof date === 'string' && /^\d+$/.test(date)) {
+    if (typeof date === "string" && /^\d+$/.test(date)) {
       d = new Date(parseInt(date, 10));
-    } else if (typeof date === 'number') {
+    } else if (typeof date === "number") {
       d = new Date(date);
     } else {
       d = new Date(date);
     }
 
     if (isNaN(d.getTime())) {
-      console.warn('Date invalide pour Factur-X:', date);
-      return '';
+      console.warn("Date invalide pour Factur-X:", date);
+      return "";
     }
 
     const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
     return `${year}${month}${day}`;
   };
 
-  // Extraire SIREN (9 premiers caractères du SIRET)
-  const sellerSiret = companyInfo?.siret || '';
-  const sellerSiren = sellerSiret ? sellerSiret.substring(0, 9) : '';
-  const buyerSiret = client?.siret || '';
-  const buyerSiren = buyerSiret ? buyerSiret.substring(0, 9) : '';
+  // SIREN : utiliser le champ dédié ou extraire des 9 premiers caractères du SIRET
+  const sellerSiret = companyInfo?.siret || "";
+  const sellerSiren =
+    companyInfo?.siren || (sellerSiret ? sellerSiret.substring(0, 9) : "");
+  const buyerSiret = client?.siret || "";
+  const buyerSiren = buyerSiret ? buyerSiret.substring(0, 9) : "";
 
   // Code pays (2 lettres)
   const getCountryCode = (country) => {
-    if (!country) return 'FR';
+    if (!country) return "FR";
     if (country.length === 2) return country.toUpperCase();
     const map = {
-      'france': 'FR', 'allemagne': 'DE', 'belgique': 'BE',
-      'espagne': 'ES', 'italie': 'IT', 'luxembourg': 'LU',
-      'pays-bas': 'NL', 'portugal': 'PT', 'royaume-uni': 'GB', 'suisse': 'CH',
+      france: "FR",
+      allemagne: "DE",
+      belgique: "BE",
+      espagne: "ES",
+      italie: "IT",
+      luxembourg: "LU",
+      "pays-bas": "NL",
+      portugal: "PT",
+      "royaume-uni": "GB",
+      suisse: "CH",
     };
-    return map[country.toLowerCase().trim()] || 'FR';
+    return map[country.toLowerCase().trim()] || "FR";
   };
 
   const sellerCountry = getCountryCode(companyInfo?.address?.country);
@@ -82,19 +90,20 @@ export function generateFacturXXML(invoiceData, documentType = 'invoice') {
 
   // Calculer les totaux par taux de TVA (avec progressPercentage)
   const vatBreakdown = {};
-  items.forEach(item => {
+  items.forEach((item) => {
     const vatRate = item.vatRate ?? 20;
     const quantity = parseFloat(item.quantity) || 0;
     const unitPrice = parseFloat(item.unitPrice) || 0;
     let itemTotal = quantity * unitPrice;
 
     // Application progressPercentage
-    const progressPercentage = item.progressPercentage != null ? item.progressPercentage : 100;
+    const progressPercentage =
+      item.progressPercentage != null ? item.progressPercentage : 100;
     itemTotal = itemTotal * (progressPercentage / 100);
 
     // Application remise article
     if (item.discount && item.discount > 0) {
-      if (item.discountType === 'PERCENTAGE') {
+      if (item.discountType === "PERCENTAGE") {
         itemTotal = itemTotal * (1 - Math.min(item.discount, 100) / 100);
       } else {
         itemTotal = Math.max(0, itemTotal - item.discount);
@@ -108,13 +117,13 @@ export function generateFacturXXML(invoiceData, documentType = 'invoice') {
   });
 
   // Calculer les montants de TVA
-  Object.keys(vatBreakdown).forEach(rate => {
+  Object.keys(vatBreakdown).forEach((rate) => {
     const base = vatBreakdown[rate].base;
     vatBreakdown[rate].amount = (base * parseFloat(rate)) / 100;
   });
 
   // --- Build IncludedNote sections (BR-FR-05/06/07) ---
-  let includedNotes = '';
+  let includedNotes = "";
   // Note obligatoire : pénalités de retard (BR-FR-05)
   includedNotes += `
     <ram:IncludedNote>
@@ -134,7 +143,7 @@ export function generateFacturXXML(invoiceData, documentType = 'invoice') {
       <ram:SubjectCode>AAB</ram:SubjectCode>
     </ram:IncludedNote>`;
   // Note conditionnelle : TVA sur les débits
-  if (companyInfo?.vatPaymentCondition === 'DEBITS') {
+  if (companyInfo?.vatPaymentCondition === "DEBITS") {
     includedNotes += `
     <ram:IncludedNote>
       <ram:Content>TVA acquittée sur les débits</ram:Content>
@@ -157,9 +166,9 @@ export function generateFacturXXML(invoiceData, documentType = 'invoice') {
   // Note conditionnelle : nature de l'opération (LB/PS/LBPS)
   if (operationType) {
     const operationLabels = {
-      'LB': 'Livraison de biens',
-      'PS': 'Prestation de services',
-      'LBPS': 'Mixte - Livraison de biens et prestation de services',
+      LB: "Livraison de biens",
+      PS: "Prestation de services",
+      LBPS: "Mixte - Livraison de biens et prestation de services",
     };
     includedNotes += `
     <ram:IncludedNote>
@@ -169,32 +178,34 @@ export function generateFacturXXML(invoiceData, documentType = 'invoice') {
   }
 
   // --- Build line items ---
-  const lineItemsXML = items.map((item, index) => {
-    const quantity = parseFloat(item.quantity) || 0;
-    const unitPrice = parseFloat(item.unitPrice) || 0;
-    let itemTotal = quantity * unitPrice;
-    const vatRate = item.vatRate ?? 20;
-    const categoryCode = parseFloat(vatRate) === 0 ? 'Z' : 'S';
+  const lineItemsXML = items
+    .map((item, index) => {
+      const quantity = parseFloat(item.quantity) || 0;
+      const unitPrice = parseFloat(item.unitPrice) || 0;
+      let itemTotal = quantity * unitPrice;
+      const vatRate = item.vatRate ?? 20;
+      const categoryCode = parseFloat(vatRate) === 0 ? "Z" : "S";
 
-    // Application progressPercentage
-    const progressPercentage = item.progressPercentage != null ? item.progressPercentage : 100;
-    itemTotal = itemTotal * (progressPercentage / 100);
+      // Application progressPercentage
+      const progressPercentage =
+        item.progressPercentage != null ? item.progressPercentage : 100;
+      itemTotal = itemTotal * (progressPercentage / 100);
 
-    if (item.discount && item.discount > 0) {
-      if (item.discountType === 'PERCENTAGE') {
-        itemTotal = itemTotal * (1 - Math.min(item.discount, 100) / 100);
-      } else {
-        itemTotal = Math.max(0, itemTotal - item.discount);
+      if (item.discount && item.discount > 0) {
+        if (item.discountType === "PERCENTAGE") {
+          itemTotal = itemTotal * (1 - Math.min(item.discount, 100) / 100);
+        } else {
+          itemTotal = Math.max(0, itemTotal - item.discount);
+        }
       }
-    }
 
-    return `
+      return `
     <ram:IncludedSupplyChainTradeLineItem>
       <ram:AssociatedDocumentLineDocument>
         <ram:LineID>${index + 1}</ram:LineID>
       </ram:AssociatedDocumentLineDocument>
       <ram:SpecifiedTradeProduct>
-        <ram:Name>${escapeXML(item.description || '')}</ram:Name>
+        <ram:Name>${escapeXML(item.description || "")}</ram:Name>
       </ram:SpecifiedTradeProduct>
       <ram:SpecifiedLineTradeAgreement>
         <ram:NetPriceProductTradePrice>
@@ -215,10 +226,11 @@ export function generateFacturXXML(invoiceData, documentType = 'invoice') {
         </ram:SpecifiedTradeSettlementLineMonetarySummation>
       </ram:SpecifiedLineTradeSettlement>
     </ram:IncludedSupplyChainTradeLineItem>`;
-  }).join('');
+    })
+    .join("");
 
   // --- Build seller SpecifiedLegalOrganization (BT-30 SIREN) ---
-  let sellerLegalOrg = '';
+  let sellerLegalOrg = "";
   if (sellerSiren) {
     sellerLegalOrg = `
         <ram:SpecifiedLegalOrganization>
@@ -227,7 +239,7 @@ export function generateFacturXXML(invoiceData, documentType = 'invoice') {
   }
 
   // --- Build seller URIUniversalCommunication (BT-34) ---
-  let sellerURI = '';
+  let sellerURI = "";
   if (sellerSiren) {
     sellerURI = `
         <ram:URIUniversalCommunication>
@@ -236,7 +248,7 @@ export function generateFacturXXML(invoiceData, documentType = 'invoice') {
   }
 
   // --- Build buyer SpecifiedLegalOrganization (BT-47 SIREN) ---
-  let buyerLegalOrg = '';
+  let buyerLegalOrg = "";
   if (buyerSiren) {
     buyerLegalOrg = `
         <ram:SpecifiedLegalOrganization>
@@ -245,7 +257,7 @@ export function generateFacturXXML(invoiceData, documentType = 'invoice') {
   }
 
   // --- Build buyer URIUniversalCommunication (BT-49) ---
-  let buyerURI = '';
+  let buyerURI = "";
   if (buyerSiren) {
     buyerURI = `
         <ram:URIUniversalCommunication>
@@ -254,31 +266,31 @@ export function generateFacturXXML(invoiceData, documentType = 'invoice') {
   }
 
   // --- Build BuyerReference (BT-10) ---
-  let buyerReference = '';
+  let buyerReference = "";
   if (purchaseOrderNumber) {
     buyerReference = `
       <ram:BuyerReference>${escapeXML(purchaseOrderNumber)}</ram:BuyerReference>`;
   }
 
   // --- Build shipping address (BT-72) ---
-  let deliveryContent = '';
+  let deliveryContent = "";
   if (shipping?.billShipping && shipping?.shippingAddress) {
     const sa = shipping.shippingAddress;
     deliveryContent = `
       <ram:ShipToTradeParty>
         <ram:PostalTradeAddress>
-          ${sa.postalCode ? `<ram:PostcodeCode>${escapeXML(sa.postalCode)}</ram:PostcodeCode>` : ''}
-          ${sa.street ? `<ram:LineOne>${escapeXML(sa.street)}</ram:LineOne>` : ''}
-          ${sa.city ? `<ram:CityName>${escapeXML(sa.city)}</ram:CityName>` : ''}
+          ${sa.postalCode ? `<ram:PostcodeCode>${escapeXML(sa.postalCode)}</ram:PostcodeCode>` : ""}
+          ${sa.street ? `<ram:LineOne>${escapeXML(sa.street)}</ram:LineOne>` : ""}
+          ${sa.city ? `<ram:CityName>${escapeXML(sa.city)}</ram:CityName>` : ""}
           <ram:CountryID>${getCountryCode(sa.country)}</ram:CountryID>
         </ram:PostalTradeAddress>
       </ram:ShipToTradeParty>`;
   }
 
   // --- Build payment means (always include, BIC correction) ---
-  let paymentMeansXML = '';
+  let paymentMeansXML = "";
   if (bankDetails?.iban) {
-    let bicSection = '';
+    let bicSection = "";
     if (bankDetails.bic) {
       bicSection = `
         <ram:PayeeSpecifiedCreditorFinancialInstitution>
@@ -301,18 +313,21 @@ export function generateFacturXXML(invoiceData, documentType = 'invoice') {
   }
 
   // --- Build VAT breakdown with CategoryCode Z for 0% ---
-  const vatBreakdownXML = Object.keys(vatBreakdown).map(rate => {
-    const categoryCode = parseFloat(rate) === 0 ? 'Z' : 'S';
-    let exemptionReason = '';
-    if (parseFloat(rate) === 0) {
-      // Check if any item with 0% has vatExemptionText
-      const exemptItem = items.find(i => (i.vatRate ?? 20) === 0 && i.vatExemptionText);
-      if (exemptItem) {
-        exemptionReason = `
+  const vatBreakdownXML = Object.keys(vatBreakdown)
+    .map((rate) => {
+      const categoryCode = parseFloat(rate) === 0 ? "Z" : "S";
+      let exemptionReason = "";
+      if (parseFloat(rate) === 0) {
+        // Check if any item with 0% has vatExemptionText
+        const exemptItem = items.find(
+          (i) => (i.vatRate ?? 20) === 0 && i.vatExemptionText,
+        );
+        if (exemptItem) {
+          exemptionReason = `
         <ram:ExemptionReason>${escapeXML(exemptItem.vatExemptionText)}</ram:ExemptionReason>`;
+        }
       }
-    }
-    return `
+      return `
       <ram:ApplicableTradeTax>
         <ram:CalculatedAmount>${vatBreakdown[rate].amount.toFixed(2)}</ram:CalculatedAmount>
         <ram:TypeCode>VAT</ram:TypeCode>
@@ -320,7 +335,8 @@ export function generateFacturXXML(invoiceData, documentType = 'invoice') {
         <ram:CategoryCode>${categoryCode}</ram:CategoryCode>
         <ram:RateApplicablePercent>${rate}</ram:RateApplicablePercent>${exemptionReason}
       </ram:ApplicableTradeTax>`;
-  }).join('');
+    })
+    .join("");
 
   // Générer le XML Factur-X (profil EN16931 - requis pour la réforme B2B)
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -334,7 +350,7 @@ export function generateFacturXXML(invoiceData, documentType = 'invoice') {
     </ram:GuidelineSpecifiedDocumentContextParameter>
   </rsm:ExchangedDocumentContext>
   <rsm:ExchangedDocument>
-    <ram:ID>${escapeXML(number || '')}</ram:ID>
+    <ram:ID>${escapeXML(number || "")}</ram:ID>
     <ram:TypeCode>${typeCode}</ram:TypeCode>
     <ram:IssueDateTime>
       <udt:DateTimeString format="102">${formatDateXML(issueDate)}</udt:DateTimeString>
@@ -343,39 +359,47 @@ export function generateFacturXXML(invoiceData, documentType = 'invoice') {
   <rsm:SupplyChainTradeTransaction>${lineItemsXML}
     <ram:ApplicableHeaderTradeAgreement>${buyerReference}
       <ram:SellerTradeParty>
-        <ram:Name>${escapeXML(companyInfo?.name || '')}</ram:Name>${sellerLegalOrg}
+        <ram:Name>${escapeXML(companyInfo?.name || "")}</ram:Name>${sellerLegalOrg}
         <ram:PostalTradeAddress>
-          ${companyInfo?.address?.postalCode ? `<ram:PostcodeCode>${escapeXML(companyInfo.address.postalCode)}</ram:PostcodeCode>` : ''}
-          <ram:LineOne>${escapeXML(companyInfo?.address?.street || '')}</ram:LineOne>
-          <ram:CityName>${escapeXML(companyInfo?.address?.city || '')}</ram:CityName>
+          ${companyInfo?.address?.postalCode ? `<ram:PostcodeCode>${escapeXML(companyInfo.address.postalCode)}</ram:PostcodeCode>` : ""}
+          <ram:LineOne>${escapeXML(companyInfo?.address?.street || "")}</ram:LineOne>
+          <ram:CityName>${escapeXML(companyInfo?.address?.city || "")}</ram:CityName>
           <ram:CountryID>${sellerCountry}</ram:CountryID>
         </ram:PostalTradeAddress>${sellerURI}
         <ram:SpecifiedTaxRegistration>
-          <ram:ID schemeID="VA">${escapeXML(companyInfo?.vatNumber || '')}</ram:ID>
+          <ram:ID schemeID="VA">${escapeXML(companyInfo?.vatNumber || "")}</ram:ID>
         </ram:SpecifiedTaxRegistration>
       </ram:SellerTradeParty>
       <ram:BuyerTradeParty>
-        <ram:Name>${escapeXML(client?.name || '')}</ram:Name>${buyerLegalOrg}
+        <ram:Name>${escapeXML(client?.name || "")}</ram:Name>${buyerLegalOrg}
         <ram:PostalTradeAddress>
-          ${client?.address?.postalCode ? `<ram:PostcodeCode>${escapeXML(client.address.postalCode)}</ram:PostcodeCode>` : ''}
-          <ram:LineOne>${escapeXML(client?.address?.street || '')}</ram:LineOne>
-          <ram:CityName>${escapeXML(client?.address?.city || '')}</ram:CityName>
+          ${client?.address?.postalCode ? `<ram:PostcodeCode>${escapeXML(client.address.postalCode)}</ram:PostcodeCode>` : ""}
+          <ram:LineOne>${escapeXML(client?.address?.street || "")}</ram:LineOne>
+          <ram:CityName>${escapeXML(client?.address?.city || "")}</ram:CityName>
           <ram:CountryID>${buyerCountry}</ram:CountryID>
         </ram:PostalTradeAddress>${buyerURI}
-        ${client?.vatNumber ? `<ram:SpecifiedTaxRegistration>
+        ${
+          client?.vatNumber
+            ? `<ram:SpecifiedTaxRegistration>
           <ram:ID schemeID="VA">${escapeXML(client.vatNumber)}</ram:ID>
-        </ram:SpecifiedTaxRegistration>` : ''}
+        </ram:SpecifiedTaxRegistration>`
+            : ""
+        }
       </ram:BuyerTradeParty>
     </ram:ApplicableHeaderTradeAgreement>
     <ram:ApplicableHeaderTradeDelivery>${deliveryContent}
     </ram:ApplicableHeaderTradeDelivery>
     <ram:ApplicableHeaderTradeSettlement>
       <ram:InvoiceCurrencyCode>EUR</ram:InvoiceCurrencyCode>${paymentMeansXML}${vatBreakdownXML}
-      ${dueDate ? `<ram:SpecifiedTradePaymentTerms>
+      ${
+        dueDate
+          ? `<ram:SpecifiedTradePaymentTerms>
         <ram:DueDateDateTime>
           <udt:DateTimeString format="102">${formatDateXML(dueDate)}</udt:DateTimeString>
         </ram:DueDateDateTime>
-      </ram:SpecifiedTradePaymentTerms>` : ''}
+      </ram:SpecifiedTradePaymentTerms>`
+          : ""
+      }
       <ram:SpecifiedTradeSettlementHeaderMonetarySummation>
         <ram:LineTotalAmount>${(finalTotalHT || 0).toFixed(2)}</ram:LineTotalAmount>
         <ram:TaxBasisTotalAmount>${(finalTotalHT || 0).toFixed(2)}</ram:TaxBasisTotalAmount>
@@ -394,13 +418,13 @@ export function generateFacturXXML(invoiceData, documentType = 'invoice') {
  * Échappe les caractères spéciaux XML
  */
 function escapeXML(str) {
-  if (!str) return '';
+  if (!str) return "";
   return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
 }
 
 /**
@@ -410,7 +434,11 @@ function escapeXML(str) {
  * @param {string} documentType - Type de document ('invoice' ou 'creditNote')
  * @returns {Promise<Uint8Array>} - PDF avec XML embarqué
  */
-export async function embedFacturXInPDF(pdfBytes, invoiceData, documentType = 'invoice') {
+export async function embedFacturXInPDF(
+  pdfBytes,
+  invoiceData,
+  documentType = "invoice",
+) {
   try {
     // Charger le PDF existant
     const pdfDoc = await PDFDocument.load(pdfBytes);
@@ -420,7 +448,7 @@ export async function embedFacturXInPDF(pdfBytes, invoiceData, documentType = 'i
     const xmlBytes = new TextEncoder().encode(xml);
 
     // Créer l'attachement XML
-    const attachmentName = 'factur-x.xml';
+    const attachmentName = "factur-x.xml";
 
     // Note: Cette fonction n'est plus utilisée directement
     // Le PDF/A-3 et les métadonnées XMP sont maintenant gérés par l'API /api/generate-facturx
@@ -428,23 +456,30 @@ export async function embedFacturXInPDF(pdfBytes, invoiceData, documentType = 'i
 
     // Embarquer le fichier XML comme pièce jointe (fallback simple)
     await pdfDoc.attach(xmlBytes, attachmentName, {
-      mimeType: 'text/xml',
-      description: 'Factur-X XML Invoice',
+      mimeType: "text/xml",
+      description: "Factur-X XML Invoice",
       creationDate: new Date(),
       modificationDate: new Date(),
     });
 
     // Ajouter les métadonnées PDF basiques
-    const docTitle = documentType === 'creditNote' ? 'Avoir' : 'Facture';
-    pdfDoc.getInfoDict().set(PDFName.of('Title'), PDFString.of(`${docTitle} ${invoiceData.number || ''}`));
-    pdfDoc.getInfoDict().set(PDFName.of('Subject'), PDFString.of('Factur-X Invoice'));
+    const docTitle = documentType === "creditNote" ? "Avoir" : "Facture";
+    pdfDoc
+      .getInfoDict()
+      .set(
+        PDFName.of("Title"),
+        PDFString.of(`${docTitle} ${invoiceData.number || ""}`),
+      );
+    pdfDoc
+      .getInfoDict()
+      .set(PDFName.of("Subject"), PDFString.of("Factur-X Invoice"));
 
     // Sauvegarder le PDF modifié
     const modifiedPdfBytes = await pdfDoc.save();
 
     return modifiedPdfBytes;
   } catch (error) {
-    console.error('Erreur lors de l\'embarquement Factur-X:', error);
+    console.error("Erreur lors de l'embarquement Factur-X:", error);
     throw error;
   }
 }
@@ -456,7 +491,7 @@ export function validateFacturXData(invoiceData) {
   const errors = [];
 
   // Log des données reçues pour debug
-  console.log('Validation Factur-X - Données reçues:', {
+  console.log("Validation Factur-X - Données reçues:", {
     number: invoiceData.number,
     issueDate: invoiceData.issueDate,
     companyName: invoiceData.companyInfo?.name,
@@ -468,27 +503,34 @@ export function validateFacturXData(invoiceData) {
     itemsCount: invoiceData.items?.length || 0,
   });
 
-  if (!invoiceData.number) errors.push('Numéro de facture manquant');
-  if (!invoiceData.issueDate) errors.push('Date d\'émission manquante');
-  if (!invoiceData.companyInfo?.name) errors.push('Nom de l\'entreprise manquant');
-  if (!invoiceData.companyInfo?.vatNumber) errors.push('Numéro de TVA manquant');
-  if (!invoiceData.companyInfo?.siret) errors.push('SIRET vendeur manquant');
-  if (!invoiceData.companyInfo?.address?.postalCode) errors.push('Code postal vendeur manquant');
-  if (!invoiceData.client?.name) errors.push('Nom du client manquant');
-  if (!invoiceData.client?.address?.postalCode) errors.push('Code postal acheteur manquant');
-  if (!invoiceData.items || invoiceData.items.length === 0) errors.push('Aucun article dans la facture');
+  if (!invoiceData.number) errors.push("Numéro de facture manquant");
+  if (!invoiceData.issueDate) errors.push("Date d'émission manquante");
+  if (!invoiceData.companyInfo?.name)
+    errors.push("Nom de l'entreprise manquant");
+  if (!invoiceData.companyInfo?.vatNumber)
+    errors.push("Numéro de TVA manquant");
+  if (!invoiceData.companyInfo?.siret) errors.push("SIRET vendeur manquant");
+  if (!invoiceData.companyInfo?.address?.postalCode)
+    errors.push("Code postal vendeur manquant");
+  if (!invoiceData.client?.name) errors.push("Nom du client manquant");
+  if (!invoiceData.client?.address?.postalCode)
+    errors.push("Code postal acheteur manquant");
+  if (!invoiceData.items || invoiceData.items.length === 0)
+    errors.push("Aucun article dans la facture");
 
   if (errors.length > 0) {
-    console.warn('Validation Factur-X échouée:');
+    console.warn("Validation Factur-X échouée:");
     errors.forEach((error, index) => {
       console.warn(`  ${index + 1}. ${error}`);
     });
   } else {
-    console.log('Validation Factur-X réussie - Toutes les données sont présentes');
+    console.log(
+      "Validation Factur-X réussie - Toutes les données sont présentes",
+    );
   }
 
   return {
     isValid: errors.length === 0,
-    errors
+    errors,
   };
 }

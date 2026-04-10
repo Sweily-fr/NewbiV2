@@ -327,8 +327,16 @@ export const GET_QUOTE_STATS = gql`
 `;
 
 export const GET_NEXT_QUOTE_NUMBER = gql`
-  query GetNextQuoteNumber($workspaceId: ID!, $prefix: String) {
-    nextQuoteNumber(workspaceId: $workspaceId, prefix: $prefix)
+  query GetNextQuoteNumber(
+    $workspaceId: ID!
+    $prefix: String
+    $autoNumbering: Boolean
+  ) {
+    nextQuoteNumber(
+      workspaceId: $workspaceId
+      prefix: $prefix
+      autoNumbering: $autoNumbering
+    )
   }
 `;
 

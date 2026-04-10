@@ -1621,6 +1621,22 @@ export const organizationPlugin = organization({
           input: true,
           required: false,
         },
+        // Numérotation séquentielle continue (indépendante du préfixe)
+        invoiceAutoNumbering: {
+          type: "boolean",
+          input: true,
+          required: false,
+        },
+        quoteAutoNumbering: {
+          type: "boolean",
+          input: true,
+          required: false,
+        },
+        purchaseOrderAutoNumbering: {
+          type: "boolean",
+          input: true,
+          required: false,
+        },
         // Organization type (business or accounting_firm)
         organizationType: {
           type: "string",

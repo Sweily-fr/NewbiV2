@@ -80,6 +80,7 @@ const getDemoPurchaseOrderData = (formData, organization) => {
         country:
           formData?.addressCountry || organization?.addressCountry || "France",
       },
+      siren: organization?.siren || "987654321",
       siret: organization?.siret || "98765432109876",
       vatNumber: organization?.vatNumber || "FR98765432109",
       logo: organization?.logo || null,
@@ -142,8 +143,11 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
   const [isLoading, setIsLoading] = useState(true);
   const [initialValues, setInitialValues] = useState(null);
   const [currentPrefix, setCurrentPrefix] = useState("");
-  const { validateNumber, hasDocumentsForPrefix } =
-    usePurchaseOrderNumber(currentPrefix);
+  const [currentAutoNumbering, setCurrentAutoNumbering] = useState(false);
+  const { validateNumber, hasDocumentsForPrefix } = usePurchaseOrderNumber(
+    currentPrefix,
+    { autoNumbering: currentAutoNumbering },
+  );
 
   // Charger les données de l'organisation dès l'ouverture
   useEffect(() => {
@@ -159,6 +163,7 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
             // Numérotation - préfixe par défaut (le numéro sera auto-rempli par le hook usePurchaseOrderNumber)
             prefix: org?.purchaseOrderPrefix || generatePurchaseOrderPrefix(),
             number: org?.purchaseOrderStartNumber || "",
+            autoNumbering: org?.purchaseOrderAutoNumbering || false,
             // Informations de l'entreprise
             companyName: org?.companyName || "",
             companyEmail: org?.companyEmail || "",
@@ -232,6 +237,7 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
     defaultValues: initialValues || {
       prefix: generatePurchaseOrderPrefix(),
       number: "",
+      autoNumbering: false,
       companyName: "",
       companyEmail: "",
       companyPhone: "",
@@ -267,12 +273,20 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
   // Observer tous les changements du formulaire
   const formData = form.watch();
 
-  // Suivre le préfixe pour la validation de numérotation
+  // Suivre le préfixe et l'autoNumbering pour la validation de numérotation
   useEffect(() => {
     if (formData?.prefix && formData.prefix !== currentPrefix) {
       setCurrentPrefix(formData.prefix);
     }
-  }, [formData?.prefix, currentPrefix]);
+    if ((formData?.autoNumbering || false) !== currentAutoNumbering) {
+      setCurrentAutoNumbering(formData?.autoNumbering || false);
+    }
+  }, [
+    formData?.prefix,
+    formData?.autoNumbering,
+    currentPrefix,
+    currentAutoNumbering,
+  ]);
 
   // Debounce pour la preview
   useEffect(() => {
@@ -335,6 +349,7 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
         // Préfixe de numérotation
         purchaseOrderPrefix: formValues.prefix || "",
         purchaseOrderStartNumber: formValues.number || "",
+        purchaseOrderAutoNumbering: formValues.autoNumbering || false,
 
         // Position du client dans le PDF (bons de commande)
         purchaseOrderClientPositionRight:

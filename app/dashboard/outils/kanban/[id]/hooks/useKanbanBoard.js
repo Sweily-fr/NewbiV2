@@ -183,7 +183,18 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
             if (cacheData?.board) {
               // Mettre à jour la tâche dans le cache avec ses nouvelles position et colonne
               const updatedTasks = cacheData.board.tasks
-                .map((t) => (t.id === task.id ? { ...t, ...task } : t))
+                .map((t) => {
+                  if (t.id !== task.id) return t;
+                  // Ne pas écraser une version plus récente
+                  const cachedTime = t.updatedAt
+                    ? new Date(t.updatedAt).getTime()
+                    : 0;
+                  const incomingTime = task.updatedAt
+                    ? new Date(task.updatedAt).getTime()
+                    : 0;
+                  if (incomingTime < cachedTime) return t;
+                  return { ...t, ...task };
+                })
                 .sort((a, b) => {
                   // Trier par colonne puis position
                   if (a.columnId !== b.columnId) return 0;
@@ -233,9 +244,25 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
             });
 
             if (cacheData?.board) {
-              const updatedTasks = (cacheData.board.tasks || []).map((t) =>
-                t.id === task.id ? task : t,
-              );
+              const updatedTasks = (cacheData.board.tasks || []).map((t) => {
+                if (t.id !== task.id) return t;
+                // Ne pas écraser une version plus récente avec une version plus ancienne
+                const cachedTime = t.updatedAt
+                  ? new Date(t.updatedAt).getTime()
+                  : 0;
+                const incomingTime = task.updatedAt
+                  ? new Date(task.updatedAt).getTime()
+                  : 0;
+                if (incomingTime < cachedTime) {
+                  console.log(
+                    "⏭️ [Subscription] Ignoré mise à jour périmée pour:",
+                    task.title,
+                    `(cache: ${t.updatedAt}, incoming: ${task.updatedAt})`,
+                  );
+                  return t;
+                }
+                return task;
+              });
 
               apolloClient.cache.writeQuery({
                 query: GET_BOARD,

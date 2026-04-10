@@ -90,6 +90,8 @@ export function TaskModal({
   updatePendingComment,
   openEditTaskModal,
   updateTask,
+  initialFormRef: externalInitialFormRef,
+  localMutationRef,
 }) {
   // Navigation prev/next entre tâches
   const { prevTask, nextTask, currentIndex, totalTasks } = useMemo(() => {
@@ -324,7 +326,9 @@ export function TaskModal({
 
   // Auto-save en mode édition — sauvegarde uniquement quand aucun champ texte n'est focus
   const autoSaveRef = useRef(null);
-  const initialFormRef = useRef(null);
+  // Utiliser le ref partagé du hook si disponible, sinon fallback local (mode création)
+  const localInitialFormRef = useRef(null);
+  const initialFormRef = externalInitialFormRef || localInitialFormRef;
   const textInputFocusedRef = useRef(false);
 
   // Capturer l'état initial à l'ouverture
@@ -339,13 +343,16 @@ export function TaskModal({
     if (!isOpen || !isEditing || !taskForm?.title?.trim()) return;
     const current = JSON.stringify(taskForm);
     if (current === initialFormRef.current) return;
+    // Marquer que c'est une mutation locale pour éviter que le hook
+    // ne re-synchronise le form avec les données du board
+    if (localMutationRef) localMutationRef.current = true;
     const formData = {
       ...taskForm,
       priority: getSubmitPriority(taskForm.priority),
     };
     onSubmit(formData);
     initialFormRef.current = current;
-  }, [isOpen, isEditing, taskForm, onSubmit]);
+  }, [isOpen, isEditing, taskForm, onSubmit, localMutationRef]);
 
   // Auto-save quand taskForm change, mais seulement si aucun champ texte n'est focus
   useEffect(() => {
@@ -393,9 +400,17 @@ export function TaskModal({
 
       // En mode édition, envoyer uniquement assignedMembers au serveur
       if (isEditing && updateTask && taskForm.id) {
-        // Mettre à jour initialFormRef pour empêcher l'auto-save de re-trigger
+        // Flush l'auto-save en attente pour ne pas perdre les modifications locales
+        // (ex: tags ajoutés, description modifiée) avant d'envoyer le member toggle
+        if (autoSaveRef.current) {
+          clearTimeout(autoSaveRef.current);
+          // Sauvegarder les modifications en attente AVANT le toggle
+          triggerAutoSave();
+        }
+        // Mettre à jour initialFormRef avec le form complet incluant le nouveau membre
         initialFormRef.current = JSON.stringify(updatedForm);
-        if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
+        // Marquer comme mutation locale
+        if (localMutationRef) localMutationRef.current = true;
 
         updateTask({
           variables: {
@@ -405,7 +420,15 @@ export function TaskModal({
         });
       }
     },
-    [taskForm, setTaskForm, isEditing, updateTask, workspaceId],
+    [
+      taskForm,
+      setTaskForm,
+      isEditing,
+      updateTask,
+      workspaceId,
+      triggerAutoSave,
+      localMutationRef,
+    ],
   );
 
   // Gestion de la date d'échéance

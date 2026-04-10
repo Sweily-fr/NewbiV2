@@ -66,6 +66,10 @@ export function usePurchaseOrderEditor({
   const [currentPrefix, setCurrentPrefix] = useState(
     organization?.purchaseOrderPrefix || "",
   );
+  // État local pour autoNumbering (synchronisé avec le form via watch)
+  const [currentAutoNumbering, setCurrentAutoNumbering] = useState(
+    organization?.purchaseOrderAutoNumbering || false,
+  );
 
   // Use the purchase order numbering hook
   const {
@@ -74,7 +78,9 @@ export function usePurchaseOrderEditor({
     isLoading: numberLoading,
     hasExistingOrders,
     hasDocumentsForPrefix,
-  } = usePurchaseOrderNumber(currentPrefix);
+  } = usePurchaseOrderNumber(currentPrefix, {
+    autoNumbering: currentAutoNumbering,
+  });
 
   const { createPurchaseOrder, loading: creating } = useCreatePurchaseOrder();
   const { updatePurchaseOrder, loading: updating } = useUpdatePurchaseOrder();
@@ -124,11 +130,14 @@ export function usePurchaseOrderEditor({
   const { watch, setValue, getValues, reset } = form;
   // const { isDirty } = formState; // DISABLED - Auto-save removed
 
-  // Synchroniser le préfixe du formulaire avec le state pour le filtrage du numéro
+  // Synchroniser le préfixe et autoNumbering du formulaire avec les states
   useEffect(() => {
     const subscription = watch((value, { name }) => {
       if (name === "prefix" && value.prefix !== undefined) {
         setCurrentPrefix(value.prefix || "");
+      }
+      if (name === "autoNumbering") {
+        setCurrentAutoNumbering(value.autoNumbering || false);
       }
     });
     return () => subscription.unsubscribe();
@@ -869,7 +878,8 @@ export function usePurchaseOrderEditor({
 
   // Set next purchase order number for new orders and draft editing
   useEffect(() => {
-    if (!isFormInitialized || numberLoading || !nextPurchaseOrderNumber) return;
+    if (!isFormInitialized || numberLoading || nextPurchaseOrderNumber == null)
+      return;
 
     const isDraftEdit =
       mode === "edit" && existingPurchaseOrder?.status === "DRAFT";
@@ -878,19 +888,15 @@ export function usePurchaseOrderEditor({
     const formattedNumber = String(nextPurchaseOrderNumber).padStart(4, "0");
     const currentNumber = getValues("number");
 
-    if (hasDocumentsForPrefix) {
+    if (currentAutoNumbering || hasDocumentsForPrefix) {
+      // Auto-numbering activé ou préfixe existant → forcer le numéro séquentiel
       setValue("number", formattedNumber, {
         shouldValidate: false,
         shouldDirty: false,
       });
-    } else if (
-      !currentNumber ||
-      currentNumber.startsWith("DRAFT-") ||
-      currentNumber === "0001"
-    ) {
-      const startNumber =
-        organization?.purchaseOrderStartNumber || formattedNumber;
-      setValue("number", startNumber, {
+    } else if (!currentNumber || currentNumber.startsWith("DRAFT-")) {
+      // Nouveau préfixe et pas de numéro → proposer 0001
+      setValue("number", formattedNumber, {
         shouldValidate: false,
         shouldDirty: false,
       });
@@ -902,6 +908,7 @@ export function usePurchaseOrderEditor({
     numberLoading,
     hasDocumentsForPrefix,
     existingPurchaseOrder?.status,
+    currentAutoNumbering,
   ]);
 
   // Mettre à jour companyInfo quand organization est chargée
@@ -1007,12 +1014,17 @@ export function usePurchaseOrderEditor({
         { shouldDirty: false },
       );
 
-      // Charger le préfixe depuis l'organisation
+      // Charger le préfixe et la numérotation automatique depuis l'organisation
       if (organization.purchaseOrderPrefix) {
         setValue("prefix", organization.purchaseOrderPrefix, {
           shouldDirty: false,
         });
       }
+      setValue(
+        "autoNumbering",
+        organization.purchaseOrderAutoNumbering || false,
+        { shouldDirty: false },
+      );
 
       // Le numéro est géré par le useEffect nextPurchaseOrderNumber (plus haut)
       // qui prend en compte hasDocumentsForPrefix et purchaseOrderStartNumber
@@ -1990,6 +2002,7 @@ function getInitialFormData(mode, initialData, session, organization) {
     email: organization?.companyEmail || "",
     phone: organization?.companyPhone || "",
     website: organization?.website || "",
+    siren: organization?.siren || "",
     siret: organization?.siret || "",
     vatNumber: organization?.vatNumber || "",
     rcs: organization?.rcs || "",
@@ -2008,6 +2021,7 @@ function getInitialFormData(mode, initialData, session, organization) {
     // Informations du bon de commande
     prefix: organization?.purchaseOrderPrefix || "",
     number: "",
+    autoNumbering: organization?.purchaseOrderAutoNumbering || false,
     purchaseOrderNumber: "",
     issueDate: today,
     validUntil: initialData?.validUntil || defaultValidUntil,

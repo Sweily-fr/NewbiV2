@@ -277,11 +277,13 @@ export const GET_NEXT_INVOICE_NUMBER = gql`
     $workspaceId: ID!
     $prefix: String
     $isDraft: Boolean
+    $autoNumbering: Boolean
   ) {
     nextInvoiceNumber(
       workspaceId: $workspaceId
       prefix: $prefix
       isDraft: $isDraft
+      autoNumbering: $autoNumbering
     )
   }
 `;

@@ -67,6 +67,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/src/components/ui/popover";
+import { VatRateSelect } from "@/src/components/vat-rate-select";
 
 const STATUS_OPTIONS = [
   { value: "TO_PROCESS", label: "À traiter" },
@@ -177,6 +178,9 @@ export function PurchaseInvoiceDetailDrawer({
     internalReference: "",
     paymentMethod: "",
   });
+  // Tracks which amount field was last edited ("ht" or "ttc") so vatRate
+  // changes recalculate from the correct source field.
+  const [amountSource, setAmountSource] = useState("ht");
 
   const { createInvoice, loading: createLoading } = useCreatePurchaseInvoice();
   const { updateInvoice, loading: updateLoading } = useUpdatePurchaseInvoice();
@@ -211,6 +215,7 @@ export function PurchaseInvoiceDetailDrawer({
         paymentMethod: invoice.paymentMethod || "",
       });
       setIsEditMode(false);
+      setAmountSource("ht");
     } else if (isCreate) {
       setForm({
         supplierName: "",
@@ -229,27 +234,40 @@ export function PurchaseInvoiceDetailDrawer({
         paymentMethod: "",
       });
       setIsEditMode(true);
+      setAmountSource("ht");
     }
   }, [invoice, isCreate, open]);
 
   const handleChange = (field, value) => {
+    if (field === "amountHT") setAmountSource("ht");
+    if (field === "amountTTC") setAmountSource("ttc");
+
     setForm((prev) => {
       const next = { ...prev, [field]: value };
-      if (field === "amountHT" || field === "vatRate") {
-        const ht =
-          parseFloat(field === "amountHT" ? value : next.amountHT) || 0;
-        const rate =
-          parseFloat(field === "vatRate" ? value : next.vatRate) || 0;
+      const rate = parseFloat(next.vatRate) || 0;
+
+      if (field === "amountHT") {
+        const ht = parseFloat(value) || 0;
         const tva = ht * (rate / 100);
         next.amountTVA = tva.toFixed(2);
         next.amountTTC = (ht + tva).toFixed(2);
-      }
-      if (field === "amountTTC" && !next.amountHT) {
+      } else if (field === "amountTTC") {
         const ttc = parseFloat(value) || 0;
-        const rate = parseFloat(next.vatRate) || 20;
         const ht = ttc / (1 + rate / 100);
         next.amountHT = ht.toFixed(2);
         next.amountTVA = (ttc - ht).toFixed(2);
+      } else if (field === "vatRate") {
+        if (amountSource === "ttc") {
+          const ttc = parseFloat(next.amountTTC) || 0;
+          const ht = ttc / (1 + rate / 100);
+          next.amountHT = ht.toFixed(2);
+          next.amountTVA = (ttc - ht).toFixed(2);
+        } else {
+          const ht = parseFloat(next.amountHT) || 0;
+          const tva = ht * (rate / 100);
+          next.amountTVA = tva.toFixed(2);
+          next.amountTTC = (ht + tva).toFixed(2);
+        }
       }
       return next;
     });
@@ -710,21 +728,11 @@ export function PurchaseInvoiceDetailDrawer({
                       <span className="text-sm font-normal text-muted-foreground">
                         Taux TVA
                       </span>
-                      <Select
+                      <VatRateSelect
                         value={form.vatRate}
-                        onValueChange={(v) => handleChange("vatRate", v)}
-                      >
-                        <SelectTrigger className="w-32 h-8 text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="0">0%</SelectItem>
-                          <SelectItem value="2.1">2,1%</SelectItem>
-                          <SelectItem value="5.5">5,5%</SelectItem>
-                          <SelectItem value="10">10%</SelectItem>
-                          <SelectItem value="20">20%</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        onChange={(v) => handleChange("vatRate", String(v))}
+                        className="w-44 h-8 text-sm [&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:block"
+                      />
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-normal text-muted-foreground">

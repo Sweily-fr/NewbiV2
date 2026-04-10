@@ -73,7 +73,6 @@ export async function applyWatermark(file, options = {}) {
   const {
     text = DEFAULT_WATERMARK_OPTIONS.text,
     opacity = DEFAULT_WATERMARK_OPTIONS.opacity,
-    fontSize = DEFAULT_WATERMARK_OPTIONS.fontSize,
     fontFamily = DEFAULT_WATERMARK_OPTIONS.fontFamily,
     color = DEFAULT_WATERMARK_OPTIONS.color,
     position = DEFAULT_WATERMARK_OPTIONS.position,
@@ -81,11 +80,11 @@ export async function applyWatermark(file, options = {}) {
     padding = DEFAULT_WATERMARK_OPTIONS.padding,
   } = options;
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     // Vérifier que c'est une image supportée
     if (!isSupportedImageType(file)) {
       console.log(
-        `⚠️ Type d'image non supporté pour le filigrane: ${file.type}`
+        `⚠️ Type d'image non supporté pour le filigrane: ${file.type}`,
       );
       resolve(file); // Retourner le fichier original
       return;
@@ -97,43 +96,61 @@ export async function applyWatermark(file, options = {}) {
 
     img.onload = () => {
       try {
+        // Utiliser naturalWidth/naturalHeight pour les dimensions réelles de l'image
+        const imgWidth = img.naturalWidth || img.width;
+        const imgHeight = img.naturalHeight || img.height;
+
         // Définir les dimensions du canvas
-        canvas.width = img.width;
-        canvas.height = img.height;
+        canvas.width = imgWidth;
+        canvas.height = imgHeight;
 
         // Dessiner l'image originale
-        ctx.drawImage(img, 0, 0);
+        ctx.drawImage(img, 0, 0, imgWidth, imgHeight);
+
+        // Calculer une taille de police adaptée aux dimensions de l'image
+        const adaptedBaseFontSize = getAdaptedFontSize(
+          imgWidth,
+          imgHeight,
+          text.length,
+          0.5,
+        );
 
         // Configurer le style du texte
         ctx.globalAlpha = opacity;
         ctx.fillStyle = color;
-        ctx.font = `bold ${fontSize}px ${fontFamily}`;
+        ctx.font = `bold ${adaptedBaseFontSize}px ${fontFamily}`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
 
         // Appliquer le filigrane selon la position
         switch (position) {
           case "center":
-            drawCenterWatermark(ctx, text, canvas.width, canvas.height, fontSize);
+            drawCenterWatermark(
+              ctx,
+              text,
+              imgWidth,
+              imgHeight,
+              adaptedBaseFontSize,
+            );
             break;
           case "bottom-right":
             drawBottomRightWatermark(
               ctx,
               text,
-              canvas.width,
-              canvas.height,
+              imgWidth,
+              imgHeight,
               padding,
-              fontSize
+              adaptedBaseFontSize,
             );
             break;
           case "tile":
             drawTileWatermark(
               ctx,
               text,
-              canvas.width,
-              canvas.height,
-              fontSize,
-              rotation
+              imgWidth,
+              imgHeight,
+              adaptedBaseFontSize,
+              rotation,
             );
             break;
           case "diagonal":
@@ -141,10 +158,10 @@ export async function applyWatermark(file, options = {}) {
             drawDiagonalWatermark(
               ctx,
               text,
-              canvas.width,
-              canvas.height,
-              fontSize,
-              rotation
+              imgWidth,
+              imgHeight,
+              adaptedBaseFontSize,
+              rotation,
             );
             break;
         }
@@ -160,12 +177,15 @@ export async function applyWatermark(file, options = {}) {
         // Convertir en blob
         canvas.toBlob(
           (blob) => {
+            URL.revokeObjectURL(objectUrl);
             if (blob) {
               const watermarkedFile = new File([blob], file.name, {
                 type: outputType,
                 lastModified: Date.now(),
               });
-              console.log(`✅ Filigrane appliqué sur: ${file.name}`);
+              console.log(
+                `✅ Filigrane appliqué sur: ${file.name} (${imgWidth}x${imgHeight}, font: ${adaptedBaseFontSize}px)`,
+              );
               resolve(watermarkedFile);
             } else {
               console.error("❌ Échec de la conversion en blob");
@@ -173,21 +193,24 @@ export async function applyWatermark(file, options = {}) {
             }
           },
           outputType,
-          quality
+          quality,
         );
       } catch (error) {
+        URL.revokeObjectURL(objectUrl);
         console.error("❌ Erreur lors de l'application du filigrane:", error);
         resolve(file); // Retourner le fichier original en cas d'erreur
       }
     };
 
     img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
       console.error("❌ Erreur de chargement de l'image pour le filigrane");
       resolve(file); // Retourner le fichier original en cas d'erreur
     };
 
     // Charger l'image
-    img.src = URL.createObjectURL(file);
+    const objectUrl = URL.createObjectURL(file);
+    img.src = objectUrl;
   });
 }
 
@@ -206,10 +229,10 @@ function getAdaptedFontSize(width, height, textLength, targetWidthRatio = 0.7) {
   const refDimension = Math.min(width, height);
   const targetWidth = refDimension * targetWidthRatio;
   const fontSize = Math.round(targetWidth / (textLength * charWidthRatio));
-  // Minimum relatif à la taille de l'image (2% de la plus petite dimension, min 10px)
-  const minFontSize = Math.max(10, Math.round(refDimension * 0.02));
-  // Maximum : ne pas dépasser 15% de la plus petite dimension
-  const maxFontSize = Math.round(refDimension * 0.15);
+  // Minimum relatif à la taille de l'image (3% de la plus petite dimension, min 12px)
+  const minFontSize = Math.max(12, Math.round(refDimension * 0.03));
+  // Maximum : ne pas dépasser 20% de la plus petite dimension
+  const maxFontSize = Math.round(refDimension * 0.2);
   return Math.min(maxFontSize, Math.max(minFontSize, fontSize));
 }
 
@@ -227,7 +250,7 @@ function drawTextWithStroke(ctx, text, x, y) {
 /**
  * Dessine le filigrane au centre de l'image
  */
-function drawCenterWatermark(ctx, text, width, height, fontSize) {
+function drawCenterWatermark(ctx, text, width, height) {
   ctx.save();
   ctx.translate(width / 2, height / 2);
 
@@ -242,7 +265,7 @@ function drawCenterWatermark(ctx, text, width, height, fontSize) {
 /**
  * Dessine le filigrane en bas à droite
  */
-function drawBottomRightWatermark(ctx, text, width, height, padding, fontSize) {
+function drawBottomRightWatermark(ctx, text, width, height, padding) {
   ctx.save();
   ctx.textAlign = "right";
   ctx.textBaseline = "bottom";
@@ -252,7 +275,12 @@ function drawBottomRightWatermark(ctx, text, width, height, padding, fontSize) {
   const adaptedPadding = Math.max(padding, adaptedFontSize * 0.6);
   ctx.font = `bold ${adaptedFontSize}px Arial, sans-serif`;
 
-  drawTextWithStroke(ctx, text, width - adaptedPadding, height - adaptedPadding);
+  drawTextWithStroke(
+    ctx,
+    text,
+    width - adaptedPadding,
+    height - adaptedPadding,
+  );
   ctx.restore();
 }
 
@@ -268,12 +296,17 @@ function drawDiagonalWatermark(ctx, text, width, height, fontSize, rotation) {
   const diagonal = Math.sqrt(width * width + height * height);
   const charWidthRatio = 0.6;
   const targetWidth = diagonal * 0.6;
-  const adaptedFontSize = Math.round(targetWidth / (text.length * charWidthRatio));
+  const adaptedFontSize = Math.round(
+    targetWidth / (text.length * charWidthRatio),
+  );
   // Bornes relatives à la plus petite dimension
   const refDimension = Math.min(width, height);
-  const minFontSize = Math.max(10, Math.round(refDimension * 0.02));
-  const maxFontSize = Math.round(refDimension * 0.15);
-  const finalFontSize = Math.min(maxFontSize, Math.max(minFontSize, adaptedFontSize));
+  const minFontSize = Math.max(12, Math.round(refDimension * 0.03));
+  const maxFontSize = Math.round(refDimension * 0.2);
+  const finalFontSize = Math.min(
+    maxFontSize,
+    Math.max(minFontSize, adaptedFontSize),
+  );
   ctx.font = `bold ${finalFontSize}px Arial, sans-serif`;
 
   drawTextWithStroke(ctx, text, 0, 0);
@@ -324,13 +357,18 @@ function hexToRgb01(hex) {
 /**
  * Calcule une taille de police adaptée pour un PDF
  */
-function getPdfAdaptedFontSize(width, height, textLength, targetWidthRatio = 0.7) {
+function getPdfAdaptedFontSize(
+  width,
+  height,
+  textLength,
+  targetWidthRatio = 0.7,
+) {
   const charWidthRatio = 0.5;
   const refDimension = Math.min(width, height);
   const targetWidth = refDimension * targetWidthRatio;
   const fontSize = Math.round(targetWidth / (textLength * charWidthRatio));
-  const minFontSize = Math.max(8, Math.round(refDimension * 0.02));
-  const maxFontSize = Math.round(refDimension * 0.15);
+  const minFontSize = Math.max(10, Math.round(refDimension * 0.03));
+  const maxFontSize = Math.round(refDimension * 0.2);
   return Math.min(maxFontSize, Math.max(minFontSize, fontSize));
 }
 
@@ -351,7 +389,8 @@ export async function applyWatermarkToPdf(file, options = {}) {
   } = options;
 
   try {
-    const { PDFDocument, rgb, degrees, StandardFonts } = await import("pdf-lib");
+    const { PDFDocument, rgb, degrees, StandardFonts } =
+      await import("pdf-lib");
     const arrayBuffer = await file.arrayBuffer();
     const pdfDoc = await PDFDocument.load(arrayBuffer);
     const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -363,7 +402,12 @@ export async function applyWatermarkToPdf(file, options = {}) {
 
       switch (position) {
         case "center": {
-          const fontSize = getPdfAdaptedFontSize(width, height, text.length, 0.7);
+          const fontSize = getPdfAdaptedFontSize(
+            width,
+            height,
+            text.length,
+            0.7,
+          );
           const textWidth = font.widthOfTextAtSize(text, fontSize);
           page.drawText(text, {
             x: (width - textWidth) / 2,
@@ -376,7 +420,12 @@ export async function applyWatermarkToPdf(file, options = {}) {
           break;
         }
         case "bottom-right": {
-          const fontSize = getPdfAdaptedFontSize(width, height, text.length, 0.35);
+          const fontSize = getPdfAdaptedFontSize(
+            width,
+            height,
+            text.length,
+            0.35,
+          );
           const textWidth = font.widthOfTextAtSize(text, fontSize);
           const adaptedPadding = Math.max(padding, fontSize * 0.6);
           page.drawText(text, {
@@ -390,11 +439,15 @@ export async function applyWatermarkToPdf(file, options = {}) {
           break;
         }
         case "tile": {
-          const fontSize = getPdfAdaptedFontSize(width, height, text.length, 0.2);
+          const fontSize = getPdfAdaptedFontSize(
+            width,
+            height,
+            text.length,
+            0.2,
+          );
           const textWidth = font.widthOfTextAtSize(text, fontSize);
           const spacingX = textWidth + fontSize * 2;
           const spacingY = fontSize * 3;
-          const rotRad = (rotation * Math.PI) / 180;
 
           for (let y = -height; y < height * 2; y += spacingY) {
             for (let x = -width * 0.5; x < width * 1.5; x += spacingX) {
@@ -416,14 +469,19 @@ export async function applyWatermarkToPdf(file, options = {}) {
           const diagonal = Math.sqrt(width * width + height * height);
           const charWidthRatio = 0.5;
           const targetW = diagonal * 0.6;
-          const rawFontSize = Math.round(targetW / (text.length * charWidthRatio));
+          const rawFontSize = Math.round(
+            targetW / (text.length * charWidthRatio),
+          );
           const refDim = Math.min(width, height);
-          const minFs = Math.max(8, Math.round(refDim * 0.02));
-          const maxFs = Math.round(refDim * 0.15);
+          const minFs = Math.max(10, Math.round(refDim * 0.03));
+          const maxFs = Math.round(refDim * 0.2);
           const fontSize = Math.min(maxFs, Math.max(minFs, rawFontSize));
           const textWidth = font.widthOfTextAtSize(text, fontSize);
           page.drawText(text, {
-            x: (width - textWidth * Math.cos(Math.abs(rotation * Math.PI / 180))) / 2,
+            x:
+              (width -
+                textWidth * Math.cos(Math.abs((rotation * Math.PI) / 180))) /
+              2,
             y: height / 2,
             size: fontSize,
             font,

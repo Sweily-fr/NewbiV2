@@ -81,68 +81,6 @@ function formatRelativeDate(dateStr) {
   return date.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
 
-// Dropdown pour changer le status du board (valeurs = noms des colonnes)
-function BoardStatusDropdown({ board, onChangeStatus }) {
-  const columns = [...(board.columns || [])].sort((a, b) => a.order - b.order);
-  const currentStatus = board.status;
-  const currentCol = columns.find((c) => c.title === currentStatus);
-
-  if (columns.length === 0)
-    return <span className="text-muted-foreground/40">-</span>;
-
-  return (
-    <DropdownMenu modal={false}>
-      <DropdownMenuTrigger asChild>
-        <button
-          className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity"
-          style={
-            currentCol
-              ? {
-                  backgroundColor: `${currentCol.color}20`,
-                  color: currentCol.color,
-                  border: `1px solid ${currentCol.color}30`,
-                }
-              : {
-                  backgroundColor: "hsl(var(--muted))",
-                  color: "hsl(var(--muted-foreground))",
-                  border: "1px solid hsl(var(--border))",
-                }
-          }
-          onClick={(e) => e.stopPropagation()}
-        >
-          {currentCol && (
-            <span
-              className="h-2 w-2 rounded-full flex-shrink-0"
-              style={{ backgroundColor: currentCol.color }}
-            />
-          )}
-          {currentStatus || "Non défini"}
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-44">
-        {columns.map((col) => (
-          <DropdownMenuItem
-            key={col.id}
-            className={`gap-2 cursor-pointer ${
-              currentStatus === col.title ? "bg-muted font-medium" : ""
-            }`}
-            onClick={(e) => {
-              e.stopPropagation();
-              onChangeStatus(board.id, col.title);
-            }}
-          >
-            <span
-              className="h-2.5 w-2.5 rounded-full flex-shrink-0"
-              style={{ backgroundColor: col.color }}
-            />
-            {col.title}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
 // Custom filter function for multi-column search
 const multiColumnFilterFn = (row, columnId, filterValue) => {
   const board = row.original;
@@ -294,14 +232,20 @@ export function useKanbanBoardsTable({
         enableHiding: false,
       },
       {
-        id: "status",
-        header: () => <span className="font-normal">Status</span>,
-        cell: ({ row }) => (
-          <BoardStatusDropdown
-            board={row.original}
-            onChangeStatus={onChangeStatus}
-          />
-        ),
+        id: "client",
+        header: () => <span className="font-normal">Client</span>,
+        cell: ({ row }) => {
+          const client = row.original.client;
+          if (!client)
+            return <span className="text-muted-foreground/40">-</span>;
+          const name =
+            client.type === "COMPANY"
+              ? client.name
+              : [client.firstName, client.lastName].filter(Boolean).join(" ");
+          return (
+            <span className="text-sm font-normal truncate">{name || "-"}</span>
+          );
+        },
         size: 200,
         enableSorting: false,
       },

@@ -72,6 +72,16 @@ function parseDate(value) {
   }
 }
 
+// TanStack sortingFn that handles all the shapes parseDate accepts.
+// Missing/invalid dates are treated as epoch (0) so they end up at the
+// bottom in desc order (most-recent-first) without fighting TanStack's
+// direction inversion.
+const dateSortingFn = (rowA, rowB, columnId) => {
+  const a = parseDate(rowA.getValue(columnId));
+  const b = parseDate(rowB.getValue(columnId));
+  return (a ? a.getTime() : 0) - (b ? b.getTime() : 0);
+};
+
 function SortableHeader({ column, children }) {
   const sorted = column.getIsSorted();
   return (
@@ -229,6 +239,7 @@ export const getColumns = ({ onViewInvoice } = {}) => [
         </div>
       );
     },
+    sortingFn: dateSortingFn,
     enableHiding: false,
   },
   {
@@ -251,6 +262,7 @@ export const getColumns = ({ onViewInvoice } = {}) => [
         </div>
       );
     },
+    sortingFn: dateSortingFn,
   },
   {
     accessorKey: "category",

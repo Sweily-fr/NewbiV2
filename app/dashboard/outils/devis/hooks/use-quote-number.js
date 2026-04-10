@@ -1,52 +1,73 @@
-import { useMemo } from 'react';
-import { useQuery } from '@apollo/client';
+import { useMemo } from "react";
+import { useQuery } from "@apollo/client";
 import { GET_NEXT_QUOTE_NUMBER } from "@/src/graphql/quoteQueries";
-import { useRequiredWorkspace } from '@/src/hooks/useWorkspace';
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
-export const useQuoteNumber = (prefix) => {
+export const useQuoteNumber = (prefix, { autoNumbering = false } = {}) => {
   const { workspaceId, loading: workspaceLoading } = useRequiredWorkspace();
 
   const { data, loading, error } = useQuery(GET_NEXT_QUOTE_NUMBER, {
-    variables: { workspaceId, prefix },
-    fetchPolicy: 'cache-and-network',
+    variables: { workspaceId, prefix, autoNumbering },
+    fetchPolicy: "network-only",
     skip: !workspaceId || !prefix,
+    notifyOnNetworkStatusChange: true,
   });
 
   const computed = useMemo(() => {
     const nextNumberStr = data?.nextQuoteNumber;
     if (!nextNumberStr) {
-      return { lastNumber: 0, anyDocumentsExist: false, hasDocumentsForPrefix: false };
+      return { lastNumber: 0, hasDocumentsForPrefix: false, hasData: false };
     }
 
-    const numericPart = nextNumberStr.replace(/\D/g, '');
+    const numericPart = nextNumberStr.replace(/\D/g, "");
     const nextNum = parseInt(numericPart, 10) || 1;
     const lastNumber = nextNum - 1;
 
     return {
       lastNumber,
-      anyDocumentsExist: lastNumber > 0,
       hasDocumentsForPrefix: lastNumber > 0,
+      hasData: true,
     };
   }, [data]);
 
   const isLoading = loading || workspaceLoading;
-  const nextQuoteNumber = computed.lastNumber + 1;
+  const nextQuoteNumber =
+    computed.hasData && !isLoading ? computed.lastNumber + 1 : null;
 
   const validateQuoteNumber = (number) => {
     const num = parseInt(number, 10);
     if (isNaN(num) || num <= 0) {
-      return { isValid: false, message: 'Le numéro doit être une valeur numérique positive' };
+      return {
+        isValid: false,
+        message: "Le numéro doit être une valeur numérique positive",
+      };
     }
 
-    if (!computed.anyDocumentsExist || !computed.hasDocumentsForPrefix) {
+    if (autoNumbering) {
+      if (nextQuoteNumber && num !== nextQuoteNumber) {
+        return {
+          isValid: false,
+          message: `Le numéro doit être ${String(nextQuoteNumber).padStart(4, "0")} (numérotation automatique)`,
+        };
+      }
+      return { isValid: true };
+    }
+
+    if (!computed.hasDocumentsForPrefix) {
       return { isValid: true };
     }
 
     if (num <= computed.lastNumber) {
-      return { isValid: false, message: `Le numéro doit être supérieur à ${String(computed.lastNumber).padStart(4, '0')}` };
+      return {
+        isValid: false,
+        message: `Le numéro doit être supérieur à ${String(computed.lastNumber).padStart(4, "0")}`,
+      };
     }
     if (num > computed.lastNumber + 1) {
-      return { isValid: false, message: `Le numéro doit être ${String(computed.lastNumber + 1).padStart(4, '0')} pour maintenir la séquence` };
+      return {
+        isValid: false,
+        message: `Le numéro doit être ${String(computed.lastNumber + 1).padStart(4, "0")} pour maintenir la séquence`,
+      };
     }
 
     return { isValid: true };
@@ -58,9 +79,10 @@ export const useQuoteNumber = (prefix) => {
     validateQuoteNumber,
     isLoading,
     error,
-    hasExistingQuotes: () => computed.anyDocumentsExist,
-    hasDocumentsForPrefix: computed.hasDocumentsForPrefix,
-    getFormattedNextNumber: () => String(nextQuoteNumber).padStart(4, '0'),
+    hasExistingQuotes: () => computed.hasDocumentsForPrefix,
+    hasDocumentsForPrefix: !isLoading && computed.hasDocumentsForPrefix,
+    getFormattedNextNumber: () =>
+      nextQuoteNumber ? String(nextQuoteNumber).padStart(4, "0") : null,
   };
 };
 
