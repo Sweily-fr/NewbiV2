@@ -136,7 +136,9 @@ export function Setup2FAModal({ isOpen, onClose }) {
 
     try {
       if (selectedMethod?.id === "authenticator") {
-        const { data, error } = await authClient.twoFactor.verifyTotp({ code: code });
+        const { data, error } = await authClient.twoFactor.verifyTotp({
+          code: code,
+        });
         if (error) {
           toast.error(error.message || "Code incorrect");
           setVerificationCode("");
@@ -157,6 +159,15 @@ export function Setup2FAModal({ isOpen, onClose }) {
           setVerificationCode("");
           return;
         }
+      }
+
+      // Mémoriser la méthode préférée pour auto-déclencher l'envoi du code
+      // au prochain login (lu par /auth/verify-2fa au mount).
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          "newbi-2fa-method",
+          selectedMethod?.id === "email" ? "email" : "totp",
+        );
       }
 
       toast.success("Vérification en 2 étapes activée");
@@ -221,7 +232,10 @@ export function Setup2FAModal({ isOpen, onClose }) {
         <DialogTitle className="text-sm font-medium flex items-center gap-2">
           <button
             type="button"
-            onClick={() => { setStep(1); setTotpUri(""); }}
+            onClick={() => {
+              setStep(1);
+              setTotpUri("");
+            }}
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
             <ChevronLeft className="size-4" />
@@ -280,7 +294,8 @@ export function Setup2FAModal({ isOpen, onClose }) {
               <Mail className="h-4 w-4 text-gray-400" />
             </div>
             <p className="text-xs text-gray-400">
-              Un code de vérification sera envoyé à votre adresse e-mail pour confirmer l'activation.
+              Un code de vérification sera envoyé à votre adresse e-mail pour
+              confirmer l'activation.
             </p>
           </div>
         )}
@@ -302,7 +317,9 @@ export function Setup2FAModal({ isOpen, onClose }) {
               disabled={isLoading}
               className="bg-[#5a50ff] hover:bg-[#4a40ee] text-white cursor-pointer"
             >
-              {isLoading && <LoaderCircle className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
+              {isLoading && (
+                <LoaderCircle className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+              )}
               {isLoading ? "Configuration..." : "Continuer"}
             </Button>
           )}
