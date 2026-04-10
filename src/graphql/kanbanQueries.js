@@ -132,14 +132,6 @@ export const GET_BOARD = gql`
           text
           completed
         }
-        clientId
-        client {
-          id
-          name
-          firstName
-          lastName
-          type
-        }
         assignedMembers
         timeTracking {
           totalSeconds
@@ -388,14 +380,6 @@ export const CREATE_TASK = gql`
         text
         completed
       }
-      clientId
-      client {
-        id
-        name
-        firstName
-        lastName
-        type
-      }
       assignedMembers
       timeTracking {
         totalSeconds
@@ -487,14 +471,6 @@ export const UPDATE_TASK = gql`
         id
         text
         completed
-      }
-      clientId
-      client {
-        id
-        name
-        firstName
-        lastName
-        type
       }
       assignedMembers
       timeTracking {
@@ -614,14 +590,6 @@ export const TASK_LIGHT_FRAGMENT = gql`
       id
       text
       completed
-    }
-    clientId
-    client {
-      id
-      name
-      firstName
-      lastName
-      type
     }
     assignedMembers
     timeTracking {

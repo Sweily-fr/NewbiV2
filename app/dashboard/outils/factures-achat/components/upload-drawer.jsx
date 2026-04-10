@@ -128,6 +128,9 @@ export function PurchaseInvoiceUploadDrawer({
   };
 
   const [editableData, setEditableData] = useState(defaultEditableData);
+  // Tracks which amount field was last edited ("ht" or "ttc") so vatRate
+  // changes recalculate from the correct source field.
+  const [amountSource, setAmountSource] = useState("ht");
 
   const handleDrag = useCallback((e) => {
     e.preventDefault();
@@ -387,19 +390,39 @@ export function PurchaseInvoiceUploadDrawer({
     setCreatedCount(0);
     setDragActive(false);
     setEditableData({ ...defaultEditableData });
+    setAmountSource("ht");
   };
 
   const handleEditChange = (field, value) => {
+    if (field === "amountHT") setAmountSource("ht");
+    if (field === "amountTTC") setAmountSource("ttc");
+
     setEditableData((prev) => {
       const next = { ...prev, [field]: value };
-      if (field === "amountHT" || field === "vatRate") {
-        const ht =
-          parseFloat(field === "amountHT" ? value : next.amountHT) || 0;
-        const rate =
-          parseFloat(field === "vatRate" ? value : next.vatRate) || 0;
+      const rate = parseFloat(next.vatRate) || 0;
+
+      if (field === "amountHT") {
+        const ht = parseFloat(value) || 0;
         const tva = ht * (rate / 100);
         next.amountTVA = tva.toFixed(2);
         next.amountTTC = (ht + tva).toFixed(2);
+      } else if (field === "amountTTC") {
+        const ttc = parseFloat(value) || 0;
+        const ht = ttc / (1 + rate / 100);
+        next.amountHT = ht.toFixed(2);
+        next.amountTVA = (ttc - ht).toFixed(2);
+      } else if (field === "vatRate") {
+        if (amountSource === "ttc") {
+          const ttc = parseFloat(next.amountTTC) || 0;
+          const ht = ttc / (1 + rate / 100);
+          next.amountHT = ht.toFixed(2);
+          next.amountTVA = (ttc - ht).toFixed(2);
+        } else {
+          const ht = parseFloat(next.amountHT) || 0;
+          const tva = ht * (rate / 100);
+          next.amountTVA = tva.toFixed(2);
+          next.amountTTC = (ht + tva).toFixed(2);
+        }
       }
       return next;
     });

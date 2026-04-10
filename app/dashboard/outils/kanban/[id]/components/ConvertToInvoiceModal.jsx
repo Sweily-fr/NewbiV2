@@ -11,7 +11,6 @@ import {
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
-import { ScrollArea } from "@/src/components/ui/scroll-area";
 import { Input } from "@/src/components/ui/input";
 import {
   DropdownMenu,
@@ -19,7 +18,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-import { Clock, Euro, Check, Search, Filter, X, Users, ExternalLink } from "lucide-react";
+import {
+  Clock,
+  Euro,
+  Check,
+  Search,
+  Filter,
+  X,
+  Users,
+  ExternalLink,
+} from "lucide-react";
 
 const formatCurrency = (amount) =>
   new Intl.NumberFormat("fr-FR", {
@@ -49,7 +57,16 @@ const getBillableHours = (totalSeconds, roundingOption) => {
   return Math.round(hours * 100) / 100;
 };
 
-export function ConvertToInvoiceModal({ open, onOpenChange, tasks, onConvert, getEffectiveSeconds, columns = [], members = [], onOpenTask }) {
+export function ConvertToInvoiceModal({
+  open,
+  onOpenChange,
+  tasks,
+  onConvert,
+  getEffectiveSeconds,
+  columns = [],
+  members = [],
+  onOpenTask,
+}) {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [filterMemberId, setFilterMemberId] = useState(null);
@@ -84,13 +101,17 @@ export function ConvertToInvoiceModal({ open, onOpenChange, tasks, onConvert, ge
     }
     if (filterMemberId) {
       result = result.filter(
-        (t) => Array.isArray(t.assignedMembers) && t.assignedMembers.includes(filterMemberId)
+        (t) =>
+          Array.isArray(t.assignedMembers) &&
+          t.assignedMembers.includes(filterMemberId),
       );
     }
     return result;
   }, [tasks, searchQuery, filterColumnId, filterMemberId]);
 
-  const allFiltered = filteredTasks.length > 0 && filteredTasks.every((t) => selectedIds.has(t.id));
+  const allFiltered =
+    filteredTasks.length > 0 &&
+    filteredTasks.every((t) => selectedIds.has(t.id));
 
   const toggleTask = useCallback((taskId) => {
     setSelectedIds((prev) => {
@@ -126,7 +147,10 @@ export function ConvertToInvoiceModal({ open, onOpenChange, tasks, onConvert, ge
       .reduce((sum, task) => {
         const tt = task.timeTracking;
         const effectiveSeconds = getEffectiveSeconds(tt);
-        const billableHours = getBillableHours(effectiveSeconds, tt.roundingOption);
+        const billableHours = getBillableHours(
+          effectiveSeconds,
+          tt.roundingOption,
+        );
         return sum + billableHours * tt.hourlyRate;
       }, 0);
   }, [tasks, selectedIds, getEffectiveSeconds]);
@@ -147,23 +171,22 @@ export function ConvertToInvoiceModal({ open, onOpenChange, tasks, onConvert, ge
       }
       onOpenChange(value);
     },
-    [onOpenChange]
+    [onOpenChange],
   );
 
-  const activeFiltersCount = (filterMemberId ? 1 : 0) + (filterColumnId ? 1 : 0);
+  const activeFiltersCount =
+    (filterMemberId ? 1 : 0) + (filterColumnId ? 1 : 0);
   const selectedColumn = availableColumns.find((c) => c.id === filterColumnId);
   const selectedMember = availableMembers.find((m) => m.id === filterMemberId);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg p-4 sm:p-6 max-h-[90dvh] flex flex-col">
+      <DialogContent className="sm:max-w-lg p-4 sm:p-6 max-h-[90dvh] flex flex-col overflow-hidden">
         <DialogHeader>
-          <DialogTitle>
-            Convertir en facture
-          </DialogTitle>
+          <DialogTitle>Convertir en facture</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3 min-h-0 flex flex-col">
+        <div className="space-y-3 min-h-0 min-w-0 flex flex-col overflow-hidden">
           {/* Recherche + Filtres */}
           <div className="flex flex-col sm:flex-row gap-2">
             <div className="relative flex-1">
@@ -190,13 +213,22 @@ export function ConvertToInvoiceModal({ open, onOpenChange, tasks, onConvert, ge
               {/* Filtre par status (colonne) */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className={`h-8 gap-1.5 text-xs flex-1 sm:flex-none ${filterColumnId ? "border-[#5b50ff]/40 bg-[#5b50ff]/5 text-[#5b50ff]" : ""}`}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={`h-8 gap-1.5 text-xs flex-1 sm:flex-none ${filterColumnId ? "border-[#5b50ff]/40 bg-[#5b50ff]/5 text-[#5b50ff]" : ""}`}
+                  >
                     <Filter size={14} className="shrink-0" />
-                    <span className="truncate max-w-[80px] sm:max-w-none">{selectedColumn ? selectedColumn.title : "Status"}</span>
+                    <span className="truncate max-w-[80px] sm:max-w-none">
+                      {selectedColumn ? selectedColumn.title : "Status"}
+                    </span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setFilterColumnId(null)} className="cursor-pointer text-sm">
+                  <DropdownMenuItem
+                    onClick={() => setFilterColumnId(null)}
+                    className="cursor-pointer text-sm"
+                  >
                     Tous les status
                   </DropdownMenuItem>
                   {availableColumns.map((col) => (
@@ -205,7 +237,10 @@ export function ConvertToInvoiceModal({ open, onOpenChange, tasks, onConvert, ge
                       onClick={() => setFilterColumnId(col.id)}
                       className="cursor-pointer text-sm gap-2"
                     >
-                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: col.color || "#94a3b8" }} />
+                      <div
+                        className="w-2 h-2 rounded-full shrink-0"
+                        style={{ backgroundColor: col.color || "#94a3b8" }}
+                      />
                       {col.title}
                     </DropdownMenuItem>
                   ))}
@@ -216,13 +251,24 @@ export function ConvertToInvoiceModal({ open, onOpenChange, tasks, onConvert, ge
               {availableMembers.length > 0 && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className={`h-8 gap-1.5 text-xs flex-1 sm:flex-none ${filterMemberId ? "border-[#5b50ff]/40 bg-[#5b50ff]/5 text-[#5b50ff]" : ""}`}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={`h-8 gap-1.5 text-xs flex-1 sm:flex-none ${filterMemberId ? "border-[#5b50ff]/40 bg-[#5b50ff]/5 text-[#5b50ff]" : ""}`}
+                    >
                       <Users size={14} className="shrink-0" />
-                      <span className="truncate max-w-[80px] sm:max-w-none">{selectedMember ? (selectedMember.name || selectedMember.email) : "Personne"}</span>
+                      <span className="truncate max-w-[80px] sm:max-w-none">
+                        {selectedMember
+                          ? selectedMember.name || selectedMember.email
+                          : "Personne"}
+                      </span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setFilterMemberId(null)} className="cursor-pointer text-sm">
+                    <DropdownMenuItem
+                      onClick={() => setFilterMemberId(null)}
+                      className="cursor-pointer text-sm"
+                    >
                       Toutes les personnes
                     </DropdownMenuItem>
                     {availableMembers.map((member) => (
@@ -232,10 +278,16 @@ export function ConvertToInvoiceModal({ open, onOpenChange, tasks, onConvert, ge
                         className="cursor-pointer text-sm gap-2"
                       >
                         {member.image ? (
-                          <img src={member.image} alt={member.name || member.email} className="w-4 h-4 rounded-full object-cover shrink-0" />
+                          <img
+                            src={member.image}
+                            alt={member.name || member.email}
+                            className="w-4 h-4 rounded-full object-cover shrink-0"
+                          />
                         ) : (
                           <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-medium shrink-0">
-                            {(member.name || member.email).charAt(0).toUpperCase()}
+                            {(member.name || member.email)
+                              .charAt(0)
+                              .toUpperCase()}
                           </div>
                         )}
                         {member.name || member.email}
@@ -252,17 +304,32 @@ export function ConvertToInvoiceModal({ open, onOpenChange, tasks, onConvert, ge
             <div className="flex items-center gap-1.5 flex-wrap">
               {filterColumnId && selectedColumn && (
                 <Badge variant="secondary" className="gap-1 text-xs pr-1">
-                  <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: selectedColumn.color || "#94a3b8" }} />
-                  <span className="truncate max-w-[120px]">{selectedColumn.title}</span>
-                  <button onClick={() => setFilterColumnId(null)} className="ml-0.5 hover:text-foreground shrink-0">
+                  <div
+                    className="w-1.5 h-1.5 rounded-full shrink-0"
+                    style={{
+                      backgroundColor: selectedColumn.color || "#94a3b8",
+                    }}
+                  />
+                  <span className="truncate max-w-[120px]">
+                    {selectedColumn.title}
+                  </span>
+                  <button
+                    onClick={() => setFilterColumnId(null)}
+                    className="ml-0.5 hover:text-foreground shrink-0"
+                  >
                     <X size={12} />
                   </button>
                 </Badge>
               )}
               {filterMemberId && selectedMember && (
                 <Badge variant="secondary" className="gap-1 text-xs pr-1">
-                  <span className="truncate max-w-[120px]">{selectedMember.name || selectedMember.email}</span>
-                  <button onClick={() => setFilterMemberId(null)} className="ml-0.5 hover:text-foreground shrink-0">
+                  <span className="truncate max-w-[120px]">
+                    {selectedMember.name || selectedMember.email}
+                  </span>
+                  <button
+                    onClick={() => setFilterMemberId(null)}
+                    className="ml-0.5 hover:text-foreground shrink-0"
+                  >
                     <X size={12} />
                   </button>
                 </Badge>
@@ -272,16 +339,22 @@ export function ConvertToInvoiceModal({ open, onOpenChange, tasks, onConvert, ge
 
           <div className="flex items-center justify-between">
             <span className="text-xs sm:text-sm text-muted-foreground">
-              {filteredTasks.length} tâche{filteredTasks.length > 1 ? "s" : ""} facturable{filteredTasks.length > 1 ? "s" : ""}
+              {filteredTasks.length} tâche{filteredTasks.length > 1 ? "s" : ""}{" "}
+              facturable{filteredTasks.length > 1 ? "s" : ""}
             </span>
-            <Button variant="ghost" size="sm" onClick={toggleAll} className="h-7 text-xs text-[#5b50ff] hover:text-[#5b50ff] hover:bg-[#5b50ff]/10">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleAll}
+              className="h-7 text-xs text-[#5b50ff] hover:text-[#5b50ff] hover:bg-[#5b50ff]/10"
+            >
               {allFiltered ? "Tout désélectionner" : "Tout sélectionner"}
             </Button>
           </div>
 
           {/* Liste des tâches - max ~3 visibles, flex-1 sur mobile pour remplir */}
-          <ScrollArea className="max-h-[180px] sm:max-h-[228px] min-h-0 flex-1">
-            <div className="space-y-2 pr-3">
+          <div className="max-h-[180px] sm:max-h-[228px] min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
+            <div className="space-y-2 pr-1">
               {filteredTasks.length === 0 ? (
                 <div className="text-center py-6 text-sm text-muted-foreground">
                   Aucune tâche trouvée
@@ -290,14 +363,17 @@ export function ConvertToInvoiceModal({ open, onOpenChange, tasks, onConvert, ge
                 filteredTasks.map((task) => {
                   const tt = task.timeTracking;
                   const effectiveSeconds = getEffectiveSeconds(tt);
-                  const billableHours = getBillableHours(effectiveSeconds, tt.roundingOption);
+                  const billableHours = getBillableHours(
+                    effectiveSeconds,
+                    tt.roundingOption,
+                  );
                   const price = billableHours * tt.hourlyRate;
                   const isSelected = selectedIds.has(task.id);
 
                   return (
                     <div
                       key={task.id}
-                      className={`flex items-start gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg border cursor-pointer transition-colors ${
+                      className={`flex items-start gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg border cursor-pointer transition-colors min-w-0 overflow-hidden ${
                         isSelected
                           ? "border-[#5b50ff]/40 bg-[#5b50ff]/5"
                           : "border-border hover:bg-muted/50"
@@ -310,11 +386,27 @@ export function ConvertToInvoiceModal({ open, onOpenChange, tasks, onConvert, ge
                         onClick={(e) => e.stopPropagation()}
                         className="mt-0.5 shrink-0"
                       />
-                      <div className="flex-1 overflow-hidden">
-                        <div className="flex items-center gap-1.5">
-                          <p className="text-xs sm:text-sm font-medium" title={task.title}>
-                            {task.title.length > 45 ? task.title.slice(0, 45) + "..." : task.title}
-                          </p>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                          }}
+                        >
+                          <span
+                            className="text-xs sm:text-sm font-medium"
+                            style={{
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              minWidth: 0,
+                              flex: "1 1 0%",
+                            }}
+                            title={task.title}
+                          >
+                            {task.title}
+                          </span>
                           {onOpenTask && (
                             <button
                               onClick={(e) => {
@@ -327,7 +419,10 @@ export function ConvertToInvoiceModal({ open, onOpenChange, tasks, onConvert, ge
                               <ExternalLink className="h-3.5 w-3.5" />
                             </button>
                           )}
-                          <span className="text-xs sm:text-sm font-semibold whitespace-nowrap shrink-0 ml-auto">
+                          <span
+                            className="text-xs sm:text-sm font-semibold"
+                            style={{ whiteSpace: "nowrap", flexShrink: 0 }}
+                          >
                             {formatCurrency(price)}
                           </span>
                         </div>
@@ -340,11 +435,16 @@ export function ConvertToInvoiceModal({ open, onOpenChange, tasks, onConvert, ge
                             <Euro className="h-3 w-3 shrink-0" />
                             {tt.hourlyRate}€/h
                           </span>
-                          {tt.roundingOption && tt.roundingOption !== "none" && (
-                            <Badge variant="outline" className="text-[10px] h-4 px-1 hidden sm:inline-flex">
-                              arrondi {tt.roundingOption === "up" ? "sup." : "inf."}
-                            </Badge>
-                          )}
+                          {tt.roundingOption &&
+                            tt.roundingOption !== "none" && (
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] h-4 px-1 hidden sm:inline-flex"
+                              >
+                                arrondi{" "}
+                                {tt.roundingOption === "up" ? "sup." : "inf."}
+                              </Badge>
+                            )}
                         </div>
                       </div>
                     </div>
@@ -352,14 +452,16 @@ export function ConvertToInvoiceModal({ open, onOpenChange, tasks, onConvert, ge
                 })
               )}
             </div>
-          </ScrollArea>
+          </div>
 
           {selectedIds.size > 0 && (
             <div className="flex items-center justify-between pt-2 border-t">
               <span className="text-xs sm:text-sm text-muted-foreground">
                 {selectedIds.size} sélectionnée{selectedIds.size > 1 ? "s" : ""}
               </span>
-              <span className="text-sm sm:text-base font-semibold">{formatCurrency(selectedTotal)}</span>
+              <span className="text-sm sm:text-base font-semibold">
+                {formatCurrency(selectedTotal)}
+              </span>
             </div>
           )}
         </div>
@@ -368,7 +470,11 @@ export function ConvertToInvoiceModal({ open, onOpenChange, tasks, onConvert, ge
           <Button variant="outline" onClick={() => handleOpenChange(false)}>
             Annuler
           </Button>
-          <Button onClick={handleConvert} disabled={selectedIds.size === 0} className="gap-2">
+          <Button
+            onClick={handleConvert}
+            disabled={selectedIds.size === 0}
+            className="gap-2"
+          >
             <Check className="h-4 w-4" />
             Créer la facture
           </Button>

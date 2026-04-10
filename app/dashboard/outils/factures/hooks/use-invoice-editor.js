@@ -54,6 +54,9 @@ export function useInvoiceEditor({
   const sourcePurchaseOrderIdRef = useRef(null);
   const sourceQuoteIdRef = useRef(null);
 
+  // State pour le client Kanban à récupérer en entier
+  const [kanbanClientId, setKanbanClientId] = useState(null);
+
   // GraphQL hooks
   const { invoice: existingInvoice, loading: loadingInvoice } =
     useInvoice(invoiceId);
@@ -62,12 +65,16 @@ export function useInvoiceEditor({
   const clientIdForFresh =
     mode !== "create" && existingInvoice?.client?.id
       ? existingInvoice.client.id
-      : null;
+      : kanbanClientId;
   const { client: freshClient } = useClient(clientIdForFresh);
 
   // Prefix state pour le filtrage du numéro par préfixe
   const [currentPrefix, setCurrentPrefix] = useState(
     organization?.invoicePrefix || "",
+  );
+  // État local pour autoNumbering (synchronisé avec le form via watch)
+  const [currentAutoNumbering, setCurrentAutoNumbering] = useState(
+    organization?.invoiceAutoNumbering || false,
   );
 
   // Use the invoice numbering hook with prefix filtering
@@ -75,7 +82,7 @@ export function useInvoiceEditor({
     nextInvoiceNumber,
     isLoading: numberLoading,
     hasDocumentsForPrefix,
-  } = useInvoiceNumber(currentPrefix);
+  } = useInvoiceNumber(currentPrefix, { autoNumbering: currentAutoNumbering });
 
   const { createInvoice, loading: creating } = useCreateInvoice();
   const { updateInvoice, loading: updating } = useUpdateInvoice();
@@ -132,11 +139,14 @@ export function useInvoiceEditor({
   const { watch, setValue, getValues, formState, reset } = form;
   const { isDirty, errors } = formState;
 
-  // Synchroniser le préfixe du formulaire avec le state pour le filtrage du numéro
+  // Synchroniser le préfixe et autoNumbering du formulaire avec les states
   useEffect(() => {
     const subscription = watch((value, { name }) => {
       if (name === "prefix" && value.prefix !== undefined) {
         setCurrentPrefix(value.prefix || "");
+      }
+      if (name === "autoNumbering") {
+        setCurrentAutoNumbering(value.autoNumbering || false);
       }
     });
     return () => subscription.unsubscribe();
@@ -213,6 +223,7 @@ export function useInvoiceEditor({
         },
         email: organization?.companyEmail || "",
         phone: organization?.companyPhone || "",
+        siren: organization?.siren || "",
         siret: organization?.siret || "",
         vatNumber: organization?.vatNumber || "",
         rcs: organization?.rcs || "",
@@ -962,10 +973,44 @@ export function useInvoiceEditor({
     }
   }, [freshClient, isFormInitialized, mode, getValues, setValue]);
 
+  // Pré-remplir le client complet depuis Kanban (après fetch via useClient)
+  useEffect(() => {
+    if (!kanbanClientId || !freshClient || !isFormInitialized) return;
+    if (freshClient.id !== kanbanClientId) return;
+
+    setValue(
+      "client",
+      {
+        id: freshClient.id,
+        name: freshClient.name,
+        firstName: freshClient.firstName,
+        lastName: freshClient.lastName,
+        email: freshClient.email,
+        type: freshClient.type,
+        address: {
+          street: freshClient.address?.street || "",
+          city: freshClient.address?.city || "",
+          postalCode: freshClient.address?.postalCode || "",
+          country: freshClient.address?.country || "France",
+        },
+        siret: freshClient.siret,
+        vatNumber: freshClient.vatNumber,
+        hasDifferentShippingAddress:
+          freshClient.hasDifferentShippingAddress || false,
+        shippingAddress: freshClient.shippingAddress || null,
+        isInternational: freshClient.isInternational || false,
+      },
+      { shouldDirty: false },
+    );
+    // Reset pour ne pas re-déclencher
+    setKanbanClientId(null);
+  }, [freshClient, kanbanClientId, isFormInitialized, setValue]);
+
   // Set next invoice number for new invoices and draft editing
   // Source unique de vérité pour le numéro de facture
   useEffect(() => {
-    if (!isFormInitialized || numberLoading || !nextInvoiceNumber) return;
+    if (!isFormInitialized || numberLoading || nextInvoiceNumber == null)
+      return;
 
     const isDraftEdit = mode === "edit" && existingInvoice?.status === "DRAFT";
     if (mode !== "create" && !isDraftEdit) return;
@@ -973,16 +1018,15 @@ export function useInvoiceEditor({
     const formattedNumber = String(nextInvoiceNumber).padStart(4, "0");
     const currentNumber = getValues("number");
 
-    if (hasDocumentsForPrefix) {
-      // Préfixe existant → toujours forcer le numéro séquentiel
+    if (currentAutoNumbering || hasDocumentsForPrefix) {
+      // Auto-numbering activé ou préfixe existant → toujours forcer le numéro séquentiel
       setValue("number", formattedNumber, {
         shouldValidate: false,
         shouldDirty: false,
       });
     } else if (!currentNumber || currentNumber.startsWith("DRAFT-")) {
-      // Nouveau préfixe et pas de numéro → utiliser invoiceStartNumber de l'org si disponible, sinon "0001"
-      const startNumber = organization?.invoiceStartNumber || formattedNumber;
-      setValue("number", startNumber, {
+      // Nouveau préfixe et pas de numéro → proposer 0001
+      setValue("number", formattedNumber, {
         shouldValidate: false,
         shouldDirty: false,
       });
@@ -994,6 +1038,7 @@ export function useInvoiceEditor({
     numberLoading,
     hasDocumentsForPrefix,
     existingInvoice?.status,
+    currentAutoNumbering,
   ]);
 
   // Auto-remplir companyInfo avec les données de l'organisation
@@ -1009,6 +1054,7 @@ export function useInvoiceEditor({
         },
         email: organization?.companyEmail || "",
         phone: organization?.companyPhone || "",
+        siren: organization?.siren || "",
         siret: organization?.siret || "",
         vatNumber: organization?.vatNumber || "",
         rcs: organization?.rcs || "",
@@ -1098,10 +1144,13 @@ export function useInvoiceEditor({
         organization.invoiceClientPositionRight || false,
       );
 
-      // Charger le préfixe depuis l'organisation
+      // Charger le préfixe et la numérotation automatique depuis l'organisation
       if (organization.invoicePrefix) {
         setValue("prefix", organization.invoicePrefix, { shouldDirty: false });
       }
+      setValue("autoNumbering", organization.invoiceAutoNumbering || false, {
+        shouldDirty: false,
+      });
 
       // Le numéro est géré par le useEffect nextInvoiceNumber (plus bas)
       // qui prend en compte hasDocumentsForPrefix et invoiceStartNumber
@@ -1185,8 +1234,11 @@ export function useInvoiceEditor({
           const kanbanClient = sessionStorage.getItem("kanbanInvoiceClient");
           if (kanbanClient) {
             const client = JSON.parse(kanbanClient);
-            setValue("client", client);
             sessionStorage.removeItem("kanbanInvoiceClient");
+            // Déclencher la récupération du client complet via useClient
+            if (client.id) {
+              setKanbanClientId(client.id);
+            }
           }
         } catch {
           sessionStorage.removeItem("kanbanInvoiceItems");
@@ -2307,6 +2359,7 @@ function getInitialFormData(mode, initialData, session, organization) {
   const defaultData = {
     prefix: organization?.invoicePrefix || "",
     number: "",
+    autoNumbering: organization?.invoiceAutoNumbering || false,
     issueDate: formatLocalDate(),
     dueDate: null,
     status: "DRAFT",

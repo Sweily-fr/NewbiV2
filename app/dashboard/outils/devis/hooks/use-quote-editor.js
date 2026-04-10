@@ -22,12 +22,30 @@ import { formatLocalDate } from "@/src/utils/dateFormatter";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
-export function useQuoteEditor({ mode, quoteId, initialData }) {
+export function useQuoteEditor({
+  mode,
+  quoteId,
+  initialData,
+  organization: organizationProp,
+}) {
   const router = useRouter();
   // const autosaveTimeoutRef = useRef(null); // DISABLED - Auto-save removed
 
   // Auth hook pour récupérer les données utilisateur
   const { session } = useUser();
+
+  // Charger l'organisation en interne si la prop n'est pas encore disponible
+  const [internalOrganization, setInternalOrganization] = useState(null);
+  useEffect(() => {
+    if (!organizationProp) {
+      getActiveOrganization()
+        .then((org) => {
+          if (org) setInternalOrganization(org);
+        })
+        .catch(() => {});
+    }
+  }, [organizationProp]);
+  const organization = organizationProp || internalOrganization;
 
   // Error handler
   const { handleError } = useErrorHandler();
@@ -44,7 +62,13 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
   const { client: freshClient } = useClient(clientIdForFresh);
 
   // Prefix state pour le filtrage du numéro par préfixe
-  const [currentPrefix, setCurrentPrefix] = useState("");
+  const [currentPrefix, setCurrentPrefix] = useState(
+    organization?.quotePrefix || "",
+  );
+  // État local pour autoNumbering (synchronisé avec le form via watch)
+  const [currentAutoNumbering, setCurrentAutoNumbering] = useState(
+    organization?.quoteAutoNumbering || false,
+  );
 
   // Use the new quote numbering hook that mirrors invoice logic
   const {
@@ -53,7 +77,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     isLoading: numberLoading,
     hasExistingQuotes,
     hasDocumentsForPrefix,
-  } = useQuoteNumber(currentPrefix);
+  } = useQuoteNumber(currentPrefix, { autoNumbering: currentAutoNumbering });
 
   const { createQuote, loading: creating } = useCreateQuote();
   const { updateQuote, loading: updating } = useUpdateQuote();
@@ -61,7 +85,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
   // Form state avec react-hook-form
   const form = useForm({
-    defaultValues: getInitialFormData(mode, initialData, session),
+    defaultValues: getInitialFormData(mode, initialData, session, organization),
     mode: "onChange",
     resolver: (values) => {
       const errors = {};
@@ -104,11 +128,14 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
   const { watch, setValue, getValues, reset } = form;
   // const { isDirty } = formState; // DISABLED - Auto-save removed
 
-  // Synchroniser le préfixe du formulaire avec le state pour le filtrage du numéro
+  // Synchroniser le préfixe et autoNumbering du formulaire avec les states
   useEffect(() => {
     const subscription = watch((value, { name }) => {
       if (name === "prefix" && value.prefix !== undefined) {
         setCurrentPrefix(value.prefix || "");
+      }
+      if (name === "autoNumbering") {
+        setCurrentAutoNumbering(value.autoNumbering || false);
       }
     });
     return () => subscription.unsubscribe();
@@ -858,7 +885,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
   // Set next quote number for new quotes and draft editing
   useEffect(() => {
-    if (!isFormInitialized || numberLoading || !nextQuoteNumber) return;
+    if (!isFormInitialized || numberLoading || nextQuoteNumber == null) return;
 
     const isDraftEdit = mode === "edit" && existingQuote?.status === "DRAFT";
     if (mode !== "create" && !isDraftEdit) return;
@@ -866,31 +893,18 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     const formattedNumber = String(nextQuoteNumber).padStart(4, "0");
     const currentNumber = getValues("number");
 
-    if (hasDocumentsForPrefix) {
+    if (currentAutoNumbering || hasDocumentsForPrefix) {
+      // Auto-numbering activé ou préfixe existant → forcer le numéro séquentiel
       setValue("number", formattedNumber, {
         shouldValidate: false,
         shouldDirty: false,
       });
-    } else if (
-      !currentNumber ||
-      currentNumber.startsWith("DRAFT-") ||
-      currentNumber === "0001"
-    ) {
-      // Charger l'organisation pour récupérer le numéro de départ personnalisé
-      getActiveOrganization()
-        .then((org) => {
-          const startNumber = org?.quoteStartNumber || formattedNumber;
-          setValue("number", startNumber, {
-            shouldValidate: false,
-            shouldDirty: false,
-          });
-        })
-        .catch(() => {
-          setValue("number", formattedNumber, {
-            shouldValidate: false,
-            shouldDirty: false,
-          });
-        });
+    } else if (!currentNumber || currentNumber.startsWith("DRAFT-")) {
+      // Nouveau préfixe et pas de numéro → proposer 0001
+      setValue("number", formattedNumber, {
+        shouldValidate: false,
+        shouldDirty: false,
+      });
     }
   }, [
     mode,
@@ -899,6 +913,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     numberLoading,
     hasDocumentsForPrefix,
     existingQuote?.status,
+    currentAutoNumbering,
   ]);
 
   // Effet pour charger les données d'organisation au démarrage
@@ -1008,12 +1023,17 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
               organization.quoteClientPositionRight || false,
             );
 
-            // Charger le préfixe depuis l'organisation
+            // Charger le préfixe et la numérotation automatique depuis l'organisation
             if (organization.quotePrefix) {
               setValue("prefix", organization.quotePrefix, {
                 shouldDirty: false,
               });
             }
+            setValue(
+              "autoNumbering",
+              organization.quoteAutoNumbering || false,
+              { shouldDirty: false },
+            );
 
             // Le numéro est géré par le useEffect nextQuoteNumber (plus haut)
             // qui prend en compte hasDocumentsForPrefix et quoteStartNumber
@@ -1933,7 +1953,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 }
 
 // Helper functions
-function getInitialFormData(mode, initialData, session) {
+function getInitialFormData(mode, initialData, session, organization) {
   const today = formatLocalDate();
 
   // Utiliser la valeur validUntil existante si elle est disponible
@@ -1944,8 +1964,9 @@ function getInitialFormData(mode, initialData, session) {
 
   const baseData = {
     // Informations du devis
-    prefix: "",
+    prefix: organization?.quotePrefix || "",
     number: "",
+    autoNumbering: organization?.quoteAutoNumbering || false,
     projectReference: "",
     issueDate: today,
     validUntil: validUntil,
@@ -2024,6 +2045,7 @@ function getInitialFormData(mode, initialData, session) {
       email: userCompany.email || "",
       phone: userCompany.phone || "",
       website: userCompany.website || "",
+      siren: userCompany.siren || "",
       siret: userCompany.siret || "",
       vatNumber: userCompany.vatNumber || "",
       rcs: userCompany.rcs || "",
@@ -2221,6 +2243,7 @@ function transformQuoteToFormData(quote) {
       phone: quote.companyInfo?.phone || "",
       website: quote.companyInfo?.website || "",
       logo: quote.companyInfo?.logo || "",
+      siren: quote.companyInfo?.siren || "",
       siret: quote.companyInfo?.siret || "",
       vatNumber: quote.companyInfo?.vatNumber || "",
       rcs: quote.companyInfo?.rcs || "",
@@ -2410,6 +2433,7 @@ function transformFormDataToInput(
     email: companyInfo?.email || session?.user?.email || "",
     phone: companyInfo?.phone || "",
     website: companyInfo?.website || "",
+    siren: companyInfo?.siren || "",
     siret: companyInfo?.siret || "",
     vatNumber: companyInfo?.vatNumber || "",
     address: companyInfo?.address

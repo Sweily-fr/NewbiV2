@@ -5,8 +5,7 @@ import { ThemeProvider } from "@/src/components/theme-provider";
 import { ApolloWrapper } from "@/src/providers/apollo-provider";
 import { Toaster } from "@/src/components/ui/sonner";
 import { DevAnimationTrigger } from "@/src/components/dev-animation-trigger";
-import CookieManager from "@/src/components/cookies/CookieManager";
-import MarketingPixels from "@/src/components/cookies/MarketingPixels";
+import CookieWrapper from "@/src/components/cookies/CookieWrapper";
 import "@/src/utils/clearApolloCache"; // Nettoyage du cache Apollo
 
 export const viewport = {
@@ -103,7 +102,6 @@ export default function RootLayout({ children }) {
       translate="no"
     >
       <head>
-        {/* Google Tag Manager - chargé conditionnellement via MarketingPixels */}
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta
@@ -166,12 +164,10 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body className="font-sans antialiased">
-        {/* Marketing pixels (GTM, Meta, TikTok) - chargés uniquement après consentement */}
-        <MarketingPixels />
         <ApolloWrapper>
           <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
             {children}
-            <CookieManager />
+            <CookieWrapper />
           </ThemeProvider>
         </ApolloWrapper>
         <Toaster />

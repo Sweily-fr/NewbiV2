@@ -818,6 +818,13 @@ const UniversalPreviewPDF = ({
                   </div>
                 )}
 
+                {/* SIREN - sous l'email */}
+                {data.companyInfo?.siren && (
+                  <div className="dark:text-[#0A0A0A]">
+                    SIREN: {data.companyInfo.siren}
+                  </div>
+                )}
+
                 {/* Téléphone */}
                 {data.companyInfo?.phone && (
                   <div className="dark:text-[#0A0A0A]">
@@ -832,12 +839,7 @@ const UniversalPreviewPDF = ({
                   </div>
                 )}
 
-                {/* SIRET et numéro de TVA */}
-                {data.companyInfo?.siret && (
-                  <div className="dark:text-[#0A0A0A]">
-                    SIRET: {data.companyInfo.siret}
-                  </div>
-                )}
+                {/* N° TVA */}
                 {data.companyInfo?.vatNumber && (
                   <div className="dark:text-[#0A0A0A]">
                     N° TVA: {data.companyInfo.vatNumber}
@@ -883,14 +885,14 @@ const UniversalPreviewPDF = ({
                       {data.client.email}
                     </div>
                   )}
-                  {data.client?.phone && (
-                    <div className="dark:text-[#0A0A0A]">
-                      {data.client.phone}
-                    </div>
-                  )}
                   {data.client?.siret && (
                     <div className="dark:text-[#0A0A0A]">
                       SIRET: {data.client.siret}
+                    </div>
+                  )}
+                  {data.client?.phone && (
+                    <div className="dark:text-[#0A0A0A]">
+                      {data.client.phone}
                     </div>
                   )}
                   {data.client?.vatNumber && (

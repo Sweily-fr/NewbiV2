@@ -236,7 +236,10 @@ export default function PurchaseInvoiceTable({
     setCategoryFilters([]);
   };
 
-  // Filter by tab + advanced filters
+  // Filter by tab + advanced filters, then sort by issueDate desc
+  // (most recent first). We sort here rather than relying solely on TanStack
+  // because the mobile list iterates filteredInvoices directly and bypasses
+  // the table's sorted row model.
   const filteredInvoices = useMemo(() => {
     let result = invoices;
     if (activeTab !== "all") {
@@ -248,7 +251,23 @@ export default function PurchaseInvoiceTable({
     if (categoryFilters.length > 0) {
       result = result.filter((inv) => categoryFilters.includes(inv.category));
     }
-    return result;
+
+    const toTime = (val) => {
+      if (!val) return 0;
+      let d;
+      if (typeof val === "string") {
+        d = /^\d+$/.test(val) ? new Date(parseInt(val, 10)) : new Date(val);
+      } else if (typeof val === "number") {
+        d = new Date(val);
+      } else if (val instanceof Date) {
+        d = val;
+      }
+      return d && !isNaN(d.getTime()) ? d.getTime() : 0;
+    };
+
+    return [...result].sort(
+      (a, b) => toTime(b.issueDate) - toTime(a.issueDate),
+    );
   }, [invoices, activeTab, statusFilters, categoryFilters]);
 
   const columns = useMemo(

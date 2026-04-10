@@ -81,6 +81,7 @@ const getDemoInvoiceData = (formData, organization, userName) => {
         country:
           formData?.addressCountry || organization?.addressCountry || "France",
       },
+      siren: organization?.siren || "987654321",
       siret: organization?.siret || "98765432109876",
       vatNumber: organization?.vatNumber || "FR98765432109",
       transactionCategory:
@@ -155,8 +156,11 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
   const [isLoading, setIsLoading] = useState(true);
   const [initialValues, setInitialValues] = useState(null);
   const [currentPrefix, setCurrentPrefix] = useState("");
-  const { validateInvoiceNumber, hasDocumentsForPrefix } =
-    useInvoiceNumber(currentPrefix);
+  const [currentAutoNumbering, setCurrentAutoNumbering] = useState(false);
+  const { validateInvoiceNumber, hasDocumentsForPrefix } = useInvoiceNumber(
+    currentPrefix,
+    { autoNumbering: currentAutoNumbering },
+  );
   const { data: session } = useSession();
 
   // Charger les données de l'organisation dès l'ouverture
@@ -173,6 +177,7 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
             // Numérotation - préfixe par défaut (le numéro sera auto-rempli par le hook useInvoiceNumber)
             prefix: org?.invoicePrefix || generateInvoicePrefix(),
             number: org?.invoiceStartNumber || "",
+            autoNumbering: org?.invoiceAutoNumbering || false,
             // Informations de l'entreprise
             companyName: org?.companyName || "",
             companyEmail: org?.companyEmail || "",
@@ -253,6 +258,7 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
     defaultValues: initialValues || {
       prefix: generateInvoicePrefix(),
       number: "",
+      autoNumbering: false,
       companyName: "",
       companyEmail: "",
       companyPhone: "",
@@ -289,12 +295,20 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
   // Observer tous les changements du formulaire
   const formData = form.watch();
 
-  // Suivre le préfixe pour la validation de numérotation
+  // Suivre le préfixe et l'autoNumbering pour la validation de numérotation
   useEffect(() => {
     if (formData?.prefix && formData.prefix !== currentPrefix) {
       setCurrentPrefix(formData.prefix);
     }
-  }, [formData?.prefix, currentPrefix]);
+    if ((formData?.autoNumbering || false) !== currentAutoNumbering) {
+      setCurrentAutoNumbering(formData?.autoNumbering || false);
+    }
+  }, [
+    formData?.prefix,
+    formData?.autoNumbering,
+    currentPrefix,
+    currentAutoNumbering,
+  ]);
 
   // Debounce pour la preview (évite les saccades)
   useEffect(() => {
@@ -357,6 +371,7 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
         // Préfixe de numérotation
         invoicePrefix: formValues.prefix || "",
         invoiceStartNumber: formValues.number || "",
+        invoiceAutoNumbering: formValues.autoNumbering || false,
 
         // Position du client dans le PDF (factures)
         invoiceClientPositionRight: formValues.clientPositionRight || false,

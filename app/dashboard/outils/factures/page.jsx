@@ -58,18 +58,20 @@ function InvoicesContent() {
           const data = JSON.parse(invoiceData);
           setNewDocumentData(data);
           setDocumentType("invoice");
-          
+
           toastManager.add({
             type: "document",
             title: "Facture créée avec succès",
             description: `Facture ${data.number} créée`,
             timeout: 10000,
-            actionProps: data.clientEmail ? {
-              children: "Envoyer au client",
-              onClick: () => setShowSendEmailModal(true),
-            } : undefined,
+            actionProps: data.clientEmail
+              ? {
+                  children: "Envoyer au client",
+                  onClick: () => setShowSendEmailModal(true),
+                }
+              : undefined,
           });
-          
+
           sessionStorage.removeItem("newInvoiceData");
         } catch (e) {
           sessionStorage.removeItem("newInvoiceData");
@@ -84,18 +86,20 @@ function InvoicesContent() {
           const data = JSON.parse(creditNoteData);
           setNewDocumentData(data);
           setDocumentType("creditNote");
-          
+
           toastManager.add({
             type: "document",
             title: "Avoir créé avec succès",
             description: `Avoir ${data.number} créé`,
             timeout: 10000,
-            actionProps: data.clientEmail ? {
-              children: "Envoyer au client",
-              onClick: () => setShowSendEmailModal(true),
-            } : undefined,
+            actionProps: data.clientEmail
+              ? {
+                  children: "Envoyer au client",
+                  onClick: () => setShowSendEmailModal(true),
+                }
+              : undefined,
           });
-          
+
           sessionStorage.removeItem("newCreditNoteData");
         } catch (e) {
           sessionStorage.removeItem("newCreditNoteData");
@@ -133,11 +137,12 @@ function InvoicesContent() {
     let overdueAmount = 0;
     let overdueCount = 0;
 
-    if (!filteredData) return { totalBilled, totalPaid, overdueAmount, overdueCount };
+    if (!filteredData)
+      return { totalBilled, totalPaid, overdueAmount, overdueCount };
 
     filteredData.forEach((item) => {
       if (item._type === "imported") {
-        // Factures importées (OCR)
+        // Factures importées (PDF direct, pas d'OCR sur cette page)
         const amount = item.totalHT ?? 0;
         if (item.status === "VALIDATED" || item.status === "COMPLETED") {
           totalBilled += amount;
@@ -145,11 +150,12 @@ function InvoicesContent() {
         if (item.status === "COMPLETED") {
           totalPaid += amount;
         }
-        // Retard pour les factures importées validées avec échéance dépassée
+        // Une facture importée VALIDATED avec échéance dépassée est en retard
         if (item.status === "VALIDATED" && item.dueDate) {
-          const dueDateValue = typeof item.dueDate === 'string' && /^\d+$/.test(item.dueDate)
-            ? parseInt(item.dueDate, 10)
-            : item.dueDate;
+          const dueDateValue =
+            typeof item.dueDate === "string" && /^\d+$/.test(item.dueDate)
+              ? parseInt(item.dueDate, 10)
+              : item.dueDate;
           const dueDate = new Date(dueDateValue);
           dueDate.setHours(0, 0, 0, 0);
           if (dueDate < today) {
@@ -171,9 +177,10 @@ function InvoicesContent() {
         }
 
         if (item.status === INVOICE_STATUS.PENDING && item.dueDate) {
-          const dueDateValue = typeof item.dueDate === 'string' && /^\d+$/.test(item.dueDate)
-            ? parseInt(item.dueDate, 10)
-            : item.dueDate;
+          const dueDateValue =
+            typeof item.dueDate === "string" && /^\d+$/.test(item.dueDate)
+              ? parseInt(item.dueDate, 10)
+              : item.dueDate;
           const dueDate = new Date(dueDateValue);
           dueDate.setHours(0, 0, 0, 0);
           if (dueDate < today) {
@@ -227,10 +234,7 @@ function InvoicesContent() {
             >
               <Settings size={14} strokeWidth={1.5} aria-hidden="true" />
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => setTriggerImport(true)}
-            >
+            <Button variant="outline" onClick={() => setTriggerImport(true)}>
               <Download size={14} strokeWidth={1.5} aria-hidden="true" />
               Importer
             </Button>
@@ -421,7 +425,6 @@ function InvoicesContent() {
         open={isAutoReminderOpen}
         onOpenChange={setIsAutoReminderOpen}
       />
-
 
       {/* Modal d'envoi par email pour les nouvelles factures/avoirs */}
       {newDocumentData && (

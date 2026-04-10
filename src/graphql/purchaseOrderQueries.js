@@ -326,8 +326,16 @@ export const GET_PURCHASE_ORDER_STATS = gql`
 `;
 
 export const GET_NEXT_PURCHASE_ORDER_NUMBER = gql`
-  query GetNextPurchaseOrderNumber($workspaceId: ID!, $prefix: String) {
-    nextPurchaseOrderNumber(workspaceId: $workspaceId, prefix: $prefix)
+  query GetNextPurchaseOrderNumber(
+    $workspaceId: ID!
+    $prefix: String
+    $autoNumbering: Boolean
+  ) {
+    nextPurchaseOrderNumber(
+      workspaceId: $workspaceId
+      prefix: $prefix
+      autoNumbering: $autoNumbering
+    )
   }
 `;
 

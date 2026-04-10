@@ -90,7 +90,15 @@ export default function InvoiceSettingsView({
   } = useFormContext();
   const data = watch();
 
-  // Hook pour la numérotation séquentielle des factures (filtré par préfixe courant)
+  // Hook pour la numérotation séquentielle des factures
+  const autoNumbering = data.autoNumbering || false;
+
+  // Deux hooks : un per-prefix (toujours actif) et un global (quand autoNumbering)
+  const perPrefixHook = useInvoiceNumber(data.prefix, { autoNumbering: false });
+  const globalHook = useInvoiceNumber(data.prefix, { autoNumbering: true });
+
+  // Sélectionner le bon hook selon le mode
+  const activeHook = autoNumbering ? globalHook : perPrefixHook;
   const {
     nextInvoiceNumber,
     validateInvoiceNumber,
@@ -98,10 +106,13 @@ export default function InvoiceSettingsView({
     hasExistingInvoices,
     hasDocumentsForPrefix,
     getFormattedNextNumber,
-  } = useInvoiceNumber(data.prefix);
+  } = activeHook;
 
   // Champ numéro éditable uniquement si aucune facture finalisée n'existe pour ce préfixe
-  const isFirstInvoice = !hasDocumentsForPrefix;
+  // En mode autoNumbering, le numéro est toujours verrouillé
+  const isFirstInvoice = autoNumbering
+    ? false
+    : !perPrefixHook.hasDocumentsForPrefix;
 
   // Auto-initialiser le préfixe si vide (au montage uniquement)
   useEffect(() => {
@@ -112,26 +123,29 @@ export default function InvoiceSettingsView({
 
   // Synchroniser le numéro depuis le hook de numérotation
   useEffect(() => {
-    if (isLoadingInvoiceNumber || !nextInvoiceNumber) return;
+    if (isLoadingInvoiceNumber || nextInvoiceNumber == null) return;
     const formattedNumber = String(nextInvoiceNumber).padStart(4, "0");
 
-    if (hasDocumentsForPrefix) {
-      // Préfixe existant → forcer le numéro séquentiel (champ verrouillé)
+    if (autoNumbering || perPrefixHook.hasDocumentsForPrefix) {
+      // Auto-numbering activé ou préfixe existant → forcer le numéro séquentiel
       setValue("number", formattedNumber, { shouldValidate: false });
     } else if (!data.number) {
-      // Nouveau préfixe, champ vide → proposer le défaut
+      // Nouveau préfixe, pas de numéro → proposer 0001
       setValue("number", formattedNumber, { shouldValidate: false });
     }
-  }, [nextInvoiceNumber, isLoadingInvoiceNumber, hasDocumentsForPrefix]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [
+    nextInvoiceNumber,
+    isLoadingInvoiceNumber,
+    perPrefixHook.hasDocumentsForPrefix,
+    autoNumbering,
+  ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Gérer le changement de préfixe avec auto-fill pour MM et AAAA
   const handlePrefixChange = (e) => {
     const value = e.target.value;
     const cursorPosition = e.target.selectionStart;
 
-    // Réinitialiser le numéro au défaut quand le préfixe change
-    // Le useEffect écrasera avec le séquentiel si le préfixe a des documents
-    setValue("number", "0001", { shouldValidate: false });
+    // Le useEffect synchronisera le numéro quand le hook aura rechargé avec le nouveau préfixe
 
     // Auto-fill MM (month)
     if (value.includes("MM")) {
@@ -422,6 +436,28 @@ export default function InvoiceSettingsView({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 p-0">
+              {/* Toggle numérotation automatique */}
+              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-muted">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-medium">
+                    Numérotation séquentielle continue
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Le numéro suit une séquence unique, même lors d'un
+                    changement de préfixe.
+                  </p>
+                </div>
+                <Switch
+                  checked={autoNumbering}
+                  onCheckedChange={(checked) => {
+                    setValue("autoNumbering", checked, {
+                      shouldValidate: false,
+                    });
+                  }}
+                  className="data-[state=checked]:bg-[#5b4fff]"
+                />
+              </div>
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Préfixe de facture */}
                 <div className="space-y-2">
@@ -575,9 +611,11 @@ export default function InvoiceSettingsView({
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground">
-                      {isFirstInvoice
-                        ? "Nouveau préfixe — vous pouvez choisir le numéro de départ."
-                        : "Numéro attribué automatiquement de manière séquentielle."}
+                      {autoNumbering
+                        ? "Numéro attribué automatiquement — séquence continue indépendante du préfixe."
+                        : isFirstInvoice
+                          ? "Nouveau préfixe — vous pouvez choisir le numéro de départ."
+                          : "Numéro attribué automatiquement de manière séquentielle."}
                     </p>
                   </div>
                 </div>

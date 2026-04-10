@@ -561,6 +561,8 @@ function KanbanBoardPageContent({ params }) {
     moveTask,
     updateTask,
     createTask,
+    initialFormRef,
+    localMutationRef,
   } = useKanbanTasks(id, board);
 
   // Mutation pour réorganiser les colonnes
@@ -761,13 +763,21 @@ function KanbanBoardPageContent({ params }) {
     return Math.max(0, total);
   }, []);
 
-  // Tâches facturables = temps effectif > 0 ET tarif horaire défini
+  // Tâches facturables = temps effectif > 0 ET tarif horaire défini ET prix > 0
   const billableTasks = useMemo(() => {
     if (!board?.tasks) return [];
     return board.tasks.filter((task) => {
-      if (!task.timeTracking?.hourlyRate || task.timeTracking.hourlyRate <= 0)
-        return false;
-      return getEffectiveSeconds(task.timeTracking) > 0;
+      const tt = task.timeTracking;
+      if (!tt?.hourlyRate || tt.hourlyRate <= 0) return false;
+      const effectiveSeconds = getEffectiveSeconds(tt);
+      if (effectiveSeconds <= 0) return false;
+      const h = Math.floor(effectiveSeconds / 3600);
+      const m = Math.floor((effectiveSeconds % 3600) / 60);
+      let billableHours = h + m / 60;
+      if (tt.roundingOption === "up") billableHours = Math.ceil(billableHours);
+      else if (tt.roundingOption === "down")
+        billableHours = Math.floor(billableHours);
+      return billableHours * tt.hourlyRate > 0;
     });
   }, [board?.tasks, getEffectiveSeconds]);
 
@@ -1663,6 +1673,8 @@ function KanbanBoardPageContent({ params }) {
         removeChecklistItem={removeChecklistItem}
         openEditTaskModal={openEditTaskModal}
         updateTask={updateTask}
+        initialFormRef={initialFormRef}
+        localMutationRef={localMutationRef}
       />
 
       <AlertDialog

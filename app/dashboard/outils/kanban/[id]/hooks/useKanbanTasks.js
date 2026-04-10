@@ -71,6 +71,9 @@ export const useKanbanTasks = (boardId, board) => {
   // Ref pour éviter les mises à jour en boucle
   const lastUpdateRef = useRef(null);
 
+  // Ref pour l'état initial du formulaire (utilisé par l'auto-save dans TaskModal)
+  const initialFormRef = useRef(null);
+
   // Lazy query pour charger les détails d'une tâche (comments, activity, timeTracking.entries)
   // Chargé uniquement quand on ouvre le modal de détail
   const [fetchTaskDetails, { loading: taskDetailsLoading }] = useLazyQuery(
@@ -79,22 +82,28 @@ export const useKanbanTasks = (boardId, board) => {
       fetchPolicy: "network-only",
       onCompleted: (data) => {
         if (data?.task) {
-          setTaskForm((prev) => ({
-            ...prev,
-            comments: Array.isArray(data.task.comments)
-              ? data.task.comments
-              : [],
-            activity: Array.isArray(data.task.activity)
-              ? data.task.activity
-              : [],
-            // Merger les entries du timeTracking si elles existent
-            timeTracking: prev.timeTracking
-              ? {
-                  ...prev.timeTracking,
-                  entries: data.task.timeTracking?.entries || [],
-                }
-              : data.task.timeTracking,
-          }));
+          setTaskForm((prev) => {
+            const updated = {
+              ...prev,
+              comments: Array.isArray(data.task.comments)
+                ? data.task.comments
+                : [],
+              activity: Array.isArray(data.task.activity)
+                ? data.task.activity
+                : [],
+              // Merger les entries du timeTracking si elles existent
+              timeTracking: prev.timeTracking
+                ? {
+                    ...prev.timeTracking,
+                    entries: data.task.timeTracking?.entries || [],
+                  }
+                : data.task.timeTracking,
+            };
+            // Mettre à jour initialFormRef pour éviter que l'auto-save ne se déclenche
+            // à cause des comments/activity rechargés
+            initialFormRef.current = JSON.stringify(updated);
+            return updated;
+          });
         }
       },
     },
@@ -106,8 +115,11 @@ export const useKanbanTasks = (boardId, board) => {
     return board.tasks.find((t) => t.id === editingTask.id) || null;
   }, [board?.tasks, editingTask?.id, isEditTaskOpen]);
 
+  // Ref pour savoir si c'est l'utilisateur local qui a déclenché la dernière mutation
+  const localMutationRef = useRef(false);
+
   // Synchroniser les données temps réel quand la tâche est mise à jour via subscription
-  // Quand updatedAt change, refetch les détails (comments, activity) depuis le serveur
+  // Quand updatedAt change, synchroniser taskForm avec les données du board ET refetch les détails
   useEffect(() => {
     if (!editingTaskFromBoard) return;
 
@@ -122,7 +134,50 @@ export const useKanbanTasks = (boardId, board) => {
 
     lastUpdateRef.current = updateKey;
 
-    // La tâche a été mise à jour via subscription → refetch les détails
+    // Si c'est une mutation locale, on ne synchronise pas le form (l'utilisateur a déjà les bonnes données)
+    if (localMutationRef.current) {
+      localMutationRef.current = false;
+    } else {
+      // Mise à jour d'un autre utilisateur → synchroniser taskForm avec les données du board
+      // pour éviter que l'auto-save n'écrase les changements avec des données périmées
+      setTaskForm((prev) => {
+        const synced = {
+          ...prev,
+          title: editingTaskFromBoard.title ?? prev.title,
+          description: editingTaskFromBoard.description ?? prev.description,
+          status: editingTaskFromBoard.status ?? prev.status,
+          priority: editingTaskFromBoard.priority
+            ? editingTaskFromBoard.priority.toLowerCase()
+            : prev.priority,
+          startDate: editingTaskFromBoard.startDate ?? prev.startDate,
+          dueDate: editingTaskFromBoard.dueDate ?? prev.dueDate,
+          columnId: editingTaskFromBoard.columnId ?? prev.columnId,
+          tags: Array.isArray(editingTaskFromBoard.tags)
+            ? editingTaskFromBoard.tags
+            : prev.tags,
+          checklist: Array.isArray(editingTaskFromBoard.checklist)
+            ? editingTaskFromBoard.checklist.map((item, index) => ({
+                id: item?.id || `checklist-item-${index}-${Date.now()}`,
+                text: item?.text || "",
+                completed: Boolean(item?.completed),
+              }))
+            : prev.checklist,
+          assignedMembers: Array.isArray(editingTaskFromBoard.assignedMembers)
+            ? editingTaskFromBoard.assignedMembers
+            : prev.assignedMembers,
+          images: Array.isArray(editingTaskFromBoard.images)
+            ? editingTaskFromBoard.images
+            : prev.images,
+          timeTracking: editingTaskFromBoard.timeTracking ?? prev.timeTracking,
+          updatedAt: editingTaskFromBoard.updatedAt ?? prev.updatedAt,
+        };
+        // Mettre à jour initialFormRef pour éviter que l'auto-save ne se déclenche
+        initialFormRef.current = JSON.stringify(synced);
+        return synced;
+      });
+    }
+
+    // Refetch les détails (comments, activity, timeTracking.entries) depuis le serveur
     fetchTaskDetails({
       variables: { id: editingTaskFromBoard.id, workspaceId },
     });
@@ -751,6 +806,10 @@ export const useKanbanTasks = (boardId, board) => {
     isEditTaskOpen,
     loading: createTaskLoading || updateTaskLoading || deleteTaskLoading,
     taskDetailsLoading,
+
+    // Refs
+    initialFormRef,
+    localMutationRef,
 
     // Setters
     setTaskForm,
