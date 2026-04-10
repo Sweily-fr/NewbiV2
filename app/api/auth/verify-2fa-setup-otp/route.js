@@ -46,20 +46,33 @@ export async function POST(request) {
     // (`better-auth.session_data` ou `__Secure-better-auth.session_data` en HTTPS).
     // Sans ça, le client continue de lire l'ancien `twoFactorEnabled=false`
     // pendant 5 minutes à cause du `cookieCache` activé dans auth.js.
+    //
+    // ⚠️ Les attributs DOIVENT matcher ceux posés par Better Auth
+    // (voir node_modules/better-auth/dist/cookies/index.mjs:createCookieGetter),
+    // sinon le Set-Cookie est ignoré — en particulier, le cookie `__Secure-*`
+    // est rejeté par le navigateur s'il ne porte pas le flag Secure.
     const response = NextResponse.json({ status: true, verified: true });
 
-    const sessionDataCookieNames = [
-      "better-auth.session_data",
-      "__Secure-better-auth.session_data",
-    ];
-    for (const name of sessionDataCookieNames) {
-      response.cookies.set({
-        name,
-        value: "",
-        path: "/",
-        maxAge: 0,
-      });
-    }
+    // Cookie dev (HTTP / localhost)
+    response.cookies.set({
+      name: "better-auth.session_data",
+      value: "",
+      path: "/",
+      maxAge: 0,
+      httpOnly: true,
+      sameSite: "lax",
+    });
+
+    // Cookie prod (HTTPS) — le préfixe __Secure- exige secure: true
+    response.cookies.set({
+      name: "__Secure-better-auth.session_data",
+      value: "",
+      path: "/",
+      maxAge: 0,
+      httpOnly: true,
+      sameSite: "lax",
+      secure: true,
+    });
 
     return response;
   } catch (error) {
