@@ -11,17 +11,14 @@ export async function POST() {
     });
 
     if (!session?.user) {
-      return NextResponse.json(
-        { error: "Non authentifié" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
     // Générer un code OTP à 6 chiffres
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Stocker le code en mémoire (expire dans 5 min)
-    setupOtpStore.set(session.user.id, otp, 5 * 60 * 1000);
+    // Stocker le code en base (expire dans 5 min)
+    await setupOtpStore.set(session.user.id, otp, 5 * 60 * 1000);
 
     // Envoyer l'email
     await send2FAEmail(session.user, otp);
@@ -31,7 +28,7 @@ export async function POST() {
     console.error("[2FA Setup OTP] Erreur:", error);
     return NextResponse.json(
       { error: error.message || "Erreur lors de l'envoi" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

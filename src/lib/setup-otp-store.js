@@ -1,26 +1,44 @@
-// Store temporaire en mémoire pour les codes OTP de setup 2FA.
-// On l'attache à globalThis pour qu'il survive au HMR de Next.js (dev/Turbopack)
-// et aux éventuelles ré-évaluations de module entre route handlers.
-const store = globalThis.__newbiSetupOtpStore ?? new Map();
-if (!globalThis.__newbiSetupOtpStore) {
-  globalThis.__newbiSetupOtpStore = store;
-}
+// Store persistant pour les codes OTP de setup 2FA.
+//
+// ⚠️ On ne peut PAS utiliser un Map en mémoire (même attaché à globalThis)
+// car NewbiV2 tourne sur Vercel en serverless : chaque invocation de route
+// handler peut atterrir sur une instance Lambda différente, et chaque
+// instance a son propre process/mémoire. Résultat : la route `send-otp`
+// écrit dans une instance et `verify-otp` lit depuis une autre instance
+// vide → "Code incorrect ou expiré" systématique.
+//
+// → Stockage en MongoDB dans la collection `twoFactorSetupOtp`.
+// Un index TTL sur `expiresAt` (voir mongodb.js ensureIndexes) supprime
+// automatiquement les entrées expirées.
+
+import { mongoDb } from "./mongodb";
+
+const COLLECTION = "twoFactorSetupOtp";
 
 export const setupOtpStore = {
-  set(userId, otp, ttlMs) {
-    store.set(userId, {
-      otp,
-      expiresAt: Date.now() + ttlMs,
-    });
+  async set(userId, otp, ttlMs) {
+    const expiresAt = new Date(Date.now() + ttlMs);
+    // Upsert : remplace l'OTP précédent si l'utilisateur clique "Renvoyer"
+    await mongoDb.collection(COLLECTION).updateOne(
+      { userId },
+      {
+        $set: {
+          userId,
+          otp: String(otp),
+          expiresAt,
+        },
+      },
+      { upsert: true },
+    );
   },
 
-  verify(userId, code) {
-    const entry = store.get(userId);
+  async verify(userId, code) {
+    const entry = await mongoDb.collection(COLLECTION).findOne({ userId });
     if (!entry) return false;
 
     // Expiré → on supprime et on refuse
-    if (Date.now() > entry.expiresAt) {
-      store.delete(userId);
+    if (entry.expiresAt < new Date()) {
+      await mongoDb.collection(COLLECTION).deleteOne({ userId });
       return false;
     }
 
@@ -32,7 +50,7 @@ export const setupOtpStore = {
     // Usage unique : on ne supprime l'entrée qu'en cas de succès,
     // pour laisser la possibilité de corriger une faute de frappe.
     if (isValid) {
-      store.delete(userId);
+      await mongoDb.collection(COLLECTION).deleteOne({ userId });
     }
 
     return isValid;

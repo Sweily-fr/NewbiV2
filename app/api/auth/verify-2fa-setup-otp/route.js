@@ -21,8 +21,8 @@ export async function POST(request) {
       return NextResponse.json({ error: "Code invalide" }, { status: 400 });
     }
 
-    // Vérifier le code OTP custom (store en mémoire)
-    const isValid = setupOtpStore.verify(session.user.id, code);
+    // Vérifier le code OTP custom (store persistant en MongoDB)
+    const isValid = await setupOtpStore.verify(session.user.id, code);
 
     if (!isValid) {
       return NextResponse.json(
