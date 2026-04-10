@@ -292,20 +292,33 @@ function drawDiagonalWatermark(ctx, text, width, height, fontSize, rotation) {
   ctx.translate(width / 2, height / 2);
   ctx.rotate((rotation * Math.PI) / 180);
 
-  // Utiliser la diagonale de l'image pour dimensionner le texte en diagonal
-  const diagonal = Math.sqrt(width * width + height * height);
-  const charWidthRatio = 0.6;
-  const targetWidth = diagonal * 0.6;
-  const adaptedFontSize = Math.round(
-    targetWidth / (text.length * charWidthRatio),
-  );
-  // Bornes relatives à la plus petite dimension
+  // Mesurer la vraie largeur du texte à une taille de référence,
+  // puis calculer la police qui rentre dans la boîte englobante après rotation.
+  const refSize = 100;
+  ctx.font = `bold ${refSize}px Arial, sans-serif`;
+  const refTextWidth = ctx.measureText(text).width;
+  const widthPerPx = refTextWidth / refSize;
+
+  // Boîte englobante d'un texte (largeur T, hauteur ≈ F) rotaté de θ :
+  //   visualWidth  = T·|cos θ| + F·|sin θ|
+  //   visualHeight = T·|sin θ| + F·|cos θ|
+  // Avec T = F·widthPerPx, on isole F :
+  //   F ≤ width  / (widthPerPx·|cos θ| + |sin θ|)
+  //   F ≤ height / (widthPerPx·|sin θ| + |cos θ|)
+  const angleRad = (rotation * Math.PI) / 180;
+  const cosA = Math.abs(Math.cos(angleRad));
+  const sinA = Math.abs(Math.sin(angleRad));
+  const fitW = width / (widthPerPx * cosA + sinA);
+  const fitH = height / (widthPerPx * sinA + cosA);
+  const fitFontSize = Math.min(fitW, fitH) * 0.9; // 10% de marge
+
+  // Bornes (police lisible mais pas démesurée)
   const refDimension = Math.min(width, height);
   const minFontSize = Math.max(12, Math.round(refDimension * 0.03));
   const maxFontSize = Math.round(refDimension * 0.2);
   const finalFontSize = Math.min(
     maxFontSize,
-    Math.max(minFontSize, adaptedFontSize),
+    Math.max(minFontSize, Math.floor(fitFontSize)),
   );
   ctx.font = `bold ${finalFontSize}px Arial, sans-serif`;
 
@@ -466,23 +479,44 @@ export async function applyWatermarkToPdf(file, options = {}) {
         }
         case "diagonal":
         default: {
-          const diagonal = Math.sqrt(width * width + height * height);
-          const charWidthRatio = 0.5;
-          const targetW = diagonal * 0.6;
-          const rawFontSize = Math.round(
-            targetW / (text.length * charWidthRatio),
-          );
+          // Mesurer le texte à une taille de référence puis calculer la
+          // police qui rentre dans la boîte englobante après rotation.
+          const refSize = 100;
+          const refTextWidth = font.widthOfTextAtSize(text, refSize);
+          const widthPerPx = refTextWidth / refSize;
+
+          const angleRad = (rotation * Math.PI) / 180;
+          const cosA = Math.abs(Math.cos(angleRad));
+          const sinA = Math.abs(Math.sin(angleRad));
+          const fitW = width / (widthPerPx * cosA + sinA);
+          const fitH = height / (widthPerPx * sinA + cosA);
+          const fitFontSize = Math.min(fitW, fitH) * 0.9;
+
           const refDim = Math.min(width, height);
           const minFs = Math.max(10, Math.round(refDim * 0.03));
           const maxFs = Math.round(refDim * 0.2);
-          const fontSize = Math.min(maxFs, Math.max(minFs, rawFontSize));
+          const fontSize = Math.min(
+            maxFs,
+            Math.max(minFs, Math.floor(fitFontSize)),
+          );
+
+          // pdf-lib place le texte tel que (x, y) soit le coin bas-gauche
+          // de la baseline, avec rotation appliquée autour de ce point.
+          // Pour obtenir un texte visuellement centré sur l'image, on
+          // calcule où placer ce coin pour que le centre du texte tombe
+          // au centre de l'image.
           const textWidth = font.widthOfTextAtSize(text, fontSize);
+          const textHeight = fontSize;
+          const cosR = Math.cos(angleRad);
+          const sinR = Math.sin(angleRad);
+          const dx = -textWidth / 2;
+          const dy = -textHeight / 2;
+          const x = width / 2 + dx * cosR - dy * sinR;
+          const y = height / 2 + dx * sinR + dy * cosR;
+
           page.drawText(text, {
-            x:
-              (width -
-                textWidth * Math.cos(Math.abs((rotation * Math.PI) / 180))) /
-              2,
-            y: height / 2,
+            x,
+            y,
             size: fontSize,
             font,
             color: rgb(r, g, b),
