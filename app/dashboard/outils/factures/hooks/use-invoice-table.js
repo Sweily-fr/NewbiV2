@@ -587,8 +587,15 @@ export function useInvoiceTable({
             }
 
             const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const dueDateMidnight = new Date(dueDate);
+            dueDateMidnight.setHours(0, 0, 0, 0);
+            const status = row.original.status;
+            const isImportedRow = row.original._type === "imported";
             const isOverdue =
-              dueDate < today && row.original.status === "PENDING";
+              dueDateMidnight < today &&
+              ((!isImportedRow && status === "PENDING") ||
+                (isImportedRow && status === "VALIDATED"));
 
             const formattedDate = dueDate.toLocaleDateString("fr-FR");
 
