@@ -60,6 +60,17 @@ async function ensureIndexes(db) {
       idx: { eventId: 1 },
       opts: { unique: true, background: true },
     },
+    // Setup 2FA OTP store (serverless-safe)
+    {
+      coll: "twoFactorSetupOtp",
+      idx: { userId: 1 },
+      opts: { unique: true, background: true },
+    },
+    {
+      coll: "twoFactorSetupOtp",
+      idx: { expiresAt: 1 },
+      opts: { expireAfterSeconds: 0, background: true },
+    },
   ];
 
   await Promise.allSettled(
