@@ -8,6 +8,7 @@ import {
   CREATE_FILE_TRANSFER_WITH_IDS_R2,
 } from "../graphql/mutations";
 import { applyWatermarkToFiles } from "../utils/watermark";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
 
 // 50 MB par part (optimal pour S3 Multipart)
 const OPTIMAL_PART_SIZE = 50 * 1024 * 1024;
@@ -16,6 +17,7 @@ const OPTIMAL_PART_SIZE = 50 * 1024 * 1024;
 const MAX_CONCURRENT_UPLOADS = 10;
 
 export const useFileTransferR2Multipart = (refetchTransfers) => {
+  const { workspaceId } = useWorkspace();
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -28,10 +30,10 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
   // Mutations GraphQL
   const [startMultipartUploadMutation] = useMutation(START_MULTIPART_UPLOAD);
   const [completeMultipartUploadMutation] = useMutation(
-    COMPLETE_MULTIPART_UPLOAD
+    COMPLETE_MULTIPART_UPLOAD,
   );
   const [createFileTransferWithIdsR2Mutation] = useMutation(
-    CREATE_FILE_TRANSFER_WITH_IDS_R2
+    CREATE_FILE_TRANSFER_WITH_IDS_R2,
   );
 
   /**
@@ -67,7 +69,7 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
       if (!response.ok) {
         const errorText = await response.text().catch(() => "");
         throw new Error(
-          `Upload part ${partNumber} échoué: ${response.status} ${response.statusText} - ${errorText}`
+          `Upload part ${partNumber} échoué: ${response.status} ${response.statusText} - ${errorText}`,
         );
       }
 
@@ -91,7 +93,7 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
     fileData,
     transferId,
     fileIndex = 0,
-    totalFiles = 1
+    totalFiles = 1,
   ) => {
     const { file, id: fileId } = fileData;
     const parts = createFileParts(file);
@@ -99,7 +101,7 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
 
     try {
       console.log(
-        `🚀 Début Multipart Upload NATIF: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB) en ${totalParts} parts de 50 MB`
+        `🚀 Début Multipart Upload NATIF: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB) en ${totalParts} parts de 50 MB`,
       );
 
       // Étape 1 : Démarrer le multipart et obtenir les URLs presigned
@@ -119,7 +121,7 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
       if (startErrors) {
         console.error("❌ Erreurs GraphQL lors du démarrage:", startErrors);
         throw new Error(
-          `Erreurs GraphQL: ${startErrors.map((e) => e.message).join(", ")}`
+          `Erreurs GraphQL: ${startErrors.map((e) => e.message).join(", ")}`,
         );
       }
 
@@ -154,7 +156,7 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
           part,
           urlInfo.uploadUrl,
           partNumber,
-          abortControllerRef.current?.signal
+          abortControllerRef.current?.signal,
         );
 
         uploadedCount++;
@@ -177,19 +179,19 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
 
         const batch = parts.slice(i, i + MAX_CONCURRENT_UPLOADS);
         const batchPromises = batch.map((part, batchIndex) =>
-          uploadPart(part, i + batchIndex)
+          uploadPart(part, i + batchIndex),
         );
 
         const batchResults = await Promise.all(batchPromises);
         uploadedParts.push(...batchResults);
 
         console.log(
-          `✅ Batch ${Math.floor(i / MAX_CONCURRENT_UPLOADS) + 1}/${Math.ceil(totalParts / MAX_CONCURRENT_UPLOADS)} uploadé (${uploadedParts.length}/${totalParts} parts)`
+          `✅ Batch ${Math.floor(i / MAX_CONCURRENT_UPLOADS) + 1}/${Math.ceil(totalParts / MAX_CONCURRENT_UPLOADS)} uploadé (${uploadedParts.length}/${totalParts} parts)`,
         );
       }
 
       console.log(
-        `✅ Toutes les parts uploadées: ${uploadedParts.length}/${totalParts}`
+        `✅ Toutes les parts uploadées: ${uploadedParts.length}/${totalParts}`,
       );
 
       // Étape 3 : Finaliser le multipart upload
@@ -208,10 +210,10 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
       if (completeErrors) {
         console.error(
           "❌ Erreurs GraphQL lors de la finalisation:",
-          completeErrors
+          completeErrors,
         );
         throw new Error(
-          `Erreurs GraphQL: ${completeErrors.map((e) => e.message).join(", ")}`
+          `Erreurs GraphQL: ${completeErrors.map((e) => e.message).join(", ")}`,
         );
       }
 
@@ -221,10 +223,10 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
       }
 
       console.log(
-        `✅ Multipart Upload complété: ${completeData.completeMultipartUpload.key}`
+        `✅ Multipart Upload complété: ${completeData.completeMultipartUpload.key}`,
       );
       console.log(
-        `📊 Taille finale: ${(completeData.completeMultipartUpload.size / 1024 / 1024).toFixed(2)} MB`
+        `📊 Taille finale: ${(completeData.completeMultipartUpload.size / 1024 / 1024).toFixed(2)} MB`,
       );
 
       return fileId;
@@ -257,7 +259,7 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
           fileData,
           transferId,
           i,
-          totalFiles
+          totalFiles,
         );
         uploadedFileIds.push(fileId);
       } catch (error) {
@@ -293,7 +295,7 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
 
         const validFiles = selectedFiles.filter(
           (f) =>
-            f && f.file && (f.file instanceof File || f.file instanceof Blob)
+            f && f.file && (f.file instanceof File || f.file instanceof Blob),
         );
 
         if (validFiles.length === 0) {
@@ -317,7 +319,7 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
           } catch (watermarkError) {
             console.error(
               "⚠️ Erreur lors de l'application du filigrane:",
-              watermarkError
+              watermarkError,
             );
             // Continuer avec les fichiers originaux en cas d'erreur
             filesToUpload = validFiles;
@@ -327,11 +329,13 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
         // Upload tous les fichiers en multipart natif vers R2
         const uploadedFileIds = await uploadMultipleFilesToR2(
           filesToUpload,
-          transferId
+          transferId,
         );
 
         // Préparer les options du transfert
         const inputData = {
+          // Scoper le transfert au workspace actif pour l'isolation multi-workspace
+          workspaceId: workspaceId || null,
           expiryDays: transferOptions.expiryDays || 7,
           isPaymentRequired: Boolean(transferOptions.isPaymentRequired),
           paymentAmount: transferOptions.paymentAmount
@@ -347,7 +351,7 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
           allowPreview: transferOptions.allowPreview !== false,
           expiryReminderEnabled: Boolean(
             transferOptions.notifyBeforeExpiry ||
-              transferOptions.expiryReminderEnabled
+            transferOptions.expiryReminderEnabled,
           ),
           // Option filigrane
           hasWatermark: Boolean(transferOptions.applyWatermark),
@@ -364,7 +368,7 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
         if (errors) {
           console.error("❌ Erreurs GraphQL:", errors);
           throw new Error(
-            `Erreurs GraphQL: ${errors.map((e) => e.message).join(", ")}`
+            `Erreurs GraphQL: ${errors.map((e) => e.message).join(", ")}`,
           );
         }
 
@@ -396,7 +400,7 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
           return result;
         } else {
           throw new Error(
-            "Erreur lors de la création du transfert R2: données manquantes dans la réponse"
+            "Erreur lors de la création du transfert R2: données manquantes dans la réponse",
           );
         }
       } catch (error) {
@@ -427,11 +431,12 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
     },
     [
       selectedFiles,
+      workspaceId,
       startMultipartUploadMutation,
       completeMultipartUploadMutation,
       createFileTransferWithIdsR2Mutation,
       refetchTransfers,
-    ]
+    ],
   );
 
   /**

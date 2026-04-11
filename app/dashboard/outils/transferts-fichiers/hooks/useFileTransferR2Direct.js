@@ -7,20 +7,24 @@ import {
   CONFIRM_CHUNK_UPLOADED,
   CREATE_FILE_TRANSFER_WITH_IDS_R2,
 } from "../graphql/mutations";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
 
 const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB par chunk
 
 export const useFileTransferR2Direct = (refetchTransfers) => {
+  const { workspaceId } = useWorkspace();
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [transferResult, setTransferResult] = useState(null);
 
   // Mutations GraphQL
-  const [generatePresignedUrlsMutation] = useMutation(GENERATE_PRESIGNED_UPLOAD_URLS);
+  const [generatePresignedUrlsMutation] = useMutation(
+    GENERATE_PRESIGNED_UPLOAD_URLS,
+  );
   const [confirmChunkUploadedMutation] = useMutation(CONFIRM_CHUNK_UPLOADED);
   const [createFileTransferWithIdsR2Mutation] = useMutation(
-    CREATE_FILE_TRANSFER_WITH_IDS_R2
+    CREATE_FILE_TRANSFER_WITH_IDS_R2,
   );
 
   /**
@@ -44,7 +48,9 @@ export const useFileTransferR2Direct = (refetchTransfers) => {
    */
   const uploadChunkDirectToR2 = async (chunk, uploadUrl, chunkIndex) => {
     try {
-      console.log(`📤 Upload chunk ${chunkIndex} vers R2 (${(chunk.size / 1024 / 1024).toFixed(2)} MB)`);
+      console.log(
+        `📤 Upload chunk ${chunkIndex} vers R2 (${(chunk.size / 1024 / 1024).toFixed(2)} MB)`,
+      );
       console.log(`🔗 URL: ${uploadUrl.substring(0, 100)}...`);
 
       const response = await fetch(uploadUrl, {
@@ -64,7 +70,7 @@ export const useFileTransferR2Direct = (refetchTransfers) => {
           body: errorText,
         });
         throw new Error(
-          `Upload chunk ${chunkIndex} échoué: ${response.status} ${response.statusText} - ${errorText}`
+          `Upload chunk ${chunkIndex} échoué: ${response.status} ${response.statusText} - ${errorText}`,
         );
       }
 
@@ -88,22 +94,28 @@ export const useFileTransferR2Direct = (refetchTransfers) => {
 
     try {
       console.log(
-        `📦 Début upload DIRECT: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB) en ${totalChunks} chunks`
+        `📦 Début upload DIRECT: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB) en ${totalChunks} chunks`,
       );
 
       // Étape 1 : Obtenir les URLs signées
       console.log(`🔑 Demande de ${totalChunks} URLs signées...`);
-      const { data: urlsData, errors: urlErrors } = await generatePresignedUrlsMutation({
-        variables: {
-          fileId: fileId,
-          totalChunks: totalChunks,
-          fileName: file.name,
-        },
-      });
+      const { data: urlsData, errors: urlErrors } =
+        await generatePresignedUrlsMutation({
+          variables: {
+            fileId: fileId,
+            totalChunks: totalChunks,
+            fileName: file.name,
+          },
+        });
 
       if (urlErrors) {
-        console.error("❌ Erreurs GraphQL lors de la génération des URLs:", urlErrors);
-        throw new Error(`Erreurs GraphQL: ${urlErrors.map(e => e.message).join(", ")}`);
+        console.error(
+          "❌ Erreurs GraphQL lors de la génération des URLs:",
+          urlErrors,
+        );
+        throw new Error(
+          `Erreurs GraphQL: ${urlErrors.map((e) => e.message).join(", ")}`,
+        );
       }
 
       if (!urlsData?.generatePresignedUploadUrls?.uploadUrls) {
@@ -113,7 +125,10 @@ export const useFileTransferR2Direct = (refetchTransfers) => {
 
       const uploadUrls = urlsData.generatePresignedUploadUrls.uploadUrls;
       console.log(`✅ ${uploadUrls.length} URLs signées reçues`);
-      console.log(`📋 Exemple d'URL:`, uploadUrls[0]?.uploadUrl?.substring(0, 150) + "...");
+      console.log(
+        `📋 Exemple d'URL:`,
+        uploadUrls[0]?.uploadUrl?.substring(0, 150) + "...",
+      );
 
       // Étape 2 : Upload des chunks en parallèle vers R2
       const CONCURRENT_UPLOADS = 5;
@@ -148,13 +163,13 @@ export const useFileTransferR2Direct = (refetchTransfers) => {
       for (let i = 0; i < chunks.length; i += CONCURRENT_UPLOADS) {
         const batch = chunks.slice(i, i + CONCURRENT_UPLOADS);
         const batchPromises = batch.map((chunk, batchIndex) =>
-          uploadChunk(chunk, i + batchIndex)
+          uploadChunk(chunk, i + batchIndex),
         );
 
         await Promise.all(batchPromises);
 
         console.log(
-          `✅ Batch ${Math.floor(i / CONCURRENT_UPLOADS) + 1}/${Math.ceil(totalChunks / CONCURRENT_UPLOADS)} uploadé`
+          `✅ Batch ${Math.floor(i / CONCURRENT_UPLOADS) + 1}/${Math.ceil(totalChunks / CONCURRENT_UPLOADS)} uploadé`,
         );
       }
 
@@ -208,7 +223,7 @@ export const useFileTransferR2Direct = (refetchTransfers) => {
 
         const validFiles = selectedFiles.filter(
           (f) =>
-            f && f.file && (f.file instanceof File || f.file instanceof Blob)
+            f && f.file && (f.file instanceof File || f.file instanceof Blob),
         );
 
         if (validFiles.length === 0) {
@@ -220,6 +235,7 @@ export const useFileTransferR2Direct = (refetchTransfers) => {
 
         // Préparer les options du transfert
         const inputData = {
+          workspaceId: workspaceId || null,
           expiryDays: transferOptions.expiryDays || 7,
           isPaymentRequired: Boolean(transferOptions.isPaymentRequired),
           paymentAmount: transferOptions.paymentAmount
@@ -241,7 +257,7 @@ export const useFileTransferR2Direct = (refetchTransfers) => {
         if (errors) {
           console.error("❌ Erreurs GraphQL:", errors);
           throw new Error(
-            `Erreurs GraphQL: ${errors.map((e) => e.message).join(", ")}`
+            `Erreurs GraphQL: ${errors.map((e) => e.message).join(", ")}`,
           );
         }
 
@@ -273,7 +289,7 @@ export const useFileTransferR2Direct = (refetchTransfers) => {
           return result;
         } else {
           throw new Error(
-            "Erreur lors de la création du transfert R2: données manquantes dans la réponse"
+            "Erreur lors de la création du transfert R2: données manquantes dans la réponse",
           );
         }
       } catch (error) {
@@ -295,11 +311,12 @@ export const useFileTransferR2Direct = (refetchTransfers) => {
     },
     [
       selectedFiles,
+      workspaceId,
       generatePresignedUrlsMutation,
       confirmChunkUploadedMutation,
       createFileTransferWithIdsR2Mutation,
       refetchTransfers,
-    ]
+    ],
   );
 
   /**

@@ -293,10 +293,11 @@ export const CREATE_FILE_TRANSFER_BASE64 = gql`
 
 // Pour récupérer les transferts de l'utilisateur
 export const GET_MY_TRANSFERS = gql`
-  query GetMyTransfers($page: Int, $limit: Int) {
-    myFileTransfers(page: $page, limit: $limit) {
+  query GetMyTransfers($workspaceId: ID, $page: Int, $limit: Int) {
+    myFileTransfers(workspaceId: $workspaceId, page: $page, limit: $limit) {
       items {
         id
+        workspaceId
         files {
           id
           fileId
@@ -304,6 +305,8 @@ export const GET_MY_TRANSFERS = gql`
           originalName
           size
           mimeType
+          r2Key
+          storageType
         }
         totalSize
         shareLink
@@ -311,6 +314,7 @@ export const GET_MY_TRANSFERS = gql`
         expiryDate
         downloadCount
         passwordProtected
+        allowPreview
         status
         isPaymentRequired
         paymentAmount

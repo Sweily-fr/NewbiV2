@@ -99,7 +99,7 @@ function isPdfFile(file) {
   return getFileExtension(file?.originalName) === "pdf";
 }
 
-// Vérifier si le fichier est prévisualisable
+// Vérifier si le fichier est prévisualisable (type supporté)
 function isPreviewable(file) {
   return isImageFile(file) || isPdfFile(file);
 }
@@ -156,10 +156,18 @@ export function TransferDetailDrawer({
   // Construire le lien de partage
   const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/transfer/${transfer.shareLink}${transfer.accessKey ? `?key=${transfer.accessKey}` : ""}`;
 
+  // Prévisualisation désactivée côté transfert (ex: ZIP depuis documents partagés)
+  const previewDisabled = transfer.allowPreview === false;
+
   // Fichiers prévisualisables pour la navigation dans le lightbox
-  const previewableFiles = transfer.files?.filter(isPreviewable) || [];
+  // Si la prévisualisation est désactivée au niveau du transfert, aucun fichier n'est
+  // réellement affichable — on force donc une liste vide pour éviter les états cassés.
+  const previewableFiles = previewDisabled
+    ? []
+    : transfer.files?.filter(isPreviewable) || [];
 
   const openLightbox = (file, index) => {
+    if (previewDisabled) return;
     // Trouver l'index dans les fichiers prévisualisables
     const previewIndex = previewableFiles.findIndex(
       (f) => (f.id || f.fileId) === (file.id || file.fileId),
@@ -334,13 +342,44 @@ export function TransferDetailDrawer({
                     loaderSize="h-8 w-8"
                   />
                 ) : isPdfFile(lightboxFile) ? (
-                  <iframe
-                    src={getPreviewUrl(transfer.id, lightboxFile)}
+                  <object
+                    data={getPreviewUrl(transfer.id, lightboxFile)}
+                    type="application/pdf"
                     className="w-full border-0 rounded-lg bg-white"
                     style={{ height: "75vh" }}
-                    title={lightboxFile.originalName}
-                  />
-                ) : null}
+                    aria-label={lightboxFile.originalName}
+                  >
+                    <div className="flex flex-col items-center justify-center gap-3 p-8 text-center">
+                      {getFileIcon(lightboxFile.originalName, "w-12 h-12")}
+                      <p className="text-sm text-gray-600">
+                        Impossible d'afficher le PDF dans le navigateur.
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => downloadFile(lightboxFile)}
+                      >
+                        <Download className="w-4 h-4 mr-1.5" />
+                        Télécharger le fichier
+                      </Button>
+                    </div>
+                  </object>
+                ) : (
+                  <div className="flex flex-col items-center justify-center gap-3 p-8 text-center">
+                    {getFileIcon(lightboxFile.originalName, "w-12 h-12")}
+                    <p className="text-sm text-gray-600">
+                      Ce type de fichier n'est pas prévisualisable.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => downloadFile(lightboxFile)}
+                    >
+                      <Download className="w-4 h-4 mr-1.5" />
+                      Télécharger le fichier
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -522,7 +561,9 @@ export function TransferDetailDrawer({
                     <div className="flex items-center gap-3">
                       <Eye className="w-4 h-4 text-gray-500" />
                       <span className="text-xs text-gray-700">
-                        Prévisualiser et télécharger
+                        {previewDisabled
+                          ? "Prévisualisation désactivée"
+                          : "Prévisualiser et télécharger"}
                       </span>
                     </div>
                   </div>
@@ -545,60 +586,67 @@ export function TransferDetailDrawer({
                   <p className="px-5 py-3 text-xs text-gray-500 border-b border-gray-200">
                     Prévisualiser
                   </p>
-                  <div className="p-4 flex gap-3 overflow-x-auto">
-                    {transfer.files?.map((file, index) => {
-                      const isImg = isImageFile(file);
-                      const isPdf = isPdfFile(file);
-                      const canPreview = isImg || isPdf;
-                      const previewUrl = getPreviewUrl(transfer.id, file);
+                  {previewDisabled ? (
+                    <div className="p-4 flex items-center gap-3 text-xs text-gray-500">
+                      <Lock className="w-4 h-4 text-gray-400" />
+                      <span>
+                        La prévisualisation est désactivée pour ce transfert.
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="p-4 flex gap-3 overflow-x-auto">
+                      {transfer.files?.map((file, index) => {
+                        const isImg = isImageFile(file);
+                        const isPdf = isPdfFile(file);
+                        const canPreview = isImg || isPdf;
+                        const previewUrl = getPreviewUrl(transfer.id, file);
 
-                      return (
-                        <button
-                          key={file.id || index}
-                          onClick={() =>
-                            canPreview && openLightbox(file, index)
-                          }
-                          className={cn(
-                            "w-32 h-40 rounded-lg border border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden flex-shrink-0 transition-all relative group",
-                            canPreview
-                              ? "cursor-pointer hover:border-gray-400 hover:shadow-sm"
-                              : "cursor-default",
-                          )}
-                        >
-                          {isImg ? (
-                            <PreviewImage
-                              src={previewUrl}
-                              alt={file.originalName}
-                              className="w-full h-full object-cover"
-                              containerClassName="w-full h-full"
-                            />
-                          ) : isPdf ? (
-                            <iframe
-                              src={previewUrl}
-                              className="w-full h-full pointer-events-none border-0"
-                              title={file.originalName}
-                            />
-                          ) : null}
-                          <div
-                            className="preview-fallback text-center p-2 items-center justify-center"
-                            style={{
-                              display: isImg || isPdf ? "none" : "flex",
-                            }}
+                        return (
+                          <button
+                            key={file.id || index}
+                            onClick={() =>
+                              canPreview && openLightbox(file, index)
+                            }
+                            className={cn(
+                              "w-32 h-40 rounded-lg border border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden flex-shrink-0 transition-all relative group",
+                              canPreview
+                                ? "cursor-pointer hover:border-gray-400 hover:shadow-sm"
+                                : "cursor-default",
+                            )}
                           >
-                            {getFileIcon(file.originalName, "w-8 h-8")}
-                          </div>
-                          {/* Overlay oeil au hover */}
-                          {canPreview && (
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                              <div className="w-9 h-9 rounded-full bg-white/90 items-center justify-center shadow hidden group-hover:flex transition-all">
-                                <Eye className="w-4 h-4 text-gray-700" />
+                            {isImg ? (
+                              <PreviewImage
+                                src={previewUrl}
+                                alt={file.originalName}
+                                className="w-full h-full object-cover"
+                                containerClassName="w-full h-full"
+                              />
+                            ) : (
+                              // PDF et autres types: afficher l'icône (les iframes
+                              // en vignette sont lourds et cassent silencieusement
+                              // si le preview échoue)
+                              <div className="flex flex-col items-center justify-center gap-2 p-2 text-center">
+                                {getFileIcon(file.originalName, "w-8 h-8")}
+                                {isPdf && (
+                                  <span className="text-[10px] font-medium text-gray-500 uppercase">
+                                    PDF
+                                  </span>
+                                )}
                               </div>
-                            </div>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
+                            )}
+                            {/* Overlay oeil au hover */}
+                            {canPreview && (
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                                <div className="w-9 h-9 rounded-full bg-white/90 items-center justify-center shadow hidden group-hover:flex transition-all">
+                                  <Eye className="w-4 h-4 text-gray-700" />
+                                </div>
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
 

@@ -6,10 +6,12 @@ import {
   UPLOAD_FILE_CHUNK_TO_R2,
   CREATE_FILE_TRANSFER_WITH_IDS_R2,
 } from "../graphql/mutations";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
 
 const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB par chunk (minimum S3 multipart = 5MB)
 
 export const useFileTransferR2 = (refetchTransfers) => {
+  const { workspaceId } = useWorkspace();
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -18,7 +20,7 @@ export const useFileTransferR2 = (refetchTransfers) => {
   // Mutations GraphQL
   const [uploadFileChunkToR2Mutation] = useMutation(UPLOAD_FILE_CHUNK_TO_R2);
   const [createFileTransferWithIdsR2Mutation] = useMutation(
-    CREATE_FILE_TRANSFER_WITH_IDS_R2
+    CREATE_FILE_TRANSFER_WITH_IDS_R2,
   );
 
   /**
@@ -46,8 +48,10 @@ export const useFileTransferR2 = (refetchTransfers) => {
     const totalChunks = chunks.length;
 
     try {
-      console.log(`📦 Début upload: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB) en ${totalChunks} chunks`);
-      
+      console.log(
+        `📦 Début upload: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB) en ${totalChunks} chunks`,
+      );
+
       // Nombre de chunks à uploader en parallèle (réduit car chunks plus gros)
       const CONCURRENT_UPLOADS = 5;
       let uploadedCount = 0;
@@ -84,14 +88,16 @@ export const useFileTransferR2 = (refetchTransfers) => {
       // Upload des chunks par batch parallèle
       for (let i = 0; i < chunks.length; i += CONCURRENT_UPLOADS) {
         const batch = chunks.slice(i, i + CONCURRENT_UPLOADS);
-        const batchPromises = batch.map((chunk, batchIndex) => 
-          uploadChunk(chunk, i + batchIndex)
+        const batchPromises = batch.map((chunk, batchIndex) =>
+          uploadChunk(chunk, i + batchIndex),
         );
 
         // Attendre que tout le batch soit uploadé
         await Promise.all(batchPromises);
-        
-        console.log(`✅ Batch ${Math.floor(i / CONCURRENT_UPLOADS) + 1}/${Math.ceil(totalChunks / CONCURRENT_UPLOADS)} uploadé`);
+
+        console.log(
+          `✅ Batch ${Math.floor(i / CONCURRENT_UPLOADS) + 1}/${Math.ceil(totalChunks / CONCURRENT_UPLOADS)} uploadé`,
+        );
       }
 
       console.log(`✅ Upload terminé: ${totalChunks} chunks uploadés`);
@@ -146,7 +152,7 @@ export const useFileTransferR2 = (refetchTransfers) => {
         // Filtrer les fichiers valides
         const validFiles = selectedFiles.filter(
           (f) =>
-            f && f.file && (f.file instanceof File || f.file instanceof Blob)
+            f && f.file && (f.file instanceof File || f.file instanceof Blob),
         );
 
         if (validFiles.length === 0) {
@@ -158,6 +164,7 @@ export const useFileTransferR2 = (refetchTransfers) => {
 
         // Préparer les options du transfert
         const inputData = {
+          workspaceId: workspaceId || null,
           expiryDays: transferOptions.expiryDays || 7,
           isPaymentRequired: Boolean(transferOptions.isPaymentRequired),
           paymentAmount: transferOptions.paymentAmount
@@ -179,7 +186,7 @@ export const useFileTransferR2 = (refetchTransfers) => {
         if (errors) {
           console.error("❌ Erreurs GraphQL:", errors);
           throw new Error(
-            `Erreurs GraphQL: ${errors.map((e) => e.message).join(", ")}`
+            `Erreurs GraphQL: ${errors.map((e) => e.message).join(", ")}`,
           );
         }
 
@@ -213,7 +220,7 @@ export const useFileTransferR2 = (refetchTransfers) => {
           return result;
         } else {
           throw new Error(
-            "Erreur lors de la création du transfert R2: données manquantes dans la réponse"
+            "Erreur lors de la création du transfert R2: données manquantes dans la réponse",
           );
         }
       } catch (error) {
@@ -235,10 +242,11 @@ export const useFileTransferR2 = (refetchTransfers) => {
     },
     [
       selectedFiles,
+      workspaceId,
       uploadFileChunkToR2Mutation,
       createFileTransferWithIdsR2Mutation,
       refetchTransfers,
-    ]
+    ],
   );
 
   /**
