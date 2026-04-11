@@ -1,12 +1,22 @@
-import { useState, useCallback } from 'react';
-import { useMutation, useApolloClient, gql } from '@apollo/client';
-import { toast } from 'sonner';
-import { GET_BOARD } from '@/src/graphql/kanbanQueries';
+import { useState, useCallback } from "react";
+import { useMutation, useApolloClient, gql } from "@apollo/client";
+import { toast } from "sonner";
+import { GET_BOARD } from "@/src/graphql/kanbanQueries";
 
 // Mutations GraphQL pour les images de tâches
 const UPLOAD_TASK_IMAGE = gql`
-  mutation UploadTaskImage($taskId: ID!, $file: Upload!, $imageType: String, $workspaceId: ID) {
-    uploadTaskImage(taskId: $taskId, file: $file, imageType: $imageType, workspaceId: $workspaceId) {
+  mutation UploadTaskImage(
+    $taskId: ID!
+    $file: Upload!
+    $imageType: String
+    $workspaceId: ID
+  ) {
+    uploadTaskImage(
+      taskId: $taskId
+      file: $file
+      imageType: $imageType
+      workspaceId: $workspaceId
+    ) {
       success
       image {
         id
@@ -25,7 +35,11 @@ const UPLOAD_TASK_IMAGE = gql`
 
 const DELETE_TASK_IMAGE = gql`
   mutation DeleteTaskImage($taskId: ID!, $imageId: ID!, $workspaceId: ID) {
-    deleteTaskImage(taskId: $taskId, imageId: $imageId, workspaceId: $workspaceId) {
+    deleteTaskImage(
+      taskId: $taskId
+      imageId: $imageId
+      workspaceId: $workspaceId
+    ) {
       id
       images {
         id
@@ -42,8 +56,18 @@ const DELETE_TASK_IMAGE = gql`
 `;
 
 const UPLOAD_COMMENT_IMAGE = gql`
-  mutation UploadCommentImage($taskId: ID!, $commentId: ID!, $file: Upload!, $workspaceId: ID) {
-    uploadCommentImage(taskId: $taskId, commentId: $commentId, file: $file, workspaceId: $workspaceId) {
+  mutation UploadCommentImage(
+    $taskId: ID!
+    $commentId: ID!
+    $file: Upload!
+    $workspaceId: ID
+  ) {
+    uploadCommentImage(
+      taskId: $taskId
+      commentId: $commentId
+      file: $file
+      workspaceId: $workspaceId
+    ) {
       success
       image {
         id
@@ -61,8 +85,18 @@ const UPLOAD_COMMENT_IMAGE = gql`
 `;
 
 const DELETE_COMMENT_IMAGE = gql`
-  mutation DeleteCommentImage($taskId: ID!, $commentId: ID!, $imageId: ID!, $workspaceId: ID) {
-    deleteCommentImage(taskId: $taskId, commentId: $commentId, imageId: $imageId, workspaceId: $workspaceId) {
+  mutation DeleteCommentImage(
+    $taskId: ID!
+    $commentId: ID!
+    $imageId: ID!
+    $workspaceId: ID
+  ) {
+    deleteCommentImage(
+      taskId: $taskId
+      commentId: $commentId
+      imageId: $imageId
+      workspaceId: $workspaceId
+    ) {
       id
       comments {
         id
@@ -97,27 +131,32 @@ export function useTaskImageUpload(taskId, workspaceId, boardId) {
    */
   const validateFile = useCallback((file) => {
     const validTypes = [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'text/plain', 'text/csv'
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "text/plain",
+      "text/csv",
     ];
     const maxSize = 10 * 1024 * 1024; // 10MB
 
     if (!validTypes.includes(file.type)) {
       return {
         valid: false,
-        error: 'Type de fichier non supporté. Formats acceptés : images (JPEG, PNG, GIF, WebP), documents (PDF, Word, Excel, TXT, CSV).'
+        error:
+          "Type de fichier non supporté. Formats acceptés : images (JPEG, PNG, GIF, WebP), documents (PDF, Word, Excel, TXT, CSV).",
       };
     }
 
     if (file.size > maxSize) {
       return {
         valid: false,
-        error: 'Fichier trop volumineux. Maximum 10MB.'
+        error: "Fichier trop volumineux. Maximum 10MB.",
       };
     }
 
@@ -127,271 +166,308 @@ export function useTaskImageUpload(taskId, workspaceId, boardId) {
   /**
    * Upload une image pour la description de la tâche
    */
-  const uploadImage = useCallback(async (file, imageType = 'description') => {
-    const validation = validateFile(file);
-    if (!validation.valid) {
-      setError(validation.error);
-      toast.error(validation.error);
-      return null;
-    }
+  const uploadImage = useCallback(
+    async (file, imageType = "description") => {
+      const validation = validateFile(file);
+      if (!validation.valid) {
+        setError(validation.error);
+        toast.error(validation.error);
+        return null;
+      }
 
-    setIsUploading(true);
-    setUploadProgress(0);
-    setError(null);
+      setIsUploading(true);
+      setUploadProgress(0);
+      setError(null);
 
-    try {
-      // Simuler la progression
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => Math.min(prev + 10, 90));
-      }, 100);
+      try {
+        // Simuler la progression
+        const progressInterval = setInterval(() => {
+          setUploadProgress((prev) => Math.min(prev + 10, 90));
+        }, 100);
 
-      const result = await uploadTaskImageMutation({
-        variables: {
-          taskId,
-          file,
-          imageType,
-          workspaceId
+        const result = await uploadTaskImageMutation({
+          variables: {
+            taskId,
+            file,
+            imageType,
+            workspaceId,
+          },
+        });
+
+        clearInterval(progressInterval);
+        setUploadProgress(100);
+
+        if (result.data?.uploadTaskImage?.success) {
+          const newImage = result.data.uploadTaskImage.image;
+
+          // Mettre à jour le cache Apollo pour que l'image persiste
+          if (boardId) {
+            try {
+              const cacheData = apolloClient.cache.readQuery({
+                query: GET_BOARD,
+                variables: { id: boardId, workspaceId },
+              });
+
+              if (cacheData?.board) {
+                const updatedTasks = cacheData.board.tasks.map((task) => {
+                  if (task.id === taskId) {
+                    // Déduplication : la subscription temps réel peut avoir
+                    // déjà ajouté cette image au cache avant qu'on y arrive
+                    const alreadyPresent = (task.images || []).some(
+                      (img) => img.id === newImage.id,
+                    );
+                    if (alreadyPresent) return task;
+                    return {
+                      ...task,
+                      images: [...(task.images || []), newImage],
+                    };
+                  }
+                  return task;
+                });
+
+                apolloClient.cache.writeQuery({
+                  query: GET_BOARD,
+                  variables: { id: boardId, workspaceId },
+                  data: {
+                    board: {
+                      ...cacheData.board,
+                      tasks: updatedTasks,
+                    },
+                  },
+                });
+              }
+            } catch (cacheError) {
+              console.warn("Erreur mise à jour cache Apollo:", cacheError);
+            }
+          }
+
+          toast.success("Image uploadée avec succès");
+          return newImage;
+        } else {
+          const errorMsg =
+            result.data?.uploadTaskImage?.message || "Erreur lors de l'upload";
+          setError(errorMsg);
+          toast.error(errorMsg);
+          return null;
         }
-      });
+      } catch (uploadError) {
+        const errorMsg = uploadError.message || "Erreur lors de l'upload";
+        setError(errorMsg);
+        toast.error(errorMsg);
+        return null;
+      } finally {
+        setIsUploading(false);
+        setTimeout(() => setUploadProgress(0), 500);
+      }
+    },
+    [
+      taskId,
+      workspaceId,
+      boardId,
+      uploadTaskImageMutation,
+      validateFile,
+      apolloClient,
+    ],
+  );
 
-      clearInterval(progressInterval);
-      setUploadProgress(100);
+  /**
+   * Supprime une image de la description
+   */
+  const deleteImage = useCallback(
+    async (imageId) => {
+      try {
+        await deleteTaskImageMutation({
+          variables: {
+            taskId,
+            imageId,
+            workspaceId,
+          },
+        });
 
-      if (result.data?.uploadTaskImage?.success) {
-        const newImage = result.data.uploadTaskImage.image;
-        
-        // Mettre à jour le cache Apollo pour que l'image persiste
+        // Mettre à jour le cache Apollo
         if (boardId) {
           try {
             const cacheData = apolloClient.cache.readQuery({
               query: GET_BOARD,
-              variables: { id: boardId, workspaceId }
+              variables: { id: boardId, workspaceId },
             });
-            
+
             if (cacheData?.board) {
-              const updatedTasks = cacheData.board.tasks.map(task => {
+              const updatedTasks = cacheData.board.tasks.map((task) => {
                 if (task.id === taskId) {
                   return {
                     ...task,
-                    images: [...(task.images || []), newImage]
+                    images: (task.images || []).filter(
+                      (img) => img.id !== imageId,
+                    ),
                   };
                 }
                 return task;
               });
-              
+
               apolloClient.cache.writeQuery({
                 query: GET_BOARD,
                 variables: { id: boardId, workspaceId },
                 data: {
                   board: {
                     ...cacheData.board,
-                    tasks: updatedTasks
-                  }
-                }
+                    tasks: updatedTasks,
+                  },
+                },
               });
             }
           } catch (cacheError) {
-            console.warn('Erreur mise à jour cache Apollo:', cacheError);
+            console.warn("Erreur mise à jour cache Apollo:", cacheError);
           }
         }
-        
-        toast.success('Image uploadée avec succès');
-        return newImage;
-      } else {
-        const errorMsg = result.data?.uploadTaskImage?.message || 'Erreur lors de l\'upload';
-        setError(errorMsg);
-        toast.error(errorMsg);
-        return null;
-      }
-    } catch (uploadError) {
-      const errorMsg = uploadError.message || 'Erreur lors de l\'upload';
-      setError(errorMsg);
-      toast.error(errorMsg);
-      return null;
-    } finally {
-      setIsUploading(false);
-      setTimeout(() => setUploadProgress(0), 500);
-    }
-  }, [taskId, workspaceId, boardId, uploadTaskImageMutation, validateFile, apolloClient]);
 
-  /**
-   * Supprime une image de la description
-   */
-  const deleteImage = useCallback(async (imageId) => {
-    try {
-      await deleteTaskImageMutation({
-        variables: {
-          taskId,
-          imageId,
-          workspaceId
-        }
-      });
-      
-      // Mettre à jour le cache Apollo
-      if (boardId) {
-        try {
-          const cacheData = apolloClient.cache.readQuery({
-            query: GET_BOARD,
-            variables: { id: boardId, workspaceId }
-          });
-          
-          if (cacheData?.board) {
-            const updatedTasks = cacheData.board.tasks.map(task => {
-              if (task.id === taskId) {
-                return {
-                  ...task,
-                  images: (task.images || []).filter(img => img.id !== imageId)
-                };
-              }
-              return task;
-            });
-            
-            apolloClient.cache.writeQuery({
-              query: GET_BOARD,
-              variables: { id: boardId, workspaceId },
-              data: {
-                board: {
-                  ...cacheData.board,
-                  tasks: updatedTasks
-                }
-              }
-            });
-          }
-        } catch (cacheError) {
-          console.warn('Erreur mise à jour cache Apollo:', cacheError);
-        }
+        toast.success("Image supprimée");
+        return true;
+      } catch {
+        toast.error("Erreur lors de la suppression");
+        return false;
       }
-      
-      toast.success('Image supprimée');
-      return true;
-    } catch {
-      toast.error('Erreur lors de la suppression');
-      return false;
-    }
-  }, [taskId, workspaceId, boardId, deleteTaskImageMutation, apolloClient]);
+    },
+    [taskId, workspaceId, boardId, deleteTaskImageMutation, apolloClient],
+  );
 
   /**
    * Upload une image pour un commentaire
    */
-  const uploadCommentImage = useCallback(async (commentId, file) => {
-    const validation = validateFile(file);
-    if (!validation.valid) {
-      setError(validation.error);
-      toast.error(validation.error);
-      return null;
-    }
+  const uploadCommentImage = useCallback(
+    async (commentId, file) => {
+      const validation = validateFile(file);
+      if (!validation.valid) {
+        setError(validation.error);
+        toast.error(validation.error);
+        return null;
+      }
 
-    setIsUploading(true);
-    setUploadProgress(0);
-    setError(null);
+      setIsUploading(true);
+      setUploadProgress(0);
+      setError(null);
 
-    try {
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => Math.min(prev + 10, 90));
-      }, 100);
+      try {
+        const progressInterval = setInterval(() => {
+          setUploadProgress((prev) => Math.min(prev + 10, 90));
+        }, 100);
 
-      const result = await uploadCommentImageMutation({
-        variables: {
-          taskId,
-          commentId,
-          file,
-          workspaceId
+        const result = await uploadCommentImageMutation({
+          variables: {
+            taskId,
+            commentId,
+            file,
+            workspaceId,
+          },
+        });
+
+        clearInterval(progressInterval);
+        setUploadProgress(100);
+
+        if (result.data?.uploadCommentImage?.success) {
+          toast.success("Image uploadée avec succès");
+          return result.data.uploadCommentImage.image;
+        } else {
+          const errorMsg =
+            result.data?.uploadCommentImage?.message ||
+            "Erreur lors de l'upload";
+          setError(errorMsg);
+          toast.error(errorMsg);
+          return null;
         }
-      });
-
-      clearInterval(progressInterval);
-      setUploadProgress(100);
-
-      if (result.data?.uploadCommentImage?.success) {
-        toast.success('Image uploadée avec succès');
-        return result.data.uploadCommentImage.image;
-      } else {
-        const errorMsg = result.data?.uploadCommentImage?.message || 'Erreur lors de l\'upload';
+      } catch (commentUploadError) {
+        const errorMsg =
+          commentUploadError.message || "Erreur lors de l'upload";
         setError(errorMsg);
         toast.error(errorMsg);
         return null;
+      } finally {
+        setIsUploading(false);
+        setTimeout(() => setUploadProgress(0), 500);
       }
-    } catch (commentUploadError) {
-      const errorMsg = commentUploadError.message || 'Erreur lors de l\'upload';
-      setError(errorMsg);
-      toast.error(errorMsg);
-      return null;
-    } finally {
-      setIsUploading(false);
-      setTimeout(() => setUploadProgress(0), 500);
-    }
-  }, [taskId, workspaceId, uploadCommentImageMutation, validateFile]);
+    },
+    [taskId, workspaceId, uploadCommentImageMutation, validateFile],
+  );
 
   /**
    * Supprime une image d'un commentaire
    */
-  const deleteCommentImage = useCallback(async (commentId, imageId) => {
-    try {
-      await deleteCommentImageMutation({
-        variables: {
-          taskId,
-          commentId,
-          imageId,
-          workspaceId
-        }
-      });
-      toast.success('Image supprimée');
-      return true;
-    } catch {
-      toast.error('Erreur lors de la suppression');
-      return false;
-    }
-  }, [taskId, workspaceId, deleteCommentImageMutation]);
+  const deleteCommentImage = useCallback(
+    async (commentId, imageId) => {
+      try {
+        await deleteCommentImageMutation({
+          variables: {
+            taskId,
+            commentId,
+            imageId,
+            workspaceId,
+          },
+        });
+        toast.success("Image supprimée");
+        return true;
+      } catch {
+        toast.error("Erreur lors de la suppression");
+        return false;
+      }
+    },
+    [taskId, workspaceId, deleteCommentImageMutation],
+  );
 
   /**
    * Gère le drop de fichiers (drag and drop)
    */
-  const handleDrop = useCallback(async (files, imageType = 'description', commentId = null) => {
-    const uploadedImages = [];
+  const handleDrop = useCallback(
+    async (files, imageType = "description", commentId = null) => {
+      const uploadedImages = [];
 
-    for (const file of files) {
-      let result;
-      if (commentId) {
-        result = await uploadCommentImage(commentId, file);
-      } else {
-        result = await uploadImage(file, imageType);
+      for (const file of files) {
+        let result;
+        if (commentId) {
+          result = await uploadCommentImage(commentId, file);
+        } else {
+          result = await uploadImage(file, imageType);
+        }
+        if (result) {
+          uploadedImages.push(result);
+        }
       }
-      if (result) {
-        uploadedImages.push(result);
-      }
-    }
 
-    return uploadedImages;
-  }, [uploadImage, uploadCommentImage]);
+      return uploadedImages;
+    },
+    [uploadImage, uploadCommentImage],
+  );
 
   /**
    * Gère le paste d'images depuis le presse-papiers
    */
-  const handlePaste = useCallback(async (event, imageType = 'description', commentId = null) => {
-    const items = event.clipboardData?.items;
-    if (!items) return [];
+  const handlePaste = useCallback(
+    async (event, imageType = "description", commentId = null) => {
+      const items = event.clipboardData?.items;
+      if (!items) return [];
 
-    const uploadedImages = [];
+      const uploadedImages = [];
 
-    for (const item of items) {
-      if (item.type.startsWith('image/')) {
-        const file = item.getAsFile();
-        if (file) {
-          let result;
-          if (commentId) {
-            result = await uploadCommentImage(commentId, file);
-          } else {
-            result = await uploadImage(file, imageType);
-          }
-          if (result) {
-            uploadedImages.push(result);
+      for (const item of items) {
+        if (item.type.startsWith("image/")) {
+          const file = item.getAsFile();
+          if (file) {
+            let result;
+            if (commentId) {
+              result = await uploadCommentImage(commentId, file);
+            } else {
+              result = await uploadImage(file, imageType);
+            }
+            if (result) {
+              uploadedImages.push(result);
+            }
           }
         }
       }
-    }
 
-    return uploadedImages;
-  }, [uploadImage, uploadCommentImage]);
+      return uploadedImages;
+    },
+    [uploadImage, uploadCommentImage],
+  );
 
   return {
     isUploading,
@@ -403,7 +479,7 @@ export function useTaskImageUpload(taskId, workspaceId, boardId) {
     deleteCommentImage,
     handleDrop,
     handlePaste,
-    validateFile
+    validateFile,
   };
 }
 
