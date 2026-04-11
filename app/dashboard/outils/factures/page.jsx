@@ -143,25 +143,14 @@ function InvoicesContent() {
     filteredData.forEach((item) => {
       if (item._type === "imported") {
         // Factures importées (PDF direct, pas d'OCR sur cette page)
+        // Le statut VALIDATED indique que la facture a déjà été payée,
+        // elle ne peut donc jamais être "en retard".
         const amount = item.totalHT ?? 0;
         if (item.status === "VALIDATED" || item.status === "COMPLETED") {
           totalBilled += amount;
         }
         if (item.status === "COMPLETED") {
           totalPaid += amount;
-        }
-        // Une facture importée VALIDATED avec échéance dépassée est en retard
-        if (item.status === "VALIDATED" && item.dueDate) {
-          const dueDateValue =
-            typeof item.dueDate === "string" && /^\d+$/.test(item.dueDate)
-              ? parseInt(item.dueDate, 10)
-              : item.dueDate;
-          const dueDate = new Date(dueDateValue);
-          dueDate.setHours(0, 0, 0, 0);
-          if (dueDate < today) {
-            overdueAmount += amount;
-            overdueCount++;
-          }
         }
         return;
       } else {
