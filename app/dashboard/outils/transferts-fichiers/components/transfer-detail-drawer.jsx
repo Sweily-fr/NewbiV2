@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { PreviewImage } from "@/src/components/ui/preview-image";
+import { useZipPreview } from "@/src/hooks/useZipPreview";
 import {
   Drawer,
   DrawerClose,
@@ -144,33 +145,89 @@ export function TransferDetailDrawer({
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
+  // Détection transfert mono-ZIP (cas des transferts créés depuis documents
+  // partagés, qui empaquettent tout dans un seul archive). On prévisualise
+  // alors le contenu du ZIP côté client via JSZip.
+  const transferFiles = transfer?.files || [];
+  const zipContainer = useMemo(() => {
+    if (transferFiles.length !== 1) return null;
+    const f = transferFiles[0];
+    const isZip =
+      f?.mimeType === "application/zip" ||
+      /\.zip$/i.test(f?.originalName || "");
+    return isZip ? f : null;
+  }, [transferFiles]);
+
+  const zipPreviewUrl = useMemo(() => {
+    if (!zipContainer || !transfer?.id) return null;
+    return getPreviewUrl(transfer.id, zipContainer);
+  }, [zipContainer, transfer?.id]);
+
+  const {
+    loading: zipLoading,
+    error: zipError,
+    entries: zipEntries,
+    blobUrls: zipBlobUrls,
+    tooLarge: zipTooLarge,
+    extractBlob: extractZipBlob,
+  } = useZipPreview({
+    enabled: !!(zipContainer && open),
+    zipUrl: zipPreviewUrl,
+  });
+
   // Tous les hooks sont déclarés avant tout return conditionnel
   if (!transfer) return null;
 
-  const firstFile = transfer.files?.[0];
+  // Pour un transfert ZIP, on affiche les entrées extraites comme s'il
+  // s'agissait de fichiers individuels.
+  const displayFiles = zipContainer
+    ? zipEntries.map((e) => ({
+        id: e.path,
+        path: e.path,
+        originalName: e.name,
+        mimeType: e.mimeType,
+        size: e.size,
+        isZipEntry: true,
+      }))
+    : transferFiles;
+
+  const firstFile = transferFiles[0];
   const fileName = firstFile?.originalName || firstFile?.fileName || "Fichier";
   const totalSize =
-    transfer.files?.reduce((acc, file) => acc + (file.size || 0), 0) || 0;
-  const fileCount = transfer.files?.length || 0;
+    transferFiles.reduce((acc, file) => acc + (file.size || 0), 0) || 0;
+  const fileCount = zipContainer ? displayFiles.length : transferFiles.length;
 
   // Construire le lien de partage
   const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/transfer/${transfer.shareLink}${transfer.accessKey ? `?key=${transfer.accessKey}` : ""}`;
 
-  // Prévisualisation désactivée côté transfert (ex: ZIP depuis documents partagés)
-  const previewDisabled = transfer.allowPreview === false;
+  // Prévisualisation désactivée côté transfert (ex: flag explicite)
+  // Exception: pour les transferts ZIP on prévisualise toujours via extraction.
+  const previewDisabled = transfer.allowPreview === false && !zipContainer;
 
   // Fichiers prévisualisables pour la navigation dans le lightbox
-  // Si la prévisualisation est désactivée au niveau du transfert, aucun fichier n'est
-  // réellement affichable — on force donc une liste vide pour éviter les états cassés.
   const previewableFiles = previewDisabled
     ? []
-    : transfer.files?.filter(isPreviewable) || [];
+    : displayFiles.filter((f) =>
+        zipContainer
+          ? f.isZipEntry && (isImageFile(f) || isPdfFile(f))
+          : isImageFile(f) || isPdfFile(f),
+      );
 
-  const openLightbox = (file, index) => {
+  // Résoudre l'URL de preview pour un fichier (ZIP entry = blob URL, sinon
+  // endpoint backend)
+  const resolvePreviewUrl = (file) => {
+    if (file?.isZipEntry) {
+      return zipBlobUrls[file.path] || null;
+    }
+    return getPreviewUrl(transfer.id, file);
+  };
+
+  const openLightbox = (file, _index) => {
     if (previewDisabled) return;
-    // Trouver l'index dans les fichiers prévisualisables
-    const previewIndex = previewableFiles.findIndex(
-      (f) => (f.id || f.fileId) === (file.id || file.fileId),
+    if (zipContainer && !zipBlobUrls[file.path]) return;
+    const key = file.isZipEntry ? file.path : file.id || file.fileId;
+    const previewIndex = previewableFiles.findIndex((f) =>
+      f.isZipEntry ? f.path === key : (f.id || f.fileId) === key,
     );
     setLightboxIndex(previewIndex >= 0 ? previewIndex : 0);
     setLightboxOpen(true);
@@ -187,9 +244,31 @@ export function TransferDetailDrawer({
     setTimeout(() => setCopied(false), 1500);
   };
 
-  // Télécharger un fichier via un lien <a> (plus fiable que window.open)
+  // Télécharger un fichier via un lien <a> (plus fiable que window.open).
+  // Pour les entrées extraites d'un ZIP, on extrait le blob côté client.
   const downloadFile = async (file) => {
     try {
+      if (file?.isZipEntry) {
+        const blob = await extractZipBlob(file.path);
+        if (!blob) {
+          toast.error("Impossible d'extraire ce fichier du ZIP");
+          return;
+        }
+        const typed = new Blob([blob], {
+          type: file.mimeType || "application/octet-stream",
+        });
+        const url = URL.createObjectURL(typed);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = file.originalName || "fichier";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        toast.success("Téléchargement démarré");
+        return;
+      }
+
       const apiUrl = (
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
       ).replace(/\/$/, "");
@@ -335,7 +414,7 @@ export function TransferDetailDrawer({
               >
                 {isImageFile(lightboxFile) ? (
                   <PreviewImage
-                    src={getPreviewUrl(transfer.id, lightboxFile)}
+                    src={resolvePreviewUrl(lightboxFile)}
                     alt={lightboxFile.originalName}
                     className="max-w-full max-h-[75vh] object-contain rounded-lg"
                     containerClassName="flex items-center justify-center w-full"
@@ -343,7 +422,7 @@ export function TransferDetailDrawer({
                   />
                 ) : isPdfFile(lightboxFile) ? (
                   <object
-                    data={getPreviewUrl(transfer.id, lightboxFile)}
+                    data={resolvePreviewUrl(lightboxFile)}
                     type="application/pdf"
                     className="w-full border-0 rounded-lg bg-white"
                     style={{ height: "75vh" }}
@@ -585,6 +664,11 @@ export function TransferDetailDrawer({
                 <div className="border border-gray-200 rounded-2xl overflow-hidden">
                   <p className="px-5 py-3 text-xs text-gray-500 border-b border-gray-200">
                     Prévisualiser
+                    {zipContainer && (
+                      <span className="ml-2 text-gray-400">
+                        (contenu de l'archive)
+                      </span>
+                    )}
                   </p>
                   {previewDisabled ? (
                     <div className="p-4 flex items-center gap-3 text-xs text-gray-500">
@@ -593,17 +677,34 @@ export function TransferDetailDrawer({
                         La prévisualisation est désactivée pour ce transfert.
                       </span>
                     </div>
+                  ) : zipContainer && zipLoading ? (
+                    <div className="p-4 text-xs text-gray-500">
+                      Lecture de l'archive…
+                    </div>
+                  ) : zipContainer && zipTooLarge ? (
+                    <div className="p-4 text-xs text-gray-500">
+                      Archive trop volumineuse pour la prévisualisation.
+                      Téléchargez-la pour consulter son contenu.
+                    </div>
+                  ) : zipContainer && zipError ? (
+                    <div className="p-4 text-xs text-red-500">
+                      Impossible de lire l'archive : {zipError}
+                    </div>
+                  ) : zipContainer && displayFiles.length === 0 ? (
+                    <div className="p-4 text-xs text-gray-500">
+                      Archive vide.
+                    </div>
                   ) : (
                     <div className="p-4 flex gap-3 overflow-x-auto">
-                      {transfer.files?.map((file, index) => {
+                      {displayFiles.map((file, index) => {
                         const isImg = isImageFile(file);
                         const isPdf = isPdfFile(file);
                         const canPreview = isImg || isPdf;
-                        const previewUrl = getPreviewUrl(transfer.id, file);
+                        const previewUrl = resolvePreviewUrl(file);
 
                         return (
                           <button
-                            key={file.id || index}
+                            key={file.id || file.path || index}
                             onClick={() =>
                               canPreview && openLightbox(file, index)
                             }
@@ -614,7 +715,7 @@ export function TransferDetailDrawer({
                                 : "cursor-default",
                             )}
                           >
-                            {isImg ? (
+                            {isImg && previewUrl ? (
                               <PreviewImage
                                 src={previewUrl}
                                 alt={file.originalName}
@@ -654,11 +755,16 @@ export function TransferDetailDrawer({
               <div className="border border-gray-200 rounded-2xl overflow-hidden">
                 <p className="px-5 py-3 text-sm font-medium text-gray-900 border-b border-gray-200">
                   {fileCount} fichier{fileCount > 1 ? "s" : ""}
+                  {zipContainer && (
+                    <span className="ml-2 text-xs font-normal text-gray-400">
+                      dans {zipContainer.originalName}
+                    </span>
+                  )}
                 </p>
                 <div>
-                  {transfer.files?.map((file, index) => (
+                  {displayFiles.map((file, index) => (
                     <div
-                      key={file.id || index}
+                      key={file.id || file.path || index}
                       className="flex items-center justify-between px-5 py-2.5 hover:bg-gray-50 transition-colors border-b border-gray-200 last:border-b-0"
                     >
                       <div className="min-w-0 flex-1">
