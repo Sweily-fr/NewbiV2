@@ -592,10 +592,10 @@ export function useInvoiceTable({
             dueDateMidnight.setHours(0, 0, 0, 0);
             const status = row.original.status;
             const isImportedRow = row.original._type === "imported";
+            // Les factures importées ne peuvent pas être en retard :
+            // le statut VALIDATED indique qu'elles ont déjà été payées.
             const isOverdue =
-              dueDateMidnight < today &&
-              ((!isImportedRow && status === "PENDING") ||
-                (isImportedRow && status === "VALIDATED"));
+              !isImportedRow && dueDateMidnight < today && status === "PENDING";
 
             const formattedDate = dueDate.toLocaleDateString("fr-FR");
 
