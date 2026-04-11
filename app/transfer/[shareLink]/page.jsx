@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useQuery } from "@apollo/client";
 import { GET_TRANSFER_BY_LINK } from "@/app/dashboard/outils/transferts-fichiers/graphql/mutations";
 import { useStripePayment } from "@/src/hooks/useStripePayment";
+import { useZipPreview } from "@/src/hooks/useZipPreview";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { toast } from "@/src/components/ui/sonner";
 import { Button } from "@/src/components/ui/button";
@@ -18,6 +19,7 @@ import {
   ArrowDown,
   Euro,
   LoaderCircle,
+  Lock,
   X,
 } from "lucide-react";
 import Image from "next/image";
@@ -79,6 +81,51 @@ export default function TransferPage() {
   });
 
   const transfer = data?.getFileTransferByLink;
+  const transferFiles = transfer?.fileTransfer?.files || [];
+
+  // Détection d'un transfert mono-ZIP (créé depuis documents partagés).
+  // On parse alors le ZIP côté client pour exposer ses entrées comme des fichiers.
+  const zipContainer = useMemo(() => {
+    if (transferFiles.length !== 1) return null;
+    const f = transferFiles[0];
+    const isZip =
+      f?.mimeType === "application/zip" ||
+      /\.zip$/i.test(f?.originalName || "");
+    return isZip ? f : null;
+  }, [transferFiles]);
+
+  const zipPreviewUrl = useMemo(() => {
+    if (!zipContainer || !transfer?.fileTransfer?.id) return null;
+    const apiUrl = (
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+    ).replace(/\/$/, "");
+    return `${apiUrl}/api/files/preview/${transfer.fileTransfer.id}/${zipContainer.fileId || zipContainer.id}`;
+  }, [zipContainer, transfer?.fileTransfer?.id]);
+
+  const {
+    loading: zipLoading,
+    error: zipError,
+    entries: zipEntries,
+    blobUrls: zipBlobUrls,
+    tooLarge: zipTooLarge,
+    extractBlob: extractZipBlob,
+  } = useZipPreview({
+    enabled: !!zipContainer,
+    zipUrl: zipPreviewUrl,
+  });
+
+  // displayFiles: entrées extraites du ZIP, sinon fichiers réels du transfert
+  const displayFiles = useMemo(() => {
+    if (!zipContainer) return transferFiles;
+    return zipEntries.map((e) => ({
+      id: e.path,
+      path: e.path,
+      originalName: e.name,
+      mimeType: e.mimeType,
+      size: e.size,
+      isZipEntry: true,
+    }));
+  }, [zipContainer, zipEntries, transferFiles]);
 
   // Fonction pour annuler le téléchargement
   const cancelDownload = () => {
@@ -434,6 +481,18 @@ export default function TransferPage() {
 
   // Fonction pour ouvrir la prévisualisation
   const openPreview = (file, index = 0) => {
+    // Entrée extraite d'un ZIP: utiliser la blob URL générée côté client
+    if (file?.isZipEntry) {
+      const previewUrl = zipBlobUrls[file.path] || null;
+      setPreviewFile({
+        ...file,
+        previewUrl,
+        transferId: transfer?.fileTransfer?.id,
+      });
+      setPreviewFileIndex(index);
+      return;
+    }
+
     const apiUrl = (
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
     ).replace(/\/$/, "");
@@ -448,14 +507,41 @@ export default function TransferPage() {
 
   // Fonction pour naviguer entre les fichiers dans le drawer
   const handlePreviewNavigate = (newIndex) => {
-    const files = transfer?.fileTransfer?.files || [];
-    if (newIndex >= 0 && newIndex < files.length) {
-      openPreview(files[newIndex], newIndex);
+    if (newIndex >= 0 && newIndex < displayFiles.length) {
+      openPreview(displayFiles[newIndex], newIndex);
     }
   };
 
   // Fonction pour télécharger un fichier individuel (depuis le drawer)
   const downloadSingleFile = async (file) => {
+    // Entrée ZIP: extraire côté client
+    if (file?.isZipEntry) {
+      try {
+        const blob = await extractZipBlob(file.path);
+        if (!blob) {
+          toast.error("Impossible d'extraire ce fichier du ZIP");
+          return;
+        }
+        const typed = new Blob([blob], {
+          type: file.mimeType || "application/octet-stream",
+        });
+        const url = window.URL.createObjectURL(typed);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = file.originalName || "fichier";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+        setPreviewFile(null);
+        return;
+      } catch (err) {
+        console.error("Erreur extraction zip entry:", err);
+        toast.error("Erreur lors de l'extraction du fichier");
+        return;
+      }
+    }
+
     const fileId = file.id || file.fileId || file._id;
     // Utiliser la fonction principale avec progression
     await downloadFile(fileId, file.originalName, file.size);
@@ -518,6 +604,12 @@ export default function TransferPage() {
     0,
   );
 
+  // Prévisualisation explicitement désactivée au niveau du transfert.
+  // Exception: les transferts ZIP sont toujours prévisualisables via extraction
+  // cliente, donc le flag ne s'applique qu'aux transferts non-ZIP.
+  const previewDisabled =
+    transfer?.fileTransfer?.allowPreview === false && !zipContainer;
+
   // Formater la taille
   const formatSize = (bytes) => {
     if (!bytes) return "0 B";
@@ -558,6 +650,10 @@ export default function TransferPage() {
 
   // Vérifier si un fichier peut être prévisualisé
   const canPreview = (file) => {
+    // Pour les entrées ZIP, on autorise la preview dès que la blob URL est prête
+    if (file?.isZipEntry) {
+      return !!zipBlobUrls[file.path];
+    }
     if (!transfer?.fileTransfer?.allowPreview) return false;
     const previewableTypes = [
       "image/jpeg",
@@ -602,7 +698,7 @@ export default function TransferPage() {
       {/* Drawer de prévisualisation */}
       <FilePreviewDrawer
         file={previewFile}
-        files={transfer?.fileTransfer?.files || []}
+        files={displayFiles}
         currentIndex={previewFileIndex}
         onClose={() => setPreviewFile(null)}
         onDownload={downloadSingleFile}
@@ -676,8 +772,26 @@ export default function TransferPage() {
           ) : isPaymentRequired ? null : (
             /* Contenu principal */
             <>
-              {/* Preview de la première image OU Progress pendant téléchargement */}
-              {transfer?.fileTransfer?.files?.[0] && (
+              {/* Carte "Prévisualisation désactivée" quand le transfert
+                  a explicitement allowPreview=false (non-ZIP) */}
+              {displayFiles?.[0] && previewDisabled && !isDownloading && (
+                <div className="mx-4 mt-4 border border-gray-200 rounded-xl overflow-hidden bg-white">
+                  <p className="px-4 py-3 text-xs text-gray-500 border-b border-gray-200">
+                    Prévisualiser
+                  </p>
+                  <div className="px-4 py-4 flex items-center gap-3 text-xs text-gray-600">
+                    <Lock className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <span>
+                      La prévisualisation est désactivée pour ce transfert.
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Preview de la première image OU Progress pendant téléchargement.
+                  Quand previewDisabled=true, ce bloc ne s'affiche qu'en cours
+                  de téléchargement (pour afficher la progress bar). */}
+              {displayFiles?.[0] && (!previewDisabled || isDownloading) && (
                 <div
                   className={`mx-4 mt-4 ${isDownloading ? "h-auto" : "h-32"} bg-gray-100 rounded-xl overflow-hidden relative`}
                 >
@@ -710,10 +824,50 @@ export default function TransferPage() {
                   ) : (
                     <>
                       {(() => {
-                        const firstFile = transfer?.fileTransfer?.files?.[0];
-                        const previewApiUrl = `${(process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "")}/api/files/preview/${transfer?.fileTransfer?.id}/${firstFile?.fileId || firstFile?.id}`;
+                        // Pour un ZIP, on cherche la première entrée prévisualisable
+                        // (image/pdf) plutôt que la première entrée brute.
+                        let thumbFile = displayFiles?.[0];
+                        let thumbIndex = 0;
+                        if (zipContainer) {
+                          const idx = displayFiles.findIndex((f) => {
+                            const ext = f?.originalName
+                              ?.split(".")
+                              ?.pop()
+                              ?.toLowerCase();
+                            return [
+                              "jpg",
+                              "jpeg",
+                              "png",
+                              "gif",
+                              "webp",
+                              "heic",
+                              "heif",
+                              "bmp",
+                              "svg",
+                              "tiff",
+                              "pdf",
+                            ].includes(ext);
+                          });
+                          if (idx >= 0) {
+                            thumbFile = displayFiles[idx];
+                            thumbIndex = idx;
+                          }
+                        }
+
+                        // URL de preview: blob URL pour zip entry, endpoint sinon
+                        let previewSrc;
+                        if (thumbFile?.isZipEntry) {
+                          previewSrc = zipBlobUrls[thumbFile.path] || null;
+                        } else if (thumbFile) {
+                          previewSrc = `${(process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "")}/api/files/preview/${transfer?.fileTransfer?.id}/${thumbFile?.fileId || thumbFile?.id}`;
+                        }
+
+                        const ext = thumbFile?.originalName
+                          ?.split(".")
+                          ?.pop()
+                          ?.toLowerCase();
                         const isImg =
-                          firstFile?.mimeType?.startsWith("image/") ||
+                          thumbFile?.mimeType?.startsWith("image/") ||
                           [
                             "jpg",
                             "jpeg",
@@ -725,35 +879,35 @@ export default function TransferPage() {
                             "bmp",
                             "svg",
                             "tiff",
-                          ].includes(
-                            firstFile?.originalName
-                              ?.split(".")
-                              ?.pop()
-                              ?.toLowerCase(),
-                          );
+                          ].includes(ext);
                         const isPdf =
-                          firstFile?.mimeType === "application/pdf" ||
-                          firstFile?.originalName
-                            ?.split(".")
-                            ?.pop()
-                            ?.toLowerCase() === "pdf";
+                          thumbFile?.mimeType === "application/pdf" ||
+                          ext === "pdf";
 
-                        if (isImg && !thumbnailError) {
+                        if (zipContainer && zipLoading) {
+                          return (
+                            <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                              Lecture de l'archive…
+                            </div>
+                          );
+                        }
+
+                        if (isImg && previewSrc && !thumbnailError) {
                           return (
                             <img
-                              src={previewApiUrl}
-                              alt={firstFile?.originalName}
+                              src={previewSrc}
+                              alt={thumbFile?.originalName}
                               className="w-full h-full object-cover"
                               onError={() => setThumbnailError(true)}
                             />
                           );
                         }
-                        if (isPdf && !thumbnailError) {
+                        if (isPdf && previewSrc && !thumbnailError) {
                           return (
                             <iframe
-                              src={previewApiUrl}
+                              src={previewSrc}
                               className="w-full h-full pointer-events-none"
-                              title={firstFile?.originalName}
+                              title={thumbFile?.originalName}
                               onError={() => setThumbnailError(true)}
                             />
                           );
@@ -766,9 +920,33 @@ export default function TransferPage() {
                       })()}
                       {/* Bouton preview au centre */}
                       <button
-                        onClick={() =>
-                          openPreview(transfer?.fileTransfer?.files?.[0], 0)
-                        }
+                        onClick={() => {
+                          // Ouvre le premier fichier prévisualisable
+                          let idx = 0;
+                          if (zipContainer) {
+                            const found = displayFiles.findIndex((f) => {
+                              const ext = f?.originalName
+                                ?.split(".")
+                                ?.pop()
+                                ?.toLowerCase();
+                              return [
+                                "jpg",
+                                "jpeg",
+                                "png",
+                                "gif",
+                                "webp",
+                                "heic",
+                                "heif",
+                                "bmp",
+                                "svg",
+                                "tiff",
+                                "pdf",
+                              ].includes(ext);
+                            });
+                            if (found >= 0) idx = found;
+                          }
+                          openPreview(displayFiles?.[idx], idx);
+                        }}
                         className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/20 transition-colors group"
                       >
                         <div className="w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center">
@@ -792,58 +970,76 @@ export default function TransferPage() {
               </div>
 
               {/* Liste des fichiers */}
-              <ul className="max-h-40 overflow-y-auto">
-                {transfer?.fileTransfer?.files?.map((file, index) => (
-                  <li
-                    key={file.id || index}
-                    className="w-full px-5 py-3 border-b border-gray-200 last:border-b-0"
-                  >
-                    <div className="w-full flex items-center">
-                      <div className="flex-grow min-w-0">
-                        <h3 className="text-sm text-gray-800 truncate">
-                          {file.originalName}
-                        </h3>
-                        <p className="text-xs text-gray-500">
-                          {formatSize(file.size)}
-                          {file.mimeType &&
-                            !file.mimeType.includes("octet-stream") && (
-                              <> • {file.mimeType?.split("/")[1]}</>
-                            )}
-                        </p>
+              {zipContainer && zipLoading ? (
+                <div className="w-full px-5 py-3 text-xs text-gray-500">
+                  Lecture de l'archive…
+                </div>
+              ) : zipContainer && zipError ? (
+                <div className="w-full px-5 py-3 text-xs text-red-500">
+                  Impossible de lire l'archive : {zipError}
+                </div>
+              ) : zipContainer && zipTooLarge ? (
+                <div className="w-full px-5 py-3 text-xs text-gray-500">
+                  Archive trop volumineuse pour la prévisualisation.
+                </div>
+              ) : (
+                <ul className="max-h-40 overflow-y-auto">
+                  {displayFiles.map((file, index) => (
+                    <li
+                      key={file.id || file.path || index}
+                      className="w-full px-5 py-3 border-b border-gray-200 last:border-b-0"
+                    >
+                      <div className="w-full flex items-center">
+                        <div className="flex-grow min-w-0">
+                          <h3 className="text-sm text-gray-800 truncate">
+                            {file.originalName}
+                          </h3>
+                          <p className="text-xs text-gray-500">
+                            {formatSize(file.size)}
+                            {file.mimeType &&
+                              !file.mimeType.includes("octet-stream") && (
+                                <> • {file.mimeType?.split("/")[1]}</>
+                              )}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1 ml-2">
+                          {canPreview(file) && (
+                            <button
+                              onClick={() => openPreview(file, index)}
+                              className="p-2 text-gray-400 hover:text-[#5a50ff] transition-colors cursor-pointer"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          )}
+                          {!isDownloadBlocked(file) && (
+                            <button
+                              onClick={() => {
+                                if (file.isZipEntry) {
+                                  downloadSingleFile(file);
+                                } else {
+                                  downloadFile(
+                                    file.id || file.fileId,
+                                    file.originalName,
+                                    file.size,
+                                  );
+                                }
+                              }}
+                              disabled={isDownloading}
+                              className={`p-2 transition-colors cursor-pointer ${
+                                isDownloading
+                                  ? "text-gray-300 cursor-not-allowed"
+                                  : "text-gray-400 hover:text-[#5a50ff]"
+                              }`}
+                            >
+                              <Download className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1 ml-2">
-                        {canPreview(file) && (
-                          <button
-                            onClick={() => openPreview(file, index)}
-                            className="p-2 text-gray-400 hover:text-[#5a50ff] transition-colors cursor-pointer"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                        )}
-                        {!isDownloadBlocked(file) && (
-                          <button
-                            onClick={() =>
-                              downloadFile(
-                                file.id || file.fileId,
-                                file.originalName,
-                                file.size,
-                              )
-                            }
-                            disabled={isDownloading}
-                            className={`p-2 transition-colors cursor-pointer ${
-                              isDownloading
-                                ? "text-gray-300 cursor-not-allowed"
-                                : "text-gray-400 hover:text-[#5a50ff]"
-                            }`}
-                          >
-                            <Download className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                    </li>
+                  ))}
+                </ul>
+              )}
 
               {/* Message filigrane */}
               {transfer?.fileTransfer?.hasWatermark && (
