@@ -267,7 +267,7 @@ export function useInvoiceTable({
             aria-label="Sélectionner la ligne"
           />
         ),
-        size: 28,
+        size: 52,
         enableSorting: false,
         enableHiding: false,
       },

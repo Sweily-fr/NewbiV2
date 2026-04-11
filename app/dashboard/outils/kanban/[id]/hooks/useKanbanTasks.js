@@ -631,15 +631,13 @@ export const useKanbanTasks = (boardId, board) => {
     }
 
     try {
-      // Envoyer seulement les userId (tableau simple d'IDs), filtrer les nulls
-      const assignedMembers = Array.isArray(taskForm.assignedMembers)
-        ? taskForm.assignedMembers
-            .map((member) =>
-              typeof member === "string" ? member : member?.userId,
-            )
-            .filter(Boolean)
-        : [];
-
+      // NOTE: `assignedMembers` est volontairement EXCLU du payload d'auto-save.
+      // Les assignations/désassignations sont gérées exclusivement par
+      // `handleMemberToggle` dans TaskModal via une mutation dédiée. Inclure ici
+      // `assignedMembers` provoquait une race condition : l'auto-save pouvait
+      // renvoyer un état stale et écraser une assignation récente, ce qui
+      // déclenchait l'envoi d'un email d'assignation à la mauvaise personne
+      // (le diff côté serveur étant fait contre un oldTask périmé).
       const input = {
         id: editingTask.id,
         title: taskForm.title,
@@ -657,7 +655,6 @@ export const useKanbanTasks = (boardId, board) => {
           text: item.text,
           completed: item.completed || false,
         })),
-        assignedMembers: assignedMembers,
       };
 
       await updateTask({

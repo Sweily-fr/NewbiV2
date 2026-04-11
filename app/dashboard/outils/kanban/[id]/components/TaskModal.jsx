@@ -188,11 +188,22 @@ export function TaskModal({
       }
 
       // Mettre à jour le formulaire avec les nouvelles images
+      // On déduplique par id car la subscription temps réel peut avoir déjà
+      // synchronisé taskForm.images depuis le cache Apollo avant qu'on arrive ici
       if (uploadedImages.length > 0) {
-        setTaskForm((prev) => ({
-          ...prev,
-          images: [...(prev.images || []), ...uploadedImages],
-        }));
+        setTaskForm((prev) => {
+          const existingIds = new Set(
+            (prev.images || []).map((img) => img.id).filter(Boolean),
+          );
+          const newImages = uploadedImages.filter(
+            (img) => !existingIds.has(img.id),
+          );
+          if (newImages.length === 0) return prev;
+          return {
+            ...prev,
+            images: [...(prev.images || []), ...newImages],
+          };
+        });
       }
     },
     [taskId, uploadImage, setTaskForm],
@@ -331,6 +342,14 @@ export function TaskModal({
   const initialFormRef = externalInitialFormRef || localInitialFormRef;
   const textInputFocusedRef = useRef(false);
 
+  // Ref sur la dernière valeur connue de assignedMembers pour éviter les
+  // closures stale dans handleMemberToggle lors de clics rapides (React
+  // ne flush pas le state entre deux clics consécutifs).
+  const assignedMembersRef = useRef(taskForm?.assignedMembers || []);
+  useEffect(() => {
+    assignedMembersRef.current = taskForm?.assignedMembers || [];
+  }, [taskForm?.assignedMembers]);
+
   // Capturer l'état initial à l'ouverture
   useEffect(() => {
     if (isOpen && isEditing) {
@@ -387,29 +406,35 @@ export function TaskModal({
     }, 300);
   }, [triggerAutoSave]);
 
-  // Toggle membre : mise à jour partielle pour éviter d'envoyer tous les champs
+  // Toggle membre : mise à jour partielle pour éviter d'envoyer tous les champs.
+  //
+  // IMPORTANT : on lit `current` depuis un ref (et non depuis `taskForm` via
+  // closure) pour gérer correctement les clics rapides. Sans ce ref, deux
+  // clics successifs avant un re-render React utilisent la même closure
+  // stale et envoient des mutations incohérentes au serveur, ce qui provoque
+  // l'envoi d'emails d'assignation aux mauvais destinataires (le diff
+  // `oldTask` vs `updates.assignedMembers` côté backend est faussé).
+  //
+  // On ne déclenche PLUS `triggerAutoSave()` ici : l'auto-save n'envoie plus
+  // `assignedMembers` (cf. useKanbanTasks.handleUpdateTask), donc il n'y a
+  // plus de risque d'écraser l'état des membres.
   const handleMemberToggle = useCallback(
     (memberId) => {
-      const current = taskForm.assignedMembers || [];
+      const current = assignedMembersRef.current || [];
       const newMembers = current.includes(memberId)
         ? current.filter((id) => id !== memberId)
         : [...current, memberId];
 
-      const updatedForm = { ...taskForm, assignedMembers: newMembers };
-      setTaskForm(updatedForm);
+      // Mettre à jour le ref IMMÉDIATEMENT pour que le prochain clic (même
+      // avant re-render) voit la nouvelle valeur.
+      assignedMembersRef.current = newMembers;
+
+      setTaskForm((prev) => ({ ...prev, assignedMembers: newMembers }));
 
       // En mode édition, envoyer uniquement assignedMembers au serveur
       if (isEditing && updateTask && taskForm.id) {
-        // Flush l'auto-save en attente pour ne pas perdre les modifications locales
-        // (ex: tags ajoutés, description modifiée) avant d'envoyer le member toggle
-        if (autoSaveRef.current) {
-          clearTimeout(autoSaveRef.current);
-          // Sauvegarder les modifications en attente AVANT le toggle
-          triggerAutoSave();
-        }
-        // Mettre à jour initialFormRef avec le form complet incluant le nouveau membre
-        initialFormRef.current = JSON.stringify(updatedForm);
-        // Marquer comme mutation locale
+        // Marquer comme mutation locale pour éviter que le hook
+        // ne re-synchronise le form avec les données du board
         if (localMutationRef) localMutationRef.current = true;
 
         updateTask({
@@ -421,12 +446,11 @@ export function TaskModal({
       }
     },
     [
-      taskForm,
       setTaskForm,
       isEditing,
       updateTask,
       workspaceId,
-      triggerAutoSave,
+      taskForm.id,
       localMutationRef,
     ],
   );
