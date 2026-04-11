@@ -442,12 +442,13 @@ export default function TransferTable({
     window.open(`/dashboard/outils/transferts-fichiers/${shareLink}`, "_blank");
   };
 
-  // Ouvrir le drawer de détail et rafraîchir les données
+  // Ouvrir le drawer de détail (pas de refetch ici: ca ferait clignoter le
+  // tableau a cause de cache-and-network + notifyOnNetworkStatusChange.
+  // Le useEffect ci-dessus resynchronise selectedTransfer avec transfers,
+  // et le drawer declenche lui-meme onRefresh apres un download)
   const openTransferDetail = (transfer) => {
     setSelectedTransfer(transfer);
     setDrawerOpen(true);
-    // Rafraîchir les données pour avoir le downloadCount et passwordProtected à jour
-    onRefresh?.();
   };
 
   const handleDeleteTransfer = async (transferId) => {
