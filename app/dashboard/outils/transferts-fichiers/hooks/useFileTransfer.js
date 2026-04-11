@@ -8,8 +8,10 @@ import {
   GET_MY_TRANSFERS,
 } from "../graphql/mutations";
 import { toast } from "@/src/components/ui/sonner";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
 
 export const useFileTransfer = () => {
+  const { workspaceId } = useWorkspace();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [transferResult, setTransferResult] = useState(null);
@@ -31,21 +33,22 @@ export const useFileTransfer = () => {
   // Mutations
   const [uploadFileChunkMutation] = useMutation(UPLOAD_FILE_CHUNK);
   const [createFileTransferWithIdsMutation] = useMutation(
-    CREATE_FILE_TRANSFER_WITH_IDS
+    CREATE_FILE_TRANSFER_WITH_IDS,
   );
   const [deleteFileTransferMutation] = useMutation(DELETE_FILE_TRANSFER);
   const [generatePaymentLinkMutation] = useMutation(
-    GENERATE_FILE_TRANSFER_PAYMENT_LINK
+    GENERATE_FILE_TRANSFER_PAYMENT_LINK,
   );
 
-  // Query pour récupérer les transferts
+  // Query pour récupérer les transferts (scopée au workspace actif)
   const {
     data: transfersData,
     loading: transfersLoading,
     error: transfersError,
     refetch: refetchTransfers,
   } = useQuery(GET_MY_TRANSFERS, {
-    variables: { page: 1, limit: 50 },
+    variables: { workspaceId, page: 1, limit: 50 },
+    skip: !workspaceId,
     fetchPolicy: "cache-and-network",
     notifyOnNetworkStatusChange: true,
   });
@@ -97,7 +100,7 @@ export const useFileTransfer = () => {
   const getTotalSize = useCallback(() => {
     return selectedFiles.reduce(
       (total, file) => total + (file.file?.size || 0),
-      0
+      0,
     );
   }, [selectedFiles]);
 
@@ -182,7 +185,7 @@ export const useFileTransfer = () => {
 
       if (validFiles.length === 0) {
         throw new Error(
-          "Aucun fichier valide à uploader. Vérifiez que les fichiers sont correctement sélectionnés."
+          "Aucun fichier valide à uploader. Vérifiez que les fichiers sont correctement sélectionnés.",
         );
       }
 
@@ -194,6 +197,9 @@ export const useFileTransfer = () => {
       // Préparer l'objet input selon la nouvelle structure backend
       // Essayons une structure alternative basée sur les mémoires
       const inputData = {
+        // Scoper le transfert au workspace actif pour l'isolation multi-workspace
+        workspaceId: workspaceId || null,
+
         // Champs obligatoires avec valeurs par défaut
         expiryDays: transferOptions.expiryDays || 7,
 
@@ -254,7 +260,7 @@ export const useFileTransfer = () => {
       } else {
         console.error("Réponse API incorrecte:", data);
         throw new Error(
-          "Erreur lors de la création du transfert: données manquantes dans la réponse"
+          "Erreur lors de la création du transfert: données manquantes dans la réponse",
         );
       }
     } catch (error) {
@@ -272,7 +278,7 @@ export const useFileTransfer = () => {
         toast.error(`Erreur serveur: ${graphQLErrorMessages}`);
       } else if (error.networkError) {
         toast.error(
-          `Erreur réseau: ${error.networkError.message || "Problème de connexion au serveur"}`
+          `Erreur réseau: ${error.networkError.message || "Problème de connexion au serveur"}`,
         );
       } else {
         const errorMessage =
@@ -294,6 +300,7 @@ export const useFileTransfer = () => {
   }, [
     selectedFiles,
     transferOptions,
+    workspaceId,
     createFileTransferWithIdsMutation,
     uploadFileInChunks,
     refetchTransfers,
@@ -316,11 +323,11 @@ export const useFileTransfer = () => {
       } catch (error) {
         console.error("Erreur lors de la suppression:", error);
         toast.error(
-          error.message || "Erreur lors de la suppression du transfert"
+          error.message || "Erreur lors de la suppression du transfert",
         );
       }
     },
-    [deleteFileTransferMutation, refetchTransfers]
+    [deleteFileTransferMutation, refetchTransfers],
   );
 
   // Fonction pour générer un lien de paiement
@@ -339,15 +346,15 @@ export const useFileTransfer = () => {
       } catch (error) {
         console.error(
           "Erreur lors de la génération du lien de paiement:",
-          error
+          error,
         );
         toast.error(
-          error.message || "Erreur lors de la génération du lien de paiement"
+          error.message || "Erreur lors de la génération du lien de paiement",
         );
         throw error;
       }
     },
-    [generatePaymentLinkMutation]
+    [generatePaymentLinkMutation],
   );
 
   // Fonction pour copier le lien de partage
