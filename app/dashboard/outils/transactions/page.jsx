@@ -52,46 +52,46 @@ import { getTransactionCategory } from "@/lib/bank-categories-config";
 // Mapping des noms de catégories (bank-categories-config) vers les clés (category-icons-config)
 const categoryNameToKey = {
   // Alimentation
-  "Alimentation": "MEALS",
-  "Restaurants": "MEALS",
-  "Courses": "MEALS",
+  Alimentation: "MEALS",
+  Restaurants: "MEALS",
+  Courses: "MEALS",
 
   // Transport
-  "Transport": "TRAVEL",
-  "Carburant": "TRAVEL",
+  Transport: "TRAVEL",
+  Carburant: "TRAVEL",
   "Transports en commun": "TRAVEL",
   "Taxi/VTC": "TRAVEL",
-  "Parking": "TRAVEL",
+  Parking: "TRAVEL",
 
   // Logement
-  "Logement": "ACCOMMODATION",
-  "Loyer": "RENT",
-  "Charges": "UTILITIES",
+  Logement: "ACCOMMODATION",
+  Loyer: "RENT",
+  Charges: "UTILITIES",
   "Assurance habitation": "INSURANCE",
 
   // Loisirs
-  "Loisirs": "OTHER",
-  "Sorties": "OTHER",
-  "Voyages": "TRAVEL",
-  "Sport": "OTHER",
+  Loisirs: "OTHER",
+  Sorties: "OTHER",
+  Voyages: "TRAVEL",
+  Sport: "OTHER",
 
   // Santé
-  "Santé": "SERVICES",
-  "Médecin": "SERVICES",
-  "Pharmacie": "SERVICES",
-  "Mutuelle": "INSURANCE",
+  Santé: "SERVICES",
+  Médecin: "SERVICES",
+  Pharmacie: "SERVICES",
+  Mutuelle: "INSURANCE",
 
   // Shopping
-  "Shopping": "OFFICE_SUPPLIES",
-  "Vêtements": "OTHER",
+  Shopping: "OFFICE_SUPPLIES",
+  Vêtements: "OTHER",
   "High-tech": "HARDWARE",
-  "Maison": "OFFICE_SUPPLIES",
+  Maison: "OFFICE_SUPPLIES",
 
   // Services
-  "Services": "SERVICES",
+  Services: "SERVICES",
   "Téléphone/Internet": "SUBSCRIPTIONS",
-  "Abonnements": "SUBSCRIPTIONS",
-  "Banque": "SERVICES",
+  Abonnements: "SUBSCRIPTIONS",
+  Banque: "SERVICES",
 
   // Impôts
   "Impôts & Taxes": "TAXES",
@@ -99,38 +99,50 @@ const categoryNameToKey = {
   "Taxe foncière": "TAXES",
 
   // Éducation
-  "Éducation": "TRAINING",
-  "Formation": "TRAINING",
-  "Livres": "TRAINING",
+  Éducation: "TRAINING",
+  Formation: "TRAINING",
+  Livres: "TRAINING",
 
   // Revenus (pour les transactions positives)
-  "Salaire": "OTHER",
-  "Prime": "OTHER",
-  "Remboursement": "OTHER",
+  Salaire: "OTHER",
+  Prime: "OTHER",
+  Remboursement: "OTHER",
   "Revenus professionnels": "SERVICES",
-  "Facturation": "SERVICES",
-  "Honoraires": "SERVICES",
+  Facturation: "SERVICES",
+  Honoraires: "SERVICES",
   "Aides & Allocations": "OTHER",
-  "CAF": "OTHER",
+  CAF: "OTHER",
   "Pôle Emploi": "OTHER",
-  "Investissements": "OTHER",
-  "Dividendes": "OTHER",
-  "Intérêts": "OTHER",
+  Investissements: "OTHER",
+  Dividendes: "OTHER",
+  Intérêts: "OTHER",
   "Virements reçus": "OTHER",
   "Virement interne": "OTHER",
   "Autre revenu": "OTHER",
 
   // Autre
-  "Autre": "OTHER",
+  Autre: "OTHER",
   "Non catégorisé": "OTHER",
 };
 
 // Clés de catégories valides (hors "OTHER")
 const SPECIFIC_CATEGORY_KEYS = [
-  "OFFICE_SUPPLIES", "TRAVEL", "MEALS", "ACCOMMODATION",
-  "SOFTWARE", "HARDWARE", "SERVICES", "MARKETING",
-  "TAXES", "RENT", "UTILITIES", "SALARIES",
-  "INSURANCE", "MAINTENANCE", "TRAINING", "SUBSCRIPTIONS"
+  "OFFICE_SUPPLIES",
+  "TRAVEL",
+  "MEALS",
+  "ACCOMMODATION",
+  "SOFTWARE",
+  "HARDWARE",
+  "SERVICES",
+  "MARKETING",
+  "TAXES",
+  "RENT",
+  "UTILITIES",
+  "SALARIES",
+  "INSURANCE",
+  "MAINTENANCE",
+  "TRAINING",
+  "SUBSCRIPTIONS",
 ];
 
 // Fonction pour obtenir la catégorie compatible avec category-icons-config
@@ -138,15 +150,25 @@ const SPECIFIC_CATEGORY_KEYS = [
 const getSmartCategory = (transaction) => {
   // Si la catégorie est une valeur spécifique (pas "OTHER"/"other"/null)
   // getCategoryConfig supporte les deux formats (large et fine)
-  if (transaction.category && transaction.category !== "OTHER" && transaction.category !== "other") {
+  if (
+    transaction.category &&
+    transaction.category !== "OTHER" &&
+    transaction.category !== "other"
+  ) {
     return transaction.category;
   }
 
   // Fallback: utiliser expenseCategory si spécifique
-  if (transaction.expenseCategory && SPECIFIC_CATEGORY_KEYS.includes(transaction.expenseCategory)) {
+  if (
+    transaction.expenseCategory &&
+    SPECIFIC_CATEGORY_KEYS.includes(transaction.expenseCategory)
+  ) {
     return transaction.expenseCategory;
   }
-  if (transaction.metadata?.bridgeCategoryMapped && SPECIFIC_CATEGORY_KEYS.includes(transaction.metadata.bridgeCategoryMapped)) {
+  if (
+    transaction.metadata?.bridgeCategoryMapped &&
+    SPECIFIC_CATEGORY_KEYS.includes(transaction.metadata.bridgeCategoryMapped)
+  ) {
     return transaction.metadata.bridgeCategoryMapped;
   }
 
@@ -177,7 +199,7 @@ function GestionDepensesContent() {
   const displayedBalance = useMemo(() => {
     if (selectedAccountId === "all") return bankBalance || 0;
     const account = (bankAccounts || []).find(
-      (a) => a.id === selectedAccountId || a.externalId === selectedAccountId
+      (a) => a.id === selectedAccountId || a.externalId === selectedAccountId,
     );
     return account?.balance?.current ?? 0;
   }, [selectedAccountId, bankAccounts, bankBalance]);
@@ -186,10 +208,11 @@ function GestionDepensesContent() {
   const selectedAccountLabel = useMemo(() => {
     if (selectedAccountId === "all") return "Tous les comptes";
     const account = (bankAccounts || []).find(
-      (a) => a.id === selectedAccountId || a.externalId === selectedAccountId
+      (a) => a.id === selectedAccountId || a.externalId === selectedAccountId,
     );
     if (!account) return "Tous les comptes";
-    const name = account.name || account.institutionName || account.bankName || "Compte";
+    const name =
+      account.name || account.institutionName || account.bankName || "Compte";
     const lastIban = account.iban ? ` ···${account.iban.slice(-4)}` : "";
     return `${name}${lastIban}`;
   }, [selectedAccountId, bankAccounts]);
@@ -201,13 +224,13 @@ function GestionDepensesContent() {
     // Filtrer par compte bancaire si un compte est sélectionné
     if (selectedAccountId !== "all") {
       const account = (bankAccounts || []).find(
-        (a) => a.id === selectedAccountId || a.externalId === selectedAccountId
+        (a) => a.id === selectedAccountId || a.externalId === selectedAccountId,
       );
       if (account) {
         txList = txList.filter(
           (tx) =>
             tx.fromAccount === account.externalId ||
-            tx.fromAccount === account.id
+            tx.fromAccount === account.id,
         );
       }
     }
@@ -225,9 +248,12 @@ function GestionDepensesContent() {
       vendor: tx.metadata?.vendor || null,
       hasReceipt: !!tx.receiptFile?.url || !!tx.linkedInvoice?.id,
       receiptFile: tx.receiptFile,
-      receiptRequired: tx.amount < 0 && !tx.receiptFile?.url && !tx.linkedInvoice?.id,
+      receiptRequired:
+        tx.amount < 0 && !tx.receiptFile?.url && !tx.linkedInvoice?.id,
       status: tx.status === "completed" ? "PAID" : tx.status?.toUpperCase(),
-      paymentMethod: tx.metadata?.paymentMethod || (tx.type === "debit" ? "CARD" : "BANK_TRANSFER"),
+      paymentMethod:
+        tx.metadata?.paymentMethod ||
+        (tx.type === "debit" ? "CARD" : "BANK_TRANSFER"),
       bankName: tx.metadata?.bankName || null,
       provider: tx.provider,
       originalTransaction: {
@@ -240,6 +266,8 @@ function GestionDepensesContent() {
       linkedInvoice: tx.linkedInvoice || null,
       reconciliationStatus: tx.reconciliationStatus || null,
       reconciliationDate: tx.reconciliationDate || null,
+      pcgAccount: tx.pcgAccount || null,
+      metadata: tx.metadata || {},
       createdAt: tx.createdAt,
       updatedAt: tx.updatedAt,
     }));
@@ -252,7 +280,11 @@ function GestionDepensesContent() {
   // Export Excel
   const exportToExcel = () => {
     const data = expenses.map((t) => ({
-      Date: t.date ? (typeof t.date === "string" && t.date.match(/^\d{4}-\d{2}-\d{2}/) ? t.date.split("T")[0].split("-").reverse().join("/") : format(new Date(t.date), "dd/MM/yyyy", { locale: fr })) : "",
+      Date: t.date
+        ? typeof t.date === "string" && t.date.match(/^\d{4}-\d{2}-\d{2}/)
+          ? t.date.split("T")[0].split("-").reverse().join("/")
+          : format(new Date(t.date), "dd/MM/yyyy", { locale: fr })
+        : "",
       Description: t.description || t.title || "",
       Catégorie: t.category || "",
       Montant: t.amount,
@@ -261,16 +293,31 @@ function GestionDepensesContent() {
       Fournisseur: t.vendor || "",
     }));
     const ws = XLSX.utils.json_to_sheet(data);
-    ws["!cols"] = [{ wch: 12 }, { wch: 30 }, { wch: 15 }, { wch: 10 }, { wch: 8 }, { wch: 10 }, { wch: 20 }];
+    ws["!cols"] = [
+      { wch: 12 },
+      { wch: 30 },
+      { wch: 15 },
+      { wch: 10 },
+      { wch: 8 },
+      { wch: 10 },
+      { wch: 20 },
+    ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Transactions");
-    XLSX.writeFile(wb, `transactions_${format(new Date(), "yyyy-MM-dd_HH-mm")}.xlsx`);
+    XLSX.writeFile(
+      wb,
+      `transactions_${format(new Date(), "yyyy-MM-dd_HH-mm")}.xlsx`,
+    );
   };
 
   // Export CSV
   const exportToCSV = () => {
     const data = expenses.map((t) => ({
-      Date: t.date ? (typeof t.date === "string" && t.date.match(/^\d{4}-\d{2}-\d{2}/) ? t.date.split("T")[0].split("-").reverse().join("/") : format(new Date(t.date), "dd/MM/yyyy", { locale: fr })) : "",
+      Date: t.date
+        ? typeof t.date === "string" && t.date.match(/^\d{4}-\d{2}-\d{2}/)
+          ? t.date.split("T")[0].split("-").reverse().join("/")
+          : format(new Date(t.date), "dd/MM/yyyy", { locale: fr })
+        : "",
       Description: t.description || t.title || "",
       Catégorie: t.category || "",
       Montant: t.amount,
@@ -281,12 +328,21 @@ function GestionDepensesContent() {
     const headers = Object.keys(data[0] || {});
     const csvContent = [
       headers.join(";"),
-      ...data.map((row) => headers.map((h) => {
-        const v = row[h];
-        return typeof v === "string" && (v.includes(";") || v.includes('"') || v.includes("\n")) ? `"${v.replace(/"/g, '""')}"` : v;
-      }).join(";")),
+      ...data.map((row) =>
+        headers
+          .map((h) => {
+            const v = row[h];
+            return typeof v === "string" &&
+              (v.includes(";") || v.includes('"') || v.includes("\n"))
+              ? `"${v.replace(/"/g, '""')}"`
+              : v;
+          })
+          .join(";"),
+      ),
     ].join("\n");
-    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob(["\uFEFF" + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = `transactions_${format(new Date(), "yyyy-MM-dd_HH-mm")}.csv`;
@@ -375,7 +431,11 @@ function GestionDepensesContent() {
                 <Button variant="outline" className="cursor-pointer">
                   <Landmark size={14} aria-hidden="true" />
                   {selectedAccountLabel}
-                  <ChevronDown size={12} className="ml-0.5 opacity-70" aria-hidden="true" />
+                  <ChevronDown
+                    size={12}
+                    className="ml-0.5 opacity-70"
+                    aria-hidden="true"
+                  />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -387,18 +447,28 @@ function GestionDepensesContent() {
                   className="flex items-center gap-2 cursor-pointer"
                 >
                   <Landmark size={14} className="text-muted-foreground" />
-                  <span className="flex-1 text-xs truncate">Tous les comptes</span>
+                  <span className="flex-1 text-xs truncate">
+                    Tous les comptes
+                  </span>
                   <Check
                     className={cn(
                       "h-4 w-4 text-[#5b4fff]",
-                      selectedAccountId === "all" ? "opacity-100" : "opacity-0"
+                      selectedAccountId === "all" ? "opacity-100" : "opacity-0",
                     )}
                   />
                 </DropdownMenuItem>
                 {(bankAccounts || []).map((account) => {
-                  const accountName = account.name || account.institutionName || account.bankName || "Compte";
-                  const lastIban = account.iban ? ` ···${account.iban.slice(-4)}` : "";
-                  const isSelected = selectedAccountId === account.id || selectedAccountId === account.externalId;
+                  const accountName =
+                    account.name ||
+                    account.institutionName ||
+                    account.bankName ||
+                    "Compte";
+                  const lastIban = account.iban
+                    ? ` ···${account.iban.slice(-4)}`
+                    : "";
+                  const isSelected =
+                    selectedAccountId === account.id ||
+                    selectedAccountId === account.externalId;
                   return (
                     <DropdownMenuItem
                       key={account.id}
@@ -416,7 +486,10 @@ function GestionDepensesContent() {
                           <Landmark className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                         )}
                         <div className="flex flex-col min-w-0">
-                          <span className="truncate text-xs">{accountName}{lastIban}</span>
+                          <span className="truncate text-xs">
+                            {accountName}
+                            {lastIban}
+                          </span>
                           {account.balance?.current != null && (
                             <span className="text-[10px] text-muted-foreground">
                               {formatAmount(account.balance.current)} €
@@ -427,7 +500,7 @@ function GestionDepensesContent() {
                       <Check
                         className={cn(
                           "h-4 w-4 text-[#5b4fff]",
-                          isSelected ? "opacity-100" : "opacity-0"
+                          isSelected ? "opacity-100" : "opacity-0",
                         )}
                       />
                     </DropdownMenuItem>
@@ -446,11 +519,17 @@ function GestionDepensesContent() {
                 <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
                   Format d'export
                 </DropdownMenuLabel>
-                <DropdownMenuItem onClick={exportToExcel} className="cursor-pointer">
+                <DropdownMenuItem
+                  onClick={exportToExcel}
+                  className="cursor-pointer"
+                >
                   <FileSpreadsheet size={16} className="text-green-600" />
                   Excel (.xlsx)
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={exportToCSV} className="cursor-pointer">
+                <DropdownMenuItem
+                  onClick={exportToCSV}
+                  className="cursor-pointer"
+                >
                   <FileText size={16} className="text-blue-600" />
                   CSV (.csv)
                 </DropdownMenuItem>
@@ -473,13 +552,14 @@ function GestionDepensesContent() {
             </TooltipProvider> */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="primary"
-                  className="self-start cursor-pointer"
-                >
+                <Button variant="primary" className="self-start cursor-pointer">
                   <Repeat2 size={14} strokeWidth={2} aria-hidden="true" />
                   Nouvelle transaction
-                  <ChevronDown size={12} className="ml-0.5 opacity-70" aria-hidden="true" />
+                  <ChevronDown
+                    size={12}
+                    className="ml-0.5 opacity-70"
+                    aria-hidden="true"
+                  />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="[--radius:1rem]">
@@ -559,7 +639,11 @@ function GestionDepensesContent() {
                     </button>
                   </div>
                 </PopoverTrigger>
-                <PopoverContent className="w-80 rounded-lg p-0" align="start" sideOffset={8}>
+                <PopoverContent
+                  className="w-80 rounded-lg p-0"
+                  align="start"
+                  sideOffset={8}
+                >
                   <Command>
                     <CommandList>
                       <CommandEmpty>Aucun compte trouvé.</CommandEmpty>
@@ -569,18 +653,30 @@ function GestionDepensesContent() {
                           onSelect={() => setSelectedAccountId("all")}
                           className="flex items-center gap-2 px-2 py-2 cursor-pointer"
                         >
-                          <span className="flex-1 text-xs truncate">Tous les comptes</span>
+                          <span className="flex-1 text-xs truncate">
+                            Tous les comptes
+                          </span>
                           <Check
                             className={cn(
                               "h-4 w-4 text-[#5b4fff]",
-                              selectedAccountId === "all" ? "opacity-100" : "opacity-0"
+                              selectedAccountId === "all"
+                                ? "opacity-100"
+                                : "opacity-0",
                             )}
                           />
                         </CommandItem>
                         {(bankAccounts || []).map((account) => {
-                          const accountName = account.name || account.institutionName || account.bankName || "Compte";
-                          const lastIban = account.iban ? ` ···${account.iban.slice(-4)}` : "";
-                          const isSelected = selectedAccountId === account.id || selectedAccountId === account.externalId;
+                          const accountName =
+                            account.name ||
+                            account.institutionName ||
+                            account.bankName ||
+                            "Compte";
+                          const lastIban = account.iban
+                            ? ` ···${account.iban.slice(-4)}`
+                            : "";
+                          const isSelected =
+                            selectedAccountId === account.id ||
+                            selectedAccountId === account.externalId;
                           return (
                             <CommandItem
                               key={account.id}
@@ -599,7 +695,10 @@ function GestionDepensesContent() {
                                   <Landmark className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                                 )}
                                 <div className="flex flex-col min-w-0">
-                                  <span className="truncate text-xs">{accountName}{lastIban}</span>
+                                  <span className="truncate text-xs">
+                                    {accountName}
+                                    {lastIban}
+                                  </span>
                                   {account.balance?.current != null && (
                                     <span className="text-[10px] text-muted-foreground">
                                       {formatAmount(account.balance.current)} €
@@ -610,7 +709,7 @@ function GestionDepensesContent() {
                               <Check
                                 className={cn(
                                   "h-4 w-4 text-[#5b4fff]",
-                                  isSelected ? "opacity-100" : "opacity-0"
+                                  isSelected ? "opacity-100" : "opacity-0",
                                 )}
                               />
                             </CommandItem>
@@ -662,7 +761,6 @@ function GestionDepensesContent() {
             openOcr={searchParams.get("openOcr") === "true"}
           />
         </Suspense>
-
       </div>
     </>
   );
