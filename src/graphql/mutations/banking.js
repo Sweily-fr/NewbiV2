@@ -42,6 +42,12 @@ export const UPDATE_TRANSACTION = gql`
       description
       category
       expenseCategory
+      pcgAccount {
+        numero
+        intitule
+        confidence
+        isManual
+      }
       amount
       currency
       date

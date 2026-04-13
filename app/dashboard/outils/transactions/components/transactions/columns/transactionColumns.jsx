@@ -8,6 +8,7 @@ import {
   Landmark,
   Link2,
   CheckCircle2,
+  BookOpen,
 } from "lucide-react";
 import { formatDateToFrench } from "@/src/utils/dateFormatter";
 import { findBank } from "@/lib/banks-config";
@@ -16,6 +17,7 @@ import { multiColumnFilterFn } from "../filters/multiColumnFilterFn";
 import { findMerchant } from "@/lib/merchants-config";
 import { MerchantLogo } from "../../merchant-logo";
 import { getCategoryConfig } from "@/lib/category-icons-config";
+import { CONFIDENCE_CONFIG } from "@/lib/pcg-mapping";
 import {
   Tooltip,
   TooltipContent,
@@ -309,7 +311,10 @@ export const columns = [
                 <div className="flex items-center gap-1.5">
                   <div className="relative">
                     <FileTextIcon size={14} className="text-green-600" />
-                    <Link2 size={8} className="text-green-600 absolute -bottom-0.5 -right-0.5" />
+                    <Link2
+                      size={8}
+                      className="text-green-600 absolute -bottom-0.5 -right-0.5"
+                    />
                   </div>
                   <CheckCircle2 size={12} className="text-green-600" />
                 </div>
@@ -318,7 +323,8 @@ export const columns = [
                 <div className="text-center">
                   <div className="font-medium">Facture liée</div>
                   <div className="text-xs text-muted-foreground">
-                    {linkedInvoice.number || "N/A"} - {linkedInvoice.clientName || "Client"}
+                    {linkedInvoice.number || "N/A"} -{" "}
+                    {linkedInvoice.clientName || "Client"}
                   </div>
                 </div>
               </TooltipContent>
@@ -351,6 +357,86 @@ export const columns = [
       );
     },
     size: 90,
+  },
+  {
+    header: "Compte PCG",
+    accessorKey: "pcgAccount",
+    meta: {
+      label: "Compte PCG",
+    },
+    cell: ({ row, table }) => {
+      const pcgAccount = row.original.pcgAccount;
+      const hasPCG = pcgAccount?.numero;
+
+      if (!hasPCG) {
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    table.options.meta?.onEditPCG?.(row.original);
+                  }}
+                >
+                  <BookOpen size={14} />
+                  <span>Affecter</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Affecter un compte PCG</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      }
+
+      const confidence =
+        CONFIDENCE_CONFIG[pcgAccount.confidence?.toLowerCase()] ||
+        CONFIDENCE_CONFIG.low;
+
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  table.options.meta?.onEditPCG?.(row.original);
+                }}
+              >
+                <code
+                  className="rounded px-1.5 py-0.5 text-xs font-mono font-semibold"
+                  style={{
+                    backgroundColor: confidence.bgColor,
+                    color: confidence.color,
+                  }}
+                >
+                  {pcgAccount.numero}
+                </code>
+                {pcgAccount.isManual && (
+                  <PenLine size={10} className="text-blue-500" />
+                )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="text-center">
+                <div className="font-medium">
+                  {pcgAccount.numero} - {pcgAccount.intitule}
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {pcgAccount.isManual
+                    ? "Affecte manuellement"
+                    : `Auto (${confidence.label.toLowerCase()})`}
+                </div>
+                <div className="text-xs mt-1">Cliquer pour modifier</div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    },
+    size: 130,
   },
   {
     id: "actions",
