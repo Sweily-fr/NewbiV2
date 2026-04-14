@@ -11,25 +11,28 @@ import {
   Legend,
 } from "recharts";
 import { ChartContainer } from "@/src/components/ui/chart";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
-
-const chartConfig = {
-  invoiceCount: { label: "Factures", color: "#5b50ff" },
-  expenseCount: { label: "Dépenses", color: "#f87171" },
-};
+import { useChartColors } from "@/src/hooks/useChartColors";
 
 const formatMonthLabel = (monthStr) => {
   if (!monthStr) return "";
   const [year, month] = monthStr.split("-");
   const date = new Date(parseInt(year), parseInt(month) - 1);
-  return date
-    .toLocaleDateString("fr-FR", { month: "short" })
-    .replace(".", "")
-    .toUpperCase() + ` ${year.slice(2)}`;
+  return (
+    date
+      .toLocaleDateString("fr-FR", { month: "short" })
+      .replace(".", "")
+      .toUpperCase() + ` ${year.slice(2)}`
+  );
 };
 
-function CustomTooltip({ active, payload }) {
+function CustomTooltip({ active, payload, remap }) {
   if (!active || !payload?.length) return null;
   const data = payload[0]?.payload;
   if (!data) return null;
@@ -47,14 +50,20 @@ function CustomTooltip({ active, payload }) {
       <div className="space-y-1">
         <div className="flex items-center justify-between gap-6">
           <span className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#5b50ff" }} />
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ backgroundColor: remap("#5b50ff") }}
+            />
             Factures
           </span>
           <span className="font-medium">{data.invoiceCount}</span>
         </div>
         <div className="flex items-center justify-between gap-6">
           <span className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#f87171" }} />
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ backgroundColor: remap("#f87171") }}
+            />
             Dépenses
           </span>
           <span className="font-medium">{data.expenseCount}</span>
@@ -65,6 +74,11 @@ function CustomTooltip({ active, payload }) {
 }
 
 export function AnalyticsCountChart({ monthlyRevenue, loading }) {
+  const { remap } = useChartColors();
+  const chartConfig = {
+    invoiceCount: { label: "Factures", color: remap("#5b50ff") },
+    expenseCount: { label: "Dépenses", color: remap("#f87171") },
+  };
   const chartData = useMemo(() => {
     if (!monthlyRevenue?.length) return [];
     return monthlyRevenue.map((m) => ({
@@ -77,7 +91,9 @@ export function AnalyticsCountChart({ monthlyRevenue, loading }) {
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Nombre de documents</CardTitle>
+          <CardTitle className="text-sm font-medium">
+            Nombre de documents
+          </CardTitle>
         </CardHeader>
         <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
           <Skeleton className="min-h-[300px] w-full" />
@@ -90,7 +106,9 @@ export function AnalyticsCountChart({ monthlyRevenue, loading }) {
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Nombre de documents</CardTitle>
+          <CardTitle className="text-sm font-medium">
+            Nombre de documents
+          </CardTitle>
         </CardHeader>
         <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 flex items-center justify-center flex-1 min-h-[300px] text-muted-foreground">
           Aucune donnée pour cette période
@@ -102,55 +120,67 @@ export function AnalyticsCountChart({ monthlyRevenue, loading }) {
   return (
     <Card className="shadow-xs flex flex-col min-h-0 py-4">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Nombre de documents</CardTitle>
+        <CardTitle className="text-sm font-medium">
+          Nombre de documents
+        </CardTitle>
       </CardHeader>
       <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
-      <ChartContainer config={chartConfig} className="h-[300px] w-full">
-        <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} />
-          <XAxis
-            dataKey="monthLabel"
-            tick={{ fontSize: 11 }}
-            tickLine={false}
-            axisLine={false}
-          />
-          <YAxis
-            tick={({ y, payload }) => (
-              <text x={0} y={y} textAnchor="start" dominantBaseline="middle" fontSize={11} className="fill-muted-foreground">
-                {payload.value}
-              </text>
-            )}
-            tickLine={false}
-            axisLine={false}
-            width={25}
-            allowDecimals={false}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Legend
-            verticalAlign="top"
-            height={36}
-            iconType="circle"
-            iconSize={8}
-            formatter={(value) => (
-              <span className="text-xs text-muted-foreground">
-                {chartConfig[value]?.label || value}
-              </span>
-            )}
-          />
-          <Bar
-            dataKey="invoiceCount"
-            fill="#5b50ff"
-            radius={[4, 4, 0, 0]}
-            barSize={16}
-          />
-          <Bar
-            dataKey="expenseCount"
-            fill="#f87171"
-            radius={[4, 4, 0, 0]}
-            barSize={16}
-          />
-        </BarChart>
-      </ChartContainer>
+        <ChartContainer config={chartConfig} className="h-[300px] w-full">
+          <BarChart
+            data={chartData}
+            margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis
+              dataKey="monthLabel"
+              tick={{ fontSize: 11 }}
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis
+              tick={({ y, payload }) => (
+                <text
+                  x={0}
+                  y={y}
+                  textAnchor="start"
+                  dominantBaseline="middle"
+                  fontSize={11}
+                  className="fill-muted-foreground"
+                >
+                  {payload.value}
+                </text>
+              )}
+              tickLine={false}
+              axisLine={false}
+              width={25}
+              allowDecimals={false}
+            />
+            <Tooltip content={<CustomTooltip remap={remap} />} />
+            <Legend
+              verticalAlign="top"
+              height={36}
+              iconType="circle"
+              iconSize={8}
+              formatter={(value) => (
+                <span className="text-xs text-muted-foreground">
+                  {chartConfig[value]?.label || value}
+                </span>
+              )}
+            />
+            <Bar
+              dataKey="invoiceCount"
+              fill={remap("#5b50ff")}
+              radius={[4, 4, 0, 0]}
+              barSize={16}
+            />
+            <Bar
+              dataKey="expenseCount"
+              fill={remap("#f87171")}
+              radius={[4, 4, 0, 0]}
+              barSize={16}
+            />
+          </BarChart>
+        </ChartContainer>
       </CardContent>
     </Card>
   );

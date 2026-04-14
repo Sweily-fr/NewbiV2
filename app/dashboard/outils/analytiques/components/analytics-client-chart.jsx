@@ -1,19 +1,38 @@
 "use client";
 
 import { useMemo } from "react";
-import { Bar, BarChart, XAxis, YAxis, Tooltip, CartesianGrid, LabelList, Cell } from "recharts";
+import {
+  Bar,
+  BarChart,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  LabelList,
+  Cell,
+} from "recharts";
 import { ChartContainer } from "@/src/components/ui/chart";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { useChartColors } from "@/src/hooks/useChartColors";
 
 const CLIENT_COLORS = [
-  "#5b50ff", "#3b82f6", "#10b981", "#f59e0b", "#ef4444",
-  "#a855f7", "#06b6d4", "#f97316", "#ec4899", "#64748b",
+  "#5b50ff",
+  "#3b82f6",
+  "#10b981",
+  "#f59e0b",
+  "#ef4444",
+  "#a855f7",
+  "#06b6d4",
+  "#f97316",
+  "#ec4899",
+  "#64748b",
 ];
-
-const chartConfig = {
-  totalTTC: { label: "CA TTC", color: "#5b50ff" },
-};
 
 const formatCurrency = (value) =>
   new Intl.NumberFormat("fr-FR", {
@@ -31,7 +50,10 @@ function CustomTooltip({ active, payload }) {
   return (
     <div className="rounded-lg border bg-background p-3 shadow-sm text-sm min-w-[200px]">
       <p className="font-medium mb-2 flex items-center gap-2">
-        <span className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: data.fill }} />
+        <span
+          className="h-2.5 w-2.5 rounded-full flex-shrink-0"
+          style={{ backgroundColor: data.fill }}
+        />
         {data.clientName}
       </p>
       <div className="space-y-1">
@@ -69,6 +91,10 @@ function BarLabel({ x, y, width, height, value }) {
 }
 
 export function AnalyticsClientChart({ topClients, loading }) {
+  const { remap } = useChartColors();
+  const chartConfig = {
+    totalTTC: { label: "CA TTC", color: remap("#5b50ff") },
+  };
   const chartData = useMemo(() => {
     if (!topClients?.length) return [];
     return topClients.map((c, i) => ({
@@ -77,9 +103,9 @@ export function AnalyticsClientChart({ topClients, loading }) {
         c.clientName.length > 20
           ? c.clientName.substring(0, 18) + "..."
           : c.clientName,
-      fill: CLIENT_COLORS[i % CLIENT_COLORS.length],
+      fill: remap(CLIENT_COLORS[i % CLIENT_COLORS.length]),
     }));
-  }, [topClients]);
+  }, [topClients, remap]);
 
   if (loading) {
     return (
@@ -113,39 +139,30 @@ export function AnalyticsClientChart({ topClients, loading }) {
         <CardTitle className="text-sm font-medium">Top 10 clients</CardTitle>
       </CardHeader>
       <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
-      <ChartContainer config={chartConfig} className="h-[350px] w-full">
-        <BarChart
-          data={chartData}
-          layout="vertical"
-          margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-          <XAxis
-            type="number"
-            tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-            tick={{ fontSize: 11 }}
-            tickLine={false}
-            axisLine={false}
-          />
-          <YAxis
-            type="category"
-            dataKey="shortName"
-            hide
-            width={0}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Bar
-            dataKey="totalTTC"
-            radius={[0, 4, 4, 0]}
-            barSize={24}
+        <ChartContainer config={chartConfig} className="h-[350px] w-full">
+          <BarChart
+            data={chartData}
+            layout="vertical"
+            margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
           >
-            {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.fill} />
-            ))}
-            <LabelList dataKey="shortName" content={<BarLabel />} />
-          </Bar>
-        </BarChart>
-      </ChartContainer>
+            <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+            <XAxis
+              type="number"
+              tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+              tick={{ fontSize: 11 }}
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis type="category" dataKey="shortName" hide width={0} />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar dataKey="totalTTC" radius={[0, 4, 4, 0]} barSize={24}>
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.fill} />
+              ))}
+              <LabelList dataKey="shortName" content={<BarLabel />} />
+            </Bar>
+          </BarChart>
+        </ChartContainer>
       </CardContent>
     </Card>
   );

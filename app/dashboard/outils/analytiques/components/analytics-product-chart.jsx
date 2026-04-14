@@ -12,16 +12,26 @@ import {
   LabelList,
 } from "recharts";
 import { ChartContainer } from "@/src/components/ui/chart";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
-
-const chartConfig = {
-  totalHT: { label: "CA HT", color: "#5b50ff" },
-};
+import { useChartColors } from "@/src/hooks/useChartColors";
 
 const BAR_COLORS = [
-  "#5b50ff", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",
-  "#06b6d4", "#ec4899", "#14b8a6", "#f97316", "#6366f1",
+  "#5b50ff",
+  "#10b981",
+  "#f59e0b",
+  "#ef4444",
+  "#8b5cf6",
+  "#06b6d4",
+  "#ec4899",
+  "#14b8a6",
+  "#f97316",
+  "#6366f1",
 ];
 
 const formatCurrency = (value) =>
@@ -43,7 +53,9 @@ function CustomTooltip({ active, payload }) {
       <div className="space-y-1">
         <div className="flex items-center justify-between gap-4">
           <span>CA HT</span>
-          <span className="font-medium">{formatCurrency(data.totalHT || data.size)}</span>
+          <span className="font-medium">
+            {formatCurrency(data.totalHT || data.size)}
+          </span>
         </div>
         {data.totalQuantity != null && (
           <div className="flex items-center justify-between gap-4">
@@ -54,7 +66,9 @@ function CustomTooltip({ active, payload }) {
         {data.averageUnitPrice != null && (
           <div className="flex items-center justify-between gap-4">
             <span>Prix moyen</span>
-            <span className="font-medium">{formatCurrency(data.averageUnitPrice)}</span>
+            <span className="font-medium">
+              {formatCurrency(data.averageUnitPrice)}
+            </span>
           </div>
         )}
       </div>
@@ -79,6 +93,10 @@ function BarLabel({ x, y, width, height, value }) {
 }
 
 export function AnalyticsProductChart({ revenueByProduct, loading }) {
+  const { remap } = useChartColors();
+  const chartConfig = {
+    totalHT: { label: "CA HT", color: remap("#5b50ff") },
+  };
   const chartData = useMemo(() => {
     if (!revenueByProduct?.length) return [];
     return revenueByProduct.slice(0, 10).map((p, i) => ({
@@ -89,15 +107,17 @@ export function AnalyticsProductChart({ revenueByProduct, loading }) {
           : p.description,
       name: p.description,
       size: p.totalHT,
-      fill: BAR_COLORS[i % BAR_COLORS.length],
+      fill: remap(BAR_COLORS[i % BAR_COLORS.length]),
     }));
-  }, [revenueByProduct]);
+  }, [revenueByProduct, remap]);
 
   if (loading) {
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Top produits / services</CardTitle>
+          <CardTitle className="text-sm font-medium">
+            Top produits / services
+          </CardTitle>
         </CardHeader>
         <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
           <Skeleton className="min-h-[200px] w-full" />
@@ -110,7 +130,9 @@ export function AnalyticsProductChart({ revenueByProduct, loading }) {
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Top produits / services</CardTitle>
+          <CardTitle className="text-sm font-medium">
+            Top produits / services
+          </CardTitle>
         </CardHeader>
         <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 flex items-center justify-center flex-1 min-h-[200px] text-muted-foreground">
           Aucune donnée pour cette période
@@ -122,7 +144,9 @@ export function AnalyticsProductChart({ revenueByProduct, loading }) {
   return (
     <Card className="shadow-xs flex flex-col min-h-0 py-4">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Top produits / services</CardTitle>
+        <CardTitle className="text-sm font-medium">
+          Top produits / services
+        </CardTitle>
       </CardHeader>
       <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
         <ChartContainer config={chartConfig} className="h-[350px] w-full">
@@ -140,18 +164,9 @@ export function AnalyticsProductChart({ revenueByProduct, loading }) {
               tickLine={false}
               axisLine={false}
             />
-            <YAxis
-              type="category"
-              dataKey="shortDesc"
-              hide
-              width={0}
-            />
+            <YAxis type="category" dataKey="shortDesc" hide width={0} />
             <Tooltip content={<CustomTooltip />} />
-            <Bar
-              dataKey="totalHT"
-              radius={[0, 4, 4, 0]}
-              barSize={18}
-            >
+            <Bar dataKey="totalHT" radius={[0, 4, 4, 0]} barSize={18}>
               {chartData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.fill} />
               ))}

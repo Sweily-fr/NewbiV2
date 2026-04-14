@@ -11,13 +11,14 @@ import {
   CartesianGrid,
 } from "recharts";
 import { ChartContainer } from "@/src/components/ui/chart";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
-
-const chartConfig = {
-  cumulativeHT: { label: "CA cumulé HT", color: "#5b50ff" },
-  cumulativeTTC: { label: "CA cumulé TTC", color: "#5b50ff" },
-};
+import { useChartColors } from "@/src/hooks/useChartColors";
 
 const formatCurrency = (value) =>
   new Intl.NumberFormat("fr-FR", {
@@ -37,7 +38,7 @@ const formatMonthLabel = (monthStr) => {
     .toUpperCase();
 };
 
-function CustomTooltip({ active, payload }) {
+function CustomTooltip({ active, payload, remap }) {
   if (!active || !payload?.length) return null;
   const data = payload[0]?.payload;
   if (!data) return null;
@@ -55,17 +56,27 @@ function CustomTooltip({ active, payload }) {
       <div className="space-y-1">
         <div className="flex items-center justify-between gap-6">
           <span className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#5b50ff" }} />
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ backgroundColor: remap("#5b50ff") }}
+            />
             Cumulé HT
           </span>
-          <span className="font-medium">{formatCurrency(data.cumulativeHT)}</span>
+          <span className="font-medium">
+            {formatCurrency(data.cumulativeHT)}
+          </span>
         </div>
         <div className="flex items-center justify-between gap-6">
           <span className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#5b50ff", opacity: 0.5 }} />
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ backgroundColor: remap("#5b50ff"), opacity: 0.5 }}
+            />
             Cumulé TTC
           </span>
-          <span className="font-medium">{formatCurrency(data.cumulativeTTC)}</span>
+          <span className="font-medium">
+            {formatCurrency(data.cumulativeTTC)}
+          </span>
         </div>
         <div className="flex items-center justify-between gap-6 border-t pt-1 mt-1 text-muted-foreground">
           <span>Mois HT</span>
@@ -77,6 +88,11 @@ function CustomTooltip({ active, payload }) {
 }
 
 export function AnalyticsCumulativeRevenueChart({ monthlyRevenue, loading }) {
+  const { remap } = useChartColors();
+  const chartConfig = {
+    cumulativeHT: { label: "CA cumulé HT", color: remap("#5b50ff") },
+    cumulativeTTC: { label: "CA cumulé TTC", color: remap("#5b50ff") },
+  };
   const chartData = useMemo(() => {
     if (!monthlyRevenue?.length) return [];
     let cumHT = 0;
@@ -125,47 +141,60 @@ export function AnalyticsCumulativeRevenueChart({ monthlyRevenue, loading }) {
         <CardTitle className="text-sm font-medium">CA cumulé</CardTitle>
       </CardHeader>
       <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
-        <ChartContainer config={chartConfig} className="flex-1 min-h-[350px] w-full">
-        <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} />
-          <XAxis
-            dataKey="monthLabel"
-            tick={{ fontSize: 11 }}
-            tickLine={false}
-            axisLine={false}
-            interval={0}
-          />
-          <YAxis
-            tickCount={6}
-            tick={({ y, payload }) => (
-              <text x={0} y={y} textAnchor="start" dominantBaseline="middle" fontSize={11} className="fill-muted-foreground">
-                {`${(payload.value / 1000).toFixed(0)}k`}
-              </text>
-            )}
-            tickLine={false}
-            axisLine={false}
-            width={35}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Area
-            type="bump"
-            dataKey="cumulativeHT"
-            stroke="#5b50ff"
-            fill="#5b50ff"
-            fillOpacity={0.25}
-            strokeWidth={1.5}
-          />
-          <Area
-            type="bump"
-            dataKey="cumulativeTTC"
-            stroke="#5b50ff"
-            fill="#5b50ff"
-            fillOpacity={0.1}
-            strokeWidth={1.5}
-            strokeOpacity={0.5}
-          />
-        </ComposedChart>
-      </ChartContainer>
+        <ChartContainer
+          config={chartConfig}
+          className="flex-1 min-h-[350px] w-full"
+        >
+          <ComposedChart
+            data={chartData}
+            margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis
+              dataKey="monthLabel"
+              tick={{ fontSize: 11 }}
+              tickLine={false}
+              axisLine={false}
+              interval={0}
+            />
+            <YAxis
+              tickCount={6}
+              tick={({ y, payload }) => (
+                <text
+                  x={0}
+                  y={y}
+                  textAnchor="start"
+                  dominantBaseline="middle"
+                  fontSize={11}
+                  className="fill-muted-foreground"
+                >
+                  {`${(payload.value / 1000).toFixed(0)}k`}
+                </text>
+              )}
+              tickLine={false}
+              axisLine={false}
+              width={35}
+            />
+            <Tooltip content={<CustomTooltip remap={remap} />} />
+            <Area
+              type="bump"
+              dataKey="cumulativeHT"
+              stroke={remap("#5b50ff")}
+              fill={remap("#5b50ff")}
+              fillOpacity={0.25}
+              strokeWidth={1.5}
+            />
+            <Area
+              type="bump"
+              dataKey="cumulativeTTC"
+              stroke={remap("#5b50ff")}
+              fill={remap("#5b50ff")}
+              fillOpacity={0.1}
+              strokeWidth={1.5}
+              strokeOpacity={0.5}
+            />
+          </ComposedChart>
+        </ChartContainer>
       </CardContent>
     </Card>
   );

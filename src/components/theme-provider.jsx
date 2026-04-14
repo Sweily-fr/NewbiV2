@@ -2,9 +2,13 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
+const COLORBLIND_STORAGE_KEY = "newbi-colorblind-mode";
+
 const initialState = {
   theme: "system",
   setTheme: () => null,
+  colorblindMode: false,
+  setColorblindMode: () => null,
 };
 
 const ThemeProviderContext = createContext(initialState);
@@ -16,15 +20,22 @@ export function ThemeProvider({
   ...props
 }) {
   const pathname = usePathname();
-  const isDarkAllowed = pathname?.startsWith("/dashboard") || pathname?.startsWith("/create-workspace");
+  const isDarkAllowed =
+    pathname?.startsWith("/dashboard") ||
+    pathname?.startsWith("/create-workspace");
 
   const [theme, setTheme] = useState(defaultTheme);
+  const [colorblindMode, setColorblindModeState] = useState(false);
 
   // Sync with localStorage on mount (client-side only)
   useEffect(() => {
     const stored = localStorage.getItem(storageKey);
     if (stored) {
       setTheme(stored);
+    }
+    const storedColorblind = localStorage.getItem(COLORBLIND_STORAGE_KEY);
+    if (storedColorblind === "true") {
+      setColorblindModeState(true);
     }
   }, [storageKey]);
 
@@ -60,6 +71,17 @@ export function ThemeProvider({
         localStorage.setItem(storageKey, theme);
       }
       setTheme(theme);
+    },
+    colorblindMode,
+    setColorblindMode: (enabled) => {
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          COLORBLIND_STORAGE_KEY,
+          enabled ? "true" : "false",
+        );
+        window.dispatchEvent(new Event("colorblind-mode-change"));
+      }
+      setColorblindModeState(enabled);
     },
   };
 

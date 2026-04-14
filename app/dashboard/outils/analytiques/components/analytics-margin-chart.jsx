@@ -11,12 +11,14 @@ import {
   ReferenceLine,
 } from "recharts";
 import { ChartContainer } from "@/src/components/ui/chart";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
-
-const chartConfig = {
-  grossMarginRate: { label: "Taux de marge brute %", color: "#5b50ff" },
-};
+import { useChartColors } from "@/src/hooks/useChartColors";
 
 const formatMonthLabel = (monthStr) => {
   if (!monthStr) return "";
@@ -36,7 +38,7 @@ const formatCurrency = (value) =>
     maximumFractionDigits: 0,
   }).format(value || 0);
 
-function CustomTooltip({ active, payload }) {
+function CustomTooltip({ active, payload, colors, remap }) {
   if (!active || !payload?.length) return null;
   const data = payload[0]?.payload;
   if (!data) return null;
@@ -54,10 +56,18 @@ function CustomTooltip({ active, payload }) {
       <div className="space-y-1">
         <div className="flex items-center justify-between gap-6">
           <span className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#5b50ff" }} />
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ backgroundColor: remap("#5b50ff") }}
+            />
             Taux de marge brute
           </span>
-          <span className={`font-medium ${data.grossMarginRate >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+          <span
+            className="font-medium"
+            style={{
+              color: data.grossMarginRate >= 0 ? colors.success : colors.danger,
+            }}
+          >
             {data.grossMarginRate.toFixed(1)}%
           </span>
         </div>
@@ -79,6 +89,14 @@ function CustomTooltip({ active, payload }) {
 }
 
 export function AnalyticsMarginChart({ monthlyRevenue, loading }) {
+  const chartColors = useChartColors();
+  const { remap } = chartColors;
+  const chartConfig = {
+    grossMarginRate: {
+      label: "Taux de marge brute %",
+      color: remap("#5b50ff"),
+    },
+  };
   const chartData = useMemo(() => {
     if (!monthlyRevenue?.length) return [];
     return monthlyRevenue.map((m) => ({
@@ -93,7 +111,9 @@ export function AnalyticsMarginChart({ monthlyRevenue, loading }) {
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Taux de marge brute %</CardTitle>
+          <CardTitle className="text-sm font-medium">
+            Taux de marge brute %
+          </CardTitle>
         </CardHeader>
         <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
           <Skeleton className="min-h-[350px] w-full" />
@@ -106,7 +126,9 @@ export function AnalyticsMarginChart({ monthlyRevenue, loading }) {
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Taux de marge brute %</CardTitle>
+          <CardTitle className="text-sm font-medium">
+            Taux de marge brute %
+          </CardTitle>
         </CardHeader>
         <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 flex items-center justify-center flex-1 min-h-[350px] text-muted-foreground">
           Aucune donnée pour cette période
@@ -118,51 +140,76 @@ export function AnalyticsMarginChart({ monthlyRevenue, loading }) {
   return (
     <Card className="shadow-xs flex flex-col min-h-0 py-4">
       <CardHeader>
-        <CardTitle className="text-sm font-medium">Taux de marge brute %</CardTitle>
+        <CardTitle className="text-sm font-medium">
+          Taux de marge brute %
+        </CardTitle>
       </CardHeader>
       <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
-        <ChartContainer config={chartConfig} className="flex-1 min-h-[350px] w-full">
-        <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-          <defs>
-            <linearGradient id="fillMarginRate" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#5b50ff" stopOpacity={0.8} />
-              <stop offset="95%" stopColor="#5b50ff" stopOpacity={0.1} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} />
-          <XAxis
-            dataKey="monthLabel"
-            tick={{ fontSize: 11 }}
-            tickLine={false}
-            axisLine={false}
-            interval={0}
-          />
-          <YAxis
-            tickCount={6}
-            tick={({ y, payload }) => (
-              <text x={0} y={y} textAnchor="start" dominantBaseline="middle" fontSize={11} className="fill-muted-foreground">
-                {`${payload.value}%`}
-              </text>
-            )}
-            tickLine={false}
-            axisLine={false}
-            width={40}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <ReferenceLine y={0} stroke="#94a3b8" strokeDasharray="3 3" />
-          <Area
-            type="bump"
-            dataKey="grossMarginRate"
-            stroke="#5b50ff"
-            strokeWidth={1.5}
-            fill="url(#fillMarginRate)"
-            fillOpacity={0.4}
-            dot={false}
-            activeDot={{ r: 5 }}
-            connectNulls
-          />
-        </AreaChart>
-      </ChartContainer>
+        <ChartContainer
+          config={chartConfig}
+          className="flex-1 min-h-[350px] w-full"
+        >
+          <AreaChart
+            data={chartData}
+            margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+          >
+            <defs>
+              <linearGradient id="fillMarginRate" x1="0" y1="0" x2="0" y2="1">
+                <stop
+                  offset="5%"
+                  stopColor={remap("#5b50ff")}
+                  stopOpacity={0.8}
+                />
+                <stop
+                  offset="95%"
+                  stopColor={remap("#5b50ff")}
+                  stopOpacity={0.1}
+                />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis
+              dataKey="monthLabel"
+              tick={{ fontSize: 11 }}
+              tickLine={false}
+              axisLine={false}
+              interval={0}
+            />
+            <YAxis
+              tickCount={6}
+              tick={({ y, payload }) => (
+                <text
+                  x={0}
+                  y={y}
+                  textAnchor="start"
+                  dominantBaseline="middle"
+                  fontSize={11}
+                  className="fill-muted-foreground"
+                >
+                  {`${payload.value}%`}
+                </text>
+              )}
+              tickLine={false}
+              axisLine={false}
+              width={40}
+            />
+            <Tooltip
+              content={<CustomTooltip colors={chartColors} remap={remap} />}
+            />
+            <ReferenceLine y={0} stroke="#94a3b8" strokeDasharray="3 3" />
+            <Area
+              type="bump"
+              dataKey="grossMarginRate"
+              stroke={remap("#5b50ff")}
+              strokeWidth={1.5}
+              fill="url(#fillMarginRate)"
+              fillOpacity={0.4}
+              dot={false}
+              activeDot={{ r: 5 }}
+              connectNulls
+            />
+          </AreaChart>
+        </ChartContainer>
       </CardContent>
     </Card>
   );

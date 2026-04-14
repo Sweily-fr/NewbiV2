@@ -20,14 +20,7 @@ import {
 } from "@/src/components/ui/card";
 import { ChartContainer } from "@/src/components/ui/chart";
 import { Skeleton } from "@/src/components/ui/skeleton";
-
-const chartConfig = {
-  actualIncome: { label: "Entrées réelles", color: "#5b50ff" },
-  forecastIncome: { label: "Prév. entrées", color: "#5b50ff" },
-  actualExpense: { label: "Sorties réelles", color: "#000000" },
-  forecastExpense: { label: "Prév. sorties", color: "#000000" },
-  balance: { label: "Solde", color: "#3b82f6" },
-};
+import { useChartColors } from "@/src/hooks/useChartColors";
 
 const formatCurrency = (value) =>
   new Intl.NumberFormat("fr-FR", {
@@ -48,7 +41,7 @@ const formatMonthLabel = (monthStr) => {
 };
 
 // Custom tooltip matching the reference design
-function CustomTooltip({ active, payload, label }) {
+function CustomTooltip({ active, payload, label, remap }) {
   if (!active || !payload?.length) return null;
 
   const data = payload[0]?.payload;
@@ -113,7 +106,7 @@ function CustomTooltip({ active, payload, label }) {
               <div className="flex items-center gap-2">
                 <span
                   className="inline-block w-3 h-3 rounded-sm"
-                  style={{ backgroundColor: "#5b50ff" }}
+                  style={{ backgroundColor: remap("#5b50ff") }}
                 />
                 <span className="text-xs text-muted-foreground">Réelles</span>
               </div>
@@ -161,7 +154,7 @@ function CustomTooltip({ active, payload, label }) {
               <div className="flex items-center gap-2">
                 <span
                   className="inline-block w-3 h-3 rounded-sm"
-                  style={{ backgroundColor: "#000000" }}
+                  style={{ backgroundColor: remap("#000000") }}
                 />
                 <span className="text-xs text-muted-foreground">Réelles</span>
               </div>
@@ -184,6 +177,14 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 export function ForecastChart({ months, loading, showForecast }) {
+  const { remap } = useChartColors();
+  const chartConfig = {
+    actualIncome: { label: "Entrées réelles", color: remap("#5b50ff") },
+    forecastIncome: { label: "Prév. entrées", color: remap("#5b50ff") },
+    actualExpense: { label: "Sorties réelles", color: remap("#000000") },
+    forecastExpense: { label: "Prév. sorties", color: remap("#000000") },
+    balance: { label: "Solde", color: remap("#3b82f6") },
+  };
   const now = new Date();
   const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
@@ -253,13 +254,13 @@ export function ForecastChart({ months, loading, showForecast }) {
                 height="6"
                 patternTransform="rotate(45)"
               >
-                <rect width="6" height="6" fill="#e8e6ff" />
+                <rect width="6" height="6" fill={remap("#e8e6ff")} />
                 <line
                   x1="0"
                   y1="0"
                   x2="0"
                   y2="6"
-                  stroke="#5b50ff"
+                  stroke={remap("#5b50ff")}
                   strokeWidth="2.5"
                   strokeOpacity="0.5"
                 />
@@ -272,21 +273,29 @@ export function ForecastChart({ months, loading, showForecast }) {
                 height="6"
                 patternTransform="rotate(45)"
               >
-                <rect width="6" height="6" fill="#e5e5e5" />
+                <rect width="6" height="6" fill={remap("#e5e5e5")} />
                 <line
                   x1="0"
                   y1="0"
                   x2="0"
                   y2="6"
-                  stroke="#000000"
+                  stroke={remap("#000000")}
                   strokeWidth="2.5"
                   strokeOpacity="0.5"
                 />
               </pattern>
               {/* Gradient for balance area fill */}
               <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.15} />
-                <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.02} />
+                <stop
+                  offset="0%"
+                  stopColor={remap("#3b82f6")}
+                  stopOpacity={0.15}
+                />
+                <stop
+                  offset="100%"
+                  stopColor={remap("#3b82f6")}
+                  stopOpacity={0.02}
+                />
               </linearGradient>
             </defs>
 
@@ -323,7 +332,7 @@ export function ForecastChart({ months, loading, showForecast }) {
                     y={y + 4}
                     textAnchor="middle"
                     fontSize={11}
-                    fill={isCurrent ? "#3b82f6" : "#9ca3af"}
+                    fill={isCurrent ? remap("#3b82f6") : "#9ca3af"}
                     fontWeight={isCurrent ? 600 : 400}
                   >
                     {payload.value}
@@ -344,13 +353,13 @@ export function ForecastChart({ months, loading, showForecast }) {
               width={50}
             />
 
-            <Tooltip content={<CustomTooltip />} cursor={false} />
+            <Tooltip content={<CustomTooltip remap={remap} />} cursor={false} />
 
             {/* Income bars: actual (solid green) stacked with forecast (hatched green) */}
             <Bar
               dataKey="actualIncome"
               stackId="income"
-              fill="#5b50ff"
+              fill={remap("#5b50ff")}
               barSize={14}
               radius={[0, 0, 0, 0]}
             />
@@ -368,7 +377,7 @@ export function ForecastChart({ months, loading, showForecast }) {
             <Bar
               dataKey="actualExpense"
               stackId="expense"
-              fill="#333333"
+              fill={remap("#333333")}
               barSize={14}
               radius={[0, 0, 0, 0]}
             />
@@ -386,18 +395,18 @@ export function ForecastChart({ months, loading, showForecast }) {
             <Line
               dataKey="balance"
               type="monotone"
-              stroke="#3b82f6"
+              stroke={remap("#3b82f6")}
               strokeWidth={2}
               dot={{
                 r: 3,
                 fill: "#ffffff",
-                stroke: "#3b82f6",
+                stroke: remap("#3b82f6"),
                 strokeWidth: 2,
               }}
               activeDot={{
                 r: 5,
                 fill: "#ffffff",
-                stroke: "#3b82f6",
+                stroke: remap("#3b82f6"),
                 strokeWidth: 2,
               }}
               connectNulls

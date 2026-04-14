@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/src/components/ui/button";
 import DarkModeComponent from "@/src/components/darkmode";
+import ColorblindModeComponent from "@/src/components/colorblind-mode";
 import { Separator } from "@/src/components/ui/separator";
 import {
   Select,
@@ -25,7 +26,7 @@ export function PreferencesSection() {
 
   // État pour la page de démarrage
   const [startupPage, setStartupPage] = useState(
-    session?.user?.redirect_after_login || "dashboard"
+    session?.user?.redirect_after_login || "dashboard",
   );
 
   // Synchroniser startupPage avec redirect_after_login de l'utilisateur
@@ -55,7 +56,7 @@ export function PreferencesSection() {
             // Revenir à l'ancienne valeur en cas d'erreur
             setStartupPage(session?.user?.redirect_after_login || "dashboard");
           },
-        }
+        },
       );
     } catch (error) {
       console.error("Erreur:", error);
@@ -67,11 +68,20 @@ export function PreferencesSection() {
     <div className="space-y-8">
       {/* Confidentialité */}
       <div>
-        <h2 className="text-lg font-medium mb-1 hidden md:block">Préférences</h2>
+        <h2 className="text-lg font-medium mb-1 hidden md:block">
+          Préférences
+        </h2>
         <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
         {/* Dark Mode Component */}
         <div className="mb-8 mt-4 md:mt-12">
           <DarkModeComponent />
+        </div>
+
+        <Separator className="bg-[#eeeff1] dark:bg-[#232323]" />
+
+        {/* Mode daltonien */}
+        <div className="my-8">
+          <ColorblindModeComponent />
         </div>
 
         <Separator className="bg-[#eeeff1] dark:bg-[#232323]" />
@@ -105,7 +115,9 @@ export function PreferencesSection() {
                 <SelectItem value="transferts">
                   Transferts de fichiers
                 </SelectItem>
-                <SelectItem value="documents-partages">Documents partagés</SelectItem>
+                <SelectItem value="documents-partages">
+                  Documents partagés
+                </SelectItem>
                 <SelectItem value="catalogues">Catalogues</SelectItem>
                 <SelectItem value="collaborateurs">Collaborateurs</SelectItem>
                 <SelectItem value="last-page">Dernière page visitée</SelectItem>
@@ -132,7 +144,6 @@ export function PreferencesSection() {
               {tutorialLoading ? "Chargement..." : "Relancer le tutoriel"}
             </Button>
           </div>
-
         </div>
       </div>
     </div>

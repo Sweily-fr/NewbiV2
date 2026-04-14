@@ -16,6 +16,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/src/components/ui/chart";
+import { useChartColors } from "@/src/hooks/useChartColors";
 
 export const description = "A radar chart with a grid and circle";
 
@@ -36,6 +37,7 @@ const chartConfig = {
 };
 
 export function ChartRadarGridCircle() {
+  const { remap } = useChartColors();
   return (
     <Card className="w-full">
       <CardHeader className="items-center pb-4">
@@ -58,7 +60,7 @@ export function ChartRadarGridCircle() {
             <PolarAngleAxis dataKey="month" />
             <Radar
               dataKey="desktop"
-              fill="#5B4FFF"
+              fill={remap("#5B4FFF")}
               fillOpacity={0.6}
               dot={{
                 r: 4,

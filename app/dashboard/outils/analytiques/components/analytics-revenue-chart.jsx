@@ -18,12 +18,7 @@ import {
   CardTitle,
 } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
-
-const chartConfig = {
-  revenueHT: { label: "CA HT", color: "#5b50ff" },
-  expenseAmount: { label: "Dépenses HT", color: "#000000" },
-  grossMarginComputed: { label: "Marge brute", color: "#5b50ff" },
-};
+import { useChartColors } from "@/src/hooks/useChartColors";
 
 const formatCurrency = (value) =>
   new Intl.NumberFormat("fr-FR", {
@@ -43,7 +38,7 @@ const formatMonthLabel = (monthStr) => {
     .toUpperCase();
 };
 
-function CustomTooltip({ active, payload }) {
+function CustomTooltip({ active, payload, colors, remap }) {
   if (!active || !payload?.length) return null;
   const data = payload[0]?.payload;
   if (!data) return null;
@@ -63,7 +58,7 @@ function CustomTooltip({ active, payload }) {
           <span className="flex items-center gap-2">
             <span
               className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: "#5b50ff" }}
+              style={{ backgroundColor: remap("#5b50ff") }}
             />
             CA HT
           </span>
@@ -73,7 +68,7 @@ function CustomTooltip({ active, payload }) {
           <span className="flex items-center gap-2">
             <span
               className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: "#000000" }}
+              style={{ backgroundColor: remap("#000000") }}
             />
             Dépenses HT
           </span>
@@ -85,12 +80,16 @@ function CustomTooltip({ active, payload }) {
           <span className="flex items-center gap-2">
             <span
               className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: "#5b50ff" }}
+              style={{ backgroundColor: remap("#5b50ff") }}
             />
             Marge brute
           </span>
           <span
-            className={`font-medium ${data.grossMarginComputed >= 0 ? "text-emerald-600" : "text-red-600"}`}
+            className="font-medium"
+            style={{
+              color:
+                data.grossMarginComputed >= 0 ? colors.success : colors.danger,
+            }}
           >
             {formatCurrency(data.grossMarginComputed)}
           </span>
@@ -105,6 +104,13 @@ export function AnalyticsRevenueChart({
   bankTransactions,
   loading,
 }) {
+  const chartColors = useChartColors();
+  const { remap } = chartColors;
+  const chartConfig = {
+    revenueHT: { label: "CA HT", color: remap("#5b50ff") },
+    expenseAmount: { label: "Dépenses HT", color: remap("#000000") },
+    grossMarginComputed: { label: "Marge brute", color: remap("#5b50ff") },
+  };
   const chartData = useMemo(() => {
     if (!monthlyRevenue?.length) return [];
 
@@ -206,17 +212,19 @@ export function AnalyticsRevenueChart({
               axisLine={false}
               width={35}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip
+              content={<CustomTooltip colors={chartColors} remap={remap} />}
+            />
             <Bar
               dataKey="revenueHT"
-              fill="#5b50ff"
+              fill={remap("#5b50ff")}
               fillOpacity={0.8}
               radius={[4, 4, 0, 0]}
               barSize={20}
             />
             <Bar
               dataKey="expenseAmount"
-              fill="#000000"
+              fill={remap("#000000")}
               fillOpacity={0.7}
               radius={[4, 4, 0, 0]}
               barSize={20}
@@ -224,7 +232,7 @@ export function AnalyticsRevenueChart({
             <Line
               type="bump"
               dataKey="grossMarginComputed"
-              stroke="#5b50ff"
+              stroke={remap("#5b50ff")}
               strokeWidth={2}
               dot={false}
               activeDot={{ r: 5 }}

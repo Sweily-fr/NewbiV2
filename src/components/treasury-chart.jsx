@@ -44,21 +44,7 @@ import {
 } from "react-aria-components";
 import { Calendar } from "@/src/components/ui/calendar-rac";
 import { DateInput } from "@/src/components/ui/datefield-rac";
-
-const chartConfig = {
-  treasury: {
-    label: "Trésorerie",
-    color: "#93c5fd", // Blue-300
-  },
-  income: {
-    label: "Entrées",
-    color: "#5b50ff", // Violet Newbi
-  },
-  expenses: {
-    label: "Sorties",
-    color: "#000000", // Noir
-  },
-};
+import { useChartColors } from "@/src/hooks/useChartColors";
 
 const TREASURY_SKELETON_HEIGHTS = [
   45, 55, 40, 70, 50, 65, 35, 80, 48, 60, 72, 42,
@@ -70,6 +56,12 @@ export function TreasuryChart({
   className = "",
   isLoading = false,
 }) {
+  const { remap } = useChartColors();
+  const chartConfig = {
+    treasury: { label: "Trésorerie", color: remap("#93c5fd") },
+    income: { label: "Entrées", color: remap("#5b50ff") },
+    expenses: { label: "Sorties", color: remap("#000000") },
+  };
   const [timeRange, setTimeRange] = useState("cumul-year"); // 90d, 30d, 365d, 730d, custom, cumul-year
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");

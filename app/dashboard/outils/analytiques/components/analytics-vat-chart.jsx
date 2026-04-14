@@ -1,21 +1,16 @@
 "use client";
 
 import { useMemo } from "react";
-import {
-  Bar,
-  BarChart,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-} from "recharts";
+import { Bar, BarChart, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { ChartContainer } from "@/src/components/ui/chart";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
-
-const chartConfig = {
-  revenueVAT: { label: "TVA collectée", color: "#5b50ff" },
-};
+import { useChartColors } from "@/src/hooks/useChartColors";
 
 const formatCurrency = (value) =>
   new Intl.NumberFormat("fr-FR", {
@@ -29,13 +24,15 @@ const formatMonthLabel = (monthStr) => {
   if (!monthStr) return "";
   const [year, month] = monthStr.split("-");
   const date = new Date(parseInt(year), parseInt(month) - 1);
-  return date
-    .toLocaleDateString("fr-FR", { month: "short" })
-    .replace(".", "")
-    .toUpperCase() + ` ${year.slice(2)}`;
+  return (
+    date
+      .toLocaleDateString("fr-FR", { month: "short" })
+      .replace(".", "")
+      .toUpperCase() + ` ${year.slice(2)}`
+  );
 };
 
-function CustomTooltip({ active, payload }) {
+function CustomTooltip({ active, payload, remap }) {
   if (!active || !payload?.length) return null;
   const data = payload[0]?.payload;
   if (!data) return null;
@@ -52,7 +49,10 @@ function CustomTooltip({ active, payload }) {
       <p className="font-medium mb-2 capitalize">{label}</p>
       <div className="flex items-center justify-between gap-6">
         <span className="flex items-center gap-2">
-          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#5b50ff" }} />
+          <span
+            className="h-2.5 w-2.5 rounded-full"
+            style={{ backgroundColor: remap("#5b50ff") }}
+          />
           TVA collectée
         </span>
         <span className="font-medium">{formatCurrency(data.revenueVAT)}</span>
@@ -62,6 +62,10 @@ function CustomTooltip({ active, payload }) {
 }
 
 export function AnalyticsVatChart({ monthlyRevenue, loading }) {
+  const { remap } = useChartColors();
+  const chartConfig = {
+    revenueVAT: { label: "TVA collectée", color: remap("#5b50ff") },
+  };
   const chartData = useMemo(() => {
     if (!monthlyRevenue?.length) return [];
     return monthlyRevenue.map((m) => ({
@@ -102,24 +106,46 @@ export function AnalyticsVatChart({ monthlyRevenue, loading }) {
         <CardTitle className="text-sm font-medium">Évolution TVA</CardTitle>
       </CardHeader>
       <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
-      <ChartContainer config={chartConfig} className="h-[300px] w-full">
-        <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey="monthLabel" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-          <YAxis
-            tick={({ y, payload }) => (
-              <text x={0} y={y} textAnchor="start" dominantBaseline="middle" fontSize={11} className="fill-muted-foreground">
-                {payload.value >= 1000 ? `${(payload.value / 1000).toFixed(1)}k` : `${Math.round(payload.value)}€`}
-              </text>
-            )}
-            tickLine={false}
-            axisLine={false}
-            width={35}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Bar dataKey="revenueVAT" fill="#5b50ff" radius={[4, 4, 0, 0]} barSize={20} />
-        </BarChart>
-      </ChartContainer>
+        <ChartContainer config={chartConfig} className="h-[300px] w-full">
+          <BarChart
+            data={chartData}
+            margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis
+              dataKey="monthLabel"
+              tick={{ fontSize: 11 }}
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis
+              tick={({ y, payload }) => (
+                <text
+                  x={0}
+                  y={y}
+                  textAnchor="start"
+                  dominantBaseline="middle"
+                  fontSize={11}
+                  className="fill-muted-foreground"
+                >
+                  {payload.value >= 1000
+                    ? `${(payload.value / 1000).toFixed(1)}k`
+                    : `${Math.round(payload.value)}€`}
+                </text>
+              )}
+              tickLine={false}
+              axisLine={false}
+              width={35}
+            />
+            <Tooltip content={<CustomTooltip remap={remap} />} />
+            <Bar
+              dataKey="revenueVAT"
+              fill={remap("#5b50ff")}
+              radius={[4, 4, 0, 0]}
+              barSize={20}
+            />
+          </BarChart>
+        </ChartContainer>
       </CardContent>
     </Card>
   );

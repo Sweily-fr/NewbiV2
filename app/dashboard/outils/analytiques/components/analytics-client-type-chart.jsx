@@ -3,22 +3,18 @@
 import { useMemo } from "react";
 import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
 import { ChartContainer } from "@/src/components/ui/chart";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { useChartColors } from "@/src/hooks/useChartColors";
 
 const TYPE_LABELS = {
   COMPANY: "Entreprise",
   INDIVIDUAL: "Particulier",
-};
-
-const TYPE_COLORS = {
-  COMPANY: "#5b50ff",
-  INDIVIDUAL: "#10b981",
-};
-
-const chartConfig = {
-  COMPANY: { label: "Entreprise", color: "#5b50ff" },
-  INDIVIDUAL: { label: "Particulier", color: "#10b981" },
 };
 
 const formatCurrency = (value) =>
@@ -60,6 +56,15 @@ function CustomTooltip({ active, payload }) {
 }
 
 export function AnalyticsClientTypeChart({ revenueByClient, loading }) {
+  const { remap } = useChartColors();
+  const TYPE_COLORS = {
+    COMPANY: remap("#5b50ff"),
+    INDIVIDUAL: remap("#10b981"),
+  };
+  const chartConfig = {
+    COMPANY: { label: "Entreprise", color: remap("#5b50ff") },
+    INDIVIDUAL: { label: "Particulier", color: remap("#10b981") },
+  };
   const chartData = useMemo(() => {
     if (!revenueByClient?.length) return [];
 
@@ -74,7 +79,8 @@ export function AnalyticsClientTypeChart({ revenueByClient, loading }) {
       grouped[type].invoiceCount += c.invoiceCount;
     }
 
-    const totalAll = Object.values(grouped).reduce((s, g) => s + g.totalTTC, 0) || 1;
+    const totalAll =
+      Object.values(grouped).reduce((s, g) => s + g.totalTTC, 0) || 1;
 
     return Object.entries(grouped).map(([type, data]) => ({
       type,
@@ -91,7 +97,9 @@ export function AnalyticsClientTypeChart({ revenueByClient, loading }) {
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Répartition par type client</CardTitle>
+          <CardTitle className="text-sm font-medium">
+            Répartition par type client
+          </CardTitle>
         </CardHeader>
         <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
           <Skeleton className="min-h-[300px] w-full" />
@@ -104,7 +112,9 @@ export function AnalyticsClientTypeChart({ revenueByClient, loading }) {
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Répartition par type client</CardTitle>
+          <CardTitle className="text-sm font-medium">
+            Répartition par type client
+          </CardTitle>
         </CardHeader>
         <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 flex items-center justify-center flex-1 min-h-[300px] text-muted-foreground">
           Aucune donnée pour cette période
@@ -116,29 +126,33 @@ export function AnalyticsClientTypeChart({ revenueByClient, loading }) {
   return (
     <Card className="shadow-xs flex flex-col min-h-0 py-4">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Répartition par type client</CardTitle>
+        <CardTitle className="text-sm font-medium">
+          Répartition par type client
+        </CardTitle>
       </CardHeader>
       <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
-      <ChartContainer config={chartConfig} className="h-[300px] w-full">
-        <PieChart>
-          <Pie
-            data={chartData}
-            dataKey="totalTTC"
-            nameKey="name"
-            cx="50%"
-            cy="50%"
-            outerRadius={100}
-            innerRadius={70}
-            paddingAngle={2}
-          >
-            {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.fill} />
-            ))}
-          </Pie>
-          <Tooltip content={<CustomTooltip />} />
-          <Legend formatter={(value) => <span className="text-xs">{value}</span>} />
-        </PieChart>
-      </ChartContainer>
+        <ChartContainer config={chartConfig} className="h-[300px] w-full">
+          <PieChart>
+            <Pie
+              data={chartData}
+              dataKey="totalTTC"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              outerRadius={100}
+              innerRadius={70}
+              paddingAngle={2}
+            >
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.fill} />
+              ))}
+            </Pie>
+            <Tooltip content={<CustomTooltip />} />
+            <Legend
+              formatter={(value) => <span className="text-xs">{value}</span>}
+            />
+          </PieChart>
+        </ChartContainer>
       </CardContent>
     </Card>
   );

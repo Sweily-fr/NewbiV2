@@ -39,6 +39,7 @@ import {
 } from "react-aria-components";
 import { Calendar } from "@/src/components/ui/calendar-rac";
 import { DateInput } from "@/src/components/ui/datefield-rac";
+import { useChartColors } from "@/src/hooks/useChartColors";
 
 // chartConfig dynamique généré à partir des données réelles
 const baseChartConfig = {
@@ -49,6 +50,7 @@ const baseChartConfig = {
 
 export function ExpenseCategoryChart({ workspaceId, accountId, className }) {
   const isMobile = useIsMobile();
+  const { getExpenseColor } = useChartColors();
   const [timeRange, setTimeRange] = useState("cumul-year"); // 30d, 90d, 365d, custom, cumul-year
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
@@ -81,13 +83,13 @@ export function ExpenseCategoryChart({ workspaceId, accountId, className }) {
 
   const chartData = useMemo(() => {
     const categories = data?.dashboardCategoryAggregation?.categories || [];
-    return categories.map((c) => ({
+    return categories.map((c, i) => ({
       category: c.name,
       amount: c.amount,
       label: c.name,
-      fill: c.color,
+      fill: getExpenseColor(i),
     }));
-  }, [data]);
+  }, [data, getExpenseColor]);
 
   // dateRange for display in the pie center (computed locally from timeRange)
   const dateRange = useMemo(() => {
