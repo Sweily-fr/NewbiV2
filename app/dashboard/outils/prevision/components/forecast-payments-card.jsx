@@ -469,6 +469,16 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                 {formatCurrencyShort(kpi?.pendingPayables || 0)}
               </p>
             </div>
+            {kpi?.signedQuotes > 0 && (
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground font-normal mb-1.5">
+                  Devis signés
+                </p>
+                <p className="text-xl font-medium text-foreground">
+                  {formatCurrencyShort(kpi.signedQuotes)}
+                </p>
+              </div>
+            )}
             <div className="text-right">
               <p className="text-xs">
                 <span className="text-muted-foreground">Aujourd&apos;hui </span>
