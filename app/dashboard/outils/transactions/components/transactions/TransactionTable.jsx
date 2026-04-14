@@ -47,6 +47,7 @@ import { mapCategoryToEnum, mapPaymentMethodToEnum } from "./utils/mappers";
 import { MobileToolbar } from "./components/MobileToolbar";
 import { MobileTable } from "./components/MobileTable";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
+import { PCGSelectDialog } from "../pcg-select-dialog";
 
 // UI Components
 import { Button } from "@/src/components/ui/button";
@@ -149,6 +150,13 @@ export default function TransactionTable({
   const [mobileTab, setMobileTab] = useState("all");
   const [isMobileScrolled, setIsMobileScrolled] = useState(false);
   const [advancedFilters, setAdvancedFilters] = useState([]);
+  const [pcgTransaction, setPcgTransaction] = useState(null);
+  const [isPCGDialogOpen, setIsPCGDialogOpen] = useState(false);
+
+  const handleEditPCG = useCallback((transaction) => {
+    setPcgTransaction(transaction);
+    setIsPCGDialogOpen(true);
+  }, []);
 
   // Options de filtres disponibles
   const filterOptions = [
@@ -459,6 +467,9 @@ export default function TransactionTable({
         linkedInvoice: expense.linkedInvoice || null,
         reconciliationStatus: expense.reconciliationStatus || null,
         reconciliationDate: expense.reconciliationDate || null,
+        // Compte PCG et métadonnées (pour affichage et suggestion dans le dialog)
+        pcgAccount: expense.pcgAccount || null,
+        metadata: expense.metadata || {},
       };
     });
 
@@ -848,6 +859,11 @@ export default function TransactionTable({
         notes: updatedTransaction.description,
       };
 
+      // Ajouter le compte PCG si renseigné
+      if (updatedTransaction.pcgAccountNumero) {
+        updateInput.pcgAccountNumero = updatedTransaction.pcgAccountNumero;
+      }
+
       const result = await updateTransaction(transactionId, updateInput);
 
       if (result.success) {
@@ -923,6 +939,7 @@ export default function TransactionTable({
       onEdit: handleEditTransaction,
       onRefresh: refetch,
       onDownloadAttachment: handleDownloadAttachment,
+      onEditPCG: handleEditPCG,
     },
   });
 
@@ -1078,6 +1095,7 @@ export default function TransactionTable({
       onEdit: handleEditTransaction,
       onRefresh: refetch,
       onDownloadAttachment: handleDownloadAttachment,
+      onEditPCG: handleEditPCG,
     },
   });
 
@@ -1773,6 +1791,13 @@ export default function TransactionTable({
         open={isReceiptUploadDrawerOpen}
         onOpenChange={setIsReceiptUploadDrawerOpen}
         onUploadSuccess={handleReceiptUploadSuccess}
+      />
+
+      <PCGSelectDialog
+        open={isPCGDialogOpen}
+        onOpenChange={setIsPCGDialogOpen}
+        transaction={pcgTransaction}
+        onRefresh={refetchExpenses}
       />
     </div>
   );

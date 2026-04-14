@@ -8,8 +8,17 @@ import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { ForecastKpiTable } from "./components/forecast-kpi-table";
 import { ForecastPaymentsCard } from "./components/forecast-payments-card";
 import { ForecastExportDialog } from "./components/forecast-export-dialog";
+import { ManualEntriesList } from "./components/manual-entries-list";
+import { DetectedRecurrencesList } from "./components/detected-recurrences-list";
 import { Button } from "@/src/components/ui/button";
-import { Download, Landmark, ChevronDown, Check, Lock, TrendingUp } from "lucide-react";
+import {
+  Download,
+  Landmark,
+  ChevronDown,
+  Check,
+  Lock,
+  TrendingUp,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,7 +29,11 @@ import {
 import { cn } from "@/src/lib/utils";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { getPlanLimits } from "@/src/lib/plan-limits";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/src/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/src/components/ui/tooltip";
 
 const PERIOD_OPTIONS = [
   { value: "6", label: "6 mois" },
@@ -35,14 +48,14 @@ const getDateRange = (periodMonths) => {
   const start = new Date(now);
   start.setMonth(start.getMonth() - half);
   const startStr = `${start.getFullYear()}-${String(
-    start.getMonth() + 1
+    start.getMonth() + 1,
   ).padStart(2, "0")}`;
 
   const end = new Date(now);
   end.setMonth(end.getMonth() + (periodMonths - half));
   const endStr = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(
     2,
-    "0"
+    "0",
   )}`;
 
   return { startDate: startStr, endDate: endStr };
@@ -56,7 +69,12 @@ export default function PrevisionPage() {
 
   // Determine the max allowed period and default period based on plan
   const maxPeriod = forecastMonths;
-  const defaultPeriod = forecastMonths >= 12 ? "12" : forecastMonths > 0 ? String(forecastMonths) : "6";
+  const defaultPeriod =
+    forecastMonths >= 12
+      ? "12"
+      : forecastMonths > 0
+        ? String(forecastMonths)
+        : "6";
 
   const [period, setPeriod] = useState(defaultPeriod);
   const [accountFilter, setAccountFilter] = useState("all");
@@ -64,7 +82,7 @@ export default function PrevisionPage() {
 
   const { startDate, endDate } = useMemo(
     () => getDateRange(parseInt(period)),
-    [period]
+    [period],
   );
 
   const { data: bankData } = useQuery(GET_BANKING_ACCOUNTS, {
@@ -94,7 +112,7 @@ export default function PrevisionPage() {
   const { forecastData, loading } = useTreasuryForecastData(
     startDate,
     endDate,
-    accountFilter !== "all" ? accountFilter : undefined
+    accountFilter !== "all" ? accountFilter : undefined,
   );
 
   // If plan has no forecast access, show upgrade message
@@ -106,9 +124,9 @@ export default function PrevisionPage() {
         </div>
         <h2 className="text-xl font-semibold mb-2">Prévisions de trésorerie</h2>
         <p className="text-muted-foreground max-w-md mb-6">
-          Les prévisions de trésorerie vous permettent d&apos;anticiper vos flux financiers
-          et de planifier votre activité sereinement. Cette fonctionnalité est disponible
-          à partir du plan PME.
+          Les prévisions de trésorerie vous permettent d&apos;anticiper vos flux
+          financiers et de planifier votre activité sereinement. Cette
+          fonctionnalité est disponible à partir du plan PME.
         </p>
         <Button asChild>
           <a href="/dashboard/parametres?tab=subscription">
@@ -130,8 +148,13 @@ export default function PrevisionPage() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="cursor-pointer">
-                {PERIOD_OPTIONS.find((o) => o.value === period)?.label || "12 mois"}
-                <ChevronDown size={12} className="ml-0.5 opacity-70" aria-hidden="true" />
+                {PERIOD_OPTIONS.find((o) => o.value === period)?.label ||
+                  "12 mois"}
+                <ChevronDown
+                  size={12}
+                  className="ml-0.5 opacity-70"
+                  aria-hidden="true"
+                />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -150,7 +173,8 @@ export default function PrevisionPage() {
                         </div>
                       </TooltipTrigger>
                       <TooltipContent>
-                        Passez au plan Entreprise pour les prévisions à {opt.label}
+                        Passez au plan Entreprise pour les prévisions à{" "}
+                        {opt.label}
                       </TooltipContent>
                     </Tooltip>
                   );
@@ -165,7 +189,7 @@ export default function PrevisionPage() {
                     <Check
                       className={cn(
                         "h-4 w-4 text-[#5b4fff]",
-                        period === opt.value ? "opacity-100" : "opacity-0"
+                        period === opt.value ? "opacity-100" : "opacity-0",
                       )}
                     />
                   </DropdownMenuItem>
@@ -187,7 +211,11 @@ export default function PrevisionPage() {
               <Button variant="outline" className="cursor-pointer">
                 <Landmark size={14} aria-hidden="true" />
                 {selectedAccountLabel}
-                <ChevronDown size={12} className="ml-0.5 opacity-70" aria-hidden="true" />
+                <ChevronDown
+                  size={12}
+                  className="ml-0.5 opacity-70"
+                  aria-hidden="true"
+                />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -199,11 +227,13 @@ export default function PrevisionPage() {
                 className="flex items-center gap-2 cursor-pointer"
               >
                 <Landmark size={14} className="text-muted-foreground" />
-                <span className="flex-1 text-xs truncate">Tous les comptes</span>
+                <span className="flex-1 text-xs truncate">
+                  Tous les comptes
+                </span>
                 <Check
                   className={cn(
                     "h-4 w-4 text-[#5b4fff]",
-                    accountFilter === "all" ? "opacity-100" : "opacity-0"
+                    accountFilter === "all" ? "opacity-100" : "opacity-0",
                   )}
                 />
               </DropdownMenuItem>
@@ -227,12 +257,15 @@ export default function PrevisionPage() {
                       ) : (
                         <Landmark className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                       )}
-                      <span className="truncate text-xs">{accountName}{lastIban}</span>
+                      <span className="truncate text-xs">
+                        {accountName}
+                        {lastIban}
+                      </span>
                     </div>
                     <Check
                       className={cn(
                         "h-4 w-4 text-[#5b4fff]",
-                        isSelected ? "opacity-100" : "opacity-0"
+                        isSelected ? "opacity-100" : "opacity-0",
                       )}
                     />
                   </DropdownMenuItem>
@@ -250,6 +283,16 @@ export default function PrevisionPage() {
           kpi={forecastData?.kpi}
           loading={loading}
         />
+      </div>
+
+      {/* ─── Section 2: Manual cashflow entries ─── */}
+      <div className="px-4 sm:px-6 pb-6">
+        <ManualEntriesList />
+      </div>
+
+      {/* ─── Section 3: Auto-detected recurrences ─── */}
+      <div className="px-4 sm:px-6 pb-6">
+        <DetectedRecurrencesList />
       </div>
 
       {/* TODO: réactiver la section KPIs Table

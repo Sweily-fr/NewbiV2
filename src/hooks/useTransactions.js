@@ -9,7 +9,8 @@ import { toast } from "@/src/components/ui/sonner";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
 // Limite raisonnable pour le refetch après mutation (pas besoin de tout recharger)
-const REFETCH_LIMIT = 200;
+// Doit correspondre à la variable limit utilisée dans useDashboardData (limit: 0 = pas de limite)
+const REFETCH_LIMIT = 0;
 
 /**
  * Hook pour créer une transaction manuelle
@@ -26,7 +27,7 @@ export const useCreateTransaction = () => {
           variables: { workspaceId, limit: REFETCH_LIMIT },
         },
       ],
-    }
+    },
   );
 
   const createTransaction = async (input) => {
@@ -75,7 +76,7 @@ export const useUpdateTransaction = () => {
           variables: { workspaceId, limit: REFETCH_LIMIT },
         },
       ],
-    }
+    },
   );
 
   const updateTransaction = async (id, input) => {
@@ -93,7 +94,7 @@ export const useUpdateTransaction = () => {
     } catch (error) {
       console.error("❌ [UPDATE TRANSACTION] Erreur:", error);
       toast.error(
-        error.message || "Erreur lors de la modification de la transaction"
+        error.message || "Erreur lors de la modification de la transaction",
       );
       return { success: false, error };
     }
@@ -120,7 +121,7 @@ export const useDeleteTransaction = () => {
           variables: { workspaceId, limit: REFETCH_LIMIT },
         },
       ],
-    }
+    },
   );
 
   const deleteTransaction = async (id) => {
@@ -138,7 +139,7 @@ export const useDeleteTransaction = () => {
     } catch (error) {
       console.error("❌ [DELETE TRANSACTION] Erreur:", error);
       toast.error(
-        error.message || "Erreur lors de la suppression de la transaction"
+        error.message || "Erreur lors de la suppression de la transaction",
       );
       return { success: false, error };
     }

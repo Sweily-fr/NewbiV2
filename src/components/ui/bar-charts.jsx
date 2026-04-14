@@ -16,6 +16,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/src/components/ui/chart";
+import { useChartColors } from "@/src/hooks/useChartColors";
 
 export const description = "A multiple bar chart";
 
@@ -40,6 +41,7 @@ const chartConfig = {
 };
 
 export function ChartBarMultiple() {
+  const { remap } = useChartColors();
   return (
     <Card className="w-full">
       <CardHeader>
@@ -61,8 +63,8 @@ export function ChartBarMultiple() {
               cursor={false}
               content={<ChartTooltipContent indicator="dashed" />}
             />
-            <Bar dataKey="desktop" fill="#5B4FFF" radius={4} />
-            <Bar dataKey="mobile" fill="#a44fff" radius={4} />
+            <Bar dataKey="desktop" fill={remap("#5B4FFF")} radius={4} />
+            <Bar dataKey="mobile" fill={remap("#a44fff")} radius={4} />
           </BarChart>
         </ChartContainer>
       </CardContent>

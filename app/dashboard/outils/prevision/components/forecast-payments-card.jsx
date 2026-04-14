@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Bar,
   CartesianGrid,
@@ -14,16 +14,10 @@ import {
 import { Card, CardContent } from "@/src/components/ui/card";
 import { ChartContainer } from "@/src/components/ui/chart";
 import { Skeleton } from "@/src/components/ui/skeleton";
-
-// ─── Chart config ───
-
-const chartConfig = {
-  actualIncome: { label: "Entrées réelles", color: "#5b50ff" },
-  forecastIncome: { label: "Prév. entrées", color: "#5b50ff" },
-  actualExpense: { label: "Sorties réelles", color: "#333333" },
-  forecastExpense: { label: "Prév. sorties", color: "#000000" },
-  balance: { label: "Solde", color: "#3b82f6" },
-};
+import { ChevronDown } from "lucide-react";
+import { cn } from "@/src/lib/utils";
+import { MonthDetailsDrawer } from "./month-details-drawer";
+import { useChartColors } from "@/src/hooks/useChartColors";
 
 // ─── Formatters ───
 
@@ -79,7 +73,7 @@ const CATEGORY_LABELS = {
   OTHER_EXPENSE: "Autres dépenses",
 };
 
-const CATEGORY_COLORS = [
+const CATEGORY_COLORS_BASE = [
   "#3B82F6",
   "#2DD4BF",
   "#F59E0B",
@@ -92,7 +86,7 @@ const CATEGORY_COLORS = [
 
 // ─── Custom Tooltip (Qonto style) ───
 
-function CustomTooltip({ active, payload }) {
+function CustomTooltip({ active, payload, remap }) {
   if (!active || !payload?.length) return null;
 
   const data = payload[0]?.payload;
@@ -156,7 +150,7 @@ function CustomTooltip({ active, payload }) {
               <div className="flex items-center gap-2">
                 <span
                   className="inline-block w-3 h-3 rounded-sm"
-                  style={{ backgroundColor: "#5b50ff" }}
+                  style={{ backgroundColor: remap("#5b50ff") }}
                 />
                 <span className="text-xs text-muted-foreground">Réelles</span>
               </div>
@@ -204,7 +198,7 @@ function CustomTooltip({ active, payload }) {
               <div className="flex items-center gap-2">
                 <span
                   className="inline-block w-3 h-3 rounded-sm"
-                  style={{ backgroundColor: "#000000" }}
+                  style={{ backgroundColor: remap("#000000") }}
                 />
                 <span className="text-xs text-muted-foreground">Réelles</span>
               </div>
@@ -326,7 +320,20 @@ function HatchedIcon() {
 // ─── Component ───
 
 export function ForecastPaymentsCard({ months, kpi, loading }) {
+  const { remap } = useChartColors();
+  const CATEGORY_COLORS = useMemo(
+    () => CATEGORY_COLORS_BASE.map(remap),
+    [remap],
+  );
+  const chartConfig = {
+    actualIncome: { label: "Entrées réelles", color: remap("#5b50ff") },
+    forecastIncome: { label: "Prév. entrées", color: remap("#5b50ff") },
+    actualExpense: { label: "Sorties réelles", color: remap("#333333") },
+    forecastExpense: { label: "Prév. sorties", color: remap("#000000") },
+    balance: { label: "Solde", color: remap("#3b82f6") },
+  };
   const safeMonths = months || [];
+  const [selectedMonth, setSelectedMonth] = useState(null);
 
   const now = new Date();
   const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -358,7 +365,9 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
     }));
   }, [safeMonths, currentMonth]);
 
-  // Top categories split by income / expense
+  // Top categories split by income / expense.
+  // Returns, per category, its total + a month-by-month breakdown
+  // ({ month, actual, forecast }) for the dropdown detail.
   const buildCategoryList = (type, limit) => {
     const catMap = {};
     safeMonths.forEach((m) => {
@@ -366,11 +375,23 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
         if (cb.type !== type) return;
         const key = cb.category;
         if (!catMap[key])
-          catMap[key] = { category: key, type: cb.type, amount: 0 };
+          catMap[key] = {
+            category: key,
+            type: cb.type,
+            amount: 0,
+            monthly: [],
+          };
         const isPast = m.month <= currentMonth;
-        catMap[key].amount += isPast
+        const contribution = isPast
           ? cb.actualAmount || 0
           : cb.forecastAmount || 0;
+        catMap[key].amount += contribution;
+        catMap[key].monthly.push({
+          month: m.month,
+          actual: cb.actualAmount || 0,
+          forecast: cb.forecastAmount || 0,
+          isPast,
+        });
       });
     });
     const all = Object.values(catMap).filter((c) => c.amount > 0);
@@ -469,6 +490,16 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                 {formatCurrencyShort(kpi?.pendingPayables || 0)}
               </p>
             </div>
+            {kpi?.signedQuotes > 0 && (
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground font-normal mb-1.5">
+                  Devis signés
+                </p>
+                <p className="text-xl font-medium text-foreground">
+                  {formatCurrencyShort(kpi.signedQuotes)}
+                </p>
+              </div>
+            )}
             <div className="text-right">
               <p className="text-xs">
                 <span className="text-muted-foreground">Aujourd&apos;hui </span>
@@ -489,7 +520,7 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                 <div className="flex items-center justify-between mb-3">
                   <p
                     className="text-[13px] font-medium"
-                    style={{ color: "#5b50ff" }}
+                    style={{ color: remap("#5b50ff") }}
                   >
                     Entrées
                   </p>
@@ -498,25 +529,14 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                   </p>
                 </div>
                 {topIncome.length > 0 ? (
-                  <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-1">
                     {topIncome.map((cat) => (
-                      <div
+                      <CategoryRow
                         key={cat.category}
-                        className="flex items-center justify-between"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="w-2 h-2 rounded-full shrink-0"
-                            style={{ backgroundColor: "#5b50ff" }}
-                          />
-                          <span className="text-sm text-foreground">
-                            {cat.label}
-                          </span>
-                        </div>
-                        <span className="text-sm tabular-nums text-foreground">
-                          {formatCurrencyShort(cat.amount)}
-                        </span>
-                      </div>
+                        cat={cat}
+                        dotColor={remap("#5b50ff")}
+                        currentMonth={currentMonth}
+                      />
                     ))}
                   </div>
                 ) : (
@@ -529,7 +549,7 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                 <div className="flex items-center justify-between mb-3">
                   <p
                     className="text-[13px] font-medium"
-                    style={{ color: "#000000" }}
+                    style={{ color: remap("#000000") }}
                   >
                     Sorties
                   </p>
@@ -538,25 +558,14 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                   </p>
                 </div>
                 {topExpense.length > 0 ? (
-                  <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-1">
                     {topExpense.map((cat) => (
-                      <div
+                      <CategoryRow
                         key={cat.category}
-                        className="flex items-center justify-between"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="w-2 h-2 rounded-full shrink-0"
-                            style={{ backgroundColor: "#000000" }}
-                          />
-                          <span className="text-sm text-foreground">
-                            {cat.label}
-                          </span>
-                        </div>
-                        <span className="text-sm tabular-nums text-foreground">
-                          {formatCurrencyShort(cat.amount)}
-                        </span>
-                      </div>
+                        cat={cat}
+                        dotColor={remap("#000000")}
+                        currentMonth={currentMonth}
+                      />
                     ))}
                   </div>
                 ) : (
@@ -579,6 +588,13 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                   <ComposedChart
                     data={chartData}
                     margin={{ top: 12, right: 12, bottom: 12, left: 0 }}
+                    onClick={(state) => {
+                      const payload = state?.activePayload?.[0]?.payload;
+                      if (payload?.rawMonth) {
+                        setSelectedMonth(payload.rawMonth);
+                      }
+                    }}
+                    style={{ cursor: "pointer" }}
                   >
                     <defs>
                       {/* Hatched pattern for forecast income (green) */}
@@ -589,13 +605,13 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                         height="6"
                         patternTransform="rotate(45)"
                       >
-                        <rect width="6" height="6" fill="#e8e6ff" />
+                        <rect width="6" height="6" fill={remap("#e8e6ff")} />
                         <line
                           x1="0"
                           y1="0"
                           x2="0"
                           y2="6"
-                          stroke="#5b50ff"
+                          stroke={remap("#5b50ff")}
                           strokeWidth="2.5"
                           strokeOpacity="0.5"
                         />
@@ -608,13 +624,13 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                         height="6"
                         patternTransform="rotate(45)"
                       >
-                        <rect width="6" height="6" fill="#e5e5e5" />
+                        <rect width="6" height="6" fill={remap("#e5e5e5")} />
                         <line
                           x1="0"
                           y1="0"
                           x2="0"
                           y2="6"
-                          stroke="#000000"
+                          stroke={remap("#000000")}
                           strokeWidth="2.5"
                           strokeOpacity="0.5"
                         />
@@ -629,12 +645,12 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                       >
                         <stop
                           offset="0%"
-                          stopColor="#3b82f6"
+                          stopColor={remap("#3b82f6")}
                           stopOpacity={0.12}
                         />
                         <stop
                           offset="100%"
-                          stopColor="#3b82f6"
+                          stopColor={remap("#3b82f6")}
                           stopOpacity={0.02}
                         />
                       </linearGradient>
@@ -674,7 +690,7 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                             y={y + 4}
                             textAnchor="middle"
                             fontSize={10}
-                            fill={isCurrent ? "#3b82f6" : "#9ca3af"}
+                            fill={isCurrent ? remap("#3b82f6") : "#9ca3af"}
                             fontWeight={isCurrent ? 600 : 400}
                           >
                             {payload.value}
@@ -697,14 +713,17 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                     />
                     <YAxis yAxisId="balance" orientation="right" hide={true} />
 
-                    <Tooltip content={<CustomTooltip />} cursor={false} />
+                    <Tooltip
+                      content={<CustomTooltip remap={remap} />}
+                      cursor={false}
+                    />
 
                     {/* Income: actual (solid green) + forecast remainder (hatched green) */}
                     <Bar
                       yAxisId="bars"
                       dataKey="actualIncome"
                       stackId="income"
-                      fill="#5b50ff"
+                      fill={remap("#5b50ff")}
                       barSize={20}
                       radius={[4, 4, 0, 0]}
                     />
@@ -722,7 +741,7 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                       yAxisId="bars"
                       dataKey="actualExpense"
                       stackId="expense"
-                      fill="#333333"
+                      fill={remap("#333333")}
                       barSize={20}
                       radius={[4, 4, 0, 0]}
                     />
@@ -740,18 +759,18 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                       yAxisId="balance"
                       dataKey="balance"
                       type="monotone"
-                      stroke="#3b82f6"
+                      stroke={remap("#3b82f6")}
                       strokeWidth={2}
                       dot={{
                         r: 3,
                         fill: "#ffffff",
-                        stroke: "#3b82f6",
+                        stroke: remap("#3b82f6"),
                         strokeWidth: 2,
                       }}
                       activeDot={{
                         r: 5,
                         fill: "#ffffff",
-                        stroke: "#3b82f6",
+                        stroke: remap("#3b82f6"),
                         strokeWidth: 2,
                       }}
                       connectNulls
@@ -767,6 +786,87 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
           </div>
         </div>
       </CardContent>
+
+      <MonthDetailsDrawer
+        month={selectedMonth}
+        open={!!selectedMonth}
+        onOpenChange={(open) => {
+          if (!open) setSelectedMonth(null);
+        }}
+      />
     </Card>
+  );
+}
+
+// ─── Collapsible row for sidebar category ───
+
+function CategoryRow({ cat, dotColor, currentMonth }) {
+  const [open, setOpen] = useState(false);
+  const sortedMonths = useMemo(
+    () =>
+      [...(cat.monthly || [])].sort((a, b) => a.month.localeCompare(b.month)),
+    [cat.monthly],
+  );
+  const hasDetails = sortedMonths.length > 0;
+
+  return (
+    <div className="flex flex-col">
+      <button
+        type="button"
+        onClick={() => hasDetails && setOpen((o) => !o)}
+        disabled={!hasDetails}
+        className={cn(
+          "flex items-center justify-between py-1.5 text-left",
+          hasDetails && "cursor-pointer hover:bg-muted/40 rounded px-1 -mx-1",
+        )}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <span
+            className="w-2 h-2 rounded-full shrink-0"
+            style={{ backgroundColor: dotColor }}
+          />
+          <span className="text-sm text-foreground truncate">{cat.label}</span>
+          {hasDetails && (
+            <ChevronDown
+              size={12}
+              className={cn(
+                "text-muted-foreground transition-transform shrink-0",
+                open && "rotate-180",
+              )}
+            />
+          )}
+        </div>
+        <span className="text-sm tabular-nums text-foreground shrink-0">
+          {formatCurrencyShort(cat.amount)}
+        </span>
+      </button>
+      {open && hasDetails && (
+        <div className="pl-4 pt-1 pb-2 flex flex-col gap-1">
+          {sortedMonths.map((m) => {
+            const isFuture = m.month > currentMonth;
+            const amount = isFuture ? m.forecast : m.actual;
+            if (amount === 0) return null;
+            return (
+              <div
+                key={m.month}
+                className="flex items-center justify-between text-xs"
+              >
+                <span className="text-muted-foreground">
+                  {formatMonthLabel(m.month)}
+                  {isFuture && (
+                    <span className="ml-1 text-[10px] uppercase tracking-wide opacity-60">
+                      prév.
+                    </span>
+                  )}
+                </span>
+                <span className="tabular-nums text-foreground/80">
+                  {formatCurrencyShort(amount)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }

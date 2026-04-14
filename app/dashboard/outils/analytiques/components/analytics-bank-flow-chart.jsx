@@ -12,13 +12,14 @@ import {
   Legend,
 } from "recharts";
 import { ChartContainer } from "@/src/components/ui/chart";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
-
-const chartConfig = {
-  invoiced: { label: "Facturé TTC", color: "#5b50ff" },
-  collected: { label: "Encaissé bancaire", color: "#10b981" },
-};
+import { useChartColors } from "@/src/hooks/useChartColors";
 
 const formatCurrency = (value) =>
   new Intl.NumberFormat("fr-FR", {
@@ -38,7 +39,7 @@ const formatMonthLabel = (monthStr) => {
     .toUpperCase();
 };
 
-function CustomTooltip({ active, payload }) {
+function CustomTooltip({ active, payload, colors, remap }) {
   if (!active || !payload?.length) return null;
   const data = payload[0]?.payload;
   if (!data) return null;
@@ -54,7 +55,7 @@ function CustomTooltip({ active, payload }) {
           <span className="flex items-center gap-2">
             <span
               className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: "#5b50ff" }}
+              style={{ backgroundColor: remap("#5b50ff") }}
             />
             Facturé
           </span>
@@ -62,14 +63,17 @@ function CustomTooltip({ active, payload }) {
         </div>
         <div className="flex items-center justify-between gap-4">
           <span className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ backgroundColor: colors.success }}
+            />
             Encaissé
           </span>
           <span className="font-medium">{formatCurrency(data.collected)}</span>
         </div>
         <div className="flex items-center justify-between gap-4 border-t pt-1 mt-1 text-muted-foreground">
           <span>Écart</span>
-          <span className={gap >= 0 ? "text-emerald-600" : "text-red-500"}>
+          <span style={{ color: gap >= 0 ? colors.success : colors.danger }}>
             {gap > 0 ? "+" : ""}
             {formatCurrency(gap)}
           </span>
@@ -84,6 +88,15 @@ export function AnalyticsBankFlowChart({
   bankTransactions,
   loading,
 }) {
+  const chartColors = useChartColors();
+  const { remap } = chartColors;
+  const chartConfig = useMemo(
+    () => ({
+      invoiced: { label: "Facturé TTC", color: remap("#5b50ff") },
+      collected: { label: "Encaissé bancaire", color: chartColors.success },
+    }),
+    [chartColors, remap],
+  );
   const chartData = useMemo(() => {
     if (!monthlyRevenue?.length) return [];
 
@@ -115,7 +128,9 @@ export function AnalyticsBankFlowChart({
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Facturé vs Encaissé</CardTitle>
+          <CardTitle className="text-sm font-medium">
+            Facturé vs Encaissé
+          </CardTitle>
         </CardHeader>
         <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
           <Skeleton className="min-h-[200px] w-full" />
@@ -128,7 +143,9 @@ export function AnalyticsBankFlowChart({
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Facturé vs Encaissé</CardTitle>
+          <CardTitle className="text-sm font-medium">
+            Facturé vs Encaissé
+          </CardTitle>
         </CardHeader>
         <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 flex items-center justify-center flex-1 min-h-[200px] text-muted-foreground">
           Aucune donnée pour cette période
@@ -140,66 +157,70 @@ export function AnalyticsBankFlowChart({
   return (
     <Card className="shadow-xs flex flex-col min-h-0 py-4">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Facturé vs Encaissé</CardTitle>
+        <CardTitle className="text-sm font-medium">
+          Facturé vs Encaissé
+        </CardTitle>
       </CardHeader>
       <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
-      <ChartContainer config={chartConfig} className="h-[300px] w-full">
-        <ComposedChart
-          data={chartData}
-          margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" vertical={false} />
-          <XAxis
-            dataKey="monthLabel"
-            tick={{ fontSize: 11 }}
-            tickLine={false}
-            axisLine={false}
-            interval={0}
-          />
-          <YAxis
-            tick={({ y, payload }) => (
-              <text
-                x={0}
-                y={y}
-                textAnchor="start"
-                dominantBaseline="middle"
-                fontSize={11}
-                className="fill-muted-foreground"
-              >
-                {`${(payload.value / 1000).toFixed(0)}k`}
-              </text>
-            )}
-            tickLine={false}
-            axisLine={false}
-            width={35}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Legend
-            verticalAlign="top"
-            height={36}
-            iconType="circle"
-            iconSize={8}
-            formatter={(value) => (
-              <span className="text-xs text-muted-foreground">
-                {chartConfig[value]?.label || value}
-              </span>
-            )}
-          />
-          <Bar
-            dataKey="invoiced"
-            fill="#5b50ff"
-            fillOpacity={0.7}
-            radius={[4, 4, 0, 0]}
-            barSize={20}
-          />
-          <Bar
-            dataKey="collected"
-            fill="#10b981"
-            radius={[4, 4, 0, 0]}
-            barSize={20}
-          />
-        </ComposedChart>
-      </ChartContainer>
+        <ChartContainer config={chartConfig} className="h-[300px] w-full">
+          <ComposedChart
+            data={chartData}
+            margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis
+              dataKey="monthLabel"
+              tick={{ fontSize: 11 }}
+              tickLine={false}
+              axisLine={false}
+              interval={0}
+            />
+            <YAxis
+              tick={({ y, payload }) => (
+                <text
+                  x={0}
+                  y={y}
+                  textAnchor="start"
+                  dominantBaseline="middle"
+                  fontSize={11}
+                  className="fill-muted-foreground"
+                >
+                  {`${(payload.value / 1000).toFixed(0)}k`}
+                </text>
+              )}
+              tickLine={false}
+              axisLine={false}
+              width={35}
+            />
+            <Tooltip
+              content={<CustomTooltip colors={chartColors} remap={remap} />}
+            />
+            <Legend
+              verticalAlign="top"
+              height={36}
+              iconType="circle"
+              iconSize={8}
+              formatter={(value) => (
+                <span className="text-xs text-muted-foreground">
+                  {chartConfig[value]?.label || value}
+                </span>
+              )}
+            />
+            <Bar
+              dataKey="invoiced"
+              fill={remap("#5b50ff")}
+              fillOpacity={0.7}
+              radius={[4, 4, 0, 0]}
+              barSize={20}
+            />
+            <Bar
+              dataKey="collected"
+              fill={chartColors.success}
+              radius={[4, 4, 0, 0]}
+              barSize={20}
+            />
+          </ComposedChart>
+        </ChartContainer>
       </CardContent>
     </Card>
   );

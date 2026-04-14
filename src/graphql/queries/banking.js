@@ -93,6 +93,13 @@ export const GET_TRANSACTIONS = gql`
       description
       category
       expenseCategory
+      pcgAccount {
+        numero
+        intitule
+        confidence
+        isManual
+        manuallySetAt
+      }
       fromAccount
       toAccount
       date
@@ -148,6 +155,13 @@ export const GET_TRANSACTION = gql`
       description
       category
       expenseCategory
+      pcgAccount {
+        numero
+        intitule
+        confidence
+        isManual
+        manuallySetAt
+      }
       fromAccount
       toAccount
       date
@@ -309,12 +323,77 @@ export const UPDATE_TRANSACTION = gql`
       description
       category
       expenseCategory
+      pcgAccount {
+        numero
+        intitule
+        confidence
+        isManual
+      }
       amount
       currency
       processedAt
       status
       metadata
       updatedAt
+    }
+  }
+`;
+
+/**
+ * Table de correspondance Bridge → PCG
+ */
+export const GET_PCG_MAPPING_TABLE = gql`
+  query GetPCGMappingTable {
+    pcgMappingTable {
+      bridgeCategoryId
+      bridgeLabel
+      parentCategory
+      pcgNumero
+      pcgIntitule
+      confidence
+      alternatives {
+        numero
+        intitule
+      }
+      rules
+    }
+  }
+`;
+
+/**
+ * Liste de tous les comptes PCG disponibles
+ */
+export const GET_PCG_ACCOUNTS = gql`
+  query GetPCGAccounts {
+    pcgAccounts {
+      numero
+      intitule
+    }
+  }
+`;
+
+/**
+ * Mettre à jour le compte PCG d'une transaction
+ */
+export const UPDATE_TRANSACTION_PCG = gql`
+  mutation UpdateTransactionPCG(
+    $transactionId: ID!
+    $pcgNumero: String!
+    $workspaceId: ID!
+  ) {
+    updateTransactionPCG(
+      transactionId: $transactionId
+      pcgNumero: $pcgNumero
+      workspaceId: $workspaceId
+    ) {
+      id
+      pcgAccount {
+        numero
+        intitule
+        confidence
+        isManual
+        manuallySetAt
+      }
     }
   }
 `;

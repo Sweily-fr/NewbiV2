@@ -18,6 +18,7 @@ export const GET_TREASURY_FORECAST_DATA = gql`
         projectedBalance3Months
         pendingReceivables
         pendingPayables
+        signedQuotes
       }
       months {
         month
@@ -34,6 +35,79 @@ export const GET_TREASURY_FORECAST_DATA = gql`
           forecastAmount
         }
       }
+    }
+  }
+`;
+
+export const GET_FORECAST_MONTH_DETAILS = gql`
+  query GetForecastMonthDetails($workspaceId: ID, $month: String!) {
+    forecastMonthDetails(workspaceId: $workspaceId, month: $month) {
+      month
+      invoices {
+        id
+        number
+        partyName
+        amountTTC
+        issueDate
+        status
+        kind
+      }
+      purchaseInvoices {
+        id
+        number
+        partyName
+        amountTTC
+        issueDate
+        status
+        kind
+      }
+      signedQuotes {
+        id
+        number
+        partyName
+        amountTTC
+        issueDate
+        status
+        kind
+      }
+    }
+  }
+`;
+
+export const GET_DETECTED_RECURRENCES = gql`
+  query GetDetectedRecurrences($workspaceId: ID) {
+    detectedRecurrences(workspaceId: $workspaceId) {
+      id
+      workspaceId
+      source
+      type
+      partyName
+      category
+      averageAmount
+      lastSeenMonth
+      consecutiveMonths
+      isActive
+      isMuted
+      lastDetectedAt
+    }
+  }
+`;
+
+export const GET_MANUAL_CASHFLOW_ENTRIES = gql`
+  query GetManualCashflowEntries($workspaceId: ID) {
+    manualCashflowEntries(workspaceId: $workspaceId) {
+      id
+      workspaceId
+      name
+      type
+      category
+      amount
+      startDate
+      endDate
+      frequency
+      notes
+      createdAt
+      updatedAt
     }
   }
 `;

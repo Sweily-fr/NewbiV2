@@ -67,10 +67,7 @@ export const useUpsertTreasuryForecast = () => {
   const { workspaceId } = useRequiredWorkspace();
 
   const [upsertMutation, { loading }] = useMutation(UPSERT_TREASURY_FORECAST, {
-    refetchQueries: [
-      { query: GET_TREASURY_FORECAST_DATA },
-      { query: GET_TREASURY_FORECASTS },
-    ],
+    refetchQueries: ["GetTreasuryForecastData", "GetTreasuryForecasts"],
     awaitRefetchQueries: false,
   });
 
@@ -106,10 +103,7 @@ export const useUpsertTreasuryForecast = () => {
  */
 export const useDeleteTreasuryForecast = () => {
   const [deleteMutation, { loading }] = useMutation(DELETE_TREASURY_FORECAST, {
-    refetchQueries: [
-      { query: GET_TREASURY_FORECAST_DATA },
-      { query: GET_TREASURY_FORECASTS },
-    ],
+    refetchQueries: ["GetTreasuryForecastData", "GetTreasuryForecasts"],
     awaitRefetchQueries: false,
   });
 

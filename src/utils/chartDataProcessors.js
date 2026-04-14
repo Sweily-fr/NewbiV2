@@ -258,30 +258,31 @@ export const processExpensesWithBankForCharts = (
 };
 
 // Configuration des graphiques
-export const getIncomeChartConfig = () => ({
+// Accepte un remap optionnel pour adapter les couleurs au mode daltonien.
+export const getIncomeChartConfig = (remap = (c) => c) => ({
   visitors: {
     label: "Visitors",
   },
   desktop: {
     label: "Montant",
-    color: "#5b50ff", // Violet Newbi pour les entrées
+    color: remap("#5b50ff"),
   },
   mobile: {
     label: "Nombre de transactions",
-    color: "#4840cc", // Violet plus foncé
+    color: remap("#4840cc"),
   },
 });
 
-export const getExpenseChartConfig = () => ({
+export const getExpenseChartConfig = (remap = (c) => c) => ({
   visitors: {
     label: "Visitors",
   },
   desktop: {
     label: "Montant",
-    color: "#000000", // Noir pour les sorties
+    color: remap("#000000"),
   },
   mobile: {
     label: "Nombre de transactions",
-    color: "#1a1a1a", // Noir légèrement plus clair
+    color: remap("#1a1a1a"),
   },
 });

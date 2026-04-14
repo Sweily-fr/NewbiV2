@@ -9,6 +9,8 @@ import {
   CircleUser,
   LogOut,
   EllipsisVertical,
+  Eye,
+  Check,
 } from "lucide-react";
 
 import {
@@ -51,7 +53,7 @@ export function NavUser({ user }) {
   const { isActive } = useSubscription();
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState("user-info");
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, colorblindMode, setColorblindMode } = useTheme();
 
   const profileImage = user.avatar;
 
@@ -263,6 +265,40 @@ export function NavUser({ user }) {
                   >
                     <Monitor className="size-4 text-muted-foreground" />
                     <span className="text-sm font-normal">Système</span>
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="gap-2 cursor-pointer">
+                  <Eye className="size-4 text-muted-foreground" />
+                  <span className="text-sm font-normal">Mode daltonien</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem
+                    onClick={() => setColorblindMode(false)}
+                    className="gap-2 cursor-pointer"
+                  >
+                    <Check
+                      className={`size-4 ${
+                        !colorblindMode ? "opacity-100" : "opacity-0"
+                      }`}
+                    />
+                    <span className="text-sm font-normal">
+                      Standard (vert et rouge)
+                    </span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setColorblindMode(true)}
+                    className="gap-2 cursor-pointer"
+                  >
+                    <Check
+                      className={`size-4 ${
+                        colorblindMode ? "opacity-100" : "opacity-0"
+                      }`}
+                    />
+                    <span className="text-sm font-normal">
+                      Daltonien (bleu et noir)
+                    </span>
                   </DropdownMenuItem>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>

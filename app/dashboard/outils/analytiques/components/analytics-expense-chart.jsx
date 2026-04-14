@@ -24,6 +24,7 @@ import {
 } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { getTransactionCategory } from "@/lib/bank-categories-config";
+import { useChartColors } from "@/src/hooks/useChartColors";
 
 const CATEGORY_LABELS = {
   OFFICE_SUPPLIES: "Fournitures",
@@ -86,7 +87,7 @@ const BANK_NAME_TO_CATEGORY = {
 };
 
 // Couleurs par catégorie (identiques au dashboard)
-const CATEGORY_COLORS_MAP = {
+const CATEGORY_COLORS_MAP_BASE = {
   OFFICE_SUPPLIES: "#eab308",
   TRAVEL: "rgba(90, 80, 255, 0.60)",
   MEALS: "#f97316",
@@ -106,7 +107,7 @@ const CATEGORY_COLORS_MAP = {
   OTHER: "#A585DB",
 };
 
-const PAYMENT_COLORS = [
+const PAYMENT_COLORS_BASE = [
   "#5b50ff",
   "#10b981",
   "#3b82f6",
@@ -163,7 +164,7 @@ function CategoryTooltip({ active, payload }) {
   );
 }
 
-function MonthlyTooltip({ active, payload }) {
+function MonthlyTooltip({ active, payload, colors, remap }) {
   if (!active || !payload?.length) return null;
   const data = payload[0]?.payload;
   if (!data) return null;
@@ -183,7 +184,7 @@ function MonthlyTooltip({ active, payload }) {
           <span className="flex items-center gap-2">
             <span
               className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: "#5b50ff" }}
+              style={{ backgroundColor: remap("#5b50ff") }}
             />
             Revenus HT
           </span>
@@ -193,7 +194,7 @@ function MonthlyTooltip({ active, payload }) {
           <span className="flex items-center gap-2">
             <span
               className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: "#000000" }}
+              style={{ backgroundColor: remap("#000000") }}
             />
             Dépenses HT
           </span>
@@ -205,12 +206,15 @@ function MonthlyTooltip({ active, payload }) {
           <span className="flex items-center gap-2">
             <span
               className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: "#5b50ff" }}
+              style={{ backgroundColor: remap("#5b50ff") }}
             />
             Marge brute
           </span>
           <span
-            className={`font-medium ${data.grossMargin >= 0 ? "text-emerald-600" : "text-red-600"}`}
+            className="font-medium"
+            style={{
+              color: data.grossMargin >= 0 ? colors.success : colors.danger,
+            }}
           >
             {formatCurrency(data.grossMargin)}
           </span>
@@ -227,6 +231,14 @@ export function AnalyticsExpenseCategoryChart({
   bankTransactions,
   loading,
 }) {
+  const { remap } = useChartColors();
+  const CATEGORY_COLORS_MAP = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(CATEGORY_COLORS_MAP_BASE).map(([k, v]) => [k, remap(v)]),
+      ),
+    [remap],
+  );
   const chartData = useMemo(() => {
     // Aggregate bank transactions by mapped internal category
     const bankByCategory = {};
@@ -303,7 +315,7 @@ export function AnalyticsExpenseCategoryChart({
       label: CATEGORY_LABELS[c.category] || c.category,
       fill: CATEGORY_COLORS_MAP[c.category] || CATEGORY_COLORS_MAP.OTHER,
     }));
-  }, [expenseByCategory, bankTransactions]);
+  }, [expenseByCategory, bankTransactions, CATEGORY_COLORS_MAP]);
 
   const chartConfig = useMemo(() => {
     const cfg = { amount: { label: "Montant" } };
@@ -439,6 +451,8 @@ export function AnalyticsRevenueVsExpenseChart({
   bankTransactions,
   loading,
 }) {
+  const chartColors = useChartColors();
+  const { remap } = chartColors;
   const chartData = useMemo(() => {
     if (!monthlyRevenue?.length) return [];
 
@@ -469,9 +483,9 @@ export function AnalyticsRevenueVsExpenseChart({
   }, [monthlyRevenue, bankTransactions]);
 
   const chartConfig = {
-    revenueHT: { label: "Revenus HT", color: "#5b50ff" },
-    expenseAmount: { label: "Dépenses", color: "#000000" },
-    grossMargin: { label: "Marge brute", color: "#5b50ff" },
+    revenueHT: { label: "Revenus HT", color: remap("#5b50ff") },
+    expenseAmount: { label: "Dépenses", color: remap("#000000") },
+    grossMargin: { label: "Marge brute", color: remap("#5b50ff") },
   };
 
   if (loading) {
@@ -545,17 +559,19 @@ export function AnalyticsRevenueVsExpenseChart({
               axisLine={false}
               width={35}
             />
-            <Tooltip content={<MonthlyTooltip />} />
+            <Tooltip
+              content={<MonthlyTooltip colors={chartColors} remap={remap} />}
+            />
             <Bar
               dataKey="revenueHT"
-              fill="#5b50ff"
+              fill={remap("#5b50ff")}
               fillOpacity={0.8}
               radius={[4, 4, 0, 0]}
               barSize={20}
             />
             <Bar
               dataKey="expenseAmount"
-              fill="#000000"
+              fill={remap("#000000")}
               fillOpacity={0.7}
               radius={[4, 4, 0, 0]}
               barSize={20}
@@ -563,7 +579,7 @@ export function AnalyticsRevenueVsExpenseChart({
             <Line
               type="bump"
               dataKey="grossMargin"
-              stroke="#5b50ff"
+              stroke={remap("#5b50ff")}
               strokeWidth={2}
               dot={false}
               activeDot={{ r: 5 }}
@@ -576,6 +592,8 @@ export function AnalyticsRevenueVsExpenseChart({
 }
 
 export function AnalyticsPaymentMethodChart({ paymentMethodStats, loading }) {
+  const { remap } = useChartColors();
+  const PAYMENT_COLORS = useMemo(() => PAYMENT_COLORS_BASE.map(remap), [remap]);
   const chartData = useMemo(() => {
     if (!paymentMethodStats?.length) return [];
     return paymentMethodStats.map((s, i) => ({
@@ -583,7 +601,7 @@ export function AnalyticsPaymentMethodChart({ paymentMethodStats, loading }) {
       name: PAYMENT_LABELS[s.method] || s.method,
       fill: PAYMENT_COLORS[i % PAYMENT_COLORS.length],
     }));
-  }, [paymentMethodStats]);
+  }, [paymentMethodStats, PAYMENT_COLORS]);
 
   const chartConfig = useMemo(() => {
     const cfg = {};

@@ -30,12 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import { ChevronRight } from "lucide-react";
-
-const chartConfig = {
-  treasury: { label: "Trésorerie", color: "#93c5fd" },
-  income: { label: "Entrées", color: "#5b50ff" },
-  expenses: { label: "Sorties", color: "#000000" },
-};
+import { useChartColors } from "@/src/hooks/useChartColors";
 
 const formatCurrency = (value) =>
   new Intl.NumberFormat("fr-FR", {
@@ -50,6 +45,13 @@ export function AnalyticsTreasuryBalanceChart({
   loading = false,
 }) {
   const [timeRange, setTimeRange] = useState("90d");
+  const chartColors = useChartColors();
+  const { remap } = chartColors;
+  const chartConfig = {
+    treasury: { label: "Trésorerie", color: remap("#93c5fd") },
+    income: { label: "Entrées", color: remap("#5b50ff") },
+    expenses: { label: "Sorties", color: remap("#000000") },
+  };
 
   const effectiveBalance = useMemo(() => {
     if (initialBalance !== 0) return initialBalance;
@@ -159,9 +161,13 @@ export function AnalyticsTreasuryBalanceChart({
           <CardDescription className="text-xs mt-1">
             Évolution du solde{" "}
             <span
-              className={`font-medium ${
-                treasuryConsumption >= 0 ? "text-green-600" : "text-red-600"
-              }`}
+              className="font-medium"
+              style={{
+                color:
+                  treasuryConsumption >= 0
+                    ? chartColors.success
+                    : chartColors.danger,
+              }}
             >
               ({treasuryConsumption >= 0 ? "+" : ""}
               {formatCurrency(treasuryConsumption)})

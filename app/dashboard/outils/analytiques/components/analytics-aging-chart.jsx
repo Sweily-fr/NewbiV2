@@ -11,12 +11,14 @@ import {
   Cell,
 } from "recharts";
 import { ChartContainer } from "@/src/components/ui/chart";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
-
-const chartConfig = {
-  totalTTC: { label: "Montant TTC", color: "#5b50ff" },
-};
+import { useChartColors } from "@/src/hooks/useChartColors";
 
 const BUCKET_COLORS = ["#fbbf24", "#f97316", "#ef4444", "#dc2626"];
 
@@ -51,6 +53,10 @@ function CustomTooltip({ active, payload }) {
 }
 
 export function AnalyticsAgingChart({ agingBuckets, loading }) {
+  const { remap } = useChartColors();
+  const chartConfig = {
+    totalTTC: { label: "Montant TTC", color: remap("#5b50ff") },
+  };
   const chartData = useMemo(() => {
     if (!agingBuckets?.length) return [];
     return agingBuckets;
@@ -60,7 +66,9 @@ export function AnalyticsAgingChart({ agingBuckets, loading }) {
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Ancienneté des créances</CardTitle>
+          <CardTitle className="text-sm font-medium">
+            Ancienneté des créances
+          </CardTitle>
         </CardHeader>
         <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
           <Skeleton className="min-h-[200px] w-full" />
@@ -75,7 +83,9 @@ export function AnalyticsAgingChart({ agingBuckets, loading }) {
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Ancienneté des créances</CardTitle>
+          <CardTitle className="text-sm font-medium">
+            Ancienneté des créances
+          </CardTitle>
         </CardHeader>
         <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 flex items-center justify-center flex-1 min-h-[200px] text-muted-foreground">
           Aucune créance en cours
@@ -87,36 +97,51 @@ export function AnalyticsAgingChart({ agingBuckets, loading }) {
   return (
     <Card className="shadow-xs flex flex-col min-h-0 py-4">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Ancienneté des créances</CardTitle>
+        <CardTitle className="text-sm font-medium">
+          Ancienneté des créances
+        </CardTitle>
       </CardHeader>
       <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
-      <ChartContainer config={chartConfig} className="h-[300px] w-full">
-        <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} />
-          <XAxis
-            dataKey="label"
-            tick={{ fontSize: 11 }}
-            tickLine={false}
-            axisLine={false}
-          />
-          <YAxis
-            tick={({ y, payload }) => (
-              <text x={0} y={y} textAnchor="start" dominantBaseline="middle" fontSize={11} className="fill-muted-foreground">
-                {`${(payload.value / 1000).toFixed(0)}k`}
-              </text>
-            )}
-            tickLine={false}
-            axisLine={false}
-            width={35}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Bar dataKey="totalTTC" radius={[4, 4, 0, 0]} barSize={40}>
-            {chartData.map((_, index) => (
-              <Cell key={`cell-${index}`} fill={BUCKET_COLORS[index] || BUCKET_COLORS[3]} />
-            ))}
-          </Bar>
-        </BarChart>
-      </ChartContainer>
+        <ChartContainer config={chartConfig} className="h-[300px] w-full">
+          <BarChart
+            data={chartData}
+            margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis
+              dataKey="label"
+              tick={{ fontSize: 11 }}
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis
+              tick={({ y, payload }) => (
+                <text
+                  x={0}
+                  y={y}
+                  textAnchor="start"
+                  dominantBaseline="middle"
+                  fontSize={11}
+                  className="fill-muted-foreground"
+                >
+                  {`${(payload.value / 1000).toFixed(0)}k`}
+                </text>
+              )}
+              tickLine={false}
+              axisLine={false}
+              width={35}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar dataKey="totalTTC" radius={[4, 4, 0, 0]} barSize={40}>
+              {chartData.map((_, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={remap(BUCKET_COLORS[index] || BUCKET_COLORS[3])}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ChartContainer>
       </CardContent>
     </Card>
   );

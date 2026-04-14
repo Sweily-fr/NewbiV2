@@ -1,12 +1,10 @@
 "use client";
 
 import { useMemo, useRef, useEffect } from "react";
-import {
-  Card,
-  CardContent,
-} from "@/src/components/ui/card";
+import { Card, CardContent } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { ArrowUp, ArrowDown } from "lucide-react";
+import { useChartColors } from "@/src/hooks/useChartColors";
 
 const formatCurrency = (value) =>
   new Intl.NumberFormat("fr-FR", {
@@ -41,22 +39,23 @@ const generateSmoothPath = (points, width, height) => {
 function SparkLine({ data, isPositive, id }) {
   const lineRef = useRef(null);
   const areaRef = useRef(null);
+  const chartColors = useChartColors();
   const svgWidth = 120;
   const svgHeight = 40;
 
   const linePath = useMemo(
     () => generateSmoothPath(data, svgWidth, svgHeight),
-    [data]
+    [data],
   );
   const areaPath = useMemo(
     () =>
       linePath.startsWith("M")
         ? `${linePath} L ${svgWidth} ${svgHeight} L 0 ${svgHeight} Z`
         : "",
-    [linePath]
+    [linePath],
   );
 
-  const strokeColor = isPositive ? "#22c55e" : "#ef4444";
+  const strokeColor = isPositive ? "#22c55e" : chartColors.danger;
   const gradientId = `sparkGrad-${id}`;
 
   useEffect(() => {
@@ -135,13 +134,15 @@ const kpiConfig = [
   {
     key: "pendingReceivables",
     title: "Encaissements à venir",
-    getSparkData: (months) => months?.map((m) => m.actualIncome || m.forecastIncome || 0) || [],
+    getSparkData: (months) =>
+      months?.map((m) => m.actualIncome || m.forecastIncome || 0) || [],
     getChange: () => null,
   },
   {
     key: "pendingPayables",
     title: "Décaissements à venir",
-    getSparkData: (months) => months?.map((m) => m.actualExpense || m.forecastExpense || 0) || [],
+    getSparkData: (months) =>
+      months?.map((m) => m.actualExpense || m.forecastExpense || 0) || [],
     getChange: () => null,
   },
 ];
@@ -173,7 +174,12 @@ export function ForecastKpiCards({ kpi, months, loading }) {
         const value = kpi?.[key] || 0;
         const sparkData = getSparkData(months);
         const change = getChange(kpi, months);
-        const isPositive = key === "pendingPayables" ? false : (change === null ? value >= 0 : change >= 0);
+        const isPositive =
+          key === "pendingPayables"
+            ? false
+            : change === null
+              ? value >= 0
+              : change >= 0;
 
         return (
           <Card key={key} className="shadow-xs">
@@ -203,7 +209,11 @@ export function ForecastKpiCards({ kpi, months, loading }) {
                 </div>
                 {sparkData.length >= 2 && (
                   <div className="w-24 h-10">
-                    <SparkLine data={sparkData} isPositive={isPositive} id={key} />
+                    <SparkLine
+                      data={sparkData}
+                      isPositive={isPositive}
+                      id={key}
+                    />
                   </div>
                 )}
               </div>

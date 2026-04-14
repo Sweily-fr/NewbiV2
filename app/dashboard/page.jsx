@@ -83,6 +83,7 @@ import {
   getIncomeChartConfig,
   getExpenseChartConfig,
 } from "@/src/utils/chartDataProcessors";
+import { useChartColors } from "@/src/hooks/useChartColors";
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 import { InvoicesToCollectCard } from "@/app/dashboard/components/invoices-to-collect-card";
 import { InvoicesToPayCard } from "@/app/dashboard/components/invoices-to-pay-card";
@@ -272,8 +273,9 @@ function DashboardContent() {
   }, [selectedAccountId, bankAccounts]);
 
   // Utiliser les configurations importées
-  const incomeChartConfig = getIncomeChartConfig();
-  const expenseChartConfig = getExpenseChartConfig();
+  const { remap } = useChartColors();
+  const incomeChartConfig = getIncomeChartConfig(remap);
+  const expenseChartConfig = getExpenseChartConfig(remap);
 
   // Loading states par section
   const cardsLoading = accountsLoading || transactionsLoading;
@@ -285,11 +287,11 @@ function DashboardContent() {
     },
     desktop: {
       label: "Montant",
-      color: "#3b82f6", // Bleu pour le solde
+      color: remap("#3b82f6"),
     },
     mobile: {
       label: "Nombre de transactions",
-      color: "#2563eb", // Bleu plus foncé
+      color: remap("#2563eb"),
     },
   };
 

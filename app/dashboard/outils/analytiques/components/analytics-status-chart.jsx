@@ -3,8 +3,14 @@
 import { useMemo } from "react";
 import { PieChart, Pie, Cell, Tooltip, Label } from "recharts";
 import { ChartContainer } from "@/src/components/ui/chart";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { useChartColors } from "@/src/hooks/useChartColors";
 
 const STATUS_LABELS = {
   DRAFT: "Brouillon",
@@ -14,20 +20,16 @@ const STATUS_LABELS = {
   CANCELED: "Annulée",
 };
 
-const STATUS_COLORS = {
-  DRAFT: "#64748b",
-  PENDING: "#f59e0b",
-  OVERDUE: "#ef4444",
-  COMPLETED: "#10b981",
-  CANCELED: "#a855f7",
+const buildStatusColors = (chartColors) => {
+  const { remap } = chartColors;
+  return {
+    DRAFT: remap("#64748b"),
+    PENDING: remap("#f59e0b"),
+    OVERDUE: chartColors.danger,
+    COMPLETED: chartColors.success,
+    CANCELED: remap("#a855f7"),
+  };
 };
-
-const chartConfig = Object.fromEntries(
-  Object.entries(STATUS_LABELS).map(([key, label]) => [
-    key,
-    { label, color: STATUS_COLORS[key] },
-  ])
-);
 
 const formatCurrency = (value) =>
   new Intl.NumberFormat("fr-FR", {
@@ -44,7 +46,9 @@ function CustomTooltip({ active, payload }) {
 
   return (
     <div className="rounded-lg border bg-background p-3 shadow-sm text-sm">
-      <p className="font-medium mb-1">{STATUS_LABELS[data.status] || data.status}</p>
+      <p className="font-medium mb-1">
+        {STATUS_LABELS[data.status] || data.status}
+      </p>
       <div className="space-y-1">
         <div className="flex items-center justify-between gap-4">
           <span>Montant TTC</span>
@@ -60,25 +64,43 @@ function CustomTooltip({ active, payload }) {
 }
 
 export function AnalyticsStatusChart({ statusBreakdown, loading }) {
+  const chartColors = useChartColors();
+  const statusColors = useMemo(
+    () => buildStatusColors(chartColors),
+    [chartColors],
+  );
+  const chartConfig = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(STATUS_LABELS).map(([key, label]) => [
+          key,
+          { label, color: statusColors[key] },
+        ]),
+      ),
+    [statusColors],
+  );
+
   const chartData = useMemo(() => {
     if (!statusBreakdown?.length) return [];
     return statusBreakdown.map((s) => ({
       ...s,
       name: STATUS_LABELS[s.status] || s.status,
-      fill: STATUS_COLORS[s.status] || "#94a3b8",
+      fill: statusColors[s.status] || "#94a3b8",
     }));
-  }, [statusBreakdown]);
+  }, [statusBreakdown, statusColors]);
 
   const totalAmount = useMemo(
     () => chartData.reduce((s, e) => s + (e.totalTTC || 0), 0),
-    [chartData]
+    [chartData],
   );
 
   if (loading) {
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Statuts des factures</CardTitle>
+          <CardTitle className="text-sm font-medium">
+            Statuts des factures
+          </CardTitle>
         </CardHeader>
         <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
           <Skeleton className="min-h-[200px] w-full" />
@@ -91,7 +113,9 @@ export function AnalyticsStatusChart({ statusBreakdown, loading }) {
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Statuts des factures</CardTitle>
+          <CardTitle className="text-sm font-medium">
+            Statuts des factures
+          </CardTitle>
         </CardHeader>
         <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 flex items-center justify-center flex-1 min-h-[200px] text-muted-foreground">
           Aucune donnée
@@ -103,7 +127,9 @@ export function AnalyticsStatusChart({ statusBreakdown, loading }) {
   return (
     <Card className="shadow-xs flex flex-col min-h-0 py-4">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Statuts des factures</CardTitle>
+        <CardTitle className="text-sm font-medium">
+          Statuts des factures
+        </CardTitle>
       </CardHeader>
       <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
         <div className="flex items-center gap-8">
@@ -113,10 +139,7 @@ export function AnalyticsStatusChart({ statusBreakdown, loading }) {
               className="aspect-square h-[280px] w-[280px]"
             >
               <PieChart>
-                <Tooltip
-                  content={<CustomTooltip />}
-                  cursor={false}
-                />
+                <Tooltip content={<CustomTooltip />} cursor={false} />
                 <Pie
                   data={chartData}
                   dataKey="totalTTC"
@@ -158,9 +181,10 @@ export function AnalyticsStatusChart({ statusBreakdown, loading }) {
 
           <div className="flex-1 space-y-3">
             {chartData.map((item) => {
-              const percentage = totalAmount > 0
-                ? ((item.totalTTC / totalAmount) * 100).toFixed(1)
-                : "0.0";
+              const percentage =
+                totalAmount > 0
+                  ? ((item.totalTTC / totalAmount) * 100).toFixed(1)
+                  : "0.0";
               return (
                 <div key={item.status} className="flex items-center gap-3">
                   <div
