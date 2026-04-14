@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { useDashboardData } from "@/src/hooks/useDashboardData";
 import { Input } from "@/src/components/ui/input";
@@ -349,9 +349,8 @@ export function AnalyticsPCGMapping() {
                   const key = group.numero || "__unassigned";
                   const isExpanded = expandedAccounts.has(key);
                   return (
-                    <>
+                    <Fragment key={key}>
                       <TableRow
-                        key={key}
                         className={`cursor-pointer hover:bg-muted/30 ${group.isUnassigned ? "bg-amber-50/50 dark:bg-amber-950/20" : ""}`}
                         onClick={() => toggleAccount(key)}
                       >
@@ -427,7 +426,7 @@ export function AnalyticsPCGMapping() {
                       </TableRow>
 
                       {isExpanded && (
-                        <TableRow key={`${key}-details`}>
+                        <TableRow>
                           <TableCell colSpan={6} className="p-0 bg-muted/20">
                             <div className="px-4 py-3">
                               <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wide">
@@ -548,7 +547,7 @@ export function AnalyticsPCGMapping() {
                           </TableCell>
                         </TableRow>
                       )}
-                    </>
+                    </Fragment>
                   );
                 })
               )}
