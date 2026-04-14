@@ -2,7 +2,9 @@
 
 import { useState, useMemo, Fragment } from "react";
 import { useDashboardData } from "@/src/hooks/useDashboardData";
+import { useUpdateTransaction } from "@/src/hooks/useTransactions";
 import { TransactionDetailDrawer } from "@/app/dashboard/outils/transactions/components/transaction-detail-drawer";
+import { mapPaymentMethodToEnum } from "@/app/dashboard/outils/transactions/components/transactions/utils/mappers";
 import { Input } from "@/src/components/ui/input";
 import {
   Table,
@@ -57,12 +59,49 @@ function ConfidenceBadge({ confidence }) {
 
 export function AnalyticsPCGMapping() {
   const { transactions, isLoading, refreshData } = useDashboardData();
+  const { updateTransaction } = useUpdateTransaction();
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState("totalAmount");
   const [sortDir, setSortDir] = useState("desc");
   const [expandedAccounts, setExpandedAccounts] = useState(new Set());
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  // Handler appelé par le drawer quand l'utilisateur sauvegarde les modifications
+  const handleSaveTransaction = async (updatedTransaction) => {
+    const transactionId =
+      updatedTransaction.id ||
+      updatedTransaction.originalTransaction?.id ||
+      selectedTransaction?.id;
+    if (!transactionId) return;
+
+    const isIncome = updatedTransaction.type === "INCOME";
+    const amount = isIncome
+      ? Math.abs(parseFloat(updatedTransaction.amount))
+      : -Math.abs(parseFloat(updatedTransaction.amount));
+
+    const updateInput = {
+      description: updatedTransaction.description || "Transaction modifiée",
+      amount,
+      currency: "EUR",
+      category: updatedTransaction.category || "OTHER",
+      date: updatedTransaction.date,
+      type: isIncome ? "CREDIT" : "DEBIT",
+      vendor: updatedTransaction.vendor,
+      paymentMethod: mapPaymentMethodToEnum(updatedTransaction.paymentMethod),
+      notes: updatedTransaction.description,
+    };
+
+    if (updatedTransaction.pcgAccountNumero) {
+      updateInput.pcgAccountNumero = updatedTransaction.pcgAccountNumero;
+    }
+
+    const result = await updateTransaction(transactionId, updateInput);
+    if (result.success) {
+      setIsDrawerOpen(false);
+      await refreshData();
+    }
+  };
 
   const openTransaction = (tx) => {
     // Mapper les données Transaction (GraphQL) vers le format attendu par le drawer
@@ -597,6 +636,7 @@ export function AnalyticsPCGMapping() {
         open={isDrawerOpen}
         onOpenChange={setIsDrawerOpen}
         onRefresh={refreshData}
+        onSubmit={handleSaveTransaction}
       />
     </div>
   );
