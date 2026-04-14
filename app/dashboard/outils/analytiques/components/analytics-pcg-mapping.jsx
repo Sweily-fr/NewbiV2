@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { useDashboardData } from "@/src/hooks/useDashboardData";
 import { Input } from "@/src/components/ui/input";
 import {
@@ -27,6 +28,7 @@ import {
   ChevronRight,
   AlertCircle,
   PenLine,
+  ExternalLink,
 } from "lucide-react";
 import { CONFIDENCE_CONFIG } from "@/lib/pcg-mapping";
 
@@ -54,8 +56,15 @@ function ConfidenceBadge({ confidence }) {
 }
 
 export function AnalyticsPCGMapping() {
+  const router = useRouter();
   const { transactions, isLoading } = useDashboardData();
   const [search, setSearch] = useState("");
+
+  const openTransaction = (transactionId) => {
+    router.push(
+      `/dashboard/outils/transactions?transactionId=${transactionId}`,
+    );
+  };
   const [sortField, setSortField] = useState("totalAmount");
   const [sortDir, setSortDir] = useState("desc");
   const [expandedAccounts, setExpandedAccounts] = useState(new Set());
@@ -460,17 +469,26 @@ export function AnalyticsPCGMapping() {
                                         return (
                                           <TableRow
                                             key={tx.id}
-                                            className="h-10"
+                                            className="h-10 cursor-pointer hover:bg-muted/50 group"
+                                            onClick={() =>
+                                              openTransaction(tx.id)
+                                            }
                                           >
                                             <TableCell className="text-xs">
                                               {formatDateToFrench(tx.date)}
                                             </TableCell>
                                             <TableCell className="text-xs">
-                                              <div
-                                                className="truncate max-w-[260px]"
-                                                title={name}
-                                              >
-                                                {name}
+                                              <div className="flex items-center gap-2">
+                                                <div
+                                                  className="truncate max-w-[240px]"
+                                                  title={name}
+                                                >
+                                                  {name}
+                                                </div>
+                                                <ExternalLink
+                                                  size={11}
+                                                  className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                                                />
                                               </div>
                                             </TableCell>
                                             <TableCell
