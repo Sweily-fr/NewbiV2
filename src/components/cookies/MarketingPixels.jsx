@@ -42,10 +42,11 @@ export default function MarketingPixels() {
     };
   }, []);
 
+  if (!hasConsent) return null;
+
   return (
     <>
-      {/* Google Tag Manager — chargé inconditionnellement.
-          Le respect du consentement est piloté côté GTM via Consent Mode v2. */}
+      {/* Google Tag Manager */}
       <Script
         id="gtm-script"
         strategy="afterInteractive"
@@ -57,6 +58,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 })(window,document,'script','dataLayer','GTM-5HP9SHS9');`,
         }}
       />
+      {/* End Google Tag Manager */}
+
+      {/* Google Tag Manager (noscript) */}
       <noscript>
         <iframe
           src="https://www.googletagmanager.com/ns.html?id=GTM-5HP9SHS9"
@@ -65,15 +69,14 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           style={{ display: "none", visibility: "hidden" }}
         />
       </noscript>
+      {/* End Google Tag Manager (noscript) */}
 
-      {/* Meta Pixel — uniquement après consentement marketing explicite */}
-      {hasConsent && (
-        <>
-          <Script
-            id="meta-pixel"
-            strategy="afterInteractive"
-            dangerouslySetInnerHTML={{
-              __html: `
+      {/* Meta Pixel Code */}
+      <Script
+        id="meta-pixel"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{
+          __html: `
             !function(f,b,e,v,n,t,s)
             {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
             n.callMethod.apply(n,arguments):n.queue.push(arguments)};
@@ -85,19 +88,18 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             fbq('init', '1623304648896676');
             fbq('track', 'PageView');
           `,
-            }}
-          />
-          <noscript>
-            <img
-              height="1"
-              width="1"
-              style={{ display: "none" }}
-              src="https://www.facebook.com/tr?id=1623304648896676&ev=PageView&noscript=1"
-              alt=""
-            />
-          </noscript>
-        </>
-      )}
+        }}
+      />
+      <noscript>
+        <img
+          height="1"
+          width="1"
+          style={{ display: "none" }}
+          src="https://www.facebook.com/tr?id=1623304648896676&ev=PageView&noscript=1"
+          alt=""
+        />
+      </noscript>
+      {/* End Meta Pixel Code */}
     </>
   );
 }
