@@ -1,13 +1,28 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
-import { Search, Building2, MapPin, Loader2, AlertCircle, LoaderCircle, X } from "lucide-react";
+import {
+  Search,
+  Building2,
+  MapPin,
+  Loader2,
+  AlertCircle,
+  LoaderCircle,
+  X,
+} from "lucide-react";
 import { useMutation } from "@apollo/client";
-import { UPLOAD_DOCUMENT, DELETE_DOCUMENT } from "@/src/graphql/mutations/documentUpload";
+import {
+  UPLOAD_DOCUMENT,
+  DELETE_DOCUMENT,
+} from "@/src/graphql/mutations/documentUpload";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
-import { Avatar, AvatarImage, AvatarFallback } from "@/src/components/ui/avatar";
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+} from "@/src/components/ui/avatar";
 import {
   Select,
   SelectContent,
@@ -18,28 +33,28 @@ import {
 import { toast } from "@/src/components/ui/sonner";
 
 const FORME_JURIDIQUE_MAP = {
-  "1000": "Entrepreneur individuel",
-  "5410": "SARL unipersonnelle",
-  "5420": "SARL",
-  "5498": "SARL à associé unique",
-  "5499": "SARL",
-  "5510": "SA à conseil d'administration",
-  "5520": "SA à directoire",
-  "5599": "SA",
-  "5610": "SAS",
-  "5699": "SAS",
-  "5710": "SAS unipersonnelle (SASU)",
-  "5720": "SASU",
-  "5785": "Société d'exercice libéral par actions simplifiée",
-  "5800": "Société civile",
-  "6220": "GIE",
-  "6317": "Coopérative",
-  "6521": "SCI",
-  "6541": "SCP",
-  "6542": "SCM",
-  "9220": "Association déclarée",
-  "9222": "Association reconnue d'utilité publique",
-  "9300": "Fondation",
+  1000: "Entrepreneur individuel",
+  5410: "SARL unipersonnelle",
+  5420: "SARL",
+  5498: "SARL à associé unique",
+  5499: "SARL",
+  5510: "SA à conseil d'administration",
+  5520: "SA à directoire",
+  5599: "SA",
+  5610: "SAS",
+  5699: "SAS",
+  5710: "SAS unipersonnelle (SASU)",
+  5720: "SASU",
+  5785: "Société d'exercice libéral par actions simplifiée",
+  5800: "Société civile",
+  6220: "GIE",
+  6317: "Coopérative",
+  6521: "SCI",
+  6541: "SCP",
+  6542: "SCM",
+  9220: "Association déclarée",
+  9222: "Association reconnue d'utilité publique",
+  9300: "Fondation",
 };
 
 const getActivityLabel = (codeNaf) => {
@@ -47,41 +62,41 @@ const getActivityLabel = (codeNaf) => {
   const prefix = codeNaf.substring(0, 2);
   const NAF_CATEGORIES = {
     "01": "Agriculture, sylviculture et pêche",
-    "10": "Industries alimentaires",
-    "13": "Fabrication de textiles",
-    "20": "Industrie chimique",
-    "25": "Fabrication de produits métalliques",
-    "41": "Construction de bâtiments",
-    "43": "Travaux de construction spécialisés",
-    "45": "Commerce et réparation automobile",
-    "46": "Commerce de gros",
-    "47": "Commerce de détail",
-    "49": "Transports terrestres",
-    "55": "Hébergement",
-    "56": "Restauration",
-    "58": "Édition",
-    "62": "Programmation, conseil et autres activités informatiques",
-    "63": "Services d'information",
-    "64": "Activités des services financiers",
-    "66": "Activités auxiliaires de services financiers",
-    "68": "Activités immobilières",
-    "69": "Activités juridiques et comptables",
-    "70": "Activités des sièges sociaux, conseil de gestion",
-    "71": "Activités d'architecture et d'ingénierie",
-    "72": "Recherche-développement scientifique",
-    "73": "Publicité et études de marché",
-    "74": "Autres activités spécialisées, scientifiques et techniques",
-    "77": "Activités de location et location-bail",
-    "78": "Activités liées à l'emploi",
-    "79": "Activités des agences de voyage",
-    "82": "Activités administratives et autres activités de soutien",
-    "85": "Enseignement",
-    "86": "Activités pour la santé humaine",
-    "90": "Activités créatives, artistiques et de spectacle",
-    "93": "Activités sportives, récréatives et de loisirs",
-    "94": "Activités des organisations associatives",
-    "95": "Réparation d'ordinateurs et de biens personnels",
-    "96": "Autres services personnels",
+    10: "Industries alimentaires",
+    13: "Fabrication de textiles",
+    20: "Industrie chimique",
+    25: "Fabrication de produits métalliques",
+    41: "Construction de bâtiments",
+    43: "Travaux de construction spécialisés",
+    45: "Commerce et réparation automobile",
+    46: "Commerce de gros",
+    47: "Commerce de détail",
+    49: "Transports terrestres",
+    55: "Hébergement",
+    56: "Restauration",
+    58: "Édition",
+    62: "Programmation, conseil et autres activités informatiques",
+    63: "Services d'information",
+    64: "Activités des services financiers",
+    66: "Activités auxiliaires de services financiers",
+    68: "Activités immobilières",
+    69: "Activités juridiques et comptables",
+    70: "Activités des sièges sociaux, conseil de gestion",
+    71: "Activités d'architecture et d'ingénierie",
+    72: "Recherche-développement scientifique",
+    73: "Publicité et études de marché",
+    74: "Autres activités spécialisées, scientifiques et techniques",
+    77: "Activités de location et location-bail",
+    78: "Activités liées à l'emploi",
+    79: "Activités des agences de voyage",
+    82: "Activités administratives et autres activités de soutien",
+    85: "Enseignement",
+    86: "Activités pour la santé humaine",
+    90: "Activités créatives, artistiques et de spectacle",
+    93: "Activités sportives, récréatives et de loisirs",
+    94: "Activités des organisations associatives",
+    95: "Réparation d'ordinateurs et de biens personnels",
+    96: "Autres services personnels",
   };
   return NAF_CATEGORIES[prefix] || "";
 };
@@ -114,57 +129,66 @@ export function WorkspaceForm({
   const fallbackLetter = companyName?.trim()?.[0]?.toUpperCase() || "A";
   const displayLogoUrl = previewUrl || logoUrl;
 
-  const handleFileSelect = useCallback(async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleFileSelect = useCallback(
+    async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      toast.error("Veuillez sélectionner une image");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("L'image doit faire moins de 5 Mo");
-      return;
-    }
-
-    try {
-      setIsUploading(true);
-
-      // Delete previous upload if exists
-      if (fileKey) {
-        await deleteDocument({ variables: { key: fileKey } }).catch(() => {});
+      if (!file.type.startsWith("image/")) {
+        toast.error("Veuillez sélectionner une image");
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("L'image doit faire moins de 5 Mo");
+        return;
       }
 
-      // Show local preview immediately
-      const preview = URL.createObjectURL(file);
-      setPreviewUrl(preview);
+      try {
+        setIsUploading(true);
 
-      // Rename for backend folder detection (imgCompany)
-      const ext = file.name.split(".").pop();
-      const renamedFile = new File([file], `company-logo-${Date.now()}.${ext}`, {
-        type: file.type,
-      });
+        // Delete previous upload if exists
+        if (fileKey) {
+          await deleteDocument({ variables: { key: fileKey } }).catch(() => {});
+        }
 
-      const result = await uploadDocument({ variables: { file: renamedFile } });
-      const data = result.data.uploadDocument;
+        // Show local preview immediately
+        const preview = URL.createObjectURL(file);
+        setPreviewUrl(preview);
 
-      if (data.success) {
-        setFileKey(data.key);
-        setLogoUrl(data.url);
-        toast.success("Logo uploadé avec succès");
-      } else {
-        throw new Error(data.message);
+        // Rename for backend folder detection (imgCompany)
+        const ext = file.name.split(".").pop();
+        const renamedFile = new File(
+          [file],
+          `company-logo-${Date.now()}.${ext}`,
+          {
+            type: file.type,
+          },
+        );
+
+        const result = await uploadDocument({
+          variables: { file: renamedFile },
+        });
+        const data = result.data.uploadDocument;
+
+        if (data.success) {
+          setFileKey(data.key);
+          setLogoUrl(data.url);
+          toast.success("Logo uploadé avec succès");
+        } else {
+          throw new Error(data.message);
+        }
+      } catch (error) {
+        console.error("Erreur upload logo:", error);
+        toast.error("Erreur lors de l'upload du logo");
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        setPreviewUrl(null);
+      } finally {
+        setIsUploading(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
       }
-    } catch (error) {
-      console.error("Erreur upload logo:", error);
-      toast.error("Erreur lors de l'upload du logo");
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-      setPreviewUrl(null);
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  }, [fileKey, deleteDocument, uploadDocument, setLogoUrl, previewUrl]);
+    },
+    [fileKey, deleteDocument, uploadDocument, setLogoUrl, previewUrl],
+  );
 
   const handleRemoveLogo = useCallback(async () => {
     if (fileKey) {
@@ -176,38 +200,42 @@ export function WorkspaceForm({
     setLogoUrl(null);
   }, [fileKey, deleteDocument, previewUrl, setLogoUrl]);
 
-  const searchCompanies = useCallback(async (query) => {
-    if (!query || query.length < 3) {
+  // Debounce + annulation des requêtes obsolètes pour éviter les races
+  useEffect(() => {
+    if (selectedCompany) return;
+
+    if (!companyName || companyName.length < 3) {
       setSearchResults([]);
       setHasSearched(false);
+      setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
-    setHasSearched(true);
-
-    try {
-      const response = await fetch(
-        `https://recherche-entreprises.api.gouv.fr/search?q=${encodeURIComponent(query)}&page=1&per_page=8`
-      );
-      const data = await response.json();
-      setSearchResults(data.results || []);
-    } catch (error) {
-      console.error("Erreur lors de la recherche:", error);
-      setSearchResults([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Debounce search
-  useEffect(() => {
-    if (selectedCompany) return;
-    const timer = setTimeout(() => {
-      searchCompanies(companyName);
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setIsLoading(true);
+      setHasSearched(true);
+      try {
+        const response = await fetch(
+          `/api/search-companies?q=${encodeURIComponent(companyName)}&limite=8`,
+          { signal: controller.signal },
+        );
+        const data = await response.json();
+        setSearchResults(data.results || []);
+      } catch (error) {
+        if (error.name === "AbortError") return;
+        console.error("Erreur lors de la recherche:", error);
+        setSearchResults([]);
+      } finally {
+        if (!controller.signal.aborted) setIsLoading(false);
+      }
     }, 400);
-    return () => clearTimeout(timer);
-  }, [companyName, searchCompanies, selectedCompany]);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [companyName, selectedCompany]);
 
   const handleSelectCompany = async (company) => {
     setSiretError(null);
@@ -227,7 +255,7 @@ export function WorkspaceForm({
 
       if (!data.available) {
         setSiretError(
-          `${data.message} Si vous faites partie de cette entreprise, demandez une invitation à l'administrateur.`
+          `${data.message} Si vous faites partie de cette entreprise, demandez une invitation à l'administrateur.`,
         );
         setIsCheckingSiret(false);
         return;
@@ -244,11 +272,18 @@ export function WorkspaceForm({
     setHasSearched(false);
 
     const formeJuridiqueCode = company.nature_juridique || "";
-    const formeJuridiqueLibelle = FORME_JURIDIQUE_MAP[formeJuridiqueCode] || formeJuridiqueCode;
+    const formeJuridiqueLibelle =
+      FORME_JURIDIQUE_MAP[formeJuridiqueCode] || formeJuridiqueCode;
     const codeNaf = company.activite_principale || "";
     const activityLabel = getActivityLabel(codeNaf);
 
-    const COUNTRY_MAP = { FR: "France", BE: "Belgique", CH: "Suisse", CA: "Canada", LU: "Luxembourg" };
+    const COUNTRY_MAP = {
+      FR: "France",
+      BE: "Belgique",
+      CH: "Suisse",
+      CA: "Canada",
+      LU: "Luxembourg",
+    };
 
     setCompanyData({
       companyName: name,
@@ -297,7 +332,11 @@ export function WorkspaceForm({
               ) : (
                 <>
                   {displayLogoUrl && (
-                    <AvatarImage src={displayLogoUrl} alt="Logo" className="object-cover rounded-xl" />
+                    <AvatarImage
+                      src={displayLogoUrl}
+                      alt="Logo"
+                      className="object-cover rounded-xl"
+                    />
                   )}
                   <AvatarFallback className="bg-muted text-muted-foreground text-3xl font-medium rounded-xl">
                     {fallbackLetter}
@@ -336,7 +375,10 @@ export function WorkspaceForm({
 
         {/* Company search field */}
         <div className="relative space-y-1.5 mb-5">
-          <Label htmlFor="company-name" className="text-[13px] text-muted-foreground">
+          <Label
+            htmlFor="company-name"
+            className="text-[13px] text-muted-foreground"
+          >
             Recherchez votre entreprise
           </Label>
           <div className="relative">
@@ -363,11 +405,13 @@ export function WorkspaceForm({
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium text-foreground truncate">
-                  {selectedCompany.nom_complet || selectedCompany.nom_raison_sociale}
+                  {selectedCompany.nom_complet ||
+                    selectedCompany.nom_raison_sociale}
                 </p>
                 <p className="text-[11px] text-muted-foreground">
                   SIREN: {selectedCompany.siren}
-                  {selectedCompany.siege?.libelle_commune && ` · ${selectedCompany.siege.libelle_commune}`}
+                  {selectedCompany.siege?.libelle_commune &&
+                    ` · ${selectedCompany.siege.libelle_commune}`}
                 </p>
               </div>
             </div>
@@ -377,7 +421,9 @@ export function WorkspaceForm({
           {siretError && (
             <div className="flex items-start gap-2.5 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 px-3 py-2.5 mt-1">
               <AlertCircle className="size-4 text-red-500 shrink-0 mt-0.5" />
-              <p className="text-xs text-red-700 dark:text-red-400">{siretError}</p>
+              <p className="text-xs text-red-700 dark:text-red-400">
+                {siretError}
+              </p>
             </div>
           )}
 
@@ -385,7 +431,9 @@ export function WorkspaceForm({
           {isCheckingSiret && (
             <div className="flex items-center gap-2 py-2 mt-1">
               <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">Vérification de l&apos;entreprise...</span>
+              <span className="text-xs text-muted-foreground">
+                Vérification de l&apos;entreprise...
+              </span>
             </div>
           )}
 
@@ -405,7 +453,8 @@ export function WorkspaceForm({
                         >
                           <div className="flex items-center justify-between w-full">
                             <span className="font-medium text-sm truncate">
-                              {company.nom_complet || company.nom_raison_sociale}
+                              {company.nom_complet ||
+                                company.nom_raison_sociale}
                             </span>
                             <span className="text-xs text-muted-foreground shrink-0 ml-2">
                               {company.siren}
@@ -414,7 +463,8 @@ export function WorkspaceForm({
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             <MapPin className="size-3 shrink-0" />
                             <span className="truncate">
-                              {siege.libelle_commune || "Adresse non disponible"}
+                              {siege.libelle_commune ||
+                                "Adresse non disponible"}
                               {siege.code_postal && ` (${siege.code_postal})`}
                             </span>
                           </div>
@@ -433,12 +483,22 @@ export function WorkspaceForm({
 
         {/* Workspace handle field */}
         <div className="space-y-1.5 mb-5">
-          <Label htmlFor="workspace-slug" className="text-[13px] text-muted-foreground">
+          <Label
+            htmlFor="workspace-slug"
+            className="text-[13px] text-muted-foreground"
+          >
             Identifiant de l&apos;espace
           </Label>
           <Input
             id="workspace-slug"
-            value={`app.newbi.io/${companyName?.trim().toLowerCase().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-") || "my-workspace"}`}
+            value={`app.newbi.io/${
+              companyName
+                ?.trim()
+                .toLowerCase()
+                .replace(/[^a-z0-9\s-]/g, "")
+                .replace(/\s+/g, "-")
+                .replace(/-+/g, "-") || "my-workspace"
+            }`}
             readOnly
           />
         </div>

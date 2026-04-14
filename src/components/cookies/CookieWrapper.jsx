@@ -4,21 +4,19 @@ import { usePathname } from "next/navigation";
 import CookieManager from "./CookieManager";
 import MarketingPixels from "./MarketingPixels";
 
-const AUTHENTICATED_ROUTES = ["/dashboard", "/onboarding", "/create-workspace"];
+const ROUTES_WITHOUT_BANNER = ["/dashboard", "/create-workspace"];
 
 export default function CookieWrapper() {
   const pathname = usePathname();
 
-  const isAuthenticatedRoute = AUTHENTICATED_ROUTES.some((route) =>
+  const hideBanner = ROUTES_WITHOUT_BANNER.some((route) =>
     pathname.startsWith(route),
   );
-
-  if (isAuthenticatedRoute) return null;
 
   return (
     <>
       <MarketingPixels />
-      <CookieManager />
+      {!hideBanner && <CookieManager />}
     </>
   );
 }
