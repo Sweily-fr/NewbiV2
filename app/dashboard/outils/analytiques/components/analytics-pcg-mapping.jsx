@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useMemo, Fragment } from "react";
-import { useRouter } from "next/navigation";
 import { useDashboardData } from "@/src/hooks/useDashboardData";
+import { TransactionDetailDrawer } from "@/app/dashboard/outils/transactions/components/transaction-detail-drawer";
 import { Input } from "@/src/components/ui/input";
 import {
   Table,
@@ -56,18 +56,46 @@ function ConfidenceBadge({ confidence }) {
 }
 
 export function AnalyticsPCGMapping() {
-  const router = useRouter();
-  const { transactions, isLoading } = useDashboardData();
+  const { transactions, isLoading, refreshData } = useDashboardData();
   const [search, setSearch] = useState("");
-
-  const openTransaction = (transactionId) => {
-    router.push(
-      `/dashboard/outils/transactions?transactionId=${transactionId}`,
-    );
-  };
   const [sortField, setSortField] = useState("totalAmount");
   const [sortDir, setSortDir] = useState("desc");
   const [expandedAccounts, setExpandedAccounts] = useState(new Set());
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  const openTransaction = (tx) => {
+    // Mapper les données Transaction (GraphQL) vers le format attendu par le drawer
+    setSelectedTransaction({
+      id: tx.id,
+      amount: tx.amount,
+      currency: tx.currency,
+      description: tx.description,
+      date: tx.date || tx.processedAt || tx.createdAt,
+      category: tx.category,
+      vendor: tx.metadata?.vendor || null,
+      paymentMethod: tx.metadata?.paymentMethod || "CARD",
+      type: tx.amount > 0 ? "INCOME" : "EXPENSE",
+      source: tx.provider === "manual" ? "MANUAL" : "BANK",
+      provider: tx.provider,
+      status: tx.status === "completed" ? "PAID" : tx.status?.toUpperCase(),
+      receiptFile: tx.receiptFile,
+      hasReceipt: !!tx.receiptFile?.url || !!tx.linkedInvoice?.id,
+      pcgAccount: tx.pcgAccount || null,
+      metadata: tx.metadata || {},
+      linkedInvoice: tx.linkedInvoice || null,
+      linkedInvoiceId: tx.linkedInvoiceId || null,
+      reconciliationStatus: tx.reconciliationStatus || null,
+      originalTransaction: {
+        id: tx.id,
+        externalId: tx.externalId,
+        provider: tx.provider,
+      },
+      createdAt: tx.createdAt,
+      updatedAt: tx.updatedAt,
+    });
+    setIsDrawerOpen(true);
+  };
 
   const toggleAccount = (numero) => {
     setExpandedAccounts((prev) => {
@@ -469,9 +497,7 @@ export function AnalyticsPCGMapping() {
                                           <TableRow
                                             key={tx.id}
                                             className="h-10 cursor-pointer hover:bg-muted/50 group"
-                                            onClick={() =>
-                                              openTransaction(tx.id)
-                                            }
+                                            onClick={() => openTransaction(tx)}
                                           >
                                             <TableCell className="text-xs">
                                               {formatDateToFrench(tx.date)}
@@ -564,6 +590,14 @@ export function AnalyticsPCGMapping() {
         PCG utilisé
         {filteredGroups.filter((g) => !g.isUnassigned).length > 1 ? "s" : ""}
       </div>
+
+      {/* Drawer de détail de transaction */}
+      <TransactionDetailDrawer
+        transaction={selectedTransaction}
+        open={isDrawerOpen}
+        onOpenChange={setIsDrawerOpen}
+        onRefresh={refreshData}
+      />
     </div>
   );
 }
