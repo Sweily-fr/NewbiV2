@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
@@ -169,45 +169,42 @@ export default function CompanySearchStep({
   const [isCheckingSiret, setIsCheckingSiret] = useState(false);
   const [siretError, setSiretError] = useState(null);
 
-  // Debounced search
-  const searchCompanies = useCallback(async (query) => {
-    if (!query || query.length < 3) {
+  // Debounce + annulation des requêtes obsolètes pour éviter les races
+  useEffect(() => {
+    if (selectedCompany) return;
+
+    if (!searchQuery || searchQuery.length < 3) {
       setSearchResults([]);
       setHasSearched(false);
+      setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
-    setHasSearched(true);
-
-    try {
-      const response = await fetch(
-        `/api/search-companies?q=${encodeURIComponent(query)}&limite=10`,
-      );
-      const data = await response.json();
-
-      if (data.results) {
-        setSearchResults(data.results);
-      } else {
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setIsLoading(true);
+      setHasSearched(true);
+      try {
+        const response = await fetch(
+          `/api/search-companies?q=${encodeURIComponent(searchQuery)}&limite=10`,
+          { signal: controller.signal },
+        );
+        const data = await response.json();
+        setSearchResults(data.results || []);
+      } catch (error) {
+        if (error.name === "AbortError") return;
+        console.error("Erreur lors de la recherche:", error);
         setSearchResults([]);
+      } finally {
+        if (!controller.signal.aborted) setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Erreur lors de la recherche:", error);
-      setSearchResults([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Debounce effect
-  useEffect(() => {
-    if (selectedCompany) return;
-    const timer = setTimeout(() => {
-      searchCompanies(searchQuery);
     }, 400);
 
-    return () => clearTimeout(timer);
-  }, [searchQuery, searchCompanies, selectedCompany]);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [searchQuery, selectedCompany]);
 
   const handleSelectCompany = async (company) => {
     setSiretError(null);
