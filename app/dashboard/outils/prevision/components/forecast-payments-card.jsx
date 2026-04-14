@@ -16,6 +16,7 @@ import { ChartContainer } from "@/src/components/ui/chart";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/src/lib/utils";
+import { MonthDetailsDrawer } from "./month-details-drawer";
 
 // ─── Chart config ───
 
@@ -329,6 +330,7 @@ function HatchedIcon() {
 
 export function ForecastPaymentsCard({ months, kpi, loading }) {
   const safeMonths = months || [];
+  const [selectedMonth, setSelectedMonth] = useState(null);
 
   const now = new Date();
   const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -583,6 +585,13 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                   <ComposedChart
                     data={chartData}
                     margin={{ top: 12, right: 12, bottom: 12, left: 0 }}
+                    onClick={(state) => {
+                      const payload = state?.activePayload?.[0]?.payload;
+                      if (payload?.rawMonth) {
+                        setSelectedMonth(payload.rawMonth);
+                      }
+                    }}
+                    style={{ cursor: "pointer" }}
                   >
                     <defs>
                       {/* Hatched pattern for forecast income (green) */}
@@ -771,6 +780,14 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
           </div>
         </div>
       </CardContent>
+
+      <MonthDetailsDrawer
+        month={selectedMonth}
+        open={!!selectedMonth}
+        onOpenChange={(open) => {
+          if (!open) setSelectedMonth(null);
+        }}
+      />
     </Card>
   );
 }
