@@ -200,38 +200,42 @@ export function WorkspaceForm({
     setLogoUrl(null);
   }, [fileKey, deleteDocument, previewUrl, setLogoUrl]);
 
-  const searchCompanies = useCallback(async (query) => {
-    if (!query || query.length < 3) {
+  // Debounce + annulation des requêtes obsolètes pour éviter les races
+  useEffect(() => {
+    if (selectedCompany) return;
+
+    if (!companyName || companyName.length < 3) {
       setSearchResults([]);
       setHasSearched(false);
+      setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
-    setHasSearched(true);
-
-    try {
-      const response = await fetch(
-        `/api/search-companies?q=${encodeURIComponent(query)}&limite=8`,
-      );
-      const data = await response.json();
-      setSearchResults(data.results || []);
-    } catch (error) {
-      console.error("Erreur lors de la recherche:", error);
-      setSearchResults([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Debounce search
-  useEffect(() => {
-    if (selectedCompany) return;
-    const timer = setTimeout(() => {
-      searchCompanies(companyName);
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setIsLoading(true);
+      setHasSearched(true);
+      try {
+        const response = await fetch(
+          `/api/search-companies?q=${encodeURIComponent(companyName)}&limite=8`,
+          { signal: controller.signal },
+        );
+        const data = await response.json();
+        setSearchResults(data.results || []);
+      } catch (error) {
+        if (error.name === "AbortError") return;
+        console.error("Erreur lors de la recherche:", error);
+        setSearchResults([]);
+      } finally {
+        if (!controller.signal.aborted) setIsLoading(false);
+      }
     }, 400);
-    return () => clearTimeout(timer);
-  }, [companyName, searchCompanies, selectedCompany]);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [companyName, selectedCompany]);
 
   const handleSelectCompany = async (company) => {
     setSiretError(null);
