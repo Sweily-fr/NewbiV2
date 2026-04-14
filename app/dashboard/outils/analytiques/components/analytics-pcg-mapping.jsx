@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useQuery } from "@apollo/client";
+import { useDashboardData } from "@/src/hooks/useDashboardData";
 import { Input } from "@/src/components/ui/input";
 import {
   Table,
@@ -17,41 +17,27 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/select";
-import { GET_PCG_MAPPING_TABLE } from "@/src/graphql/queries/banking";
+import { formatDateToFrench } from "@/src/utils/dateFormatter";
+import { findMerchant } from "@/lib/merchants-config";
 import {
   Search,
   ArrowUpDown,
   Info,
   ChevronDown,
   ChevronRight,
+  AlertCircle,
+  PenLine,
 } from "lucide-react";
 import { CONFIDENCE_CONFIG } from "@/lib/pcg-mapping";
 
-const PARENT_CATEGORIES = [
-  "Tous",
-  "Incomes",
-  "Taxes",
-  "Misc.",
-  "Home",
-  "Shopping",
-  "Health",
-  "Bank",
-  "Transport",
-  "Business",
-  "Education",
-  "Food",
-  "Entertainment",
-  "Bills",
-  "Transfers",
-  "Personal care",
-];
+function formatAmount(amount) {
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount || 0);
+}
 
 function ConfidenceBadge({ confidence }) {
   const key = confidence?.toLowerCase();
@@ -59,7 +45,7 @@ function ConfidenceBadge({ confidence }) {
   if (!config) return null;
   return (
     <span
-      className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+      className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium"
       style={{ backgroundColor: config.bgColor, color: config.color }}
     >
       {config.label}
@@ -68,19 +54,17 @@ function ConfidenceBadge({ confidence }) {
 }
 
 export function AnalyticsPCGMapping() {
-  const { data, loading, error } = useQuery(GET_PCG_MAPPING_TABLE);
+  const { transactions, isLoading } = useDashboardData();
   const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("Tous");
-  const [confidenceFilter, setConfidenceFilter] = useState("all");
-  const [sortField, setSortField] = useState("bridgeCategoryId");
-  const [sortDir, setSortDir] = useState("asc");
-  const [expandedRows, setExpandedRows] = useState(new Set());
+  const [sortField, setSortField] = useState("totalAmount");
+  const [sortDir, setSortDir] = useState("desc");
+  const [expandedAccounts, setExpandedAccounts] = useState(new Set());
 
-  const toggleRow = (id) => {
-    setExpandedRows((prev) => {
+  const toggleAccount = (numero) => {
+    setExpandedAccounts((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(numero)) next.delete(numero);
+      else next.add(numero);
       return next;
     });
   };
@@ -90,74 +74,139 @@ export function AnalyticsPCGMapping() {
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     } else {
       setSortField(field);
-      setSortDir("asc");
+      setSortDir(field === "numero" ? "asc" : "desc");
     }
   };
 
-  const filteredData = useMemo(() => {
-    if (!data?.pcgMappingTable) return [];
-    let items = [...data.pcgMappingTable];
+  // Grouper les transactions par compte PCG
+  const accountGroups = useMemo(() => {
+    if (!transactions?.length) return [];
+
+    const groups = new Map();
+    let unassignedCount = 0;
+    let unassignedAmount = 0;
+    const unassignedTxs = [];
+
+    for (const tx of transactions) {
+      const pcg = tx.pcgAccount;
+      if (!pcg?.numero) {
+        unassignedCount++;
+        unassignedAmount += Math.abs(tx.amount || 0);
+        unassignedTxs.push(tx);
+        continue;
+      }
+
+      if (!groups.has(pcg.numero)) {
+        groups.set(pcg.numero, {
+          numero: pcg.numero,
+          intitule: pcg.intitule || "",
+          count: 0,
+          totalDebit: 0,
+          totalCredit: 0,
+          totalNet: 0,
+          manualCount: 0,
+          transactions: [],
+        });
+      }
+      const g = groups.get(pcg.numero);
+      g.count++;
+      if (tx.amount > 0) g.totalCredit += tx.amount;
+      else g.totalDebit += Math.abs(tx.amount);
+      g.totalNet += tx.amount || 0;
+      if (pcg.isManual) g.manualCount++;
+      g.transactions.push(tx);
+    }
+
+    // Trier les transactions dans chaque groupe par date desc
+    for (const g of groups.values()) {
+      g.transactions.sort((a, b) => {
+        const dateA = new Date(a.date || a.createdAt || 0).getTime();
+        const dateB = new Date(b.date || b.createdAt || 0).getTime();
+        return dateB - dateA;
+      });
+      g.totalAmount = g.totalDebit + g.totalCredit;
+    }
+
+    let result = Array.from(groups.values());
+
+    // Ajouter le groupe "non affecté" s'il y en a
+    if (unassignedCount > 0) {
+      result.push({
+        numero: "",
+        intitule: "Non affecté",
+        count: unassignedCount,
+        totalDebit: unassignedAmount,
+        totalCredit: 0,
+        totalNet: -unassignedAmount,
+        totalAmount: unassignedAmount,
+        manualCount: 0,
+        transactions: unassignedTxs.sort((a, b) => {
+          const dateA = new Date(a.date || a.createdAt || 0).getTime();
+          const dateB = new Date(b.date || b.createdAt || 0).getTime();
+          return dateB - dateA;
+        }),
+        isUnassigned: true,
+      });
+    }
+
+    return result;
+  }, [transactions]);
+
+  const filteredGroups = useMemo(() => {
+    let items = [...accountGroups];
 
     if (search) {
       const s = search.toLowerCase();
       items = items.filter(
-        (item) =>
-          item.bridgeLabel.toLowerCase().includes(s) ||
-          item.pcgNumero.includes(s) ||
-          item.pcgIntitule.toLowerCase().includes(s) ||
-          item.parentCategory.toLowerCase().includes(s),
+        (g) =>
+          g.numero.includes(s) ||
+          g.intitule.toLowerCase().includes(s) ||
+          g.transactions.some((t) =>
+            (t.description || "").toLowerCase().includes(s),
+          ),
       );
     }
 
-    if (categoryFilter !== "Tous") {
-      items = items.filter((item) => item.parentCategory === categoryFilter);
-    }
-
-    if (confidenceFilter !== "all") {
-      items = items.filter((item) => item.confidence === confidenceFilter);
-    }
-
     items.sort((a, b) => {
+      // Toujours mettre "non affecté" en dernier
+      if (a.isUnassigned) return 1;
+      if (b.isUnassigned) return -1;
+
       let cmp = 0;
-      if (sortField === "bridgeCategoryId") {
-        cmp = a.bridgeCategoryId - b.bridgeCategoryId;
-      } else if (sortField === "parentCategory") {
-        cmp = a.parentCategory.localeCompare(b.parentCategory);
-      } else if (sortField === "pcgNumero") {
-        cmp = a.pcgNumero.localeCompare(b.pcgNumero);
-      } else if (sortField === "confidence") {
-        const order = { high: 0, medium: 1, low: 2 };
-        cmp = (order[a.confidence] || 3) - (order[b.confidence] || 3);
-      }
+      if (sortField === "numero") cmp = a.numero.localeCompare(b.numero);
+      else if (sortField === "count") cmp = a.count - b.count;
+      else if (sortField === "totalAmount") cmp = a.totalAmount - b.totalAmount;
       return sortDir === "asc" ? cmp : -cmp;
     });
 
     return items;
-  }, [data, search, categoryFilter, confidenceFilter, sortField, sortDir]);
+  }, [accountGroups, search, sortField, sortDir]);
 
+  // Stats globales
   const stats = useMemo(() => {
-    if (!data?.pcgMappingTable) return { total: 0, high: 0, medium: 0, low: 0 };
-    const items = data.pcgMappingTable;
-    return {
-      total: items.length,
-      high: items.filter((i) => i.confidence === "high").length,
-      medium: items.filter((i) => i.confidence === "medium").length,
-      low: items.filter((i) => i.confidence === "low").length,
-    };
-  }, [data]);
+    const totalTxs = transactions?.length || 0;
+    const assignedTxs =
+      transactions?.filter((t) => t.pcgAccount?.numero).length || 0;
+    const unassignedTxs = totalTxs - assignedTxs;
+    const manualTxs =
+      transactions?.filter((t) => t.pcgAccount?.isManual).length || 0;
+    const uniqueAccounts = accountGroups.filter((g) => !g.isUnassigned).length;
 
-  if (loading) {
+    return {
+      totalTxs,
+      assignedTxs,
+      unassignedTxs,
+      manualTxs,
+      uniqueAccounts,
+      assignedPercent:
+        totalTxs > 0 ? Math.round((assignedTxs / totalTxs) * 100) : 0,
+    };
+  }, [transactions, accountGroups]);
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-12 text-muted-foreground">
-        Erreur lors du chargement de la table de correspondance.
       </div>
     );
   }
@@ -170,50 +219,33 @@ export function AnalyticsPCGMapping() {
           <Info className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
           <div className="text-sm text-muted-foreground">
             <p className="font-medium text-foreground mb-1">
-              Correspondance Bridge API → Plan Comptable Général 2026
+              Transactions regroupées par compte du Plan Comptable Général
             </p>
             <p>
-              Cette table associe chaque catégorie Bridge au compte PCG le plus
-              pertinent. Le niveau de confiance indique la fiabilité de
-              l'attribution automatique. Cliquez sur une ligne avec un chevron
-              pour voir les règles de décision pour les cas ambigus.
+              Visualise tes transactions classées par compte PCG. Clique sur une
+              ligne pour voir le détail des transactions affectées à chaque
+              compte. Les transactions sans PCG apparaissent en bas du tableau.
             </p>
           </div>
         </div>
       </div>
 
       {/* Stats cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <div className="rounded-lg border p-3">
-          <div className="text-sm text-muted-foreground">Total catégories</div>
-          <div className="text-2xl font-semibold">{stats.total}</div>
+          <div className="text-sm text-muted-foreground">Transactions</div>
+          <div className="text-2xl font-semibold">{stats.totalTxs}</div>
         </div>
         <div
           className="rounded-lg border p-3"
           style={{ borderColor: "#22c55e33" }}
         >
           <div className="text-sm" style={{ color: "#22c55e" }}>
-            Fiable
+            Affectées
           </div>
-          <div className="text-2xl font-semibold">{stats.high}</div>
+          <div className="text-2xl font-semibold">{stats.assignedTxs}</div>
           <div className="text-xs text-muted-foreground">
-            {stats.total > 0 ? Math.round((stats.high / stats.total) * 100) : 0}
-            %
-          </div>
-        </div>
-        <div
-          className="rounded-lg border p-3"
-          style={{ borderColor: "#f59e0b33" }}
-        >
-          <div className="text-sm" style={{ color: "#f59e0b" }}>
-            Probable
-          </div>
-          <div className="text-2xl font-semibold">{stats.medium}</div>
-          <div className="text-xs text-muted-foreground">
-            {stats.total > 0
-              ? Math.round((stats.medium / stats.total) * 100)
-              : 0}
-            %
+            {stats.assignedPercent}%
           </div>
         </div>
         <div
@@ -221,12 +253,22 @@ export function AnalyticsPCGMapping() {
           style={{ borderColor: "#ef444433" }}
         >
           <div className="text-sm" style={{ color: "#ef4444" }}>
-            Incertain
+            Non affectées
           </div>
-          <div className="text-2xl font-semibold">{stats.low}</div>
-          <div className="text-xs text-muted-foreground">
-            {stats.total > 0 ? Math.round((stats.low / stats.total) * 100) : 0}%
+          <div className="text-2xl font-semibold">{stats.unassignedTxs}</div>
+        </div>
+        <div
+          className="rounded-lg border p-3"
+          style={{ borderColor: "#3b82f633" }}
+        >
+          <div className="text-sm" style={{ color: "#3b82f6" }}>
+            Manuelles
           </div>
+          <div className="text-2xl font-semibold">{stats.manualTxs}</div>
+        </div>
+        <div className="rounded-lg border p-3">
+          <div className="text-sm text-muted-foreground">Comptes PCG</div>
+          <div className="text-2xl font-semibold">{stats.uniqueAccounts}</div>
         </div>
       </div>
 
@@ -235,35 +277,12 @@ export function AnalyticsPCGMapping() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Rechercher par catégorie Bridge, numéro PCG, intitulé..."
+            placeholder="Rechercher un compte PCG, une description..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
           />
         </div>
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Catégorie" />
-          </SelectTrigger>
-          <SelectContent>
-            {PARENT_CATEGORIES.map((cat) => (
-              <SelectItem key={cat} value={cat}>
-                {cat}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={confidenceFilter} onValueChange={setConfidenceFilter}>
-          <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Confiance" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous niveaux</SelectItem>
-            <SelectItem value="high">Fiable</SelectItem>
-            <SelectItem value="medium">Probable</SelectItem>
-            <SelectItem value="low">Incertain</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       {/* Table */}
@@ -275,16 +294,7 @@ export function AnalyticsPCGMapping() {
                 <TableHead className="w-10" />
                 <TableHead
                   className="cursor-pointer select-none"
-                  onClick={() => toggleSort("parentCategory")}
-                >
-                  <div className="flex items-center gap-1">
-                    Catégorie Bridge
-                    <ArrowUpDown className="h-3 w-3" />
-                  </div>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer select-none"
-                  onClick={() => toggleSort("pcgNumero")}
+                  onClick={() => toggleSort("numero")}
                 >
                   <div className="flex items-center gap-1">
                     Compte PCG
@@ -292,103 +302,230 @@ export function AnalyticsPCGMapping() {
                   </div>
                 </TableHead>
                 <TableHead
-                  className="cursor-pointer select-none"
-                  onClick={() => toggleSort("confidence")}
+                  className="cursor-pointer select-none text-center"
+                  onClick={() => toggleSort("count")}
                 >
-                  <div className="flex items-center gap-1">
-                    Confiance
+                  <div className="flex items-center gap-1 justify-center">
+                    Transactions
                     <ArrowUpDown className="h-3 w-3" />
                   </div>
                 </TableHead>
-                <TableHead>Alternatives</TableHead>
+                <TableHead className="text-right">Débit</TableHead>
+                <TableHead className="text-right">Crédit</TableHead>
+                <TableHead
+                  className="cursor-pointer select-none text-right"
+                  onClick={() => toggleSort("totalAmount")}
+                >
+                  <div className="flex items-center gap-1 justify-end">
+                    Solde
+                    <ArrowUpDown className="h-3 w-3" />
+                  </div>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredData.length === 0 ? (
+              {filteredGroups.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
+                    colSpan={6}
                     className="text-center py-8 text-muted-foreground"
                   >
-                    Aucun résultat trouvé
+                    {transactions?.length === 0
+                      ? "Aucune transaction"
+                      : "Aucun résultat"}
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredData.map((item) => {
-                  const isExpanded = expandedRows.has(item.bridgeCategoryId);
+                filteredGroups.map((group) => {
+                  const key = group.numero || "__unassigned";
+                  const isExpanded = expandedAccounts.has(key);
                   return (
                     <>
                       <TableRow
-                        key={item.bridgeCategoryId}
-                        className={`${item.rules ? "cursor-pointer" : ""} hover:bg-muted/30`}
-                        onClick={() =>
-                          item.rules && toggleRow(item.bridgeCategoryId)
-                        }
+                        key={key}
+                        className={`cursor-pointer hover:bg-muted/30 ${group.isUnassigned ? "bg-amber-50/50 dark:bg-amber-950/20" : ""}`}
+                        onClick={() => toggleAccount(key)}
                       >
                         <TableCell className="w-10 px-2">
-                          {item.rules ? (
-                            isExpanded ? (
-                              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                            )
-                          ) : null}
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium text-sm">
-                              {item.bridgeLabel}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {item.parentCategory} (ID: {item.bridgeCategoryId}
-                              )
-                            </div>
-                          </div>
+                          {isExpanded ? (
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          )}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <code className="rounded bg-muted px-1.5 py-0.5 text-sm font-mono font-semibold">
-                              {item.pcgNumero}
-                            </code>
-                            <span className="text-sm">{item.pcgIntitule}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <ConfidenceBadge confidence={item.confidence} />
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {item.alternatives.map((alt) => (
-                              <TooltipProvider key={alt.numero}>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <code className="rounded bg-muted/60 px-1.5 py-0.5 text-xs font-mono text-muted-foreground cursor-help">
-                                      {alt.numero}
-                                    </code>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    {alt.intitule}
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            ))}
-                            {item.alternatives.length === 0 && (
-                              <span className="text-xs text-muted-foreground">
-                                -
-                              </span>
+                            {group.isUnassigned ? (
+                              <>
+                                <AlertCircle className="h-4 w-4 text-amber-600" />
+                                <span className="font-medium text-amber-700 dark:text-amber-400">
+                                  {group.intitule}
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <code className="rounded bg-muted px-1.5 py-0.5 text-sm font-mono font-semibold">
+                                  {group.numero}
+                                </code>
+                                <span className="text-sm">
+                                  {group.intitule}
+                                </span>
+                                {group.manualCount > 0 && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <PenLine className="h-3 w-3 text-blue-500" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        {group.manualCount} affectation(s)
+                                        manuelle(s)
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
+                              </>
                             )}
                           </div>
                         </TableCell>
+                        <TableCell className="text-center">
+                          <span className="text-sm font-medium">
+                            {group.count}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right text-sm text-red-600 dark:text-red-400">
+                          {group.totalDebit > 0
+                            ? formatAmount(group.totalDebit)
+                            : "-"}
+                        </TableCell>
+                        <TableCell className="text-right text-sm text-green-600 dark:text-green-400">
+                          {group.totalCredit > 0
+                            ? formatAmount(group.totalCredit)
+                            : "-"}
+                        </TableCell>
+                        <TableCell
+                          className="text-right font-semibold text-sm"
+                          style={{
+                            color:
+                              group.totalNet > 0
+                                ? "#0E7A3E"
+                                : group.totalNet < 0
+                                  ? "#DC2626"
+                                  : undefined,
+                          }}
+                        >
+                          {formatAmount(group.totalNet)}
+                        </TableCell>
                       </TableRow>
-                      {isExpanded && item.rules && (
-                        <TableRow key={`${item.bridgeCategoryId}-rules`}>
-                          <TableCell />
-                          <TableCell colSpan={4}>
-                            <div className="flex items-start gap-2 py-1 px-2 rounded bg-blue-50 dark:bg-blue-950/30 text-sm">
-                              <Info className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                              <span className="text-blue-700 dark:text-blue-300">
-                                {item.rules}
-                              </span>
+
+                      {isExpanded && (
+                        <TableRow key={`${key}-details`}>
+                          <TableCell colSpan={6} className="p-0 bg-muted/20">
+                            <div className="px-4 py-3">
+                              <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wide">
+                                Détail des transactions ({group.count})
+                              </div>
+                              <div className="rounded-md border bg-background overflow-hidden">
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead className="h-8 text-xs">
+                                        Date
+                                      </TableHead>
+                                      <TableHead className="h-8 text-xs">
+                                        Description
+                                      </TableHead>
+                                      <TableHead className="h-8 text-xs text-right">
+                                        Montant
+                                      </TableHead>
+                                      <TableHead className="h-8 text-xs text-center">
+                                        Source
+                                      </TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {group.transactions
+                                      .slice(0, 50)
+                                      .map((tx) => {
+                                        const merchant = findMerchant(
+                                          tx.metadata?.vendor ||
+                                            tx.description ||
+                                            "",
+                                        );
+                                        const name =
+                                          merchant?.name ||
+                                          tx.metadata?.vendor ||
+                                          tx.description ||
+                                          "Transaction";
+                                        const isIncome = tx.amount > 0;
+                                        return (
+                                          <TableRow
+                                            key={tx.id}
+                                            className="h-10"
+                                          >
+                                            <TableCell className="text-xs">
+                                              {formatDateToFrench(tx.date)}
+                                            </TableCell>
+                                            <TableCell className="text-xs">
+                                              <div
+                                                className="truncate max-w-[260px]"
+                                                title={name}
+                                              >
+                                                {name}
+                                              </div>
+                                            </TableCell>
+                                            <TableCell
+                                              className="text-xs text-right font-medium"
+                                              style={{
+                                                color: isIncome
+                                                  ? "#0E7A3E"
+                                                  : "#DC2626",
+                                              }}
+                                            >
+                                              {isIncome ? "+" : ""}
+                                              {formatAmount(tx.amount)}
+                                            </TableCell>
+                                            <TableCell className="text-xs text-center">
+                                              {tx.pcgAccount?.isManual ? (
+                                                <TooltipProvider>
+                                                  <Tooltip>
+                                                    <TooltipTrigger>
+                                                      <PenLine
+                                                        size={12}
+                                                        className="text-blue-500 mx-auto"
+                                                      />
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                      Affecté manuellement
+                                                    </TooltipContent>
+                                                  </Tooltip>
+                                                </TooltipProvider>
+                                              ) : (
+                                                <ConfidenceBadge
+                                                  confidence={
+                                                    tx.pcgAccount?.confidence
+                                                  }
+                                                />
+                                              )}
+                                            </TableCell>
+                                          </TableRow>
+                                        );
+                                      })}
+                                  </TableBody>
+                                </Table>
+                                {group.transactions.length > 50 && (
+                                  <div className="text-center py-2 text-xs text-muted-foreground border-t">
+                                    ... et {group.transactions.length - 50}{" "}
+                                    autre
+                                    {group.transactions.length - 50 > 1
+                                      ? "s"
+                                      : ""}{" "}
+                                    transaction
+                                    {group.transactions.length - 50 > 1
+                                      ? "s"
+                                      : ""}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -403,9 +540,12 @@ export function AnalyticsPCGMapping() {
       </div>
 
       <div className="text-xs text-muted-foreground text-right">
-        {filteredData.length} correspondance
-        {filteredData.length > 1 ? "s" : ""} affichée
-        {filteredData.length > 1 ? "s" : ""}
+        {filteredGroups.filter((g) => !g.isUnassigned).length} compte
+        {filteredGroups.filter((g) => !g.isUnassigned).length > 1
+          ? "s"
+          : ""}{" "}
+        PCG utilisé
+        {filteredGroups.filter((g) => !g.isUnassigned).length > 1 ? "s" : ""}
       </div>
     </div>
   );
