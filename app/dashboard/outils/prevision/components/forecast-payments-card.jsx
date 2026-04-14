@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Bar,
   CartesianGrid,
@@ -14,6 +14,8 @@ import {
 import { Card, CardContent } from "@/src/components/ui/card";
 import { ChartContainer } from "@/src/components/ui/chart";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { ChevronDown } from "lucide-react";
+import { cn } from "@/src/lib/utils";
 
 // ─── Chart config ───
 
@@ -358,7 +360,9 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
     }));
   }, [safeMonths, currentMonth]);
 
-  // Top categories split by income / expense
+  // Top categories split by income / expense.
+  // Returns, per category, its total + a month-by-month breakdown
+  // ({ month, actual, forecast }) for the dropdown detail.
   const buildCategoryList = (type, limit) => {
     const catMap = {};
     safeMonths.forEach((m) => {
@@ -366,11 +370,23 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
         if (cb.type !== type) return;
         const key = cb.category;
         if (!catMap[key])
-          catMap[key] = { category: key, type: cb.type, amount: 0 };
+          catMap[key] = {
+            category: key,
+            type: cb.type,
+            amount: 0,
+            monthly: [],
+          };
         const isPast = m.month <= currentMonth;
-        catMap[key].amount += isPast
+        const contribution = isPast
           ? cb.actualAmount || 0
           : cb.forecastAmount || 0;
+        catMap[key].amount += contribution;
+        catMap[key].monthly.push({
+          month: m.month,
+          actual: cb.actualAmount || 0,
+          forecast: cb.forecastAmount || 0,
+          isPast,
+        });
       });
     });
     const all = Object.values(catMap).filter((c) => c.amount > 0);
@@ -508,25 +524,14 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                   </p>
                 </div>
                 {topIncome.length > 0 ? (
-                  <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-1">
                     {topIncome.map((cat) => (
-                      <div
+                      <CategoryRow
                         key={cat.category}
-                        className="flex items-center justify-between"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="w-2 h-2 rounded-full shrink-0"
-                            style={{ backgroundColor: "#5b50ff" }}
-                          />
-                          <span className="text-sm text-foreground">
-                            {cat.label}
-                          </span>
-                        </div>
-                        <span className="text-sm tabular-nums text-foreground">
-                          {formatCurrencyShort(cat.amount)}
-                        </span>
-                      </div>
+                        cat={cat}
+                        dotColor="#5b50ff"
+                        currentMonth={currentMonth}
+                      />
                     ))}
                   </div>
                 ) : (
@@ -548,25 +553,14 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                   </p>
                 </div>
                 {topExpense.length > 0 ? (
-                  <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-1">
                     {topExpense.map((cat) => (
-                      <div
+                      <CategoryRow
                         key={cat.category}
-                        className="flex items-center justify-between"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="w-2 h-2 rounded-full shrink-0"
-                            style={{ backgroundColor: "#000000" }}
-                          />
-                          <span className="text-sm text-foreground">
-                            {cat.label}
-                          </span>
-                        </div>
-                        <span className="text-sm tabular-nums text-foreground">
-                          {formatCurrencyShort(cat.amount)}
-                        </span>
-                      </div>
+                        cat={cat}
+                        dotColor="#000000"
+                        currentMonth={currentMonth}
+                      />
                     ))}
                   </div>
                 ) : (
@@ -778,5 +772,78 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+// ─── Collapsible row for sidebar category ───
+
+function CategoryRow({ cat, dotColor, currentMonth }) {
+  const [open, setOpen] = useState(false);
+  const sortedMonths = useMemo(
+    () =>
+      [...(cat.monthly || [])].sort((a, b) => a.month.localeCompare(b.month)),
+    [cat.monthly],
+  );
+  const hasDetails = sortedMonths.length > 0;
+
+  return (
+    <div className="flex flex-col">
+      <button
+        type="button"
+        onClick={() => hasDetails && setOpen((o) => !o)}
+        disabled={!hasDetails}
+        className={cn(
+          "flex items-center justify-between py-1.5 text-left",
+          hasDetails && "cursor-pointer hover:bg-muted/40 rounded px-1 -mx-1",
+        )}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <span
+            className="w-2 h-2 rounded-full shrink-0"
+            style={{ backgroundColor: dotColor }}
+          />
+          <span className="text-sm text-foreground truncate">{cat.label}</span>
+          {hasDetails && (
+            <ChevronDown
+              size={12}
+              className={cn(
+                "text-muted-foreground transition-transform shrink-0",
+                open && "rotate-180",
+              )}
+            />
+          )}
+        </div>
+        <span className="text-sm tabular-nums text-foreground shrink-0">
+          {formatCurrencyShort(cat.amount)}
+        </span>
+      </button>
+      {open && hasDetails && (
+        <div className="pl-4 pt-1 pb-2 flex flex-col gap-1">
+          {sortedMonths.map((m) => {
+            const isFuture = m.month > currentMonth;
+            const amount = isFuture ? m.forecast : m.actual;
+            if (amount === 0) return null;
+            return (
+              <div
+                key={m.month}
+                className="flex items-center justify-between text-xs"
+              >
+                <span className="text-muted-foreground">
+                  {formatMonthLabel(m.month)}
+                  {isFuture && (
+                    <span className="ml-1 text-[10px] uppercase tracking-wide opacity-60">
+                      prév.
+                    </span>
+                  )}
+                </span>
+                <span className="tabular-nums text-foreground/80">
+                  {formatCurrencyShort(amount)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
