@@ -55,6 +55,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/src/components/ui/popover";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
 
 export default function ModernInvoiceEditor({
   mode = "create",
@@ -80,6 +90,10 @@ export default function ModernInvoiceEditor({
   const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
   const [showManageTemplates, setShowManageTemplates] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState("none");
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const bypassGuardRef = useRef(false);
+  const sentinelPushedRef = useRef(false);
   const pdfRef = useRef(null);
 
   // Template selector (create mode only)
@@ -147,7 +161,11 @@ export default function ModernInvoiceEditor({
   // Debounce pour la preview (évite les saccades)
   // Stabiliser par contenu pour éviter les re-renders inutiles (trackpad scroll, etc.)
   const formDataKey = useMemo(() => {
-    try { return JSON.stringify(formData); } catch { return ""; }
+    try {
+      return JSON.stringify(formData);
+    } catch {
+      return "";
+    }
   }, [formData]);
 
   useEffect(() => {
@@ -184,8 +202,72 @@ export default function ModernInvoiceEditor({
   const isEditing = mode === "edit";
   const isCreating = mode === "create";
 
-  const handleBack = () => {
+  // La modal de confirmation ne s'affiche que si la facture est "draftable" :
+  // un client sélectionné ET au moins un article. Sans ces deux éléments,
+  // on laisse l'utilisateur quitter directement sans rien demander.
+  const watchedFormItems = form.watch("items");
+  const watchedClient = form.watch("client");
+  const hasItems =
+    Array.isArray(watchedFormItems) && watchedFormItems.length > 0;
+  const hasClient = !!(watchedClient && watchedClient.id);
+  const hasUserChanges = hasClient && hasItems;
+  const guardActive = hasUserChanges && !readOnly && !isReadOnly;
+
+  // Intercepter le retour arrière du navigateur (bouton, swipe trackpad, ⌘←)
+  // UNIQUEMENT quand l'utilisateur a modifié au moins un champ.
+  // Le ref évite le double-push en mode StrictMode.
+  useEffect(() => {
+    if (!guardActive) return;
+
+    if (!sentinelPushedRef.current) {
+      window.history.pushState({ invoiceEditorGuard: true }, "");
+      sentinelPushedRef.current = true;
+    }
+
+    const handlePopState = () => {
+      if (bypassGuardRef.current) {
+        bypassGuardRef.current = false;
+        return;
+      }
+      // L'utilisateur a cliqué sur back : on re-pousse la sentinelle pour rester
+      // sur la page et on affiche la modal de confirmation.
+      window.history.pushState({ invoiceEditorGuard: true }, "");
+      setShowUnsavedDialog(true);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [guardActive]);
+
+  const leaveEditor = () => {
+    bypassGuardRef.current = true;
     router.push("/dashboard/outils/factures");
+  };
+
+  const handleSaveDraftAndLeave = async () => {
+    setSavingDraft(true);
+    const ok = await handleSave();
+    setSavingDraft(false);
+    if (ok) {
+      // handleSave redirige déjà vers la liste — on ferme simplement la modal
+      setShowUnsavedDialog(false);
+    }
+    // Si validation échoue, la modal reste ouverte et les erreurs s'affichent sur le formulaire
+  };
+
+  const handleLeaveWithoutSaving = () => {
+    setShowUnsavedDialog(false);
+    leaveEditor();
+  };
+
+  const handleBack = () => {
+    if (!isReadOnly && !readOnly && hasUserChanges) {
+      setShowUnsavedDialog(true);
+      return;
+    }
+    leaveEditor();
   };
 
   const handleSettingsClick = () => {
@@ -486,7 +568,7 @@ export default function ModernInvoiceEditor({
                       </>
                     )}
                   </h1>
-                  {!showSettings && isDirty && !isReadOnly && (
+                  {!showSettings && hasUserChanges && !isReadOnly && (
                     <p className="text-sm text-muted-foreground">
                       {saving
                         ? "Sauvegarde en cours..."
@@ -503,7 +585,7 @@ export default function ModernInvoiceEditor({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => window.history.back()}
+                      onClick={handleBack}
                       className="h-8 w-8 p-0 md:hidden"
                     >
                       <X className="h-4 w-4 text-muted-foreground" />
@@ -641,6 +723,8 @@ export default function ModernInvoiceEditor({
                     <EnhancedInvoiceForm
                       onSave={handleSave}
                       onSubmit={handleSubmitWithEmail}
+                      onLeave={leaveEditor}
+                      hasUserChanges={hasUserChanges}
                       loading={loading}
                       saving={saving}
                       readOnly={readOnly}
@@ -715,6 +799,52 @@ export default function ModernInvoiceEditor({
           onOpenChange={setShowSaveTemplateDialog}
         />
       )}
+
+      {/* Modal de confirmation avant de quitter avec des changements non sauvegardés */}
+      <AlertDialog
+        open={showUnsavedDialog}
+        onOpenChange={(open) => {
+          if (!savingDraft) setShowUnsavedDialog(open);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Enregistrer en brouillon&nbsp;?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Vous avez des modifications non sauvegardées. Voulez-vous
+              enregistrer cette facture en brouillon avant de quitter&nbsp;?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={savingDraft}>
+              Annuler
+            </AlertDialogCancel>
+            <Button
+              variant="outline"
+              onClick={handleLeaveWithoutSaving}
+              disabled={savingDraft}
+            >
+              Quitter sans enregistrer
+            </Button>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleSaveDraftAndLeave();
+              }}
+              disabled={savingDraft}
+            >
+              {savingDraft ? (
+                <>
+                  <LoaderCircle className="h-4 w-4 animate-spin mr-2" />
+                  Enregistrement...
+                </>
+              ) : (
+                "Enregistrer en brouillon"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Modal d'envoi par email */}
       {createdInvoiceData && (
