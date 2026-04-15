@@ -30,14 +30,24 @@ const formatCurrency = (value) =>
     maximumFractionDigits: 2,
   }).format(value || 0);
 
+const FR_MONTHS_3 = [
+  "Jan",
+  "Fév",
+  "Mar",
+  "Avr",
+  "Mai",
+  "Jun",
+  "Jul",
+  "Aoû",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Déc",
+];
+
 const formatMonthLabel = (monthStr) => {
   const [year, month] = monthStr.split("-");
-  const date = new Date(parseInt(year), parseInt(month) - 1);
-  const label = date
-    .toLocaleDateString("fr-FR", { month: "short" })
-    .replace(".", "")
-    .toUpperCase();
-  return `${label}. ${year.slice(2)}`;
+  return `${FR_MONTHS_3[parseInt(month) - 1]}.${year.slice(2)}`;
 };
 
 // Custom tooltip matching the reference design
@@ -223,13 +233,13 @@ export function ForecastChart({ months, loading, showForecast }) {
   // Find current month index for ReferenceArea highlight
   const currentIdx = chartData.findIndex((d) => d.isCurrent);
 
-  // Adapter l'affichage de l'axe X au nombre de mois pour éviter le chevauchement.
-  // Pour 24 mois on n'affiche qu'1 label sur 3 (8 labels) avec rotation.
+  // Au-delà de 18 mois (24 mois), on n'affiche qu'1 label sur 2 pour rester horizontal.
+  // Sinon (≤ 12 mois) on garde le comportement normal.
   const n = chartData.length;
-  const xAxisInterval = n > 18 ? 2 : n > 12 ? 1 : 0;
-  const xAxisFontSize = n > 18 ? 9 : n > 12 ? 10 : 11;
-  const xAxisAngle = n > 12 ? -45 : 0;
-  const xAxisHeight = n > 12 ? 60 : 30;
+  const xAxisInterval = n > 18 ? 1 : 0;
+  const xAxisFontSize = 11;
+  const xAxisAngle = 0;
+  const xAxisHeight = 30;
 
   if (loading) {
     return (
