@@ -12,7 +12,7 @@ import { Badge } from "@/src/components/ui/badge";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { GET_FORECAST_MONTH_DETAILS } from "@/src/graphql/queries/treasuryForecast";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
-import { ArrowUpRight, ArrowDownRight, FileText } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, FileText, Landmark } from "lucide-react";
 
 const formatCurrency = (value) =>
   new Intl.NumberFormat("fr-FR", {
@@ -123,6 +123,79 @@ function Section({ title, icon, items, emptyLabel, accentColor }) {
   );
 }
 
+function BankTransactionsSection({ transactions }) {
+  const totalIn = transactions
+    .filter((t) => t.amount > 0)
+    .reduce((s, t) => s + t.amount, 0);
+  const totalOut = transactions
+    .filter((t) => t.amount < 0)
+    .reduce((s, t) => s + Math.abs(t.amount), 0);
+  return (
+    <div className="mb-6">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Landmark size={14} className="text-blue-600" />
+          <h3 className="text-sm font-medium text-foreground">
+            Transactions bancaires
+          </h3>
+          <span className="text-xs text-muted-foreground">
+            {transactions.length}
+          </span>
+        </div>
+        <div className="text-xs tabular-nums">
+          {totalIn > 0 && (
+            <span className="text-green-600 font-medium mr-2">
+              +{formatCurrency(totalIn)}
+            </span>
+          )}
+          {totalOut > 0 && (
+            <span className="text-red-600 font-medium">
+              −{formatCurrency(totalOut)}
+            </span>
+          )}
+        </div>
+      </div>
+      {transactions.length === 0 ? (
+        <p className="text-xs text-muted-foreground py-3 text-center">
+          Aucune transaction bancaire ce mois-ci
+        </p>
+      ) : (
+        <ul className="divide-y divide-border border border-border rounded-md">
+          {transactions.map((t) => {
+            const isIn = t.amount > 0;
+            return (
+              <li
+                key={t.id}
+                className="flex items-center justify-between px-3 py-2.5 hover:bg-muted/40"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {t.description}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatDate(t.date)}
+                    {t.category && (
+                      <span className="ml-1.5 opacity-70">· {t.category}</span>
+                    )}
+                  </p>
+                </div>
+                <span
+                  className={`text-sm font-medium tabular-nums ml-3 shrink-0 ${
+                    isIn ? "text-green-600" : "text-red-600"
+                  }`}
+                >
+                  {isIn ? "+" : "−"}
+                  {formatCurrency(Math.abs(t.amount))}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export function MonthDetailsDrawer({ month, open, onOpenChange }) {
   const { workspaceId } = useRequiredWorkspace();
 
@@ -140,7 +213,7 @@ export function MonthDetailsDrawer({ month, open, onOpenChange }) {
         <DrawerHeader>
           <DrawerTitle>Détail de {formatMonthTitle(month)}</DrawerTitle>
           <DrawerDescription>
-            Factures et devis liés à ce mois (date d&apos;émission).
+            Transactions bancaires, factures et devis liés à ce mois.
           </DrawerDescription>
         </DrawerHeader>
         <div className="px-4 pb-8 overflow-y-auto">
@@ -152,6 +225,9 @@ export function MonthDetailsDrawer({ month, open, onOpenChange }) {
             </div>
           ) : (
             <>
+              <BankTransactionsSection
+                transactions={details?.bankTransactions || []}
+              />
               <Section
                 title="Factures clients"
                 icon={<ArrowUpRight size={14} className="text-green-600" />}

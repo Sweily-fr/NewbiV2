@@ -41,7 +41,14 @@ const formatMonthLabel = (monthStr) => {
 };
 
 // Custom tooltip matching the reference design
-function CustomTooltip({ active, payload, label, remap }) {
+function CustomTooltip({
+  active,
+  payload,
+  label,
+  remap,
+  incomeColor,
+  expenseColor,
+}) {
   if (!active || !payload?.length) return null;
 
   const data = payload[0]?.payload;
@@ -89,9 +96,8 @@ function CustomTooltip({ active, payload, label, remap }) {
                 <span
                   className="inline-block w-3 h-3 rounded-sm"
                   style={{
-                    backgroundColor: "rgba(91,80,255,0.3)",
-                    backgroundImage:
-                      "repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(91,80,255,0.5) 2px, rgba(91,80,255,0.5) 4px)",
+                    backgroundColor: `${incomeColor}40`,
+                    backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 2px, ${incomeColor}80 2px, ${incomeColor}80 4px)`,
                   }}
                 />
                 <span className="text-xs text-muted-foreground">Prévision</span>
@@ -106,7 +112,7 @@ function CustomTooltip({ active, payload, label, remap }) {
               <div className="flex items-center gap-2">
                 <span
                   className="inline-block w-3 h-3 rounded-sm"
-                  style={{ backgroundColor: remap("#5b50ff") }}
+                  style={{ backgroundColor: incomeColor }}
                 />
                 <span className="text-xs text-muted-foreground">Réelles</span>
               </div>
@@ -137,9 +143,8 @@ function CustomTooltip({ active, payload, label, remap }) {
                 <span
                   className="inline-block w-3 h-3 rounded-sm"
                   style={{
-                    backgroundColor: "rgba(0,0,0,0.15)",
-                    backgroundImage:
-                      "repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.4) 2px, rgba(0,0,0,0.4) 4px)",
+                    backgroundColor: `${expenseColor}40`,
+                    backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 2px, ${expenseColor}80 2px, ${expenseColor}80 4px)`,
                   }}
                 />
                 <span className="text-xs text-muted-foreground">Prévision</span>
@@ -154,7 +159,7 @@ function CustomTooltip({ active, payload, label, remap }) {
               <div className="flex items-center gap-2">
                 <span
                   className="inline-block w-3 h-3 rounded-sm"
-                  style={{ backgroundColor: remap("#000000") }}
+                  style={{ backgroundColor: expenseColor }}
                 />
                 <span className="text-xs text-muted-foreground">Réelles</span>
               </div>
@@ -178,11 +183,13 @@ function CustomTooltip({ active, payload, label, remap }) {
 
 export function ForecastChart({ months, loading, showForecast }) {
   const { remap } = useChartColors();
+  const incomeColor = remap("#5b50ff");
+  const expenseColor = remap("#000000");
   const chartConfig = {
-    actualIncome: { label: "Entrées réelles", color: remap("#5b50ff") },
-    forecastIncome: { label: "Prév. entrées", color: remap("#5b50ff") },
-    actualExpense: { label: "Sorties réelles", color: remap("#000000") },
-    forecastExpense: { label: "Prév. sorties", color: remap("#000000") },
+    actualIncome: { label: "Entrées réelles", color: incomeColor },
+    forecastIncome: { label: "Prév. entrées", color: incomeColor },
+    actualExpense: { label: "Sorties réelles", color: expenseColor },
+    forecastExpense: { label: "Prév. sorties", color: expenseColor },
     balance: { label: "Solde", color: remap("#3b82f6") },
   };
   const now = new Date();
@@ -215,6 +222,14 @@ export function ForecastChart({ months, loading, showForecast }) {
 
   // Find current month index for ReferenceArea highlight
   const currentIdx = chartData.findIndex((d) => d.isCurrent);
+
+  // Adapter l'affichage de l'axe X au nombre de mois pour éviter le chevauchement.
+  // Pour 24 mois on n'affiche qu'1 label sur 3 (8 labels) avec rotation.
+  const n = chartData.length;
+  const xAxisInterval = n > 18 ? 2 : n > 12 ? 1 : 0;
+  const xAxisFontSize = n > 18 ? 9 : n > 12 ? 10 : 11;
+  const xAxisAngle = n > 12 ? -45 : 0;
+  const xAxisHeight = n > 12 ? 60 : 30;
 
   if (loading) {
     return (
@@ -321,6 +336,8 @@ export function ForecastChart({ months, loading, showForecast }) {
               tickLine={false}
               axisLine={false}
               tickMargin={12}
+              interval={xAxisInterval}
+              height={xAxisHeight}
               tick={({ x, y, payload }) => {
                 const dataItem = chartData.find(
                   (d) => d.label === payload.value,
@@ -330,10 +347,15 @@ export function ForecastChart({ months, loading, showForecast }) {
                   <text
                     x={x}
                     y={y + 4}
-                    textAnchor="middle"
-                    fontSize={11}
+                    textAnchor={xAxisAngle ? "end" : "middle"}
+                    fontSize={xAxisFontSize}
                     fill={isCurrent ? remap("#3b82f6") : "#9ca3af"}
                     fontWeight={isCurrent ? 600 : 400}
+                    transform={
+                      xAxisAngle
+                        ? `rotate(${xAxisAngle}, ${x}, ${y + 4})`
+                        : undefined
+                    }
                   >
                     {payload.value}
                   </text>
@@ -353,7 +375,16 @@ export function ForecastChart({ months, loading, showForecast }) {
               width={50}
             />
 
-            <Tooltip content={<CustomTooltip remap={remap} />} cursor={false} />
+            <Tooltip
+              content={
+                <CustomTooltip
+                  remap={remap}
+                  incomeColor={incomeColor}
+                  expenseColor={expenseColor}
+                />
+              }
+              cursor={false}
+            />
 
             {/* Income bars: actual (solid green) stacked with forecast (hatched green) */}
             <Bar

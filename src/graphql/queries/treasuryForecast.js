@@ -70,6 +70,13 @@ export const GET_FORECAST_MONTH_DETAILS = gql`
         status
         kind
       }
+      bankTransactions {
+        id
+        description
+        amount
+        date
+        category
+      }
     }
   }
 `;
