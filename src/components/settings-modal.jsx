@@ -247,9 +247,9 @@ export function SettingsModal({
           .toUpperCase(),
         bankBic: sanitizeInput(formData.bankDetails?.bic || ""),
 
-        // Informations légales
-        siren: sanitizeInput(formData.legal?.siren || ""),
+        // Informations légales — le SIREN est dérivé des 9 premiers chiffres du SIRET
         siret: sanitizeInput(formData.legal?.siret || ""),
+        siren: sanitizeInput(formData.legal?.siret || "").substring(0, 9),
         vatNumber: sanitizeInput(formData.legal?.vatNumber || ""),
         rcs: sanitizeInput(formData.legal?.rcs || ""),
         legalForm: formData.legal?.legalForm || "",
