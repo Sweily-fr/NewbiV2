@@ -86,7 +86,7 @@ const CATEGORY_COLORS_BASE = [
 
 // ─── Custom Tooltip (Qonto style) ───
 
-function CustomTooltip({ active, payload, remap }) {
+function CustomTooltip({ active, payload, remap, incomeColor, expenseColor }) {
   if (!active || !payload?.length) return null;
 
   const data = payload[0]?.payload;
@@ -133,9 +133,8 @@ function CustomTooltip({ active, payload, remap }) {
                 <span
                   className="inline-block w-3 h-3 rounded-sm"
                   style={{
-                    backgroundImage:
-                      "repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(91,80,255,0.5) 2px, rgba(91,80,255,0.5) 4px)",
-                    backgroundColor: "rgba(91,80,255,0.15)",
+                    backgroundColor: `${incomeColor}40`,
+                    backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 2px, ${incomeColor}80 2px, ${incomeColor}80 4px)`,
                   }}
                 />
                 <span className="text-xs text-muted-foreground">Prévision</span>
@@ -150,7 +149,7 @@ function CustomTooltip({ active, payload, remap }) {
               <div className="flex items-center gap-2">
                 <span
                   className="inline-block w-3 h-3 rounded-sm"
-                  style={{ backgroundColor: remap("#5b50ff") }}
+                  style={{ backgroundColor: incomeColor }}
                 />
                 <span className="text-xs text-muted-foreground">Réelles</span>
               </div>
@@ -181,9 +180,8 @@ function CustomTooltip({ active, payload, remap }) {
                 <span
                   className="inline-block w-3 h-3 rounded-sm"
                   style={{
-                    backgroundImage:
-                      "repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.4) 2px, rgba(0,0,0,0.4) 4px)",
-                    backgroundColor: "rgba(0,0,0,0.15)",
+                    backgroundColor: `${expenseColor}40`,
+                    backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 2px, ${expenseColor}80 2px, ${expenseColor}80 4px)`,
                   }}
                 />
                 <span className="text-xs text-muted-foreground">Prévision</span>
@@ -198,7 +196,7 @@ function CustomTooltip({ active, payload, remap }) {
               <div className="flex items-center gap-2">
                 <span
                   className="inline-block w-3 h-3 rounded-sm"
-                  style={{ backgroundColor: remap("#000000") }}
+                  style={{ backgroundColor: expenseColor }}
                 />
                 <span className="text-xs text-muted-foreground">Réelles</span>
               </div>
@@ -321,15 +319,17 @@ function HatchedIcon() {
 
 export function ForecastPaymentsCard({ months, kpi, loading }) {
   const { remap } = useChartColors();
+  const incomeColor = remap("#5b50ff");
+  const expenseColor = remap("#000000");
   const CATEGORY_COLORS = useMemo(
     () => CATEGORY_COLORS_BASE.map(remap),
     [remap],
   );
   const chartConfig = {
-    actualIncome: { label: "Entrées réelles", color: remap("#5b50ff") },
-    forecastIncome: { label: "Prév. entrées", color: remap("#5b50ff") },
+    actualIncome: { label: "Entrées réelles", color: incomeColor },
+    forecastIncome: { label: "Prév. entrées", color: incomeColor },
     actualExpense: { label: "Sorties réelles", color: remap("#333333") },
-    forecastExpense: { label: "Prév. sorties", color: remap("#000000") },
+    forecastExpense: { label: "Prév. sorties", color: expenseColor },
     balance: { label: "Solde", color: remap("#3b82f6") },
   };
   const safeMonths = months || [];
@@ -714,7 +714,13 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                     <YAxis yAxisId="balance" orientation="right" hide={true} />
 
                     <Tooltip
-                      content={<CustomTooltip remap={remap} />}
+                      content={
+                        <CustomTooltip
+                          remap={remap}
+                          incomeColor={incomeColor}
+                          expenseColor={expenseColor}
+                        />
+                      }
                       cursor={false}
                     />
 
