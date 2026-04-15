@@ -2,31 +2,52 @@
 // Protection contre les injections XSS, SQL et autres attaques
 
 // Legal forms that require specific fields
-export const LEGAL_FORMS_WITH_RCS = ['SARL', 'SAS', 'SASU', 'EURL', 'SA', 'SNC'];
-export const LEGAL_FORMS_WITH_CAPITAL = ['SARL', 'SAS', 'SASU', 'EURL', 'SA', 'SNC'];
-export const LEGAL_FORMS_WITHOUT_CAPITAL = ['Auto-entrepreneur', 'EI'];
-export const LEGAL_FORMS_EI_MICRO = ['EI', 'Auto-entrepreneur'];
+export const LEGAL_FORMS_WITH_RCS = [
+  "SARL",
+  "SAS",
+  "SASU",
+  "EURL",
+  "SA",
+  "SNC",
+];
+export const LEGAL_FORMS_WITH_CAPITAL = [
+  "SARL",
+  "SAS",
+  "SASU",
+  "EURL",
+  "SA",
+  "SNC",
+];
+export const LEGAL_FORMS_WITHOUT_CAPITAL = ["Auto-entrepreneur", "EI"];
+export const LEGAL_FORMS_EI_MICRO = ["EI", "Auto-entrepreneur"];
 
 // Function to determine if a field is required based on legal form and other conditions
-export const getRequiredFields = (legalForm, isVatSubject = false, hasCommercialActivity = false) => {
+export const getRequiredFields = (
+  legalForm,
+  isVatSubject = false,
+  hasCommercialActivity = false,
+) => {
   const required = {
     // Only required if legal form is selected
-    siren: !!legalForm,
+    // siren n'est plus saisi : il est dérivé automatiquement des 9 premiers chiffres du SIRET
     siret: !!legalForm,
     fiscalRegime: !!legalForm,
     activityCategory: !!legalForm,
     legalForm: false,
-    
+
     // Conditionally required fields
     rcs: false,
     vatNumber: false,
-    capital: false
+    capital: false,
   };
 
   // RCS logic
   if (LEGAL_FORMS_WITH_RCS.includes(legalForm)) {
     required.rcs = true;
-  } else if (LEGAL_FORMS_EI_MICRO.includes(legalForm) && hasCommercialActivity) {
+  } else if (
+    LEGAL_FORMS_EI_MICRO.includes(legalForm) &&
+    hasCommercialActivity
+  ) {
     required.rcs = true;
   }
 
@@ -44,21 +65,27 @@ export const getRequiredFields = (legalForm, isVatSubject = false, hasCommercial
 };
 
 // Function to determine if a field should be visible
-export const getVisibleFields = (legalForm, isVatSubject = false, hasCommercialActivity = false) => {
+export const getVisibleFields = (
+  legalForm,
+  isVatSubject = false,
+  hasCommercialActivity = false,
+) => {
   const visible = {
     // Always visible fields
-    siren: true,
+    // siren n'est plus affiché : il est dérivé du SIRET
     siret: true,
     fiscalRegime: true,
     activityCategory: true,
     legalForm: true,
-    
+
     // Conditionally visible fields
-    rcs: LEGAL_FORMS_WITH_RCS.includes(legalForm) || (LEGAL_FORMS_EI_MICRO.includes(legalForm) && hasCommercialActivity),
+    rcs:
+      LEGAL_FORMS_WITH_RCS.includes(legalForm) ||
+      (LEGAL_FORMS_EI_MICRO.includes(legalForm) && hasCommercialActivity),
     vatNumber: isVatSubject,
     capital: !LEGAL_FORMS_WITHOUT_CAPITAL.includes(legalForm),
     vatSubjectCheckbox: true,
-    commercialActivityCheckbox: LEGAL_FORMS_EI_MICRO.includes(legalForm)
+    commercialActivityCheckbox: LEGAL_FORMS_EI_MICRO.includes(legalForm),
   };
 
   return visible;
@@ -68,18 +95,23 @@ export const getVisibleFields = (legalForm, isVatSubject = false, hasCommercialA
 export const VALIDATION_PATTERNS = {
   // Informations générales - Synchronisé avec le backend (validators.js)
   companyName: {
-    pattern: /^(?!.*[<>])[A-Za-zÀ-ÖØ-öø-ÿ0-9\s\-'.(),&/\\:;!?@#$%*+=[\]{}|~"_]{2,200}$/,
-    message: "Le nom doit contenir entre 2 et 200 caractères (lettres, chiffres, espaces et caractères spéciaux autorisés, < et > interdits)",
+    pattern:
+      /^(?!.*[<>])[A-Za-zÀ-ÖØ-öø-ÿ0-9\s\-'.(),&/\\:;!?@#$%*+=[\]{}|~"_]{2,200}$/,
+    message:
+      "Le nom doit contenir entre 2 et 200 caractères (lettres, chiffres, espaces et caractères spéciaux autorisés, < et > interdits)",
   },
 
   email: {
-    pattern: /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/,
+    pattern:
+      /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/,
     message: "Format d'email invalide",
   },
 
   phone: {
-    pattern: /^(?:(?:\+|00)33[ .-]?|0[ .-]?)([1-9])[ .-]?(\d{2})[ .-]?(\d{2})[ .-]?(\d{2})[ .-]?(\d{2})$/,
-    message: "Numéro de téléphone français invalide (ex: +33 6 12 34 56 78, 06.12.34.56.78, 0612345678)",
+    pattern:
+      /^(?:(?:\+|00)33[ .-]?|0[ .-]?)([1-9])[ .-]?(\d{2})[ .-]?(\d{2})[ .-]?(\d{2})[ .-]?(\d{2})$/,
+    message:
+      "Numéro de téléphone français invalide (ex: +33 6 12 34 56 78, 06.12.34.56.78, 0612345678)",
   },
 
   website: {
@@ -97,12 +129,14 @@ export const VALIDATION_PATTERNS = {
   // Adresse - Synchronisé avec le backend (validators.js)
   street: {
     pattern: /^[A-Za-zÀ-ÖØ-öø-ÿ0-9\s,'\-\.]{3,100}$/,
-    message: "L'adresse doit contenir entre 3 et 100 caractères (lettres, chiffres, espaces, virgules, apostrophes, tirets et points autorisés)",
+    message:
+      "L'adresse doit contenir entre 3 et 100 caractères (lettres, chiffres, espaces, virgules, apostrophes, tirets et points autorisés)",
   },
 
   city: {
     pattern: /^[A-Za-zÀ-ÖØ-öø-ÿ\s'\-\.]{2,50}$/,
-    message: "La ville doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes, tirets et points uniquement)",
+    message:
+      "La ville doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes, tirets et points uniquement)",
   },
 
   postalCode: {
@@ -112,7 +146,8 @@ export const VALIDATION_PATTERNS = {
 
   country: {
     pattern: /^[A-Za-zÀ-ÖØ-öø-ÿ\s'\-\.]{2,50}$/,
-    message: "Le pays doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes, tirets et points uniquement)",
+    message:
+      "Le pays doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes, tirets et points uniquement)",
   },
 
   // Informations bancaires
@@ -148,13 +183,16 @@ export const VALIDATION_PATTERNS = {
   },
 
   rcs: {
-    pattern: /^(\d{3}\s?\d{3}\s?\d{3}\s?R\.?C\.?S\.?\s[A-Za-zÀ-ÖØ-öø-ÿ\s]{2,30}|[A-Za-zÀ-ÖØ-öø-ÿ\s]{2,30}\s[A-Z]?\s?\d{3}\s?\d{3}\s?\d{3})$/,
-    message: "Format RCS invalide (ex: 981 576 549 R.C.S. Paris ou Paris B 123 456 789)",
+    pattern:
+      /^(\d{3}\s?\d{3}\s?\d{3}\s?R\.?C\.?S\.?\s[A-Za-zÀ-ÖØ-öø-ÿ\s]{2,30}|[A-Za-zÀ-ÖØ-öø-ÿ\s]{2,30}\s[A-Z]?\s?\d{3}\s?\d{3}\s?\d{3})$/,
+    message:
+      "Format RCS invalide (ex: 981 576 549 R.C.S. Paris ou Paris B 123 456 789)",
   },
 
   capital: {
     pattern: /^\d{1,20}(\.\d{1,2})?$/,
-    message: "Capital social invalide (chiffres uniquement, max 2 décimales, jusqu'à 20 chiffres)",
+    message:
+      "Capital social invalide (chiffres uniquement, max 2 décimales, jusqu'à 20 chiffres)",
   },
 
   fiscalRegime: {
@@ -242,14 +280,18 @@ export const validateField = (value, fieldName, isRequired = false) => {
 export const validateSettingsForm = (formData) => {
   const errors = {};
   const sanitizedData = {};
-  
+
   // Get conditional requirements based on legal form
-  const legalForm = formData.legal?.legalForm || '';
+  const legalForm = formData.legal?.legalForm || "";
   const isVatSubject = formData.legal?.isVatSubject || false;
   const hasCommercialActivity = formData.legal?.hasCommercialActivity || false;
-  
-  const requiredFields = getRequiredFields(legalForm, isVatSubject, hasCommercialActivity);
-  
+
+  const requiredFields = getRequiredFields(
+    legalForm,
+    isVatSubject,
+    hasCommercialActivity,
+  );
+
   // Validation des champs entreprise
   if (formData.name) {
     const validation = validateField(formData.name, "companyName", false); // Pas requis
@@ -306,7 +348,7 @@ export const validateSettingsForm = (formData) => {
     if (formData.address.postalCode) {
       const validation = validateField(
         formData.address.postalCode,
-        "postalCode"
+        "postalCode",
       );
       if (!validation.isValid) addressErrors.postalCode = validation.message;
       else sanitizedAddress.postalCode = validation.sanitizedValue;
@@ -328,10 +370,14 @@ export const validateSettingsForm = (formData) => {
     const sanitizedBank = {};
 
     // Vérifier si au moins un champ bancaire est rempli
-    const hasIban = formData.bankDetails.iban && formData.bankDetails.iban.trim() !== "";
-    const hasBic = formData.bankDetails.bic && formData.bankDetails.bic.trim() !== "";
-    const hasBankName = formData.bankDetails.bankName && formData.bankDetails.bankName.trim() !== "";
-    
+    const hasIban =
+      formData.bankDetails.iban && formData.bankDetails.iban.trim() !== "";
+    const hasBic =
+      formData.bankDetails.bic && formData.bankDetails.bic.trim() !== "";
+    const hasBankName =
+      formData.bankDetails.bankName &&
+      formData.bankDetails.bankName.trim() !== "";
+
     const hasAnyBankField = hasIban || hasBic || hasBankName;
 
     // Si aucun champ n'est rempli, c'est valide (on peut avoir des coordonnées bancaires vides)
@@ -339,37 +385,57 @@ export const validateSettingsForm = (formData) => {
       sanitizedData.bankDetails = {
         iban: "",
         bic: "",
-        bankName: ""
+        bankName: "",
       };
     } else {
       // Si au moins un champ est rempli, tous les 3 champs deviennent obligatoires
-      
+
       // Validation IBAN (obligatoire si au moins un champ bancaire est rempli)
-      const ibanValidation = validateField(formData.bankDetails.iban, "iban", hasAnyBankField);
+      const ibanValidation = validateField(
+        formData.bankDetails.iban,
+        "iban",
+        hasAnyBankField,
+      );
       if (!ibanValidation.isValid) {
-        bankErrors.iban = hasAnyBankField && (!formData.bankDetails.iban || formData.bankDetails.iban.trim() === "") 
-          ? "L'IBAN est requis si vous renseignez des coordonnées bancaires" 
-          : ibanValidation.message;
+        bankErrors.iban =
+          hasAnyBankField &&
+          (!formData.bankDetails.iban ||
+            formData.bankDetails.iban.trim() === "")
+            ? "L'IBAN est requis si vous renseignez des coordonnées bancaires"
+            : ibanValidation.message;
       } else if (ibanValidation.sanitizedValue) {
         sanitizedBank.iban = ibanValidation.sanitizedValue;
       }
 
       // Validation BIC (obligatoire si au moins un champ bancaire est rempli)
-      const bicValidation = validateField(formData.bankDetails.bic, "bic", hasAnyBankField);
+      const bicValidation = validateField(
+        formData.bankDetails.bic,
+        "bic",
+        hasAnyBankField,
+      );
       if (!bicValidation.isValid) {
-        bankErrors.bic = hasAnyBankField && (!formData.bankDetails.bic || formData.bankDetails.bic.trim() === "") 
-          ? "Le BIC est requis si vous renseignez des coordonnées bancaires" 
-          : bicValidation.message;
+        bankErrors.bic =
+          hasAnyBankField &&
+          (!formData.bankDetails.bic || formData.bankDetails.bic.trim() === "")
+            ? "Le BIC est requis si vous renseignez des coordonnées bancaires"
+            : bicValidation.message;
       } else if (bicValidation.sanitizedValue) {
         sanitizedBank.bic = bicValidation.sanitizedValue;
       }
 
       // Validation nom de banque (obligatoire si au moins un champ bancaire est rempli)
-      const bankNameValidation = validateField(formData.bankDetails.bankName, "bankName", hasAnyBankField);
+      const bankNameValidation = validateField(
+        formData.bankDetails.bankName,
+        "bankName",
+        hasAnyBankField,
+      );
       if (!bankNameValidation.isValid) {
-        bankErrors.bankName = hasAnyBankField && (!formData.bankDetails.bankName || formData.bankDetails.bankName.trim() === "") 
-          ? "Le nom de la banque est requis si vous renseignez des coordonnées bancaires" 
-          : bankNameValidation.message;
+        bankErrors.bankName =
+          hasAnyBankField &&
+          (!formData.bankDetails.bankName ||
+            formData.bankDetails.bankName.trim() === "")
+            ? "Le nom de la banque est requis si vous renseignez des coordonnées bancaires"
+            : bankNameValidation.message;
       } else if (bankNameValidation.sanitizedValue) {
         sanitizedBank.bankName = bankNameValidation.sanitizedValue;
       }
@@ -383,58 +449,92 @@ export const validateSettingsForm = (formData) => {
   if (formData.legal) {
     const legalErrors = {};
     const sanitizedLegal = {};
-    
+
     // Forme juridique - toujours incluse
     if (formData.legal.legalForm) {
-      const legalFormValidation = validateField(formData.legal.legalForm, 'legalForm', requiredFields.legalForm);
-      if (!legalFormValidation.isValid) legalErrors.legalForm = legalFormValidation.message;
+      const legalFormValidation = validateField(
+        formData.legal.legalForm,
+        "legalForm",
+        requiredFields.legalForm,
+      );
+      if (!legalFormValidation.isValid)
+        legalErrors.legalForm = legalFormValidation.message;
       else sanitizedLegal.legalForm = legalFormValidation.sanitizedValue;
     }
-    
+
     // SIRET - toujours obligatoire
-    const siretValidation = validateField(formData.legal.siret, 'siret', requiredFields.siret);
+    const siretValidation = validateField(
+      formData.legal.siret,
+      "siret",
+      requiredFields.siret,
+    );
     if (!siretValidation.isValid) legalErrors.siret = siretValidation.message;
-    else if (siretValidation.sanitizedValue) sanitizedLegal.siret = siretValidation.sanitizedValue;
-    
+    else if (siretValidation.sanitizedValue)
+      sanitizedLegal.siret = siretValidation.sanitizedValue;
+
     // RCS - obligatoire selon la forme juridique et activité commerciale
     if (formData.legal.rcs) {
-      const rcsValidation = validateField(formData.legal.rcs, 'rcs', requiredFields.rcs);
+      const rcsValidation = validateField(
+        formData.legal.rcs,
+        "rcs",
+        requiredFields.rcs,
+      );
       if (!rcsValidation.isValid) legalErrors.rcs = rcsValidation.message;
       else sanitizedLegal.rcs = rcsValidation.sanitizedValue;
     }
-    
+
     // Numéro de TVA - obligatoire seulement si assujetti à la TVA
     if (formData.legal.vatNumber) {
-      const vatValidation = validateField(formData.legal.vatNumber, 'vatNumber', requiredFields.vatNumber);
+      const vatValidation = validateField(
+        formData.legal.vatNumber,
+        "vatNumber",
+        requiredFields.vatNumber,
+      );
       if (!vatValidation.isValid) legalErrors.vatNumber = vatValidation.message;
       else sanitizedLegal.vatNumber = vatValidation.sanitizedValue;
     }
-    
+
     // Capital social - obligatoire selon la forme juridique
     if (formData.legal.capital) {
-      const capitalValidation = validateField(formData.legal.capital, 'capital', requiredFields.capital);
-      if (!capitalValidation.isValid) legalErrors.capital = capitalValidation.message;
+      const capitalValidation = validateField(
+        formData.legal.capital,
+        "capital",
+        requiredFields.capital,
+      );
+      if (!capitalValidation.isValid)
+        legalErrors.capital = capitalValidation.message;
       else sanitizedLegal.capital = capitalValidation.sanitizedValue;
     }
-    
+
     // Régime fiscal - toujours inclus
     if (formData.legal.regime) {
-      const fiscalRegimeValidation = validateField(formData.legal.regime, 'fiscalRegime', requiredFields.fiscalRegime);
-      if (!fiscalRegimeValidation.isValid) legalErrors.fiscalRegime = fiscalRegimeValidation.message;
+      const fiscalRegimeValidation = validateField(
+        formData.legal.regime,
+        "fiscalRegime",
+        requiredFields.fiscalRegime,
+      );
+      if (!fiscalRegimeValidation.isValid)
+        legalErrors.fiscalRegime = fiscalRegimeValidation.message;
       else sanitizedLegal.regime = fiscalRegimeValidation.sanitizedValue;
     }
-    
+
     // Catégorie d'activité - toujours incluse
     if (formData.legal.category) {
-      const activityValidation = validateField(formData.legal.category, 'activityCategory', requiredFields.activityCategory);
-      if (!activityValidation.isValid) legalErrors.activityCategory = activityValidation.message;
+      const activityValidation = validateField(
+        formData.legal.category,
+        "activityCategory",
+        requiredFields.activityCategory,
+      );
+      if (!activityValidation.isValid)
+        legalErrors.activityCategory = activityValidation.message;
       else sanitizedLegal.category = activityValidation.sanitizedValue;
     }
-    
+
     // Inclure les booléens
     sanitizedLegal.isVatSubject = formData.legal.isVatSubject || false;
-    sanitizedLegal.hasCommercialActivity = formData.legal.hasCommercialActivity || false;
-    
+    sanitizedLegal.hasCommercialActivity =
+      formData.legal.hasCommercialActivity || false;
+
     if (Object.keys(legalErrors).length > 0) errors.legal = legalErrors;
     else sanitizedData.legal = sanitizedLegal;
   }

@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useForm } from "react-hook-form"
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
 import {
   Dialog,
   DialogContent,
@@ -9,16 +9,46 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/src/components/ui/dialog"
-import { Button } from "@/src/components/ui/button"
-import { InputWithError } from "@/src/components/ui/input-with-error"
-import { updateOrganization, getActiveOrganization } from "@/src/lib/organization-client"
-import { toast } from "@/src/components/ui/sonner"
+} from "@/src/components/ui/dialog";
+import { Button } from "@/src/components/ui/button";
+import { InputWithError } from "@/src/components/ui/input-with-error";
+import {
+  updateOrganization,
+  getActiveOrganization,
+} from "@/src/lib/organization-client";
+import { toast } from "@/src/components/ui/sonner";
+
+type OrganizationData = {
+  id?: string;
+  companyName?: string;
+  companyEmail?: string;
+  companyPhone?: string;
+  siret?: string;
+  vatNumber?: string;
+  addressStreet?: string;
+  addressCity?: string;
+  addressZipCode?: string;
+  addressCountry?: string;
+} | null;
+
+type CompanyFormValues = {
+  companyName: string;
+  companyEmail: string;
+  companyPhone: string;
+  siret: string;
+  vatNumber: string;
+  addressStreet: string;
+  addressCity: string;
+  addressZipCode: string;
+  addressCountry: string;
+};
 
 interface QuickEditCompanyModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onCompanyUpdated?: (updatedCompany: any) => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCompanyUpdated?: (
+    updatedCompany: CompanyFormValues & { siren: string },
+  ) => void;
 }
 
 export function QuickEditCompanyModal({
@@ -26,80 +56,93 @@ export function QuickEditCompanyModal({
   onOpenChange,
   onCompanyUpdated,
 }: QuickEditCompanyModalProps) {
-  const [saving, setSaving] = useState(false)
-  const [organization, setOrganization] = useState<any>(null)
+  const [saving, setSaving] = useState(false);
+  const [organization, setOrganization] = useState<OrganizationData>(null);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
-  } = useForm()
+  } = useForm<CompanyFormValues>();
 
   useEffect(() => {
     const fetchOrganization = async () => {
       try {
-        const org = await getActiveOrganization()
-        setOrganization(org)
+        const org = (await getActiveOrganization()) as OrganizationData;
+        setOrganization(org);
         reset({
           companyName: org?.companyName || "",
           companyEmail: org?.companyEmail || "",
           companyPhone: org?.companyPhone || "",
-          siren: org?.siren || "",
           siret: org?.siret || "",
           vatNumber: org?.vatNumber || "",
           addressStreet: org?.addressStreet || "",
           addressCity: org?.addressCity || "",
           addressZipCode: org?.addressZipCode || "",
           addressCountry: org?.addressCountry || "",
-        })
+        });
       } catch (error) {
-        console.error("Erreur lors de la récupération de l'organisation:", error)
+        console.error(
+          "Erreur lors de la récupération de l'organisation:",
+          error,
+        );
       }
-    }
+    };
 
     if (open) {
-      fetchOrganization()
+      fetchOrganization();
     }
-  }, [open, reset])
+  }, [open, reset]);
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: CompanyFormValues) => {
     try {
-      setSaving(true)
+      setSaving(true);
 
+      const siret = (data.siret || "").trim();
       const input = {
         companyName: data.companyName,
         companyEmail: data.companyEmail,
         companyPhone: data.companyPhone,
-        siren: data.siren,
-        siret: data.siret,
+        siret,
+        siren: siret.substring(0, 9),
         vatNumber: data.vatNumber,
         addressStreet: data.addressStreet,
         addressCity: data.addressCity,
         addressZipCode: data.addressZipCode,
         addressCountry: data.addressCountry,
+      };
+
+      if (!organization?.id) {
+        throw new Error("Organisation introuvable");
       }
+      await updateOrganization(organization.id, input);
 
-      await updateOrganization(organization.id, input)
-
-      toast.success("Informations de l'entreprise mises à jour")
-      onCompanyUpdated?.(input)
-      onOpenChange(false)
-    } catch (error: any) {
-      console.error("Erreur lors de la mise à jour de l'entreprise:", error)
-      toast.error(error.message || "Erreur lors de la mise à jour de l'entreprise")
+      toast.success("Informations de l'entreprise mises à jour");
+      onCompanyUpdated?.(input);
+      onOpenChange(false);
+    } catch (error: unknown) {
+      console.error("Erreur lors de la mise à jour de l'entreprise:", error);
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Erreur lors de la mise à jour de l'entreprise";
+      toast.error(message);
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Modifier les informations de l'entreprise</DialogTitle>
+          <DialogTitle>
+            Modifier les informations de l&apos;entreprise
+          </DialogTitle>
           <DialogDescription>
-            Corrigez les informations de votre entreprise directement depuis l'éditeur
+            Corrigez les informations de votre entreprise directement depuis
+            l&apos;éditeur
           </DialogDescription>
         </DialogHeader>
 
@@ -107,7 +150,9 @@ export function QuickEditCompanyModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <InputWithError
               label="Nom de l'entreprise *"
-              {...register("companyName", { required: "Le nom de l'entreprise est requis" })}
+              {...register("companyName", {
+                required: "Le nom de l'entreprise est requis",
+              })}
               error={errors.companyName?.message as string}
             />
 
@@ -131,12 +176,6 @@ export function QuickEditCompanyModal({
             />
 
             <InputWithError
-              label="SIREN"
-              {...register("siren")}
-              error={errors.siren?.message as string}
-            />
-
-            <InputWithError
               label="SIRET"
               {...register("siret")}
               error={errors.siret?.message as string}
@@ -150,8 +189,10 @@ export function QuickEditCompanyModal({
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-sm font-medium">Adresse de l'entreprise</h3>
-            
+            <h3 className="text-sm font-medium">
+              Adresse de l&apos;entreprise
+            </h3>
+
             <InputWithError
               label="Rue *"
               {...register("addressStreet", { required: "La rue est requise" })}
@@ -161,19 +202,25 @@ export function QuickEditCompanyModal({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <InputWithError
                 label="Ville *"
-                {...register("addressCity", { required: "La ville est requise" })}
+                {...register("addressCity", {
+                  required: "La ville est requise",
+                })}
                 error={errors.addressCity?.message as string}
               />
 
               <InputWithError
                 label="Code postal *"
-                {...register("addressZipCode", { required: "Le code postal est requis" })}
+                {...register("addressZipCode", {
+                  required: "Le code postal est requis",
+                })}
                 error={errors.addressZipCode?.message as string}
               />
 
               <InputWithError
                 label="Pays *"
-                {...register("addressCountry", { required: "Le pays est requis" })}
+                {...register("addressCountry", {
+                  required: "Le pays est requis",
+                })}
                 error={errors.addressCountry?.message as string}
               />
             </div>
@@ -195,5 +242,5 @@ export function QuickEditCompanyModal({
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

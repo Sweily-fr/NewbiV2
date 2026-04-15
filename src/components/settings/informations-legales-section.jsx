@@ -150,7 +150,10 @@ export function InformationsLegalesSection({
     setValue("legal.legalForm", value, { shouldDirty: true });
     // Reset le régime fiscal si la valeur actuelle n'est plus disponible
     const newAvailable = getAvailableTaxRegimes(value);
-    if (selectedRegime && !newAvailable.some((r) => r.value === selectedRegime)) {
+    if (
+      selectedRegime &&
+      !newAvailable.some((r) => r.value === selectedRegime)
+    ) {
       setValue("legal.regime", "", { shouldDirty: true });
     }
   };
@@ -185,17 +188,20 @@ export function InformationsLegalesSection({
   const requiredFields = getRequiredFields(
     selectedLegalForm,
     isVatSubject,
-    hasCommercialActivity
+    hasCommercialActivity,
   );
   const visibleFields = getVisibleFields(
     selectedLegalForm,
     isVatSubject,
-    hasCommercialActivity
+    hasCommercialActivity,
   );
 
   const RequiredLabel = ({ htmlFor, children, isRequired, tooltip }) => (
     <div className="flex items-center gap-2">
-      <Label htmlFor={htmlFor} className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+      <Label
+        htmlFor={htmlFor}
+        className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+      >
         {children}
         {isRequired && <span className="text-red-500 ml-1">*</span>}
       </Label>
@@ -225,7 +231,9 @@ export function InformationsLegalesSection({
     <div className="space-y-8">
       {/* Titre */}
       <div>
-        <h2 className="text-lg font-medium mb-1 hidden md:block">Informations légales</h2>
+        <h2 className="text-lg font-medium mb-1 hidden md:block">
+          Informations légales
+        </h2>
         <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
         {!canManageOrgSettings && (
           <div className="mt-4">
@@ -286,42 +294,14 @@ export function InformationsLegalesSection({
             </Select>
           </div>
 
-          {/* SIREN, SIRET et RCS */}
+          {/* SIRET et RCS côte à côte (le SIREN est automatiquement déduit des 9 premiers chiffres du SIRET) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex flex-col gap-1">
-              <RequiredLabel htmlFor="siren" isRequired={requiredFields.siren} tooltip="9 chiffres sans espaces">
-                Numéro SIREN
-              </RequiredLabel>
-              <Input
-                id="siren"
-                placeholder="123456789"
-                className="w-full"
-                disabled={!canManageOrgSettings}
-                {...register("legal.siren", {
-                  required: requiredFields.siren
-                    ? "Le numéro SIREN est requis"
-                    : false,
-                  pattern: {
-                    value: VALIDATION_PATTERNS.siren.pattern,
-                    message: VALIDATION_PATTERNS.siren.message,
-                  },
-                  validate: (value) => {
-                    if (value && detectInjectionAttempt(value)) {
-                      return "Caractères non autorisés détectés";
-                    }
-                    return true;
-                  },
-                })}
-              />
-              {errors.legal?.siren && (
-                <p className="text-sm text-red-500">
-                  {errors.legal.siren.message}
-                </p>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <RequiredLabel htmlFor="siret" isRequired={requiredFields.siret} tooltip="14 chiffres sans espaces">
+              <RequiredLabel
+                htmlFor="siret"
+                isRequired={requiredFields.siret}
+                tooltip="14 chiffres sans espaces. Le SIREN correspond aux 9 premiers chiffres."
+              >
                 Numéro SIRET
               </RequiredLabel>
               <Input
@@ -351,13 +331,14 @@ export function InformationsLegalesSection({
                 </p>
               )}
             </div>
-          </div>
 
-          {/* RCS */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {visibleFields.rcs && (
               <div className="flex flex-col gap-1">
-                <RequiredLabel htmlFor="rcs" isRequired={requiredFields.rcs} tooltip="Format: RCS Ville 123 456 789">
+                <RequiredLabel
+                  htmlFor="rcs"
+                  isRequired={requiredFields.rcs}
+                  tooltip="Format: RCS Ville 123 456 789"
+                >
                   Numéro RCS
                   {!requiredFields.rcs &&
                     ["EI", "Auto-entrepreneur"].includes(selectedLegalForm) && (
@@ -494,7 +475,6 @@ export function InformationsLegalesSection({
                   </SelectContent>
                 </Select>
               </div>
-
             </div>
           </div>
 
@@ -658,10 +638,7 @@ export function InformationsLegalesSection({
             <SectionTitle>Exercice comptable</SectionTitle>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="flex flex-col gap-1">
-                <RequiredLabel
-                  htmlFor="fiscalYearStartDate"
-                  isRequired={false}
-                >
+                <RequiredLabel htmlFor="fiscalYearStartDate" isRequired={false}>
                   Date de début
                 </RequiredLabel>
                 <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
@@ -673,7 +650,7 @@ export function InformationsLegalesSection({
                       className={cn(
                         "w-full justify-start text-left font-normal",
                         !watchedValues.legal?.fiscalYearStartDate &&
-                          "text-muted-foreground"
+                          "text-muted-foreground",
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
@@ -682,10 +659,10 @@ export function InformationsLegalesSection({
                           parse(
                             watchedValues.legal.fiscalYearStartDate,
                             "yyyy-MM-dd",
-                            new Date()
+                            new Date(),
                           ),
                           "dd MMM yyyy",
-                          { locale: fr }
+                          { locale: fr },
                         )
                       ) : (
                         <span>Sélectionner une date</span>
@@ -700,7 +677,7 @@ export function InformationsLegalesSection({
                           ? parse(
                               watchedValues.legal.fiscalYearStartDate,
                               "yyyy-MM-dd",
-                              new Date()
+                              new Date(),
                             )
                           : undefined
                       }
@@ -708,7 +685,7 @@ export function InformationsLegalesSection({
                         setValue(
                           "legal.fiscalYearStartDate",
                           date ? format(date, "yyyy-MM-dd") : "",
-                          { shouldDirty: true }
+                          { shouldDirty: true },
                         );
                         setStartDateOpen(false);
                       }}
@@ -731,7 +708,7 @@ export function InformationsLegalesSection({
                       className={cn(
                         "w-full justify-start text-left font-normal",
                         !watchedValues.legal?.fiscalYearEndDate &&
-                          "text-muted-foreground"
+                          "text-muted-foreground",
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
@@ -740,10 +717,10 @@ export function InformationsLegalesSection({
                           parse(
                             watchedValues.legal.fiscalYearEndDate,
                             "yyyy-MM-dd",
-                            new Date()
+                            new Date(),
                           ),
                           "dd MMM yyyy",
-                          { locale: fr }
+                          { locale: fr },
                         )
                       ) : (
                         <span>Sélectionner une date</span>
@@ -758,7 +735,7 @@ export function InformationsLegalesSection({
                           ? parse(
                               watchedValues.legal.fiscalYearEndDate,
                               "yyyy-MM-dd",
-                              new Date()
+                              new Date(),
                             )
                           : undefined
                       }
@@ -766,7 +743,7 @@ export function InformationsLegalesSection({
                         setValue(
                           "legal.fiscalYearEndDate",
                           date ? format(date, "yyyy-MM-dd") : "",
-                          { shouldDirty: true }
+                          { shouldDirty: true },
                         );
                         setEndDateOpen(false);
                       }}
@@ -784,12 +761,16 @@ export function InformationsLegalesSection({
           <div className="mb-8 mt-2">
             <Callout type="neutral" noMargin>
               <p>
-                <span className="font-medium text-sm">Facturation électronique</span>
+                <span className="font-medium text-sm">
+                  Facturation électronique
+                </span>
                 <br />
-                <span className="text-xs">Ces informations sont essentielles pour la conformité de vos
-                factures électroniques. Elles apparaissent sur chaque document
-                émis et sont requises par la réglementation française en matière
-                de facturation électronique.</span>
+                <span className="text-xs">
+                  Ces informations sont essentielles pour la conformité de vos
+                  factures électroniques. Elles apparaissent sur chaque document
+                  émis et sont requises par la réglementation française en
+                  matière de facturation électronique.
+                </span>
               </p>
             </Callout>
           </div>

@@ -80,7 +80,10 @@ const getDemoPurchaseOrderData = (formData, organization) => {
         country:
           formData?.addressCountry || organization?.addressCountry || "France",
       },
-      siren: organization?.siren || "987654321",
+      siren:
+        organization?.siren ||
+        organization?.siret?.substring(0, 9) ||
+        "987654321",
       siret: organization?.siret || "98765432109876",
       vatNumber: organization?.vatNumber || "FR98765432109",
       logo: organization?.logo || null,
