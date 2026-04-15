@@ -37,14 +37,24 @@ const formatCurrencyShort = (value) =>
     maximumFractionDigits: 0,
   }).format(value || 0);
 
+const FR_MONTHS_3 = [
+  "Jan",
+  "Fév",
+  "Mar",
+  "Avr",
+  "Mai",
+  "Jun",
+  "Jul",
+  "Aoû",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Déc",
+];
+
 const formatMonthLabel = (monthStr) => {
   const [year, month] = monthStr.split("-");
-  const date = new Date(parseInt(year), parseInt(month) - 1);
-  const label = date
-    .toLocaleDateString("fr-FR", { month: "short" })
-    .replace(".", "")
-    .toUpperCase();
-  return `${label}. ${year.slice(2)}`;
+  return `${FR_MONTHS_3[parseInt(month) - 1]}.${year.slice(2)}`;
 };
 
 // ─── Category labels ───
@@ -365,6 +375,14 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
     }));
   }, [safeMonths, currentMonth]);
 
+  // Au-delà de 18 mois (24 mois), on n'affiche qu'1 label sur 2 pour rester horizontal.
+  // Sinon (≤ 12 mois) on garde le comportement normal.
+  const xN = chartData.length;
+  const xAxisInterval = xN > 18 ? 1 : 0;
+  const xAxisFontSize = 11;
+  const xAxisAngle = 0;
+  const xAxisHeight = 30;
+
   // Top categories split by income / expense.
   // Returns, per category, its total + a month-by-month breakdown
   // ({ month, actual, forecast }) for the dropdown detail.
@@ -678,7 +696,8 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                       tickLine={false}
                       axisLine={false}
                       tickMargin={12}
-                      interval={0}
+                      interval={xAxisInterval}
+                      height={xAxisHeight}
                       tick={({ x, y, payload }) => {
                         const dataItem = chartData.find(
                           (d) => d.label === payload.value,
@@ -688,10 +707,15 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                           <text
                             x={x}
                             y={y + 4}
-                            textAnchor="middle"
-                            fontSize={10}
+                            textAnchor={xAxisAngle ? "end" : "middle"}
+                            fontSize={xAxisFontSize}
                             fill={isCurrent ? remap("#3b82f6") : "#9ca3af"}
                             fontWeight={isCurrent ? 600 : 400}
+                            transform={
+                              xAxisAngle
+                                ? `rotate(${xAxisAngle}, ${x}, ${y + 4})`
+                                : undefined
+                            }
                           >
                             {payload.value}
                           </text>
