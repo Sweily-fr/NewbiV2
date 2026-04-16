@@ -68,10 +68,22 @@ import {
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
+  DropdownMenuItem,
   DropdownMenuContent,
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
+import { cn } from "@/src/lib/utils";
+import {
+  TagIcon,
+  WalletIcon,
+  Wallet1Icon,
+  GraphIcon,
+  DollarSquareIcon,
+  Link2Icon,
+  SortIcon as ListFilterIcon,
+  Setting4Icon,
+} from "@/src/components/icons";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -92,7 +104,6 @@ import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import {
   Search,
   TrashIcon,
-  ListFilterIcon,
   ChevronFirstIcon,
   ChevronLastIcon,
   ChevronLeftIcon,
@@ -125,6 +136,7 @@ export default function TransactionTable({
   onAddManualTriggered,
   triggerAddOcr = false,
   onAddOcrTriggered,
+  bankAccounts = [],
 }) {
   const id = useId();
   const [columnFilters, setColumnFilters] = useState([]);
@@ -940,6 +952,7 @@ export default function TransactionTable({
       onRefresh: refetch,
       onDownloadAttachment: handleDownloadAttachment,
       onEditPCG: handleEditPCG,
+      bankAccounts,
     },
   });
 
@@ -1096,6 +1109,7 @@ export default function TransactionTable({
       onRefresh: refetch,
       onDownloadAttachment: handleDownloadAttachment,
       onEditPCG: handleEditPCG,
+      bankAccounts,
     },
   });
 
@@ -1139,11 +1153,11 @@ export default function TransactionTable({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline">
-                <Settings2 size={14} aria-hidden="true" />
+                <Setting4Icon className="w-3.5 h-3.5" aria-hidden="true" />
                 Gérer les colonnes
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
+            <DropdownMenuContent align="start" className="flex flex-col gap-1">
               <DropdownMenuLabel>Afficher les colonnes</DropdownMenuLabel>
               {tableWithFilteredData
                 .getAllColumns()
@@ -1153,18 +1167,32 @@ export default function TransactionTable({
                     column.columnDef.meta?.label ||
                     column.columnDef.header ||
                     column.id;
+                  const columnIcons = {
+                    category: TagIcon,
+                    paymentMethod: WalletIcon,
+                    source: Wallet1Icon,
+                    hasReceipt: Link2Icon,
+                    pcgAccount: GraphIcon,
+                    amount: DollarSquareIcon,
+                  };
+                  const IconComp = columnIcons[column.id];
                   return (
-                    <DropdownMenuCheckboxItem
+                    <DropdownMenuItem
                       key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
+                      className={cn(
+                        "capitalize cursor-pointer gap-2",
+                        column.getIsVisible() && "bg-accent",
+                      )}
+                      onClick={() =>
+                        column.toggleVisibility(!column.getIsVisible())
                       }
                       onSelect={(event) => event.preventDefault()}
                     >
+                      {IconComp && (
+                        <IconComp className="!size-3 text-sidebar-foreground" />
+                      )}
                       {label}
-                    </DropdownMenuCheckboxItem>
+                    </DropdownMenuItem>
                   );
                 })}
             </DropdownMenuContent>
@@ -1176,7 +1204,7 @@ export default function TransactionTable({
               <Button
                 variant={advancedFilters.length > 0 ? "primary" : "filter"}
               >
-                <Filter size={14} aria-hidden="true" />
+                <ListFilterIcon className="w-3.5 h-3.5" aria-hidden="true" />
                 Filtres
                 {advancedFilters.length > 0 && (
                   <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-xs">
@@ -1604,7 +1632,7 @@ export default function TransactionTable({
                       <td
                         key={cell.id}
                         style={{ width: cell.column.getSize() }}
-                        className={`p-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                        className={`p-2 align-middle text-[13px] ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
                       >
                         {flexRender(
                           cell.column.columnDef.cell,

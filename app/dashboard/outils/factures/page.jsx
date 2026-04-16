@@ -3,16 +3,12 @@
 import { Suspense, useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/src/components/ui/button";
 import { PermissionButton } from "@/src/components/rbac";
+import { Plus, Bell, Info } from "lucide-react";
 import {
-  Plus,
-  Settings,
-  MailCheck,
-  Bell,
-  ArrowRightFromLine,
-  Download,
-  FileText,
-  Info,
-} from "lucide-react";
+  SettingIcon as Settings,
+  ExportIcon as Download,
+  SmsIcon as MailCheck,
+} from "@/src/components/icons";
 import { Badge } from "@/src/components/ui/badge";
 import {
   Tooltip,
@@ -198,10 +194,10 @@ function InvoicesContent() {
 
   return (
     <>
-      {/* Desktop Layout - Full height avec scroll uniquement sur le tableau */}
+      {/* Desktop Layout */}
       <div className="hidden md:flex md:flex-col md:h-[calc(100vh-64px)] overflow-hidden">
-        {/* Header */}
-        <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6">
+        {/* Header - Fixe */}
+        <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6 flex-shrink-0">
           <div>
             <h1 className="text-2xl font-medium mb-2">Factures clients</h1>
             {/* <p className="text-muted-foreground text-sm">
@@ -214,17 +210,17 @@ function InvoicesContent() {
               size="icon"
               onClick={() => setIsAutoReminderOpen(true)}
             >
-              <MailCheck size={14} strokeWidth={1.5} aria-hidden="true" />
+              <MailCheck className="w-3.5 h-3.5" aria-hidden="true" />
             </Button>
             <Button
               variant="outline"
               size="icon"
               onClick={() => setIsSettingsOpen(true)}
             >
-              <Settings size={14} strokeWidth={1.5} aria-hidden="true" />
+              <Settings className="w-3.5 h-3.5" aria-hidden="true" />
             </Button>
             <Button variant="outline" onClick={() => setTriggerImport(true)}>
-              <Download size={14} strokeWidth={1.5} aria-hidden="true" />
+              <Download className="w-3.5 h-3.5" aria-hidden="true" />
               Importer
             </Button>
             <InvoiceExportButton invoices={filteredData} iconOnly={false} />
@@ -239,119 +235,128 @@ function InvoicesContent() {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="flex gap-3 px-4 sm:px-6 py-3">
-          {/* CA facturé + CA payé */}
-          <div className="bg-background border rounded-lg px-4 py-3 flex items-center gap-0">
-            {/* CA facturé */}
-            <div className="pr-4">
-              <div className="flex items-center gap-1.5 mb-1">
-                <span className="text-xs text-muted-foreground">
-                  CA facturé
-                </span>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side="bottom"
-                      className="bg-[#202020] text-white border-0"
-                    >
-                      <p>Total des factures émises (hors brouillons)</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+        {/* Zone scrollable : KPIs + recherche + onglets + tableau */}
+        <div className="flex-1 min-h-0 overflow-auto">
+          <div className="flex flex-col min-h-full">
+            {/* Stats Cards */}
+            <div className="flex gap-3 px-4 sm:px-6 py-3">
+              {/* CA facturé + CA payé */}
+              <div className="bg-background border rounded-lg px-4 py-3 flex items-center gap-0">
+                {/* CA facturé */}
+                <div className="pr-4">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-xs text-muted-foreground">
+                      CA facturé
+                    </span>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="bottom"
+                          className="bg-[#202020] text-white border-0"
+                        >
+                          <p>Total des factures émises (hors brouillons)</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-lg font-medium tracking-tight">
+                      {filteredData === null
+                        ? "..."
+                        : `${formatAmount(invoiceStats.totalBilled)} €`}
+                    </span>
+                    <span className="text-xs text-muted-foreground">HT</span>
+                  </div>
+                </div>
+
+                {/* Separator */}
+                <div className="w-px h-10 bg-border mx-4" />
+
+                {/* CA payé */}
+                <div className="pl-0">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-xs text-muted-foreground">
+                      CA payé
+                    </span>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="bottom"
+                          className="bg-[#202020] text-white border-0"
+                        >
+                          <p>Total des factures payées</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-lg font-medium tracking-tight">
+                      {filteredData === null
+                        ? "..."
+                        : `${formatAmount(invoiceStats.totalPaid)} €`}
+                    </span>
+                    <span className="text-xs text-muted-foreground">HT</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-lg font-medium tracking-tight">
-                  {filteredData === null
-                    ? "..."
-                    : `${formatAmount(invoiceStats.totalBilled)} €`}
-                </span>
-                <span className="text-xs text-muted-foreground">HT</span>
+
+              {/* Factures en retard */}
+              <div className="bg-background border rounded-lg px-4 py-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="text-xs text-muted-foreground">
+                    Factures en retard
+                  </span>
+                  {invoiceStats.overdueCount > 0 && (
+                    <span className="h-4 w-4 flex items-center justify-center rounded-full bg-red-100 text-red-500 text-[10px] font-medium">
+                      {invoiceStats.overdueCount}
+                    </span>
+                  )}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="bottom"
+                        className="bg-[#202020] text-white border-0"
+                      >
+                        <p>Factures dont la date d'échéance est dépassée</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-lg font-medium tracking-tight">
+                    {filteredData === null
+                      ? "..."
+                      : `${formatAmount(invoiceStats.overdueAmount)} €`}
+                  </span>
+                  <span className="text-xs text-muted-foreground">HT</span>
+                </div>
               </div>
             </div>
 
-            {/* Separator */}
-            <div className="w-px h-10 bg-border mx-4" />
-
-            {/* CA payé */}
-            <div className="pl-0">
-              <div className="flex items-center gap-1.5 mb-1">
-                <span className="text-xs text-muted-foreground">CA payé</span>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side="bottom"
-                      className="bg-[#202020] text-white border-0"
-                    >
-                      <p>Total des factures payées</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-lg font-medium tracking-tight">
-                  {filteredData === null
-                    ? "..."
-                    : `${formatAmount(invoiceStats.totalPaid)} €`}
-                </span>
-                <span className="text-xs text-muted-foreground">HT</span>
-              </div>
-            </div>
+            {/* Table */}
+            <Suspense fallback={<InvoiceTableSkeleton />}>
+              <InvoiceTable
+                handleNewInvoice={handleNewInvoice}
+                invoiceIdToOpen={invoiceIdToOpen}
+                onOpenReminderSettings={() => setIsAutoReminderOpen(true)}
+                triggerImport={triggerImport}
+                onImportTriggered={() => setTriggerImport(false)}
+                onFilteredDataChange={handleFilteredDataChange}
+              />
+            </Suspense>
           </div>
-
-          {/* Factures en retard */}
-          <div className="bg-background border rounded-lg px-4 py-3">
-            <div className="flex items-center gap-1.5 mb-1">
-              <span className="text-xs text-muted-foreground">
-                Factures en retard
-              </span>
-              {invoiceStats.overdueCount > 0 && (
-                <span className="h-4 w-4 flex items-center justify-center rounded-full bg-red-100 text-red-500 text-[10px] font-medium">
-                  {invoiceStats.overdueCount}
-                </span>
-              )}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="bottom"
-                    className="bg-[#202020] text-white border-0"
-                  >
-                    <p>Factures dont la date d'échéance est dépassée</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-lg font-medium tracking-tight">
-                {filteredData === null
-                  ? "..."
-                  : `${formatAmount(invoiceStats.overdueAmount)} €`}
-              </span>
-              <span className="text-xs text-muted-foreground">HT</span>
-            </div>
-          </div>
+          {/* Fin min-h-full */}
         </div>
-
-        {/* Table */}
-        <Suspense fallback={<InvoiceTableSkeleton />}>
-          <InvoiceTable
-            handleNewInvoice={handleNewInvoice}
-            invoiceIdToOpen={invoiceIdToOpen}
-            onOpenReminderSettings={() => setIsAutoReminderOpen(true)}
-            triggerImport={triggerImport}
-            onImportTriggered={() => setTriggerImport(false)}
-            onFilteredDataChange={handleFilteredDataChange}
-          />
-        </Suspense>
+        {/* Fin zone scrollable */}
       </div>
 
       {/* Mobile Layout */}

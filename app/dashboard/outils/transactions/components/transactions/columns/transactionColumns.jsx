@@ -3,13 +3,12 @@ import {
   CreditCardIcon,
   BanknoteIcon,
   FileTextIcon,
-  Paperclip,
   PenLine,
   Landmark,
-  Link2,
   CheckCircle2,
   BookOpen,
 } from "lucide-react";
+import { Link2Icon as Link2, MoneyReciveIcon } from "@/src/components/icons";
 import { formatDateToFrench } from "@/src/utils/dateFormatter";
 import { findBank } from "@/lib/banks-config";
 import { RowActions } from "../components/RowActions";
@@ -186,10 +185,10 @@ export const columns = [
       };
 
       return (
-        <div className="flex items-center gap-2">
-          {getIcon()}
-          <span className="text-sm">{getLabel()}</span>
-        </div>
+        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-violet-100 text-violet-700 dark:bg-violet-900/20 dark:text-violet-400">
+          <MoneyReciveIcon className="w-3 h-3" />
+          {getLabel()}
+        </span>
       );
     },
     size: 150,
@@ -200,7 +199,7 @@ export const columns = [
     meta: {
       label: "Source",
     },
-    cell: ({ row }) => {
+    cell: ({ row, table }) => {
       const source = row.original.source || row.original.type;
       const isBank = source === "BANK" || source === "BANK_TRANSACTION";
       const isManual = source === "MANUAL" || source === "MANUAL_EXPENSE";
@@ -214,33 +213,39 @@ export const columns = [
         "";
       const bank = findBank(bankName);
 
+      // Chercher le logo de l'institution via bankAccounts du meta
+      const bankAccounts = table.options.meta?.bankAccounts || [];
+      const fromAccountId = row.original.originalTransaction?.fromAccount;
+      const matchedAccount = bankAccounts.find(
+        (acc) => acc.id === fromAccountId || acc.externalId === fromAccountId,
+      );
+      const institutionLogo = matchedAccount?.institutionLogo || bank?.logo;
+      const institutionName =
+        matchedAccount?.institutionName ||
+        matchedAccount?.bankName ||
+        bank?.name;
+
       if (isBank) {
         return (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex items-center gap-2">
-                  {bank?.logo ? (
+                  {institutionLogo ? (
                     <img
-                      src={bank.logo}
-                      alt={bank.name}
-                      className="h-5 w-5 rounded-full object-cover"
-                      onError={(e) => {
-                        e.target.style.display = "none";
-                        e.target.nextSibling.style.display = "flex";
-                      }}
+                      src={institutionLogo}
+                      alt={institutionName || "Banque"}
+                      className="h-6 w-6 rounded-sm object-cover"
                     />
-                  ) : null}
-                  <div
-                    className="h-5 w-5 rounded-full bg-muted items-center justify-center"
-                    style={{ display: bank?.logo ? "none" : "flex" }}
-                  >
-                    <Landmark size={12} className="text-muted-foreground" />
-                  </div>
+                  ) : (
+                    <div className="h-6 w-6 rounded-sm bg-muted flex items-center justify-center">
+                      <Landmark size={14} className="text-muted-foreground" />
+                    </div>
+                  )}
                 </div>
               </TooltipTrigger>
               <TooltipContent>
-                {bank?.name || "Transaction bancaire"}
+                {institutionName || "Transaction bancaire"}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -311,10 +316,7 @@ export const columns = [
                 <div className="flex items-center gap-1.5">
                   <div className="relative">
                     <FileTextIcon size={14} className="text-green-600" />
-                    <Link2
-                      size={8}
-                      className="text-green-600 absolute -bottom-0.5 -right-0.5"
-                    />
+                    <Link2 className="w-2 h-2 text-green-600 absolute -bottom-0.5 -right-0.5" />
                   </div>
                   <CheckCircle2 size={12} className="text-green-600" />
                 </div>
@@ -339,7 +341,7 @@ export const columns = [
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center gap-1.5">
-                <Paperclip size={14} className="text-muted-foreground" />
+                <Link2 className="w-3.5 h-3.5 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground">
                   {filesCount > 0 ? filesCount : "-"}
                 </span>
@@ -374,14 +376,13 @@ export const columns = [
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-500 dark:bg-gray-900/20 dark:text-gray-400 cursor-pointer hover:opacity-80 transition-opacity"
                   onClick={(e) => {
                     e.stopPropagation();
                     table.options.meta?.onEditPCG?.(row.original);
                   }}
                 >
-                  <BookOpen size={14} />
-                  <span>Affecter</span>
+                  Non affecté
                 </button>
               </TooltipTrigger>
               <TooltipContent>Affecter un compte PCG</TooltipContent>
@@ -399,24 +400,14 @@ export const columns = [
           <Tooltip>
             <TooltipTrigger asChild>
               <button
-                className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity"
+                className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 cursor-pointer hover:opacity-80 transition-opacity"
                 onClick={(e) => {
                   e.stopPropagation();
                   table.options.meta?.onEditPCG?.(row.original);
                 }}
               >
-                <code
-                  className="rounded px-1.5 py-0.5 text-xs font-mono font-semibold"
-                  style={{
-                    backgroundColor: confidence.bgColor,
-                    color: confidence.color,
-                  }}
-                >
-                  {pcgAccount.numero}
-                </code>
-                {pcgAccount.isManual && (
-                  <PenLine size={10} className="text-blue-500" />
-                )}
+                {pcgAccount.numero}
+                {pcgAccount.isManual && <PenLine size={10} />}
               </button>
             </TooltipTrigger>
             <TooltipContent>
@@ -426,7 +417,7 @@ export const columns = [
                 </div>
                 <div className="text-xs text-muted-foreground mt-0.5">
                   {pcgAccount.isManual
-                    ? "Affecte manuellement"
+                    ? "Affecté manuellement"
                     : `Auto (${confidence.label.toLowerCase()})`}
                 </div>
                 <div className="text-xs mt-1">Cliquer pour modifier</div>

@@ -2,15 +2,17 @@
 
 import { useState, useEffect } from "react";
 import {
-  Download,
   FileSpreadsheet,
   FileText,
   FileCheck,
   Building,
   Building2,
-  ArrowRightFromLine,
   Lock,
 } from "lucide-react";
+import {
+  ImportIcon as ArrowRightFromLine,
+  ExportIcon as Download,
+} from "@/src/components/icons";
 import { Button } from "@/src/components/ui/button";
 import {
   DropdownMenu,
@@ -75,9 +77,7 @@ export default function PurchaseOrderExportButton({
   const hasSelection = selectedRows && selectedRows.length > 0;
 
   const poToExport = hasSelection
-    ? selectedRows
-        .map((row) => row.original || row)
-        .filter(Boolean)
+    ? selectedRows.map((row) => row.original || row).filter(Boolean)
     : purchaseOrders || [];
 
   const handleFormatSelect = (format) => {
@@ -94,19 +94,29 @@ export default function PurchaseOrderExportButton({
 
       if (selectedFormat === "csv") {
         exportToCSV(finalPOs, finalDateRange);
-        toast.success(`${finalPOs.length} bon(s) de commande exporté(s) en CSV`);
+        toast.success(
+          `${finalPOs.length} bon(s) de commande exporté(s) en CSV`,
+        );
       } else if (selectedFormat === "excel") {
         exportToExcel(finalPOs, finalDateRange);
-        toast.success(`${finalPOs.length} bon(s) de commande exporté(s) en Excel`);
+        toast.success(
+          `${finalPOs.length} bon(s) de commande exporté(s) en Excel`,
+        );
       } else if (selectedFormat === "fec") {
         exportToFEC(finalPOs, finalDateRange);
-        toast.success(`${finalPOs.length} bon(s) de commande exporté(s) au format FEC`);
+        toast.success(
+          `${finalPOs.length} bon(s) de commande exporté(s) au format FEC`,
+        );
       } else if (selectedFormat === "sage") {
         exportToSage(finalPOs, finalDateRange);
-        toast.success(`${finalPOs.length} bon(s) de commande exporté(s) pour Sage`);
+        toast.success(
+          `${finalPOs.length} bon(s) de commande exporté(s) pour Sage`,
+        );
       } else if (selectedFormat === "cegid") {
         exportToCegid(finalPOs, finalDateRange);
-        toast.success(`${finalPOs.length} bon(s) de commande exporté(s) pour Cegid`);
+        toast.success(
+          `${finalPOs.length} bon(s) de commande exporté(s) pour Cegid`,
+        );
       }
 
       setIsDialogOpen(false);
@@ -133,11 +143,11 @@ export default function PurchaseOrderExportButton({
         <DropdownMenuTrigger asChild>
           {iconOnly ? (
             <Button variant="secondary" size="icon">
-              <ArrowRightFromLine className="h-4 w-4" strokeWidth={1.5} />
+              <ArrowRightFromLine className="h-3.5 w-3.5" />
             </Button>
           ) : (
             <Button variant="outline" className="cursor-pointer">
-              <ArrowRightFromLine size={14} strokeWidth={1.5} />
+              <ArrowRightFromLine className="w-3.5 h-3.5" />
               Exporter
               {hasSelection && (
                 <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-white dark:text-black">
@@ -240,8 +250,8 @@ export default function PurchaseOrderExportButton({
             <DialogDescription>
               {hasSelection ? (
                 <span className="font-medium text-primary">
-                  {poToExport.length} bon(s) de commande sélectionné(s) sera(ont)
-                  exporté(s).
+                  {poToExport.length} bon(s) de commande sélectionné(s)
+                  sera(ont) exporté(s).
                 </span>
               ) : selectedFormat === "fec" ? (
                 "Format légal obligatoire pour l'administration fiscale française. Génère les écritures comptables au format normalisé."
@@ -287,7 +297,7 @@ export default function PurchaseOrderExportButton({
                           • BC {po.prefix || ""}
                           {po.number} - {po.client?.name || "Client inconnu"}
                         </li>
-                      )
+                      ),
                   )}
                   {poToExport.length > 5 && (
                     <li className="text-xs italic">
@@ -304,7 +314,7 @@ export default function PurchaseOrderExportButton({
               Annuler
             </Button>
             <Button onClick={handleExport}>
-              <Download className="mr-2 h-4 w-4" />
+              <Download className="mr-2 w-3.5 h-3.5" />
               Exporter
             </Button>
           </DialogFooter>

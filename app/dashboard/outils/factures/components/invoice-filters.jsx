@@ -23,12 +23,12 @@ import {
 } from "@/src/components/ui/popover";
 import {
   EllipsisVertical,
-  ListFilterIcon,
   Users,
   FileCheck,
   Calendar as CalendarIcon,
   FileType,
 } from "lucide-react";
+import { SortIcon as ListFilterIcon } from "@/src/components/icons";
 import { cn } from "@/src/lib/utils";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";

@@ -10,15 +10,22 @@ import {
   Crown,
   Settings2,
   Trash,
-  Settings,
   Users,
   Sparkles,
-  MessageCircleQuestionMark,
   GraduationCap,
   UsersRound,
   HelpCircle,
-  Bell,
 } from "lucide-react";
+import {
+  DirectNormalIcon as Bell,
+  SettingIcon as Settings,
+  MessagesIcon as MessageCircleQuestionMark,
+  Setting5Icon,
+  PeopleIcon,
+  LampOnIcon,
+  TeacherIcon,
+  BookIcon,
+} from "@/src/components/icons";
 import { cn } from "@/src/lib/utils";
 import { useUser } from "@/src/lib/auth/hooks";
 import { SettingsModal } from "@/src/components/settings-modal";
@@ -39,7 +46,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
-
 
 import {
   DropdownMenu,
@@ -97,7 +103,7 @@ function HelpDropdownMenu({ onCommunityClick }) {
           >
             <a href={buildMailtoLink()}>
               <div className="flex items-center gap-2 w-full">
-                <HelpCircle className="h-4 w-4" />
+                <LampOnIcon className="h-4 w-4 text-sidebar-foreground" />
                 <div className="flex flex-col">
                   <span className="font-normal text-sm">Aide</span>
                   <span className="text-xs text-muted-foreground">
@@ -119,7 +125,7 @@ function HelpDropdownMenu({ onCommunityClick }) {
             }}
           >
             <div className="flex items-center gap-2 w-full">
-              <UsersRound className="h-4 w-4" />
+              <TeacherIcon className="h-4 w-4 text-sidebar-foreground" />
               <div className="flex flex-col">
                 <span className="font-normal text-sm">Communauté</span>
                 <span className="text-xs text-muted-foreground">
@@ -139,7 +145,7 @@ function HelpDropdownMenu({ onCommunityClick }) {
               rel="noopener noreferrer"
             >
               <div className="flex items-center gap-2 w-full">
-                <GraduationCap className="h-4 w-4" />
+                <BookIcon className="h-4 w-4 text-sidebar-foreground" />
                 <div className="flex flex-col">
                   <span className="font-normal text-sm">Documentation</span>
                   <span className="text-xs text-muted-foreground">
@@ -190,14 +196,14 @@ function SettingsDropdownMenu() {
               setSettingsModalOpen(true);
             }}
           >
-            <Settings2 className="size-4 text-[#505154]" />
+            <Setting5Icon className="size-4 text-sidebar-foreground" />
             <span className="text-[13px]">Paramètres entreprise</span>
           </DropdownMenuItem>
 
           <DropdownMenuItem
             className={cn(
               "cursor-pointer",
-              !isActive() && "opacity-60 cursor-not-allowed"
+              !isActive() && "opacity-60 cursor-not-allowed",
             )}
             onClick={() => {
               // Toujours ouvrir le modal sur l'onglet espaces
@@ -207,13 +213,13 @@ function SettingsDropdownMenu() {
           >
             {isActive() ? (
               <>
-                <Users className="size-4 text-[#505154]" />
+                <PeopleIcon className="size-4 text-sidebar-foreground" />
                 <span className="text-[13px]">Collaborateurs</span>
               </>
             ) : (
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
-                  <Users className="size-4 text-[#505154]" />
+                  <PeopleIcon className="size-4 text-sidebar-foreground" />
                   <span className="text-[13px]">Collaborateurs</span>
                 </div>
                 <Crown className="w-3 h-3 text-[#5b4fff]" />
@@ -357,7 +363,7 @@ export function NavSecondary({
                           e.preventDefault();
                           // Déclencher l'événement personnalisé pour ouvrir la recherche
                           window.dispatchEvent(
-                            new Event("open-search-command")
+                            new Event("open-search-command"),
                           );
                         } else if (item.title === "Communauté") {
                           e.preventDefault();

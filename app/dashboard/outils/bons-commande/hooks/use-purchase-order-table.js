@@ -10,8 +10,12 @@ import {
 } from "@tanstack/react-table";
 import { Badge } from "@/src/components/ui/badge";
 import { Checkbox } from "@/src/components/ui/checkbox";
-import { Button } from "@/src/components/ui/button";
-import { ArrowUpDown, Mail } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
+import { ArrowUpDown, CircleAlert } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
   PURCHASE_ORDER_STATUS_LABELS,
@@ -220,7 +224,7 @@ export function usePurchaseOrderTable({
             aria-label="Selectionner la ligne"
           />
         ),
-        size: 28,
+        size: 40,
         enableSorting: false,
         enableHiding: false,
         meta: {
@@ -236,7 +240,7 @@ export function usePurchaseOrderTable({
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Client
-            <ArrowUpDown className="ml-2 h-4 w-4" />
+            <ArrowUpDown className="ml-2 h-3 w-3" />
           </div>
         ),
         meta: {
@@ -261,7 +265,9 @@ export function usePurchaseOrderTable({
                 )}
               </div>
               <div className="text-xs text-muted-foreground truncate max-w-[100px] md:max-w-none">
-                {purchaseOrder.number || (
+                {(purchaseOrder.prefix
+                  ? `${purchaseOrder.prefix}${purchaseOrder.number}`
+                  : purchaseOrder.number) || (
                   <span className="italic">Brouillon</span>
                 )}
               </div>
@@ -282,7 +288,7 @@ export function usePurchaseOrderTable({
               }
             >
               Date d&apos;emission
-              <ArrowUpDown className="ml-2 h-4 w-4" />
+              <ArrowUpDown className="ml-2 h-3 w-3" />
             </div>
           </div>
         ),
@@ -307,7 +313,7 @@ export function usePurchaseOrderTable({
               }
             >
               Date de validité
-              <ArrowUpDown className="ml-2 h-4 w-4" />
+              <ArrowUpDown className="ml-2 h-3 w-3" />
             </div>
           </div>
         ),
@@ -331,9 +337,28 @@ export function usePurchaseOrderTable({
           const isExpired = isDateExpired(dateValue);
 
           return (
-            <div className={cn("text-sm", isExpired && "text-red-600")}>
+            <div
+              className={cn(
+                "flex items-center gap-1.5",
+                isExpired && "text-destructive font-medium",
+              )}
+            >
               {formattedDate}
-              {isExpired && <div className="text-xs text-red-500">Expirée</div>}
+              {isExpired && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex items-center justify-center flex-shrink-0">
+                      <CircleAlert className="w-3.5 h-3.5 text-destructive" />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="top"
+                    className="bg-[#202020] text-white border-none text-xs"
+                  >
+                    Expirée
+                  </TooltipContent>
+                </Tooltip>
+              )}
             </div>
           );
         },
@@ -347,7 +372,7 @@ export function usePurchaseOrderTable({
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Statut
-            <ArrowUpDown className="ml-2 h-4 w-4" />
+            <ArrowUpDown className="ml-2 h-3 w-3" />
           </div>
         ),
         meta: {
@@ -368,35 +393,32 @@ export function usePurchaseOrderTable({
       {
         id: "emailTracking",
         header: () => (
-          <div className="flex items-center justify-center font-normal">
-            <Mail className="h-4 w-4" />
-          </div>
+          <div className="flex items-center font-normal">Suivi</div>
         ),
         meta: {
-          label: "Email",
+          label: "Suivi",
         },
         cell: ({ row }) => {
           const emailTracking = row.original.emailTracking;
           return (
-            <div className="flex justify-center">
+            <div className="flex items-center">
               <EmailTrackingStatus emailTracking={emailTracking} />
             </div>
           );
         },
-        size: 50,
+        size: 100,
         enableSorting: false,
       },
       {
         accessorKey: "finalTotalTTC",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <div
+            className="flex items-center cursor-pointer font-normal"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="h-auto p-0 font-normal"
           >
             Montant TTC
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
+            <ArrowUpDown className="ml-2 h-3 w-3" />
+          </div>
         ),
         meta: {
           label: "Montant TTC",
