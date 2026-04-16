@@ -266,11 +266,11 @@
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar: #F3F3F4;
+  --sidebar-foreground: lch(38.376% 1.25 282 / 1);
   --sidebar-primary: oklch(0.205 0 0);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent: rgb(229 229 230 / 0.85);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
@@ -361,7 +361,7 @@
 
 /* Lucide icons - strokeWidth global à 1.5 */
 .lucide {
-  stroke-width: 1.5;
+  stroke-width: 1.6;
 }
 
 /* Tooltip styles - fond noir #202020 */

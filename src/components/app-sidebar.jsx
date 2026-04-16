@@ -5,24 +5,41 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 
 import {
-  CircleGauge,
-  Calendar,
   Users,
   FileMinus,
-  Search,
   MessageCircleQuestionMark,
   Bell,
   Landmark,
   FileText,
   ClipboardCheck,
   Receipt,
-  ShoppingBasket,
   BarChart3,
   FolderOpen,
   Command as CommandIcon,
 } from "lucide-react";
 
 import { NavDocuments } from "@/src/components/nav-documents";
+import {
+  DashboardIcon as CircleGauge,
+  ShopIcon as ShoppingBasket,
+  SearchIcon as Search,
+  ReceiptItemIcon,
+  DiagramIcon,
+  HealthIcon,
+  ClipboardImportIcon,
+  ClipboardTickIcon,
+  DocumentText2Icon,
+  MenuBoardIcon,
+  UserEditIcon,
+  TaskIcon,
+  MicroscopeIcon,
+  SlashIcon,
+  BrushIcon,
+  DocumentCloudIcon,
+  DocumentTextIcon,
+  SendIcon,
+  NoteTextIcon as Calendar,
+} from "@/src/components/icons";
 import { NavMain } from "@/src/components/nav-main";
 import { NavSecondary } from "@/src/components/nav-secondary";
 import { NavUser } from "@/src/components/nav-user";
@@ -78,50 +95,61 @@ const data = {
     {
       title: "Transactions",
       url: "/dashboard/outils/transactions",
+      icon: ReceiptItemIcon,
     },
     {
       title: "Prévision",
       url: "/dashboard/outils/prevision",
+      icon: HealthIcon,
     },
     {
       title: "Analytiques",
       url: "/dashboard/outils/analytiques",
+      icon: DiagramIcon,
     },
   ],
   navVentes: [
     {
       title: "Factures clients",
       url: "/dashboard/outils/factures",
+      icon: DocumentText2Icon,
     },
     {
       title: "Devis",
       url: "/dashboard/outils/devis",
+      icon: ClipboardTickIcon,
     },
     {
       title: "Bons de commande",
       url: "/dashboard/outils/bons-commande",
+      icon: ClipboardImportIcon,
     },
     {
       title: "Catalogues",
       url: "/dashboard/catalogues",
+      icon: MenuBoardIcon,
     },
   ],
   navClients: [
     {
       title: "Mes clients",
       url: "/dashboard/clients",
+      icon: UserEditIcon,
     },
     {
       title: "Listes",
       url: "/dashboard/clients/listes",
+      icon: TaskIcon,
     },
     {
       title: "Segments",
       url: "/dashboard/clients/segments",
+      icon: MicroscopeIcon,
     },
     {
       title: "Bloqués",
       url: "/dashboard/clients/blocked",
+      icon: SlashIcon,
     },
   ],
   navAfterVentes: [
@@ -148,10 +176,12 @@ const data = {
     {
       title: "Transfert de fichiers",
       url: "/dashboard/outils/transferts-fichiers",
+      icon: DocumentTextIcon,
     },
     {
       title: "Documents partagés",
       url: "/dashboard/outils/documents-partages",
+      icon: DocumentCloudIcon,
     },
   ],
   navCommunication: [
@@ -159,6 +189,7 @@ const data = {
       title: "Signature de mail",
       url: "/dashboard/outils/signatures-mail",
       isPro: false,
+      icon: BrushIcon,
     },
   ],
   navSecondary: [
@@ -405,7 +436,7 @@ export function AppSidebar({
   const [theme, setTheme] = React.useState("light");
   const [notificationCount, setNotificationCount] = React.useState(0);
   const { listInvitations } = useOrganizationInvitations();
-  
+
   // Hook pour les notifications d'activité (assignations de tâches)
   const { unreadCount: activityUnreadCount } = useActivityNotifications();
 
@@ -442,28 +473,34 @@ export function AppSidebar({
     const fetchNotifications = async () => {
       try {
         // Récupérer les IDs déjà lus depuis le localStorage
-        const readNotifications = typeof window !== "undefined"
-          ? JSON.parse(localStorage.getItem("readNotifications") || "[]")
-          : [];
+        const readNotifications =
+          typeof window !== "undefined"
+            ? JSON.parse(localStorage.getItem("readNotifications") || "[]")
+            : [];
 
         // Récupérer les invitations reçues
         const { data: receivedInvitations } =
           await authClient.organization.listUserInvitations();
         const pendingReceived =
           receivedInvitations?.filter(
-            (inv) => inv.status === "pending" && !readNotifications.includes(inv.id)
+            (inv) =>
+              inv.status === "pending" && !readNotifications.includes(inv.id),
           ) || [];
 
         // Récupérer les invitations envoyées
         const sentResult = await listInvitations();
         const pendingSent = sentResult.success
           ? sentResult.data?.filter(
-              (inv) => inv.status === "pending" && !readNotifications.includes(inv.id)
+              (inv) =>
+                inv.status === "pending" && !readNotifications.includes(inv.id),
             ) || []
           : [];
 
         // Total des notifications (invitations non lues + activité non lue)
-        const total = pendingReceived.length + pendingSent.length + (activityUnreadCount || 0);
+        const total =
+          pendingReceived.length +
+          pendingSent.length +
+          (activityUnreadCount || 0);
         setNotificationCount(total);
       } catch (error) {
         console.error(
@@ -485,7 +522,10 @@ export function AppSidebar({
 
       return () => {
         clearInterval(interval);
-        window.removeEventListener("notificationsRead", handleNotificationsRead);
+        window.removeEventListener(
+          "notificationsRead",
+          handleNotificationsRead,
+        );
       };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

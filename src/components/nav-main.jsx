@@ -8,15 +8,9 @@ import { useWorkspace } from "@/src/hooks/useWorkspace";
 import {
   Crown,
   ChevronRight,
-  ShoppingCart,
-  FolderKanban,
-  FileText,
-  MessageSquare,
   Plus,
   Search,
   LayoutGrid,
-  Landmark,
-  Users,
   Command,
 } from "lucide-react";
 import { Input } from "@/src/components/ui/input";
@@ -49,6 +43,14 @@ import Link from "next/link";
 import { cn } from "@/src/lib/utils";
 import { usePathname } from "next/navigation";
 import { usePermissions } from "@/src/hooks/usePermissions";
+import {
+  ChartIcon as Landmark,
+  UsersIcon as Users,
+  ShoppingCartIcon as ShoppingCart,
+  NoteIcon as FolderKanban,
+  DocumentTextIcon as FileText,
+  SmsIcon as MessageSquare,
+} from "@/src/components/icons";
 
 export function NavMain({
   items,
@@ -201,6 +203,7 @@ export function NavMain({
           onOpenChange={(open) => {
             isDropdownOpenRef.current = open;
             if (open) setActiveDropdown("ventes");
+            else setActiveDropdown(null);
           }}
         >
           <SidebarMenuItem
@@ -214,8 +217,6 @@ export function NavMain({
                 tooltip={activeDropdown === "ventes" ? undefined : "Ventes"}
                 className={cn(
                   "bg-transparent w-full cursor-pointer focus-visible:ring-0",
-                  isVentesSubActive &&
-                    "bg-sidebar-accent text-sidebar-foreground",
                 )}
               >
                 <ShoppingCart />
@@ -225,7 +226,7 @@ export function NavMain({
             <DropdownMenuContent
               side={isMobile ? "bottom" : "right"}
               align="start"
-              className="min-w-[180px]"
+              className="min-w-[180px] text-[.8125rem]"
             >
               {/* Actions rapides (masquées pour le comptable) */}
               {userRole !== "accountant" && (
@@ -282,14 +283,17 @@ export function NavMain({
                         href={subItem.url}
                         onClick={handleLinkClick}
                         className={cn(
-                          "cursor-pointer",
-                          isSubItemActive && "bg-accent font-medium",
+                          "cursor-pointer flex items-center gap-2",
+                          isSubItemActive &&
+                            "bg-accent font-medium !text-sidebar-foreground",
                         )}
                       >
+                        {subItem.icon && <subItem.icon className="w-4 h-4" />}
                         {subItem.title}
                       </Link>
                     ) : (
                       <div className="flex items-center justify-between w-full">
+                        {subItem.icon && <subItem.icon className="w-4 h-4" />}
                         <span>{subItem.title}</span>
                         <Crown className="w-3 h-3 text-[#5b4fff]" />
                       </div>
@@ -314,9 +318,7 @@ export function NavMain({
             data-tutorial="nav-ventes"
             className={cn(
               "flex items-center w-full rounded-md transition-colors overflow-hidden",
-              isVentesSubActive
-                ? "bg-sidebar-accent"
-                : !isVentesOpen && "hover:bg-sidebar-accent",
+              !isVentesOpen && "hover:bg-sidebar-accent",
             )}
           >
             <SidebarMenuButton
@@ -337,7 +339,7 @@ export function NavMain({
               >
                 <ChevronRight
                   className={cn(
-                    "h-4 w-4 transition-transform duration-200",
+                    "h-3.5 w-3.5 transition-transform duration-200",
                     isVentesOpen && "rotate-90",
                   )}
                 />
@@ -368,11 +370,13 @@ export function NavMain({
                               "bg-sidebar-accent text-sidebar-foreground font-medium",
                           )}
                         >
-                          <span className="text-sm">{subItem.title}</span>
+                          {subItem.icon && <subItem.icon className="w-4 h-4" />}
+                          <span>{subItem.title}</span>
                         </Link>
                       ) : (
                         <div className="flex items-center justify-between w-full">
-                          <span className="text-sm">{subItem.title}</span>
+                          {subItem.icon && <subItem.icon className="w-4 h-4" />}
+                          <span>{subItem.title}</span>
                           <Crown className="w-3 h-3 text-[#5b4fff]" />
                         </div>
                       )}
@@ -396,6 +400,7 @@ export function NavMain({
           onOpenChange={(open) => {
             isDropdownOpenRef.current = open;
             if (open) setActiveDropdown("clients");
+            else setActiveDropdown(null);
           }}
         >
           <SidebarMenuItem
@@ -409,8 +414,6 @@ export function NavMain({
                 tooltip={activeDropdown === "clients" ? undefined : "Clients"}
                 className={cn(
                   "bg-transparent w-full cursor-pointer focus-visible:ring-0",
-                  isClientsSubActive &&
-                    "bg-sidebar-accent text-sidebar-foreground",
                 )}
               >
                 <Users />
@@ -420,7 +423,7 @@ export function NavMain({
             <DropdownMenuContent
               side={isMobile ? "bottom" : "right"}
               align="start"
-              className="min-w-[180px]"
+              className="min-w-[180px] text-[.8125rem]"
             >
               {/* Action rapide: Nouveau client (masquée pour le comptable) */}
               {userRole !== "accountant" && (
@@ -457,14 +460,17 @@ export function NavMain({
                         href={subItem.url}
                         onClick={handleLinkClick}
                         className={cn(
-                          "cursor-pointer",
-                          isSubItemActive && "bg-accent font-medium",
+                          "cursor-pointer flex items-center gap-2",
+                          isSubItemActive &&
+                            "bg-accent font-medium !text-sidebar-foreground",
                         )}
                       >
+                        {subItem.icon && <subItem.icon className="w-4 h-4" />}
                         {subItem.title}
                       </Link>
                     ) : (
                       <div className="flex items-center justify-between w-full">
+                        {subItem.icon && <subItem.icon className="w-4 h-4" />}
                         <span>{subItem.title}</span>
                         <Crown className="w-3 h-3 text-[#5b4fff]" />
                       </div>
@@ -488,9 +494,7 @@ export function NavMain({
           <div
             className={cn(
               "flex items-center w-full rounded-md transition-colors overflow-hidden",
-              isClientsSubActive
-                ? "bg-sidebar-accent"
-                : !isClientsOpen && "hover:bg-sidebar-accent",
+              !isClientsOpen && "hover:bg-sidebar-accent",
             )}
           >
             <SidebarMenuButton
@@ -511,7 +515,7 @@ export function NavMain({
               >
                 <ChevronRight
                   className={cn(
-                    "h-4 w-4 transition-transform duration-200",
+                    "h-3.5 w-3.5 transition-transform duration-200",
                     isClientsOpen && "rotate-90",
                   )}
                 />
@@ -542,11 +546,13 @@ export function NavMain({
                               "bg-sidebar-accent text-sidebar-foreground font-medium",
                           )}
                         >
-                          <span className="text-sm">{subItem.title}</span>
+                          {subItem.icon && <subItem.icon className="w-4 h-4" />}
+                          <span>{subItem.title}</span>
                         </Link>
                       ) : (
                         <div className="flex items-center justify-between w-full">
-                          <span className="text-sm">{subItem.title}</span>
+                          {subItem.icon && <subItem.icon className="w-4 h-4" />}
+                          <span>{subItem.title}</span>
                           <Crown className="w-3 h-3 text-[#5b4fff]" />
                         </div>
                       )}
@@ -572,6 +578,7 @@ export function NavMain({
           onOpenChange={(open) => {
             isDropdownOpenRef.current = open;
             if (open) setActiveDropdown("projets");
+            else setActiveDropdown(null);
           }}
         >
           <SidebarMenuItem
@@ -585,7 +592,6 @@ export function NavMain({
                 tooltip={activeDropdown === "projets" ? undefined : "Tâches"}
                 className={cn(
                   "bg-transparent w-full cursor-pointer focus-visible:ring-0",
-                  isKanbanActive && "bg-sidebar-accent text-sidebar-foreground",
                 )}
               >
                 <FolderKanban />
@@ -593,7 +599,7 @@ export function NavMain({
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-              className="w-80 rounded-lg"
+              className="w-80 rounded-lg text-[.8125rem]"
               side={isMobile ? "bottom" : "right"}
               align="start"
               sideOffset={8}
@@ -681,6 +687,7 @@ export function NavMain({
         onOpenChange={(open) => {
           isDropdownOpenRef.current = open;
           if (open) setActiveDropdown("projets-expanded");
+          else setActiveDropdown(null);
         }}
       >
         <SidebarMenuItem
@@ -836,6 +843,7 @@ export function NavMain({
           onOpenChange={(open) => {
             isDropdownOpenRef.current = open;
             if (open) setActiveDropdown(title);
+            else setActiveDropdown(null);
           }}
         >
           <SidebarMenuItem
@@ -849,7 +857,6 @@ export function NavMain({
                 tooltip={activeDropdown === title ? undefined : title}
                 className={cn(
                   "bg-transparent w-full cursor-pointer focus-visible:ring-0",
-                  isSubActive && "bg-sidebar-accent text-sidebar-foreground",
                 )}
               >
                 <IconComponent />
@@ -859,7 +866,7 @@ export function NavMain({
             <DropdownMenuContent
               side={isMobile ? "bottom" : "right"}
               align="start"
-              className="min-w-[180px]"
+              className="min-w-[180px] text-[.8125rem]"
             >
               {subItems.map((subItem, index) => {
                 // Si l'item a une section, c'est un groupe
@@ -894,14 +901,17 @@ export function NavMain({
                                 href={item.url}
                                 onClick={handleLinkClick}
                                 className={cn(
-                                  "cursor-pointer",
-                                  isSubItemActive && "bg-accent font-medium",
+                                  "cursor-pointer flex items-center gap-2",
+                                  isSubItemActive &&
+                                    "bg-accent font-medium !text-sidebar-foreground",
                                 )}
                               >
+                                {item.icon && <item.icon className="w-4 h-4" />}
                                 {item.title}
                               </Link>
                             ) : (
                               <div className="flex items-center justify-between w-full">
+                                {item.icon && <item.icon className="w-4 h-4" />}
                                 <span>{item.title}</span>
                                 <Crown className="w-3 h-3 text-[#5b4fff]" />
                               </div>
@@ -931,14 +941,17 @@ export function NavMain({
                         href={subItem.url}
                         onClick={handleLinkClick}
                         className={cn(
-                          "cursor-pointer",
-                          isSubItemActive && "bg-accent font-medium",
+                          "cursor-pointer flex items-center gap-2",
+                          isSubItemActive &&
+                            "bg-accent font-medium !text-sidebar-foreground",
                         )}
                       >
+                        {subItem.icon && <subItem.icon className="w-4 h-4" />}
                         {subItem.title}
                       </Link>
                     ) : (
                       <div className="flex items-center justify-between w-full">
+                        {subItem.icon && <subItem.icon className="w-4 h-4" />}
                         <span>{subItem.title}</span>
                         <Crown className="w-3 h-3 text-[#5b4fff]" />
                       </div>
@@ -958,9 +971,7 @@ export function NavMain({
           <div
             className={cn(
               "flex items-center w-full rounded-md transition-colors overflow-hidden",
-              isSubActive
-                ? "bg-sidebar-accent"
-                : !isOpen && "hover:bg-sidebar-accent",
+              !isOpen && "hover:bg-sidebar-accent",
             )}
           >
             <SidebarMenuButton
@@ -981,7 +992,7 @@ export function NavMain({
               >
                 <ChevronRight
                   className={cn(
-                    "h-4 w-4 transition-transform duration-200",
+                    "h-3.5 w-3.5 transition-transform duration-200",
                     isOpen && "rotate-90",
                   )}
                 />
@@ -1068,11 +1079,13 @@ export function NavMain({
                               "bg-sidebar-accent text-sidebar-foreground font-medium",
                           )}
                         >
-                          <span className="text-sm">{subItem.title}</span>
+                          {subItem.icon && <subItem.icon className="w-4 h-4" />}
+                          <span>{subItem.title}</span>
                         </Link>
                       ) : (
                         <div className="flex items-center justify-between w-full">
-                          <span className="text-sm">{subItem.title}</span>
+                          {subItem.icon && <subItem.icon className="w-4 h-4" />}
+                          <span>{subItem.title}</span>
                           <Crown className="w-3 h-3 text-[#5b4fff]" />
                         </div>
                       )}
