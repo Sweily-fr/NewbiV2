@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import {
   flexRender,
@@ -191,11 +192,24 @@ export default function QuoteTable({
     } else if (value === "draft") {
       setStatusFilter(["DRAFT"]);
     } else if (value === "sent") {
-      setStatusFilter(["SENT"]);
+      setStatusFilter(["PENDING"]);
     } else if (value === "accepted") {
-      setStatusFilter(["ACCEPTED"]);
+      setStatusFilter(["COMPLETED"]);
     }
   };
+
+  // Pré-filtrage depuis l'URL (ex: ?status=sent depuis le dashboard)
+  const searchParams = useSearchParams();
+  const initialStatusRef = useRef(null);
+  useEffect(() => {
+    const status = searchParams.get("status");
+    if (!status || initialStatusRef.current === status) return;
+    initialStatusRef.current = status;
+    if (["all", "draft", "sent", "accepted"].includes(status)) {
+      handleTabChange(status);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   // Compter les devis par statut
   const quoteCounts = useMemo(() => {
@@ -207,8 +221,8 @@ export default function QuoteTable({
     };
     (quotes || []).forEach((quote) => {
       if (quote.status === "DRAFT") counts.draft++;
-      else if (quote.status === "SENT") counts.sent++;
-      else if (quote.status === "ACCEPTED") counts.accepted++;
+      else if (quote.status === "PENDING") counts.sent++;
+      else if (quote.status === "COMPLETED") counts.accepted++;
     });
     return counts;
   }, [quotes]);

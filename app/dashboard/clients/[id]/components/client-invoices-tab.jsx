@@ -7,6 +7,7 @@ import { FileText, Plus } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import InvoiceSidebar from "@/app/dashboard/outils/factures/components/invoice-sidebar";
 import {
+  INVOICE_STATUS,
   INVOICE_STATUS_LABELS,
   INVOICE_STATUS_COLORS,
 } from "@/src/graphql/invoiceQueries";
@@ -50,8 +51,22 @@ export default function ClientInvoicesTab({ invoices = [], clientId }) {
           if (isNaN(dateB.getTime())) return -1;
           return dateB - dateA;
         }),
-    [invoices, clientId]
+    [invoices, clientId],
   );
+
+  const { totalPaid, totalRemaining } = useMemo(() => {
+    let paid = 0;
+    let remaining = 0;
+    for (const inv of clientInvoices) {
+      const amount = inv.finalTotalTTC ?? inv.totalTTC ?? 0;
+      if (inv.status === INVOICE_STATUS.COMPLETED) {
+        paid += amount;
+      } else if (inv.status === INVOICE_STATUS.PENDING) {
+        remaining += amount;
+      }
+    }
+    return { totalPaid: paid, totalRemaining: remaining };
+  }, [clientInvoices]);
 
   const formatCurrency = (amount) =>
     new Intl.NumberFormat("fr-FR", {
@@ -66,7 +81,7 @@ export default function ClientInvoicesTab({ invoices = [], clientId }) {
       <span
         className={cn(
           "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border",
-          colors
+          colors,
         )}
       >
         {label}
@@ -90,7 +105,9 @@ export default function ClientInvoicesTab({ invoices = [], clientId }) {
           <Button
             variant="outline"
             className="mt-4"
-            onClick={() => router.push(`/dashboard/outils/factures/new?clientId=${clientId}`)}
+            onClick={() =>
+              router.push(`/dashboard/outils/factures/new?clientId=${clientId}`)
+            }
           >
             <Plus className="h-3.5 w-3.5" />
             Nouvelle facture
@@ -103,10 +120,14 @@ export default function ClientInvoicesTab({ invoices = [], clientId }) {
   return (
     <>
       <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3">
-        <h3 className="text-base font-medium text-[#242529] dark:text-foreground">Factures</h3>
+        <h3 className="text-base font-medium text-[#242529] dark:text-foreground">
+          Factures
+        </h3>
         <Button
           variant="outline"
-          onClick={() => router.push(`/dashboard/outils/factures/new?clientId=${clientId}`)}
+          onClick={() =>
+            router.push(`/dashboard/outils/factures/new?clientId=${clientId}`)
+          }
         >
           <Plus className="h-3.5 w-3.5" />
           Nouvelle facture
@@ -122,6 +143,9 @@ export default function ClientInvoicesTab({ invoices = [], clientId }) {
               </th>
               <th className="text-left text-xs font-medium text-[#505154] dark:text-muted-foreground py-2.5 px-4">
                 Date d&apos;émission
+              </th>
+              <th className="text-left text-xs font-medium text-[#505154] dark:text-muted-foreground py-2.5 px-4">
+                Date de paiement
               </th>
               <th className="text-left text-xs font-medium text-[#505154] dark:text-muted-foreground py-2.5 px-4">
                 Statut
@@ -148,7 +172,12 @@ export default function ClientInvoicesTab({ invoices = [], clientId }) {
                 <td className="py-3.5 px-4 text-sm text-[#242529] dark:text-foreground">
                   {safeFormatDate(invoice.issueDate)}
                 </td>
-                <td className="py-3.5 px-4">{getStatusBadge(invoice.status)}</td>
+                <td className="py-3.5 px-4 text-sm text-[#242529] dark:text-foreground">
+                  {safeFormatDate(invoice.paymentDate)}
+                </td>
+                <td className="py-3.5 px-4">
+                  {getStatusBadge(invoice.status)}
+                </td>
                 <td className="py-3.5 px-4 text-sm text-right font-medium text-[#242529] dark:text-foreground">
                   {formatCurrency(invoice.finalTotalTTC || invoice.totalTTC)}
                 </td>
@@ -156,6 +185,25 @@ export default function ClientInvoicesTab({ invoices = [], clientId }) {
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4 px-4 sm:px-6 py-3 border-t border-[#f0f0f0] dark:border-[#232323]">
+        <div className="flex items-center gap-2 text-sm">
+          <span className="text-[#505154] dark:text-muted-foreground">
+            Total payé
+          </span>
+          <span className="font-medium text-[#242529] dark:text-foreground">
+            {formatCurrency(totalPaid)}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <span className="text-[#505154] dark:text-muted-foreground">
+            Total restant
+          </span>
+          <span className="font-medium text-[#242529] dark:text-foreground">
+            {formatCurrency(totalRemaining)}
+          </span>
+        </div>
       </div>
 
       <InvoiceSidebar

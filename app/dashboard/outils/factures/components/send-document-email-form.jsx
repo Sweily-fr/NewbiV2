@@ -1,10 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useFormContext } from "react-hook-form";
 import { Input } from "@/src/components/ui/input";
 import { Switch } from "@/src/components/ui/switch";
-import { X, Plus } from "lucide-react";
+import { X, Plus, Paperclip, FileText } from "lucide-react";
+import { toast } from "sonner";
+
+const MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024; // 10 Mo par fichier
+const MAX_TOTAL_ATTACHMENTS_SIZE = 25 * 1024 * 1024; // 25 Mo total
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return `${bytes} o`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+}
 
 const DOCUMENT_LABELS = {
   invoice: { singular: "facture", article: "la" },
@@ -27,10 +37,12 @@ export default function SendDocumentEmailForm({
   const useCustomFooter = watch("useCustomFooter");
   const ccEmails = watch("ccEmails") || [];
   const bccEmails = watch("bccEmails") || [];
+  const attachments = watch("attachments") || [];
   const [ccInput, setCcInput] = useState("");
   const [bccInput, setBccInput] = useState("");
   const [showCc, setShowCc] = useState(false);
   const [showBcc, setShowBcc] = useState(false);
+  const fileInputRef = useRef(null);
   const labels = DOCUMENT_LABELS[documentType] || DOCUMENT_LABELS.invoice;
 
   const [ccError, setCcError] = useState("");
@@ -86,6 +98,45 @@ export default function SendDocumentEmailForm({
     if (email) {
       addEmail(type, email, setInput, setError);
     }
+  };
+
+  const handleAddFiles = (files) => {
+    if (!files || files.length === 0) return;
+    const current = attachments;
+    const newFiles = Array.from(files);
+
+    const currentTotal = current.reduce((acc, f) => acc + (f.size || 0), 0);
+    let newTotal = currentTotal;
+    const accepted = [];
+
+    for (const file of newFiles) {
+      if (file.size > MAX_ATTACHMENT_SIZE) {
+        toast.error(
+          `Le fichier "${file.name}" dépasse la taille maximale de 10 Mo`,
+        );
+        continue;
+      }
+      if (newTotal + file.size > MAX_TOTAL_ATTACHMENTS_SIZE) {
+        toast.error(
+          "Taille totale des pièces jointes limitée à 25 Mo. Fichier(s) ignoré(s).",
+        );
+        break;
+      }
+      if (current.some((f) => f.name === file.name && f.size === file.size)) {
+        continue;
+      }
+      accepted.push(file);
+      newTotal += file.size;
+    }
+
+    if (accepted.length > 0) {
+      setValue("attachments", [...current, ...accepted], { shouldDirty: true });
+    }
+  };
+
+  const removeAttachment = (index) => {
+    const next = attachments.filter((_, i) => i !== index);
+    setValue("attachments", next, { shouldDirty: true });
   };
 
   return (
@@ -336,6 +387,71 @@ export default function SendDocumentEmailForm({
             <p className="text-sm text-red-500">{errors.emailBody.message}</p>
           )}
         </div>
+      </div>
+
+      <div className="border-t border-border/40" />
+
+      {/* Pièces jointes supplémentaires */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="text-sm font-normal mb-1">Pièces jointes</h4>
+            <p className="text-xs text-gray-400">
+              Ajoutez des fichiers en complément {labels.article}
+              {labels.article.endsWith("'") ? "" : " "}
+              {labels.singular} (max 10 Mo par fichier, 25 Mo au total)
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-[#5b50ff] text-white hover:bg-[#4a41e0] transition-colors"
+          >
+            <Paperclip className="size-3.5" />
+            Ajouter
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              handleAddFiles(e.target.files);
+              e.target.value = "";
+            }}
+          />
+        </div>
+
+        {attachments.length > 0 && (
+          <div className="space-y-1.5">
+            {attachments.map((file, index) => (
+              <div
+                key={`${file.name}-${index}`}
+                className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-md border border-border/40 bg-muted/30"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <FileText className="size-4 text-[#5b50ff] shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-foreground truncate">
+                      {file.name}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {formatFileSize(file.size)}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeAttachment(index)}
+                  className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+                  title="Retirer"
+                >
+                  <X className="size-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="border-t border-border/40" />

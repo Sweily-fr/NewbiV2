@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import {
   flexRender,
@@ -195,6 +195,28 @@ export default function InvoiceTable({
     });
   }, [invoices, importedInvoices]);
 
+  // État pour les tabs de filtre rapide
+  const [activeTab, setActiveTab] = useState("all");
+
+  // Filtrer combinedInvoices pour l'onglet "En retard"
+  const displayInvoices = useMemo(() => {
+    if (activeTab !== "overdue") return combinedInvoices;
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    return combinedInvoices.filter((inv) => {
+      if (inv.status !== "PENDING") return false;
+      if (!inv.dueDate) return false;
+      const dueDateValue =
+        typeof inv.dueDate === "string" && /^\d+$/.test(inv.dueDate)
+          ? parseInt(inv.dueDate, 10)
+          : inv.dueDate;
+      const due = new Date(dueDateValue);
+      if (isNaN(due.getTime())) return false;
+      due.setHours(0, 0, 0, 0);
+      return due < now;
+    });
+  }, [combinedInvoices, activeTab]);
+
   const {
     table,
     globalFilter,
@@ -211,7 +233,7 @@ export default function InvoiceTable({
     handleDeleteSelected,
     isDeleting,
   } = useInvoiceTable({
-    data: combinedInvoices,
+    data: displayInvoices,
     onRefetch: refetch,
     onRefetchImported: refetchImported,
     onBalancesRefetch,
@@ -242,9 +264,6 @@ export default function InvoiceTable({
     }
   }, [table, onFilteredDataChange, filterKey, dataLength]);
 
-  // État pour les tabs de filtre rapide
-  const [activeTab, setActiveTab] = useState("all");
-
   // Gérer le changement de tab
   const handleTabChange = (value) => {
     setActiveTab(value);
@@ -254,23 +273,56 @@ export default function InvoiceTable({
       setStatusFilter(["DRAFT"]);
     } else if (value === "pending") {
       setStatusFilter(["PENDING"]);
+    } else if (value === "overdue") {
+      // Les factures en retard sont des PENDING avec dueDate dépassée,
+      // filtrées en amont via displayInvoices — on garde le statusFilter vide
+      // pour laisser le filtrage dates agir seul.
+      setStatusFilter([]);
     } else if (value === "completed") {
       setStatusFilter(["COMPLETED"]);
     }
   };
 
-  // Compter les factures par statut
+  // Pré-filtrage depuis l'URL (ex: ?status=overdue depuis le dashboard)
+  const searchParams = useSearchParams();
+  const initialStatusRef = useRef(null);
+  useEffect(() => {
+    const status = searchParams.get("status");
+    if (!status || initialStatusRef.current === status) return;
+    initialStatusRef.current = status;
+    if (["all", "draft", "pending", "overdue", "completed"].includes(status)) {
+      handleTabChange(status);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  // Compter les factures par statut (dont les en retard)
   const invoiceCounts = useMemo(() => {
     const counts = {
       all: combinedInvoices.length,
       draft: 0,
       pending: 0,
+      overdue: 0,
       completed: 0,
     };
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
     combinedInvoices.forEach((inv) => {
       if (inv.status === "DRAFT") counts.draft++;
-      else if (inv.status === "PENDING") counts.pending++;
-      else if (inv.status === "COMPLETED") counts.completed++;
+      else if (inv.status === "PENDING") {
+        counts.pending++;
+        if (inv.dueDate) {
+          const dueDateValue =
+            typeof inv.dueDate === "string" && /^\d+$/.test(inv.dueDate)
+              ? parseInt(inv.dueDate, 10)
+              : inv.dueDate;
+          const due = new Date(dueDateValue);
+          if (!isNaN(due.getTime())) {
+            due.setHours(0, 0, 0, 0);
+            if (due < now) counts.overdue++;
+          }
+        }
+      } else if (inv.status === "COMPLETED") counts.completed++;
     });
     return counts;
   }, [combinedInvoices]);
@@ -288,6 +340,7 @@ export default function InvoiceTable({
     { id: "all", label: "Toutes" },
     { id: "draft", label: "Brouillons" },
     { id: "pending", label: "À encaisser" },
+    { id: "overdue", label: "En retard" },
     { id: "completed", label: "Terminées" },
   ];
 
@@ -506,6 +559,15 @@ export default function InvoiceTable({
               <span>À encaisser</span>
               <span className="text-xs text-muted-foreground">
                 {invoiceCounts.pending}
+              </span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="overdue"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+            >
+              <span>En retard</span>
+              <span className="text-xs text-muted-foreground">
+                {invoiceCounts.overdue}
               </span>
             </TabsTrigger>
             <TabsTrigger

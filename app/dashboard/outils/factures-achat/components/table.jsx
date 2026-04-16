@@ -1,6 +1,7 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useId, useMemo, useState, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   flexRender,
   getCoreRowModel,
@@ -186,6 +187,18 @@ export default function PurchaseInvoiceTable({
   const [activeTab, setActiveTab] = useState("all");
   const [statusFilters, setStatusFilters] = useState([]);
   const [categoryFilters, setCategoryFilters] = useState([]);
+
+  // Pré-filtrage depuis l'URL (ex: ?status=TO_PAY depuis le dashboard)
+  const searchParams = useSearchParams();
+  const initialStatusRef = useRef(null);
+  useEffect(() => {
+    const status = searchParams.get("status");
+    if (!status || initialStatusRef.current === status) return;
+    initialStatusRef.current = status;
+    if (["all", "TO_PAY", "OVERDUE", "PAID", "imported"].includes(status)) {
+      setActiveTab(status);
+    }
+  }, [searchParams]);
 
   const { deleteInvoice } = useDeletePurchaseInvoice();
   const { bulkDelete } = useBulkDelete();

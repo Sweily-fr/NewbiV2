@@ -32,7 +32,13 @@ import {
 } from "@/src/components/ui/dropdown-menu";
 import { Button } from "@/src/components/ui/button";
 import { Label } from "@/src/components/ui/label";
-import { ChevronRight, CalendarIcon, ArrowLeft } from "lucide-react";
+import {
+  ChevronRight,
+  CalendarIcon,
+  ArrowLeft,
+  ExternalLink,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
 import { parseDate } from "@internationalized/date";
 import {
   Button as RACButton,
@@ -56,6 +62,7 @@ export function TreasuryChart({
   className = "",
   isLoading = false,
 }) {
+  const router = useRouter();
   const { remap } = useChartColors();
   const chartConfig = {
     treasury: { label: "Trésorerie", color: remap("#93c5fd") },
@@ -370,7 +377,18 @@ export function TreasuryChart({
             </span>
           </CardDescription>
         </div>
-        {timeRangeDropdown}
+        <div className="flex items-center gap-1">
+          {timeRangeDropdown}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs text-muted-foreground hover:text-foreground"
+            onClick={() => router.push("/dashboard/outils/prevision")}
+          >
+            Prévisions
+            <ExternalLink className="ml-1 h-3 w-3" />
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="px-2 pt-4 pb-2 sm:px-6 sm:pt-6 sm:pb-4 overflow-visible">
         <ChartContainer

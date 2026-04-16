@@ -165,6 +165,7 @@ export function SendDocumentModal({
       emailBody: defaultContent.body,
       ccEmails: [],
       bccEmails: [],
+      attachments: [],
       useCustomFooter: emailSettings?.useCustomFooter || false,
       customEmailFooter: emailSettings?.customEmailFooter || "",
     },
@@ -181,6 +182,7 @@ export function SendDocumentModal({
         emailBody: content.body,
         ccEmails: [],
         bccEmails: [],
+        attachments: [],
         useCustomFooter: emailSettings?.useCustomFooter || false,
         customEmailFooter: emailSettings?.customEmailFooter || "",
       });
@@ -212,6 +214,35 @@ export function SendDocumentModal({
         }
       }
 
+      // Convertir les pièces jointes utilisateur en base64
+      const extraAttachments = [];
+      if (Array.isArray(data.attachments) && data.attachments.length > 0) {
+        for (const file of data.attachments) {
+          try {
+            const base64 = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => {
+                const result = reader.result || "";
+                const commaIdx = result.indexOf(",");
+                resolve(
+                  commaIdx >= 0 ? result.substring(commaIdx + 1) : result,
+                );
+              };
+              reader.onerror = () => reject(reader.error);
+              reader.readAsDataURL(file);
+            });
+            extraAttachments.push({
+              filename: file.name,
+              content: base64,
+              contentType: file.type || "application/octet-stream",
+            });
+          } catch (err) {
+            console.warn(`Erreur lecture fichier ${file.name}:`, err);
+            toast.error(`Impossible de lire le fichier "${file.name}"`);
+          }
+        }
+      }
+
       const input = {
         documentId,
         emailSubject: data.emailSubject,
@@ -220,6 +251,7 @@ export function SendDocumentModal({
         ccEmails: data.ccEmails?.filter((e) => e && e.trim()) || [],
         bccEmails: data.bccEmails?.filter((e) => e && e.trim()) || [],
         pdfBase64,
+        attachments: extraAttachments,
       };
 
       let result;
