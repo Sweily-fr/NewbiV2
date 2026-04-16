@@ -1,7 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Filter, ListFilterIcon, Users, FileCheck, Calendar as CalendarIcon } from "lucide-react";
+import {
+  Filter,
+  Users,
+  FileCheck,
+  Calendar as CalendarIcon,
+} from "lucide-react";
+import { SortIcon as ListFilterIcon } from "@/src/components/icons";
 import { Badge } from "@/src/components/ui/badge";
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/components/ui/button";
@@ -18,7 +24,11 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import { Calendar } from "@/src/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
 import { QUOTE_STATUS_LABELS } from "@/src/graphql/quoteQueries";
@@ -245,8 +255,10 @@ export default function QuoteFilters({
               {(dateRange?.from || dateRange?.to) && (
                 <div className="border-t pt-3 px-3 pb-3">
                   <p className="text-xs text-muted-foreground px-2">
-                    {dateRange.from && format(dateRange.from, "dd MMM yyyy", { locale: fr })}
-                    {dateRange.to && dateRange.from !== dateRange.to && 
+                    {dateRange.from &&
+                      format(dateRange.from, "dd MMM yyyy", { locale: fr })}
+                    {dateRange.to &&
+                      dateRange.from !== dateRange.to &&
                       ` - ${format(dateRange.to, "dd MMM yyyy", { locale: fr })}`}
                   </p>
                   <Button
@@ -281,7 +293,7 @@ export default function QuoteFilters({
             {uniqueClients.length > 0 ? (
               <>
                 {/* Checkbox Tout sélectionner */}
-                <div 
+                <div
                   className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
                   onClick={toggleAllClients}
                 >
@@ -327,7 +339,7 @@ export default function QuoteFilters({
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="w-[250px]">
             {/* Checkbox Tout sélectionner */}
-            <div 
+            <div
               className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
               onClick={toggleAllStatuses}
             >
@@ -367,7 +379,7 @@ export default function QuoteFilters({
               .filter(
                 (column) =>
                   typeof column.accessorFn !== "undefined" &&
-                  column.getCanHide()
+                  column.getCanHide(),
               )
               .map((column) => {
                 const getColumnLabel = () => {
@@ -376,9 +388,7 @@ export default function QuoteFilters({
                   }
                   return column.id
                     .split(".")
-                    .map(
-                      (word) => word.charAt(0).toUpperCase() + word.slice(1)
-                    )
+                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
                     .join(" ");
                 };
 

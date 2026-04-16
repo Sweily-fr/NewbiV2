@@ -5,6 +5,7 @@ import { Slot } from "@radix-ui/react-slot";
 import { cva, VariantProps } from "class-variance-authority";
 import { PanelLeftIcon } from "lucide-react";
 
+import { usePathname } from "next/navigation";
 import { useIsMobile } from "@/src/hooks/use-mobile";
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/components/ui/button";
@@ -431,7 +432,7 @@ function SidebarMenuItem({ className, ...props }) {
 }
 
 const sidebarMenuButtonVariants = cva(
-  "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm font-normal leading-5 -tracking-[0.01em] text-sidebar-foreground outline-hidden ring-sidebar-ring transition-[width,height,padding] data-[hovered]:bg-sidebar-accent focus-visible:ring-2 active:bg-sidebar-accent disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-[15px] [&>svg]:shrink-0 [&>svg]:text-muted-foreground",
+  "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-[.8125rem] font-medium leading-5 -tracking-[0.01em] text-sidebar-foreground outline-hidden ring-sidebar-ring transition-[width,height,padding] data-[hovered]:bg-sidebar-accent focus-visible:ring-2 active:bg-sidebar-accent disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-[15px] [&>svg]:shrink-0 [&>svg]:text-sidebar-foreground",
   {
     variants: {
       variant: {
@@ -440,7 +441,7 @@ const sidebarMenuButtonVariants = cva(
           "bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] data-[hovered]:bg-sidebar-accent data-[hovered]:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]",
       },
       size: {
-        default: "h-7 text-sm",
+        default: "h-7 text-[.8125rem]",
         sm: "h-7 text-xs",
         lg: "h-12 text-sm group-data-[collapsible=icon]:p-0!",
       },
@@ -465,6 +466,12 @@ function SidebarMenuButton({
   const { isMobile, state } = useSidebar();
   const [isHovered, setIsHovered] = React.useState(false);
   const clicked = React.useRef(false);
+  const pathname = usePathname();
+
+  // Reset hover state on route change
+  React.useEffect(() => {
+    setIsHovered(false);
+  }, [pathname]);
 
   const button = (
     <Comp
@@ -631,10 +638,10 @@ function SidebarMenuSubButton({
       data-size={size}
       data-active={isActive}
       className={cn(
-        "text-sidebar-foreground font-normal leading-5 -tracking-[0.01em] ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground [&>svg]:text-muted-foreground flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 outline-hidden focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-[15px] [&>svg]:shrink-0",
-        "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground",
+        "text-sidebar-foreground font-medium leading-5 -tracking-[0.01em] ring-sidebar-ring hover:bg-sidebar-accent active:bg-sidebar-accent [&>svg]:text-sidebar-foreground flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 outline-hidden focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-[15px] [&>svg]:shrink-0",
+        "data-[active=true]:bg-sidebar-accent",
         size === "sm" && "text-xs",
-        size === "md" && "text-sm",
+        size === "md" && "text-[.8125rem]",
         "group-data-[collapsible=icon]:hidden",
         className,
       )}

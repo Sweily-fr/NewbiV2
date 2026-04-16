@@ -9,7 +9,6 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import {
   Plus,
   Settings,
-  Download,
   Eye,
   EyeOff,
   Edit3,
@@ -23,6 +22,12 @@ import {
   FileText,
   Repeat2,
 } from "lucide-react";
+import {
+  ExportIcon as Download,
+  MoneyReciveIcon as MoneyRecive,
+  Edit2Icon,
+  ImportIcon,
+} from "@/src/components/icons";
 import * as XLSX from "xlsx";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -438,24 +443,27 @@ function GestionDepensesContent() {
                   />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent
+                align="end"
+                className="max-h-[320px] overflow-y-auto flex flex-col gap-1 min-w-[240px]"
+              >
                 <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
                   Sélectionner un compte
                 </DropdownMenuLabel>
                 <DropdownMenuItem
                   onClick={() => setSelectedAccountId("all")}
-                  className="flex items-center gap-2 cursor-pointer"
+                  className={cn(
+                    "flex items-center gap-2.5 cursor-pointer rounded-md",
+                    selectedAccountId === "all" && "bg-accent",
+                  )}
                 >
-                  <Landmark size={14} className="text-muted-foreground" />
-                  <span className="flex-1 text-xs truncate">
+                  <Landmark
+                    size={16}
+                    className="text-sidebar-foreground flex-shrink-0"
+                  />
+                  <span className="flex-1 text-[13px] truncate">
                     Tous les comptes
                   </span>
-                  <Check
-                    className={cn(
-                      "h-4 w-4 text-[#5b4fff]",
-                      selectedAccountId === "all" ? "opacity-100" : "opacity-0",
-                    )}
-                  />
                 </DropdownMenuItem>
                 {(bankAccounts || []).map((account) => {
                   const accountName =
@@ -473,36 +481,33 @@ function GestionDepensesContent() {
                     <DropdownMenuItem
                       key={account.id}
                       onClick={() => setSelectedAccountId(account.id)}
-                      className="flex items-center gap-2 cursor-pointer"
+                      className={cn(
+                        "flex items-center gap-2.5 cursor-pointer rounded-md",
+                        isSelected && "bg-accent",
+                      )}
                     >
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <div className="flex items-center gap-2.5 flex-1 min-w-0">
                         {account.institutionLogo ? (
                           <img
                             src={account.institutionLogo}
                             alt=""
-                            className="h-5 w-5 rounded-sm object-contain flex-shrink-0"
+                            className="h-6 w-6 rounded-sm object-contain flex-shrink-0"
                           />
                         ) : (
-                          <Landmark className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                          <Landmark className="h-4 w-4 text-sidebar-foreground flex-shrink-0" />
                         )}
                         <div className="flex flex-col min-w-0">
-                          <span className="truncate text-xs">
+                          <span className="truncate text-[13px]">
                             {accountName}
                             {lastIban}
                           </span>
                           {account.balance?.current != null && (
-                            <span className="text-[10px] text-muted-foreground">
+                            <span className="text-xs text-muted-foreground">
                               {formatAmount(account.balance.current)} €
                             </span>
                           )}
                         </div>
                       </div>
-                      <Check
-                        className={cn(
-                          "h-4 w-4 text-[#5b4fff]",
-                          isSelected ? "opacity-100" : "opacity-0",
-                        )}
-                      />
                     </DropdownMenuItem>
                   );
                 })}
@@ -511,7 +516,7 @@ function GestionDepensesContent() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="cursor-pointer">
-                  <Download size={14} strokeWidth={1.5} aria-hidden="true" />
+                  <Download className="w-3.5 h-3.5" aria-hidden="true" />
                   Exporter
                 </Button>
               </DropdownMenuTrigger>
@@ -553,7 +558,7 @@ function GestionDepensesContent() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="primary" className="self-start cursor-pointer">
-                  <Repeat2 size={14} strokeWidth={2} aria-hidden="true" />
+                  <MoneyRecive className="w-3.5 h-3.5" aria-hidden="true" />
                   Nouvelle transaction
                   <ChevronDown
                     size={12}
@@ -562,17 +567,23 @@ function GestionDepensesContent() {
                   />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="[--radius:1rem]">
+              <DropdownMenuContent align="end" className="[--radius:0.625rem]">
                 <DropdownMenuGroup>
                   <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
                     Créer une transaction
                   </DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => setTriggerAddManual(true)}>
-                    <Edit3 size={16} />
+                  <DropdownMenuItem
+                    onClick={() => setTriggerAddManual(true)}
+                    className="rounded-[0.5rem]"
+                  >
+                    <Edit2Icon className="w-4 h-4 text-sidebar-foreground" />
                     Saisie manuelle
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTriggerAddOcr(true)}>
-                    <Upload size={16} />
+                  <DropdownMenuItem
+                    onClick={() => setTriggerAddOcr(true)}
+                    className="rounded-[0.5rem]"
+                  >
+                    <ImportIcon className="w-4 h-4 text-sidebar-foreground" />
                     Scanner un reçu (OCR)
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
@@ -593,6 +604,7 @@ function GestionDepensesContent() {
             onAddManualTriggered={() => setTriggerAddManual(false)}
             triggerAddOcr={triggerAddOcr}
             onAddOcrTriggered={() => setTriggerAddOcr(false)}
+            bankAccounts={bankAccounts}
           />
         </Suspense>
       </div>

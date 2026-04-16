@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Download, FileSpreadsheet, FileText } from "lucide-react";
+import { FileSpreadsheet, FileText } from "lucide-react";
+import { ExportIcon as Download } from "@/src/components/icons";
 import { Button } from "@/src/components/ui/button";
 import {
   DropdownMenu,
@@ -21,19 +22,25 @@ import {
 import { exportToCSV, exportToExcel } from "@/src/utils/product-export";
 import { toast } from "@/src/components/ui/sonner";
 
-export default function ProductExportButton({ products, selectedRows = [], iconOnly = false }) {
+export default function ProductExportButton({
+  products,
+  selectedRows = [],
+  iconOnly = false,
+}) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState(null);
 
   // Déterminer si on exporte les produits sélectionnés ou tous les produits
   const hasSelection = selectedRows && selectedRows.length > 0;
-  
-  const productsToExport = hasSelection 
-    ? selectedRows.map(row => {
-        // TanStack Table peut utiliser row.original OU directement row
-        return row.original || row;
-      }).filter(Boolean) 
-    : (products || []);
+
+  const productsToExport = hasSelection
+    ? selectedRows
+        .map((row) => {
+          // TanStack Table peut utiliser row.original OU directement row
+          return row.original || row;
+        })
+        .filter(Boolean)
+    : products || [];
 
   const handleFormatSelect = (format) => {
     setSelectedFormat(format);
@@ -53,8 +60,10 @@ export default function ProductExportButton({ products, selectedRows = [], iconO
     }
 
     if (result?.success) {
-      toast.success(`Export réussi - ${finalProducts.length} produit${finalProducts.length > 1 ? 's' : ''} exporté${finalProducts.length > 1 ? 's' : ''}`);
-      
+      toast.success(
+        `Export réussi - ${finalProducts.length} produit${finalProducts.length > 1 ? "s" : ""} exporté${finalProducts.length > 1 ? "s" : ""}`,
+      );
+
       // Réinitialiser et fermer
       setIsDialogOpen(false);
       setSelectedFormat(null);
@@ -74,11 +83,11 @@ export default function ProductExportButton({ products, selectedRows = [], iconO
         <DropdownMenuTrigger asChild>
           {iconOnly ? (
             <Button variant="secondary" size="icon" className="cursor-pointer">
-              <Download className="h-4 w-4" strokeWidth={1.5} />
+              <Download className="h-3.5 w-3.5" />
             </Button>
           ) : (
             <Button variant="outline" className="cursor-pointer">
-              <Download size={14} strokeWidth={1.5} />
+              <Download className="w-3.5 h-3.5" />
               Exporter
               {hasSelection && (
                 <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-white dark:text-black">
@@ -110,24 +119,31 @@ export default function ProductExportButton({ products, selectedRows = [], iconO
             <DialogDescription>
               {hasSelection ? (
                 <span className="font-medium text-primary">
-                  {productsToExport.length} produit(s) sélectionné(s) sera(ont) exporté(s).
+                  {productsToExport.length} produit(s) sélectionné(s) sera(ont)
+                  exporté(s).
                 </span>
               ) : (
                 "Tous les produits de votre catalogue seront exportés."
               )}
             </DialogDescription>
           </DialogHeader>
-          
+
           {hasSelection && productsToExport.length > 0 && (
             <div className="py-4">
               <div className="rounded-lg border bg-muted/50 p-4">
-                <p className="text-sm font-medium mb-2">Produits sélectionnés :</p>
+                <p className="text-sm font-medium mb-2">
+                  Produits sélectionnés :
+                </p>
                 <ul className="text-sm text-muted-foreground space-y-1">
-                  {productsToExport.slice(0, 5).map((product) => product && (
-                    <li key={product.id}>
-                      • {product.name} {product.reference ? `(${product.reference})` : ""}
-                    </li>
-                  ))}
+                  {productsToExport.slice(0, 5).map(
+                    (product) =>
+                      product && (
+                        <li key={product.id}>
+                          • {product.name}{" "}
+                          {product.reference ? `(${product.reference})` : ""}
+                        </li>
+                      ),
+                  )}
                   {productsToExport.length > 5 && (
                     <li className="text-xs italic">
                       ... et {productsToExport.length - 5} autre(s)
@@ -142,7 +158,8 @@ export default function ProductExportButton({ products, selectedRows = [], iconO
             <div className="py-4">
               <div className="rounded-lg border bg-blue-50 dark:bg-blue-950 p-4">
                 <p className="text-sm text-blue-900 dark:text-blue-100">
-                  <strong>💡 Astuce :</strong> Vous pouvez sélectionner des produits spécifiques dans le tableau avant d&apos;exporter.
+                  <strong>💡 Astuce :</strong> Vous pouvez sélectionner des
+                  produits spécifiques dans le tableau avant d&apos;exporter.
                 </p>
               </div>
             </div>
@@ -153,7 +170,7 @@ export default function ProductExportButton({ products, selectedRows = [], iconO
               Annuler
             </Button>
             <Button onClick={handleExport}>
-              <Download className="mr-2 h-4 w-4" />
+              <Download className="mr-2 w-3.5 h-3.5" />
               Exporter
             </Button>
           </DialogFooter>

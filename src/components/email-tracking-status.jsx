@@ -1,19 +1,20 @@
 "use client";
 
-import { Mail, MailOpen, MousePointerClick } from "lucide-react";
 import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
 } from "@/src/components/ui/tooltip";
+import { cn } from "@/src/lib/utils";
 
 /**
  * Composant d'affichage du statut de tracking d'email
  *
- * 3 états :
- * - Non envoyé : enveloppe fermée grise
- * - Envoyé, non ouvert : enveloppe fermée orange
- * - Ouvert : enveloppe ouverte verte (+ date et nombre d'ouvertures au survol)
+ * 4 états :
+ * - Non envoyé : badge gris
+ * - Envoyé, non ouvert : badge orange
+ * - Ouvert : badge vert
+ * - Cliqué : badge bleu
  */
 export function EmailTrackingStatus({ emailTracking }) {
   // Pas de tracking = non envoyé
@@ -21,11 +22,16 @@ export function EmailTrackingStatus({ emailTracking }) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="inline-flex items-center justify-center">
-            <Mail className="h-4 w-4 text-gray-300 dark:text-gray-600" />
+          <span
+            className={cn(
+              "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium",
+              "bg-gray-100 text-gray-500 dark:bg-gray-900/20 dark:text-gray-400",
+            )}
+          >
+            Non envoyé
           </span>
         </TooltipTrigger>
-        <TooltipContent>
+        <TooltipContent className="bg-[#202020] text-white border-none text-xs">
           <p>Non envoyé par email</p>
         </TooltipContent>
       </Tooltip>
@@ -39,11 +45,16 @@ export function EmailTrackingStatus({ emailTracking }) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="inline-flex items-center justify-center">
-            <Mail className="h-4 w-4 text-amber-500" />
+          <span
+            className={cn(
+              "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium",
+              "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400",
+            )}
+          >
+            Envoyé
           </span>
         </TooltipTrigger>
-        <TooltipContent>
+        <TooltipContent className="bg-[#202020] text-white border-none text-xs">
           <p>Envoyé le {sentDate}</p>
           <p className="text-gray-400">Non ouvert</p>
         </TooltipContent>
@@ -59,11 +70,16 @@ export function EmailTrackingStatus({ emailTracking }) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="inline-flex items-center justify-center">
-            <MousePointerClick className="h-4 w-4 text-blue-500" />
+          <span
+            className={cn(
+              "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium",
+              "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400",
+            )}
+          >
+            Consulté
           </span>
         </TooltipTrigger>
-        <TooltipContent>
+        <TooltipContent className="bg-[#202020] text-white border-none text-xs">
           <p>Envoyé le {sentDate}</p>
           <p className="text-emerald-400">
             Ouvert le {formatTrackingDate(emailTracking.emailOpenedAt)}
@@ -84,11 +100,16 @@ export function EmailTrackingStatus({ emailTracking }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span className="inline-flex items-center justify-center">
-          <MailOpen className="h-4 w-4 text-emerald-500" />
+        <span
+          className={cn(
+            "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium",
+            "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400",
+          )}
+        >
+          Ouvert
         </span>
       </TooltipTrigger>
-      <TooltipContent>
+      <TooltipContent className="bg-[#202020] text-white border-none text-xs">
         <p>Envoyé le {sentDate}</p>
         <p className="text-emerald-400">
           Ouvert le {openedDate}

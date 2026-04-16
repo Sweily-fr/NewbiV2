@@ -385,146 +385,148 @@ export default function InvoiceTable({
   }
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
-      {/* Filters and Add Invoice Button - Fixe en haut */}
-      <div className="flex items-center justify-between gap-3 hidden md:flex px-4 sm:px-6 py-4 flex-shrink-0">
-        {/* Search + Filtres à gauche */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 h-8 w-full sm:w-[400px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
-            <Search
-              size={16}
-              className="text-muted-foreground/80 shrink-0"
-              aria-hidden="true"
+    <div className="flex flex-col flex-1">
+      {/* Sticky zone: recherche + onglets */}
+      <div className="hidden md:block sticky top-0 z-10 bg-background">
+        {/* Filters and Add Invoice Button */}
+        <div className="flex items-center justify-between gap-3 md:flex px-4 sm:px-6 py-4">
+          {/* Search + Filtres à gauche */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 h-8 w-full sm:w-[400px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
+              <Search
+                size={16}
+                className="text-muted-foreground/80 shrink-0"
+                aria-hidden="true"
+              />
+              <Input
+                variant="ghost"
+                ref={inputRef}
+                value={globalFilter ?? ""}
+                onChange={(event) => setGlobalFilter(event.target.value)}
+                placeholder="Recherchez par numéro, client ou montant..."
+              />
+              {Boolean(globalFilter) && (
+                <button
+                  onClick={() => {
+                    setGlobalFilter("");
+                    inputRef.current?.focus();
+                  }}
+                  className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex items-center justify-center rounded focus-visible:ring-[3px] focus-visible:outline-none cursor-pointer"
+                  aria-label="Effacer la recherche"
+                >
+                  <CircleXIcon size={16} strokeWidth={2} aria-hidden="true" />
+                </button>
+              )}
+            </div>
+
+            {/* Filters Button */}
+            <InvoiceFilters
+              statusFilter={statusFilter}
+              setStatusFilter={setStatusFilter}
+              clientFilter={clientFilter}
+              setClientFilter={setClientFilter}
+              dateFilter={dateFilter}
+              setDateFilter={setDateFilter}
+              typeFilter={typeFilter}
+              setTypeFilter={setTypeFilter}
+              invoices={invoices || []}
+              table={table}
             />
-            <Input
-              variant="ghost"
-              ref={inputRef}
-              value={globalFilter ?? ""}
-              onChange={(event) => setGlobalFilter(event.target.value)}
-              placeholder="Recherchez par numéro, client ou montant..."
-            />
-            {Boolean(globalFilter) && (
-              <button
-                onClick={() => {
-                  setGlobalFilter("");
-                  inputRef.current?.focus();
-                }}
-                className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex items-center justify-center rounded focus-visible:ring-[3px] focus-visible:outline-none cursor-pointer"
-                aria-label="Effacer la recherche"
-              >
-                <CircleXIcon size={16} strokeWidth={2} aria-hidden="true" />
-              </button>
-            )}
           </div>
 
-          {/* Filters Button */}
-          <InvoiceFilters
-            statusFilter={statusFilter}
-            setStatusFilter={setStatusFilter}
-            clientFilter={clientFilter}
-            setClientFilter={setClientFilter}
-            dateFilter={dateFilter}
-            setDateFilter={setDateFilter}
-            typeFilter={typeFilter}
-            setTypeFilter={setTypeFilter}
-            invoices={invoices || []}
-            table={table}
-          />
-        </div>
-
-        {/* Actions à droite */}
-        <div className="flex items-center gap-2">
-          {/* Bulk delete - visible quand des rows sont sélectionnées */}
-          {selectedRows.length > 0 && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="destructive"
-                  disabled={isDeleting}
-                  data-mobile-delete-trigger-invoice
-                >
-                  <TrashIcon className="mr-2 h-4 w-4" />
-                  Supprimer ({selectedRows.length})
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
-                    facture(s) sélectionnée(s) ? Cette action ne peut pas être
-                    annulée.
-                    <br />
-                    <br />
-                    <strong>Note :</strong> Seules les factures en brouillon et
-                    les factures importées peuvent être supprimées.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDeleteSelected}
-                    className="bg-destructive text-white hover:bg-destructive/90"
+          {/* Actions à droite */}
+          <div className="flex items-center gap-2">
+            {/* Bulk delete - visible quand des rows sont sélectionnées */}
+            {selectedRows.length > 0 && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    disabled={isDeleting}
+                    data-mobile-delete-trigger-invoice
                   >
-                    Supprimer
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
+                    <TrashIcon className="mr-2 h-4 w-4" />
+                    Supprimer ({selectedRows.length})
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      Confirmer la suppression
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
+                      facture(s) sélectionnée(s) ? Cette action ne peut pas être
+                      annulée.
+                      <br />
+                      <br />
+                      <strong>Note :</strong> Seules les factures en brouillon
+                      et les factures importées peuvent être supprimées.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteSelected}
+                      className="bg-destructive text-white hover:bg-destructive/90"
+                    >
+                      Supprimer
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Tabs de filtre rapide - Desktop */}
-      <div className="hidden md:block flex-shrink-0 border-b border-border">
-        <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="h-auto rounded-none bg-transparent p-0 pb-2 w-full justify-start px-4 sm:px-6">
-            <TabsTrigger
-              value="all"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
-            >
-              <span className="data-[state=active]:text-shadow-[0_0_0.01px_currentColor]">
-                Toutes les factures
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {invoiceCounts.all}
-              </span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="draft"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
-            >
-              <span>Brouillons</span>
-              <span className="text-xs text-muted-foreground">
-                {invoiceCounts.draft}
-              </span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="pending"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
-            >
-              <span>À encaisser</span>
-              <span className="text-xs text-muted-foreground">
-                {invoiceCounts.pending}
-              </span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="completed"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
-            >
-              <span>Terminées</span>
-              <span className="text-xs text-muted-foreground">
-                {invoiceCounts.completed}
-              </span>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
+        {/* Tabs de filtre rapide - Desktop */}
+        <div className="border-b border-border">
+          <Tabs value={activeTab} onValueChange={handleTabChange}>
+            <TabsList className="h-auto rounded-none bg-transparent p-0 pb-2 w-full justify-start px-4 sm:px-6">
+              <TabsTrigger
+                value="all"
+                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              >
+                <span className="data-[state=active]:text-shadow-[0_0_0.01px_currentColor]">
+                  Toutes les factures
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {invoiceCounts.all}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="draft"
+                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              >
+                <span>Brouillons</span>
+                <span className="text-xs text-muted-foreground">
+                  {invoiceCounts.draft}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="pending"
+                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              >
+                <span>À encaisser</span>
+                <span className="text-xs text-muted-foreground">
+                  {invoiceCounts.pending}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="completed"
+                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              >
+                <span>Terminées</span>
+                <span className="text-xs text-muted-foreground">
+                  {invoiceCounts.completed}
+                </span>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
 
-      {/* Table - Desktop style avec header fixe et body scrollable */}
-      <div className="hidden md:flex md:flex-col flex-1 min-h-0 overflow-hidden">
-        {/* Header fixe */}
-        <div className="flex-shrink-0 border-b border-border">
+        {/* Table header - sticky */}
+        <div className="border-b border-border">
           <table className="w-full table-fixed">
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -550,103 +552,105 @@ export default function InvoiceTable({
             </thead>
           </table>
         </div>
-        {/* Table Body - Scrollable */}
-        <div className="flex-1 overflow-auto">
-          <table className="w-full table-fixed">
-            <tbody>
-              {loading ? (
-                Array.from({ length: 8 }).map((_, i) => (
-                  <tr key={`skeleton-${i}`} className="border-b">
-                    <td className="p-2 pl-4 sm:pl-6">
-                      <div className="h-4 w-4 rounded bg-muted animate-pulse" />
-                    </td>
-                    <td className="p-2">
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full bg-muted animate-pulse flex-shrink-0" />
-                        <div className="h-4 w-[140px] rounded bg-muted animate-pulse" />
-                      </div>
-                    </td>
-                    <td className="p-2">
-                      <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
-                    </td>
-                    <td className="p-2">
-                      <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
-                    </td>
-                    <td className="p-2">
-                      <div className="h-5 w-[70px] rounded-full bg-muted animate-pulse" />
-                    </td>
-                    <td className="p-2">
-                      <div className="h-4 w-[80px] rounded bg-muted animate-pulse" />
-                    </td>
-                    <td className="p-2 pr-4 sm:pr-6">
-                      <div className="h-7 w-7 rounded bg-muted animate-pulse" />
-                    </td>
-                  </tr>
-                ))
-              ) : table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <tr
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                    className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
-                    onClick={(e) => {
-                      // Ignorer les clics provenant de portals React (modals, dropdowns)
-                      if (!e.currentTarget.contains(e.target)) return;
-                      // Ne pas ouvrir la sidebar si on clique sur la checkbox, les actions, un menu ou un dialog
-                      if (
-                        e.target.closest('[role="checkbox"]') ||
-                        e.target.closest("[data-actions-cell]") ||
-                        e.target.closest('button[role="combobox"]') ||
-                        e.target.closest('[role="menu"]') ||
-                        e.target.closest('[role="dialog"]')
-                      ) {
-                        return;
-                      }
-                      const invoice = row.original;
-                      // Ouvrir la sidebar appropriée selon le type
-                      if (invoice._type === "imported") {
-                        setSelectedImportedInvoice(invoice);
-                      } else {
-                        // Déclencher l'ouverture de la sidebar via le bouton d'actions
-                        const actionsButton = e.currentTarget.querySelector(
-                          "[data-view-invoice]",
-                        );
-                        if (actionsButton) {
-                          actionsButton.click();
-                        }
-                      }
-                    }}
-                  >
-                    {row
-                      .getVisibleCells()
-                      .filter((c) => c.column.id !== "_type")
-                      .map((cell, index, arr) => (
-                        <td
-                          key={cell.id}
-                          style={{ width: cell.column.getSize() }}
-                          className={`p-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
-                        </td>
-                      ))}
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={table.getAllColumns().length}
-                    className="h-24 text-center p-2"
-                  >
-                    Aucune facture trouvée.
+      </div>
+      {/* Fin sticky zone */}
+
+      {/* Table body - Desktop */}
+      <div className="hidden md:flex md:flex-col flex-1">
+        <table className="w-full table-fixed">
+          <tbody>
+            {loading ? (
+              Array.from({ length: 8 }).map((_, i) => (
+                <tr key={`skeleton-${i}`} className="border-b">
+                  <td className="p-2 pl-4 sm:pl-6">
+                    <div className="h-4 w-4 rounded bg-muted animate-pulse" />
+                  </td>
+                  <td className="p-2">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-muted animate-pulse flex-shrink-0" />
+                      <div className="h-4 w-[140px] rounded bg-muted animate-pulse" />
+                    </div>
+                  </td>
+                  <td className="p-2">
+                    <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
+                  </td>
+                  <td className="p-2">
+                    <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
+                  </td>
+                  <td className="p-2">
+                    <div className="h-5 w-[70px] rounded-full bg-muted animate-pulse" />
+                  </td>
+                  <td className="p-2">
+                    <div className="h-4 w-[80px] rounded bg-muted animate-pulse" />
+                  </td>
+                  <td className="p-2 pr-4 sm:pr-6">
+                    <div className="h-7 w-7 rounded bg-muted animate-pulse" />
                   </td>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              ))
+            ) : table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <tr
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                  className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
+                  onClick={(e) => {
+                    // Ignorer les clics provenant de portals React (modals, dropdowns)
+                    if (!e.currentTarget.contains(e.target)) return;
+                    // Ne pas ouvrir la sidebar si on clique sur la checkbox, les actions, un menu ou un dialog
+                    if (
+                      e.target.closest('[role="checkbox"]') ||
+                      e.target.closest("[data-actions-cell]") ||
+                      e.target.closest('button[role="combobox"]') ||
+                      e.target.closest('[role="menu"]') ||
+                      e.target.closest('[role="dialog"]')
+                    ) {
+                      return;
+                    }
+                    const invoice = row.original;
+                    // Ouvrir la sidebar appropriée selon le type
+                    if (invoice._type === "imported") {
+                      setSelectedImportedInvoice(invoice);
+                    } else {
+                      // Déclencher l'ouverture de la sidebar via le bouton d'actions
+                      const actionsButton = e.currentTarget.querySelector(
+                        "[data-view-invoice]",
+                      );
+                      if (actionsButton) {
+                        actionsButton.click();
+                      }
+                    }
+                  }}
+                >
+                  {row
+                    .getVisibleCells()
+                    .filter((c) => c.column.id !== "_type")
+                    .map((cell, index, arr) => (
+                      <td
+                        key={cell.id}
+                        style={{ width: cell.column.getSize() }}
+                        className={`p-2 align-middle text-[13px] ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </td>
+                    ))}
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan={table.getAllColumns().length}
+                  className="h-24 text-center p-2"
+                >
+                  Aucune facture trouvée.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
       {/* Mobile Toolbar */}
@@ -953,7 +957,7 @@ export default function InvoiceTable({
       </div>
 
       {/* Pagination - Fixe en bas sur desktop */}
-      <div className="hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-border bg-background flex-shrink-0">
+      <div className="hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-border bg-background sticky bottom-0 z-10">
         <div className="flex-1 text-xs font-normal text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} sur{" "}
           {table.getFilteredRowModel().rows.length} ligne(s) sélectionnée(s).
