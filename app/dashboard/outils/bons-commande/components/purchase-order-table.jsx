@@ -74,6 +74,7 @@ import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { usePurchaseOrderTable } from "../hooks/use-purchase-order-table";
 import PurchaseOrderRowActions from "./purchase-order-row-actions";
 import PurchaseOrderSidebar from "./purchase-order-sidebar";
+import PurchaseOrderFilters from "./purchase-order-filters";
 import { SendDocumentModal } from "../../factures/components/send-document-modal";
 import { SavePurchaseOrderTemplateDialog } from "./SavePurchaseOrderTemplateDialog";
 import { ImportPurchaseOrderModal } from "./import-purchase-order-modal";
@@ -115,6 +116,10 @@ export default function PurchaseOrderTable({
     setGlobalFilter,
     statusFilter,
     setStatusFilter,
+    clientFilter,
+    setClientFilter,
+    dateFilter,
+    setDateFilter,
     selectedRows,
     handleDeleteSelected,
     isDeleting,
@@ -241,6 +246,17 @@ export default function PurchaseOrderTable({
                 </button>
               )}
             </div>
+
+            <PurchaseOrderFilters
+              statusFilter={statusFilter}
+              setStatusFilter={setStatusFilter}
+              clientFilter={clientFilter}
+              setClientFilter={setClientFilter}
+              dateFilter={dateFilter}
+              setDateFilter={setDateFilter}
+              purchaseOrders={purchaseOrders || []}
+              table={table}
+            />
           </div>
 
           {/* Actions à droite */}

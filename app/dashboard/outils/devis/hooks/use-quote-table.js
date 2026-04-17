@@ -332,6 +332,36 @@ export function useQuoteTable({
         size: 200,
       },
       {
+        accessorKey: "projectReference",
+        header: ({ column }) => (
+          <div
+            className="flex items-center cursor-pointer font-normal"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Référence
+            <ArrowUpDown className="ml-2 h-3 w-3" />
+          </div>
+        ),
+        meta: {
+          label: "Référence",
+        },
+        cell: ({ row }) => {
+          const reference = row.original.projectReference;
+          if (!reference) {
+            return <span className="text-muted-foreground">—</span>;
+          }
+          return (
+            <div
+              className="font-normal truncate max-w-[160px]"
+              title={reference}
+            >
+              {reference}
+            </div>
+          );
+        },
+        size: 140,
+      },
+      {
         accessorKey: "issueDate",
         header: ({ column }) => (
           <div className="flex items-center font-normal px-0 py-2">
@@ -546,6 +576,66 @@ export function useQuoteTable({
         enableSorting: false,
       },
       {
+        accessorKey: "finalTotalHT",
+        header: ({ column }) => (
+          <div
+            className="flex items-center cursor-pointer font-normal"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Montant HT
+            <ArrowUpDown className="ml-2 h-3 w-3" />
+          </div>
+        ),
+        meta: {
+          label: "Montant HT",
+        },
+        cell: ({ row }) => {
+          const quote = row.original;
+          const amount = quote.finalTotalHT ?? quote.totalHT;
+          if (amount === undefined || amount === null || isNaN(amount))
+            return "—";
+          return (
+            <div className="font-normal">
+              {new Intl.NumberFormat("fr-FR", {
+                style: "currency",
+                currency: "EUR",
+              }).format(amount)}
+            </div>
+          );
+        },
+        size: 110,
+      },
+      {
+        accessorKey: "finalTotalVAT",
+        header: ({ column }) => (
+          <div
+            className="flex items-center cursor-pointer font-normal"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            TVA
+            <ArrowUpDown className="ml-2 h-3 w-3" />
+          </div>
+        ),
+        meta: {
+          label: "TVA",
+        },
+        cell: ({ row }) => {
+          const quote = row.original;
+          const amount = quote.finalTotalVAT ?? quote.totalVAT;
+          if (amount === undefined || amount === null || isNaN(amount))
+            return "—";
+          return (
+            <div className="font-normal">
+              {new Intl.NumberFormat("fr-FR", {
+                style: "currency",
+                currency: "EUR",
+              }).format(amount)}
+            </div>
+          );
+        },
+        size: 100,
+      },
+      {
         accessorKey: "finalTotalTTC",
         header: ({ column }) => (
           <div
@@ -693,6 +783,10 @@ export function useQuoteTable({
     initialState: {
       pagination: {
         pageSize: 10,
+      },
+      columnVisibility: {
+        finalTotalHT: false,
+        finalTotalVAT: false,
       },
     },
   });

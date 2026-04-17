@@ -366,6 +366,36 @@ export function useInvoiceTable({
         size: 200,
       },
       {
+        accessorKey: "purchaseOrderNumber",
+        header: ({ column }) => (
+          <div
+            className="flex items-center cursor-pointer font-normal"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Référence
+            <ArrowUpDown className="ml-2 h-3 w-3" />
+          </div>
+        ),
+        meta: {
+          label: "Référence",
+        },
+        cell: ({ row }) => {
+          const reference = row.original.purchaseOrderNumber;
+          if (!reference) {
+            return <span className="text-muted-foreground">—</span>;
+          }
+          return (
+            <div
+              className="font-normal truncate max-w-[160px]"
+              title={reference}
+            >
+              {reference}
+            </div>
+          );
+        },
+        size: 140,
+      },
+      {
         accessorKey: "finalTotalHT",
         header: ({ column }) => (
           <div
@@ -907,6 +937,10 @@ export function useInvoiceTable({
     initialState: {
       pagination: {
         pageSize: 50,
+      },
+      columnVisibility: {
+        finalTotalHT: false,
+        finalTotalVAT: false,
       },
     },
   });
