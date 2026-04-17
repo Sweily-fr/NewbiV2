@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { useQuery } from "@apollo/client";
 import { GET_BOARDS } from "@/src/graphql/kanbanQueries";
@@ -182,9 +182,13 @@ export function NavMain({
     if (isCommunicationSubActive) setIsCommunicationOpen(true);
   }, [isCommunicationSubActive]);
 
-  // Track quel dropdown est ouvert pour supprimer le tooltip pendant/après interaction
-  const [activeDropdown, setActiveDropdown] = useState(null);
-  const isDropdownOpenRef = useRef(false);
+  // Suit l'ouverture de chaque dropdown pour propager `suppressHover` au
+  // SidebarMenuButton concerné — sinon le hover/tooltip se réaffichent à la
+  // fermeture du dropdown quand le focus revient sur le trigger.
+  const [openDropdowns, setOpenDropdowns] = useState({});
+  const isDropdownOpen = (id) => Boolean(openDropdowns[id]);
+  const handleDropdownOpenChange = (id) => (open) =>
+    setOpenDropdowns((prev) => ({ ...prev, [id]: open }));
 
   // Fonction pour fermer la sidebar sur mobile lors du clic
   const handleLinkClick = () => {
@@ -200,21 +204,13 @@ export function NavMain({
       return (
         <DropdownMenu
           key="ventes"
-          onOpenChange={(open) => {
-            isDropdownOpenRef.current = open;
-            if (open) setActiveDropdown("ventes");
-            else setActiveDropdown(null);
-          }}
+          onOpenChange={handleDropdownOpenChange("ventes")}
         >
-          <SidebarMenuItem
-            onMouseEnter={() => {
-              if (!isDropdownOpenRef.current && activeDropdown)
-                setActiveDropdown(null);
-            }}
-          >
+          <SidebarMenuItem>
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
-                tooltip={activeDropdown === "ventes" ? undefined : "Ventes"}
+                tooltip="Ventes"
+                suppressHover={isDropdownOpen("ventes")}
                 className={cn(
                   "bg-transparent w-full cursor-pointer focus-visible:ring-0",
                 )}
@@ -227,6 +223,7 @@ export function NavMain({
               side={isMobile ? "bottom" : "right"}
               align="start"
               className="min-w-[180px] text-[.8125rem]"
+              onCloseAutoFocus={(e) => e.preventDefault()}
             >
               {/* Actions rapides (masquées pour le comptable) */}
               {userRole !== "accountant" && (
@@ -397,21 +394,13 @@ export function NavMain({
       return (
         <DropdownMenu
           key="clients"
-          onOpenChange={(open) => {
-            isDropdownOpenRef.current = open;
-            if (open) setActiveDropdown("clients");
-            else setActiveDropdown(null);
-          }}
+          onOpenChange={handleDropdownOpenChange("clients")}
         >
-          <SidebarMenuItem
-            onMouseEnter={() => {
-              if (!isDropdownOpenRef.current && activeDropdown)
-                setActiveDropdown(null);
-            }}
-          >
+          <SidebarMenuItem>
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
-                tooltip={activeDropdown === "clients" ? undefined : "Clients"}
+                tooltip="Clients"
+                suppressHover={isDropdownOpen("clients")}
                 className={cn(
                   "bg-transparent w-full cursor-pointer focus-visible:ring-0",
                 )}
@@ -424,6 +413,7 @@ export function NavMain({
               side={isMobile ? "bottom" : "right"}
               align="start"
               className="min-w-[180px] text-[.8125rem]"
+              onCloseAutoFocus={(e) => e.preventDefault()}
             >
               {/* Action rapide: Nouveau client (masquée pour le comptable) */}
               {userRole !== "accountant" && (
@@ -575,21 +565,13 @@ export function NavMain({
       return (
         <DropdownMenu
           key="projets"
-          onOpenChange={(open) => {
-            isDropdownOpenRef.current = open;
-            if (open) setActiveDropdown("projets");
-            else setActiveDropdown(null);
-          }}
+          onOpenChange={handleDropdownOpenChange("projets")}
         >
-          <SidebarMenuItem
-            onMouseEnter={() => {
-              if (!isDropdownOpenRef.current && activeDropdown)
-                setActiveDropdown(null);
-            }}
-          >
+          <SidebarMenuItem>
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
-                tooltip={activeDropdown === "projets" ? undefined : "Tâches"}
+                tooltip="Tâches"
+                suppressHover={isDropdownOpen("projets")}
                 className={cn(
                   "bg-transparent w-full cursor-pointer focus-visible:ring-0",
                 )}
@@ -603,6 +585,7 @@ export function NavMain({
               side={isMobile ? "bottom" : "right"}
               align="start"
               sideOffset={8}
+              onCloseAutoFocus={(e) => e.preventDefault()}
             >
               {/* Barre de recherche */}
               <div className="flex items-center px-4 mb-1 border-b">
@@ -684,23 +667,13 @@ export function NavMain({
     return (
       <DropdownMenu
         key="projets-expanded"
-        onOpenChange={(open) => {
-          isDropdownOpenRef.current = open;
-          if (open) setActiveDropdown("projets-expanded");
-          else setActiveDropdown(null);
-        }}
+        onOpenChange={handleDropdownOpenChange("projets-expanded")}
       >
-        <SidebarMenuItem
-          onMouseEnter={() => {
-            if (!isDropdownOpenRef.current && activeDropdown)
-              setActiveDropdown(null);
-          }}
-        >
+        <SidebarMenuItem>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
-              tooltip={
-                activeDropdown === "projets-expanded" ? undefined : "Tâches"
-              }
+              tooltip="Tâches"
+              suppressHover={isDropdownOpen("projets-expanded")}
               className={cn(
                 "bg-transparent w-full cursor-pointer focus-visible:ring-0",
                 isKanbanActive && "bg-sidebar-accent text-sidebar-foreground",
@@ -716,6 +689,7 @@ export function NavMain({
             align="start"
             className="w-64 rounded-lg"
             sideOffset={8}
+            onCloseAutoFocus={(e) => e.preventDefault()}
           >
             {/* Lien vers tous les dossiers - Style comme organization switcher */}
             <DropdownMenuItem asChild>
@@ -840,21 +814,13 @@ export function NavMain({
       return (
         <DropdownMenu
           key={title}
-          onOpenChange={(open) => {
-            isDropdownOpenRef.current = open;
-            if (open) setActiveDropdown(title);
-            else setActiveDropdown(null);
-          }}
+          onOpenChange={handleDropdownOpenChange(title)}
         >
-          <SidebarMenuItem
-            onMouseEnter={() => {
-              if (!isDropdownOpenRef.current && activeDropdown)
-                setActiveDropdown(null);
-            }}
-          >
+          <SidebarMenuItem>
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
-                tooltip={activeDropdown === title ? undefined : title}
+                tooltip={title}
+                suppressHover={isDropdownOpen(title)}
                 className={cn(
                   "bg-transparent w-full cursor-pointer focus-visible:ring-0",
                 )}
@@ -867,6 +833,7 @@ export function NavMain({
               side={isMobile ? "bottom" : "right"}
               align="start"
               className="min-w-[180px] text-[.8125rem]"
+              onCloseAutoFocus={(e) => e.preventDefault()}
             >
               {subItems.map((subItem, index) => {
                 // Si l'item a une section, c'est un groupe
