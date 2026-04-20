@@ -17,6 +17,9 @@ export function TutorialProvider({ children }) {
   const [stepIndex, setStepIndex] = useState(0);
   const [hasCompletedTutorial, setHasCompletedTutorial] = useState(true); // Par défaut true pour éviter le flash
   const [isLoading, setIsLoading] = useState(true);
+  // Incrémenté à chaque relance pour forcer le remount de Joyride
+  // (sinon son état interne reste "finished" et masque le bouton Ignorer)
+  const [runKey, setRunKey] = useState(0);
 
   // Charger l'état du tutoriel depuis la base de données
   useEffect(() => {
@@ -97,11 +100,12 @@ export function TutorialProvider({ children }) {
     }
   }, []);
 
-  // Relancer le tutoriel (uniquement côté client, sans toucher à la BDD)
-  // Petit délai pour laisser le temps au modal de se fermer avant que Joyride
-  // calcule la position des éléments cibles.
+  // Relancer le tutoriel (uniquement côté client, sans toucher à la BDD).
+  // - Incrémente runKey pour forcer Joyride à se remonter (sinon Ignorer est masqué).
+  // - Petit délai pour laisser le modal se fermer avant le calcul des cibles.
   const resetTutorial = useCallback(() => {
     setStepIndex(0);
+    setRunKey((k) => k + 1);
     setTimeout(() => {
       setIsRunning(true);
     }, 300);
@@ -113,6 +117,7 @@ export function TutorialProvider({ children }) {
     setStepIndex,
     hasCompletedTutorial,
     isLoading,
+    runKey,
     startTutorial,
     stopTutorial,
     completeTutorial,
