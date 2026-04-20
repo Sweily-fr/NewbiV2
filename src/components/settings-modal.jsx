@@ -339,7 +339,7 @@ export function SettingsModal({
       case "espaces":
         return <EspacesSection canManageOrgSettings={canManageOrgSettings} />;
       case "preferences":
-        return <PreferencesSection />;
+        return <PreferencesSection onClose={() => onOpenChange(false)} />;
       case "notifications":
         return <NotificationsSection onClose={() => onOpenChange(false)} />;
       case "generale":

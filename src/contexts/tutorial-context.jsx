@@ -43,7 +43,7 @@ export function TutorialProvider({ children }) {
       } catch (error) {
         console.error(
           "Erreur lors du chargement de l'état du tutoriel:",
-          error
+          error,
         );
       } finally {
         setIsLoading(false);
@@ -97,27 +97,14 @@ export function TutorialProvider({ children }) {
     }
   }, []);
 
-  // Réinitialiser le tutoriel (pour le relancer)
-  const resetTutorial = useCallback(async () => {
-    setHasCompletedTutorial(false);
-
-    // Persister en base de données
-    try {
-      await fetch("/api/tutorial/reset", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      // Démarrer le tutoriel après réinitialisation
-      setTimeout(() => {
-        setStepIndex(0);
-        setIsRunning(true);
-      }, 500);
-    } catch (error) {
-      console.error("Erreur lors de la réinitialisation du tutoriel:", error);
-    }
+  // Relancer le tutoriel (uniquement côté client, sans toucher à la BDD)
+  // Petit délai pour laisser le temps au modal de se fermer avant que Joyride
+  // calcule la position des éléments cibles.
+  const resetTutorial = useCallback(() => {
+    setStepIndex(0);
+    setTimeout(() => {
+      setIsRunning(true);
+    }, 300);
   }, []);
 
   const value = {
