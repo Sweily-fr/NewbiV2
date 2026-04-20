@@ -1,54 +1,46 @@
-// Définition des étapes du tutoriel pour la Phase 1
-// Couvre : Sidebar et Dropdown menu utilisateur
+// Tutoriel simplifié : tooltips centrés uniquement, sans cible DOM.
+// Évite les blocages quand un élément de la sidebar / du header n'est pas
+// rendu (orga en loading, écran mobile, rôles sans Dashboard, etc.).
 
 export const tutorialSteps = [
-  // Étape 1 : Bienvenue
   {
     target: "body",
     content:
-      "Bienvenue sur Newbi ! 👋 Laissez-nous vous guider à travers les fonctionnalités principales de votre espace de travail.",
+      "Bienvenue sur Newbi ! 👋 Laissez-nous vous guider rapidement à travers votre espace de travail.",
     placement: "center",
     disableBeacon: true,
     title: "Bienvenue sur Newbi",
   },
-  // Étape 2 : Sélecteur d'espace (dans le header)
-  {
-    target: '[data-tutorial="organization-switcher-header"]',
-    content:
-      "Ici, vous pouvez voir et changer d'espace de travail. Cliquez pour accéder à vos différentes organisations.",
-    placement: "bottom",
-    title: "Sélecteur d'espace",
-  },
-  // Étape 3 : Navigation principale - Dashboard
-  {
-    target: '[data-tutorial="nav-dashboard"]',
-    content:
-      "Le Dashboard vous donne une vue d'ensemble de votre activité : revenus, dépenses et statistiques clés.",
-    placement: "right",
-    title: "Tableau de bord",
-  },
-  // Étape 4 : Navigation principale - Finances
-  {
-    target: '[data-tutorial="nav-finances"]',
-    content:
-      "Le menu Finances regroupe vos transactions bancaires synchronisées, vos prévisions et vos mouvements financiers.",
-    placement: "right",
-    title: "Finances",
-  },
-  // Étape 5 : Menu utilisateur
-  {
-    target: '[data-tutorial="nav-user"]',
-    content:
-      "Cliquez ici pour accéder à votre profil, gérer votre abonnement, changer le thème ou vous déconnecter.",
-    placement: "right",
-    title: "Menu utilisateur",
-  },
-  // Étape finale
   {
     target: "body",
     content:
-      "🎉 Vous êtes prêt ! Explorez Newbi et n'hésitez pas à relancer ce tutoriel depuis les paramètres si besoin.",
+      "En haut à gauche, le sélecteur d'espace vous permet de basculer entre vos différentes organisations.",
     placement: "center",
+    disableBeacon: true,
+    title: "Sélecteur d'espace",
+  },
+  {
+    target: "body",
+    content:
+      "Dans la barre latérale, retrouvez votre Dashboard, vos Finances, vos documents (factures, devis, bons de commande) et vos outils.",
+    placement: "center",
+    disableBeacon: true,
+    title: "Navigation principale",
+  },
+  {
+    target: "body",
+    content:
+      "En bas de la sidebar, cliquez sur votre avatar pour accéder à votre profil, votre abonnement, le thème et la déconnexion.",
+    placement: "center",
+    disableBeacon: true,
+    title: "Menu utilisateur",
+  },
+  {
+    target: "body",
+    content:
+      "🎉 Vous êtes prêt ! Vous pouvez relancer ce tutoriel à tout moment depuis les paramètres.",
+    placement: "center",
+    disableBeacon: true,
     title: "C'est parti !",
   },
 ];
