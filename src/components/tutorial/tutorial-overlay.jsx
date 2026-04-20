@@ -76,7 +76,12 @@ const joyrideStyles = {
     cursor: "pointer",
   },
   buttonClose: {
-    display: "none",
+    color: "#9ca3af",
+    height: 14,
+    width: 14,
+    padding: 10,
+    right: 8,
+    top: 8,
   },
   spotlight: {
     borderRadius: "0.5rem",
@@ -170,11 +175,7 @@ export function TutorialOverlay() {
         completeTutorial();
       }
 
-      if (status === "skipped" || action === "skip") {
-        stopTutorial();
-      }
-
-      if (action === "close") {
+      if (status === "skipped" || action === "skip" || action === "close") {
         stopTutorial();
       }
     },
@@ -194,8 +195,6 @@ export function TutorialOverlay() {
       continuous
       showProgress
       showSkipButton
-      hideCloseButton
-      disableOverlayClose
       disableCloseOnEsc={false}
       scrollToFirstStep
       spotlightClicks={false}
