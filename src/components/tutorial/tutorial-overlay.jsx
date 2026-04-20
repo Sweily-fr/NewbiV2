@@ -104,6 +104,7 @@ export function TutorialOverlay() {
     stopTutorial,
     completeTutorial,
     isLoading,
+    runKey,
   } = useTutorial();
 
   const { open: sidebarOpen, setOpen: setSidebarOpen } = useSidebar();
@@ -161,6 +162,7 @@ export function TutorialOverlay() {
 
   return (
     <Joyride
+      key={runKey}
       steps={tutorialSteps}
       run={isRunning}
       stepIndex={stepIndex}
