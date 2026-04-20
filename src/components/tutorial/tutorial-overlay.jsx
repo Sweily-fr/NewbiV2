@@ -106,52 +106,79 @@ export function TutorialOverlay() {
     isLoading,
   } = useTutorial();
 
-  const { open: sidebarOpen, setOpen: setSidebarOpen } = useSidebar();
+  const {
+    open: sidebarOpen,
+    setOpen: setSidebarOpen,
+    isMobile,
+    openMobile,
+    setOpenMobile,
+  } = useSidebar();
   const sidebarWasOpen = useRef(sidebarOpen);
+  const mobileWasOpen = useRef(openMobile);
 
-  // Forcer la sidebar ouverte pendant le tutoriel
+  // Forcer la sidebar ouverte pendant le tutoriel (desktop + mobile)
   useEffect(() => {
     if (isRunning) {
       sidebarWasOpen.current = sidebarOpen;
+      mobileWasOpen.current = openMobile;
       setSidebarOpen(true);
+      if (isMobile) {
+        setOpenMobile(true);
+      }
     } else if (sidebarWasOpen.current !== undefined) {
-      // Restaurer l'état précédent quand le tutoriel se termine
       setSidebarOpen(sidebarWasOpen.current);
+      if (isMobile) {
+        setOpenMobile(mobileWasOpen.current ?? false);
+      }
     }
   }, [isRunning]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const advanceOrComplete = useCallback(
+    (fromIndex) => {
+      const nextIndex = fromIndex + 1;
+      if (nextIndex >= tutorialSteps.length) {
+        completeTutorial();
+      } else {
+        setStepIndex(nextIndex);
+      }
+    },
+    [setStepIndex, completeTutorial],
+  );
 
   const handleJoyrideCallback = useCallback(
     (data) => {
       const { action, index, status, type } = data;
 
-      // Gestion des différents événements
+      // Cible introuvable (élément pas encore monté, écran mobile, etc.)
+      // En mode contrôlé, Joyride ne fait rien par défaut → on avance manuellement
+      // sinon l'overlay gris reste bloqué sans tooltip.
+      if (type === "error:target_not_found" || type === "error") {
+        advanceOrComplete(index);
+        return;
+      }
+
       if (type === "step:after") {
-        // Passer à l'étape suivante
         if (action === "next") {
-          setStepIndex(index + 1);
+          advanceOrComplete(index);
         }
-        // Revenir à l'étape précédente
         if (action === "prev") {
-          setStepIndex(index - 1);
+          setStepIndex(Math.max(0, index - 1));
         }
       }
 
-      // Tutoriel terminé (dernière étape)
       if (status === "finished") {
         completeTutorial();
       }
 
-      // Tutoriel ignoré (skip)
       if (status === "skipped" || action === "skip") {
         stopTutorial();
       }
 
-      // Fermeture du tutoriel
       if (action === "close") {
         stopTutorial();
       }
     },
-    [setStepIndex, completeTutorial, stopTutorial],
+    [advanceOrComplete, setStepIndex, completeTutorial, stopTutorial],
   );
 
   // Ne pas afficher pendant le chargement
