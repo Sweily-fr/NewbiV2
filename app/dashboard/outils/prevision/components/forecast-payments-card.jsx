@@ -8,16 +8,74 @@ import {
   Line,
   XAxis,
   YAxis,
-  ReferenceArea,
   Tooltip,
+  ReferenceArea,
+  ResponsiveContainer,
 } from "recharts";
-import { Card, CardContent } from "@/src/components/ui/card";
-import { ChartContainer } from "@/src/components/ui/chart";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { ChevronDown } from "lucide-react";
+import {
+  ChevronRight,
+  ChevronLeft,
+  ChevronDown,
+  Clock,
+  Wallet,
+  Calculator,
+  PiggyBank,
+  Landmark,
+  Home,
+  Users,
+  CreditCard,
+  Wrench,
+  Monitor,
+  Receipt,
+  Megaphone,
+  Car,
+  Shield,
+  Zap,
+  Phone,
+  UtensilsCrossed,
+  Package,
+  Cpu,
+  GraduationCap,
+  HardDrive,
+  Plug,
+  MoreHorizontal,
+} from "lucide-react";
 import { cn } from "@/src/lib/utils";
+import {
+  Tooltip as ShadTooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/src/components/ui/tooltip";
 import { MonthDetailsDrawer } from "./month-details-drawer";
 import { useChartColors } from "@/src/hooks/useChartColors";
+
+// ─── Shared layout constants ───
+
+const LABEL_COL_WIDTH = 160;
+const COLUMN_WIDTH = 120;
+const CHART_HEIGHT = 200;
+const VISIBLE_MONTHS = 7;
+const CHART_MARGIN = { top: 12, right: 0, bottom: 0, left: 0 };
+const X_AXIS_HEIGHT = 32;
+
+// ─── Badge thresholds ───
+
+const BADGE_THRESHOLDS = {
+  EXCEEDS: { min: 120, color: "text-violet-600 bg-violet-50" },
+  ON_TRACK: { min: 80, color: "text-green-700 bg-green-50" },
+  BEHIND: { min: 40, color: "text-amber-700 bg-amber-50" },
+  CRITICAL: { min: 0, color: "text-red-600 bg-red-50" },
+};
+
+const getBadgeStyle = (pct) => {
+  if (pct >= BADGE_THRESHOLDS.EXCEEDS.min)
+    return BADGE_THRESHOLDS.EXCEEDS.color;
+  if (pct >= BADGE_THRESHOLDS.ON_TRACK.min)
+    return BADGE_THRESHOLDS.ON_TRACK.color;
+  if (pct >= BADGE_THRESHOLDS.BEHIND.min) return BADGE_THRESHOLDS.BEHIND.color;
+  return BADGE_THRESHOLDS.CRITICAL.color;
+};
 
 // ─── Formatters ───
 
@@ -57,48 +115,49 @@ const formatMonthLabel = (monthStr) => {
   return `${FR_MONTHS_3[parseInt(month) - 1]}.${year.slice(2)}`;
 };
 
-// ─── Category labels ───
+// ─── Y-axis tick calculation (nice numbers) ───
 
-const CATEGORY_LABELS = {
-  SALES: "Ventes",
-  REFUNDS_RECEIVED: "Remboursements reçus",
-  OTHER_INCOME: "Autres revenus",
-  RENT: "Loyer",
-  SUBSCRIPTIONS: "Abonnements",
-  OFFICE_SUPPLIES: "Fournitures",
-  SERVICES: "Services",
-  TRANSPORT: "Transport",
-  MEALS: "Repas",
-  TELECOMMUNICATIONS: "Télécom",
-  INSURANCE: "Assurance",
-  ENERGY: "Énergie",
-  SOFTWARE: "Logiciels",
-  HARDWARE: "Matériel",
-  MARKETING: "Marketing",
-  TRAINING: "Formation",
-  MAINTENANCE: "Maintenance",
-  TAXES: "Impôts & taxes",
-  UTILITIES: "Charges",
-  SALARIES: "Salaires",
-  OTHER_EXPENSE: "Autres dépenses",
-};
+function niceNum(range, round) {
+  if (range <= 0) return 1;
+  const exponent = Math.floor(Math.log10(range));
+  const fraction = range / Math.pow(10, exponent);
+  let nice;
+  if (round) {
+    if (fraction < 1.5) nice = 1;
+    else if (fraction < 3) nice = 2;
+    else if (fraction < 7) nice = 5;
+    else nice = 10;
+  } else {
+    if (fraction <= 1) nice = 1;
+    else if (fraction <= 2) nice = 2;
+    else if (fraction <= 5) nice = 5;
+    else nice = 10;
+  }
+  return nice * Math.pow(10, exponent);
+}
 
-const CATEGORY_COLORS_BASE = [
-  "#3B82F6",
-  "#2DD4BF",
-  "#F59E0B",
-  "#EF4444",
-  "#8B5CF6",
-  "#EC4899",
-  "#14B8A6",
-  "#F97316",
-];
+function computeYTicks(maxValue, desiredTicks = 5) {
+  if (maxValue <= 0) return { ticks: [0], max: 100 };
+  const range = niceNum(maxValue, false);
+  const spacing = niceNum(range / (desiredTicks - 1), true);
+  const niceMax = Math.ceil(maxValue / spacing) * spacing;
+  const ticks = [];
+  for (let v = 0; v <= niceMax; v += spacing) {
+    ticks.push(Math.round(v));
+  }
+  return { ticks, max: niceMax };
+}
 
-// ─── Custom Tooltip (Qonto style) ───
+function formatTickLabel(v) {
+  if (v === 0) return "0";
+  if (v >= 1000) return `${(v / 1000).toFixed(0)}K`;
+  return String(v);
+}
+
+// ─── Custom Tooltip ───
 
 function CustomTooltip({ active, payload, remap, incomeColor, expenseColor }) {
   if (!active || !payload?.length) return null;
-
   const data = payload[0]?.payload;
   if (!data) return null;
 
@@ -115,7 +174,6 @@ function CustomTooltip({ active, payload, remap, incomeColor, expenseColor }) {
   const actualIncome = data.actualIncome || 0;
   const forecastExpense = data.rawForecastExpense || 0;
   const actualExpense = data.actualExpense || 0;
-
   const incomePct =
     forecastIncome > 0
       ? Math.round((actualIncome / forecastIncome) * 100)
@@ -130,8 +188,6 @@ function CustomTooltip({ active, payload, remap, incomeColor, expenseColor }) {
       <div className="text-sm font-medium text-foreground border-b border-border pb-2 mb-3">
         {capitalizedLabel}
       </div>
-
-      {/* Entrées */}
       {(forecastIncome > 0 || actualIncome > 0) && (
         <div className="mb-3">
           <div className="text-xs font-medium text-foreground mb-1.5">
@@ -177,8 +233,6 @@ function CustomTooltip({ active, payload, remap, incomeColor, expenseColor }) {
           )}
         </div>
       )}
-
-      {/* Sorties */}
       {(forecastExpense > 0 || actualExpense > 0) && (
         <div>
           <div className="text-xs font-medium text-foreground mb-1.5">
@@ -228,137 +282,204 @@ function CustomTooltip({ active, payload, remap, incomeColor, expenseColor }) {
   );
 }
 
-// ─── Hatched Icon ───
+// ─── Category configs for table ───
 
-function HatchedIcon() {
-  return (
-    <svg
-      width="48"
-      height="56"
-      viewBox="0 0 48 56"
-      fill="none"
-      className="shrink-0"
-    >
-      <defs>
-        <pattern
-          id="hatch-icon-1"
-          patternUnits="userSpaceOnUse"
-          width="3"
-          height="3"
-        >
-          <line
-            x1="0"
-            y1="0"
-            x2="0"
-            y2="3"
-            stroke="#0D9488"
-            strokeWidth="1.5"
-            opacity="0.7"
-          />
-        </pattern>
-        <pattern
-          id="hatch-icon-2"
-          patternUnits="userSpaceOnUse"
-          width="3"
-          height="3"
-        >
-          <line
-            x1="0"
-            y1="0"
-            x2="0"
-            y2="3"
-            stroke="#0D9488"
-            strokeWidth="1.5"
-            opacity="0.5"
-          />
-        </pattern>
-        <pattern
-          id="hatch-icon-3"
-          patternUnits="userSpaceOnUse"
-          width="3"
-          height="3"
-        >
-          <line
-            x1="0"
-            y1="0"
-            x2="0"
-            y2="3"
-            stroke="#0D9488"
-            strokeWidth="1.5"
-            opacity="0.35"
-          />
-        </pattern>
-      </defs>
-      <rect
-        x="2"
-        y="8"
-        width="10"
-        height="48"
-        rx="2"
-        fill="url(#hatch-icon-1)"
-      />
-      <rect
-        x="14"
-        y="18"
-        width="10"
-        height="38"
-        rx="2"
-        fill="url(#hatch-icon-2)"
-      />
-      <rect
-        x="26"
-        y="26"
-        width="10"
-        height="30"
-        rx="2"
-        fill="url(#hatch-icon-3)"
-      />
-      <rect
-        x="38"
-        y="34"
-        width="8"
-        height="22"
-        rx="2"
-        fill="url(#hatch-icon-3)"
-      />
-    </svg>
-  );
-}
+const INCOME_CATEGORIES = [
+  {
+    key: "SALES",
+    label: "Chiffre d'affaires",
+    bg: "bg-violet-100",
+    text: "text-violet-600",
+    icon: Wallet,
+  },
+  {
+    key: "OTHER_INCOME",
+    label: "Autres revenus fi...",
+    bg: "bg-emerald-100",
+    text: "text-emerald-600",
+    icon: Calculator,
+  },
+  {
+    key: "REFUNDS_RECEIVED",
+    label: "Subventions et ai...",
+    bg: "bg-amber-100",
+    text: "text-amber-600",
+    icon: PiggyBank,
+  },
+];
 
-// ─── Component ───
+const EXPENSE_CATEGORIES = [
+  {
+    key: "RENT",
+    label: "Loyer",
+    bg: "bg-rose-100",
+    text: "text-rose-600",
+    icon: Home,
+  },
+  {
+    key: "SALARIES",
+    label: "Salaires",
+    bg: "bg-blue-100",
+    text: "text-blue-600",
+    icon: Users,
+  },
+  {
+    key: "SUBSCRIPTIONS",
+    label: "Abonnements",
+    bg: "bg-violet-100",
+    text: "text-violet-500",
+    icon: CreditCard,
+  },
+  {
+    key: "SERVICES",
+    label: "Services",
+    bg: "bg-cyan-100",
+    text: "text-cyan-600",
+    icon: Wrench,
+  },
+  {
+    key: "SOFTWARE",
+    label: "Logiciels",
+    bg: "bg-indigo-100",
+    text: "text-indigo-500",
+    icon: Monitor,
+  },
+  {
+    key: "TAXES",
+    label: "Impôts & taxes",
+    bg: "bg-amber-100",
+    text: "text-amber-600",
+    icon: Receipt,
+  },
+  {
+    key: "MARKETING",
+    label: "Marketing",
+    bg: "bg-pink-100",
+    text: "text-pink-600",
+    icon: Megaphone,
+  },
+  {
+    key: "TRANSPORT",
+    label: "Transport",
+    bg: "bg-emerald-100",
+    text: "text-emerald-500",
+    icon: Car,
+  },
+  {
+    key: "INSURANCE",
+    label: "Assurance",
+    bg: "bg-sky-100",
+    text: "text-sky-600",
+    icon: Shield,
+  },
+  {
+    key: "ENERGY",
+    label: "Énergie",
+    bg: "bg-yellow-100",
+    text: "text-yellow-600",
+    icon: Zap,
+  },
+  {
+    key: "TELECOMMUNICATIONS",
+    label: "Télécom",
+    bg: "bg-teal-100",
+    text: "text-teal-600",
+    icon: Phone,
+  },
+  {
+    key: "MEALS",
+    label: "Repas",
+    bg: "bg-orange-100",
+    text: "text-orange-500",
+    icon: UtensilsCrossed,
+  },
+  {
+    key: "OFFICE_SUPPLIES",
+    label: "Fournitures",
+    bg: "bg-gray-100",
+    text: "text-gray-500",
+    icon: Package,
+  },
+  {
+    key: "HARDWARE",
+    label: "Matériel",
+    bg: "bg-slate-100",
+    text: "text-slate-500",
+    icon: Cpu,
+  },
+  {
+    key: "TRAINING",
+    label: "Formation",
+    bg: "bg-lime-100",
+    text: "text-lime-600",
+    icon: GraduationCap,
+  },
+  {
+    key: "MAINTENANCE",
+    label: "Maintenance",
+    bg: "bg-stone-100",
+    text: "text-stone-500",
+    icon: HardDrive,
+  },
+  {
+    key: "UTILITIES",
+    label: "Charges",
+    bg: "bg-neutral-100",
+    text: "text-neutral-500",
+    icon: Plug,
+  },
+  {
+    key: "OTHER_EXPENSE",
+    label: "Autres dépenses",
+    bg: "bg-gray-100",
+    text: "text-gray-400",
+    icon: MoreHorizontal,
+  },
+];
 
-export function ForecastPaymentsCard({ months, kpi, loading }) {
+// ═══════════════════════════════════════════════════════════
+// ─── Main Component ───
+// ═══════════════════════════════════════════════════════════
+
+export function ForecastPaymentsCard({ months, kpi, loading, onCellClick }) {
   const { remap } = useChartColors();
   const incomeColor = remap("#5b50ff");
   const expenseColor = remap("#000000");
-  const CATEGORY_COLORS = useMemo(
-    () => CATEGORY_COLORS_BASE.map(remap),
-    [remap],
-  );
-  const chartConfig = {
-    actualIncome: { label: "Entrées réelles", color: incomeColor },
-    forecastIncome: { label: "Prév. entrées", color: incomeColor },
-    actualExpense: { label: "Sorties réelles", color: remap("#333333") },
-    forecastExpense: { label: "Prév. sorties", color: expenseColor },
-    balance: { label: "Solde", color: remap("#3b82f6") },
-  };
+
   const safeMonths = months || [];
   const [selectedMonth, setSelectedMonth] = useState(null);
 
   const now = new Date();
   const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
-  // Build chart data with stacked actual + forecast remainder
+  const N = safeMonths.length;
+
+  // Pagination
+  const currentMonthIdx = safeMonths.findIndex((m) => m.month === currentMonth);
+  const defaultStart = Math.max(
+    0,
+    Math.min(
+      currentMonthIdx - Math.floor(VISIBLE_MONTHS / 2),
+      N - VISIBLE_MONTHS,
+    ),
+  );
+  const [visibleStart, setVisibleStart] = useState(Math.max(0, defaultStart));
+  const canGoBack = visibleStart > 0;
+  const canGoForward = visibleStart + VISIBLE_MONTHS < N;
+  const visibleMonths = useMemo(
+    () => safeMonths.slice(visibleStart, visibleStart + VISIBLE_MONTHS),
+    [safeMonths, visibleStart],
+  );
+
+  // Chart data (visible months only)
   const chartData = useMemo(() => {
-    if (!safeMonths.length) return [];
-    return safeMonths.map((m) => ({
+    if (!visibleMonths.length) return [];
+    return visibleMonths.map((m) => ({
       label: formatMonthLabel(m.month),
       rawMonth: m.month,
       isCurrent: m.month === currentMonth,
-      // Actual (solid bars)
       actualIncome: m.actualIncome || 0,
       actualExpense: m.actualExpense || 0,
-      // Forecast remainder (hatched bars) — portion above actual
       forecastIncome: Math.max(
         0,
         (m.forecastIncome || 0) - (m.actualIncome || 0),
@@ -367,455 +488,313 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
         0,
         (m.forecastExpense || 0) - (m.actualExpense || 0),
       ),
-      // Raw forecast for tooltip
       rawForecastIncome: m.forecastIncome || 0,
       rawForecastExpense: m.forecastExpense || 0,
-      // Balance line
       balance: m.closingBalance || 0,
     }));
-  }, [safeMonths, currentMonth]);
+  }, [visibleMonths, currentMonth]);
 
-  // Au-delà de 18 mois (24 mois), on n'affiche qu'1 label sur 2 pour rester horizontal.
-  // Sinon (≤ 12 mois) on garde le comportement normal.
-  const xN = chartData.length;
-  const xAxisInterval = xN > 18 ? 1 : 0;
-  const xAxisFontSize = 11;
-  const xAxisAngle = 0;
-  const xAxisHeight = 30;
+  // Y-axis ticks (computed from ALL months for consistent scale)
+  const { yTicks, yMax } = useMemo(() => {
+    if (!chartData.length) return { yTicks: [0], yMax: 100 };
+    let max = 0;
+    for (const d of chartData) {
+      max = Math.max(
+        max,
+        d.actualIncome + d.forecastIncome,
+        d.actualExpense + d.forecastExpense,
+      );
+    }
+    const { ticks, max: niceMax } = computeYTicks(max);
+    return { yTicks: ticks, yMax: niceMax };
+  }, [chartData]);
 
-  // Top categories split by income / expense.
-  // Returns, per category, its total + a month-by-month breakdown
-  // ({ month, actual, forecast }) for the dropdown detail.
-  const buildCategoryList = (type, limit) => {
-    const catMap = {};
-    safeMonths.forEach((m) => {
-      (m.categoryBreakdown || []).forEach((cb) => {
-        if (cb.type !== type) return;
-        const key = cb.category;
-        if (!catMap[key])
-          catMap[key] = {
-            category: key,
-            type: cb.type,
-            amount: 0,
-            monthly: [],
-          };
-        const isPast = m.month <= currentMonth;
-        const contribution = isPast
-          ? cb.actualAmount || 0
-          : cb.forecastAmount || 0;
-        catMap[key].amount += contribution;
-        catMap[key].monthly.push({
-          month: m.month,
+  // Table data
+  const [incomeExpanded, setIncomeExpanded] = useState(true);
+  const [expenseExpanded, setExpenseExpanded] = useState(true);
+
+  const catLookup = useMemo(() => {
+    const lookup = {};
+    for (const m of safeMonths) {
+      const map = {};
+      for (const cb of m.categoryBreakdown || []) {
+        map[cb.category] = {
           actual: cb.actualAmount || 0,
           forecast: cb.forecastAmount || 0,
-          isPast,
-        });
-      });
-    });
-    const all = Object.values(catMap).filter((c) => c.amount > 0);
-    const total = all.reduce((s, c) => s + c.amount, 0);
-    const sorted = [...all].sort((a, b) => b.amount - a.amount).slice(0, limit);
-    return {
-      categories: sorted.map((c, i) => ({
-        ...c,
-        label: CATEGORY_LABELS[c.category] || c.category,
-        color: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
-        pct: total > 0 ? ((c.amount / total) * 100).toFixed(1) : "0",
-      })),
-      total,
-    };
-  };
+        };
+      }
+      lookup[m.month] = map;
+    }
+    return lookup;
+  }, [safeMonths]);
 
-  const { categories: topIncome, total: totalIncome } = useMemo(
+  const activeIncomeCategories = useMemo(
     () =>
-      safeMonths.length
-        ? buildCategoryList("INCOME", 3)
-        : { categories: [], total: 0 },
-    [safeMonths, currentMonth],
-  );
-  const { categories: topExpense, total: totalExpense } = useMemo(
-    () =>
-      safeMonths.length
-        ? buildCategoryList("EXPENSE", 3)
-        : { categories: [], total: 0 },
-    [safeMonths, currentMonth],
+      INCOME_CATEGORIES.filter((cat) =>
+        safeMonths.some((m) => {
+          const d = catLookup[m.month]?.[cat.key];
+          return d && (d.actual > 0 || d.forecast > 0);
+        }),
+      ),
+    [safeMonths, catLookup],
   );
 
-  const today = new Date();
-  const todayDate = today.toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-  const timeStr = today.toLocaleTimeString("fr-FR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const activeExpenseCategories = useMemo(
+    () =>
+      EXPENSE_CATEGORIES.filter((cat) =>
+        safeMonths.some((m) => {
+          const d = catLookup[m.month]?.[cat.key];
+          return d && (d.actual > 0 || d.forecast > 0);
+        }),
+      ),
+    [safeMonths, catLookup],
+  );
 
-  const totalAmount =
-    (kpi?.pendingPayables || 0) + (kpi?.pendingReceivables || 0);
-
-  // Current month index for highlight
-  const currentIdx = chartData.findIndex((d) => d.isCurrent);
+  // ─── Loading state ───
 
   if (loading) {
     return (
-      <Card className="border-border">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-4 mb-6">
-            <Skeleton className="h-14 w-14 rounded-lg" />
-            <div>
-              <Skeleton className="h-4 w-24 mb-2" />
-              <Skeleton className="h-8 w-40" />
+      <div>
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="rounded-xl border border-border p-6">
+              <Skeleton className="h-4 w-32 mb-3" />
+              <Skeleton className="h-9 w-40" />
             </div>
-          </div>
+          ))}
+        </div>
+        <div className="rounded-xl border border-border p-6">
           <Skeleton className="h-[400px] w-full" />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
+  // ─── Render ───
+
   return (
-    <Card className="border-border bg-background shadow-none">
-      <CardContent className="p-0">
-        {/* ─── Top row ─── */}
-        <div className="flex items-center justify-between px-8 pt-3 pb-6">
-          <div className="flex items-center gap-4">
-            <HatchedIcon />
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">
-                Paiements en attente
-              </p>
-              <p className="text-[32px] font-medium text-foreground leading-tight tracking-tight">
-                {formatCurrencyShort(totalAmount)}
-              </p>
-            </div>
+    <div>
+      {/* ─── Chart ─── */}
+      <div className="relative">
+        {/* Navigation arrows */}
+        {N > VISIBLE_MONTHS && (
+          <div className="flex items-center gap-1 absolute bottom-1 left-0 z-10">
+            <button
+              type="button"
+              onClick={() => setVisibleStart((s) => Math.max(0, s - 1))}
+              disabled={!canGoBack}
+              className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-20 disabled:cursor-default"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                setVisibleStart((s) => Math.min(N - VISIBLE_MONTHS, s + 1))
+              }
+              disabled={!canGoForward}
+              className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-20 disabled:cursor-default"
+            >
+              <ChevronRight size={16} />
+            </button>
           </div>
-          <div className="flex items-start gap-12">
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground font-normal mb-1.5">
-                Encaissements
-              </p>
-              <p className="text-xl font-medium text-foreground">
-                {formatCurrencyShort(kpi?.pendingReceivables || 0)}
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground font-normal mb-1.5">
-                Décaissements
-              </p>
-              <p className="text-xl font-medium text-foreground">
-                {formatCurrencyShort(kpi?.pendingPayables || 0)}
-              </p>
-            </div>
-            {kpi?.signedQuotes > 0 && (
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground font-normal mb-1.5">
-                  Devis signés
-                </p>
-                <p className="text-xl font-medium text-foreground">
-                  {formatCurrencyShort(kpi.signedQuotes)}
-                </p>
-              </div>
-            )}
-            <div className="text-right">
-              <p className="text-xs">
-                <span className="text-muted-foreground">Aujourd&apos;hui </span>
-                <span className="text-foreground font-medium">{todayDate}</span>
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">{timeStr}</p>
-            </div>
+        )}
+
+        {chartData.length > 0 && (
+          <div className="w-full" style={{ height: CHART_HEIGHT }}>
+            <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
+              <ComposedChart
+                data={chartData}
+                margin={{ top: 12, right: 24, bottom: 0, left: 24 }}
+                onClick={(state) => {
+                  const payload = state?.activePayload?.[0]?.payload;
+                  if (payload?.rawMonth) setSelectedMonth(payload.rawMonth);
+                }}
+                style={{ cursor: "pointer" }}
+              >
+                <defs>
+                  <pattern
+                    id="hatchIncomePayments"
+                    patternUnits="userSpaceOnUse"
+                    width="6"
+                    height="6"
+                    patternTransform="rotate(45)"
+                  >
+                    <rect width="6" height="6" fill={remap("#e8e6ff")} />
+                    <line
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="6"
+                      stroke={remap("#5b50ff")}
+                      strokeWidth="2.5"
+                      strokeOpacity="0.5"
+                    />
+                  </pattern>
+                  <pattern
+                    id="hatchExpensePayments"
+                    patternUnits="userSpaceOnUse"
+                    width="6"
+                    height="6"
+                    patternTransform="rotate(45)"
+                  >
+                    <rect width="6" height="6" fill={remap("#e5e5e5")} />
+                    <line
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="6"
+                      stroke={remap("#000000")}
+                      strokeWidth="2.5"
+                      strokeOpacity="0.5"
+                    />
+                  </pattern>
+                </defs>
+
+                <CartesianGrid
+                  vertical={false}
+                  strokeDasharray="0"
+                  className="stroke-border"
+                />
+
+                {/* Current month highlight */}
+                {(() => {
+                  const cur = chartData.find((d) => d.isCurrent);
+                  return cur ? (
+                    <ReferenceArea
+                      x1={cur.label}
+                      x2={cur.label}
+                      fill="#000000"
+                      fillOpacity={0.04}
+                      ifOverflow="extendDomain"
+                    />
+                  ) : null;
+                })()}
+
+                <XAxis
+                  dataKey="label"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={10}
+                  height={X_AXIS_HEIGHT}
+                  tick={({ x, y, payload }) => {
+                    const dataItem = chartData.find(
+                      (d) => d.label === payload.value,
+                    );
+                    const isCurrent = dataItem?.isCurrent;
+                    return (
+                      <text
+                        x={x}
+                        y={y + 4}
+                        textAnchor="middle"
+                        fontSize={11}
+                        fill={isCurrent ? remap("#3b82f6") : "#9ca3af"}
+                        fontWeight={isCurrent ? 600 : 400}
+                      >
+                        {payload.value}
+                      </text>
+                    );
+                  }}
+                />
+
+                <YAxis
+                  yAxisId="bars"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={4}
+                  domain={[0, yMax]}
+                  ticks={yTicks}
+                  tickFormatter={formatTickLabel}
+                  width={40}
+                  tick={{ fontSize: 11, fill: "#9ca3af" }}
+                />
+                <YAxis yAxisId="balance" orientation="right" hide width={0} />
+
+                <Tooltip
+                  content={
+                    <CustomTooltip
+                      remap={remap}
+                      incomeColor={incomeColor}
+                      expenseColor={expenseColor}
+                    />
+                  }
+                  cursor={false}
+                />
+
+                <Bar
+                  yAxisId="bars"
+                  dataKey="actualIncome"
+                  stackId="income"
+                  fill={remap("#5b50ff")}
+                  barSize={20}
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  yAxisId="bars"
+                  dataKey="forecastIncome"
+                  stackId="income"
+                  fill="url(#hatchIncomePayments)"
+                  barSize={20}
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  yAxisId="bars"
+                  dataKey="actualExpense"
+                  stackId="expense"
+                  fill={remap("#333333")}
+                  barSize={20}
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  yAxisId="bars"
+                  dataKey="forecastExpense"
+                  stackId="expense"
+                  fill="url(#hatchExpensePayments)"
+                  barSize={20}
+                  radius={[4, 4, 0, 0]}
+                />
+
+                <Line
+                  yAxisId="balance"
+                  dataKey="balance"
+                  type="monotone"
+                  stroke={remap("#3b82f6")}
+                  strokeWidth={2}
+                  dot={{
+                    r: 3,
+                    fill: "#ffffff",
+                    stroke: remap("#3b82f6"),
+                    strokeWidth: 2,
+                  }}
+                  activeDot={{
+                    r: 5,
+                    fill: "#ffffff",
+                    stroke: remap("#3b82f6"),
+                    strokeWidth: 2,
+                  }}
+                  connectNulls
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
           </div>
-        </div>
+        )}
+      </div>
 
-        {/* ─── Bottom: legend + chart ─── */}
-        <div className="border-t border-border">
-          <div className="flex">
-            {/* Left: legend split by income / expense */}
-            <div className="w-[280px] shrink-0 border-r border-border px-8 pt-6 pb-8">
-              {/* ── Entrées ── */}
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-3">
-                  <p
-                    className="text-[13px] font-medium"
-                    style={{ color: remap("#5b50ff") }}
-                  >
-                    Entrées
-                  </p>
-                  <p className="text-[13px] font-medium text-foreground">
-                    {formatCurrencyShort(totalIncome)}
-                  </p>
-                </div>
-                {topIncome.length > 0 ? (
-                  <div className="flex flex-col gap-1">
-                    {topIncome.map((cat) => (
-                      <CategoryRow
-                        key={cat.category}
-                        cat={cat}
-                        dotColor={remap("#5b50ff")}
-                        currentMonth={currentMonth}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">Aucune entrée</p>
-                )}
-              </div>
-
-              {/* ── Sorties ── */}
-              <div className="pt-6 border-t border-border">
-                <div className="flex items-center justify-between mb-3">
-                  <p
-                    className="text-[13px] font-medium"
-                    style={{ color: remap("#000000") }}
-                  >
-                    Sorties
-                  </p>
-                  <p className="text-[13px] font-medium text-foreground">
-                    {formatCurrencyShort(totalExpense)}
-                  </p>
-                </div>
-                {topExpense.length > 0 ? (
-                  <div className="flex flex-col gap-1">
-                    {topExpense.map((cat) => (
-                      <CategoryRow
-                        key={cat.category}
-                        cat={cat}
-                        dotColor={remap("#000000")}
-                        currentMonth={currentMonth}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">Aucune sortie</p>
-                )}
-              </div>
-            </div>
-
-            {/* Right: chart */}
-            <div className="flex-1 min-w-0 px-8 pt-6 pb-8">
-              <p className="text-sm font-medium text-foreground mb-4">
-                Flux mensuels
-              </p>
-
-              {chartData.length > 0 ? (
-                <ChartContainer
-                  config={chartConfig}
-                  className="aspect-auto h-[400px] w-full"
-                >
-                  <ComposedChart
-                    data={chartData}
-                    margin={{ top: 12, right: 12, bottom: 12, left: 0 }}
-                    onClick={(state) => {
-                      const payload = state?.activePayload?.[0]?.payload;
-                      if (payload?.rawMonth) {
-                        setSelectedMonth(payload.rawMonth);
-                      }
-                    }}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <defs>
-                      {/* Hatched pattern for forecast income (green) */}
-                      <pattern
-                        id="hatchIncomePayments"
-                        patternUnits="userSpaceOnUse"
-                        width="6"
-                        height="6"
-                        patternTransform="rotate(45)"
-                      >
-                        <rect width="6" height="6" fill={remap("#e8e6ff")} />
-                        <line
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="6"
-                          stroke={remap("#5b50ff")}
-                          strokeWidth="2.5"
-                          strokeOpacity="0.5"
-                        />
-                      </pattern>
-                      {/* Hatched pattern for forecast expense (red) */}
-                      <pattern
-                        id="hatchExpensePayments"
-                        patternUnits="userSpaceOnUse"
-                        width="6"
-                        height="6"
-                        patternTransform="rotate(45)"
-                      >
-                        <rect width="6" height="6" fill={remap("#e5e5e5")} />
-                        <line
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="6"
-                          stroke={remap("#000000")}
-                          strokeWidth="2.5"
-                          strokeOpacity="0.5"
-                        />
-                      </pattern>
-                      {/* Gradient under balance line for forecast zone */}
-                      <linearGradient
-                        id="balanceGradientPayments"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop
-                          offset="0%"
-                          stopColor={remap("#3b82f6")}
-                          stopOpacity={0.12}
-                        />
-                        <stop
-                          offset="100%"
-                          stopColor={remap("#3b82f6")}
-                          stopOpacity={0.02}
-                        />
-                      </linearGradient>
-                    </defs>
-
-                    <CartesianGrid
-                      vertical={false}
-                      strokeDasharray="0"
-                      className="stroke-border"
-                    />
-
-                    {/* Current month highlight */}
-                    {currentIdx >= 0 && (
-                      <ReferenceArea
-                        x1={chartData[currentIdx]?.label}
-                        x2={chartData[currentIdx]?.label}
-                        className="fill-muted"
-                        fillOpacity={0.5}
-                        ifOverflow="extendDomain"
-                      />
-                    )}
-
-                    <XAxis
-                      dataKey="label"
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={12}
-                      interval={xAxisInterval}
-                      height={xAxisHeight}
-                      tick={({ x, y, payload }) => {
-                        const dataItem = chartData.find(
-                          (d) => d.label === payload.value,
-                        );
-                        const isCurrent = dataItem?.isCurrent;
-                        return (
-                          <text
-                            x={x}
-                            y={y + 4}
-                            textAnchor={xAxisAngle ? "end" : "middle"}
-                            fontSize={xAxisFontSize}
-                            fill={isCurrent ? remap("#3b82f6") : "#9ca3af"}
-                            fontWeight={isCurrent ? 600 : 400}
-                            transform={
-                              xAxisAngle
-                                ? `rotate(${xAxisAngle}, ${x}, ${y + 4})`
-                                : undefined
-                            }
-                          >
-                            {payload.value}
-                          </text>
-                        );
-                      }}
-                    />
-                    <YAxis
-                      yAxisId="bars"
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={8}
-                      domain={[0, "auto"]}
-                      tickFormatter={(v) => {
-                        if (v === 0) return "0";
-                        if (v >= 1000) return `${(v / 1000).toFixed(0)}K`;
-                        return String(v);
-                      }}
-                      width={50}
-                    />
-                    <YAxis yAxisId="balance" orientation="right" hide={true} />
-
-                    <Tooltip
-                      content={
-                        <CustomTooltip
-                          remap={remap}
-                          incomeColor={incomeColor}
-                          expenseColor={expenseColor}
-                        />
-                      }
-                      cursor={false}
-                    />
-
-                    {/* Income: actual (solid green) + forecast remainder (hatched green) */}
-                    <Bar
-                      yAxisId="bars"
-                      dataKey="actualIncome"
-                      stackId="income"
-                      fill={remap("#5b50ff")}
-                      barSize={20}
-                      radius={[4, 4, 0, 0]}
-                    />
-                    <Bar
-                      yAxisId="bars"
-                      dataKey="forecastIncome"
-                      stackId="income"
-                      fill="url(#hatchIncomePayments)"
-                      barSize={20}
-                      radius={[4, 4, 0, 0]}
-                    />
-
-                    {/* Expense: actual (solid red) + forecast remainder (hatched red) */}
-                    <Bar
-                      yAxisId="bars"
-                      dataKey="actualExpense"
-                      stackId="expense"
-                      fill={remap("#333333")}
-                      barSize={20}
-                      radius={[4, 4, 0, 0]}
-                    />
-                    <Bar
-                      yAxisId="bars"
-                      dataKey="forecastExpense"
-                      stackId="expense"
-                      fill="url(#hatchExpensePayments)"
-                      barSize={20}
-                      radius={[4, 4, 0, 0]}
-                    />
-
-                    {/* Balance line (separate right axis) */}
-                    <Line
-                      yAxisId="balance"
-                      dataKey="balance"
-                      type="monotone"
-                      stroke={remap("#3b82f6")}
-                      strokeWidth={2}
-                      dot={{
-                        r: 3,
-                        fill: "#ffffff",
-                        stroke: remap("#3b82f6"),
-                        strokeWidth: 2,
-                      }}
-                      activeDot={{
-                        r: 5,
-                        fill: "#ffffff",
-                        stroke: remap("#3b82f6"),
-                        strokeWidth: 2,
-                      }}
-                      connectNulls
-                    />
-                  </ComposedChart>
-                </ChartContainer>
-              ) : (
-                <div className="h-[400px] flex items-center justify-center text-sm text-muted-foreground">
-                  Aucune donnée disponible
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </CardContent>
+      {/* ─── Forecast Table ─── */}
+      {chartData.length > 0 && (
+        <ForecastTable
+          months={visibleMonths}
+          currentMonth={currentMonth}
+          catLookup={catLookup}
+          activeIncomeCategories={activeIncomeCategories}
+          activeExpenseCategories={activeExpenseCategories}
+          incomeExpanded={incomeExpanded}
+          setIncomeExpanded={setIncomeExpanded}
+          expenseExpanded={expenseExpanded}
+          setExpenseExpanded={setExpenseExpanded}
+          onCellClick={onCellClick}
+        />
+      )}
 
       <MonthDetailsDrawer
         month={selectedMonth}
@@ -824,79 +803,414 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
           if (!open) setSelectedMonth(null);
         }}
       />
-    </Card>
+    </div>
   );
 }
 
-// ─── Collapsible row for sidebar category ───
+// ═══════════════════════════════════════════════════════════
+// ─── Forecast Table ───
+// ═══════════════════════════════════════════════════════════
 
-function CategoryRow({ cat, dotColor, currentMonth }) {
-  const [open, setOpen] = useState(false);
-  const sortedMonths = useMemo(
-    () =>
-      [...(cat.monthly || [])].sort((a, b) => a.month.localeCompare(b.month)),
-    [cat.monthly],
+const formatNumber = (value) => {
+  if (!value || value === 0) return "–";
+  return new Intl.NumberFormat("fr-FR", {
+    maximumFractionDigits: 0,
+  }).format(Math.round(value));
+};
+
+function ForecastTable({
+  months,
+  currentMonth,
+  catLookup,
+  activeIncomeCategories,
+  activeExpenseCategories,
+  incomeExpanded,
+  setIncomeExpanded,
+  expenseExpanded,
+  setExpenseExpanded,
+  onCellClick,
+}) {
+  const N = months.length;
+
+  const Row = ({ label, labelClass, onClick, borderClass, children }) => (
+    <div className={cn("flex items-center", borderClass)} onClick={onClick}>
+      <div
+        className={cn("shrink-0 px-4 py-3.5 overflow-hidden", labelClass)}
+        style={{ width: 160 }}
+      >
+        {label}
+      </div>
+      <div
+        className="flex-1 grid pr-6"
+        style={{ gridTemplateColumns: `repeat(${N}, 1fr)` }}
+      >
+        {children}
+      </div>
+    </div>
   );
-  const hasDetails = sortedMonths.length > 0;
+
+  const Cell = ({
+    value,
+    isPast,
+    isCurrent,
+    badge,
+    muted: isMuted,
+    onClick: cellClick,
+  }) => {
+    const isFutureClickable = !isPast && cellClick;
+    return (
+      <div
+        className={cn(
+          "py-3.5 text-center text-[13px] tabular-nums group/cell relative",
+          isCurrent && "bg-black/[0.04]",
+          isFutureClickable &&
+            "cursor-pointer hover:bg-muted/40 transition-colors rounded",
+        )}
+        onClick={isFutureClickable ? cellClick : undefined}
+        title={
+          isFutureClickable ? "Cliquer pour ajouter une prévision" : undefined
+        }
+      >
+        <span
+          className={cn(
+            isMuted && "text-muted-foreground",
+            !isMuted && isPast && "font-semibold text-foreground",
+            !isMuted && !isPast && "text-muted-foreground",
+            isFutureClickable &&
+              "group-hover/cell:opacity-0 transition-opacity",
+          )}
+        >
+          {value}
+        </span>
+        {badge}
+        {isFutureClickable && (
+          <span className="absolute inset-0 flex items-center justify-center text-muted-foreground/50 text-lg opacity-0 group-hover/cell:opacity-100 transition-opacity">
+            +
+          </span>
+        )}
+      </div>
+    );
+  };
+
+  const Badge = ({ pct }) => (
+    <span
+      className={cn(
+        "ml-2 text-[11px] px-1.5 py-0.5 rounded tabular-nums",
+        getBadgeStyle(pct),
+      )}
+    >
+      {pct} %
+    </span>
+  );
+
+  const EstBadge = ({ pct }) => (
+    <span className="ml-2 text-[11px] text-muted-foreground/50 tabular-nums">
+      {pct} %
+    </span>
+  );
 
   return (
-    <div className="flex flex-col">
-      <button
-        type="button"
-        onClick={() => hasDetails && setOpen((o) => !o)}
-        disabled={!hasDetails}
-        className={cn(
-          "flex items-center justify-between py-1.5 text-left",
-          hasDetails && "cursor-pointer hover:bg-muted/40 rounded px-1 -mx-1",
-        )}
+    <div>
+      {/* ── Début du mois (header séparé) ── */}
+      <Row
+        label={
+          <span className="text-[13px] font-medium text-foreground">
+            Début du mois
+          </span>
+        }
+        borderClass="bg-muted/40 border border-border rounded-lg mt-6"
       >
-        <div className="flex items-center gap-2 min-w-0">
-          <span
-            className="w-2 h-2 rounded-full shrink-0"
-            style={{ backgroundColor: dotColor }}
-          />
-          <span className="text-sm text-foreground truncate">{cat.label}</span>
-          {hasDetails && (
-            <ChevronDown
-              size={12}
-              className={cn(
-                "text-muted-foreground transition-transform shrink-0",
-                open && "rotate-180",
-              )}
-            />
-          )}
-        </div>
-        <span className="text-sm tabular-nums text-foreground shrink-0">
-          {formatCurrencyShort(cat.amount)}
-        </span>
-      </button>
-      {open && hasDetails && (
-        <div className="pl-4 pt-1 pb-2 flex flex-col gap-1">
-          {sortedMonths.map((m) => {
-            const isFuture = m.month > currentMonth;
-            const amount = isFuture ? m.forecast : m.actual;
-            if (amount === 0) return null;
+        {months.map((m) => (
+          <div
+            key={m.month}
+            className={cn(
+              "py-3.5 text-center text-[13px] tabular-nums font-semibold text-foreground",
+              m.month === currentMonth && "bg-black/[0.06]",
+            )}
+          >
+            {formatNumber(m.openingBalance)}
+          </div>
+        ))}
+      </Row>
+
+      <div className="h-4" />
+
+      <div className="border border-border rounded-lg overflow-hidden">
+        {/* ── Entrées ── */}
+        <Row
+          label={
+            <div className="flex items-center gap-2">
+              <ChevronDown
+                size={14}
+                className={cn(
+                  "text-muted-foreground transition-transform",
+                  !incomeExpanded && "-rotate-90",
+                )}
+              />
+              <span className="text-[13px] font-semibold text-foreground">
+                Entrées
+              </span>
+            </div>
+          }
+          onClick={() => setIncomeExpanded((v) => !v)}
+          borderClass="border-b border-border cursor-pointer bg-muted/40 hover:bg-muted/60 transition-colors"
+        >
+          {months.map((m) => {
+            const isPast = m.month <= currentMonth;
+            const val = isPast ? m.actualIncome || 0 : m.forecastIncome || 0;
+            const forecast = m.forecastIncome || 0;
+            const pct =
+              isPast && forecast > 0
+                ? Math.round(((m.actualIncome || 0) / forecast) * 100)
+                : null;
             return (
-              <div
+              <Cell
                 key={m.month}
-                className="flex items-center justify-between text-xs"
-              >
-                <span className="text-muted-foreground">
-                  {formatMonthLabel(m.month)}
-                  {isFuture && (
-                    <span className="ml-1 text-[10px] uppercase tracking-wide opacity-60">
-                      prév.
-                    </span>
-                  )}
-                </span>
-                <span className="tabular-nums text-foreground/80">
-                  {formatCurrencyShort(amount)}
-                </span>
-              </div>
+                value={formatNumber(val)}
+                isPast={isPast}
+                isCurrent={m.month === currentMonth}
+                badge={pct !== null ? <Badge pct={pct} /> : null}
+              />
             );
           })}
-        </div>
-      )}
+        </Row>
+
+        {incomeExpanded && (
+          <>
+            {/* Estimation */}
+            <Row
+              label={
+                <div className="flex items-center gap-2 pl-6">
+                  <Clock
+                    size={14}
+                    className="text-muted-foreground/40 shrink-0"
+                  />
+                  <span className="text-[13px] text-muted-foreground">
+                    Estimation
+                  </span>
+                </div>
+              }
+              borderClass="border-b border-border/30"
+            >
+              {months.map((m) => {
+                const isPast = m.month <= currentMonth;
+                const forecast = m.forecastIncome || 0;
+                const pct =
+                  isPast && forecast > 0
+                    ? Math.round(((m.actualIncome || 0) / forecast) * 100)
+                    : null;
+                return (
+                  <Cell
+                    key={m.month}
+                    value={forecast > 0 ? formatNumber(forecast) : "–"}
+                    isPast={false}
+                    isCurrent={m.month === currentMonth}
+                    muted
+                    badge={pct !== null ? <EstBadge pct={pct} /> : null}
+                  />
+                );
+              })}
+            </Row>
+
+            {activeIncomeCategories.map((cat, idx) => {
+              const Icon = cat.icon;
+              return (
+                <Row
+                  key={cat.key}
+                  label={
+                    <div className="flex items-center gap-2 pl-6">
+                      <span
+                        className={cn(
+                          "flex items-center justify-center w-7 h-7 rounded-lg shrink-0",
+                          cat.bg,
+                        )}
+                      >
+                        <Icon size={14} className={cat.text} />
+                      </span>
+                      <ShadTooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-[13px] text-foreground/80 truncate">
+                            {cat.label}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">{cat.label}</TooltipContent>
+                      </ShadTooltip>
+                    </div>
+                  }
+                  borderClass={
+                    idx < activeIncomeCategories.length - 1
+                      ? "border-b border-border/20"
+                      : ""
+                  }
+                >
+                  {months.map((m) => {
+                    const d = catLookup[m.month]?.[cat.key];
+                    const isPast = m.month <= currentMonth;
+                    const actual = d?.actual || 0;
+                    const forecast = d?.forecast || 0;
+                    const val = isPast ? actual : forecast;
+                    const pct =
+                      isPast && forecast > 0
+                        ? Math.round((actual / forecast) * 100)
+                        : null;
+                    return (
+                      <Cell
+                        key={m.month}
+                        value={formatNumber(val)}
+                        isPast={isPast}
+                        isCurrent={m.month === currentMonth}
+                        badge={pct !== null ? <Badge pct={pct} /> : null}
+                        onClick={
+                          onCellClick
+                            ? () => onCellClick(cat.key, "INCOME", m.month)
+                            : undefined
+                        }
+                      />
+                    );
+                  })}
+                </Row>
+              );
+            })}
+          </>
+        )}
+
+        {/* ── Sorties ── */}
+        <Row
+          label={
+            <div className="flex items-center gap-2">
+              <ChevronDown
+                size={14}
+                className={cn(
+                  "text-muted-foreground transition-transform",
+                  !expenseExpanded && "-rotate-90",
+                )}
+              />
+              <span className="text-[13px] font-semibold text-foreground">
+                Sorties
+              </span>
+            </div>
+          }
+          onClick={() => setExpenseExpanded((v) => !v)}
+          borderClass="border-y border-border cursor-pointer bg-muted/40 hover:bg-muted/60 transition-colors"
+        >
+          {months.map((m) => {
+            const isPast = m.month <= currentMonth;
+            const val = isPast ? m.actualExpense || 0 : m.forecastExpense || 0;
+            const forecast = m.forecastExpense || 0;
+            const pct =
+              isPast && forecast > 0
+                ? Math.round(((m.actualExpense || 0) / forecast) * 100)
+                : null;
+            return (
+              <Cell
+                key={m.month}
+                value={formatNumber(val)}
+                isPast={isPast}
+                isCurrent={m.month === currentMonth}
+                badge={pct !== null ? <Badge pct={pct} /> : null}
+              />
+            );
+          })}
+        </Row>
+
+        {expenseExpanded && (
+          <>
+            <Row
+              label={
+                <div className="flex items-center gap-2 pl-6">
+                  <Clock
+                    size={14}
+                    className="text-muted-foreground/40 shrink-0"
+                  />
+                  <span className="text-[13px] text-muted-foreground">
+                    Estimation
+                  </span>
+                </div>
+              }
+              borderClass="border-b border-border/30"
+            >
+              {months.map((m) => {
+                const isPast = m.month <= currentMonth;
+                const forecast = m.forecastExpense || 0;
+                const pct =
+                  isPast && forecast > 0
+                    ? Math.round(((m.actualExpense || 0) / forecast) * 100)
+                    : null;
+                return (
+                  <Cell
+                    key={m.month}
+                    value={forecast > 0 ? formatNumber(forecast) : "–"}
+                    isPast={false}
+                    isCurrent={m.month === currentMonth}
+                    muted
+                    badge={pct !== null ? <EstBadge pct={pct} /> : null}
+                  />
+                );
+              })}
+            </Row>
+
+            {activeExpenseCategories.map((cat, idx) => {
+              const Icon = cat.icon;
+              return (
+                <Row
+                  key={cat.key}
+                  label={
+                    <div className="flex items-center gap-2 pl-6">
+                      <span
+                        className={cn(
+                          "flex items-center justify-center w-7 h-7 rounded-lg shrink-0",
+                          cat.bg,
+                        )}
+                      >
+                        <Icon size={14} className={cat.text} />
+                      </span>
+                      <ShadTooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-[13px] text-foreground/80 truncate">
+                            {cat.label}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">{cat.label}</TooltipContent>
+                      </ShadTooltip>
+                    </div>
+                  }
+                  borderClass={
+                    idx < activeExpenseCategories.length - 1
+                      ? "border-b border-border/20"
+                      : ""
+                  }
+                >
+                  {months.map((m) => {
+                    const d = catLookup[m.month]?.[cat.key];
+                    const isPast = m.month <= currentMonth;
+                    const actual = d?.actual || 0;
+                    const forecast = d?.forecast || 0;
+                    const val = isPast ? actual : forecast;
+                    const pct =
+                      isPast && forecast > 0
+                        ? Math.round((actual / forecast) * 100)
+                        : null;
+                    return (
+                      <Cell
+                        key={m.month}
+                        value={formatNumber(val)}
+                        isPast={isPast}
+                        isCurrent={m.month === currentMonth}
+                        badge={pct !== null ? <Badge pct={pct} /> : null}
+                        onClick={
+                          onCellClick
+                            ? () => onCellClick(cat.key, "EXPENSE", m.month)
+                            : undefined
+                        }
+                      />
+                    );
+                  })}
+                </Row>
+              );
+            })}
+          </>
+        )}
+      </div>
     </div>
   );
 }

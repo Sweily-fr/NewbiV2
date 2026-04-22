@@ -6,12 +6,14 @@ export const GET_TREASURY_FORECAST_DATA = gql`
     $startDate: String!
     $endDate: String!
     $accountId: ID
+    $scenarioId: ID
   ) {
     treasuryForecastData(
       workspaceId: $workspaceId
       startDate: $startDate
       endDate: $endDate
       accountId: $accountId
+      scenarioId: $scenarioId
     ) {
       kpi {
         currentBalance
@@ -115,6 +117,17 @@ export const GET_MANUAL_CASHFLOW_ENTRIES = gql`
       notes
       createdAt
       updatedAt
+    }
+  }
+`;
+
+export const GET_FORECAST_SCENARIOS = gql`
+  query GetForecastScenarios($workspaceId: ID) {
+    forecastScenarios(workspaceId: $workspaceId) {
+      id
+      name
+      incomeMultiplier
+      expenseMultiplier
     }
   }
 `;

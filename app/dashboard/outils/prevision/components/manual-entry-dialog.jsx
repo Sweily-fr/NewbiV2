@@ -4,28 +4,37 @@ import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
 import { Switch } from "@/src/components/ui/switch";
-import { Textarea } from "@/src/components/ui/textarea";
+import { Calendar } from "@/src/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
 import { cn } from "@/src/lib/utils";
 import {
   useUpsertManualCashflowEntry,
   useDeleteManualCashflowEntry,
 } from "@/src/hooks/useManualCashflowEntries";
-import { Trash2 } from "lucide-react";
+import {
+  Trash2,
+  CornerDownLeft,
+  LoaderCircle,
+  ArrowUpRight,
+  ArrowDownRight,
+  CalendarIcon,
+} from "lucide-react";
 
 const FREQUENCIES = [
   { value: "WEEKLY", label: "Hebdo" },
   { value: "MONTHLY", label: "Mensuel" },
-  { value: "QUARTERLY", label: "Trimestriel" },
-  { value: "SEMIANNUAL", label: "Semestriel" },
+  { value: "QUARTERLY", label: "Trim." },
+  { value: "SEMIANNUAL", label: "Sem." },
   { value: "ANNUAL", label: "Annuel" },
 ];
 
@@ -38,7 +47,23 @@ const toDateInput = (iso) => {
 
 const todayInput = () => toDateInput(new Date().toISOString());
 
-export function ManualEntryDialog({ open, onOpenChange, entry }) {
+const parseDate = (str) => {
+  if (!str) return undefined;
+  const d = new Date(str + "T00:00:00");
+  return Number.isNaN(d.getTime()) ? undefined : d;
+};
+
+const formatDateLabel = (str) => {
+  const d = parseDate(str);
+  if (!d) return null;
+  return d.toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+export function ManualEntryDialog({ open, onOpenChange, entry, defaults }) {
   const { upsertEntry, loading: saving } = useUpsertManualCashflowEntry();
   const { deleteEntry, loading: deleting } = useDeleteManualCashflowEntry();
 
@@ -67,10 +92,15 @@ export function ManualEntryDialog({ open, onOpenChange, entry }) {
       );
       setNotes(entry.notes || "");
     } else {
-      setType("EXPENSE");
+      setType(defaults?.type || "EXPENSE");
       setAmount("");
       setName("");
-      setStartDate(todayInput());
+      // If defaults has a month (YYYY-MM), set startDate to first of that month
+      if (defaults?.month) {
+        setStartDate(`${defaults.month}-01`);
+      } else {
+        setStartDate(todayInput());
+      }
       setEndDate("");
       setHasFrequency(false);
       setFrequency("MONTHLY");
@@ -109,187 +139,233 @@ export function ManualEntryDialog({ open, onOpenChange, entry }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px]">
-        <DialogHeader>
-          <DialogTitle>
-            {entry ? "Modifier la saisie" : "Ajoutez une saisie manuelle"}
-          </DialogTitle>
-          <DialogDescription className="sr-only">
-            Projeter un flux de trésorerie ponctuel ou récurrent.
-          </DialogDescription>
-        </DialogHeader>
-
-        {/* ─── Amount + type ─── */}
-        <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-          <div className="flex items-baseline gap-2">
-            <Input
-              type="number"
-              inputMode="decimal"
-              step="0.01"
-              min="0"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0,00"
-              className="text-2xl font-medium border-0 shadow-none focus-visible:ring-0 px-0 h-auto flex-1"
-            />
-            <span className="text-lg text-muted-foreground">EUR</span>
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setType("INCOME")}
-              className={cn(
-                "px-4 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer",
-                type === "INCOME"
-                  ? "bg-[#5b4fff] text-white"
-                  : "bg-muted text-foreground hover:bg-muted/80",
+      <DialogContent className="sm:max-w-[520px] p-1 gap-0 top-[40%] border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
+        <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
+          <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
+            <DialogTitle className="text-sm font-medium flex items-center gap-2">
+              {type === "INCOME" ? (
+                <ArrowUpRight className="size-4" />
+              ) : (
+                <ArrowDownRight className="size-4" />
               )}
-            >
-              Entrée
-            </button>
-            <button
-              type="button"
-              onClick={() => setType("EXPENSE")}
-              className={cn(
-                "px-4 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer",
-                type === "EXPENSE"
-                  ? "bg-[#5b4fff] text-white"
-                  : "bg-muted text-foreground hover:bg-muted/80",
-              )}
-            >
-              Sortie
-            </button>
-          </div>
-        </div>
+              {entry ? "Modifier la saisie" : "Nouvelle saisie"}
+            </DialogTitle>
+          </DialogHeader>
 
-        {/* ─── Name + start date ─── */}
-        <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-          <div className="space-y-1.5">
-            <Label
-              htmlFor="manual-entry-name"
-              className="text-xs text-muted-foreground font-normal"
-            >
-              Nom
-            </Label>
-            <Input
-              id="manual-entry-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Loyer bureau"
-              maxLength={120}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label
-              htmlFor="manual-entry-start"
-              className="text-xs text-muted-foreground font-normal"
-            >
-              Date prévue
-            </Label>
-            <Input
-              id="manual-entry-start"
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-          </div>
-        </div>
+          <div className="space-y-4 px-5 pt-4 pb-0">
+            {/* Type toggle */}
+            <div className="flex gap-1.5 p-1 bg-muted/50 rounded-lg w-fit">
+              <button
+                type="button"
+                onClick={() => setType("EXPENSE")}
+                className={cn(
+                  "px-3.5 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer",
+                  type === "EXPENSE"
+                    ? "bg-background text-foreground shadow-sm ring-1 ring-black/[0.07] dark:ring-white/[0.1]"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                Sortie
+              </button>
+              <button
+                type="button"
+                onClick={() => setType("INCOME")}
+                className={cn(
+                  "px-3.5 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer",
+                  type === "INCOME"
+                    ? "bg-background text-foreground shadow-sm ring-1 ring-black/[0.07] dark:ring-white/[0.1]"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                Entrée
+              </button>
+            </div>
 
-        {/* ─── Frequency ─── */}
-        <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="manual-entry-freq" className="font-normal">
-              Fréquence
-            </Label>
-            <Switch
-              id="manual-entry-freq"
-              checked={hasFrequency}
-              onCheckedChange={setHasFrequency}
-            />
-          </div>
-          {hasFrequency && (
-            <>
-              <div className="flex flex-wrap gap-2">
-                {FREQUENCIES.map((f) => (
-                  <button
-                    key={f.value}
-                    type="button"
-                    onClick={() => setFrequency(f.value)}
-                    className={cn(
-                      "px-3 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer",
-                      frequency === f.value
-                        ? "bg-[#5b4fff] text-white"
-                        : "bg-muted text-foreground hover:bg-muted/80",
-                    )}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-              </div>
+            {/* Name + Amount on same row */}
+            <div className="grid grid-cols-[1fr,140px] gap-3">
               <div className="space-y-1.5">
-                <Label
-                  htmlFor="manual-entry-end"
-                  className="text-xs text-muted-foreground font-normal"
-                >
-                  Date de fin (optionnel)
-                </Label>
+                <label className="text-sm text-muted-foreground">Libellé</label>
                 <Input
-                  id="manual-entry-end"
-                  type="date"
-                  value={endDate}
-                  min={startDate || undefined}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Ex: Loyer bureau"
+                  maxLength={120}
                 />
               </div>
-            </>
-          )}
-        </div>
+              <div className="space-y-1.5">
+                <label className="text-sm text-muted-foreground">Montant</label>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    min="0"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="0,00"
+                    className="pr-8"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                    €
+                  </span>
+                </div>
+              </div>
+            </div>
 
-        {/* ─── Notes (optional) ─── */}
-        <div className="space-y-1.5">
-          <Label
-            htmlFor="manual-entry-notes"
-            className="text-xs text-muted-foreground font-normal"
-          >
-            Notes (optionnel)
-          </Label>
-          <Textarea
-            id="manual-entry-notes"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            maxLength={500}
-            rows={2}
-          />
-        </div>
+            {/* Date */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm text-muted-foreground">
+                Date prévue
+              </label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-fit justify-start text-left font-normal",
+                      !startDate && "text-muted-foreground",
+                    )}
+                  >
+                    <CalendarIcon className="size-3.5 text-muted-foreground" />
+                    {formatDateLabel(startDate) || "Sélectionner une date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={parseDate(startDate)}
+                    onSelect={(date) => {
+                      if (date) setStartDate(toDateInput(date.toISOString()));
+                    }}
+                    defaultMonth={parseDate(startDate)}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
 
-        <DialogFooter className="flex items-center justify-between gap-2 sm:justify-between">
-          <div>
-            {entry?.id && (
+            {/* Frequency */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm text-muted-foreground">
+                  Récurrent
+                </label>
+                <Switch
+                  checked={hasFrequency}
+                  onCheckedChange={setHasFrequency}
+                />
+              </div>
+              {hasFrequency && (
+                <div className="space-y-3">
+                  <div className="flex gap-1.5">
+                    {FREQUENCIES.map((f) => (
+                      <button
+                        key={f.value}
+                        type="button"
+                        onClick={() => setFrequency(f.value)}
+                        className={cn(
+                          "px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer",
+                          frequency === f.value
+                            ? "bg-background text-foreground shadow-sm ring-1 ring-black/[0.07] dark:ring-white/[0.1]"
+                            : "text-muted-foreground hover:text-foreground bg-muted/50",
+                        )}
+                      >
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm text-muted-foreground">
+                      Fin de récurrence
+                      <span className="text-muted-foreground/50 ml-1">
+                        optionnel
+                      </span>
+                    </label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-fit justify-start text-left font-normal",
+                            !endDate && "text-muted-foreground",
+                          )}
+                        >
+                          <CalendarIcon className="size-3.5 text-muted-foreground" />
+                          {formatDateLabel(endDate) || "Aucune"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={parseDate(endDate)}
+                          onSelect={(date) => {
+                            if (date)
+                              setEndDate(toDateInput(date.toISOString()));
+                          }}
+                          disabled={(date) => {
+                            const start = parseDate(startDate);
+                            return start ? date < start : false;
+                          }}
+                          defaultMonth={
+                            parseDate(endDate) || parseDate(startDate)
+                          }
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Notes */}
+            <div className="space-y-1.5">
+              <label className="text-sm text-muted-foreground">
+                Note
+                <span className="text-muted-foreground/50 ml-1">optionnel</span>
+              </label>
+              <Input
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Ajouter un commentaire..."
+                maxLength={500}
+              />
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between border-t border-border/40 mt-4 px-5 py-3 -mx-5">
+              <div>
+                {entry?.id && (
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="text-xs text-muted-foreground hover:text-destructive transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {deleting ? "Suppression..." : "Supprimer"}
+                  </button>
+                )}
+              </div>
               <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleDelete}
-                disabled={deleting}
-                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={handleSubmit}
+                disabled={!canSubmit || saving}
+                className="gap-2"
               >
-                <Trash2 size={14} className="mr-1.5" />
-                Supprimer
+                {saving ? (
+                  <>
+                    <LoaderCircle className="size-4 animate-spin" />
+                    Enregistrement...
+                  </>
+                ) : (
+                  <>
+                    {entry ? "Enregistrer" : "Ajouter"}
+                    <kbd className="inline-flex items-center justify-center size-5 rounded bg-white/20 ml-0.5">
+                      <CornerDownLeft className="size-3" />
+                    </kbd>
+                  </>
+                )}
               </Button>
-            )}
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={saving}
-            >
-              Annuler
-            </Button>
-            <Button onClick={handleSubmit} disabled={!canSubmit || saving}>
-              {entry ? "Enregistrer" : "Saisie manuelle"}
-            </Button>
-          </div>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -1,18 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "@apollo/client";
 import {
   Drawer,
   DrawerContent,
-  DrawerDescription,
   DrawerHeader,
   DrawerTitle,
+  DrawerDescription,
 } from "@/src/components/ui/drawer";
-import { Badge } from "@/src/components/ui/badge";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { GET_FORECAST_MONTH_DETAILS } from "@/src/graphql/queries/treasuryForecast";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
-import { ArrowUpRight, ArrowDownRight, FileText, Landmark } from "lucide-react";
+import { cn } from "@/src/lib/utils";
 
 const formatCurrency = (value) =>
   new Intl.NumberFormat("fr-FR", {
@@ -26,9 +26,8 @@ const formatDate = (iso) => {
   if (!iso) return "";
   const d = new Date(iso);
   return d.toLocaleDateString("fr-FR", {
-    day: "2-digit",
+    day: "numeric",
     month: "short",
-    year: "numeric",
   });
 };
 
@@ -53,146 +52,108 @@ const STATUS_LABELS = {
   ARCHIVED: "Archivée",
 };
 
-const STATUS_VARIANT = {
-  COMPLETED: "default",
-  PAID: "default",
-  PENDING: "secondary",
-  TO_PAY: "secondary",
-  TO_PROCESS: "secondary",
-  OVERDUE: "destructive",
-  CANCELED: "outline",
-  ARCHIVED: "outline",
-};
+function StatusDot({ status }) {
+  const color =
+    {
+      COMPLETED: "bg-green-500",
+      PAID: "bg-green-500",
+      PENDING: "bg-amber-400",
+      TO_PAY: "bg-amber-400",
+      TO_PROCESS: "bg-amber-400",
+      OVERDUE: "bg-red-500",
+      CANCELED: "bg-muted-foreground/40",
+      ARCHIVED: "bg-muted-foreground/40",
+      DRAFT: "bg-muted-foreground/40",
+    }[status] || "bg-muted-foreground/40";
 
-function Section({ title, icon, items, emptyLabel, accentColor }) {
-  const total = items.reduce((s, i) => s + (i.amountTTC || 0), 0);
+  return <span className={cn("size-1.5 rounded-full shrink-0", color)} />;
+}
+
+function SectionHeader({ title, count, right }) {
   return (
-    <div className="mb-6">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          {icon}
-          <h3 className="text-sm font-medium text-foreground">{title}</h3>
-          <span className="text-xs text-muted-foreground">{items.length}</span>
-        </div>
-        <span
-          className="text-sm font-medium tabular-nums"
-          style={{ color: accentColor }}
-        >
-          {formatCurrency(total)}
+    <div className="flex items-center justify-between px-5 py-2.5 bg-muted/30">
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          {title}
         </span>
+        <span className="text-[11px] text-muted-foreground/60">{count}</span>
       </div>
-      {items.length === 0 ? (
-        <p className="text-xs text-muted-foreground py-3 text-center">
-          {emptyLabel}
-        </p>
-      ) : (
-        <ul className="divide-y divide-border border border-border rounded-md">
-          {items.map((item) => (
-            <li
-              key={item.id}
-              className="flex items-center justify-between px-3 py-2.5 hover:bg-muted/40"
-            >
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <p className="text-sm font-medium text-foreground truncate">
-                    {item.partyName}
-                  </p>
-                  <Badge
-                    variant={STATUS_VARIANT[item.status] || "outline"}
-                    className="text-[10px] font-normal shrink-0"
-                  >
-                    {STATUS_LABELS[item.status] || item.status}
-                  </Badge>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {item.number && <span>{item.number} · </span>}
-                  {formatDate(item.issueDate)}
-                </p>
-              </div>
-              <span
-                className="text-sm font-medium tabular-nums ml-3 shrink-0"
-                style={{ color: accentColor }}
-              >
-                {formatCurrency(item.amountTTC)}
-              </span>
-            </li>
-          ))}
-        </ul>
+      {right && (
+        <span className="text-xs font-medium text-foreground tabular-nums">
+          {right}
+        </span>
       )}
     </div>
   );
 }
 
-function BankTransactionsSection({ transactions }) {
-  const totalIn = transactions
-    .filter((t) => t.amount > 0)
-    .reduce((s, t) => s + t.amount, 0);
-  const totalOut = transactions
-    .filter((t) => t.amount < 0)
-    .reduce((s, t) => s + Math.abs(t.amount), 0);
+function ItemRow({ name, meta, amount, isPositive, status }) {
   return (
-    <div className="mb-6">
-      <div className="flex items-center justify-between mb-3">
+    <div className="flex items-center justify-between px-5 py-2.5 hover:bg-muted/30 transition-colors">
+      <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <Landmark size={14} className="text-blue-600" />
-          <h3 className="text-sm font-medium text-foreground">
-            Transactions bancaires
-          </h3>
-          <span className="text-xs text-muted-foreground">
-            {transactions.length}
-          </span>
-        </div>
-        <div className="text-xs tabular-nums">
-          {totalIn > 0 && (
-            <span className="text-green-600 font-medium mr-2">
-              +{formatCurrency(totalIn)}
-            </span>
-          )}
-          {totalOut > 0 && (
-            <span className="text-red-600 font-medium">
-              −{formatCurrency(totalOut)}
-            </span>
+          <p className="text-[13px] text-foreground truncate">{name}</p>
+          {status && (
+            <div className="flex items-center gap-1 shrink-0">
+              <StatusDot status={status} />
+              <span className="text-[11px] text-muted-foreground">
+                {STATUS_LABELS[status] || status}
+              </span>
+            </div>
           )}
         </div>
+        {meta && (
+          <p className="text-[11px] text-muted-foreground/70 mt-0.5">{meta}</p>
+        )}
       </div>
-      {transactions.length === 0 ? (
-        <p className="text-xs text-muted-foreground py-3 text-center">
-          Aucune transaction bancaire ce mois-ci
-        </p>
-      ) : (
-        <ul className="divide-y divide-border border border-border rounded-md">
-          {transactions.map((t) => {
-            const isIn = t.amount > 0;
-            return (
-              <li
-                key={t.id}
-                className="flex items-center justify-between px-3 py-2.5 hover:bg-muted/40"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-foreground truncate">
-                    {t.description}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatDate(t.date)}
-                    {t.category && (
-                      <span className="ml-1.5 opacity-70">· {t.category}</span>
-                    )}
-                  </p>
-                </div>
-                <span
-                  className={`text-sm font-medium tabular-nums ml-3 shrink-0 ${
-                    isIn ? "text-green-600" : "text-red-600"
-                  }`}
-                >
-                  {isIn ? "+" : "−"}
-                  {formatCurrency(Math.abs(t.amount))}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      <span
+        className={cn(
+          "text-[13px] font-medium tabular-nums ml-4 shrink-0",
+          isPositive === true && "text-green-600",
+          isPositive === false && "text-red-500",
+          isPositive == null && "text-foreground",
+        )}
+      >
+        {isPositive === true && "+"}
+        {isPositive === false && "−"}
+        {formatCurrency(Math.abs(amount || 0))}
+      </span>
     </div>
+  );
+}
+
+const PAGE_SIZE = 5;
+
+function PaginatedList({ items, renderItem, emptyLabel }) {
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? items : items.slice(0, PAGE_SIZE);
+  const remaining = items.length - PAGE_SIZE;
+
+  if (items.length === 0) {
+    return <EmptyState label={emptyLabel} />;
+  }
+
+  return (
+    <>
+      <div className="divide-y divide-border/20">{visible.map(renderItem)}</div>
+      {remaining > 0 && !expanded && (
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="w-full py-2.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+        >
+          Afficher {remaining} autre{remaining > 1 ? "s" : ""}
+        </button>
+      )}
+    </>
+  );
+}
+
+function EmptyState({ label }) {
+  return (
+    <p className="text-[11px] text-muted-foreground/50 text-center py-4">
+      {label}
+    </p>
   );
 }
 
@@ -206,50 +167,176 @@ export function MonthDetailsDrawer({ month, open, onOpenChange }) {
   });
 
   const details = data?.forecastMonthDetails;
+  const transactions = details?.bankTransactions || [];
+  const invoices = details?.invoices || [];
+  const quotes = details?.signedQuotes || [];
+  const purchases = details?.purchaseInvoices || [];
+
+  const totalIn = transactions
+    .filter((t) => t.amount > 0)
+    .reduce((s, t) => s + t.amount, 0);
+  const totalOut = transactions
+    .filter((t) => t.amount < 0)
+    .reduce((s, t) => s + Math.abs(t.amount), 0);
+  const invoicesTotal = invoices.reduce((s, i) => s + (i.amountTTC || 0), 0);
+  const quotesTotal = quotes.reduce((s, i) => s + (i.amountTTC || 0), 0);
+  const purchasesTotal = purchases.reduce((s, i) => s + (i.amountTTC || 0), 0);
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="right">
-      <DrawerContent className="data-[vaul-drawer-direction=right]:sm:max-w-md">
-        <DrawerHeader>
-          <DrawerTitle>Détail de {formatMonthTitle(month)}</DrawerTitle>
-          <DrawerDescription>
-            Transactions bancaires, factures et devis liés à ce mois.
+      <DrawerContent className="data-[vaul-drawer-direction=right]:sm:max-w-lg">
+        {/* Header */}
+        <DrawerHeader className="px-5 pt-5 pb-4 border-b border-border/40">
+          <DrawerTitle className="text-sm font-medium">
+            {formatMonthTitle(month)}
+          </DrawerTitle>
+          <DrawerDescription className="sr-only">
+            Détail des flux du mois
           </DrawerDescription>
+          {!loading && details && (
+            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+              {totalIn > 0 && (
+                <span>
+                  Entrées{" "}
+                  <span className="font-medium text-green-600">
+                    +{formatCurrency(totalIn)}
+                  </span>
+                </span>
+              )}
+              {totalOut > 0 && (
+                <span>
+                  Sorties{" "}
+                  <span className="font-medium text-red-500">
+                    −{formatCurrency(totalOut)}
+                  </span>
+                </span>
+              )}
+            </div>
+          )}
         </DrawerHeader>
-        <div className="px-4 pb-8 overflow-y-auto">
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto">
           {loading && !details ? (
-            <div className="space-y-3">
-              <Skeleton className="h-6 w-32" />
-              <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-20 w-full" />
+            <div className="px-5 py-6 space-y-4">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-4 w-20 mt-4" />
+              <Skeleton className="h-12 w-full" />
             </div>
           ) : (
-            <>
-              <BankTransactionsSection
-                transactions={details?.bankTransactions || []}
-              />
-              <Section
-                title="Factures clients"
-                icon={<ArrowUpRight size={14} className="text-green-600" />}
-                items={details?.invoices || []}
-                emptyLabel="Aucune facture client ce mois-ci"
-                accentColor="#16a34a"
-              />
-              <Section
-                title="Devis signés (à facturer)"
-                icon={<FileText size={14} className="text-[#5b50ff]" />}
-                items={details?.signedQuotes || []}
-                emptyLabel="Aucun devis signé non converti"
-                accentColor="#5b50ff"
-              />
-              <Section
-                title="Factures fournisseurs"
-                icon={<ArrowDownRight size={14} className="text-red-600" />}
-                items={details?.purchaseInvoices || []}
-                emptyLabel="Aucune facture fournisseur ce mois-ci"
-                accentColor="#dc2626"
-              />
-            </>
+            <div className="divide-y divide-border/40">
+              {/* Transactions bancaires */}
+              <div>
+                <SectionHeader
+                  title="Transactions"
+                  count={transactions.length}
+                  right={
+                    transactions.length > 0
+                      ? formatCurrency(totalIn - totalOut)
+                      : undefined
+                  }
+                />
+                <PaginatedList
+                  items={transactions}
+                  emptyLabel="Aucune transaction ce mois-ci"
+                  renderItem={(t) => (
+                    <ItemRow
+                      key={t.id}
+                      name={t.description}
+                      meta={[formatDate(t.date), t.category]
+                        .filter(Boolean)
+                        .join(" · ")}
+                      amount={Math.abs(t.amount)}
+                      isPositive={t.amount > 0}
+                    />
+                  )}
+                />
+              </div>
+
+              {/* Factures clients */}
+              <div>
+                <SectionHeader
+                  title="Factures clients"
+                  count={invoices.length}
+                  right={
+                    invoices.length > 0
+                      ? formatCurrency(invoicesTotal)
+                      : undefined
+                  }
+                />
+                <PaginatedList
+                  items={invoices}
+                  emptyLabel="Aucune facture client"
+                  renderItem={(inv) => (
+                    <ItemRow
+                      key={inv.id}
+                      name={inv.partyName}
+                      meta={[inv.number, formatDate(inv.issueDate)]
+                        .filter(Boolean)
+                        .join(" · ")}
+                      amount={inv.amountTTC}
+                      status={inv.status}
+                    />
+                  )}
+                />
+              </div>
+
+              {/* Devis signés */}
+              {quotes.length > 0 && (
+                <div>
+                  <SectionHeader
+                    title="Devis signés"
+                    count={quotes.length}
+                    right={formatCurrency(quotesTotal)}
+                  />
+                  <PaginatedList
+                    items={quotes}
+                    emptyLabel=""
+                    renderItem={(q) => (
+                      <ItemRow
+                        key={q.id}
+                        name={q.partyName}
+                        meta={[q.number, formatDate(q.issueDate)]
+                          .filter(Boolean)
+                          .join(" · ")}
+                        amount={q.amountTTC}
+                        status={q.status}
+                      />
+                    )}
+                  />
+                </div>
+              )}
+
+              {/* Factures fournisseurs */}
+              <div>
+                <SectionHeader
+                  title="Fournisseurs"
+                  count={purchases.length}
+                  right={
+                    purchases.length > 0
+                      ? formatCurrency(purchasesTotal)
+                      : undefined
+                  }
+                />
+                <PaginatedList
+                  items={purchases}
+                  emptyLabel="Aucune facture fournisseur"
+                  renderItem={(inv) => (
+                    <ItemRow
+                      key={inv.id}
+                      name={inv.partyName}
+                      meta={[inv.number, formatDate(inv.issueDate)]
+                        .filter(Boolean)
+                        .join(" · ")}
+                      amount={inv.amountTTC}
+                      status={inv.status}
+                    />
+                  )}
+                />
+              </div>
+            </div>
           )}
         </div>
       </DrawerContent>
