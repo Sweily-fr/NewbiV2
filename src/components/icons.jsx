@@ -1999,3 +1999,382 @@ export const DollarSquareIcon = (props) => (
     />
   </svg>
 );
+
+export const NotificationIcon = (props) => (
+  <svg
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M12.0206 2.91016C8.71058 2.91016 6.02058 5.60016 6.02058 8.91016V11.8002C6.02058 12.4102 5.76058 13.3402 5.45058 13.8602L4.30058 15.7702C3.59058 16.9502 4.08058 18.2602 5.38058 18.7002C9.69058 20.1402 14.3406 20.1402 18.6506 18.7002C19.8606 18.3002 20.3906 16.8702 19.7306 15.7702L18.5806 13.8602C18.2806 13.3402 18.0206 12.4102 18.0206 11.8002V8.91016C18.0206 5.61016 15.3206 2.91016 12.0206 2.91016Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeMiterlimit="10"
+      strokeLinecap="round"
+    />
+    <path
+      d="M13.87 3.2C13.56 3.11 13.24 3.04 12.91 3C11.95 2.88 11.03 2.95 10.17 3.2C10.46 2.46 11.18 1.94 12.02 1.94C12.86 1.94 13.58 2.46 13.87 3.2Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeMiterlimit="10"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M15.0195 19.0601C15.0195 20.7101 13.6695 22.0601 12.0195 22.0601C11.1995 22.0601 10.4395 21.7201 9.89953 21.1801C9.35953 20.6401 9.01953 19.8801 9.01953 19.0601"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeMiterlimit="10"
+    />
+  </svg>
+);
+
+export const ReceiptSearchIcon = (props) => (
+  <svg
+    width="20"
+    height="22"
+    viewBox="0 0 20 22"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M1.14481 1.24637C2.09095 0.235041 3.5785 0 5.47 0H13.03C14.9215 0 16.4091 0.235041 17.3552 1.24637C18.2847 2.23991 18.5 3.78645 18.5 5.79001V10.05C18.5 10.4642 18.1642 10.8 17.75 10.8C17.3358 10.8 17 10.4642 17 10.05V5.79001C17 3.76357 16.7453 2.7901 16.2598 2.27114C15.7909 1.76996 14.9185 1.5 13.03 1.5H5.47C3.5815 1.5 2.70906 1.76996 2.24019 2.27114C1.75468 2.7901 1.5 3.76357 1.5 5.79001V17.05C1.5 17.6546 1.58408 18.0885 1.70025 18.3733C1.81542 18.6557 1.93815 18.7404 1.99794 18.7662C2.05225 18.7896 2.17947 18.8186 2.43132 18.7099C2.69052 18.598 3.03163 18.3577 3.43124 17.9288C3.43701 17.9226 3.44289 17.9165 3.44887 17.9105L3.45198 17.9074C4.5893 16.7098 6.3818 16.8078 7.37075 18.131L8.38053 19.4807C8.62867 19.8124 8.56095 20.2824 8.22929 20.5305C7.89762 20.7787 7.4276 20.7109 7.17947 20.3793L6.16946 19.0293L6.16923 19.029C5.74043 18.4552 5.03886 18.4106 4.53577 18.9444L4.52113 18.9595L4.51989 18.9608C4.03723 19.4771 3.53513 19.8671 3.02589 20.087C2.50617 20.3114 1.93652 20.3729 1.40457 20.1438C0.878107 19.9171 0.525211 19.4643 0.311315 18.9398C0.0984195 18.4177 0 17.7754 0 17.05V5.79001C0 3.78645 0.21532 2.23991 1.14481 1.24637Z"
+      fill="currentColor"
+    />
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M15.45 14.5C14.0969 14.5 13 15.5969 13 16.95C13 18.3031 14.0969 19.4 15.45 19.4C16.8031 19.4 17.9 18.3031 17.9 16.95C17.9 15.5969 16.8031 14.5 15.45 14.5ZM11.5 16.95C11.5 14.7685 13.2685 13 15.45 13C17.6315 13 19.4 14.7685 19.4 16.95C19.4 19.1315 17.6315 20.9 15.45 20.9C13.2685 20.9 11.5 19.1315 11.5 16.95Z"
+      fill="currentColor"
+    />
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M17.7197 19.2197C18.0126 18.9268 18.4874 18.9268 18.7803 19.2197L19.7803 20.2197C20.0732 20.5126 20.0732 20.9874 19.7803 21.2803C19.4874 21.5732 19.0126 21.5732 18.7197 21.2803L17.7197 20.2803C17.4268 19.9874 17.4268 19.5126 17.7197 19.2197Z"
+      fill="currentColor"
+    />
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M4.5 5.75C4.5 5.33579 4.83579 5 5.25 5H13.25C13.6642 5 14 5.33579 14 5.75C14 6.16421 13.6642 6.5 13.25 6.5H5.25C4.83579 6.5 4.5 6.16421 4.5 5.75Z"
+      fill="currentColor"
+    />
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M5.5 9.75C5.5 9.33579 5.83579 9 6.25 9H12.25C12.6642 9 13 9.33579 13 9.75C13 10.1642 12.6642 10.5 12.25 10.5H6.25C5.83579 10.5 5.5 10.1642 5.5 9.75Z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+export const CardCoinIcon = (props) => (
+  <svg
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M2 17.06H12"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeMiterlimit="10"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M4.21997 13.5H9.78003C11.56 13.5 12 13.94 12 15.7V19.81C12 21.57 11.56 22.01 9.78003 22.01H4.21997C2.43997 22.01 2 21.57 2 19.81V15.7C2 13.94 2.43997 13.5 4.21997 13.5Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M22 15C22 18.87 18.87 22 15 22L16.05 20.25"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M2 9C2 5.13 5.13 2 9 2L7.95001 3.75"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M18.5 11C20.9853 11 23 8.98528 23 6.5C23 4.01472 20.9853 2 18.5 2C16.0147 2 14 4.01472 14 6.5C14 8.98528 16.0147 11 18.5 11Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+export const DiagramLineIcon = (props) => (
+  <svg
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M2 2V19C2 20.66 3.34 22 5 22H22"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeMiterlimit="10"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M5 17L9.59 11.64C10.35 10.76 11.7 10.7 12.52 11.53L13.47 12.48C14.29 13.3 15.64 13.25 16.4 12.37L21 7"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeMiterlimit="10"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+export const Element4Icon = (props) => (
+  <svg
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M22 10.9V4.1C22 2.6 21.36 2 19.77 2H15.73C14.14 2 13.5 2.6 13.5 4.1V10.9C13.5 12.4 14.14 13 15.73 13H19.77C21.36 13 22 12.4 22 10.9Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M22 19.9V18.1C22 16.6 21.36 16 19.77 16H15.73C14.14 16 13.5 16.6 13.5 18.1V19.9C13.5 21.4 14.14 22 15.73 22H19.77C21.36 22 22 21.4 22 19.9Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M10.5 13.1V19.9C10.5 21.4 9.86 22 8.27 22H4.23C2.64 22 2 21.4 2 19.9V13.1C2 11.6 2.64 11 4.23 11H8.27C9.86 11 10.5 11.6 10.5 13.1Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M10.5 4.1V5.9C10.5 7.4 9.86 8 8.27 8H4.23C2.64 8 2 7.4 2 5.9V4.1C2 2.6 2.64 2 4.23 2H8.27C9.86 2 10.5 2.6 10.5 4.1Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+export const ChartBarIcon = (props) => (
+  <svg
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M2 22H22"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeMiterlimit="10"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M9.75 4V22H14.25V4C14.25 2.9 13.8 2 12.45 2H11.55C10.2 2 9.75 2.9 9.75 4Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M3 10V22H7V10C7 8.9 6.6 8 5.4 8H4.6C3.4 8 3 8.9 3 10Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M17 15V22H21V15C21 13.9 20.6 13 19.4 13H18.6C17.4 13 17 13.9 17 15Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+export const AddCircleIcon = (props) => (
+  <svg
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M12 22C17.5 22 22 17.5 22 12C22 6.5 17.5 2 12 2C6.5 2 2 6.5 2 12C2 17.5 6.5 22 12 22Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M8 12H16"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M12 16V8"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+export const CardAddIcon = (props) => (
+  <svg
+    width="22"
+    height="19"
+    viewBox="0 0 22 19"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M0 5.75C0 5.33579 0.335786 5 0.75 5H12.25C12.6642 5 13 5.33579 13 5.75C13 6.16421 12.6642 6.5 12.25 6.5H0.75C0.335786 6.5 0 6.16421 0 5.75Z"
+      fill="currentColor"
+    />
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M4 13.75C4 13.3358 4.33579 13 4.75 13H6.75C7.16421 13 7.5 13.3358 7.5 13.75C7.5 14.1642 7.16421 14.5 6.75 14.5H4.75C4.33579 14.5 4 14.1642 4 13.75Z"
+      fill="currentColor"
+    />
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M8.5 13.75C8.5 13.3358 8.83579 13 9.25 13H13.25C13.6642 13 14 13.3358 14 13.75C14 14.1642 13.6642 14.5 13.25 14.5H9.25C8.83579 14.5 8.5 14.1642 8.5 13.75Z"
+      fill="currentColor"
+    />
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M2.16607 2.16207C1.74101 2.58235 1.5 3.38117 1.5 5.14V13.36C1.5 15.1188 1.74101 15.9176 2.16607 16.3379C2.59409 16.7611 3.409 17 5.19 17H16.31C18.091 17 18.9059 16.7611 19.3339 16.3379C19.759 15.9176 20 15.1188 20 13.36V9.28C20 8.86579 20.3358 8.53 20.75 8.53C21.1642 8.53 21.5 8.86579 21.5 9.28V13.36C21.5 15.1112 21.296 16.5074 20.3886 17.4046C19.4841 18.2989 18.079 18.5 16.31 18.5H5.19C3.421 18.5 2.01591 18.2989 1.11143 17.4046C0.203993 16.5074 0 15.1112 0 13.36V5.14C0 3.38883 0.203993 1.99265 1.11143 1.09543C2.01591 0.201125 3.421 0 5.19 0H12.25C12.6642 0 13 0.335786 13 0.75C13 1.16421 12.6642 1.5 12.25 1.5H5.19C3.409 1.5 2.59409 1.73887 2.16607 2.16207Z"
+      fill="currentColor"
+    />
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M14.5 3.5C14.5 3.08579 14.8358 2.75 15.25 2.75H20.75C21.1642 2.75 21.5 3.08579 21.5 3.5C21.5 3.91421 21.1642 4.25 20.75 4.25H15.25C14.8358 4.25 14.5 3.91421 14.5 3.5Z"
+      fill="currentColor"
+    />
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M18 0C18.4142 0 18.75 0.335786 18.75 0.75V6.25C18.75 6.66421 18.4142 7 18 7C17.5858 7 17.25 6.66421 17.25 6.25V0.75C17.25 0.335786 17.5858 0 18 0Z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+export const TrendUpIcon = (props) => (
+  <svg
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M16.5 9.5L12.3 13.7L10.7 11.3L7.5 14.5"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M14.5 9.5H16.5V11.5"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+export const TrendDownIcon = (props) => (
+  <svg
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M16.5 14.5L12.3 10.3L10.7 12.7L7.5 9.5"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M14.5 14.5H16.5V12.5"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);

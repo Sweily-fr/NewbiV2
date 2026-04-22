@@ -21,25 +21,41 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/src/components/ui/avatar";
-import { Landmark, LoaderCircle, Search, Building2, Plus, Eye, EyeOff } from "lucide-react";
+import {
+  Landmark,
+  LoaderCircle,
+  Search,
+  Building2,
+  Plus,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
-import { useState, useEffect, useMemo, useImperativeHandle, forwardRef } from "react";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useImperativeHandle,
+  forwardRef,
+} from "react";
 import { toast } from "@/src/components/ui/sonner";
 import { findBank } from "@/lib/banks-config";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { usePermissions } from "@/src/hooks/usePermissions";
 
-
-function BankBalanceCardInner({
-  className,
-  expenses = [],
-  invoices = [],
-  totalIncome = 0,
-  totalExpenses = 0,
-  bankAccounts: propBankAccounts,
-  bankBalance: propBankBalance,
-  isLoading = false,
-}, ref) {
+function BankBalanceCardInner(
+  {
+    className,
+    expenses = [],
+    invoices = [],
+    totalIncome = 0,
+    totalExpenses = 0,
+    bankAccounts: propBankAccounts,
+    bankBalance: propBankBalance,
+    isLoading = false,
+  },
+  ref,
+) {
   const { workspaceId } = useWorkspace();
   const { subscription } = useSubscription();
   const { getUserRole } = usePermissions();
@@ -143,9 +159,8 @@ function BankBalanceCardInner({
       const response = await fetch(
         "/api/banking-connect/bridge/institutions?country=FR",
         {
-          headers: {
-            },
-        }
+          headers: {},
+        },
       );
 
       if (response.ok) {
@@ -178,7 +193,7 @@ function BankBalanceCardInner({
     return institutions.filter(
       (inst) =>
         inst.name.toLowerCase().includes(query) ||
-        inst.groupName?.toLowerCase().includes(query)
+        inst.groupName?.toLowerCase().includes(query),
     );
   }, [institutions, searchQuery]);
 
@@ -210,8 +225,8 @@ function BankBalanceCardInner({
         {
           headers: {
             "x-workspace-id": workspaceId,
-            },
-        }
+          },
+        },
       );
 
       if (response.ok) {
@@ -346,133 +361,126 @@ function BankBalanceCardInner({
     );
   }
 
-  // Afficher le solde total même sans comptes bancaires
+  // Afficher l'état vide quand pas de comptes bancaires
   if (accounts.length === 0) {
     return (
       <Card className={`${className} flex flex-col`}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-normal">Soldes</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col flex-1">
-          {/* Solde total sans comptes bancaires */}
-          <div className="mb-6">
-            <div className="text-3xl font-medium mb-2">
-              {formatCurrency(totalBalance)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Solde global (revenus - dépenses)
-            </p>
+        <CardContent className="flex flex-col flex-1 items-center justify-center py-6">
+          <div className="relative w-44 mb-4">
+            <img
+              src="/images/bank-cards-empty.png"
+              alt="Aucun compte bancaire"
+              className="w-full h-auto"
+            />
+            <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-card via-card/60 to-transparent" />
           </div>
-
-          {/* <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="text-sm text-blue-700 text-center">
-              💳 Intégration bancaire temporairement désactivée
-            </p>
-            <p className="text-xs text-blue-600 text-center mt-1">
-              Le solde est calculé sur vos factures et dépenses
-            </p>
-          </div> */}
-
-          {/* Spacer pour pousser le bouton vers le bas */}
-          <div className="flex-1"></div>
-
-          {/* Bouton de connexion bancaire via Bridge (masqué pour le comptable) */}
-          {userRole !== "accountant" && (
+          <p className="text-sm text-muted-foreground text-center mb-5 max-w-[300px]">
+            Connectez votre compte bancaire pour suivre votre solde et vos
+            transactions en temps réel.
+          </p>
+          <div className="flex items-center gap-3">
+            {userRole !== "accountant" && (
+              <Button
+                size="sm"
+                className="text-xs font-medium bg-foreground text-background hover:bg-foreground/90"
+                onClick={handleOpenModal}
+                disabled={isConnecting}
+              >
+                {isConnecting ? "Connexion..." : "Connecter un compte"}
+              </Button>
+            )}
             <Button
-              className="w-full font-normal mt-auto"
-              onClick={handleOpenModal}
-              disabled={isConnecting}
+              variant="outline"
+              size="sm"
+              className="text-xs font-medium"
+              onClick={() => window.open("https://docs.newbi.fr", "_blank")}
             >
-              {isConnecting ? (
-                <LoaderCircle className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <Landmark className="h-4 w-4 mr-2" />
-              )}
-              {isConnecting
-                ? "Connexion en cours..."
-                : "Connecter un compte bancaire"}
+              Documentation
             </Button>
-          )}
+          </div>
         </CardContent>
 
         {/* Modal de sélection de banque */}
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogContent className="sm:max-w-xl p-1 gap-0 top-[40%] border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
             <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
-            <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
-              <DialogTitle className="text-sm font-medium flex items-center gap-2">
-                <Landmark className="size-4" />
-                Connecter votre banque
-              </DialogTitle>
-            </DialogHeader>
+              <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
+                <DialogTitle className="text-sm font-medium flex items-center gap-2">
+                  <Landmark className="size-4" />
+                  Connecter votre banque
+                </DialogTitle>
+              </DialogHeader>
 
-            <div className="px-5 pt-3 pb-3 space-y-3">
-              {/* Barre de recherche */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Rechercher une banque..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
+              <div className="px-5 pt-3 pb-3 space-y-3">
+                {/* Barre de recherche */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Rechercher une banque..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
 
-              {/* Liste des banques */}
-              <ScrollArea className="h-[350px]">
-                {isLoadingInstitutions ? (
-                  <div className="flex items-center justify-center py-10">
-                    <LoaderCircle className="h-5 w-5 animate-spin text-muted-foreground/50" />
-                  </div>
-                ) : filteredInstitutions.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground text-sm">
-                    {searchQuery
-                      ? "Aucune banque trouvée"
-                      : "Aucune banque disponible"}
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    {filteredInstitutions.map((bank) => (
-                      <button
-                        key={bank.id}
-                        onClick={() => handleSelectBank(bank)}
-                        disabled={isConnecting}
-                        className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {bank.logo ? (
-                          <img
-                            src={bank.logo}
-                            alt={bank.name}
-                            className="h-8 w-8 object-contain rounded"
-                            onError={(e) => {
-                              e.target.style.display = "none";
-                              e.target.nextSibling.style.display = "flex";
-                            }}
-                          />
-                        ) : null}
-                        <div
-                          className="h-8 w-8 rounded bg-muted items-center justify-center"
-                          style={{ display: bank.logo ? "none" : "flex" }}
+                {/* Liste des banques */}
+                <ScrollArea className="h-[350px]">
+                  {isLoadingInstitutions ? (
+                    <div className="flex items-center justify-center py-10">
+                      <LoaderCircle className="h-5 w-5 animate-spin text-muted-foreground/50" />
+                    </div>
+                  ) : filteredInstitutions.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground text-sm">
+                      {searchQuery
+                        ? "Aucune banque trouvée"
+                        : "Aucune banque disponible"}
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      {filteredInstitutions.map((bank) => (
+                        <button
+                          key={bank.id}
+                          onClick={() => handleSelectBank(bank)}
+                          disabled={isConnecting}
+                          className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <Building2 className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <div className="flex-1 text-left">
-                          <p className="text-sm font-medium">{bank.name}</p>
-                          {bank.groupName && bank.groupName !== bank.name && (
-                            <p className="text-xs text-muted-foreground">
-                              {bank.groupName}
-                            </p>
+                          {bank.logo ? (
+                            <img
+                              src={bank.logo}
+                              alt={bank.name}
+                              className="h-8 w-8 object-contain rounded"
+                              onError={(e) => {
+                                e.target.style.display = "none";
+                                e.target.nextSibling.style.display = "flex";
+                              }}
+                            />
+                          ) : null}
+                          <div
+                            className="h-8 w-8 rounded bg-muted items-center justify-center"
+                            style={{ display: bank.logo ? "none" : "flex" }}
+                          >
+                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                          <div className="flex-1 text-left">
+                            <p className="text-sm font-medium">{bank.name}</p>
+                            {bank.groupName && bank.groupName !== bank.name && (
+                              <p className="text-xs text-muted-foreground">
+                                {bank.groupName}
+                              </p>
+                            )}
+                          </div>
+                          {isConnecting && selectedBank?.id === bank.id && (
+                            <LoaderCircle className="h-4 w-4 animate-spin" />
                           )}
-                        </div>
-                        {isConnecting && selectedBank?.id === bank.id && (
-                          <LoaderCircle className="h-4 w-4 animate-spin" />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
-            </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
@@ -496,13 +504,17 @@ function BankBalanceCardInner({
         {/* Solde bancaire (mode bancaire pur) */}
         <div className="mb-6">
           <div className="flex items-center gap-3">
-            <span className={`text-3xl font-medium transition-all duration-200 ${isBalanceHidden ? "blur-md select-none" : ""}`}>
+            <span
+              className={`text-3xl font-medium transition-all duration-200 ${isBalanceHidden ? "blur-md select-none" : ""}`}
+            >
               {formatCurrency(bankBalance)}
             </span>
             <button
               onClick={() => setIsBalanceHidden(!isBalanceHidden)}
               className="text-muted-foreground hover:text-foreground transition-colors"
-              aria-label={isBalanceHidden ? "Afficher le solde" : "Masquer le solde"}
+              aria-label={
+                isBalanceHidden ? "Afficher le solde" : "Masquer le solde"
+              }
             >
               {isBalanceHidden ? (
                 <Eye className="h-4 w-4" />
@@ -511,7 +523,9 @@ function BankBalanceCardInner({
               )}
             </button>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">Solde bancaire total</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Solde bancaire total
+          </p>
         </div>
 
         {/* Liste des comptes */}
@@ -525,8 +539,14 @@ function BankBalanceCardInner({
                 {account.institutionLogo || findBank(account.name)?.logo ? (
                   <Avatar className="h-7 w-7 ring-1 ring-border bg-white">
                     <AvatarImage
-                      alt={account.institutionName || account.bankName || account.name}
-                      src={account.institutionLogo || findBank(account.name)?.logo}
+                      alt={
+                        account.institutionName ||
+                        account.bankName ||
+                        account.name
+                      }
+                      src={
+                        account.institutionLogo || findBank(account.name)?.logo
+                      }
                       className="object-contain p-0.5"
                     />
                     <AvatarFallback className="text-xs bg-white">
@@ -548,7 +568,7 @@ function BankBalanceCardInner({
                     ? account.balance?.current ||
                         account.balance?.available ||
                         0
-                    : account.balance || 0
+                    : account.balance || 0,
                 )}
               </span>
             </div>
@@ -578,80 +598,80 @@ function BankBalanceCardInner({
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogContent className="sm:max-w-xl p-1 gap-0 top-[40%] border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
             <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
-            <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
-              <DialogTitle className="text-sm font-medium flex items-center gap-2">
-                <Landmark className="size-4" />
-                Connecter votre banque
-              </DialogTitle>
-            </DialogHeader>
+              <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
+                <DialogTitle className="text-sm font-medium flex items-center gap-2">
+                  <Landmark className="size-4" />
+                  Connecter votre banque
+                </DialogTitle>
+              </DialogHeader>
 
-            <div className="px-5 pt-3 pb-3 space-y-3">
-              {/* Barre de recherche */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Rechercher une banque..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
+              <div className="px-5 pt-3 pb-3 space-y-3">
+                {/* Barre de recherche */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Rechercher une banque..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
 
-              {/* Liste des banques */}
-              <ScrollArea className="h-[350px]">
-                {isLoadingInstitutions ? (
-                  <div className="flex items-center justify-center py-10">
-                    <LoaderCircle className="h-5 w-5 animate-spin text-muted-foreground/50" />
-                  </div>
-                ) : filteredInstitutions.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground text-sm">
-                    {searchQuery
-                      ? "Aucune banque trouvée"
-                      : "Aucune banque disponible"}
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    {filteredInstitutions.map((bank) => (
-                      <button
-                        key={bank.id}
-                        onClick={() => handleSelectBank(bank)}
-                        disabled={isConnecting}
-                        className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {bank.logo ? (
-                          <img
-                            src={bank.logo}
-                            alt={bank.name}
-                            className="h-8 w-8 object-contain rounded"
-                            onError={(e) => {
-                              e.target.style.display = "none";
-                              e.target.nextSibling.style.display = "flex";
-                            }}
-                          />
-                        ) : null}
-                        <div
-                          className="h-8 w-8 rounded bg-muted items-center justify-center"
-                          style={{ display: bank.logo ? "none" : "flex" }}
+                {/* Liste des banques */}
+                <ScrollArea className="h-[350px]">
+                  {isLoadingInstitutions ? (
+                    <div className="flex items-center justify-center py-10">
+                      <LoaderCircle className="h-5 w-5 animate-spin text-muted-foreground/50" />
+                    </div>
+                  ) : filteredInstitutions.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground text-sm">
+                      {searchQuery
+                        ? "Aucune banque trouvée"
+                        : "Aucune banque disponible"}
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      {filteredInstitutions.map((bank) => (
+                        <button
+                          key={bank.id}
+                          onClick={() => handleSelectBank(bank)}
+                          disabled={isConnecting}
+                          className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <Building2 className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <div className="flex-1 text-left">
-                          <p className="text-sm font-medium">{bank.name}</p>
-                          {bank.groupName && bank.groupName !== bank.name && (
-                            <p className="text-xs text-muted-foreground">
-                              {bank.groupName}
-                            </p>
+                          {bank.logo ? (
+                            <img
+                              src={bank.logo}
+                              alt={bank.name}
+                              className="h-8 w-8 object-contain rounded"
+                              onError={(e) => {
+                                e.target.style.display = "none";
+                                e.target.nextSibling.style.display = "flex";
+                              }}
+                            />
+                          ) : null}
+                          <div
+                            className="h-8 w-8 rounded bg-muted items-center justify-center"
+                            style={{ display: bank.logo ? "none" : "flex" }}
+                          >
+                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                          <div className="flex-1 text-left">
+                            <p className="text-sm font-medium">{bank.name}</p>
+                            {bank.groupName && bank.groupName !== bank.name && (
+                              <p className="text-xs text-muted-foreground">
+                                {bank.groupName}
+                              </p>
+                            )}
+                          </div>
+                          {isConnecting && selectedBank?.id === bank.id && (
+                            <LoaderCircle className="h-4 w-4 animate-spin" />
                           )}
-                        </div>
-                        {isConnecting && selectedBank?.id === bank.id && (
-                          <LoaderCircle className="h-4 w-4 animate-spin" />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
-            </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              </div>
             </div>
           </DialogContent>
         </Dialog>

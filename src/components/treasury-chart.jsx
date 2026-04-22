@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@apollo/client";
 import { GET_TREASURY_CHART } from "@/src/graphql/queries/dashboardAggregation";
 import {
@@ -61,6 +61,8 @@ export function TreasuryChart({
   accountId,
   className = "",
   isLoading = false,
+  hideHeader = false,
+  externalTimeRange,
 }) {
   const router = useRouter();
   const { remap } = useChartColors();
@@ -69,7 +71,10 @@ export function TreasuryChart({
     income: { label: "Entrées", color: remap("#5b50ff") },
     expenses: { label: "Sorties", color: remap("#000000") },
   };
-  const [timeRange, setTimeRange] = useState("cumul-year"); // 90d, 30d, 365d, 730d, custom, cumul-year
+  const [timeRange, setTimeRange] = useState(externalTimeRange || "cumul-year"); // 90d, 30d, 365d, 730d, custom, cumul-year
+  useEffect(() => {
+    if (externalTimeRange) setTimeRange(externalTimeRange);
+  }, [externalTimeRange]);
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
   const [showCustomView, setShowCustomView] = useState(false);
@@ -367,29 +372,31 @@ export function TreasuryChart({
 
   return (
     <Card className={className}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <div className="flex flex-col gap-1">
-          <CardTitle className="text-base font-normal">Trésorerie</CardTitle>
-          <CardDescription>
-            <span className="text-2xl font-medium text-foreground">
-              {treasuryConsumption >= 0 ? "+" : ""}
-              {formatCurrency(treasuryConsumption)}
-            </span>
-          </CardDescription>
-        </div>
-        <div className="flex items-center gap-1">
-          {timeRangeDropdown}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs text-muted-foreground hover:text-foreground"
-            onClick={() => router.push("/dashboard/outils/prevision")}
-          >
-            Prévisions
-            <ExternalLink className="ml-1 h-3 w-3" />
-          </Button>
-        </div>
-      </CardHeader>
+      {!hideHeader && (
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div className="flex flex-col gap-1">
+            <CardTitle className="text-base font-normal">Trésorerie</CardTitle>
+            <CardDescription>
+              <span className="text-2xl font-medium text-foreground">
+                {treasuryConsumption >= 0 ? "+" : ""}
+                {formatCurrency(treasuryConsumption)}
+              </span>
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-1">
+            {timeRangeDropdown}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs text-muted-foreground hover:text-foreground"
+              onClick={() => router.push("/dashboard/outils/prevision")}
+            >
+              Prévisions
+              <ExternalLink className="ml-1 h-3 w-3" />
+            </Button>
+          </div>
+        </CardHeader>
+      )}
       <CardContent className="px-2 pt-4 pb-2 sm:px-6 sm:pt-6 sm:pb-4 overflow-visible">
         <ChartContainer
           key={chartMountKey}
