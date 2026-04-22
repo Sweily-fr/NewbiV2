@@ -44,7 +44,7 @@ import { cn } from "@/src/lib/utils";
 import { usePathname } from "next/navigation";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import {
-  ChartIcon as Landmark,
+  DiagramLineIcon as Landmark,
   UsersIcon as Users,
   ShoppingCartIcon as ShoppingCart,
   NoteIcon as FolderKanban,
@@ -1179,20 +1179,6 @@ export function NavMain({
           {/* Dashboard */}
           {items.map((item) => renderSimpleItem(item))}
 
-          {/* Menu Finances (Transactions + Prévision) */}
-          {navFinances.length > 0 && (
-            <div data-tutorial="nav-finances">
-              {renderCollapsibleMenu(
-                "Finances",
-                Landmark,
-                navFinances,
-                isFinancesOpen,
-                setIsFinancesOpen,
-                isFinancesSubActive,
-              )}
-            </div>
-          )}
-
           {/* Menu Ventes avec sous-menus et actions rapides */}
           {navVentes.length > 0 &&
             (() => {
@@ -1209,6 +1195,20 @@ export function NavMain({
                 renderVentesMenu(filteredNavVentes)
               );
             })()}
+
+          {/* Menu Finances (Transactions + Prévision) */}
+          {navFinances.length > 0 && (
+            <div data-tutorial="nav-finances">
+              {renderCollapsibleMenu(
+                "Pilotage",
+                Landmark,
+                navFinances,
+                isFinancesOpen,
+                setIsFinancesOpen,
+                isFinancesSubActive,
+              )}
+            </div>
+          )}
 
           {/* Menu Clients (CRM) avec sous-menus et action rapide */}
           {navClients.length > 0 && renderClientsMenu()}

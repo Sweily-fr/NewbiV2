@@ -42,8 +42,10 @@ import {
   CreditCard,
   TrendingUp,
   TrendingDown,
+  ExternalLink,
   Building2,
   ChevronsUpDown,
+  Bell,
 } from "lucide-react";
 import {
   Popover,
@@ -84,6 +86,25 @@ import {
   getExpenseChartConfig,
 } from "@/src/utils/chartDataProcessors";
 import { useChartColors } from "@/src/hooks/useChartColors";
+import {
+  ClipboardTickIcon,
+  DocumentText2Icon,
+  ClipboardImportIcon,
+  SendIcon,
+  TrendUpIcon,
+  TrendDownIcon,
+  AddCircleIcon,
+  ChartBarIcon,
+  ReceiptItemIcon,
+  CardCoinIcon,
+  ReceiptSearchIcon,
+  NotificationIcon,
+} from "@/src/components/icons";
+import { useInvoiceBalances } from "@/src/graphql/invoiceQueries";
+import { usePurchaseInvoiceStats } from "@/src/hooks/usePurchaseInvoices";
+import { useQuoteBalances } from "@/src/graphql/quoteQueries";
+import { useActivityNotifications } from "@/src/hooks/useActivityNotifications";
+import { GET_RECONCILIATION_SUGGESTIONS } from "@/src/graphql/queries/reconciliation";
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 import { InvoicesToCollectCard } from "@/app/dashboard/components/invoices-to-collect-card";
 import { PurchaseInvoicesStatsCard } from "@/app/dashboard/components/purchase-invoices-stats-card";
@@ -100,6 +121,19 @@ function DashboardContent() {
   );
 
   const { workspaceId } = useWorkspace();
+
+  // Données factures et achats pour les KPIs
+  const { balances: invoiceBalances } = useInvoiceBalances();
+  const { stats: purchaseStats } = usePurchaseInvoiceStats();
+  const { balances: quoteBalances } = useQuoteBalances();
+  const { unreadCount: notifUnreadCount } = useActivityNotifications();
+
+  // Reconciliation data
+  const { data: reconData } = useQuery(GET_RECONCILIATION_SUGGESTIONS, {
+    variables: { workspaceId },
+    fetchPolicy: "cache-and-network",
+    skip: !workspaceId,
+  });
 
   // État pour le filtre de compte bancaire
   const [selectedAccountId, setSelectedAccountId] = useState("all");
@@ -153,6 +187,45 @@ function DashboardContent() {
       mobile: 0,
     }));
   }, [flowChartData]);
+
+  // Compteurs "À traiter"
+  const actionCounts = useMemo(() => {
+    const allInvoices = invoices || [];
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    // Card Comptabilité
+    const unmatchedCount =
+      reconData?.reconciliationSuggestions?.unmatchedCount || 0;
+
+    // Card Facturation
+    const overdueInvoices = allInvoices.filter((inv) => {
+      if (inv.status !== "PENDING") return false;
+      if (!inv.dueDate) return false;
+      const due = new Date(
+        Number(inv.dueDate) < 1e12
+          ? Number(inv.dueDate) * 1000
+          : Number(inv.dueDate),
+      );
+      return !isNaN(due.getTime()) && due < now;
+    });
+    const unsentInvoices = allInvoices.filter(
+      (inv) => inv.status === "PENDING" && !inv.emailTracking?.emailSentAt,
+    );
+
+    return {
+      unmatchedCount,
+      overdueCount: overdueInvoices.length,
+      overdueAmount: overdueInvoices.reduce(
+        (s, i) => s + (i.finalTotalTTC || 0),
+        0,
+      ),
+      unsentCount: unsentInvoices.length,
+      pendingQuotesCount: quoteBalances.pendingCount,
+      pendingQuotesAmount: quoteBalances.pendingAmount,
+      notifCount: notifUnreadCount || 0,
+    };
+  }, [invoices, reconData, quoteBalances, notifUnreadCount]);
 
   const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
 
@@ -311,6 +384,11 @@ function DashboardContent() {
       {/* Overlay de synchronisation bancaire */}
       <BankSyncOverlay isVisible={isBankSyncing} />
 
+      {/* BankBalanceCard caché — sert uniquement pour le dialog de connexion */}
+      <div className="hidden">
+        <BankBalanceCard ref={bankBalanceRef} />
+      </div>
+
       <div className="flex flex-col gap-4 py-8 sm:p-6 md:gap-6 md:py-6 p-4 md:p-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full mb-2 gap-1 md:gap-0">
           <h1 className="text-2xl font-semibold">
@@ -438,6 +516,57 @@ function DashboardContent() {
             </Button>
           )}
         </div>
+
+        {/* Actions rapides */}
+        <div className="flex items-center gap-2 flex-wrap -mt-2">
+          <Button
+            variant="primary"
+            className="cursor-pointer"
+            size="sm"
+            asChild
+          >
+            <a
+              href="/dashboard/outils/devis/new"
+              className="flex items-center gap-1.5"
+            >
+              <ClipboardTickIcon className="w-4 h-4" />
+              Créer un devis
+            </a>
+          </Button>
+          <Button
+            variant="primary"
+            className="cursor-pointer"
+            size="sm"
+            asChild
+          >
+            <a
+              href="/dashboard/outils/factures/new"
+              className="flex items-center gap-1.5"
+            >
+              <DocumentText2Icon className="w-4 h-4" />
+              Créer une facture
+            </a>
+          </Button>
+          <Button variant="filter" className="cursor-pointer" size="sm" asChild>
+            <a
+              href="/dashboard/outils/factures-achat"
+              className="flex items-center gap-1.5"
+            >
+              <ClipboardImportIcon className="w-4 h-4" />
+              Ajouter une facture d&apos;achat
+            </a>
+          </Button>
+          <Button variant="filter" className="cursor-pointer" size="sm" asChild>
+            <a
+              href="/dashboard/outils/transferts-fichiers/new"
+              className="flex items-center gap-1.5"
+            >
+              <SendIcon className="w-4 h-4" />
+              Transférer un fichier
+            </a>
+          </Button>
+        </div>
+
         {/* Barre de recherche et actions rapides temporairement désactivées */}
         {/* <div className="flex flex-col gap-3 w-full">
           <Comp333
@@ -523,32 +652,624 @@ function DashboardContent() {
             </div>
           </div>
         </div> */}
-        <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
-          <BankBalanceCard
-            ref={bankBalanceRef}
-            className="shadow-xs w-full md:w-1/2"
-            expenses={paidExpenses}
-            invoices={paidInvoices}
-            totalIncome={totalIncome}
-            totalExpenses={totalExpenses}
-            bankAccounts={filteredBankAccounts}
-            bankBalance={bankBalance}
-            isLoading={cardsLoading}
-          />
+        {/* Deux cards KPI */}
+        <div className="flex items-center justify-between mt-6">
+          <h2 className="text-sm font-medium text-foreground">
+            En un coup d&apos;oeil —{" "}
+            {new Date().toLocaleDateString("fr-FR", {
+              month: "long",
+              year: "numeric",
+            })}
+          </h2>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 text-xs font-medium"
+            style={{ color: "#5A50FF" }}
+            asChild
+          >
+            <a href="/dashboard/outils/analytiques/vue-densemble">
+              <ChartBarIcon
+                className="w-3.5 h-3.5"
+                style={{ color: "#5A50FF" }}
+              />
+              Vue d&apos;ensemble
+            </a>
+          </Button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 w-full -mt-2">
+          <Card className="shadow-xs">
+            {(filteredBankAccounts || []).length === 0 ? (
+              <CardContent className="flex flex-col items-center justify-center py-6">
+                <div className="relative w-36 mb-4">
+                  <img
+                    src="/images/bank-cards-empty.png"
+                    alt="Aucun compte bancaire"
+                    className="w-full h-auto"
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-card via-card/60 to-transparent" />
+                </div>
+                <p className="text-sm text-muted-foreground text-center mb-4 max-w-[280px]">
+                  Connectez votre compte bancaire pour suivre votre solde et vos
+                  transactions en temps réel.
+                </p>
+                <div className="flex items-center gap-3">
+                  <Button
+                    size="sm"
+                    className="text-xs font-medium bg-foreground text-background hover:bg-foreground/90"
+                    onClick={() => bankBalanceRef.current?.openConnectModal()}
+                  >
+                    Connecter un compte
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs font-medium"
+                    onClick={() =>
+                      window.open("https://docs.newbi.fr", "_blank")
+                    }
+                  >
+                    Documentation
+                  </Button>
+                </div>
+              </CardContent>
+            ) : (
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-normal">
+                    {(bankAccounts || []).length > 1
+                      ? "Solde des comptes"
+                      : "Solde du compte"}
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => bankBalanceRef.current?.openConnectModal()}
+                  >
+                    <AddCircleIcon className="w-4 h-4 text-muted-foreground/60" />
+                  </Button>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-3xl font-medium">
+                    {formatCurrency(bankBalance)}
+                  </span>
+                  <div className="flex items-center -space-x-2">
+                    {(filteredBankAccounts || []).slice(0, 3).map((account) => (
+                      <Avatar
+                        key={account.id}
+                        className="size-7 ring-2 ring-background bg-muted"
+                      >
+                        {account.institutionLogo ? (
+                          <AvatarImage
+                            src={account.institutionLogo}
+                            alt={
+                              account.institutionName ||
+                              account.bankName ||
+                              account.name
+                            }
+                            className="object-contain p-0.5"
+                          />
+                        ) : null}
+                        <AvatarFallback className="text-[10px] bg-muted">
+                          {(
+                            account.institutionName ||
+                            account.bankName ||
+                            account.name ||
+                            "B"
+                          )
+                            .slice(0, 2)
+                            .toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                    {(filteredBankAccounts || []).length > 3 && (
+                      <div className="size-7 ring-2 ring-background rounded-full flex items-center justify-center text-[10px] font-medium text-foreground bg-muted">
+                        +{(filteredBankAccounts || []).length - 3}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 mt-3">
+                  <div className="flex items-center gap-1.5">
+                    <TrendUpIcon className="size-4 text-emerald-500" />
+                    <span className="text-xs text-muted-foreground">
+                      Encaissement
+                    </span>
+                    <span className="text-xs font-medium">
+                      {formatCurrency(totalIncome)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <TrendDownIcon className="size-4 text-red-500" />
+                    <span className="text-xs text-muted-foreground">
+                      Décaissement
+                    </span>
+                    <span className="text-xs font-medium">
+                      {formatCurrency(totalExpenses)}
+                    </span>
+                  </div>
+                </div>
+              </CardHeader>
+            )}
+          </Card>
+          <Card className="shadow-xs">
+            {(filteredBankAccounts || []).length === 0 ? (
+              <CardContent className="flex flex-col items-center justify-center py-6">
+                <div className="relative w-36 mb-4">
+                  <img
+                    src="/images/bank-cards-empty.png"
+                    alt="Aucun compte bancaire"
+                    className="w-full h-auto"
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-card via-card/60 to-transparent" />
+                </div>
+                <p className="text-sm text-muted-foreground text-center mb-4 max-w-[280px]">
+                  Connectez un compte bancaire pour voir vos données de
+                  facturation.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs font-medium"
+                  asChild
+                >
+                  <a href="/dashboard/outils/factures">Voir les factures</a>
+                </Button>
+              </CardContent>
+            ) : (
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-normal">
+                    Facturation
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 gap-1.5 text-xs text-muted-foreground font-normal"
+                    asChild
+                  >
+                    <a href="/dashboard/outils/factures">
+                      <DocumentText2Icon className="w-3.5 h-3.5" />
+                      Voir les factures
+                    </a>
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 divide-x mt-1">
+                  <div className="pr-4">
+                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                      Ventes (TTC)
+                    </p>
+                    <p className="text-2xl font-medium mt-1">
+                      {formatCurrency(invoiceBalances.totalBilled)}
+                    </p>
+                    <a
+                      href="/dashboard/outils/factures?status=PENDING"
+                      className="flex items-center gap-1.5 mt-2 group cursor-pointer"
+                    >
+                      <span className="text-xs text-muted-foreground group-hover:text-amber-600 transition-colors">
+                        En cours
+                      </span>
+                      <span className="text-xs font-medium text-amber-600 group-hover:underline">
+                        {formatCurrency(
+                          invoiceBalances.totalBilled -
+                            invoiceBalances.totalPaid,
+                        )}
+                      </span>
+                    </a>
+                  </div>
+                  <div className="pl-4">
+                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                      Achats (TTC)
+                    </p>
+                    <p className="text-2xl font-medium mt-1">
+                      {formatCurrency(purchaseStats.totalThisMonth)}
+                    </p>
+                    <a
+                      href="/dashboard/outils/factures-achat"
+                      className="flex items-center gap-1.5 mt-2 group cursor-pointer"
+                    >
+                      <span className="text-xs text-muted-foreground group-hover:text-red-500 transition-colors">
+                        À payer
+                      </span>
+                      <span className="text-xs font-medium text-red-500 group-hover:underline">
+                        {formatCurrency(purchaseStats.totalToPay)}
+                      </span>
+                    </a>
+                  </div>
+                </div>
+              </CardHeader>
+            )}
+          </Card>
+        </div>
+
+        {/* Section : À traiter */}
+        <h2 className="text-sm font-medium text-foreground mt-4">À traiter</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 w-full -mt-2">
+          {/* Card Comptabilité */}
+          <Card className="shadow-xs">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-normal">
+                  Comptabilité
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs text-muted-foreground font-normal"
+                  asChild
+                >
+                  <a href="/dashboard/outils/transactions">
+                    Voir les transactions
+                  </a>
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-2.5">
+              <a
+                href="/dashboard/outils/transactions?filter=unmatched"
+                className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <CardCoinIcon className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-foreground/80 group-hover:text-foreground transition-colors">
+                    Rapprochements à faire
+                  </span>
+                </div>
+                <Badge
+                  variant="secondary"
+                  className="text-[10px] h-5 px-1.5 font-medium rounded-md"
+                >
+                  {actionCounts.unmatchedCount}
+                </Badge>
+              </a>
+              <a
+                href="/dashboard/outils/transactions?filter=uncategorized"
+                className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <ReceiptItemIcon className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-foreground/80 group-hover:text-foreground transition-colors">
+                    Transactions à catégoriser
+                  </span>
+                </div>
+                <Badge
+                  variant="secondary"
+                  className="text-[10px] h-5 px-1.5 font-medium rounded-md"
+                >
+                  0
+                </Badge>
+              </a>
+              <a
+                href="/dashboard/outils/transactions?filter=missing_receipts"
+                className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <ReceiptSearchIcon className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-foreground/80 group-hover:text-foreground transition-colors">
+                    Justificatifs manquants
+                  </span>
+                </div>
+                <Badge
+                  variant="secondary"
+                  className="text-[10px] h-5 px-1.5 font-medium rounded-md"
+                >
+                  0
+                </Badge>
+              </a>
+            </CardContent>
+          </Card>
+
+          {/* Card Facturation */}
+          <Card className="shadow-xs">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-normal">
+                  Facturation
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs text-muted-foreground font-normal"
+                  asChild
+                >
+                  <a href="/dashboard/outils/factures/new">Créer une facture</a>
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-2.5">
+              <a
+                href="/dashboard/outils/factures?status=PENDING"
+                className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <TrendDownIcon className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-foreground/80 group-hover:text-foreground transition-colors">
+                    Factures en retard
+                  </span>
+                </div>
+                {actionCounts.overdueCount > 0 ? (
+                  <Badge
+                    variant="secondary"
+                    className="text-[10px] h-5 px-1.5 font-medium rounded-md !bg-red-500/15 !text-red-600 dark:!text-red-400"
+                  >
+                    {actionCounts.overdueCount}
+                  </Badge>
+                ) : (
+                  <Badge
+                    variant="secondary"
+                    className="text-[10px] h-5 px-1.5 font-medium rounded-md"
+                  >
+                    0
+                  </Badge>
+                )}
+              </a>
+              <a
+                href="/dashboard/outils/factures"
+                className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <SendIcon className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-foreground/80 group-hover:text-foreground transition-colors">
+                    Factures à envoyer
+                  </span>
+                </div>
+                <Badge
+                  variant="secondary"
+                  className="text-[10px] h-5 px-1.5 font-medium rounded-md"
+                >
+                  {actionCounts.unsentCount}
+                </Badge>
+              </a>
+              <a
+                href="/dashboard/outils/devis"
+                className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <ClipboardTickIcon className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-foreground/80 group-hover:text-foreground transition-colors">
+                    Devis en attente
+                  </span>
+                </div>
+                <Badge
+                  variant="secondary"
+                  className="text-[10px] h-5 px-1.5 font-medium rounded-md"
+                >
+                  {actionCounts.pendingQuotesCount}
+                </Badge>
+              </a>
+            </CardContent>
+          </Card>
+
+          {/* Card Tâches & Activité */}
+          <Card className="shadow-xs">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-normal">
+                  Tâches & Activité
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs text-muted-foreground font-normal"
+                  asChild
+                >
+                  <a href="/dashboard/outils/kanban">Voir les tâches</a>
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-2.5">
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.dispatchEvent(
+                    new CustomEvent("openSettingsModal", {
+                      detail: { section: "notifications" },
+                    }),
+                  );
+                }}
+                className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <NotificationIcon className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-foreground/80 group-hover:text-foreground transition-colors">
+                    Notifications non lues
+                  </span>
+                </div>
+                {actionCounts.notifCount > 0 ? (
+                  <Badge
+                    variant="secondary"
+                    className="text-[10px] h-5 px-1.5 font-medium rounded-md !bg-red-500/15 !text-red-600 dark:!text-red-400"
+                  >
+                    {actionCounts.notifCount}
+                  </Badge>
+                ) : (
+                  <Badge
+                    variant="secondary"
+                    className="text-[10px] h-5 px-1.5 font-medium rounded-md"
+                  >
+                    0
+                  </Badge>
+                )}
+              </a>
+              <a
+                href="/dashboard/outils/factures-achat"
+                className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <ClipboardImportIcon className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-foreground/80 group-hover:text-foreground transition-colors">
+                    Achats à payer
+                  </span>
+                </div>
+                <Badge
+                  variant="secondary"
+                  className="text-[10px] h-5 px-1.5 font-medium rounded-md"
+                >
+                  {purchaseStats.totalToPayCount}
+                </Badge>
+              </a>
+              <a
+                href="/dashboard/outils/transferts-fichiers"
+                className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <SendIcon className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-foreground/80 group-hover:text-foreground transition-colors">
+                    Transferts en cours
+                  </span>
+                </div>
+                <Badge
+                  variant="secondary"
+                  className="text-[10px] h-5 px-1.5 font-medium rounded-md"
+                >
+                  0
+                </Badge>
+              </a>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Section : Suivi en temps réel */}
+        <h2 className="text-sm font-medium text-foreground mt-4">
+          Suivi en temps réel
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 w-full -mt-2">
           <RecentTransactionsCard
-            className="shadow-xs w-full md:w-1/2"
+            className="shadow-xs w-full"
             workspaceId={workspaceId}
             accountId={selectedAccountId}
             limit={5}
             isLoading={transactionsLoading}
           />
+          <Card className="shadow-xs flex flex-col">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-normal">
+                Factures de vente (HT)
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-muted-foreground hover:text-foreground"
+                asChild
+              >
+                <a href="/dashboard/outils/factures">
+                  Voir tout
+                  <ExternalLink className="ml-1 h-3 w-3" />
+                </a>
+              </Button>
+            </CardHeader>
+            <CardContent className="flex flex-col flex-1">
+              {invoicesLoading ? (
+                <div className="space-y-4 flex-1 animate-pulse">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="h-8 w-8 bg-accent rounded-full" />
+                        <div className="flex flex-col gap-1">
+                          <div className="h-4 w-28 bg-accent rounded" />
+                          <div className="h-3 w-14 bg-accent rounded" />
+                        </div>
+                      </div>
+                      <div className="h-4 w-16 bg-accent rounded" />
+                    </div>
+                  ))}
+                </div>
+              ) : invoices.length === 0 ? (
+                <div className="flex flex-col items-center justify-center flex-1 py-8">
+                  <DocumentText2Icon className="w-8 h-8 text-muted-foreground/40 mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    Aucune facture de vente
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4 flex-1">
+                  {invoices
+                    .filter((inv) => inv.status !== "DRAFT")
+                    .slice(0, 5)
+                    .map((inv, index) => {
+                      const isPaid = inv.status === "COMPLETED";
+                      const clientName = inv.client?.name || "Client";
+                      const initials =
+                        clientName.trim().split(/\s+/).length >= 2
+                          ? (
+                              clientName.trim().split(/\s+/)[0][0] +
+                              clientName.trim().split(/\s+/)[1][0]
+                            ).toUpperCase()
+                          : clientName.slice(0, 2).toUpperCase();
+
+                      return (
+                        <div
+                          key={inv.id || `inv-${index}`}
+                          className="flex items-center justify-between"
+                        >
+                          <div className="flex items-center space-x-3">
+                            <div className="h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 bg-muted">
+                              <span className="text-xs font-medium text-muted-foreground">
+                                {initials}
+                              </span>
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-sm font-normal truncate max-w-[180px]">
+                                {clientName}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {inv.prefix}
+                                {inv.number}
+                              </span>
+                            </div>
+                          </div>
+                          <span
+                            className={`text-sm font-medium ${isPaid ? "text-emerald-600" : ""}`}
+                          >
+                            {formatCurrency(
+                              inv.finalTotalHT || inv.totalHT || 0,
+                            )}
+                          </span>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
-        {/* Graphique de trésorerie - Pleine largeur (MODE BANCAIRE PUR) */}
+
+        {/* Sections commentées */}
+        {/*
+        <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-4 md:gap-6 w-full">
+          <div className="flex flex-col gap-4 md:gap-6">
+            <BankBalanceCard
+              ref={bankBalanceRef}
+              className="shadow-xs w-full"
+              expenses={paidExpenses}
+              invoices={paidInvoices}
+              totalIncome={totalIncome}
+              totalExpenses={totalExpenses}
+              bankAccounts={filteredBankAccounts}
+              bankBalance={bankBalance}
+              isLoading={cardsLoading}
+            />
+            <IncomeCategoryChart
+              workspaceId={workspaceId}
+              accountId={selectedAccountId}
+              className="shadow-xs w-full !pb-2 [&_[data-slot=card-content]]:!pb-0"
+            />
+          </div>
+          <RecentTransactionsCard
+            className="shadow-xs w-full h-full"
+            workspaceId={workspaceId}
+            accountId={selectedAccountId}
+            limit={13}
+            isLoading={transactionsLoading}
+          />
+        </div>
         <div className="w-full">
           <TreasuryChart
             workspaceId={workspaceId}
             accountId={selectedAccountId}
-            className="shadow-xs"
+            className="shadow-xs w-full"
             isLoading={cardsLoading}
           />
         </div>
@@ -583,7 +1304,6 @@ function DashboardContent() {
           />
         </div>
 
-        {/* Stats principales - 5 cards sur une ligne */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6 w-full">
           <InvoicesToCollectCard
             className="shadow-xs"
@@ -604,7 +1324,6 @@ function DashboardContent() {
           />
         </div>
 
-        {/* Top 3 clients + Calendrier de la semaine */}
         <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
           <TopClientsCard
             className="shadow-xs w-full md:w-1/3"
@@ -614,7 +1333,6 @@ function DashboardContent() {
           <WeekCalendarCard className="shadow-xs w-full md:w-2/3" />
         </div>
 
-        {/* Graphiques de répartition par catégorie (MODE BANCAIRE PUR) */}
         <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
           <IncomeCategoryChart
             workspaceId={workspaceId}
@@ -627,6 +1345,7 @@ function DashboardContent() {
             className="shadow-xs w-full md:w-1/2"
           />
         </div>
+        */}
       </div>
     </>
   );
