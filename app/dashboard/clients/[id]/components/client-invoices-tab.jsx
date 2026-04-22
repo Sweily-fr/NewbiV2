@@ -3,14 +3,19 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/src/lib/utils";
-import { FileText, Plus } from "lucide-react";
+import { FileText, Plus, FileInput } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import InvoiceSidebar from "@/app/dashboard/outils/factures/components/invoice-sidebar";
+import { ImportedInvoiceSidebar } from "@/app/dashboard/outils/factures/components/imported-invoice-sidebar";
 import {
   INVOICE_STATUS,
   INVOICE_STATUS_LABELS,
   INVOICE_STATUS_COLORS,
 } from "@/src/graphql/invoiceQueries";
+import {
+  IMPORTED_INVOICE_STATUS_LABELS,
+  IMPORTED_INVOICE_STATUS_COLORS,
+} from "@/src/graphql/importedInvoiceQueries";
 import {
   Empty,
   EmptyMedia,
@@ -35,29 +40,51 @@ function safeFormatDate(dateString) {
   }
 }
 
-export default function ClientInvoicesTab({ invoices = [], clientId }) {
+function getSortDate(invoice) {
+  if (invoice._type === "imported") {
+    return new Date(invoice.invoiceDate || invoice.createdAt || 0);
+  }
+  return new Date(invoice.issueDate || invoice.createdAt || 0);
+}
+
+export default function ClientInvoicesTab({
+  invoices = [],
+  importedInvoices = [],
+  clientId,
+}) {
   const router = useRouter();
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [selectedImportedInvoice, setSelectedImportedInvoice] = useState(null);
 
-  const clientInvoices = useMemo(
-    () =>
-      invoices
-        .filter((inv) => inv.client?.id === clientId)
-        .sort((a, b) => {
-          const dateA = new Date(a.issueDate || a.createdAt || 0);
-          const dateB = new Date(b.issueDate || b.createdAt || 0);
-          if (isNaN(dateA.getTime())) return 1;
-          if (isNaN(dateB.getTime())) return -1;
-          return dateB - dateA;
-        }),
-    [invoices, clientId],
-  );
+  const clientInvoices = useMemo(() => {
+    const normal = invoices
+      .filter((inv) => inv.client?.id === clientId)
+      .map((inv) => ({ ...inv, _type: "normal" }));
+    const imported = (importedInvoices || []).map((inv) => ({
+      ...inv,
+      _type: "imported",
+    }));
+    return [...normal, ...imported].sort((a, b) => {
+      const dateA = getSortDate(a);
+      const dateB = getSortDate(b);
+      if (isNaN(dateA.getTime())) return 1;
+      if (isNaN(dateB.getTime())) return -1;
+      return dateB - dateA;
+    });
+  }, [invoices, importedInvoices, clientId]);
 
   const { totalPaid, totalRemaining } = useMemo(() => {
     let paid = 0;
     let remaining = 0;
     for (const inv of clientInvoices) {
+      if (inv._type === "imported") {
+        const amount = inv.totalTTC ?? 0;
+        if (inv.status === "COMPLETED") paid += amount;
+        else if (inv.status === "VALIDATED" || inv.status === "PENDING_REVIEW")
+          remaining += amount;
+        continue;
+      }
       const amount = inv.finalTotalTTC ?? inv.totalTTC ?? 0;
       if (inv.status === INVOICE_STATUS.COMPLETED) {
         paid += amount;
@@ -74,9 +101,14 @@ export default function ClientInvoicesTab({ invoices = [], clientId }) {
       currency: "EUR",
     }).format(amount || 0);
 
-  const getStatusBadge = (status) => {
-    const label = INVOICE_STATUS_LABELS[status] || status;
-    const colors = INVOICE_STATUS_COLORS[status] || "";
+  const getStatusBadge = (invoice) => {
+    const isImported = invoice._type === "imported";
+    const label = isImported
+      ? IMPORTED_INVOICE_STATUS_LABELS[invoice.status] || invoice.status
+      : INVOICE_STATUS_LABELS[invoice.status] || invoice.status;
+    const colors = isImported
+      ? IMPORTED_INVOICE_STATUS_COLORS[invoice.status] || ""
+      : INVOICE_STATUS_COLORS[invoice.status] || "";
     return (
       <span
         className={cn(
@@ -87,6 +119,15 @@ export default function ClientInvoicesTab({ invoices = [], clientId }) {
         {label}
       </span>
     );
+  };
+
+  const handleRowClick = (invoice) => {
+    if (invoice._type === "imported") {
+      setSelectedImportedInvoice(invoice);
+    } else {
+      setSelectedInvoice(invoice);
+      setIsSidebarOpen(true);
+    }
   };
 
   if (clientInvoices.length === 0) {
@@ -156,33 +197,50 @@ export default function ClientInvoicesTab({ invoices = [], clientId }) {
             </tr>
           </thead>
           <tbody>
-            {clientInvoices.map((invoice) => (
-              <tr
-                key={invoice.id}
-                className="border-b border-[#f0f0f0] dark:border-[#232323] hover:bg-[#FBFBFB] dark:bg-[#1a1a1a] cursor-pointer transition-colors"
-                onClick={() => {
-                  setSelectedInvoice(invoice);
-                  setIsSidebarOpen(true);
-                }}
-              >
-                <td className="py-3.5 px-4 text-sm font-medium text-[#242529] dark:text-foreground">
-                  {invoice.prefix}
-                  {invoice.number}
-                </td>
-                <td className="py-3.5 px-4 text-sm text-[#242529] dark:text-foreground">
-                  {safeFormatDate(invoice.issueDate)}
-                </td>
-                <td className="py-3.5 px-4 text-sm text-[#242529] dark:text-foreground">
-                  {safeFormatDate(invoice.paymentDate)}
-                </td>
-                <td className="py-3.5 px-4">
-                  {getStatusBadge(invoice.status)}
-                </td>
-                <td className="py-3.5 px-4 text-sm text-right font-medium text-[#242529] dark:text-foreground">
-                  {formatCurrency(invoice.finalTotalTTC || invoice.totalTTC)}
-                </td>
-              </tr>
-            ))}
+            {clientInvoices.map((invoice) => {
+              const isImported = invoice._type === "imported";
+              const number = isImported
+                ? invoice.originalInvoiceNumber || "—"
+                : `${invoice.prefix || ""}${invoice.number || ""}`;
+              const issueDate = isImported
+                ? invoice.invoiceDate
+                : invoice.issueDate;
+              const amount = isImported
+                ? invoice.totalTTC
+                : invoice.finalTotalTTC || invoice.totalTTC;
+              return (
+                <tr
+                  key={`${invoice._type}-${invoice.id}`}
+                  className="border-b border-[#f0f0f0] dark:border-[#232323] hover:bg-[#FBFBFB] dark:bg-[#1a1a1a] cursor-pointer transition-colors"
+                  onClick={() => handleRowClick(invoice)}
+                >
+                  <td className="py-3.5 px-4 text-sm font-medium text-[#242529] dark:text-foreground">
+                    <span className="inline-flex items-center gap-2">
+                      {number}
+                      {isImported && (
+                        <span
+                          title="Facture importée"
+                          className="inline-flex items-center gap-1 text-[10px] font-normal text-[#505154] dark:text-muted-foreground border border-[#eeeff1] dark:border-[#232323] rounded px-1.5 py-0.5"
+                        >
+                          <FileInput className="h-3 w-3" />
+                          Importée
+                        </span>
+                      )}
+                    </span>
+                  </td>
+                  <td className="py-3.5 px-4 text-sm text-[#242529] dark:text-foreground">
+                    {safeFormatDate(issueDate)}
+                  </td>
+                  <td className="py-3.5 px-4 text-sm text-[#242529] dark:text-foreground">
+                    {safeFormatDate(invoice.paymentDate)}
+                  </td>
+                  <td className="py-3.5 px-4">{getStatusBadge(invoice)}</td>
+                  <td className="py-3.5 px-4 text-sm text-right font-medium text-[#242529] dark:text-foreground">
+                    {formatCurrency(amount)}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -213,6 +271,13 @@ export default function ClientInvoicesTab({ invoices = [], clientId }) {
           setIsSidebarOpen(false);
           setSelectedInvoice(null);
         }}
+      />
+
+      <ImportedInvoiceSidebar
+        invoice={selectedImportedInvoice}
+        open={!!selectedImportedInvoice}
+        onOpenChange={(open) => !open && setSelectedImportedInvoice(null)}
+        onUpdate={() => setSelectedImportedInvoice(null)}
       />
     </>
   );

@@ -17,7 +17,9 @@ import {
   Mail,
   Import,
   BookTemplate,
+  UserPlus,
 } from "lucide-react";
+import AssignImportedInvoicesDialog from "./assign-imported-invoices-dialog";
 import { ButtonGroup } from "@/src/components/ui/button-group";
 import {
   Tooltip,
@@ -61,6 +63,7 @@ export default function InvoiceRowActions({
   const [isMobileFullscreenOpen, setIsMobileFullscreenOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [canCreateCreditNote, setCanCreateCreditNote] = useState(false);
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const router = useRouter();
   const invoice = row.original;
   const { canCreate } = usePermissions();
@@ -202,6 +205,12 @@ export default function InvoiceRowActions({
               <Eye className="mr-2 h-4 w-4" />
               Voir
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setIsAssignDialogOpen(true)}>
+              <UserPlus className="mr-2 h-4 w-4" />
+              {invoice.clientId
+                ? "Réassigner à un client"
+                : "Assigner à un client"}
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={handleDeleteImported}
@@ -217,6 +226,15 @@ export default function InvoiceRowActions({
             </div>
           </DropdownMenuContent>
         </DropdownMenu>
+        <AssignImportedInvoicesDialog
+          open={isAssignDialogOpen}
+          onOpenChange={setIsAssignDialogOpen}
+          invoiceIds={[invoice.id]}
+          onAssigned={() => {
+            if (onRefetchImported) onRefetchImported();
+            if (onRefetch) onRefetch();
+          }}
+        />
       </div>
     );
   }

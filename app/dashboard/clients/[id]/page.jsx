@@ -13,9 +13,11 @@ import {
 } from "@/src/hooks/useClients";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
+import { useImportedInvoices } from "@/src/graphql/importedInvoiceQueries";
 import { useQuotes } from "@/src/graphql/quoteQueries";
 import { usePurchaseOrders } from "@/src/graphql/purchaseOrderQueries";
 import { useCreateEvent } from "@/src/hooks/useEvents";
+import { filterImportedInvoicesForClient } from "./lib/match-imported-invoice";
 import ClientsModal from "@/app/dashboard/clients/components/clients-modal";
 import ClientDetailHeader from "./components/client-detail-header";
 import ClientDetailSidebar from "./components/client-detail-sidebar";
@@ -54,8 +56,14 @@ function ClientDetailContent() {
   } = useClient(isValid ? id : null);
   const { clients: allClients } = useClients(1, 1000);
   const { invoices } = useInvoices();
+  const { importedInvoices } = useImportedInvoices(workspaceId);
   const { quotes } = useQuotes();
   const { purchaseOrders } = usePurchaseOrders();
+
+  const clientImportedInvoices = useMemo(
+    () => filterImportedInvoicesForClient(importedInvoices, client),
+    [importedInvoices, client],
+  );
   const { deleteClient } = useDeleteClient();
   const { blockClient } = useBlockClient();
   const { unblockClient } = useUnblockClient();
@@ -191,6 +199,7 @@ function ClientDetailContent() {
           <ClientDetailTabs
             client={client}
             invoices={invoices || []}
+            importedInvoices={clientImportedInvoices}
             quotes={quotes || []}
             purchaseOrders={purchaseOrders || []}
             workspaceId={workspaceId}
@@ -201,6 +210,7 @@ function ClientDetailContent() {
         <ClientDetailSidebar
           client={client}
           invoices={invoices || []}
+          importedInvoices={clientImportedInvoices}
           workspaceId={workspaceId}
           onEdit={() => setIsEditModalOpen(true)}
         />
