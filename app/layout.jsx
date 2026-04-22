@@ -171,7 +171,7 @@ export default function RootLayout({ children }) {
           </ThemeProvider>
         </ApolloWrapper>
         <Toaster />
-        <DevAnimationTrigger />
+        {/* <DevAnimationTrigger /> */}
       </body>
     </html>
   );

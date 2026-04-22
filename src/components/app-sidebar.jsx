@@ -39,6 +39,8 @@ import {
   DocumentTextIcon,
   SendIcon,
   NoteTextIcon as Calendar,
+  Element4Icon,
+  ChartIcon,
 } from "@/src/components/icons";
 import { NavMain } from "@/src/components/nav-main";
 import { NavSecondary } from "@/src/components/nav-secondary";
@@ -86,16 +88,21 @@ const data = {
   ],
   navMain: [
     {
-      title: "Dashboard",
+      title: "Accueil",
       url: "/dashboard",
-      icon: CircleGauge,
+      icon: Element4Icon,
+    },
+    {
+      title: "Transactions",
+      url: "/dashboard/outils/transactions",
+      icon: ChartIcon,
     },
   ],
   navFinances: [
     {
-      title: "Transactions",
-      url: "/dashboard/outils/transactions",
-      icon: ReceiptItemIcon,
+      title: "Vue d'ensemble",
+      url: "/dashboard/outils/analytiques/vue-densemble",
+      icon: CircleGauge,
     },
     {
       title: "Prévision",

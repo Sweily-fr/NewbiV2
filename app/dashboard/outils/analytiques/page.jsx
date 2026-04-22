@@ -55,6 +55,38 @@ import { AnalyticsCollectionChart } from "./components/analytics-collection-char
 import { AnalyticsTreasuryForecastChart } from "./components/analytics-treasury-forecast-chart";
 import { AnalyticsBankFlowChart } from "./components/analytics-bank-flow-chart";
 import { AnalyticsPCGMapping } from "./components/analytics-pcg-mapping";
+import BankBalanceCard from "@/src/components/banking/BankBalanceCard";
+import RecentTransactionsCard from "@/src/components/banking/RecentTransactionsCard";
+import { TreasuryChart } from "@/src/components/treasury-chart";
+import { ChartAreaInteractive } from "@/src/components/chart-area-interactive";
+import { IncomeCategoryChart } from "@/app/dashboard/components/income-category-chart";
+import { ExpenseCategoryChart } from "@/app/dashboard/outils/transactions/components/expense-category-chart";
+import { InvoicesToCollectCard } from "@/app/dashboard/components/invoices-to-collect-card";
+import { PurchaseInvoicesStatsCard } from "@/app/dashboard/components/purchase-invoices-stats-card";
+import { PendingQuotesCard } from "@/app/dashboard/components/pending-quotes-card";
+import { OverdueInvoicesCard } from "@/app/dashboard/components/overdue-invoices-card";
+import { MonthlyRevenueCard } from "@/app/dashboard/components/monthly-revenue-card";
+import { TopClientsCard } from "@/app/dashboard/components/top-clients-card";
+import { WeekCalendarCard } from "@/app/dashboard/components/week-calendar-card";
+import { useChartColors } from "@/src/hooks/useChartColors";
+import {
+  getIncomeChartConfig,
+  getExpenseChartConfig,
+} from "@/src/utils/chartDataProcessors";
+import { GET_TREASURY_CHART } from "@/src/graphql/queries/dashboardAggregation";
+import { useQuery } from "@apollo/client";
+import { useRef } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/src/components/ui/avatar";
 
 const CATEGORY_LABELS = {
   OFFICE_SUPPLIES: "Fournitures",
@@ -270,8 +302,48 @@ export default function AnalytiquesPage() {
     bankBalance,
     totalIncome,
     totalExpenses,
+    invoices,
+    paidInvoices,
+    paidExpenses,
     isLoading: bankLoading,
+    invoicesLoading,
+    transactionsLoading,
+    formatCurrency: dashFormatCurrency,
   } = useDashboardData();
+
+  const bankBalanceRef = useRef(null);
+  const { remap } = useChartColors();
+
+  const { data: flowChartData, loading: flowChartLoading } = useQuery(
+    GET_TREASURY_CHART,
+    {
+      variables: {
+        workspaceId,
+        period: { preset: "365d" },
+      },
+      fetchPolicy: "cache-and-network",
+      skip: !workspaceId,
+    },
+  );
+
+  const incomeChartData = useMemo(() => {
+    const points = flowChartData?.dashboardTreasuryChart?.dataPoints || [];
+    return points.map((d) => ({ date: d.date, desktop: d.income, mobile: 0 }));
+  }, [flowChartData]);
+
+  const expenseChartData = useMemo(() => {
+    const points = flowChartData?.dashboardTreasuryChart?.dataPoints || [];
+    return points.map((d) => ({
+      date: d.date,
+      desktop: d.expenses,
+      mobile: 0,
+    }));
+  }, [flowChartData]);
+
+  const incomeChartConfig = getIncomeChartConfig(remap);
+  const expenseChartConfig = getExpenseChartConfig(remap);
+  const cardsLoading = bankLoading;
+  const chartsLoading = flowChartLoading;
 
   // Treasury forecast (6 months: 3 past + 3 future)
   const forecastStart = useMemo(() => {

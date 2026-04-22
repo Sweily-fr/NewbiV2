@@ -25,7 +25,11 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import { Button } from "@/src/components/ui/button";
-import { ArrowLeft, Calendar as CalendarIcon, ChevronRight } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar as CalendarIcon,
+  ChevronRight,
+} from "lucide-react";
 import { Label } from "@/src/components/ui/label";
 import { parseDate } from "@internationalized/date";
 import {
@@ -73,13 +77,20 @@ export function ChartAreaInteractive({
   showMobile = true,
   singleCurve = false,
   hideMobileCurve = false,
+  hideHeader = false,
+  externalTimeRange,
   className = "",
   isLoading = false,
   ...props
 }) {
   const isMobile = useIsMobile();
   const chartId = React.useId();
-  const [timeRange, setTimeRange] = React.useState("cumul-year");
+  const [timeRange, setTimeRange] = React.useState(
+    externalTimeRange || "cumul-year",
+  );
+  React.useEffect(() => {
+    if (externalTimeRange) setTimeRange(externalTimeRange);
+  }, [externalTimeRange]);
   const [customStartDate, setCustomStartDate] = React.useState("");
   const [customEndDate, setCustomEndDate] = React.useState("");
   const [showCustomView, setShowCustomView] = React.useState(false);
@@ -90,15 +101,24 @@ export function ChartAreaInteractive({
   // Obtenir le label de la période sélectionnée
   const getTimeRangeLabel = () => {
     switch (timeRange) {
-      case "cumul-month": return "Cumul mensuel";
-      case "cumul-quarter": return "Cumul trimestriel";
-      case "cumul-year": return "Cumul annuel";
-      case "7d": return "7 derniers jours";
-      case "30d": return "30 derniers jours";
-      case "90d": return "3 derniers mois";
-      case "365d": return "12 derniers mois";
-      case "custom": return "Période personnalisée";
-      default: return "3 derniers mois";
+      case "cumul-month":
+        return "Cumul mensuel";
+      case "cumul-quarter":
+        return "Cumul trimestriel";
+      case "cumul-year":
+        return "Cumul annuel";
+      case "7d":
+        return "7 derniers jours";
+      case "30d":
+        return "30 derniers jours";
+      case "90d":
+        return "3 derniers mois";
+      case "365d":
+        return "12 derniers mois";
+      case "custom":
+        return "Période personnalisée";
+      default:
+        return "3 derniers mois";
     }
   };
 
@@ -132,12 +152,20 @@ export function ChartAreaInteractive({
 
       // Cumul modes
       if (timeRange === "cumul-month") {
-        const startOfMonth = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1);
+        const startOfMonth = new Date(
+          referenceDate.getFullYear(),
+          referenceDate.getMonth(),
+          1,
+        );
         return date >= startOfMonth;
       }
       if (timeRange === "cumul-quarter") {
         const quarterMonth = Math.floor(referenceDate.getMonth() / 3) * 3;
-        const startOfQuarter = new Date(referenceDate.getFullYear(), quarterMonth, 1);
+        const startOfQuarter = new Date(
+          referenceDate.getFullYear(),
+          quarterMonth,
+          1,
+        );
         return date >= startOfQuarter;
       }
       if (timeRange === "cumul-year") {
@@ -221,13 +249,37 @@ export function ChartAreaInteractive({
   const renderChart = () => {
     const children = [
       <defs key="gradients">
-        <linearGradient id={`fillDesktop-${chartId}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="5%" stopColor="var(--color-desktop)" stopOpacity={0.8} />
-          <stop offset="95%" stopColor="var(--color-desktop)" stopOpacity={0.1} />
+        <linearGradient
+          id={`fillDesktop-${chartId}`}
+          x1="0"
+          y1="0"
+          x2="0"
+          y2="1"
+        >
+          <stop
+            offset="5%"
+            stopColor="var(--color-desktop)"
+            stopOpacity={0.8}
+          />
+          <stop
+            offset="95%"
+            stopColor="var(--color-desktop)"
+            stopOpacity={0.1}
+          />
         </linearGradient>
-        <linearGradient id={`fillMobile-${chartId}`} x1="0" y1="0" x2="0" y2="1">
+        <linearGradient
+          id={`fillMobile-${chartId}`}
+          x1="0"
+          y1="0"
+          x2="0"
+          y2="1"
+        >
           <stop offset="5%" stopColor="var(--color-mobile)" stopOpacity={0.8} />
-          <stop offset="95%" stopColor="var(--color-mobile)" stopOpacity={0.1} />
+          <stop
+            offset="95%"
+            stopColor="var(--color-mobile)"
+            stopOpacity={0.1}
+          />
         </linearGradient>
       </defs>,
       <CartesianGrid key="grid" vertical={false} />,
@@ -290,7 +342,7 @@ export function ChartAreaInteractive({
           strokeWidth={1.5}
           stackId="a"
           connectNulls
-        />
+        />,
       );
     }
 
@@ -305,7 +357,7 @@ export function ChartAreaInteractive({
         strokeWidth={1.5}
         stackId={!singleCurve && !hideMobileCurve ? "a" : undefined}
         connectNulls
-      />
+      />,
     );
 
     return (
@@ -319,78 +371,200 @@ export function ChartAreaInteractive({
   };
 
   const timeRangeDropdown = (
-    <DropdownMenu open={dropdownOpen} onOpenChange={(open) => { setDropdownOpen(open); if (!open) setShowCustomView(false); }}>
+    <DropdownMenu
+      open={dropdownOpen}
+      onOpenChange={(open) => {
+        setDropdownOpen(open);
+        if (!open) setShowCustomView(false);
+      }}
+    >
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-8 text-sm font-normal text-[#7A7A7A]">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 text-sm font-normal text-[#7A7A7A]"
+        >
           {getTimeRangeLabel()}
-          <ChevronRight className="-me-1 opacity-60 rotate-90" size={14} aria-hidden="true" />
+          <ChevronRight
+            className="-me-1 opacity-60 rotate-90"
+            size={14}
+            aria-hidden="true"
+          />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="rounded-xl w-80" align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
+      <DropdownMenuContent
+        className="rounded-xl w-80"
+        align="end"
+        onCloseAutoFocus={(e) => e.preventDefault()}
+      >
         {!showCustomView ? (
           <>
-            <DropdownMenuItem className="rounded-lg text-sm" onSelect={() => { setTimeRange("cumul-month"); setDropdownOpen(false); }}>Cumul mensuel</DropdownMenuItem>
-            <DropdownMenuItem className="rounded-lg text-sm" onSelect={() => { setTimeRange("cumul-quarter"); setDropdownOpen(false); }}>Cumul trimestriel</DropdownMenuItem>
-            <DropdownMenuItem className="rounded-lg text-sm" onSelect={() => { setTimeRange("cumul-year"); setDropdownOpen(false); }}>Cumul annuel</DropdownMenuItem>
-            <DropdownMenuItem className="rounded-lg text-sm" onSelect={() => { setTimeRange("30d"); setDropdownOpen(false); }}>30 derniers jours</DropdownMenuItem>
-            <DropdownMenuItem className="rounded-lg text-sm" onSelect={() => { setTimeRange("90d"); setDropdownOpen(false); }}>3 derniers mois</DropdownMenuItem>
-            <DropdownMenuItem className="rounded-lg text-sm" onSelect={() => { setTimeRange("365d"); setDropdownOpen(false); }}>12 derniers mois</DropdownMenuItem>
-            <DropdownMenuItem className="rounded-lg text-sm flex items-center justify-between" onSelect={(e) => { e.preventDefault(); setTempStartDate(customStartDate); setTempEndDate(customEndDate); setShowCustomView(true); }}>
+            <DropdownMenuItem
+              className="rounded-lg text-sm"
+              onSelect={() => {
+                setTimeRange("cumul-month");
+                setDropdownOpen(false);
+              }}
+            >
+              Cumul mensuel
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="rounded-lg text-sm"
+              onSelect={() => {
+                setTimeRange("cumul-quarter");
+                setDropdownOpen(false);
+              }}
+            >
+              Cumul trimestriel
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="rounded-lg text-sm"
+              onSelect={() => {
+                setTimeRange("cumul-year");
+                setDropdownOpen(false);
+              }}
+            >
+              Cumul annuel
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="rounded-lg text-sm"
+              onSelect={() => {
+                setTimeRange("30d");
+                setDropdownOpen(false);
+              }}
+            >
+              30 derniers jours
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="rounded-lg text-sm"
+              onSelect={() => {
+                setTimeRange("90d");
+                setDropdownOpen(false);
+              }}
+            >
+              3 derniers mois
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="rounded-lg text-sm"
+              onSelect={() => {
+                setTimeRange("365d");
+                setDropdownOpen(false);
+              }}
+            >
+              12 derniers mois
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="rounded-lg text-sm flex items-center justify-between"
+              onSelect={(e) => {
+                e.preventDefault();
+                setTempStartDate(customStartDate);
+                setTempEndDate(customEndDate);
+                setShowCustomView(true);
+              }}
+            >
               Période personnalisée
               <ChevronRight size={14} className="opacity-60" />
             </DropdownMenuItem>
           </>
         ) : (
           <I18nProvider locale="fr-FR">
-          <div onKeyDown={(e) => { if (e.key !== 'Escape') e.stopPropagation(); }} onPointerDown={(e) => e.stopPropagation()}>
-            <div className="flex items-center px-1 py-1 border-b">
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-[#7A7A7A]" onClick={() => setShowCustomView(false)}>
-                <ArrowLeft size={16} />
-              </Button>
-            </div>
-            <div className="grid grid-cols-2 gap-2 px-2 pt-2">
-              <div className="min-w-0 space-y-1.5">
-                <Label className="text-sm font-medium">Début</Label>
-                <DatePicker value={tempStartDate ? parseDate(tempStartDate) : null} onChange={(date) => { if (date) setTempStartDate(date.toString()); }}>
-                  <div className="flex">
-                    <Group className="w-full min-w-0">
-                      <DateInput className="pe-9 text-sm" />
-                    </Group>
-                    <RACButton className="z-10 -ms-9 -me-px flex w-9 shrink-0 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground data-focus-visible:border-ring data-focus-visible:ring-[3px] data-focus-visible:ring-ring/50">
-                      <CalendarIcon size={14} />
-                    </RACButton>
-                  </div>
-                  <RACPopover className="z-50 rounded-lg border bg-background text-popover-foreground shadow-lg outline-hidden data-entering:animate-in data-exiting:animate-out data-[entering]:fade-in-0 data-[entering]:zoom-in-95 data-[exiting]:fade-out-0 data-[exiting]:zoom-out-95" offset={4}>
-                    <Dialog className="max-h-[inherit] overflow-auto p-2">
-                      <Calendar />
-                    </Dialog>
-                  </RACPopover>
-                </DatePicker>
+            <div
+              onKeyDown={(e) => {
+                if (e.key !== "Escape") e.stopPropagation();
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center px-1 py-1 border-b">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-[#7A7A7A]"
+                  onClick={() => setShowCustomView(false)}
+                >
+                  <ArrowLeft size={16} />
+                </Button>
               </div>
-              <div className="min-w-0 space-y-1.5">
-                <Label className="text-sm font-medium">Fin</Label>
-                <DatePicker value={tempEndDate ? parseDate(tempEndDate) : null} onChange={(date) => { if (date) setTempEndDate(date.toString()); }}>
-                  <div className="flex">
-                    <Group className="w-full min-w-0">
-                      <DateInput className="pe-9 text-sm" />
-                    </Group>
-                    <RACButton className="z-10 -ms-9 -me-px flex w-9 shrink-0 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground data-focus-visible:border-ring data-focus-visible:ring-[3px] data-focus-visible:ring-ring/50">
-                      <CalendarIcon size={14} />
-                    </RACButton>
-                  </div>
-                  <RACPopover className="z-50 rounded-lg border bg-background text-popover-foreground shadow-lg outline-hidden data-entering:animate-in data-exiting:animate-out data-[entering]:fade-in-0 data-[entering]:zoom-in-95 data-[exiting]:fade-out-0 data-[exiting]:zoom-out-95" offset={4}>
-                    <Dialog className="max-h-[inherit] overflow-auto p-2">
-                      <Calendar />
-                    </Dialog>
-                  </RACPopover>
-                </DatePicker>
+              <div className="grid grid-cols-2 gap-2 px-2 pt-2">
+                <div className="min-w-0 space-y-1.5">
+                  <Label className="text-sm font-medium">Début</Label>
+                  <DatePicker
+                    value={tempStartDate ? parseDate(tempStartDate) : null}
+                    onChange={(date) => {
+                      if (date) setTempStartDate(date.toString());
+                    }}
+                  >
+                    <div className="flex">
+                      <Group className="w-full min-w-0">
+                        <DateInput className="pe-9 text-sm" />
+                      </Group>
+                      <RACButton className="z-10 -ms-9 -me-px flex w-9 shrink-0 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground data-focus-visible:border-ring data-focus-visible:ring-[3px] data-focus-visible:ring-ring/50">
+                        <CalendarIcon size={14} />
+                      </RACButton>
+                    </div>
+                    <RACPopover
+                      className="z-50 rounded-lg border bg-background text-popover-foreground shadow-lg outline-hidden data-entering:animate-in data-exiting:animate-out data-[entering]:fade-in-0 data-[entering]:zoom-in-95 data-[exiting]:fade-out-0 data-[exiting]:zoom-out-95"
+                      offset={4}
+                    >
+                      <Dialog className="max-h-[inherit] overflow-auto p-2">
+                        <Calendar />
+                      </Dialog>
+                    </RACPopover>
+                  </DatePicker>
+                </div>
+                <div className="min-w-0 space-y-1.5">
+                  <Label className="text-sm font-medium">Fin</Label>
+                  <DatePicker
+                    value={tempEndDate ? parseDate(tempEndDate) : null}
+                    onChange={(date) => {
+                      if (date) setTempEndDate(date.toString());
+                    }}
+                  >
+                    <div className="flex">
+                      <Group className="w-full min-w-0">
+                        <DateInput className="pe-9 text-sm" />
+                      </Group>
+                      <RACButton className="z-10 -ms-9 -me-px flex w-9 shrink-0 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground data-focus-visible:border-ring data-focus-visible:ring-[3px] data-focus-visible:ring-ring/50">
+                        <CalendarIcon size={14} />
+                      </RACButton>
+                    </div>
+                    <RACPopover
+                      className="z-50 rounded-lg border bg-background text-popover-foreground shadow-lg outline-hidden data-entering:animate-in data-exiting:animate-out data-[entering]:fade-in-0 data-[entering]:zoom-in-95 data-[exiting]:fade-out-0 data-[exiting]:zoom-out-95"
+                      offset={4}
+                    >
+                      <Dialog className="max-h-[inherit] overflow-auto p-2">
+                        <Calendar />
+                      </Dialog>
+                    </RACPopover>
+                  </DatePicker>
+                </div>
+              </div>
+              <div className="flex gap-2 mt-3 px-2 pb-2 justify-end">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-sm font-normal"
+                  onClick={() => {
+                    setShowCustomView(false);
+                    setDropdownOpen(false);
+                  }}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  size="sm"
+                  className="h-8 text-sm font-normal"
+                  onClick={() => {
+                    setCustomStartDate(tempStartDate);
+                    setCustomEndDate(tempEndDate);
+                    setTimeRange("custom");
+                    setShowCustomView(false);
+                    setDropdownOpen(false);
+                  }}
+                >
+                  Appliquer
+                </Button>
               </div>
             </div>
-            <div className="flex gap-2 mt-3 px-2 pb-2 justify-end">
-              <Button variant="ghost" size="sm" className="h-8 text-sm font-normal" onClick={() => { setShowCustomView(false); setDropdownOpen(false); }}>Annuler</Button>
-              <Button size="sm" className="h-8 text-sm font-normal" onClick={() => { setCustomStartDate(tempStartDate); setCustomEndDate(tempEndDate); setTimeRange("custom"); setShowCustomView(false); setDropdownOpen(false); }}>Appliquer</Button>
-            </div>
-          </div>
           </I18nProvider>
         )}
       </DropdownMenuContent>
@@ -399,7 +573,11 @@ export function ChartAreaInteractive({
 
   if (isLoading) {
     return (
-      <Card className={`@container/card ${className}`} style={{ width }} {...props}>
+      <Card
+        className={`@container/card ${className}`}
+        style={{ width }}
+        {...props}
+      >
         <CardHeader>
           <div className="flex items-center justify-between">
             <Skeleton className="h-5 w-16" />
@@ -408,7 +586,10 @@ export function ChartAreaInteractive({
           <Skeleton className="h-7 w-28" />
         </CardHeader>
         <CardContent className="px-2 pt-4 pb-2 sm:px-6 sm:pt-6 sm:pb-4">
-          <div className="flex items-end justify-between gap-1 md:gap-2" style={{ height }}>
+          <div
+            className="flex items-end justify-between gap-1 md:gap-2"
+            style={{ height }}
+          >
             {AREA_SKELETON_HEIGHTS.map((h, i) => (
               <Skeleton
                 key={i}
@@ -428,20 +609,20 @@ export function ChartAreaInteractive({
       style={{ width }}
       {...props}
     >
-      <CardHeader>
-        <CardTitle className="text-base font-normal">{title}</CardTitle>
-        <CardDescription>
-          <span className="hidden @[540px]/card:block text-2xl font-medium text-foreground">
-            {resolvedDescription}
-          </span>
-          <span className="@[540px]/card:hidden text-2xl font-medium text-foreground">{computeDescription ? resolvedDescription : shortDescription}</span>
-        </CardDescription>
-        {showTimeRange && (
-          <CardAction>
-            {timeRangeDropdown}
-          </CardAction>
-        )}
-      </CardHeader>
+      {!hideHeader && (
+        <CardHeader>
+          <CardTitle className="text-base font-normal">{title}</CardTitle>
+          <CardDescription>
+            <span className="hidden @[540px]/card:block text-2xl font-medium text-foreground">
+              {resolvedDescription}
+            </span>
+            <span className="@[540px]/card:hidden text-2xl font-medium text-foreground">
+              {computeDescription ? resolvedDescription : shortDescription}
+            </span>
+          </CardDescription>
+          {showTimeRange && <CardAction>{timeRangeDropdown}</CardAction>}
+        </CardHeader>
+      )}
       <CardContent className="px-2 pt-4 pb-2 sm:px-6 sm:pt-6 sm:pb-4 overflow-visible">
         <ChartContainer
           key={chartMountKey}

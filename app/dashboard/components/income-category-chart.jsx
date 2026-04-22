@@ -2,7 +2,7 @@
 
 import { ChevronRight, CalendarIcon, ArrowLeft } from "lucide-react";
 import { Label, Pie, PieChart } from "recharts";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@apollo/client";
 import { GET_CATEGORY_AGGREGATION } from "@/src/graphql/queries/dashboardAggregation";
 import { useIsMobile } from "@/src/hooks/use-mobile";
@@ -48,10 +48,19 @@ const baseChartConfig = {
   },
 };
 
-export function IncomeCategoryChart({ workspaceId, accountId, className }) {
+export function IncomeCategoryChart({
+  workspaceId,
+  accountId,
+  className,
+  externalTimeRange,
+  hideHeader,
+}) {
   const isMobile = useIsMobile();
   const { getIncomeColor } = useChartColors();
-  const [timeRange, setTimeRange] = useState("cumul-year"); // 30d, 90d, 365d, custom, cumul-year
+  const [timeRange, setTimeRange] = useState(externalTimeRange || "cumul-year"); // 30d, 90d, 365d, custom, cumul-year
+  useEffect(() => {
+    if (externalTimeRange) setTimeRange(externalTimeRange);
+  }, [externalTimeRange]);
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
   const [showCustomView, setShowCustomView] = useState(false);
@@ -417,17 +426,19 @@ export function IncomeCategoryChart({ workspaceId, accountId, className }) {
   if (chartData.length === 0) {
     return (
       <Card className={`@container/card flex flex-col ${className || ""}`}>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <div className="flex flex-col gap-1">
-            <CardTitle className="font-normal text-base">
-              Entrées par catégorie
-            </CardTitle>
-            <CardDescription className="font-normal text-sm">
-              Aucune facture à afficher
-            </CardDescription>
-          </div>
-          {timeRangeDropdown}
-        </CardHeader>
+        {!hideHeader && (
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+            <div className="flex flex-col gap-1">
+              <CardTitle className="font-normal text-base">
+                Entrées par catégorie
+              </CardTitle>
+              <CardDescription className="font-normal text-sm">
+                Aucune facture à afficher
+              </CardDescription>
+            </div>
+            {timeRangeDropdown}
+          </CardHeader>
+        )}
         <CardContent className="flex-1 pb-0 flex items-center justify-center min-h-[250px]">
           <p className="text-sm text-muted-foreground">
             Aucune facture payée pour cette période
@@ -439,17 +450,19 @@ export function IncomeCategoryChart({ workspaceId, accountId, className }) {
 
   return (
     <Card className={`@container/card flex flex-col ${className || ""}`}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-        <div className="flex flex-col gap-1">
-          <CardTitle className="font-normal text-base">
-            Entrées par catégorie
-          </CardTitle>
-          <CardDescription className="font-normal text-sm">
-            Total : {formatCurrency(totalAmount)}
-          </CardDescription>
-        </div>
-        {timeRangeDropdown}
-      </CardHeader>
+      {!hideHeader && (
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <div className="flex flex-col gap-1">
+            <CardTitle className="font-normal text-base">
+              Entrées par catégorie
+            </CardTitle>
+            <CardDescription className="font-normal text-sm">
+              Total : {formatCurrency(totalAmount)}
+            </CardDescription>
+          </div>
+          {timeRangeDropdown}
+        </CardHeader>
+      )}
       <CardContent className="flex-1 pb-2 sm:pb-4">
         <div className="flex items-center gap-8">
           {/* Graphique à gauche */}
@@ -489,7 +502,7 @@ export function IncomeCategoryChart({ workspaceId, accountId, className }) {
                   data={chartData}
                   dataKey="amount"
                   nameKey="label"
-                  innerRadius={90}
+                  innerRadius={100}
                   outerRadius={125}
                   paddingAngle={2}
                   strokeWidth={0}

@@ -409,7 +409,7 @@ function DashboardContent({ children }) {
       )}
 
       {/* Panel de debug session — dev uniquement */}
-      {process.env.NODE_ENV === "development" && <SessionDebugPanel />}
+      {/* {process.env.NODE_ENV === "development" && <SessionDebugPanel />} */}
     </SidebarProvider>
   );
 }
