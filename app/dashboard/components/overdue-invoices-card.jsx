@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -10,26 +11,44 @@ import {
   CardTitle,
 } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
-import { ExternalLink } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { ExternalLink } from "lucide-react";
 
 const formatCurrency = (amount) =>
   new Intl.NumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
-  }).format(amount);
+  }).format(amount || 0);
 
-export function InvoicesToCollectCard({ className, invoices = [], isLoading }) {
+function parseDate(value) {
+  if (!value) return null;
+  const num = Number(value);
+  if (!isNaN(num) && num > 0) {
+    const d = new Date(num < 1e12 ? num * 1000 : num);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+export function OverdueInvoicesCard({ className, invoices = [], isLoading }) {
   const router = useRouter();
 
-  const { total, invoiceCount } = useMemo(() => {
-    const pendingInvoices = invoices.filter((inv) => inv.status === "PENDING");
-    const total = pendingInvoices.reduce(
-      (sum, inv) => sum + (inv.finalTotalTTC || 0),
-      0,
-    );
-    return { total, invoiceCount: pendingInvoices.length };
+  const { total, count } = useMemo(() => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    let count = 0;
+    let total = 0;
+    for (const inv of invoices || []) {
+      if (inv.status !== "PENDING") continue;
+      const due = parseDate(inv.dueDate);
+      if (!due || due >= now) continue;
+      count += 1;
+      total += inv.finalTotalTTC || 0;
+    }
+
+    return { total, count };
   }, [invoices]);
 
   if (isLoading) {
@@ -37,7 +56,7 @@ export function InvoicesToCollectCard({ className, invoices = [], isLoading }) {
       <Card className={`${className || ""} flex flex-col py-5 gap-3`}>
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-normal">
-            Factures à encaisser
+            Factures clients en retard
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col flex-1 justify-center gap-1">
@@ -55,15 +74,17 @@ export function InvoicesToCollectCard({ className, invoices = [], isLoading }) {
     <Card className={`${className || ""} flex flex-col py-5 gap-3`}>
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-normal">
-          Factures à encaisser
+          Factures clients en retard
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col flex-1 justify-center gap-1">
-        <span className="text-2xl font-medium text-foreground">
+        <span
+          className={`text-2xl font-medium ${count > 0 ? "text-red-500" : "text-foreground"}`}
+        >
           {formatCurrency(total)}
         </span>
         <span className="text-sm text-muted-foreground">
-          {invoiceCount} facture{invoiceCount > 1 ? "s" : ""}
+          {count} facture{count > 1 ? "s" : ""}
         </span>
       </CardContent>
       <CardFooter className="justify-end pt-0 pr-3">
@@ -72,7 +93,7 @@ export function InvoicesToCollectCard({ className, invoices = [], isLoading }) {
           size="sm"
           className="text-xs text-muted-foreground hover:text-foreground"
           onClick={() =>
-            router.push("/dashboard/outils/factures?status=pending")
+            router.push("/dashboard/outils/factures?status=overdue")
           }
         >
           Voir tout

@@ -2,15 +2,17 @@
 
 import { useState, useEffect } from "react";
 import {
-  Download,
   FileSpreadsheet,
   FileText,
   FileCheck,
   Building,
   Building2,
-  ArrowRightFromLine,
   Lock,
 } from "lucide-react";
+import {
+  ImportIcon as ArrowRightFromLine,
+  ExportIcon as Download,
+} from "@/src/components/icons";
 import { Button } from "@/src/components/ui/button";
 import {
   DropdownMenu,
@@ -75,9 +77,7 @@ export default function QuoteExportButton({
   const hasSelection = selectedRows && selectedRows.length > 0;
 
   const quotesToExport = hasSelection
-    ? selectedRows
-        .map((row) => row.original || row)
-        .filter(Boolean)
+    ? selectedRows.map((row) => row.original || row).filter(Boolean)
     : quotes || [];
 
   const handleFormatSelect = (format) => {
@@ -133,11 +133,11 @@ export default function QuoteExportButton({
         <DropdownMenuTrigger asChild>
           {iconOnly ? (
             <Button variant="secondary" size="icon">
-              <ArrowRightFromLine className="h-4 w-4" strokeWidth={1.5} />
+              <ArrowRightFromLine className="h-3.5 w-3.5" />
             </Button>
           ) : (
             <Button variant="outline" className="cursor-pointer">
-              <ArrowRightFromLine size={14} strokeWidth={1.5} />
+              <ArrowRightFromLine className="w-3.5 h-3.5" />
               Exporter
               {hasSelection && (
                 <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-white dark:text-black">
@@ -276,9 +276,7 @@ export default function QuoteExportButton({
           {hasSelection && quotesToExport.length > 0 && (
             <div className="py-4">
               <div className="rounded-lg border bg-muted/50 p-4">
-                <p className="text-sm font-medium mb-2">
-                  Devis sélectionnés :
-                </p>
+                <p className="text-sm font-medium mb-2">Devis sélectionnés :</p>
                 <ul className="text-sm text-muted-foreground space-y-1">
                   {quotesToExport.slice(0, 5).map(
                     (q) =>
@@ -287,7 +285,7 @@ export default function QuoteExportButton({
                           • Devis {q.prefix || ""}
                           {q.number} - {q.client?.name || "Client inconnu"}
                         </li>
-                      )
+                      ),
                   )}
                   {quotesToExport.length > 5 && (
                     <li className="text-xs italic">
@@ -304,7 +302,7 @@ export default function QuoteExportButton({
               Annuler
             </Button>
             <Button onClick={handleExport}>
-              <Download className="mr-2 h-4 w-4" />
+              <Download className="mr-2 w-3.5 h-3.5" />
               Exporter
             </Button>
           </DialogFooter>

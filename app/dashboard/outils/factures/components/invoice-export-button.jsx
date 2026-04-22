@@ -2,15 +2,17 @@
 
 import { useState, useEffect } from "react";
 import {
-  Download,
   FileText,
   FileSpreadsheet,
   Building,
   Building2,
-  ArrowRightFromLine,
   Info,
   Lock,
 } from "lucide-react";
+import {
+  ImportIcon as ArrowRightFromLine,
+  ExportIcon as Download,
+} from "@/src/components/icons";
 import { Button } from "@/src/components/ui/button";
 import {
   DropdownMenu,
@@ -177,11 +179,11 @@ export default function InvoiceExportButton({
         <DropdownMenuTrigger asChild>
           {iconOnly ? (
             <Button variant="secondary" size="icon">
-              <ArrowRightFromLine className="h-4 w-4" strokeWidth={1.5} />
+              <ArrowRightFromLine className="h-3.5 w-3.5" />
             </Button>
           ) : (
             <Button variant="outline" className="cursor-pointer">
-              <ArrowRightFromLine size={14} strokeWidth={1.5} />
+              <ArrowRightFromLine className="w-3.5 h-3.5" />
               Exporter
               {hasSelection && (
                 <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-white dark:text-black">
@@ -194,10 +196,7 @@ export default function InvoiceExportButton({
         <DropdownMenuContent align="end" className="w-[220px]">
           <DropdownMenuLabel>Formats standards</DropdownMenuLabel>
           <DropdownMenuItem onClick={() => handleFormatSelect("csv")}>
-            <FileText
-              className="mr-2 h-4 w-4"
-              style={{ color: "#22C55E" }}
-            />
+            <FileText className="mr-2 h-4 w-4" style={{ color: "#22C55E" }} />
             CSV
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleFormatSelect("excel")}>
@@ -378,7 +377,7 @@ export default function InvoiceExportButton({
                   onClick={handleExport}
                   className="gap-2"
                 >
-                  <Download className="size-3.5" />
+                  <Download className="w-3.5 h-3.5" />
                   Exporter
                 </Button>
               </div>

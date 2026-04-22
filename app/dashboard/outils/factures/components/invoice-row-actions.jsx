@@ -17,7 +17,9 @@ import {
   Mail,
   Import,
   BookTemplate,
+  UserPlus,
 } from "lucide-react";
+import AssignImportedInvoicesDialog from "./assign-imported-invoices-dialog";
 import { ButtonGroup } from "@/src/components/ui/button-group";
 import {
   Tooltip,
@@ -61,6 +63,7 @@ export default function InvoiceRowActions({
   const [isMobileFullscreenOpen, setIsMobileFullscreenOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [canCreateCreditNote, setCanCreateCreditNote] = useState(false);
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const router = useRouter();
   const invoice = row.original;
   const { canCreate } = usePermissions();
@@ -202,6 +205,12 @@ export default function InvoiceRowActions({
               <Eye className="mr-2 h-4 w-4" />
               Voir
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setIsAssignDialogOpen(true)}>
+              <UserPlus className="mr-2 h-4 w-4" />
+              {invoice.clientId
+                ? "Réassigner à un client"
+                : "Assigner à un client"}
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={handleDeleteImported}
@@ -217,6 +226,15 @@ export default function InvoiceRowActions({
             </div>
           </DropdownMenuContent>
         </DropdownMenu>
+        <AssignImportedInvoicesDialog
+          open={isAssignDialogOpen}
+          onOpenChange={setIsAssignDialogOpen}
+          invoiceIds={[invoice.id]}
+          onAssigned={() => {
+            if (onRefetchImported) onRefetchImported();
+            if (onRefetch) onRefetch();
+          }}
+        />
       </div>
     );
   }
@@ -231,123 +249,132 @@ export default function InvoiceRowActions({
           className="hidden"
           aria-hidden="true"
         />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 p-0"
-              disabled={isLoading}
-            >
-              <span className="sr-only">Ouvrir le menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleView}>
-              <Eye className="mr-2 h-4 w-4" />
-              Voir
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={(e) => {
-                e.stopPropagation();
-                onSaveAsTemplate?.(invoice);
-              }}
-            >
-              <BookTemplate className="mr-2 h-4 w-4" />
-              Sauv. modèle
-            </DropdownMenuItem>
-            {invoice.status === INVOICE_STATUS.DRAFT && (
-              <DropdownMenuItem onClick={handleEdit}>
-                <Pencil className="mr-2 h-4 w-4" />
-                Éditer
+        <ButtonGroup>
+          {/* Icône d'envoi par email - visible pour les factures non brouillon */}
+          {invoice.status !== "DRAFT" && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 p-0 cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSendEmail?.(invoice);
+                    }}
+                  >
+                    <Mail className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Envoyer par email</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 p-0"
+                disabled={isLoading}
+              >
+                <span className="sr-only">Ouvrir le menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleView}>
+                <Eye className="mr-2 h-4 w-4" />
+                Voir
               </DropdownMenuItem>
-            )}
-
-            {invoice.status === INVOICE_STATUS.PENDING && (
-              <>
-                <DropdownMenuItem onClick={handleMarkAsPaid}>
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Marquer comme payée
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSaveAsTemplate?.(invoice);
+                }}
+              >
+                <BookTemplate className="mr-2 h-4 w-4" />
+                Sauv. modèle
+              </DropdownMenuItem>
+              {invoice.status === INVOICE_STATUS.DRAFT && (
+                <DropdownMenuItem onClick={handleEdit}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Éditer
                 </DropdownMenuItem>
-                {canCreateCreditNote && (
+              )}
+
+              {invoice.status === INVOICE_STATUS.PENDING && (
+                <>
+                  <DropdownMenuItem onClick={handleMarkAsPaid}>
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Marquer comme payée
+                  </DropdownMenuItem>
+                  {canCreateCreditNote && (
+                    <DropdownMenuItem onClick={handleCreateCreditNote}>
+                      <Receipt className="mr-2 h-4 w-4" />
+                      Créer un avoir
+                    </DropdownMenuItem>
+                  )}
+                </>
+              )}
+
+              {invoice.status === INVOICE_STATUS.COMPLETED &&
+                canCreateCreditNote && (
                   <DropdownMenuItem onClick={handleCreateCreditNote}>
                     <Receipt className="mr-2 h-4 w-4" />
                     Créer un avoir
                   </DropdownMenuItem>
                 )}
-              </>
-            )}
 
-            {invoice.status === INVOICE_STATUS.COMPLETED &&
-              canCreateCreditNote && (
-                <DropdownMenuItem onClick={handleCreateCreditNote}>
-                  <Receipt className="mr-2 h-4 w-4" />
-                  Créer un avoir
-                </DropdownMenuItem>
+              {invoice.status === INVOICE_STATUS.CANCELED &&
+                canCreateCreditNote && (
+                  <DropdownMenuItem onClick={handleCreateCreditNote}>
+                    <Receipt className="mr-2 h-4 w-4" />
+                    Créer un avoir
+                  </DropdownMenuItem>
+                )}
+
+              {/* Annuler - pour les factures en attente */}
+              {invoice.status === INVOICE_STATUS.PENDING && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleCancel}
+                    className="text-red-600 focus:text-red-600"
+                  >
+                    <XCircle className="mr-2 h-4 w-4 text-red-600" />
+                    Annuler
+                  </DropdownMenuItem>
+                </>
               )}
 
-            {invoice.status === INVOICE_STATUS.CANCELED &&
-              canCreateCreditNote && (
-                <DropdownMenuItem onClick={handleCreateCreditNote}>
-                  <Receipt className="mr-2 h-4 w-4" />
-                  Créer un avoir
-                </DropdownMenuItem>
+              {/* Créer la facture et Supprimer - pour les brouillons */}
+              {invoice.status === INVOICE_STATUS.DRAFT && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleCreateInvoice}
+                    disabled={isLoading}
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    Créer la facture
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleDelete}
+                    className="text-red-600 focus:text-red-600"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4 text-red-600" />
+                    Supprimer
+                  </DropdownMenuItem>
+                </>
               )}
-
-            {/* Envoyer par email - visible pour les factures non brouillon */}
-            {invoice.status !== "DRAFT" && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSendEmail?.(invoice);
-                  }}
-                >
-                  <Mail className="mr-2 h-4 w-4" />
-                  Envoyer par email
-                </DropdownMenuItem>
-              </>
-            )}
-
-            {/* Annuler - pour les factures en attente */}
-            {invoice.status === INVOICE_STATUS.PENDING && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={handleCancel}
-                  className="text-red-600 focus:text-red-600"
-                >
-                  <XCircle className="mr-2 h-4 w-4 text-red-600" />
-                  Annuler
-                </DropdownMenuItem>
-              </>
-            )}
-
-            {/* Créer la facture et Supprimer - pour les brouillons */}
-            {invoice.status === INVOICE_STATUS.DRAFT && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={handleCreateInvoice}
-                  disabled={isLoading}
-                >
-                  <FileText className="mr-2 h-4 w-4" />
-                  Créer la facture
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={handleDelete}
-                  className="text-red-600 focus:text-red-600"
-                >
-                  <Trash2 className="mr-2 h-4 w-4 text-red-600" />
-                  Supprimer
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </ButtonGroup>
       </div>
 
       {/* Sidebar pour desktop - DÉPLACÉE AU NIVEAU DU TABLEAU pour éviter les re-renders */}

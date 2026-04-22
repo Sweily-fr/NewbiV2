@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { Button } from "@/src/components/ui/button";
-import { Plus, Upload, Settings2 } from "lucide-react";
+import { Plus } from "lucide-react";
+import {
+  ImportIcon as Upload,
+  Setting4Icon as Settings2,
+} from "@/src/components/icons";
 import TableProduct from "./components/table-product";
 import ProductModal from "./components/product-modal";
 import ProductImportDialog from "./components/product-import-dialog";
@@ -39,7 +43,7 @@ function CataloguesContent() {
               onClick={() => setCustomFieldsOpen(true)}
               className="cursor-pointer"
             >
-              <Settings2 size={14} strokeWidth={1.5} />
+              <Settings2 className="w-3.5 h-3.5" />
               Champs
             </Button>
             <Button
@@ -47,7 +51,7 @@ function CataloguesContent() {
               onClick={() => setImportDialogOpen(true)}
               className="cursor-pointer"
             >
-              <Upload size={14} strokeWidth={1.5} />
+              <Upload className="w-3.5 h-3.5" />
               Importer
             </Button>
             <ProductExportButton products={allProducts} iconOnly={false} />
@@ -102,8 +106,14 @@ function CataloguesContent() {
 
       {/* Modal unique pour desktop et mobile */}
       <ProductModal open={dialogOpen} onOpenChange={setDialogOpen} />
-      <ProductImportDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} />
-      <ProductCustomFieldsManager open={customFieldsOpen} onOpenChange={setCustomFieldsOpen} />
+      <ProductImportDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+      />
+      <ProductCustomFieldsManager
+        open={customFieldsOpen}
+        onOpenChange={setCustomFieldsOpen}
+      />
     </>
   );
 }

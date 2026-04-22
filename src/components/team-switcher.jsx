@@ -5,9 +5,7 @@ import {
   ChevronsUpDown,
   Plus,
   Crown,
-  Settings,
   UserCog,
-  Users,
   Layers,
   LayersPlus,
   LayoutGrid,
@@ -18,7 +16,6 @@ import {
   Palette,
   Edit3,
   ChevronRight,
-  UserPlus,
   Trash2,
   Archive,
   Building2,
@@ -98,6 +95,11 @@ import {
 import Link from "next/link";
 import { InviteMemberModal } from "./invite-member-modal";
 import { SettingsModal } from "./settings-modal";
+import {
+  PeopleIcon as Users,
+  SettingIcon as Settings,
+  ProfileAddIcon as UserPlus,
+} from "@/src/components/icons";
 
 import { RenameOrganizationModal } from "./rename-organization-modal";
 import { apolloClient } from "@/src/lib/apolloClient";
@@ -359,20 +361,24 @@ export function TeamSwitcher() {
                 <img
                   src="/newbi.svg"
                   alt="NewBi Logo"
-                  className={isCollapsed && !isMobile ? "size-8" : "size-7"}
+                  className={
+                    isCollapsed && !isMobile
+                      ? "size-8 rounded-md"
+                      : "size-7 rounded-md"
+                  }
                 />
                 {(!isCollapsed || isMobile) && (
                   <>
                     <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-medium text-sm">
+                      <span className="truncate font-medium text-sm text-[#212121]">
                         {currentOrganization.name}
                       </span>
-                      <span className="truncate text-xs">
-                        {sortedOrganizations.length} organisation
+                      <span className="truncate text-xs font-normal">
+                        {sortedOrganizations.length} espace
                         {sortedOrganizations.length > 1 ? "s" : ""}
                       </span>
                     </div>
-                    <ChevronsUpDown className="ml-auto" />
+                    <ChevronsUpDown className="ml-auto text-sidebar-foreground" />
                   </>
                 )}
               </SidebarMenuButton>
@@ -388,7 +394,7 @@ export function TeamSwitcher() {
                 Organisation active
               </DropdownMenuLabel>
               <DropdownMenuItem className="gap-2 p-2 rounded-sm">
-                <Boxes className="size-4 text-muted-foreground" />
+                <Boxes className="size-4 text-sidebar-foreground" />
                 <span className="text-[13px] font-normal">
                   {currentOrganization.name}
                 </span>
@@ -401,7 +407,7 @@ export function TeamSwitcher() {
                 }}
                 className="gap-2 p-2 rounded-sm cursor-pointer"
               >
-                <UserCog className="size-4 text-muted-foreground" />
+                <UserCog className="size-4 text-sidebar-foreground" />
                 <span className="text-[13px] font-normal">
                   Paramètres du compte
                 </span>
@@ -413,7 +419,7 @@ export function TeamSwitcher() {
                 }}
                 className="gap-2 p-2 rounded-sm cursor-pointer"
               >
-                <Settings className="size-4 text-muted-foreground" />
+                <Settings className="size-4 text-sidebar-foreground" />
                 <span className="text-[13px] font-normal">
                   Paramètres de l'espace
                 </span>
@@ -423,7 +429,7 @@ export function TeamSwitcher() {
                 onClick={() => setInviteDialogOpen(true)}
                 className="gap-2 p-2 rounded-sm cursor-pointer"
               >
-                <UserPlus className="size-4 text-muted-foreground" />
+                <UserPlus className="size-4 text-sidebar-foreground" />
                 <span className="text-[13px] font-normal">
                   Inviter des membres
                 </span>
@@ -435,7 +441,7 @@ export function TeamSwitcher() {
                 }}
                 className="gap-2 p-2 rounded-sm cursor-pointer"
               >
-                <Users className="size-4 text-muted-foreground" />
+                <Users className="size-4 text-sidebar-foreground" />
                 <span className="text-[13px] font-normal">Collaborateurs</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-border" />
@@ -443,7 +449,7 @@ export function TeamSwitcher() {
                 onClick={() => router.push("/create-workspace")}
                 className="gap-2 p-2 rounded-sm cursor-pointer"
               >
-                <LayersPlus className="size-4 text-muted-foreground" />
+                <LayersPlus className="size-4 text-sidebar-foreground" />
                 <span className="text-[13px] font-normal">Nouveau espace</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-border" />

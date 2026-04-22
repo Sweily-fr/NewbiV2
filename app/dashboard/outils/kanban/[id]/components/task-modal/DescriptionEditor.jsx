@@ -1,4 +1,11 @@
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import {
   Trash2,
   Bold,
@@ -36,13 +43,16 @@ const descriptionToolbarItems = [
   { icon: Link, tooltip: "Lien", command: "createLink" },
 ];
 
-export function DescriptionEditor({
-  value,
-  onChange,
-  onFocus: onFocusProp,
-  onBlur: onBlurProp,
-  placeholder = "Ajouter une description...",
-}) {
+export const DescriptionEditor = forwardRef(function DescriptionEditor(
+  {
+    value,
+    onChange,
+    onFocus: onFocusProp,
+    onBlur: onBlurProp,
+    placeholder = "Ajouter une description...",
+  },
+  ref,
+) {
   const editorRef = useRef(null);
   const [isEmpty, setIsEmpty] = useState(!value);
   const lastSavedRef = useRef(null);
@@ -109,12 +119,20 @@ export function DescriptionEditor({
     return text.trim().length === 0 ? "" : html;
   }, []);
 
-  // Only update visual state (placeholder) on each keystroke — no onChange
+  // Propager à chaque frappe pour que le parent ait toujours la dernière
+  // valeur (évite la perte de données si le modal se ferme sans blur).
+  // On met à jour lastSavedRef AVANT onChange pour empêcher l'effect [value]
+  // de réinjecter innerHTML et casser la position du curseur.
   const handleInput = useCallback(() => {
     if (!editorRef.current) return;
     const text = editorRef.current.textContent || "";
     setIsEmpty(text.trim().length === 0);
-  }, []);
+    const newValue = getCurrentValue();
+    if (newValue !== lastSavedRef.current) {
+      lastSavedRef.current = newValue;
+      onChange(newValue);
+    }
+  }, [getCurrentValue, onChange]);
 
   const handleFocus = useCallback(() => {
     onFocusProp?.();
@@ -129,6 +147,22 @@ export function DescriptionEditor({
     }
     onBlurProp?.();
   }, [getCurrentValue, onChange, onBlurProp]);
+
+  // Expose a commit() method so the parent can force-propagate the current
+  // editor content (ex: fermeture du modal avec Escape sans blur préalable).
+  useImperativeHandle(
+    ref,
+    () => ({
+      commit: () => {
+        const newValue = getCurrentValue();
+        if (newValue !== lastSavedRef.current) {
+          lastSavedRef.current = newValue;
+          onChange(newValue);
+        }
+      },
+    }),
+    [getCurrentValue, onChange],
+  );
 
   const applyFormat = useCallback(
     (item) => {
@@ -231,4 +265,4 @@ export function DescriptionEditor({
       </div>
     </div>
   );
-}
+});

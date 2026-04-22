@@ -74,6 +74,7 @@ import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { usePurchaseOrderTable } from "../hooks/use-purchase-order-table";
 import PurchaseOrderRowActions from "./purchase-order-row-actions";
 import PurchaseOrderSidebar from "./purchase-order-sidebar";
+import PurchaseOrderFilters from "./purchase-order-filters";
 import { SendDocumentModal } from "../../factures/components/send-document-modal";
 import { SavePurchaseOrderTemplateDialog } from "./SavePurchaseOrderTemplateDialog";
 import { ImportPurchaseOrderModal } from "./import-purchase-order-modal";
@@ -115,6 +116,10 @@ export default function PurchaseOrderTable({
     setGlobalFilter,
     statusFilter,
     setStatusFilter,
+    clientFilter,
+    setClientFilter,
+    dateFilter,
+    setDateFilter,
     selectedRows,
     handleDeleteSelected,
     isDeleting,
@@ -208,133 +213,176 @@ export default function PurchaseOrderTable({
   }
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
-      {/* Filters - Desktop */}
-      <div className="flex items-center justify-between gap-3 hidden md:flex px-4 sm:px-6 py-4 flex-shrink-0">
-        {/* Search + Filtres à gauche */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 h-8 w-full sm:w-[400px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
-            <Search
-              size={16}
-              className="text-muted-foreground/80 shrink-0"
-              aria-hidden="true"
+    <div className="flex flex-col flex-1">
+      {/* Sticky zone: recherche + onglets + header tableau */}
+      <div className="hidden md:block sticky top-0 z-10 bg-background">
+        {/* Filters - Desktop */}
+        <div className="flex items-center justify-between gap-3 md:flex px-4 sm:px-6 py-4">
+          {/* Search + Filtres à gauche */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 h-8 w-full sm:w-[400px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
+              <Search
+                size={16}
+                className="text-muted-foreground/80 shrink-0"
+                aria-hidden="true"
+              />
+              <Input
+                variant="ghost"
+                ref={inputRef}
+                value={globalFilter ?? ""}
+                onChange={(event) => setGlobalFilter(event.target.value)}
+                placeholder="Recherchez par numéro, client ou montant..."
+              />
+              {Boolean(globalFilter) && (
+                <button
+                  onClick={() => {
+                    setGlobalFilter("");
+                    inputRef.current?.focus();
+                  }}
+                  className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex items-center justify-center rounded focus-visible:ring-[3px] focus-visible:outline-none cursor-pointer"
+                  aria-label="Effacer la recherche"
+                >
+                  <CircleXIcon size={16} strokeWidth={2} aria-hidden="true" />
+                </button>
+              )}
+            </div>
+
+            <PurchaseOrderFilters
+              statusFilter={statusFilter}
+              setStatusFilter={setStatusFilter}
+              clientFilter={clientFilter}
+              setClientFilter={setClientFilter}
+              dateFilter={dateFilter}
+              setDateFilter={setDateFilter}
+              purchaseOrders={purchaseOrders || []}
+              table={table}
             />
-            <Input
-              variant="ghost"
-              ref={inputRef}
-              value={globalFilter ?? ""}
-              onChange={(event) => setGlobalFilter(event.target.value)}
-              placeholder="Recherchez par numéro, client ou montant..."
-            />
-            {Boolean(globalFilter) && (
-              <button
-                onClick={() => {
-                  setGlobalFilter("");
-                  inputRef.current?.focus();
-                }}
-                className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex items-center justify-center rounded focus-visible:ring-[3px] focus-visible:outline-none cursor-pointer"
-                aria-label="Effacer la recherche"
-              >
-                <CircleXIcon size={16} strokeWidth={2} aria-hidden="true" />
-              </button>
+          </div>
+
+          {/* Actions à droite */}
+          <div className="flex items-center gap-2">
+            {selectedRows.length > 0 && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    disabled={isDeleting}
+                    data-mobile-delete-trigger-po
+                  >
+                    <TrashIcon className="mr-2 h-4 w-4" />
+                    Supprimer ({selectedRows.length})
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      Confirmer la suppression
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
+                      bon(s) de commande sélectionné(s) ? Cette action ne peut
+                      pas être annulée.
+                      <br />
+                      <br />
+                      <strong>Note :</strong> Seuls les brouillons peuvent être
+                      supprimés.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteSelected}
+                      className="bg-destructive text-white hover:bg-destructive/90"
+                    >
+                      Supprimer
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
           </div>
         </div>
 
-        {/* Actions à droite */}
-        <div className="flex items-center gap-2">
-          {selectedRows.length > 0 && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="destructive"
-                  disabled={isDeleting}
-                  data-mobile-delete-trigger-po
-                >
-                  <TrashIcon className="mr-2 h-4 w-4" />
-                  Supprimer ({selectedRows.length})
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
-                    bon(s) de commande sélectionné(s) ? Cette action ne peut pas
-                    être annulée.
-                    <br />
-                    <br />
-                    <strong>Note :</strong> Seuls les brouillons peuvent être
-                    supprimés.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDeleteSelected}
-                    className="bg-destructive text-white hover:bg-destructive/90"
-                  >
-                    Supprimer
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
+        {/* Tabs de filtre rapide - Desktop */}
+        <div className="border-b border-gray-200 dark:border-gray-800">
+          <Tabs value={activeTab} onValueChange={handleTabChange}>
+            <TabsList className="h-auto rounded-none bg-transparent p-0 pb-2 w-full justify-start px-4 sm:px-6">
+              <TabsTrigger
+                value="all"
+                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              >
+                <span>Tous</span>
+                <span className="text-xs text-muted-foreground">
+                  {poCounts.all}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="draft"
+                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              >
+                <span>Brouillons</span>
+                <span className="text-xs text-muted-foreground">
+                  {poCounts.draft}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="confirmed"
+                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              >
+                <span>Confirmés</span>
+                <span className="text-xs text-muted-foreground">
+                  {poCounts.confirmed}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="inProgress"
+                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              >
+                <span>En cours</span>
+                <span className="text-xs text-muted-foreground">
+                  {poCounts.inProgress}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="delivered"
+                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              >
+                <span>Livrés</span>
+                <span className="text-xs text-muted-foreground">
+                  {poCounts.delivered}
+                </span>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
+        {/* Table header - sticky */}
+        <div className="border-b border-gray-200 dark:border-gray-800">
+          <table className="w-full table-fixed">
+            <thead>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header, index, arr) => (
+                    <th
+                      key={header.id}
+                      style={{ width: header.getSize() }}
+                      className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+          </table>
         </div>
       </div>
-
-      {/* Tabs de filtre rapide - Desktop */}
-      <div className="hidden md:block flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
-        <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="h-auto rounded-none bg-transparent p-0 pb-2 w-full justify-start px-4 sm:px-6">
-            <TabsTrigger
-              value="all"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
-            >
-              <span>Tous</span>
-              <span className="text-xs text-muted-foreground">
-                {poCounts.all}
-              </span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="draft"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
-            >
-              <span>Brouillons</span>
-              <span className="text-xs text-muted-foreground">
-                {poCounts.draft}
-              </span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="confirmed"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
-            >
-              <span>Confirmés</span>
-              <span className="text-xs text-muted-foreground">
-                {poCounts.confirmed}
-              </span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="inProgress"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
-            >
-              <span>En cours</span>
-              <span className="text-xs text-muted-foreground">
-                {poCounts.inProgress}
-              </span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="delivered"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
-            >
-              <span>Livrés</span>
-              <span className="text-xs text-muted-foreground">
-                {poCounts.delivered}
-              </span>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
+      {/* Fin sticky zone */}
 
       {/* Mobile Toolbar */}
       <div className="md:hidden px-4 py-3">
@@ -421,117 +469,91 @@ export default function PurchaseOrderTable({
         </div>
       </div>
 
-      {/* Table - Desktop */}
-      <div className="hidden md:flex md:flex-col flex-1 min-h-0 overflow-hidden">
-        <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
-          <table className="w-full table-fixed">
-            <thead>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header, index, arr) => (
-                    <th
-                      key={header.id}
-                      style={{ width: header.getSize() }}
-                      className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-          </table>
-        </div>
-        <div className="flex-1 overflow-auto">
-          <table className="w-full table-fixed">
-            <tbody>
-              {loading ? (
-                Array.from({ length: 8 }).map((_, i) => (
-                  <tr key={`skeleton-${i}`} className="border-b">
-                    <td className="p-2 pl-4 sm:pl-6">
-                      <div className="h-4 w-4 rounded bg-muted animate-pulse" />
-                    </td>
-                    <td className="p-2">
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full bg-muted animate-pulse flex-shrink-0" />
-                        <div className="h-4 w-[140px] rounded bg-muted animate-pulse" />
-                      </div>
-                    </td>
-                    <td className="p-2">
-                      <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
-                    </td>
-                    <td className="p-2">
-                      <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
-                    </td>
-                    <td className="p-2">
-                      <div className="h-5 w-[70px] rounded-full bg-muted animate-pulse" />
-                    </td>
-                    <td className="p-2">
-                      <div className="h-4 w-[80px] rounded bg-muted animate-pulse" />
-                    </td>
-                    <td className="p-2 pr-4 sm:pr-6">
-                      <div className="h-7 w-7 rounded bg-muted animate-pulse" />
-                    </td>
-                  </tr>
-                ))
-              ) : table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <tr
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                    className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
-                    onClick={(e) => {
-                      // Ignorer les clics provenant de portals React (modals, dropdowns)
-                      if (!e.currentTarget.contains(e.target)) return;
-                      if (
-                        e.target.closest('[role="checkbox"]') ||
-                        e.target.closest("[data-actions-cell]") ||
-                        e.target.closest('button[role="combobox"]') ||
-                        e.target.closest('[role="menu"]') ||
-                        e.target.closest('[role="dialog"]')
-                      ) {
-                        return;
-                      }
-                      const actionsButton = e.currentTarget.querySelector(
-                        "[data-view-purchase-order]",
-                      );
-                      if (actionsButton) {
-                        actionsButton.click();
-                      }
-                    }}
-                  >
-                    {row.getVisibleCells().map((cell, index, arr) => (
-                      <td
-                        key={cell.id}
-                        style={{ width: cell.column.getSize() }}
-                        className={`p-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={table.getAllColumns().length}
-                    className="h-24 text-center p-2"
-                  >
-                    Aucun bon de commande trouvé.
+      {/* Table body - Desktop */}
+      <div className="hidden md:flex md:flex-col flex-1">
+        <table className="w-full table-fixed">
+          <tbody>
+            {loading ? (
+              Array.from({ length: 8 }).map((_, i) => (
+                <tr key={`skeleton-${i}`} className="border-b">
+                  <td className="p-2 pl-4 sm:pl-6">
+                    <div className="h-4 w-4 rounded bg-muted animate-pulse" />
+                  </td>
+                  <td className="p-2">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-muted animate-pulse flex-shrink-0" />
+                      <div className="h-4 w-[140px] rounded bg-muted animate-pulse" />
+                    </div>
+                  </td>
+                  <td className="p-2">
+                    <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
+                  </td>
+                  <td className="p-2">
+                    <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
+                  </td>
+                  <td className="p-2">
+                    <div className="h-5 w-[70px] rounded-full bg-muted animate-pulse" />
+                  </td>
+                  <td className="p-2">
+                    <div className="h-4 w-[80px] rounded bg-muted animate-pulse" />
+                  </td>
+                  <td className="p-2 pr-4 sm:pr-6">
+                    <div className="h-7 w-7 rounded bg-muted animate-pulse" />
                   </td>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              ))
+            ) : table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <tr
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                  className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
+                  onClick={(e) => {
+                    // Ignorer les clics provenant de portals React (modals, dropdowns)
+                    if (!e.currentTarget.contains(e.target)) return;
+                    if (
+                      e.target.closest('[role="checkbox"]') ||
+                      e.target.closest("[data-actions-cell]") ||
+                      e.target.closest('button[role="combobox"]') ||
+                      e.target.closest('[role="menu"]') ||
+                      e.target.closest('[role="dialog"]')
+                    ) {
+                      return;
+                    }
+                    const actionsButton = e.currentTarget.querySelector(
+                      "[data-view-purchase-order]",
+                    );
+                    if (actionsButton) {
+                      actionsButton.click();
+                    }
+                  }}
+                >
+                  {row.getVisibleCells().map((cell, index, arr) => (
+                    <td
+                      key={cell.id}
+                      style={{ width: cell.column.getSize() }}
+                      className={`p-2 align-middle text-[13px] ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan={table.getAllColumns().length}
+                  className="h-24 text-center p-2"
+                >
+                  Aucun bon de commande trouvé.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
       {/* Table - Mobile */}
@@ -633,7 +655,7 @@ export default function PurchaseOrderTable({
       </div>
 
       {/* Pagination - Desktop */}
-      <div className="hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-gray-200 dark:border-gray-800 bg-background flex-shrink-0">
+      <div className="hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-gray-200 dark:border-gray-800 bg-background sticky bottom-0 z-10">
         <div className="flex-1 text-xs font-normal text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} sur{" "}
           {table.getFilteredRowModel().rows.length} ligne(s) sélectionnée(s).

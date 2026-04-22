@@ -5,6 +5,7 @@ import React, {
   useEffect,
   useRef,
 } from "react";
+import { flushSync } from "react-dom";
 import {
   LoaderCircle,
   X,
@@ -112,11 +113,21 @@ export function TaskModal({
     };
   }, [board?.tasks, taskForm?.id]);
 
+  // flushPendingSaveRef : filled later (after autoSaveRef/triggerAutoSaveRef are declared)
+  // pour pouvoir flusher depuis goToPrev/goToNext qui sont mémorisés tôt.
+  const flushPendingSaveRef = useRef(null);
+
   const goToPrev = useCallback(() => {
-    if (prevTask && openEditTaskModal) openEditTaskModal(prevTask);
+    if (prevTask && openEditTaskModal) {
+      flushPendingSaveRef.current?.();
+      openEditTaskModal(prevTask);
+    }
   }, [prevTask, openEditTaskModal]);
   const goToNext = useCallback(() => {
-    if (nextTask && openEditTaskModal) openEditTaskModal(nextTask);
+    if (nextTask && openEditTaskModal) {
+      flushPendingSaveRef.current?.();
+      openEditTaskModal(nextTask);
+    }
   }, [nextTask, openEditTaskModal]);
 
   // Raccourcis clavier pour navigation
@@ -373,38 +384,88 @@ export function TaskModal({
     initialFormRef.current = current;
   }, [isOpen, isEditing, taskForm, onSubmit, localMutationRef]);
 
-  // Auto-save quand taskForm change, mais seulement si aucun champ texte n'est focus
+  // Ref qui pointe toujours vers la dernière version de triggerAutoSave.
+  // Assigné pendant le render (pas dans un effect) pour garantir que le flush
+  // utilise le taskForm le plus récent, même si le flush est appelé avant
+  // que les effects de ce render n'aient commité.
+  const triggerAutoSaveRef = useRef(triggerAutoSave);
+  triggerAutoSaveRef.current = triggerAutoSave;
+
+  // Ref sur le DescriptionEditor pour forcer la propagation de son contenu
+  // vers taskForm.description avant un flush (ex: Escape sans blur préalable).
+  const descriptionEditorRef = useRef(null);
+
+  // Flush immédiat : force-commit l'éditeur de description, annule un timer en
+  // attente, puis sauvegarde avec l'état le plus à jour.
+  const flushAutoSave = useCallback(() => {
+    if (descriptionEditorRef.current?.commit) {
+      // flushSync force React à appliquer le setTaskForm du commit()
+      // avant que triggerAutoSave ne lise taskForm via sa closure.
+      flushSync(() => {
+        descriptionEditorRef.current.commit();
+      });
+    }
+    if (autoSaveRef.current) {
+      clearTimeout(autoSaveRef.current);
+      autoSaveRef.current = null;
+    }
+    triggerAutoSaveRef.current?.();
+  }, []);
+  // Exposer flushAutoSave à goToPrev/goToNext via un ref.
+  flushPendingSaveRef.current = flushAutoSave;
+
+  // Auto-save quand taskForm change.
+  // - Champ texte focus : debounce 400ms (sauvegarde quand l'utilisateur arrête de taper)
+  // - Autres champs : sauvegarde immédiate
   useEffect(() => {
     if (!isOpen || !isEditing || !taskForm?.title?.trim()) return;
-    if (textInputFocusedRef.current) return;
 
     const current = JSON.stringify(taskForm);
     if (current === initialFormRef.current) return;
 
     if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
-    autoSaveRef.current = setTimeout(() => {
+
+    if (textInputFocusedRef.current) {
+      autoSaveRef.current = setTimeout(() => {
+        triggerAutoSave();
+      }, 400);
+    } else {
       triggerAutoSave();
-    }, 800);
+    }
 
     return () => {
       if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
     };
   }, [isOpen, isEditing, taskForm, triggerAutoSave]);
 
-  // Handlers pour tracker le focus des champs texte et sauvegarder au blur
+  // Filet de sécurité : si le modal se ferme / démonte avec une sauvegarde en attente, la flusher.
+  useEffect(() => {
+    if (!isOpen || !isEditing) return;
+    return () => {
+      if (autoSaveRef.current) {
+        clearTimeout(autoSaveRef.current);
+        autoSaveRef.current = null;
+        triggerAutoSaveRef.current?.();
+      }
+    };
+  }, [isOpen, isEditing]);
+
+  // Handlers pour tracker le focus des champs texte
   const handleTextInputFocus = useCallback(() => {
     textInputFocusedRef.current = true;
-    if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
   }, []);
 
   const handleTextInputBlur = useCallback(() => {
     textInputFocusedRef.current = false;
-    // Sauvegarder après un court délai au blur
-    if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
-    autoSaveRef.current = setTimeout(() => {
-      triggerAutoSave();
-    }, 300);
-  }, [triggerAutoSave]);
+    // Flush immédiat au blur si une sauvegarde est en attente
+    flushAutoSave();
+  }, [flushAutoSave]);
+
+  // Fermeture du modal : flusher avant de notifier le parent.
+  const handleClose = useCallback(() => {
+    flushAutoSave();
+    onClose?.();
+  }, [flushAutoSave, onClose]);
 
   // Toggle membre : mise à jour partielle pour éviter d'envoyer tous les champs.
   //
@@ -543,7 +604,7 @@ export function TaskModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent
         onOpenAutoFocus={(e) => e.preventDefault()}
         className="!max-w-[calc(100vw-2rem)] !w-[calc(100vw-2rem)] h-[calc(100vh-2rem)] p-0 bg-card text-card-foreground overflow-hidden flex flex-col"
@@ -1314,6 +1375,7 @@ export function TaskModal({
                     </button>
                   ) : (
                     <DescriptionEditor
+                      ref={descriptionEditorRef}
                       value={taskForm.description}
                       onChange={(html) =>
                         setTaskForm((prev) => ({ ...prev, description: html }))
@@ -1368,7 +1430,7 @@ export function TaskModal({
                   <div className="flex justify-end gap-3">
                     <Button
                       variant="outline"
-                      onClick={onClose}
+                      onClick={handleClose}
                       disabled={isLoading}
                       className="px-6 border-input"
                     >
@@ -1497,6 +1559,7 @@ export function TaskModal({
                     <>
                       <Label className="text-sm font-normal">Description</Label>
                       <DescriptionEditor
+                        ref={descriptionEditorRef}
                         value={taskForm.description}
                         onChange={(html) =>
                           setTaskForm((prev) => ({

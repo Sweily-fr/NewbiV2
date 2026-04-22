@@ -10,6 +10,7 @@ import {
   useUpdateInvoice,
   useInvoice,
   useCheckInvoiceNumber,
+  useLatestInvoiceIssueDate,
 } from "@/src/graphql/invoiceQueries";
 import { useClient } from "@/src/graphql/clientQueries";
 import { useInvoiceNumber } from "./use-invoice-number";
@@ -87,6 +88,7 @@ export function useInvoiceEditor({
   const { createInvoice, loading: creating } = useCreateInvoice();
   const { updateInvoice, loading: updating } = useUpdateInvoice();
   const { checkInvoiceNumber } = useCheckInvoiceNumber();
+  const { latestIssueDate } = useLatestInvoiceIssueDate();
 
   // Form state avec react-hook-form
   const form = useForm({
@@ -1222,6 +1224,53 @@ export function useInvoiceEditor({
     }
   }, [isFormInitialized, formData.companyInfo, setValue]);
 
+  // Pré-remplir la date d'émission avec max(aujourd'hui, date de la dernière facture)
+  // pour éviter l'erreur de validation backend "date antérieure à la dernière facture"
+  // Ajuste aussi la date d'échéance pour rester cohérente (>= issueDate)
+  const latestIssueDateAppliedRef = useRef(false);
+  useEffect(() => {
+    if (mode !== "create" || !isFormInitialized) return;
+    if (!latestIssueDate) return;
+    if (latestIssueDateAppliedRef.current) return;
+
+    const currentIssueDate = getValues("issueDate");
+    const today = formatLocalDate();
+
+    // Ne pas écraser la valeur si l'utilisateur l'a déjà modifiée
+    if (currentIssueDate && currentIssueDate !== today) {
+      latestIssueDateAppliedRef.current = true;
+      return;
+    }
+
+    const latestLocal = formatLocalDate(new Date(latestIssueDate));
+    // Comparaison lexicographique valide pour le format YYYY-MM-DD
+    if (latestLocal > today) {
+      setValue("issueDate", latestLocal, { shouldDirty: false });
+
+      // Ajuster la date d'échéance pour conserver le délai de paiement
+      const currentDueDate = getValues("dueDate");
+      const issueDateObj = new Date(latestLocal);
+      if (currentDueDate) {
+        // Préserver l'écart existant (ex: 30 jours depuis l'ancienne issueDate)
+        const oldIssueObj = new Date(currentIssueDate || today);
+        const dueObj = new Date(currentDueDate);
+        const diffDays = Math.max(
+          0,
+          Math.round((dueObj - oldIssueObj) / (1000 * 60 * 60 * 24)),
+        );
+        const newDue = new Date(issueDateObj);
+        newDue.setDate(newDue.getDate() + (diffDays || 30));
+        setValue("dueDate", formatLocalDate(newDue), { shouldDirty: false });
+      } else {
+        // Pas de dueDate encore définie, appliquer l'offset par défaut de 30 jours
+        const newDue = new Date(issueDateObj);
+        newDue.setDate(newDue.getDate() + 30);
+        setValue("dueDate", formatLocalDate(newDue), { shouldDirty: false });
+      }
+    }
+    latestIssueDateAppliedRef.current = true;
+  }, [mode, isFormInitialized, latestIssueDate, getValues, setValue]);
+
   // Pre-fill items from Kanban conversion (via sessionStorage)
   useEffect(() => {
     if (mode === "create" && isFormInitialized) {
@@ -1690,6 +1739,35 @@ export function useInvoiceEditor({
       // Pas de changement de statut dans handleSave, donc pas besoin du statut précédent
       let input = transformFormDataToInput(currentFormData);
 
+      // Garde-fou: forcer issueDate >= date de la dernière facture non-brouillon
+      // et ajuster dueDate pour qu'elle reste >= issueDate
+      if (latestIssueDate && input.issueDate) {
+        const latestLocal = formatLocalDate(new Date(latestIssueDate));
+        if (input.issueDate < latestLocal) {
+          const oldIssue = input.issueDate;
+          input = { ...input, issueDate: latestLocal };
+          setValue("issueDate", latestLocal, { shouldDirty: false });
+
+          if (input.dueDate) {
+            if (input.dueDate < latestLocal) {
+              // Préserver l'écart initial (ou 30 jours par défaut)
+              const diffDays = Math.max(
+                0,
+                Math.round(
+                  (new Date(input.dueDate) - new Date(oldIssue)) /
+                    (1000 * 60 * 60 * 24),
+                ),
+              );
+              const newDue = new Date(latestLocal);
+              newDue.setDate(newDue.getDate() + (diffDays || 30));
+              const newDueStr = formatLocalDate(newDue);
+              input = { ...input, dueDate: newDueStr };
+              setValue("dueDate", newDueStr, { shouldDirty: false });
+            }
+          }
+        }
+      }
+
       if (mode === "create") {
         if (sourcePurchaseOrderIdRef.current) {
           input = {
@@ -2053,6 +2131,16 @@ export function useInvoiceEditor({
       // IMPORTANT: Ne pas définir previousStatus lors de la création pour éviter de vider le préfixe
       const previousStatus = mode === "edit" ? existingInvoice?.status : null;
       let input = transformFormDataToInput(dataToTransform, previousStatus);
+
+      // Garde-fou: forcer issueDate >= date de la dernière facture non-brouillon
+      // pour éviter l'erreur backend "date antérieure à la dernière facture"
+      if (latestIssueDate && input.issueDate) {
+        const latestLocal = formatLocalDate(new Date(latestIssueDate));
+        if (input.issueDate < latestLocal) {
+          input = { ...input, issueDate: latestLocal };
+          setValue("issueDate", latestLocal, { shouldDirty: false });
+        }
+      }
 
       if (mode === "create") {
         if (sourcePurchaseOrderIdRef.current) {

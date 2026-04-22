@@ -17,6 +17,7 @@ import {
   BookTemplate,
   PenLine,
 } from "lucide-react";
+import { ButtonGroup } from "@/src/components/ui/button-group";
 import {
   Tooltip,
   TooltipContent,
@@ -73,7 +74,14 @@ const formatDateForEmail = (dateValue) => {
   }
 };
 
-export default function QuoteRowActions({ row, onRefetch, onSendEmail, onSaveAsTemplate, onRequestSignature, onOpenSidebar }) {
+export default function QuoteRowActions({
+  row,
+  onRefetch,
+  onSendEmail,
+  onSaveAsTemplate,
+  onRequestSignature,
+  onOpenSidebar,
+}) {
   const [isMobileFullscreenOpen, setIsMobileFullscreenOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
@@ -85,8 +93,8 @@ export default function QuoteRowActions({ row, onRefetch, onSendEmail, onSaveAsT
       setIsMobile(window.innerWidth < 768);
     };
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
   const apolloClient = useApolloClient();
   const { workspaceId } = useRequiredWorkspace();
@@ -161,20 +169,23 @@ export default function QuoteRowActions({ row, onRefetch, onSendEmail, onSaveAsT
         toast.error("Impossible de récupérer le devis");
         return;
       }
-      sessionStorage.setItem('quoteInvoiceData', JSON.stringify({
-        sourceQuoteId: fullQuote.id,
-        purchaseOrderNumber: `${fullQuote.prefix || ''}-${fullQuote.number || ''}`,
-        client: fullQuote.client,
-        items: fullQuote.items,
-        discount: fullQuote.discount,
-        discountType: fullQuote.discountType,
-        customFields: fullQuote.customFields,
-        shipping: fullQuote.shipping,
-        isReverseCharge: fullQuote.isReverseCharge,
-        retenueGarantie: fullQuote.retenueGarantie,
-        escompte: fullQuote.escompte,
-      }));
-      router.push('/dashboard/outils/factures/new');
+      sessionStorage.setItem(
+        "quoteInvoiceData",
+        JSON.stringify({
+          sourceQuoteId: fullQuote.id,
+          purchaseOrderNumber: `${fullQuote.prefix || ""}-${fullQuote.number || ""}`,
+          client: fullQuote.client,
+          items: fullQuote.items,
+          discount: fullQuote.discount,
+          discountType: fullQuote.discountType,
+          customFields: fullQuote.customFields,
+          shipping: fullQuote.shipping,
+          isReverseCharge: fullQuote.isReverseCharge,
+          retenueGarantie: fullQuote.retenueGarantie,
+          escompte: fullQuote.escompte,
+        }),
+      );
+      router.push("/dashboard/outils/factures/new");
     } catch (error) {
       toast.error("Erreur lors de la conversion en facture");
     }
@@ -192,20 +203,23 @@ export default function QuoteRowActions({ row, onRefetch, onSendEmail, onSaveAsT
         toast.error("Impossible de récupérer le devis");
         return;
       }
-      sessionStorage.setItem('quotePurchaseOrderData', JSON.stringify({
-        sourceQuoteId: fullQuote.id,
-        purchaseOrderNumber: `${fullQuote.prefix || ''}-${fullQuote.number || ''}`,
-        client: fullQuote.client,
-        items: fullQuote.items,
-        discount: fullQuote.discount,
-        discountType: fullQuote.discountType,
-        customFields: fullQuote.customFields,
-        shipping: fullQuote.shipping,
-        isReverseCharge: fullQuote.isReverseCharge,
-        retenueGarantie: fullQuote.retenueGarantie,
-        escompte: fullQuote.escompte,
-      }));
-      router.push('/dashboard/outils/bons-commande/new');
+      sessionStorage.setItem(
+        "quotePurchaseOrderData",
+        JSON.stringify({
+          sourceQuoteId: fullQuote.id,
+          purchaseOrderNumber: `${fullQuote.prefix || ""}-${fullQuote.number || ""}`,
+          client: fullQuote.client,
+          items: fullQuote.items,
+          discount: fullQuote.discount,
+          discountType: fullQuote.discountType,
+          customFields: fullQuote.customFields,
+          shipping: fullQuote.shipping,
+          isReverseCharge: fullQuote.isReverseCharge,
+          retenueGarantie: fullQuote.retenueGarantie,
+          escompte: fullQuote.escompte,
+        }),
+      );
+      router.push("/dashboard/outils/bons-commande/new");
     } catch (error) {
       toast.error("Erreur lors de la conversion en bon de commande");
     }
@@ -215,12 +229,14 @@ export default function QuoteRowActions({ row, onRefetch, onSendEmail, onSaveAsT
 
   // Logique pour déterminer quelles actions sont disponibles
   const canConvertToPO = quote.status === QUOTE_STATUS.COMPLETED;
-  const canConvertToInvoice = quote.status === QUOTE_STATUS.COMPLETED &&
+  const canConvertToInvoice =
+    quote.status === QUOTE_STATUS.COMPLETED &&
     (!quote.linkedInvoices || quote.linkedInvoices.length === 0);
   const hasStatusActions =
     quote.status === QUOTE_STATUS.DRAFT || // Envoyer le devis
     quote.status === QUOTE_STATUS.PENDING || // Accepter/Rejeter
-    canConvertToInvoice || canConvertToPO;
+    canConvertToInvoice ||
+    canConvertToPO;
 
   const hasDeleteAction = quote.status === QUOTE_STATUS.DRAFT;
 
@@ -234,159 +250,177 @@ export default function QuoteRowActions({ row, onRefetch, onSendEmail, onSaveAsT
           className="hidden"
           aria-hidden="true"
         />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 p-0"
-              disabled={isLoading}
-            >
-              <span className="sr-only">Ouvrir le menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleView}>
-              <Eye className="mr-2 h-4 w-4" />
-              Voir
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={(e) => {
-                e.stopPropagation();
-                onSaveAsTemplate?.(quote);
-              }}
-            >
-              <BookTemplate className="mr-2 h-4 w-4" />
-              Sauv. modèle
-            </DropdownMenuItem>
-            {(quote.status === QUOTE_STATUS.DRAFT || quote.status === QUOTE_STATUS.PENDING) && (
-              <DropdownMenuItem onClick={handleEdit}>
-                <Pencil className="mr-2 h-4 w-4" />
-                Éditer
-              </DropdownMenuItem>
-            )}
-
-            {/* Séparateur entre les actions de base et les actions de statut */}
-            {hasStatusActions && <DropdownMenuSeparator />}
-
-            {quote.status === QUOTE_STATUS.DRAFT && (
-              <DropdownMenuItem onClick={handleSendQuote} disabled={isLoading}>
-                <FileText className="mr-2 h-4 w-4" />
-                Envoyer le devis
-              </DropdownMenuItem>
-            )}
-
-            {quote.status === QUOTE_STATUS.PENDING && (
-              <>
-                <DropdownMenuItem onClick={handleAccept} disabled={isLoading}>
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Accepter le devis
-                </DropdownMenuItem>
-              </>
-            )}
-
-            {canConvertToInvoice && (
-              <DropdownMenuItem
-                onClick={handleConvertToInvoice}
-                disabled={isLoading}
-              >
-                <FileCheck className="mr-2 h-4 w-4" />
-                Convertir en facture
-              </DropdownMenuItem>
-            )}
-
-            {canConvertToPO && (
-              <DropdownMenuItem
-                onClick={handleConvertToPurchaseOrder}
-                disabled={isLoading}
-              >
-                <ShoppingCart className="mr-2 h-4 w-4" />
-                Convertir en bon de commande
-              </DropdownMenuItem>
-            )}
-
-            {/* Envoyer par email - visible pour les devis non brouillon */}
-            {quote.status !== QUOTE_STATUS.DRAFT && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSendEmail?.(quote);
-                  }}
-                >
-                  <Mail className="mr-2 h-4 w-4" />
-                  Envoyer par email
-                </DropdownMenuItem>
-              </>
-            )}
-
-            {/* Faire signer - visible pour les devis non brouillon et sans signature en cours/terminée */}
-            {quote.status !== QUOTE_STATUS.DRAFT && (!quote.signatureStatus || quote.signatureStatus === "ERROR" || quote.signatureStatus === "CANCELLED") && (
-              <>
-                {quote.status === QUOTE_STATUS.DRAFT && <DropdownMenuSeparator />}
-                {esignatureAccess ? (
-                  <DropdownMenuItem
+        <ButtonGroup>
+          {/* Icône d'envoi par email - visible pour les devis non brouillon */}
+          {quote.status !== QUOTE_STATUS.DRAFT && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 p-0 cursor-pointer"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onRequestSignature?.(quote);
+                      onSendEmail?.(quote);
                     }}
                   >
-                    <PenLine className="mr-2 h-4 w-4" />
-                    Faire signer
-                  </DropdownMenuItem>
-                ) : (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <DropdownMenuItem
-                          disabled
-                          onSelect={(e) => e.preventDefault()}
-                        >
-                          <PenLine className="mr-2 h-4 w-4" />
-                          Faire signer
-                        </DropdownMenuItem>
-                      </TooltipTrigger>
-                      <TooltipContent side="left">
-                        <p>Disponible à partir du plan PME</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-              </>
-            )}
+                    <Mail className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Envoyer par email</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 p-0"
+                disabled={isLoading}
+              >
+                <span className="sr-only">Ouvrir le menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleView}>
+                <Eye className="mr-2 h-4 w-4" />
+                Voir
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSaveAsTemplate?.(quote);
+                }}
+              >
+                <BookTemplate className="mr-2 h-4 w-4" />
+                Sauv. modèle
+              </DropdownMenuItem>
+              {(quote.status === QUOTE_STATUS.DRAFT ||
+                quote.status === QUOTE_STATUS.PENDING) && (
+                <DropdownMenuItem onClick={handleEdit}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Éditer
+                </DropdownMenuItem>
+              )}
 
-            {/* Rejeter le devis - en rouge */}
-            {quote.status === QUOTE_STATUS.PENDING && (
-              <>
-                <DropdownMenuSeparator />
+              {/* Séparateur entre les actions de base et les actions de statut */}
+              {hasStatusActions && <DropdownMenuSeparator />}
+
+              {quote.status === QUOTE_STATUS.DRAFT && (
                 <DropdownMenuItem
-                  onClick={handleReject}
+                  onClick={handleSendQuote}
                   disabled={isLoading}
-                  className="text-red-600 focus:text-red-600"
                 >
-                  <XCircle className="mr-2 h-4 w-4 text-red-600" />
-                  Rejeter le devis
+                  <FileText className="mr-2 h-4 w-4" />
+                  Envoyer le devis
                 </DropdownMenuItem>
-              </>
-            )}
+              )}
 
-            {/* Supprimer - pour les brouillons, en rouge */}
-            {hasDeleteAction && (
-              <>
-                <DropdownMenuSeparator />
+              {quote.status === QUOTE_STATUS.PENDING && (
+                <>
+                  <DropdownMenuItem onClick={handleAccept} disabled={isLoading}>
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Accepter le devis
+                  </DropdownMenuItem>
+                </>
+              )}
+
+              {canConvertToInvoice && (
                 <DropdownMenuItem
-                  onClick={handleDelete}
-                  className="text-red-600 focus:text-red-600"
+                  onClick={handleConvertToInvoice}
+                  disabled={isLoading}
                 >
-                  <Trash2 className="mr-2 h-4 w-4 text-red-600" />
-                  Supprimer
+                  <FileCheck className="mr-2 h-4 w-4" />
+                  Convertir en facture
                 </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+              )}
+
+              {canConvertToPO && (
+                <DropdownMenuItem
+                  onClick={handleConvertToPurchaseOrder}
+                  disabled={isLoading}
+                >
+                  <ShoppingCart className="mr-2 h-4 w-4" />
+                  Convertir en bon de commande
+                </DropdownMenuItem>
+              )}
+
+              {/* Faire signer - visible pour les devis non brouillon et sans signature en cours/terminée */}
+              {quote.status !== QUOTE_STATUS.DRAFT &&
+                (!quote.signatureStatus ||
+                  quote.signatureStatus === "ERROR" ||
+                  quote.signatureStatus === "CANCELLED") && (
+                  <>
+                    {quote.status === QUOTE_STATUS.DRAFT && (
+                      <DropdownMenuSeparator />
+                    )}
+                    {esignatureAccess ? (
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onRequestSignature?.(quote);
+                        }}
+                      >
+                        <PenLine className="mr-2 h-4 w-4" />
+                        Faire signer
+                      </DropdownMenuItem>
+                    ) : (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <DropdownMenuItem
+                              disabled
+                              onSelect={(e) => e.preventDefault()}
+                            >
+                              <PenLine className="mr-2 h-4 w-4" />
+                              Faire signer
+                            </DropdownMenuItem>
+                          </TooltipTrigger>
+                          <TooltipContent side="left">
+                            <p>Disponible à partir du plan PME</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </>
+                )}
+
+              {/* Rejeter le devis - en rouge */}
+              {quote.status === QUOTE_STATUS.PENDING && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleReject}
+                    disabled={isLoading}
+                    className="text-red-600 focus:text-red-600"
+                  >
+                    <XCircle className="mr-2 h-4 w-4 text-red-600" />
+                    Rejeter le devis
+                  </DropdownMenuItem>
+                </>
+              )}
+
+              {/* Supprimer - pour les brouillons, en rouge */}
+              {hasDeleteAction && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleDelete}
+                    className="text-red-600 focus:text-red-600"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4 text-red-600" />
+                    Supprimer
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </ButtonGroup>
       </div>
 
       {/* Sidebar pour desktop - gérée au niveau du tableau pour éviter les re-renders */}
@@ -400,7 +434,6 @@ export default function QuoteRowActions({ row, onRefetch, onSendEmail, onSaveAsT
           onRefetch={onRefetch}
         />
       )}
-
     </>
   );
 }

@@ -18,6 +18,7 @@ import { UserAvatar } from "@/src/components/ui/user-avatar";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import InvoiceSidebar from "@/app/dashboard/outils/factures/components/invoice-sidebar";
+import { ImportedInvoiceSidebar } from "@/app/dashboard/outils/factures/components/imported-invoice-sidebar";
 import QuoteSidebar from "@/app/dashboard/outils/devis/components/quote-sidebar";
 
 // Action text per activity type
@@ -35,6 +36,7 @@ function getActionText(activity) {
     created: "a créé le client",
     updated: "a mis à jour la fiche",
     invoice_created: `a créé la facture${docNum}`,
+    invoice_imported: `a importé la facture${docNum}`,
     invoice_status_changed: `a modifié le statut de la facture${docNum}`,
     quote_created: `a créé le devis${docNum}`,
     quote_status_changed: `a modifié le statut du devis${docNum}`,
@@ -111,12 +113,13 @@ const FILTER_TYPES = [
   { label: "Rappels", value: "reminder" },
 ];
 
-export default function ClientActivityTab({ client }) {
+export default function ClientActivityTab({ client, importedInvoices = [] }) {
   const [filterType, setFilterType] = useState(null);
   const [collapsedPeriods, setCollapsedPeriods] = useState(new Set());
 
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [selectedQuote, setSelectedQuote] = useState(null);
+  const [selectedImportedInvoice, setSelectedImportedInvoice] = useState(null);
   const [isInvoiceSidebarOpen, setIsInvoiceSidebarOpen] = useState(false);
   const [isQuoteSidebarOpen, setIsQuoteSidebarOpen] = useState(false);
 
@@ -133,10 +136,37 @@ export default function ClientActivityTab({ client }) {
       createdAt: note.createdAt,
       metadata: {},
     }));
-    return [...activities, ...notes]
+    const existingImportedDocIds = new Set(
+      (client?.activity || [])
+        .filter(
+          (a) =>
+            a.type === "invoice_imported" ||
+            a.type === "quote_imported" ||
+            a.type === "purchase_order_imported",
+        )
+        .map((a) => a.metadata?.documentId)
+        .filter(Boolean),
+    );
+    const importedEntries = (importedInvoices || [])
+      .filter((inv) => !existingImportedDocIds.has(inv.id))
+      .map((inv) => ({
+        id: `imported-${inv.id}`,
+        type: "invoice_imported",
+        description: null,
+        userName: null,
+        userImage: null,
+        createdAt: inv.createdAt,
+        metadata: {
+          documentType: "importedInvoice",
+          documentId: inv.id,
+          documentNumber: inv.originalInvoiceNumber || "",
+          status: inv.status,
+        },
+      }));
+    return [...activities, ...notes, ...importedEntries]
       .filter((item) => item.createdAt)
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  }, [client?.activity, client?.notes]);
+  }, [client?.activity, client?.notes, importedInvoices]);
 
   const filtered = useMemo(() => {
     let items = allActivities;
@@ -146,7 +176,8 @@ export default function ClientActivityTab({ client }) {
         if (filterType === "invoice")
           return (
             item.type.startsWith("invoice") ||
-            item.type === "credit_note_created"
+            item.type === "credit_note_created" ||
+            item.type === "invoice_imported"
           );
         if (filterType === "quote") return item.type.startsWith("quote");
         if (filterType === "email")
@@ -209,6 +240,9 @@ export default function ClientActivityTab({ client }) {
     } else if (docType === "quote") {
       setSelectedQuote({ id: docId });
       setIsQuoteSidebarOpen(true);
+    } else if (docType === "importedInvoice") {
+      const imported = (importedInvoices || []).find((i) => i.id === docId);
+      if (imported) setSelectedImportedInvoice(imported);
     }
   };
 
@@ -306,6 +340,7 @@ export default function ClientActivityTab({ client }) {
                               "created",
                               "updated",
                               "invoice_created",
+                              "invoice_imported",
                               "invoice_status_changed",
                               "quote_created",
                               "quote_status_changed",
@@ -405,9 +440,12 @@ export default function ClientActivityTab({ client }) {
                                           )
                                         }
                                       >
-                                        {meta.documentType === "invoice"
-                                          ? "Voir la facture"
-                                          : "Voir le devis"}
+                                        {meta.documentType === "quote"
+                                          ? "Voir le devis"
+                                          : meta.documentType ===
+                                              "importedInvoice"
+                                            ? "Voir la facture importée"
+                                            : "Voir la facture"}
                                         <ExternalLink className="h-3 w-3" />
                                       </button>
                                     )}
@@ -460,6 +498,12 @@ export default function ClientActivityTab({ client }) {
           setIsQuoteSidebarOpen(false);
           setSelectedQuote(null);
         }}
+      />
+      <ImportedInvoiceSidebar
+        invoice={selectedImportedInvoice}
+        open={!!selectedImportedInvoice}
+        onOpenChange={(open) => !open && setSelectedImportedInvoice(null)}
+        onUpdate={() => setSelectedImportedInvoice(null)}
       />
     </div>
   );

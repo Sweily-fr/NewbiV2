@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import {
   flexRender,
@@ -29,6 +29,7 @@ import {
   TrashIcon,
   Upload,
   FileUp,
+  UserPlus,
 } from "lucide-react";
 
 import { cn } from "@/src/lib/utils";
@@ -105,6 +106,7 @@ import { SendDocumentModal } from "./send-document-modal";
 import { SaveInvoiceTemplateDialog } from "./SaveInvoiceTemplateDialog";
 import { ImportInvoiceModal } from "./import-invoice-modal";
 import { ImportedInvoiceSidebar } from "./imported-invoice-sidebar";
+import AssignImportedInvoicesDialog from "./assign-imported-invoices-dialog";
 import { useImportedInvoices } from "@/src/graphql/importedInvoiceQueries";
 import { useEmailTrackingSubscription } from "@/src/graphql/documentEmailQueries";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
@@ -134,6 +136,7 @@ export default function InvoiceTable({
   // États pour les factures importées
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [selectedImportedInvoice, setSelectedImportedInvoice] = useState(null);
+  const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false);
   const { workspaceId } = useRequiredWorkspace();
 
   // Subscription temps réel pour le tracking d'ouverture d'email
@@ -195,6 +198,28 @@ export default function InvoiceTable({
     });
   }, [invoices, importedInvoices]);
 
+  // État pour les tabs de filtre rapide
+  const [activeTab, setActiveTab] = useState("all");
+
+  // Filtrer combinedInvoices pour l'onglet "En retard"
+  const displayInvoices = useMemo(() => {
+    if (activeTab !== "overdue") return combinedInvoices;
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    return combinedInvoices.filter((inv) => {
+      if (inv.status !== "PENDING") return false;
+      if (!inv.dueDate) return false;
+      const dueDateValue =
+        typeof inv.dueDate === "string" && /^\d+$/.test(inv.dueDate)
+          ? parseInt(inv.dueDate, 10)
+          : inv.dueDate;
+      const due = new Date(dueDateValue);
+      if (isNaN(due.getTime())) return false;
+      due.setHours(0, 0, 0, 0);
+      return due < now;
+    });
+  }, [combinedInvoices, activeTab]);
+
   const {
     table,
     globalFilter,
@@ -211,7 +236,7 @@ export default function InvoiceTable({
     handleDeleteSelected,
     isDeleting,
   } = useInvoiceTable({
-    data: combinedInvoices,
+    data: displayInvoices,
     onRefetch: refetch,
     onRefetchImported: refetchImported,
     onBalancesRefetch,
@@ -242,9 +267,6 @@ export default function InvoiceTable({
     }
   }, [table, onFilteredDataChange, filterKey, dataLength]);
 
-  // État pour les tabs de filtre rapide
-  const [activeTab, setActiveTab] = useState("all");
-
   // Gérer le changement de tab
   const handleTabChange = (value) => {
     setActiveTab(value);
@@ -254,23 +276,56 @@ export default function InvoiceTable({
       setStatusFilter(["DRAFT"]);
     } else if (value === "pending") {
       setStatusFilter(["PENDING"]);
+    } else if (value === "overdue") {
+      // Les factures en retard sont des PENDING avec dueDate dépassée,
+      // filtrées en amont via displayInvoices — on garde le statusFilter vide
+      // pour laisser le filtrage dates agir seul.
+      setStatusFilter([]);
     } else if (value === "completed") {
       setStatusFilter(["COMPLETED"]);
     }
   };
 
-  // Compter les factures par statut
+  // Pré-filtrage depuis l'URL (ex: ?status=overdue depuis le dashboard)
+  const searchParams = useSearchParams();
+  const initialStatusRef = useRef(null);
+  useEffect(() => {
+    const status = searchParams.get("status");
+    if (!status || initialStatusRef.current === status) return;
+    initialStatusRef.current = status;
+    if (["all", "draft", "pending", "overdue", "completed"].includes(status)) {
+      handleTabChange(status);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  // Compter les factures par statut (dont les en retard)
   const invoiceCounts = useMemo(() => {
     const counts = {
       all: combinedInvoices.length,
       draft: 0,
       pending: 0,
+      overdue: 0,
       completed: 0,
     };
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
     combinedInvoices.forEach((inv) => {
       if (inv.status === "DRAFT") counts.draft++;
-      else if (inv.status === "PENDING") counts.pending++;
-      else if (inv.status === "COMPLETED") counts.completed++;
+      else if (inv.status === "PENDING") {
+        counts.pending++;
+        if (inv.dueDate) {
+          const dueDateValue =
+            typeof inv.dueDate === "string" && /^\d+$/.test(inv.dueDate)
+              ? parseInt(inv.dueDate, 10)
+              : inv.dueDate;
+          const due = new Date(dueDateValue);
+          if (!isNaN(due.getTime())) {
+            due.setHours(0, 0, 0, 0);
+            if (due < now) counts.overdue++;
+          }
+        }
+      } else if (inv.status === "COMPLETED") counts.completed++;
     });
     return counts;
   }, [combinedInvoices]);
@@ -288,6 +343,7 @@ export default function InvoiceTable({
     { id: "all", label: "Toutes" },
     { id: "draft", label: "Brouillons" },
     { id: "pending", label: "À encaisser" },
+    { id: "overdue", label: "En retard" },
     { id: "completed", label: "Terminées" },
   ];
 
@@ -385,146 +441,168 @@ export default function InvoiceTable({
   }
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
-      {/* Filters and Add Invoice Button - Fixe en haut */}
-      <div className="flex items-center justify-between gap-3 hidden md:flex px-4 sm:px-6 py-4 flex-shrink-0">
-        {/* Search + Filtres à gauche */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 h-8 w-full sm:w-[400px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
-            <Search
-              size={16}
-              className="text-muted-foreground/80 shrink-0"
-              aria-hidden="true"
+    <div className="flex flex-col flex-1">
+      {/* Sticky zone: recherche + onglets */}
+      <div className="hidden md:block sticky top-0 z-10 bg-background">
+        {/* Filters and Add Invoice Button */}
+        <div className="flex items-center justify-between gap-3 md:flex px-4 sm:px-6 py-4">
+          {/* Search + Filtres à gauche */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 h-8 w-full sm:w-[400px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
+              <Search
+                size={16}
+                className="text-muted-foreground/80 shrink-0"
+                aria-hidden="true"
+              />
+              <Input
+                variant="ghost"
+                ref={inputRef}
+                value={globalFilter ?? ""}
+                onChange={(event) => setGlobalFilter(event.target.value)}
+                placeholder="Recherchez par numéro, client ou montant..."
+              />
+              {Boolean(globalFilter) && (
+                <button
+                  onClick={() => {
+                    setGlobalFilter("");
+                    inputRef.current?.focus();
+                  }}
+                  className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex items-center justify-center rounded focus-visible:ring-[3px] focus-visible:outline-none cursor-pointer"
+                  aria-label="Effacer la recherche"
+                >
+                  <CircleXIcon size={16} strokeWidth={2} aria-hidden="true" />
+                </button>
+              )}
+            </div>
+
+            {/* Filters Button */}
+            <InvoiceFilters
+              statusFilter={statusFilter}
+              setStatusFilter={setStatusFilter}
+              clientFilter={clientFilter}
+              setClientFilter={setClientFilter}
+              dateFilter={dateFilter}
+              setDateFilter={setDateFilter}
+              typeFilter={typeFilter}
+              setTypeFilter={setTypeFilter}
+              invoices={invoices || []}
+              table={table}
             />
-            <Input
-              variant="ghost"
-              ref={inputRef}
-              value={globalFilter ?? ""}
-              onChange={(event) => setGlobalFilter(event.target.value)}
-              placeholder="Recherchez par numéro, client ou montant..."
-            />
-            {Boolean(globalFilter) && (
-              <button
-                onClick={() => {
-                  setGlobalFilter("");
-                  inputRef.current?.focus();
-                }}
-                className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex items-center justify-center rounded focus-visible:ring-[3px] focus-visible:outline-none cursor-pointer"
-                aria-label="Effacer la recherche"
-              >
-                <CircleXIcon size={16} strokeWidth={2} aria-hidden="true" />
-              </button>
-            )}
           </div>
 
-          {/* Filters Button */}
-          <InvoiceFilters
-            statusFilter={statusFilter}
-            setStatusFilter={setStatusFilter}
-            clientFilter={clientFilter}
-            setClientFilter={setClientFilter}
-            dateFilter={dateFilter}
-            setDateFilter={setDateFilter}
-            typeFilter={typeFilter}
-            setTypeFilter={setTypeFilter}
-            invoices={invoices || []}
-            table={table}
-          />
-        </div>
-
-        {/* Actions à droite */}
-        <div className="flex items-center gap-2">
-          {/* Bulk delete - visible quand des rows sont sélectionnées */}
-          {selectedRows.length > 0 && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="destructive"
-                  disabled={isDeleting}
-                  data-mobile-delete-trigger-invoice
-                >
-                  <TrashIcon className="mr-2 h-4 w-4" />
-                  Supprimer ({selectedRows.length})
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
-                    facture(s) sélectionnée(s) ? Cette action ne peut pas être
-                    annulée.
-                    <br />
-                    <br />
-                    <strong>Note :</strong> Seules les factures en brouillon et
-                    les factures importées peuvent être supprimées.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDeleteSelected}
-                    className="bg-destructive text-white hover:bg-destructive/90"
+          {/* Actions à droite */}
+          <div className="flex items-center gap-2">
+            {/* Bulk assign - visible quand au moins une importée est sélectionnée */}
+            {selectedRows.some((r) => r._type === "imported") && (
+              <Button
+                variant="outline"
+                onClick={() => setIsBulkAssignOpen(true)}
+              >
+                <UserPlus className="mr-2 h-4 w-4" />
+                Assigner (
+                {selectedRows.filter((r) => r._type === "imported").length})
+              </Button>
+            )}
+            {/* Bulk delete - visible quand des rows sont sélectionnées */}
+            {selectedRows.length > 0 && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    disabled={isDeleting}
+                    data-mobile-delete-trigger-invoice
                   >
-                    Supprimer
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
+                    <TrashIcon className="mr-2 h-4 w-4" />
+                    Supprimer ({selectedRows.length})
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      Confirmer la suppression
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
+                      facture(s) sélectionnée(s) ? Cette action ne peut pas être
+                      annulée.
+                      <br />
+                      <br />
+                      <strong>Note :</strong> Seules les factures en brouillon
+                      et les factures importées peuvent être supprimées.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteSelected}
+                      className="bg-destructive text-white hover:bg-destructive/90"
+                    >
+                      Supprimer
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Tabs de filtre rapide - Desktop */}
-      <div className="hidden md:block flex-shrink-0 border-b border-border">
-        <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="h-auto rounded-none bg-transparent p-0 pb-2 w-full justify-start px-4 sm:px-6">
-            <TabsTrigger
-              value="all"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
-            >
-              <span className="data-[state=active]:text-shadow-[0_0_0.01px_currentColor]">
-                Toutes les factures
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {invoiceCounts.all}
-              </span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="draft"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
-            >
-              <span>Brouillons</span>
-              <span className="text-xs text-muted-foreground">
-                {invoiceCounts.draft}
-              </span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="pending"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
-            >
-              <span>À encaisser</span>
-              <span className="text-xs text-muted-foreground">
-                {invoiceCounts.pending}
-              </span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="completed"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
-            >
-              <span>Terminées</span>
-              <span className="text-xs text-muted-foreground">
-                {invoiceCounts.completed}
-              </span>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
+        {/* Tabs de filtre rapide - Desktop */}
+        <div className="border-b border-border">
+          <Tabs value={activeTab} onValueChange={handleTabChange}>
+            <TabsList className="h-auto rounded-none bg-transparent p-0 pb-2 w-full justify-start px-4 sm:px-6">
+              <TabsTrigger
+                value="all"
+                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              >
+                <span className="data-[state=active]:text-shadow-[0_0_0.01px_currentColor]">
+                  Toutes les factures
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {invoiceCounts.all}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="draft"
+                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              >
+                <span>Brouillons</span>
+                <span className="text-xs text-muted-foreground">
+                  {invoiceCounts.draft}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="pending"
+                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              >
+                <span>À encaisser</span>
+                <span className="text-xs text-muted-foreground">
+                  {invoiceCounts.pending}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="overdue"
+                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              >
+                <span>En retard</span>
+                <span className="text-xs text-muted-foreground">
+                  {invoiceCounts.overdue}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="completed"
+                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              >
+                <span>Terminées</span>
+                <span className="text-xs text-muted-foreground">
+                  {invoiceCounts.completed}
+                </span>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
 
-      {/* Table - Desktop style avec header fixe et body scrollable */}
-      <div className="hidden md:flex md:flex-col flex-1 min-h-0 overflow-hidden">
-        {/* Header fixe */}
-        <div className="flex-shrink-0 border-b border-border">
+        {/* Table header - sticky */}
+        <div className="border-b border-border">
           <table className="w-full table-fixed">
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -550,103 +628,105 @@ export default function InvoiceTable({
             </thead>
           </table>
         </div>
-        {/* Table Body - Scrollable */}
-        <div className="flex-1 overflow-auto">
-          <table className="w-full table-fixed">
-            <tbody>
-              {loading ? (
-                Array.from({ length: 8 }).map((_, i) => (
-                  <tr key={`skeleton-${i}`} className="border-b">
-                    <td className="p-2 pl-4 sm:pl-6">
-                      <div className="h-4 w-4 rounded bg-muted animate-pulse" />
-                    </td>
-                    <td className="p-2">
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full bg-muted animate-pulse flex-shrink-0" />
-                        <div className="h-4 w-[140px] rounded bg-muted animate-pulse" />
-                      </div>
-                    </td>
-                    <td className="p-2">
-                      <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
-                    </td>
-                    <td className="p-2">
-                      <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
-                    </td>
-                    <td className="p-2">
-                      <div className="h-5 w-[70px] rounded-full bg-muted animate-pulse" />
-                    </td>
-                    <td className="p-2">
-                      <div className="h-4 w-[80px] rounded bg-muted animate-pulse" />
-                    </td>
-                    <td className="p-2 pr-4 sm:pr-6">
-                      <div className="h-7 w-7 rounded bg-muted animate-pulse" />
-                    </td>
-                  </tr>
-                ))
-              ) : table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <tr
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                    className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
-                    onClick={(e) => {
-                      // Ignorer les clics provenant de portals React (modals, dropdowns)
-                      if (!e.currentTarget.contains(e.target)) return;
-                      // Ne pas ouvrir la sidebar si on clique sur la checkbox, les actions, un menu ou un dialog
-                      if (
-                        e.target.closest('[role="checkbox"]') ||
-                        e.target.closest("[data-actions-cell]") ||
-                        e.target.closest('button[role="combobox"]') ||
-                        e.target.closest('[role="menu"]') ||
-                        e.target.closest('[role="dialog"]')
-                      ) {
-                        return;
-                      }
-                      const invoice = row.original;
-                      // Ouvrir la sidebar appropriée selon le type
-                      if (invoice._type === "imported") {
-                        setSelectedImportedInvoice(invoice);
-                      } else {
-                        // Déclencher l'ouverture de la sidebar via le bouton d'actions
-                        const actionsButton = e.currentTarget.querySelector(
-                          "[data-view-invoice]",
-                        );
-                        if (actionsButton) {
-                          actionsButton.click();
-                        }
-                      }
-                    }}
-                  >
-                    {row
-                      .getVisibleCells()
-                      .filter((c) => c.column.id !== "_type")
-                      .map((cell, index, arr) => (
-                        <td
-                          key={cell.id}
-                          style={{ width: cell.column.getSize() }}
-                          className={`p-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
-                        </td>
-                      ))}
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={table.getAllColumns().length}
-                    className="h-24 text-center p-2"
-                  >
-                    Aucune facture trouvée.
+      </div>
+      {/* Fin sticky zone */}
+
+      {/* Table body - Desktop */}
+      <div className="hidden md:flex md:flex-col flex-1">
+        <table className="w-full table-fixed">
+          <tbody>
+            {loading ? (
+              Array.from({ length: 8 }).map((_, i) => (
+                <tr key={`skeleton-${i}`} className="border-b">
+                  <td className="p-2 pl-4 sm:pl-6">
+                    <div className="h-4 w-4 rounded bg-muted animate-pulse" />
+                  </td>
+                  <td className="p-2">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-muted animate-pulse flex-shrink-0" />
+                      <div className="h-4 w-[140px] rounded bg-muted animate-pulse" />
+                    </div>
+                  </td>
+                  <td className="p-2">
+                    <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
+                  </td>
+                  <td className="p-2">
+                    <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
+                  </td>
+                  <td className="p-2">
+                    <div className="h-5 w-[70px] rounded-full bg-muted animate-pulse" />
+                  </td>
+                  <td className="p-2">
+                    <div className="h-4 w-[80px] rounded bg-muted animate-pulse" />
+                  </td>
+                  <td className="p-2 pr-4 sm:pr-6">
+                    <div className="h-7 w-7 rounded bg-muted animate-pulse" />
                   </td>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              ))
+            ) : table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <tr
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                  className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
+                  onClick={(e) => {
+                    // Ignorer les clics provenant de portals React (modals, dropdowns)
+                    if (!e.currentTarget.contains(e.target)) return;
+                    // Ne pas ouvrir la sidebar si on clique sur la checkbox, les actions, un menu ou un dialog
+                    if (
+                      e.target.closest('[role="checkbox"]') ||
+                      e.target.closest("[data-actions-cell]") ||
+                      e.target.closest('button[role="combobox"]') ||
+                      e.target.closest('[role="menu"]') ||
+                      e.target.closest('[role="dialog"]')
+                    ) {
+                      return;
+                    }
+                    const invoice = row.original;
+                    // Ouvrir la sidebar appropriée selon le type
+                    if (invoice._type === "imported") {
+                      setSelectedImportedInvoice(invoice);
+                    } else {
+                      // Déclencher l'ouverture de la sidebar via le bouton d'actions
+                      const actionsButton = e.currentTarget.querySelector(
+                        "[data-view-invoice]",
+                      );
+                      if (actionsButton) {
+                        actionsButton.click();
+                      }
+                    }
+                  }}
+                >
+                  {row
+                    .getVisibleCells()
+                    .filter((c) => c.column.id !== "_type")
+                    .map((cell, index, arr) => (
+                      <td
+                        key={cell.id}
+                        style={{ width: cell.column.getSize() }}
+                        className={`p-2 align-middle text-[13px] ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </td>
+                    ))}
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan={table.getAllColumns().length}
+                  className="h-24 text-center p-2"
+                >
+                  Aucune facture trouvée.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
       {/* Mobile Toolbar */}
@@ -953,7 +1033,7 @@ export default function InvoiceTable({
       </div>
 
       {/* Pagination - Fixe en bas sur desktop */}
-      <div className="hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-border bg-background flex-shrink-0">
+      <div className="hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-border bg-background sticky bottom-0 z-10">
         <div className="flex-1 text-xs font-normal text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} sur{" "}
           {table.getFilteredRowModel().rows.length} ligne(s) sélectionnée(s).
@@ -1100,6 +1180,20 @@ export default function InvoiceTable({
           refetchImported();
           onBalancesRefetch?.();
           setSelectedImportedInvoice(null);
+        }}
+      />
+
+      {/* Dialog d'assignation groupée des factures importées */}
+      <AssignImportedInvoicesDialog
+        open={isBulkAssignOpen}
+        onOpenChange={setIsBulkAssignOpen}
+        invoiceIds={selectedRows
+          .filter((r) => r._type === "imported")
+          .map((r) => r.id)}
+        onAssigned={() => {
+          refetchImported();
+          onBalancesRefetch?.();
+          table.resetRowSelection?.();
         }}
       />
 

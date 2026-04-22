@@ -9,18 +9,21 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { Checkbox } from "@/src/components/ui/checkbox";
-import { Button } from "@/src/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
 import {
   ArrowUpDown,
   FileText,
-  FileUp,
   Clock,
   CheckCircle,
   Send,
   XCircle,
   Archive,
-  Mail,
   Upload,
+  CircleAlert,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
@@ -267,7 +270,7 @@ export function useInvoiceTable({
             aria-label="Sélectionner la ligne"
           />
         ),
-        size: 52,
+        size: 40,
         enableSorting: false,
         enableHiding: false,
       },
@@ -279,7 +282,7 @@ export function useInvoiceTable({
       //       onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       //     >
       //       Numéro
-      //       <ArrowUpDown className="ml-2 h-4 w-4" />
+      //       <ArrowUpDown className="ml-2 h-3 w-3" />
       //     </div>
       //   ),
       //   cell: ({ row }) => {
@@ -305,7 +308,7 @@ export function useInvoiceTable({
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Client
-            <ArrowUpDown className="ml-2 h-4 w-4" />
+            <ArrowUpDown className="ml-2 h-3 w-3" />
           </div>
         ),
         meta: {
@@ -321,14 +324,6 @@ export function useInvoiceTable({
             client?.name || (isImported ? "Client inconnu" : "Non défini");
           return (
             <div className="min-h-[40px] flex items-center gap-2">
-              {isImported && (
-                <span
-                  className="flex-shrink-0 inline-flex items-center justify-center w-5 h-5 rounded bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
-                  title="Facture importée"
-                >
-                  <Upload className="w-3 h-3" />
-                </span>
-              )}
               <div className="flex flex-col justify-center min-w-0">
                 <div
                   className="font-normal max-w-[100px] md:max-w-none truncate"
@@ -342,69 +337,74 @@ export function useInvoiceTable({
                 </div>
                 {!isImported && (
                   <div className="text-xs text-muted-foreground truncate max-w-[100px] md:max-w-none">
-                    {invoice.number || (
+                    {(invoice.prefix
+                      ? `${invoice.prefix}${invoice.number}`
+                      : invoice.number) || (
                       <span className="italic">Brouillon</span>
                     )}
                   </div>
                 )}
               </div>
+              {isImported && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="flex-shrink-0 inline-flex items-center justify-center w-5 h-5 rounded bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400 cursor-default">
+                      <Upload className="w-3 h-3" />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="top"
+                    className="bg-[#202020] text-white border-none text-xs"
+                  >
+                    Facture importée
+                  </TooltipContent>
+                </Tooltip>
+              )}
             </div>
           );
         },
         size: 200,
       },
       {
-        id: "reference",
-        accessorFn: (row) => {
-          if (row._type === "imported") return row.invoiceNumber || "";
-          if (!row.number) return "";
-          return row.prefix ? `${row.prefix}${row.number}` : row.number;
-        },
+        accessorKey: "purchaseOrderNumber",
         header: ({ column }) => (
           <div
             className="flex items-center cursor-pointer font-normal"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Référence
-            <ArrowUpDown className="ml-2 h-4 w-4" />
+            <ArrowUpDown className="ml-2 h-3 w-3" />
           </div>
         ),
         meta: {
           label: "Référence",
         },
         cell: ({ row }) => {
-          const invoice = row.original;
-          if (invoice._type === "imported") {
-            return (
-              <div className="font-normal text-muted-foreground">
-                {invoice.invoiceNumber || "—"}
-              </div>
-            );
+          const reference = row.original.purchaseOrderNumber;
+          if (!reference) {
+            return <span className="text-muted-foreground">—</span>;
           }
-          const ref = invoice.prefix
-            ? `${invoice.prefix}${invoice.number}`
-            : invoice.number;
           return (
-            <div className="font-normal">
-              {ref || (
-                <span className="text-muted-foreground italic">Brouillon</span>
-              )}
+            <div
+              className="font-normal truncate max-w-[160px]"
+              title={reference}
+            >
+              {reference}
             </div>
           );
         },
-        size: 130,
+        size: 140,
       },
       {
         accessorKey: "finalTotalHT",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <div
+            className="flex items-center cursor-pointer font-normal"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="h-auto p-0 font-normal"
           >
             Montant HT
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
+            <ArrowUpDown className="ml-2 h-3 w-3" />
+          </div>
         ),
         meta: {
           label: "Montant HT",
@@ -439,14 +439,13 @@ export function useInvoiceTable({
       {
         accessorKey: "finalTotalVAT",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
+          <div
+            className="flex items-center cursor-pointer font-normal"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="h-auto p-0 font-normal"
           >
             TVA
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
+            <ArrowUpDown className="ml-2 h-3 w-3" />
+          </div>
         ),
         meta: {
           label: "TVA",
@@ -479,6 +478,78 @@ export function useInvoiceTable({
         size: 100,
       },
       {
+        accessorKey: "finalTotalTTC",
+        header: ({ column }) => (
+          <div
+            className="flex items-center cursor-pointer font-normal"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Montant TTC
+            <ArrowUpDown className="ml-2 h-3 w-3" />
+          </div>
+        ),
+        meta: {
+          label: "Montant TTC",
+        },
+        cell: ({ row }) => {
+          const invoice = row.original;
+
+          // Pour les factures importées, utiliser totalTTC directement
+          if (invoice._type === "imported") {
+            const amount = invoice.totalTTC || invoice.total || 0;
+            return (
+              <div className="font-normal">
+                {new Intl.NumberFormat("fr-FR", {
+                  style: "currency",
+                  currency: invoice.currency || "EUR",
+                }).format(amount)}
+              </div>
+            );
+          }
+
+          const escompteValue = parseFloat(invoice.escompte) || 0;
+
+          // Utiliser finalTotalTTC comme base (après remise mais avant escompte)
+          let amount = invoice.finalTotalTTC;
+
+          // Afficher "-" si undefined/null
+          if (amount === undefined || amount === null || isNaN(amount))
+            return "-";
+
+          // Appliquer uniquement l'escompte pour afficher le Total TTC
+          if (escompteValue > 0) {
+            const totalHT =
+              invoice.finalTotalHT !== undefined &&
+              invoice.finalTotalHT !== null
+                ? invoice.finalTotalHT
+                : invoice.totalHT || 0;
+            const totalVAT =
+              invoice.finalTotalVAT !== undefined &&
+              invoice.finalTotalVAT !== null
+                ? invoice.finalTotalVAT
+                : invoice.totalVAT || 0;
+
+            // Appliquer l'escompte sur HT
+            const escompteAmount = (totalHT * escompteValue) / 100;
+            const htAfterEscompte = totalHT - escompteAmount;
+            const tvaAfterEscompte = invoice.isReverseCharge
+              ? 0
+              : (htAfterEscompte / totalHT) * totalVAT;
+            amount = htAfterEscompte + tvaAfterEscompte;
+          }
+
+          return (
+            <div className="font-normal">
+              {new Intl.NumberFormat("fr-FR", {
+                style: "currency",
+                currency: "EUR",
+              }).format(amount)}
+            </div>
+          );
+        },
+        size: 120,
+      },
+      {
         accessorKey: "issueDate",
         header: ({ column }) => (
           <div
@@ -486,7 +557,7 @@ export function useInvoiceTable({
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Date d&apos;émission
-            <ArrowUpDown className="ml-2 h-4 w-4" />
+            <ArrowUpDown className="ml-2 h-3 w-3" />
           </div>
         ),
         meta: {
@@ -545,7 +616,7 @@ export function useInvoiceTable({
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Échéance
-            <ArrowUpDown className="ml-2 h-4 w-4" />
+            <ArrowUpDown className="ml-2 h-3 w-3" />
           </div>
         ),
         meta: {
@@ -600,9 +671,28 @@ export function useInvoiceTable({
             const formattedDate = dueDate.toLocaleDateString("fr-FR");
 
             return (
-              <div className={cn(isOverdue && "text-destructive font-medium")}>
+              <div
+                className={cn(
+                  "flex items-center gap-1.5",
+                  isOverdue && "text-destructive font-medium",
+                )}
+              >
                 {formattedDate}
-                {isOverdue && <div className="text-xs">En retard</div>}
+                {isOverdue && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex items-center justify-center flex-shrink-0">
+                        <CircleAlert className="w-3.5 h-3.5 text-destructive" />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="top"
+                      className="bg-[#202020] text-white border-none text-xs"
+                    >
+                      En retard
+                    </TooltipContent>
+                  </Tooltip>
+                )}
               </div>
             );
           } catch {
@@ -619,7 +709,7 @@ export function useInvoiceTable({
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Statut
-            <ArrowUpDown className="ml-2 h-4 w-4" />
+            <ArrowUpDown className="ml-2 h-3 w-3" />
           </div>
         ),
         meta: {
@@ -730,144 +820,23 @@ export function useInvoiceTable({
         filterFn: statusFilterFn,
       },
       {
-        id: "source",
-        header: () => (
-          <div className="flex items-center font-normal">Source</div>
-        ),
-        meta: {
-          label: "Source",
-        },
-        cell: ({ row }) => {
-          const isImported = row.original._type === "imported";
-          if (isImported) {
-            return (
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium",
-                  "bg-violet-100 text-violet-700 dark:bg-violet-900/20 dark:text-violet-400",
-                )}
-              >
-                <FileUp className="w-3 h-3" />
-                Importée
-              </span>
-            );
-          }
-          return null;
-        },
-        size: 100,
-        enableSorting: false,
-      },
-      {
         id: "emailTracking",
         header: () => (
-          <div className="flex items-center justify-center font-normal">
-            <Mail className="h-4 w-4" />
-          </div>
+          <div className="flex items-center font-normal">Suivi</div>
         ),
         meta: {
-          label: "Email",
+          label: "Suivi",
         },
         cell: ({ row }) => {
           const emailTracking = row.original.emailTracking;
           return (
-            <div className="flex justify-center">
+            <div className="flex items-center">
               <EmailTrackingStatus emailTracking={emailTracking} />
             </div>
           );
         },
-        size: 50,
+        size: 100,
         enableSorting: false,
-      },
-      {
-        accessorKey: "finalTotalTTC",
-        header: ({ column }) => (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="h-auto p-0 font-normal"
-          >
-            Montant TTC
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
-        ),
-        meta: {
-          label: "Montant TTC",
-        },
-        cell: ({ row }) => {
-          const invoice = row.original;
-
-          // Pour les factures importées, utiliser totalTTC directement
-          if (invoice._type === "imported") {
-            const amount = invoice.totalTTC || invoice.total || 0;
-            return (
-              <div className="font-normal">
-                {new Intl.NumberFormat("fr-FR", {
-                  style: "currency",
-                  currency: invoice.currency || "EUR",
-                }).format(amount)}
-              </div>
-            );
-          }
-
-          const escompteValue = parseFloat(invoice.escompte) || 0;
-
-          // Utiliser finalTotalTTC comme base (après remise mais avant escompte)
-          let amount = invoice.finalTotalTTC;
-
-          // Afficher "-" si undefined/null
-          if (amount === undefined || amount === null || isNaN(amount))
-            return "-";
-
-          // Appliquer uniquement l'escompte pour afficher le Total TTC
-          if (escompteValue > 0) {
-            // Utiliser finalTotalHT et finalTotalVAT (après remise)
-            const totalHT =
-              invoice.finalTotalHT !== undefined &&
-              invoice.finalTotalHT !== null
-                ? invoice.finalTotalHT
-                : invoice.totalHT || 0;
-            const totalVAT =
-              invoice.finalTotalVAT !== undefined &&
-              invoice.finalTotalVAT !== null
-                ? invoice.finalTotalVAT
-                : invoice.totalVAT || 0;
-
-            console.log("Invoice Table - Escompte calculation:", {
-              invoiceId: invoice.id,
-              finalTotalTTC: invoice.finalTotalTTC,
-              finalTotalHT: invoice.finalTotalHT,
-              finalTotalVAT: invoice.finalTotalVAT,
-              totalHT,
-              totalVAT,
-              escompteValue,
-            });
-
-            // Appliquer l'escompte sur HT
-            const escompteAmount = (totalHT * escompteValue) / 100;
-            const htAfterEscompte = totalHT - escompteAmount;
-            const tvaAfterEscompte = invoice.isReverseCharge
-              ? 0
-              : (htAfterEscompte / totalHT) * totalVAT;
-            amount = htAfterEscompte + tvaAfterEscompte;
-
-            console.log("Invoice Table - Result:", {
-              escompteAmount,
-              htAfterEscompte,
-              tvaAfterEscompte,
-              finalAmount: amount,
-            });
-          }
-
-          return (
-            <div className="font-normal">
-              {new Intl.NumberFormat("fr-FR", {
-                style: "currency",
-                currency: "EUR",
-              }).format(amount)}
-            </div>
-          );
-        },
-        size: 120,
       },
       {
         id: "actions",
@@ -968,6 +937,10 @@ export function useInvoiceTable({
     initialState: {
       pagination: {
         pageSize: 50,
+      },
+      columnVisibility: {
+        finalTotalHT: false,
+        finalTotalVAT: false,
       },
     },
   });

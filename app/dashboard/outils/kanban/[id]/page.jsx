@@ -721,25 +721,59 @@ function KanbanBoardPageContent({ params }) {
     filterTasks: filterTasksBySearch,
   } = useKanbanSearch();
 
+  // Ref pour éviter que l'effet de synchronisation URL → modal ne réouvre
+  // une tâche qu'on vient de fermer (avant que useSearchParams ne se mette à jour)
+  const handledTaskIdRef = React.useRef(null);
+
   // Ouvrir automatiquement une tâche si le paramètre ?task= est présent dans l'URL
   React.useEffect(() => {
-    if (taskIdFromUrl && board?.tasks && !loading) {
-      const taskToOpen = board.tasks.find((t) => t.id === taskIdFromUrl);
-      if (taskToOpen && !isEditTaskOpen) {
-        openEditTaskModal(taskToOpen);
-        // Supprimer le paramètre de l'URL après ouverture pour éviter de réouvrir
-        router.replace(`/dashboard/outils/kanban/${id}`, { scroll: false });
-      }
+    if (!taskIdFromUrl) {
+      handledTaskIdRef.current = null;
+      return;
     }
-  }, [
-    taskIdFromUrl,
-    board?.tasks,
-    loading,
-    isEditTaskOpen,
-    openEditTaskModal,
-    router,
-    id,
-  ]);
+    if (!board?.tasks || loading) return;
+    if (handledTaskIdRef.current === taskIdFromUrl) return;
+
+    const taskToOpen = board.tasks.find((t) => t.id === taskIdFromUrl);
+    if (taskToOpen) {
+      handledTaskIdRef.current = taskIdFromUrl;
+      openEditTaskModal(taskToOpen);
+    }
+  }, [taskIdFromUrl, board?.tasks, loading, openEditTaskModal]);
+
+  // Wrappers qui synchronisent l'URL avec l'état du modal de tâche.
+  // window.history.replaceState évite un re-render côté serveur (router.replace
+  // en App Router re-déclenche le rendu serveur pour chaque changement).
+  const handleOpenEditTaskModal = React.useCallback(
+    (task) => {
+      if (!task) return;
+      const taskId = task?.id || task?._id;
+      if (taskId) {
+        handledTaskIdRef.current = taskId;
+      }
+      openEditTaskModal(task);
+      if (taskId && typeof window !== "undefined") {
+        window.history.replaceState(
+          null,
+          "",
+          `/dashboard/outils/kanban/${id}?task=${taskId}`,
+        );
+      }
+    },
+    [openEditTaskModal, id],
+  );
+
+  const handleCloseEditTaskModal = React.useCallback(() => {
+    // Marque l'id courant comme "déjà traité" pour bloquer l'effet de réouverture
+    // le temps que useSearchParams reflète l'URL nettoyée.
+    if (taskIdFromUrl) {
+      handledTaskIdRef.current = taskIdFromUrl;
+    }
+    closeEditTaskModal();
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", `/dashboard/outils/kanban/${id}`);
+    }
+  }, [closeEditTaskModal, id, taskIdFromUrl]);
 
   // Fonction de filtrage combinée (recherche + membre)
   const filterTasks = React.useCallback(
@@ -863,9 +897,9 @@ function KanbanBoardPageContent({ params }) {
 
   const handleColumnEditTask = React.useCallback(
     (task) => {
-      openEditTaskModal(task);
+      handleOpenEditTaskModal(task);
     },
-    [openEditTaskModal],
+    [handleOpenEditTaskModal],
   );
 
   const handleColumnDeleteTask = React.useCallback(
@@ -1546,7 +1580,7 @@ function KanbanBoardPageContent({ params }) {
             columns={localColumns}
             getTasksByColumn={getLocalTasksByColumn}
             filterTasks={filterTasks}
-            onEditTask={openEditTaskModal}
+            onEditTask={handleOpenEditTaskModal}
             onAddTask={openAddTaskModal}
             members={board?.members || []}
             updateTask={updateTask}
@@ -1569,7 +1603,7 @@ function KanbanBoardPageContent({ params }) {
               columns={localColumns}
               getTasksByColumn={getLocalTasksByColumn}
               filterTasks={filterTasks}
-              onEditTask={openEditTaskModal}
+              onEditTask={handleOpenEditTaskModal}
               onDeleteTask={handleDeleteTask}
               onAddTask={openAddTaskModal}
               onEditColumn={openEditModal}
@@ -1658,7 +1692,7 @@ function KanbanBoardPageContent({ params }) {
 
       <TaskModal
         isOpen={isEditTaskOpen}
-        onClose={closeEditTaskModal}
+        onClose={handleCloseEditTaskModal}
         onSubmit={handleUpdateTask}
         isLoading={updateTaskLoading}
         isEditing={true}
@@ -1671,7 +1705,7 @@ function KanbanBoardPageContent({ params }) {
         addChecklistItem={addChecklistItem}
         toggleChecklistItem={toggleChecklistItem}
         removeChecklistItem={removeChecklistItem}
-        openEditTaskModal={openEditTaskModal}
+        openEditTaskModal={handleOpenEditTaskModal}
         updateTask={updateTask}
         initialFormRef={initialFormRef}
         localMutationRef={localMutationRef}
@@ -1723,7 +1757,7 @@ function KanbanBoardPageContent({ params }) {
         members={members}
         onOpenTask={(task) => {
           setShowConvertModal(false);
-          openEditTaskModal(task);
+          handleOpenEditTaskModal(task);
         }}
       />
     </div>

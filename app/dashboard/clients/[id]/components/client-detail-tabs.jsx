@@ -27,6 +27,7 @@ const tabTriggerClass =
 export default function ClientDetailTabs({
   client,
   invoices = [],
+  importedInvoices = [],
   quotes = [],
   purchaseOrders = [],
   workspaceId,
@@ -57,8 +58,10 @@ export default function ClientDetailTabs({
   };
 
   const clientInvoicesCount = useMemo(
-    () => invoices.filter((inv) => inv.client?.id === client.id).length,
-    [invoices, client.id],
+    () =>
+      invoices.filter((inv) => inv.client?.id === client.id).length +
+      importedInvoices.length,
+    [invoices, importedInvoices, client.id],
   );
 
   const clientQuotesCount = useMemo(
@@ -133,7 +136,10 @@ export default function ClientDetailTabs({
         value="activity"
         className="flex-1 min-h-0 mt-0 overflow-hidden data-[state=inactive]:hidden"
       >
-        <ClientActivityTab client={client} />
+        <ClientActivityTab
+          client={client}
+          importedInvoices={importedInvoices}
+        />
       </TabsContent>
 
       <TabsContent
@@ -151,7 +157,11 @@ export default function ClientDetailTabs({
         value="invoices"
         className="flex-1 min-h-0 mt-0 overflow-auto data-[state=inactive]:hidden"
       >
-        <ClientInvoicesTab invoices={invoices} clientId={client.id} />
+        <ClientInvoicesTab
+          invoices={invoices}
+          importedInvoices={importedInvoices}
+          clientId={client.id}
+        />
       </TabsContent>
 
       <TabsContent

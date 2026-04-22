@@ -13,7 +13,7 @@ const skipImages = process.argv.includes("--skip-images");
 const forceImages = process.argv.includes("--force-images");
 const ignoreLinks = process.argv.includes("--ignore-links");
 const forceFlag = forceImages ? " --force" : "";
-const count = imagesOnly ? 0 : (parseInt(process.argv[2], 10) || 3);
+const count = imagesOnly ? 0 : parseInt(process.argv[2], 10) || 3;
 
 const queue = JSON.parse(fs.readFileSync(QUEUE_PATH, "utf-8"));
 const log = fs.existsSync(LOG_PATH)
@@ -38,18 +38,23 @@ if (imagesOnly) {
     process.exit(0);
   }
 
-  console.log(`Found ${publishedSlugs.length} published article(s). Generating images...`);
+  console.log(
+    `Found ${publishedSlugs.length} published article(s). Generating images...`,
+  );
   if (!process.env.OPENAI_API_KEY) {
     console.log("Error: OPENAI_API_KEY not set.");
     process.exit(1);
   }
 
   try {
-    execSync(`python3 ${IMAGE_SCRIPT} ${publishedSlugs.join(" ")}${forceFlag}`, {
-      stdio: "inherit",
-      env: { ...process.env },
-      timeout: 660000,
-    });
+    execSync(
+      `python3 ${IMAGE_SCRIPT} ${publishedSlugs.join(" ")}${forceFlag}`,
+      {
+        stdio: "inherit",
+        env: { ...process.env },
+        timeout: 660000,
+      },
+    );
   } catch (err) {
     console.error("Warning: Image generation failed:", err.message);
   }
@@ -68,69 +73,184 @@ function getPublishedSlugs() {
   return slugs;
 }
 
-// Validate internal /blog/ links in an article's content
-function validateInternalLinks(content, slug, publishedSlugs, batchSlugs) {
-  const linkRegex = /\[([^\]]+)\]\(\/blog\/([^)]+)\)/g;
-  const brokenLinks = [];
-  let match;
-  while ((match = linkRegex.exec(content)) !== null) {
-    const targetSlug = match[2];
-    if (
-      !publishedSlugs.has(targetSlug) &&
-      !batchSlugs.has(targetSlug) &&
-      !fs.existsSync(path.join(BLOG_DIR, `${targetSlug}.mdx`))
-    ) {
-      brokenLinks.push({ text: match[1], target: targetSlug, type: "missing" });
-    } else if (
-      !publishedSlugs.has(targetSlug) &&
-      !batchSlugs.has(targetSlug)
-    ) {
-      brokenLinks.push({ text: match[1], target: targetSlug, type: "unpublished" });
-    }
-  }
-  return brokenLinks;
-}
-
 // Normal mode: publish new articles
 const published = [];
 const publishedSlugs = getPublishedSlugs();
 
-// First pass: collect the batch of slugs we intend to publish
-const batchSlugs = new Set();
+// Build metadata for every unpublished queued article: parsed frontmatter,
+// content, internal-link dependencies (unpublished but existing) and missing
+// targets (file doesn't exist — unresolvable 404).
+const linkScanRegex = /\[([^\]]+)\]\(\/blog\/([^)#?]+)(?:[#?][^)]*)?\)/g;
+const meta = new Map(); // slug -> { data, content, deps:Set<string>, missing:[{text,target}] }
+
 for (const slug of queue.queue) {
-  if (batchSlugs.size >= count) break;
   const fp = path.join(BLOG_DIR, `${slug}.mdx`);
   if (!fs.existsSync(fp)) continue;
-  const { data } = matter(fs.readFileSync(fp, "utf-8"));
+  const { data, content } = matter(fs.readFileSync(fp, "utf-8"));
   if (data.published === true) continue;
-  batchSlugs.add(slug);
+
+  const deps = new Set();
+  const missing = [];
+  let m;
+  const re = new RegExp(linkScanRegex.source, "g");
+  while ((m = re.exec(content)) !== null) {
+    const target = m[2].replace(/\/$/, "");
+    if (target === slug) continue;
+    const targetFp = path.join(BLOG_DIR, `${target}.mdx`);
+    if (!fs.existsSync(targetFp)) {
+      missing.push({ text: m[1], target });
+    } else if (!publishedSlugs.has(target)) {
+      deps.add(target);
+    }
+  }
+  meta.set(slug, { data, content, deps, missing });
 }
 
-// Second pass: validate links and publish
-for (const slug of queue.queue) {
-  if (published.length >= count) break;
+// Build the dep graph over unpublished articles. Articles that mutually link
+// to each other (strongly-connected components) must be published in the same
+// batch — otherwise one would 404 the other. Tarjan's algo finds SCCs; we
+// then pick whole SCCs in topological order using queue position as
+// tiebreaker. An SCC bigger than `count` forces a larger-than-usual week,
+// which is strictly better than stranding articles forever.
+const graph = new Map(); // slug -> deps limited to other unpublished
+for (const [slug, { deps, missing }] of meta.entries()) {
+  if (missing.length > 0 && !ignoreLinks) continue; // unpublishable in strict mode
+  graph.set(
+    slug,
+    [...deps].filter((d) => meta.has(d)),
+  );
+}
 
-  const filePath = path.join(BLOG_DIR, `${slug}.mdx`);
-  if (!fs.existsSync(filePath)) {
-    console.warn(`File not found: ${slug}.mdx — skipping`);
-    continue;
-  }
+// Iterative Tarjan SCC (avoids stack overflow on deep graphs).
+const sccIdBySlug = new Map();
+const sccs = [];
+{
+  let idx = 0;
+  const indices = new Map();
+  const lowlink = new Map();
+  const onStack = new Set();
+  const stk = [];
+  const callStack = [];
 
-  const raw = fs.readFileSync(filePath, "utf-8");
-  const { data, content } = matter(raw);
-
-  if (data.published === true) continue;
-
-  // Validate internal links before publishing
-  const brokenLinks = validateInternalLinks(content, slug, publishedSlugs, batchSlugs);
-  if (brokenLinks.length > 0) {
-    console.warn(`\n⚠ ${slug}.mdx has ${brokenLinks.length} broken internal link(s):`);
-    for (const link of brokenLinks) {
-      console.warn(`  - [${link.text}](/blog/${link.target}) — ${link.type === "missing" ? "file not found" : "not yet published"}`);
+  for (const start of graph.keys()) {
+    if (indices.has(start)) continue;
+    callStack.push({ v: start, iter: 0 });
+    while (callStack.length > 0) {
+      const frame = callStack[callStack.length - 1];
+      const { v } = frame;
+      if (frame.iter === 0) {
+        indices.set(v, idx);
+        lowlink.set(v, idx);
+        idx++;
+        stk.push(v);
+        onStack.add(v);
+      }
+      const neighbors = graph.get(v) || [];
+      if (frame.iter < neighbors.length) {
+        const w = neighbors[frame.iter++];
+        if (!indices.has(w)) {
+          callStack.push({ v: w, iter: 0 });
+        } else if (onStack.has(w)) {
+          lowlink.set(v, Math.min(lowlink.get(v), indices.get(w)));
+        }
+      } else {
+        if (lowlink.get(v) === indices.get(v)) {
+          const scc = [];
+          let w;
+          do {
+            w = stk.pop();
+            onStack.delete(w);
+            scc.push(w);
+          } while (w !== v);
+          const id = sccs.length;
+          sccs.push(scc);
+          for (const s of scc) sccIdBySlug.set(s, id);
+        }
+        callStack.pop();
+        if (callStack.length > 0) {
+          const parent = callStack[callStack.length - 1];
+          lowlink.set(
+            parent.v,
+            Math.min(lowlink.get(parent.v), lowlink.get(v)),
+          );
+        }
+      }
     }
-    if (!ignoreLinks) {
-      console.warn(`  → Skipping publication. Use --ignore-links to force.\n`);
-      continue;
+  }
+}
+
+// SCC-level dependency set and priority (min queue position of members).
+const queueIndex = new Map(queue.queue.map((s, i) => [s, i]));
+const sccExternalDeps = sccs.map(() => new Set());
+for (const [slug, deps] of graph.entries()) {
+  const from = sccIdBySlug.get(slug);
+  for (const d of deps) {
+    const to = sccIdBySlug.get(d);
+    if (to !== from) sccExternalDeps[from].add(to);
+  }
+}
+const sccPriority = sccs.map((scc) =>
+  Math.min(...scc.map((s) => queueIndex.get(s) ?? Number.MAX_SAFE_INTEGER)),
+);
+
+// Walk SCCs in topo order, tiebreaking on earliest queue position, until the
+// batch reaches `count`. Include whole SCCs — never half of one.
+const sccDone = new Set();
+const batch = [];
+const batchSet = new Set();
+const resolved = new Set(publishedSlugs);
+
+while (batch.length < count) {
+  let pick = -1;
+  let pickPrio = Number.MAX_SAFE_INTEGER;
+  for (let i = 0; i < sccs.length; i++) {
+    if (sccDone.has(i)) continue;
+    const unresolvedDeps = [...sccExternalDeps[i]].some((d) => !sccDone.has(d));
+    if (unresolvedDeps) continue;
+    if (sccPriority[i] < pickPrio) {
+      pick = i;
+      pickPrio = sccPriority[i];
+    }
+  }
+  if (pick === -1) break;
+  sccDone.add(pick);
+  const members = sccs[pick]
+    .slice()
+    .sort((a, b) => (queueIndex.get(a) ?? 0) - (queueIndex.get(b) ?? 0));
+  if (members.length > 1) {
+    console.log(
+      `→ Co-publishing cycle of ${members.length} articles: ${members.join(", ")}`,
+    );
+  }
+  for (const slug of members) {
+    batch.push(slug);
+    batchSet.add(slug);
+    resolved.add(slug);
+  }
+}
+
+// Articles with missing targets (broken slugs with no .mdx file) can never be
+// resolved through scheduling — surface them so the editor can fix the link
+// or create the missing article.
+for (const [slug, { missing }] of meta.entries()) {
+  if (batchSet.has(slug)) continue;
+  if (missing.length === 0) continue;
+  console.warn(
+    `⚠ ${slug} blocked on missing targets: ${missing
+      .map((x) => `/blog/${x.target}`)
+      .join(", ")}`,
+  );
+}
+
+// Publish the selected batch in the chosen order.
+for (const slug of batch) {
+  const filePath = path.join(BLOG_DIR, `${slug}.mdx`);
+  const { data, content, missing } = meta.get(slug);
+
+  if (missing.length > 0 && ignoreLinks) {
+    console.warn(`\n⚠ ${slug}.mdx has ${missing.length} missing target(s):`);
+    for (const link of missing) {
+      console.warn(`  - [${link.text}](/blog/${link.target}) — file not found`);
     }
     console.warn(`  → Publishing anyway (--ignore-links flag used).\n`);
   }
@@ -168,7 +288,9 @@ if (!skipImages && process.env.OPENAI_API_KEY) {
       timeout: 660000,
     });
   } catch (err) {
-    console.error("Warning: Image generation failed. Articles are published but some images may be missing.");
+    console.error(
+      "Warning: Image generation failed. Articles are published but some images may be missing.",
+    );
     console.error(err.message);
   }
 } else if (!process.env.OPENAI_API_KEY) {

@@ -15,6 +15,7 @@ export const INVOICE_FRAGMENT = gql`
     status
     issueDate
     dueDate
+    paymentDate
     headerNotes
     footerNotes
     termsAndConditions
@@ -152,6 +153,7 @@ export const INVOICE_LIST_FRAGMENT = gql`
     status
     issueDate
     dueDate
+    paymentDate
     discount
     discountType
     retenueGarantie
@@ -309,6 +311,12 @@ export const GET_LAST_INVOICE_PREFIX = gql`
         prefix
       }
     }
+  }
+`;
+
+export const GET_LATEST_INVOICE_ISSUE_DATE = gql`
+  query GetLatestInvoiceIssueDate($workspaceId: ID!) {
+    latestInvoiceIssueDate(workspaceId: $workspaceId)
   }
 `;
 
@@ -829,6 +837,29 @@ export const useLastInvoicePrefix = () => {
   return useMemo(
     () => ({
       prefix: data?.invoices?.invoices?.[0]?.prefix || null,
+      loading,
+      error,
+    }),
+    [data, loading, error],
+  );
+};
+
+// Hook pour récupérer la date d'émission de la dernière facture non-brouillon
+// Utilisé pour pré-remplir la date d'émission lors de la création d'une facture
+// afin d'éviter l'erreur de validation "date antérieure à la dernière facture"
+export const useLatestInvoiceIssueDate = () => {
+  const { workspaceId } = useRequiredWorkspace();
+
+  const { data, loading, error } = useQuery(GET_LATEST_INVOICE_ISSUE_DATE, {
+    variables: { workspaceId },
+    skip: !workspaceId,
+    errorPolicy: "all",
+    fetchPolicy: "cache-and-network",
+  });
+
+  return useMemo(
+    () => ({
+      latestIssueDate: data?.latestInvoiceIssueDate || null,
       loading,
       error,
     }),

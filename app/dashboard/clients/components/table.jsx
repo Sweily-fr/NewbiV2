@@ -35,9 +35,12 @@ import {
   EllipsisIcon,
   FilterIcon,
   ListFilterIcon,
+  ListPlus,
   PlusIcon,
   Search,
+  ShieldOff,
   TrashIcon,
+  UserCheck,
 } from "lucide-react";
 
 import { useRouter } from "next/navigation";
@@ -105,8 +108,15 @@ import {
 } from "@/src/components/ui/table";
 import { Skeleton } from "@/src/components/ui/skeleton";
 // Le composant est exporté par défaut, pas en named export
-import { useClients, useDeleteClient } from "@/src/hooks/useClients";
-import { useClientListsByClient } from "@/src/hooks/useClientLists";
+import {
+  useClients,
+  useDeleteClient,
+  useBlockClient,
+} from "@/src/hooks/useClients";
+import {
+  useClientListsByClient,
+  useAddClientToLists,
+} from "@/src/hooks/useClientLists";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
 import { toast } from "@/src/components/ui/sonner";
 import ClientsModal from "./clients-modal";
@@ -131,7 +141,7 @@ const columns = (
   onSelectAll,
   allClients,
   invoiceCountByClient = {},
-  customFieldDefinitions = []
+  customFieldDefinitions = [],
 ) => [
   {
     id: "select",
@@ -176,7 +186,13 @@ const columns = (
         : "";
       return (
         <div className="flex items-center gap-3">
-          <UserAvatar name={displayName} colorKey={client.email} size="xs" className="rounded-md" fallbackClassName="bg-gray-100 text-gray-600 rounded-md" />
+          <UserAvatar
+            name={displayName}
+            colorKey={client.email}
+            size="xs"
+            className="rounded-md"
+            fallbackClassName="bg-gray-100 text-gray-600 rounded-md"
+          />
           <div
             className="font-normal max-w-[150px] md:max-w-none truncate"
             title={displayName}
@@ -226,7 +242,7 @@ const columns = (
         <span
           className={cn(
             "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border",
-            config.className
+            config.className,
           )}
         >
           {config.label}
@@ -243,11 +259,7 @@ const columns = (
       const clientId = row.original.id;
       const count = invoiceCountByClient[clientId] || 0;
 
-      return (
-        <span className="text-sm text-muted-foreground">
-          {count}
-        </span>
-      );
+      return <span className="text-sm text-muted-foreground">{count}</span>;
     },
     size: 100,
   },
@@ -257,11 +269,7 @@ const columns = (
     cell: ({ row }) => {
       const address = row.original.address;
       if (!address || !address.city) return "-";
-      return (
-        <div className="text-sm">
-          {address.city}
-        </div>
-      );
+      return <div className="text-sm">{address.city}</div>;
     },
     size: 150,
   },
@@ -331,12 +339,14 @@ const columns = (
       const handleEditClient = table.options.meta?.handleEditClient;
       const onSelectList = table.options.meta?.onSelectList;
       const workspaceId = table.options.meta?.workspaceId;
+      const allLists = table.options.meta?.allLists;
       return (
         <RowActions
           row={row}
           onEdit={handleEditClient}
           onSelectList={onSelectList}
           workspaceId={workspaceId}
+          allLists={allLists}
         />
       );
     },
@@ -361,13 +371,15 @@ export default function TableClients({
   customFieldDefinitions = [],
   externalColumnVisibility,
   onColumnVisibilityChange,
+  allLists = [],
 }) {
   const id = useId();
   const router = useRouter();
   const [columnFilters, setColumnFilters] = useState([]);
   const [internalColumnVisibility, setInternalColumnVisibility] = useState({});
   const columnVisibility = externalColumnVisibility || internalColumnVisibility;
-  const setColumnVisibility = onColumnVisibilityChange || setInternalColumnVisibility;
+  const setColumnVisibility =
+    onColumnVisibilityChange || setInternalColumnVisibility;
   const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: 10,
@@ -413,7 +425,7 @@ export default function TableClients({
   const hookResult = useClients(
     pagination.pageIndex + 1,
     pagination.pageSize,
-    debouncedGlobalFilter
+    debouncedGlobalFilter,
   );
 
   const {
@@ -428,19 +440,17 @@ export default function TableClients({
 
   // Utiliser les clients passés en props si disponibles
   const rawClients = useProvidedClients ? clientsProp || [] : hookClients;
-  
+
   // Filtrer les clients par liste sélectionnée
   const clients = useMemo(() => {
     if (!selectedList || !rawClients) return rawClients;
     // Filtrer les clients qui appartiennent à la liste sélectionnée
-    return rawClients.filter(client => 
-      client.lists?.some(list => list.id === selectedList.id)
+    return rawClients.filter((client) =>
+      client.lists?.some((list) => list.id === selectedList.id),
     );
   }, [rawClients, selectedList]);
-  
-  const totalItems = useProvidedClients
-    ? clients?.length || 0
-    : hookTotalItems;
+
+  const totalItems = useProvidedClients ? clients?.length || 0 : hookTotalItems;
   const currentPage = useProvidedClients ? 1 : hookCurrentPage;
   const totalPages = useProvidedClients ? 1 : hookTotalPages;
   const loading = useProvidedClients ? false : hookLoading;
@@ -476,7 +486,7 @@ export default function TableClients({
   const handleDeleteRows = async () => {
     try {
       await Promise.all(
-        Array.from(selectedClients).map((clientId) => deleteClient(clientId))
+        Array.from(selectedClients).map((clientId) => deleteClient(clientId)),
       );
       // Réinitialiser la sélection via le callback parent
       if (onSelectAll) {
@@ -534,7 +544,7 @@ export default function TableClients({
         }
       }
     },
-    [clients, selectedClients, onSelectClient, onSelectAll]
+    [clients, selectedClients, onSelectClient, onSelectAll],
   );
 
   const table = useReactTable({
@@ -545,7 +555,7 @@ export default function TableClients({
       handleSelectAll,
       clients,
       invoiceCountByClient,
-      customFieldDefinitions
+      customFieldDefinitions,
     ),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -569,6 +579,7 @@ export default function TableClients({
       handleEditClient,
       onSelectList,
       workspaceId,
+      allLists,
     },
   });
 
@@ -634,7 +645,7 @@ export default function TableClients({
                 ref={inputRef}
                 className={cn(
                   "w-full sm:w-[490px] lg:w-[490px] ps-9",
-                  Boolean(table.getColumn("name")?.getFilterValue()) && "pe-9"
+                  Boolean(table.getColumn("name")?.getFilterValue()) && "pe-9",
                 )}
                 value={globalFilter}
                 onChange={(e) => {
@@ -692,7 +703,7 @@ export default function TableClients({
                         <div
                           className={cn(
                             header.column.getCanSort() &&
-                              "flex h-full cursor-pointer items-center justify-between gap-2 select-none"
+                              "flex h-full cursor-pointer items-center justify-between gap-2 select-none",
                           )}
                           onClick={header.column.getToggleSortingHandler()}
                           onKeyDown={(e) => {
@@ -704,13 +715,11 @@ export default function TableClients({
                               header.column.getToggleSortingHandler()?.(e);
                             }
                           }}
-                          tabIndex={
-                            header.column.getCanSort() ? 0 : undefined
-                          }
+                          tabIndex={header.column.getCanSort() ? 0 : undefined}
                         >
                           {flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                           {{
                             asc: (
@@ -732,7 +741,7 @@ export default function TableClients({
                       ) : (
                         flexRender(
                           header.column.columnDef.header,
-                          header.getContext()
+                          header.getContext(),
                         )
                       )}
                     </th>
@@ -743,41 +752,39 @@ export default function TableClients({
             <tbody>
               {loading ? (
                 // Skeleton loading state
-                Array.from({ length: pagination.pageSize }).map(
-                  (_, index) => (
-                    <tr
-                      key={`skeleton-${index}`}
-                      className="border-b hover:bg-muted/50"
-                    >
-                      <td style={{ width: 28 }} className="p-2 pl-4 sm:pl-6">
-                        <Skeleton className="h-4 w-4 rounded" />
-                      </td>
-                      <td style={{ width: 200 }} className="p-2">
-                        <Skeleton className="h-4 w-32" />
-                      </td>
-                      <td style={{ width: 220 }} className="p-2">
-                        <Skeleton className="h-4 w-40" />
-                      </td>
-                      <td style={{ width: 120 }} className="p-2">
-                        <Skeleton className="h-5 w-20 rounded-full" />
-                      </td>
-                      <td style={{ width: 100 }} className="p-2">
-                        <Skeleton className="h-5 w-12 rounded-full" />
-                      </td>
-                      <td style={{ width: 150 }} className="p-2">
-                        <Skeleton className="h-3 w-24" />
-                      </td>
-                      <td style={{ width: 140 }} className="p-2">
-                        <Skeleton className="h-4 w-28" />
-                      </td>
-                      <td style={{ width: 60 }} className="p-2 pr-4 sm:pr-6">
-                        <div className="flex justify-end">
-                          <Skeleton className="h-8 w-8 rounded" />
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                )
+                Array.from({ length: pagination.pageSize }).map((_, index) => (
+                  <tr
+                    key={`skeleton-${index}`}
+                    className="border-b hover:bg-muted/50"
+                  >
+                    <td style={{ width: 28 }} className="p-2 pl-4 sm:pl-6">
+                      <Skeleton className="h-4 w-4 rounded" />
+                    </td>
+                    <td style={{ width: 200 }} className="p-2">
+                      <Skeleton className="h-4 w-32" />
+                    </td>
+                    <td style={{ width: 220 }} className="p-2">
+                      <Skeleton className="h-4 w-40" />
+                    </td>
+                    <td style={{ width: 120 }} className="p-2">
+                      <Skeleton className="h-5 w-20 rounded-full" />
+                    </td>
+                    <td style={{ width: 100 }} className="p-2">
+                      <Skeleton className="h-5 w-12 rounded-full" />
+                    </td>
+                    <td style={{ width: 150 }} className="p-2">
+                      <Skeleton className="h-3 w-24" />
+                    </td>
+                    <td style={{ width: 140 }} className="p-2">
+                      <Skeleton className="h-4 w-28" />
+                    </td>
+                    <td style={{ width: 60 }} className="p-2 pr-4 sm:pr-6">
+                      <div className="flex justify-end">
+                        <Skeleton className="h-8 w-8 rounded" />
+                      </div>
+                    </td>
+                  </tr>
+                ))
               ) : table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => (
                   <tr
@@ -804,7 +811,7 @@ export default function TableClients({
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </td>
                     ))}
@@ -812,10 +819,7 @@ export default function TableClients({
                 ))
               ) : error ? (
                 <tr>
-                  <td
-                    colSpan={8}
-                    className="h-24 text-center text-red-500 p-2"
-                  >
+                  <td colSpan={8} className="h-24 text-center text-red-500 p-2">
                     <div className="flex flex-col items-center gap-2">
                       <span>Erreur lors du chargement des clients</span>
                       <button
@@ -848,7 +852,7 @@ export default function TableClients({
               const start = pagination.pageIndex * pagination.pageSize + 1;
               const end = Math.min(
                 (pagination.pageIndex + 1) * pagination.pageSize,
-                displayTotal
+                displayTotal,
               );
               return `${start}-${end} sur ${displayTotal}`;
             })()}
@@ -877,7 +881,8 @@ export default function TableClients({
               </Select>
             </div>
             <div className="flex items-center whitespace-nowrap text-xs font-normal">
-              Page {pagination.pageIndex + 1} sur {useProvidedClients ? (table.getPageCount() || 1) : (totalPages || 1)}
+              Page {pagination.pageIndex + 1} sur{" "}
+              {useProvidedClients ? table.getPageCount() || 1 : totalPages || 1}
             </div>
             <Pagination>
               <PaginationContent>
@@ -997,7 +1002,6 @@ export default function TableClients({
               </PopoverContent>
             </Popover>
 
-
             {/* Add Client Button - Icon only */}
             {/* <Button
               variant="default"
@@ -1025,7 +1029,7 @@ export default function TableClients({
                         header.column.id === "select" ||
                         header.column.id === "name" ||
                         header.column.id === "type" ||
-                        header.column.id === "actions"
+                        header.column.id === "actions",
                     )
                     .map((header) => (
                       <TableHead
@@ -1036,13 +1040,13 @@ export default function TableClients({
                           <div
                             className={cn(
                               header.column.getCanSort() &&
-                                "flex h-full cursor-pointer items-center justify-between gap-2 select-none"
+                                "flex h-full cursor-pointer items-center justify-between gap-2 select-none",
                             )}
                             onClick={header.column.getToggleSortingHandler()}
                           >
                             {flexRender(
                               header.column.columnDef.header,
-                              header.getContext()
+                              header.getContext(),
                             )}
                             {{
                               asc: (
@@ -1064,7 +1068,7 @@ export default function TableClients({
                         ) : (
                           flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )
                         )}
                       </TableHead>
@@ -1118,7 +1122,7 @@ export default function TableClients({
                           cell.column.id === "select" ||
                           cell.column.id === "name" ||
                           cell.column.id === "type" ||
-                          cell.column.id === "actions"
+                          cell.column.id === "actions",
                       )
                       .map((cell) => (
                         <TableCell
@@ -1127,7 +1131,7 @@ export default function TableClients({
                         >
                           {flexRender(
                             cell.column.columnDef.cell,
-                            cell.getContext()
+                            cell.getContext(),
                           )}
                         </TableCell>
                       ))}
@@ -1173,13 +1177,45 @@ export default function TableClients({
   );
 }
 
-function RowActions({ row, onEdit, onSelectList, workspaceId }) {
+function RowActions({ row, onEdit, onSelectList, workspaceId, allLists }) {
   const client = row.original;
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showBlockDialog, setShowBlockDialog] = useState(false);
   const [showDeleteTooltip, setShowDeleteTooltip] = useState(null);
+  const [addingToList, setAddingToList] = useState(false);
   const { deleteClient } = useDeleteClient();
+  const { blockClient } = useBlockClient();
+  const { addToLists } = useAddClientToLists();
   const { lists } = useClientListsByClient(workspaceId || "", client.id);
+
+  const handleAddToList = useCallback(
+    async (listId) => {
+      setAddingToList(true);
+      try {
+        await addToLists(workspaceId, client.id, [listId]);
+        toast.success("Contact ajouté à la liste");
+      } catch (error) {
+        toast.error("Impossible d'ajouter le contact à la liste");
+      } finally {
+        setAddingToList(false);
+      }
+    },
+    [addToLists, workspaceId, client.id],
+  );
+
+  const handleBlock = useCallback(async () => {
+    try {
+      await blockClient(client.id);
+      setShowBlockDialog(false);
+    } catch (error) {
+      // Error handled by hook
+    }
+  }, [blockClient, client.id]);
+
+  const handleAssign = useCallback(() => {
+    toast.info("Fonctionnalité bientôt disponible");
+  }, []);
 
   const handleEdit = useCallback(() => {
     if (onEdit) {
@@ -1266,7 +1302,7 @@ function RowActions({ row, onEdit, onSelectList, workspaceId }) {
             </Button>
           </div>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuGroup>
             <DropdownMenuItem onClick={handleEdit}>
               <span>Modifier</span>
@@ -1275,6 +1311,67 @@ function RowActions({ row, onEdit, onSelectList, workspaceId }) {
             <DropdownMenuItem onClick={handleCopyEmail}>
               <span>Copier email</span>
               <DropdownMenuShortcut>⌘C</DropdownMenuShortcut>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            {/* Ajouter à une liste */}
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger disabled={addingToList} className="gap-2">
+                <ListPlus className="w-3.5 h-3.5" />
+                <span>Ajouter à une liste</span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                {(() => {
+                  const currentListIds = new Set(
+                    (lists || []).map((l) => l.id),
+                  );
+                  const availableLists = (allLists || []).filter(
+                    (l) => !currentListIds.has(l.id),
+                  );
+                  if (availableLists.length === 0) {
+                    return (
+                      <DropdownMenuItem disabled>
+                        Aucune liste disponible
+                      </DropdownMenuItem>
+                    );
+                  }
+                  return availableLists.map((list) => (
+                    <DropdownMenuItem
+                      key={list.id}
+                      onClick={() => handleAddToList(list.id)}
+                      disabled={addingToList}
+                      className="cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2 w-full">
+                        <div
+                          className="w-2 h-2 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: list.color }}
+                        />
+                        <span>{list.name}</span>
+                      </div>
+                    </DropdownMenuItem>
+                  ));
+                })()}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+
+            {/* Assigner */}
+            <DropdownMenuItem onClick={handleAssign}>
+              <UserCheck className="w-3.5 h-3.5" />
+              <span>Assigner</span>
+            </DropdownMenuItem>
+
+            {/* Bloquer */}
+            <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault();
+                setShowBlockDialog(true);
+              }}
+            >
+              <ShieldOff className="w-3.5 h-3.5" />
+              <span>Bloquer</span>
             </DropdownMenuItem>
           </DropdownMenuGroup>
 
@@ -1294,7 +1391,9 @@ function RowActions({ row, onEdit, onSelectList, workspaceId }) {
                         if (onSelectList) {
                           onSelectList(list);
                         } else {
-                          router.push(`/dashboard/clients/listes?listId=${list.id}`);
+                          router.push(
+                            `/dashboard/clients/listes?listId=${list.id}`,
+                          );
                         }
                       }}
                       className="flex items-center gap-2"
@@ -1313,9 +1412,10 @@ function RowActions({ row, onEdit, onSelectList, workspaceId }) {
 
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className={client.hasDocuments
-              ? "opacity-50 cursor-not-allowed"
-              : "text-destructive focus:text-destructive"
+            className={
+              client.hasDocuments
+                ? "opacity-50 cursor-not-allowed"
+                : "text-destructive focus:text-destructive"
             }
             onSelect={(e) => {
               if (client.hasDocuments) {
@@ -1327,7 +1427,10 @@ function RowActions({ row, onEdit, onSelectList, workspaceId }) {
             onMouseEnter={(e) => {
               if (client.hasDocuments) {
                 const rect = e.currentTarget.getBoundingClientRect();
-                setShowDeleteTooltip({ top: rect.bottom + 6, left: rect.right });
+                setShowDeleteTooltip({
+                  top: rect.bottom + 6,
+                  left: rect.right,
+                });
               }
             }}
             onMouseLeave={() => setShowDeleteTooltip(null)}
@@ -1338,6 +1441,36 @@ function RowActions({ row, onEdit, onSelectList, workspaceId }) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* Dialog de confirmation de blocage */}
+      <AlertDialog open={showBlockDialog} onOpenChange={setShowBlockDialog}>
+        <AlertDialogContent>
+          <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
+            <div
+              className="flex size-9 shrink-0 items-center justify-center rounded-full border"
+              aria-hidden="true"
+            >
+              <ShieldOff className="opacity-80" size={16} />
+            </div>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Bloquer {client.name} ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Ce contact sera bloqué. Il sera exclu de la création de
+                documents et des communications.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBlock}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Bloquer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Dialog de confirmation de suppression */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
@@ -1368,23 +1501,24 @@ function RowActions({ row, onEdit, onSelectList, workspaceId }) {
         </AlertDialogContent>
       </AlertDialog>
 
-      {showDeleteTooltip && ReactDOM.createPortal(
-        <div
-          className="fixed z-[9999] w-[260px] rounded-md px-3 py-1.5 text-xs text-white whitespace-normal animate-in fade-in-0 zoom-in-95"
-          style={{
-            backgroundColor: "#202020",
-            top: showDeleteTooltip.top,
-            left: showDeleteTooltip.left - 260,
-          }}
-        >
-          Ce contact est lié à des factures, devis ou bons de commande.
+      {showDeleteTooltip &&
+        ReactDOM.createPortal(
           <div
-            className="absolute bottom-full right-4 size-2.5 translate-y-[calc(50%+2px)] rotate-45 rounded-[2px]"
-            style={{ backgroundColor: "#202020" }}
-          />
-        </div>,
-        document.body
-      )}
+            className="fixed z-[9999] w-[260px] rounded-md px-3 py-1.5 text-xs text-white whitespace-normal animate-in fade-in-0 zoom-in-95"
+            style={{
+              backgroundColor: "#202020",
+              top: showDeleteTooltip.top,
+              left: showDeleteTooltip.left - 260,
+            }}
+          >
+            Ce contact est lié à des factures, devis ou bons de commande.
+            <div
+              className="absolute bottom-full right-4 size-2.5 translate-y-[calc(50%+2px)] rotate-45 rounded-[2px]"
+              style={{ backgroundColor: "#202020" }}
+            />
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

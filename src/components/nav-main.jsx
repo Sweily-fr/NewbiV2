@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { useQuery } from "@apollo/client";
 import { GET_BOARDS } from "@/src/graphql/kanbanQueries";
@@ -8,15 +8,9 @@ import { useWorkspace } from "@/src/hooks/useWorkspace";
 import {
   Crown,
   ChevronRight,
-  ShoppingCart,
-  FolderKanban,
-  FileText,
-  MessageSquare,
   Plus,
   Search,
   LayoutGrid,
-  Landmark,
-  Users,
   Command,
 } from "lucide-react";
 import { Input } from "@/src/components/ui/input";
@@ -49,6 +43,14 @@ import Link from "next/link";
 import { cn } from "@/src/lib/utils";
 import { usePathname } from "next/navigation";
 import { usePermissions } from "@/src/hooks/usePermissions";
+import {
+  ChartIcon as Landmark,
+  UsersIcon as Users,
+  ShoppingCartIcon as ShoppingCart,
+  NoteIcon as FolderKanban,
+  DocumentTextIcon as FileText,
+  SmsIcon as MessageSquare,
+} from "@/src/components/icons";
 
 export function NavMain({
   items,
@@ -180,9 +182,13 @@ export function NavMain({
     if (isCommunicationSubActive) setIsCommunicationOpen(true);
   }, [isCommunicationSubActive]);
 
-  // Track quel dropdown est ouvert pour supprimer le tooltip pendant/après interaction
-  const [activeDropdown, setActiveDropdown] = useState(null);
-  const isDropdownOpenRef = useRef(false);
+  // Suit l'ouverture de chaque dropdown pour propager `suppressHover` au
+  // SidebarMenuButton concerné — sinon le hover/tooltip se réaffichent à la
+  // fermeture du dropdown quand le focus revient sur le trigger.
+  const [openDropdowns, setOpenDropdowns] = useState({});
+  const isDropdownOpen = (id) => Boolean(openDropdowns[id]);
+  const handleDropdownOpenChange = (id) => (open) =>
+    setOpenDropdowns((prev) => ({ ...prev, [id]: open }));
 
   // Fonction pour fermer la sidebar sur mobile lors du clic
   const handleLinkClick = () => {
@@ -198,24 +204,15 @@ export function NavMain({
       return (
         <DropdownMenu
           key="ventes"
-          onOpenChange={(open) => {
-            isDropdownOpenRef.current = open;
-            if (open) setActiveDropdown("ventes");
-          }}
+          onOpenChange={handleDropdownOpenChange("ventes")}
         >
-          <SidebarMenuItem
-            onMouseEnter={() => {
-              if (!isDropdownOpenRef.current && activeDropdown)
-                setActiveDropdown(null);
-            }}
-          >
+          <SidebarMenuItem>
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
-                tooltip={activeDropdown === "ventes" ? undefined : "Ventes"}
+                tooltip="Ventes"
+                suppressHover={isDropdownOpen("ventes")}
                 className={cn(
                   "bg-transparent w-full cursor-pointer focus-visible:ring-0",
-                  isVentesSubActive &&
-                    "bg-sidebar-accent text-sidebar-foreground",
                 )}
               >
                 <ShoppingCart />
@@ -225,7 +222,8 @@ export function NavMain({
             <DropdownMenuContent
               side={isMobile ? "bottom" : "right"}
               align="start"
-              className="min-w-[180px]"
+              className="min-w-[180px] text-[.8125rem]"
+              onCloseAutoFocus={(e) => e.preventDefault()}
             >
               {/* Actions rapides (masquées pour le comptable) */}
               {userRole !== "accountant" && (
@@ -282,14 +280,17 @@ export function NavMain({
                         href={subItem.url}
                         onClick={handleLinkClick}
                         className={cn(
-                          "cursor-pointer",
-                          isSubItemActive && "bg-accent font-medium",
+                          "cursor-pointer flex items-center gap-2",
+                          isSubItemActive &&
+                            "bg-accent font-medium !text-sidebar-foreground",
                         )}
                       >
+                        {subItem.icon && <subItem.icon className="w-4 h-4" />}
                         {subItem.title}
                       </Link>
                     ) : (
                       <div className="flex items-center justify-between w-full">
+                        {subItem.icon && <subItem.icon className="w-4 h-4" />}
                         <span>{subItem.title}</span>
                         <Crown className="w-3 h-3 text-[#5b4fff]" />
                       </div>
@@ -314,9 +315,7 @@ export function NavMain({
             data-tutorial="nav-ventes"
             className={cn(
               "flex items-center w-full rounded-md transition-colors overflow-hidden",
-              isVentesSubActive
-                ? "bg-sidebar-accent"
-                : !isVentesOpen && "hover:bg-sidebar-accent",
+              !isVentesOpen && "hover:bg-sidebar-accent",
             )}
           >
             <SidebarMenuButton
@@ -337,7 +336,7 @@ export function NavMain({
               >
                 <ChevronRight
                   className={cn(
-                    "h-4 w-4 transition-transform duration-200",
+                    "h-3.5 w-3.5 transition-transform duration-200",
                     isVentesOpen && "rotate-90",
                   )}
                 />
@@ -368,11 +367,13 @@ export function NavMain({
                               "bg-sidebar-accent text-sidebar-foreground font-medium",
                           )}
                         >
-                          <span className="text-sm">{subItem.title}</span>
+                          {subItem.icon && <subItem.icon className="w-4 h-4" />}
+                          <span>{subItem.title}</span>
                         </Link>
                       ) : (
                         <div className="flex items-center justify-between w-full">
-                          <span className="text-sm">{subItem.title}</span>
+                          {subItem.icon && <subItem.icon className="w-4 h-4" />}
+                          <span>{subItem.title}</span>
                           <Crown className="w-3 h-3 text-[#5b4fff]" />
                         </div>
                       )}
@@ -393,24 +394,15 @@ export function NavMain({
       return (
         <DropdownMenu
           key="clients"
-          onOpenChange={(open) => {
-            isDropdownOpenRef.current = open;
-            if (open) setActiveDropdown("clients");
-          }}
+          onOpenChange={handleDropdownOpenChange("clients")}
         >
-          <SidebarMenuItem
-            onMouseEnter={() => {
-              if (!isDropdownOpenRef.current && activeDropdown)
-                setActiveDropdown(null);
-            }}
-          >
+          <SidebarMenuItem>
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
-                tooltip={activeDropdown === "clients" ? undefined : "Clients"}
+                tooltip="Clients"
+                suppressHover={isDropdownOpen("clients")}
                 className={cn(
                   "bg-transparent w-full cursor-pointer focus-visible:ring-0",
-                  isClientsSubActive &&
-                    "bg-sidebar-accent text-sidebar-foreground",
                 )}
               >
                 <Users />
@@ -420,7 +412,8 @@ export function NavMain({
             <DropdownMenuContent
               side={isMobile ? "bottom" : "right"}
               align="start"
-              className="min-w-[180px]"
+              className="min-w-[180px] text-[.8125rem]"
+              onCloseAutoFocus={(e) => e.preventDefault()}
             >
               {/* Action rapide: Nouveau client (masquée pour le comptable) */}
               {userRole !== "accountant" && (
@@ -457,14 +450,17 @@ export function NavMain({
                         href={subItem.url}
                         onClick={handleLinkClick}
                         className={cn(
-                          "cursor-pointer",
-                          isSubItemActive && "bg-accent font-medium",
+                          "cursor-pointer flex items-center gap-2",
+                          isSubItemActive &&
+                            "bg-accent font-medium !text-sidebar-foreground",
                         )}
                       >
+                        {subItem.icon && <subItem.icon className="w-4 h-4" />}
                         {subItem.title}
                       </Link>
                     ) : (
                       <div className="flex items-center justify-between w-full">
+                        {subItem.icon && <subItem.icon className="w-4 h-4" />}
                         <span>{subItem.title}</span>
                         <Crown className="w-3 h-3 text-[#5b4fff]" />
                       </div>
@@ -488,9 +484,7 @@ export function NavMain({
           <div
             className={cn(
               "flex items-center w-full rounded-md transition-colors overflow-hidden",
-              isClientsSubActive
-                ? "bg-sidebar-accent"
-                : !isClientsOpen && "hover:bg-sidebar-accent",
+              !isClientsOpen && "hover:bg-sidebar-accent",
             )}
           >
             <SidebarMenuButton
@@ -511,7 +505,7 @@ export function NavMain({
               >
                 <ChevronRight
                   className={cn(
-                    "h-4 w-4 transition-transform duration-200",
+                    "h-3.5 w-3.5 transition-transform duration-200",
                     isClientsOpen && "rotate-90",
                   )}
                 />
@@ -542,11 +536,13 @@ export function NavMain({
                               "bg-sidebar-accent text-sidebar-foreground font-medium",
                           )}
                         >
-                          <span className="text-sm">{subItem.title}</span>
+                          {subItem.icon && <subItem.icon className="w-4 h-4" />}
+                          <span>{subItem.title}</span>
                         </Link>
                       ) : (
                         <div className="flex items-center justify-between w-full">
-                          <span className="text-sm">{subItem.title}</span>
+                          {subItem.icon && <subItem.icon className="w-4 h-4" />}
+                          <span>{subItem.title}</span>
                           <Crown className="w-3 h-3 text-[#5b4fff]" />
                         </div>
                       )}
@@ -569,23 +565,15 @@ export function NavMain({
       return (
         <DropdownMenu
           key="projets"
-          onOpenChange={(open) => {
-            isDropdownOpenRef.current = open;
-            if (open) setActiveDropdown("projets");
-          }}
+          onOpenChange={handleDropdownOpenChange("projets")}
         >
-          <SidebarMenuItem
-            onMouseEnter={() => {
-              if (!isDropdownOpenRef.current && activeDropdown)
-                setActiveDropdown(null);
-            }}
-          >
+          <SidebarMenuItem>
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
-                tooltip={activeDropdown === "projets" ? undefined : "Tâches"}
+                tooltip="Tâches"
+                suppressHover={isDropdownOpen("projets")}
                 className={cn(
                   "bg-transparent w-full cursor-pointer focus-visible:ring-0",
-                  isKanbanActive && "bg-sidebar-accent text-sidebar-foreground",
                 )}
               >
                 <FolderKanban />
@@ -593,10 +581,11 @@ export function NavMain({
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-              className="w-80 rounded-lg"
+              className="w-80 rounded-lg text-[.8125rem]"
               side={isMobile ? "bottom" : "right"}
               align="start"
               sideOffset={8}
+              onCloseAutoFocus={(e) => e.preventDefault()}
             >
               {/* Barre de recherche */}
               <div className="flex items-center px-4 mb-1 border-b">
@@ -678,22 +667,13 @@ export function NavMain({
     return (
       <DropdownMenu
         key="projets-expanded"
-        onOpenChange={(open) => {
-          isDropdownOpenRef.current = open;
-          if (open) setActiveDropdown("projets-expanded");
-        }}
+        onOpenChange={handleDropdownOpenChange("projets-expanded")}
       >
-        <SidebarMenuItem
-          onMouseEnter={() => {
-            if (!isDropdownOpenRef.current && activeDropdown)
-              setActiveDropdown(null);
-          }}
-        >
+        <SidebarMenuItem>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
-              tooltip={
-                activeDropdown === "projets-expanded" ? undefined : "Tâches"
-              }
+              tooltip="Tâches"
+              suppressHover={isDropdownOpen("projets-expanded")}
               className={cn(
                 "bg-transparent w-full cursor-pointer focus-visible:ring-0",
                 isKanbanActive && "bg-sidebar-accent text-sidebar-foreground",
@@ -709,6 +689,7 @@ export function NavMain({
             align="start"
             className="w-64 rounded-lg"
             sideOffset={8}
+            onCloseAutoFocus={(e) => e.preventDefault()}
           >
             {/* Lien vers tous les dossiers - Style comme organization switcher */}
             <DropdownMenuItem asChild>
@@ -833,23 +814,15 @@ export function NavMain({
       return (
         <DropdownMenu
           key={title}
-          onOpenChange={(open) => {
-            isDropdownOpenRef.current = open;
-            if (open) setActiveDropdown(title);
-          }}
+          onOpenChange={handleDropdownOpenChange(title)}
         >
-          <SidebarMenuItem
-            onMouseEnter={() => {
-              if (!isDropdownOpenRef.current && activeDropdown)
-                setActiveDropdown(null);
-            }}
-          >
+          <SidebarMenuItem>
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
-                tooltip={activeDropdown === title ? undefined : title}
+                tooltip={title}
+                suppressHover={isDropdownOpen(title)}
                 className={cn(
                   "bg-transparent w-full cursor-pointer focus-visible:ring-0",
-                  isSubActive && "bg-sidebar-accent text-sidebar-foreground",
                 )}
               >
                 <IconComponent />
@@ -859,7 +832,8 @@ export function NavMain({
             <DropdownMenuContent
               side={isMobile ? "bottom" : "right"}
               align="start"
-              className="min-w-[180px]"
+              className="min-w-[180px] text-[.8125rem]"
+              onCloseAutoFocus={(e) => e.preventDefault()}
             >
               {subItems.map((subItem, index) => {
                 // Si l'item a une section, c'est un groupe
@@ -894,14 +868,17 @@ export function NavMain({
                                 href={item.url}
                                 onClick={handleLinkClick}
                                 className={cn(
-                                  "cursor-pointer",
-                                  isSubItemActive && "bg-accent font-medium",
+                                  "cursor-pointer flex items-center gap-2",
+                                  isSubItemActive &&
+                                    "bg-accent font-medium !text-sidebar-foreground",
                                 )}
                               >
+                                {item.icon && <item.icon className="w-4 h-4" />}
                                 {item.title}
                               </Link>
                             ) : (
                               <div className="flex items-center justify-between w-full">
+                                {item.icon && <item.icon className="w-4 h-4" />}
                                 <span>{item.title}</span>
                                 <Crown className="w-3 h-3 text-[#5b4fff]" />
                               </div>
@@ -931,14 +908,17 @@ export function NavMain({
                         href={subItem.url}
                         onClick={handleLinkClick}
                         className={cn(
-                          "cursor-pointer",
-                          isSubItemActive && "bg-accent font-medium",
+                          "cursor-pointer flex items-center gap-2",
+                          isSubItemActive &&
+                            "bg-accent font-medium !text-sidebar-foreground",
                         )}
                       >
+                        {subItem.icon && <subItem.icon className="w-4 h-4" />}
                         {subItem.title}
                       </Link>
                     ) : (
                       <div className="flex items-center justify-between w-full">
+                        {subItem.icon && <subItem.icon className="w-4 h-4" />}
                         <span>{subItem.title}</span>
                         <Crown className="w-3 h-3 text-[#5b4fff]" />
                       </div>
@@ -958,9 +938,7 @@ export function NavMain({
           <div
             className={cn(
               "flex items-center w-full rounded-md transition-colors overflow-hidden",
-              isSubActive
-                ? "bg-sidebar-accent"
-                : !isOpen && "hover:bg-sidebar-accent",
+              !isOpen && "hover:bg-sidebar-accent",
             )}
           >
             <SidebarMenuButton
@@ -981,7 +959,7 @@ export function NavMain({
               >
                 <ChevronRight
                   className={cn(
-                    "h-4 w-4 transition-transform duration-200",
+                    "h-3.5 w-3.5 transition-transform duration-200",
                     isOpen && "rotate-90",
                   )}
                 />
@@ -1068,11 +1046,13 @@ export function NavMain({
                               "bg-sidebar-accent text-sidebar-foreground font-medium",
                           )}
                         >
-                          <span className="text-sm">{subItem.title}</span>
+                          {subItem.icon && <subItem.icon className="w-4 h-4" />}
+                          <span>{subItem.title}</span>
                         </Link>
                       ) : (
                         <div className="flex items-center justify-between w-full">
-                          <span className="text-sm">{subItem.title}</span>
+                          {subItem.icon && <subItem.icon className="w-4 h-4" />}
+                          <span>{subItem.title}</span>
                           <Crown className="w-3 h-3 text-[#5b4fff]" />
                         </div>
                       )}

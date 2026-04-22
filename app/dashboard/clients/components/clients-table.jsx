@@ -34,19 +34,19 @@ function CommonListsDisplay({
   // Récupérer les listes pour le premier client
   const { lists: firstClientLists } = useClientListsByClient(
     workspaceId,
-    selectedClientIds[0] || null
+    selectedClientIds[0] || null,
   );
 
   // Récupérer les listes pour le deuxième client (si existe)
   const { lists: secondClientLists } = useClientListsByClient(
     workspaceId,
-    selectedClientIds[1] || null
+    selectedClientIds[1] || null,
   );
 
   // Récupérer les listes pour le troisième client (si existe)
   const { lists: thirdClientLists } = useClientListsByClient(
     workspaceId,
-    selectedClientIds[2] || null
+    selectedClientIds[2] || null,
   );
 
   // Calculer les listes communes avec useMemo
@@ -66,8 +66,8 @@ function CommonListsDisplay({
 
     return (firstClientLists || []).filter((list) =>
       allClientLists.every((clientLists) =>
-        clientLists.some((l) => l.id === list.id)
-      )
+        clientLists.some((l) => l.id === list.id),
+      ),
     );
   }, [
     selectedClientIds.length,
@@ -126,9 +126,12 @@ export default function ClientsTable({
   onColumnVisibilityChange,
 }) {
   const router = useRouter();
-  const [internalSelectedClients, setInternalSelectedClients] = useState(new Set());
+  const [internalSelectedClients, setInternalSelectedClients] = useState(
+    new Set(),
+  );
   const selectedClients = externalSelectedClients || internalSelectedClients;
-  const setSelectedClients = onSelectedClientsChange || setInternalSelectedClients;
+  const setSelectedClients =
+    onSelectedClientsChange || setInternalSelectedClients;
   const { addToLists } = useAddClientToLists();
   const { removeFromLists } = useRemoveClientFromLists();
   const { deleteClient } = useDeleteClient();
@@ -156,7 +159,7 @@ export default function ClientsTable({
       onListsUpdated?.();
     } catch (error) {
       toast.error(
-        error.message || "Impossible d'ajouter les clients à la liste"
+        error.message || "Impossible d'ajouter les clients à la liste",
       );
     } finally {
       setAssigningLists(false);
@@ -172,9 +175,17 @@ export default function ClientsTable({
   const handleExportCSV = useCallback(() => {
     if (selectedClients.size === 0 || !clientsProp) return;
     const selectedData = (clientsProp || []).filter((c) =>
-      selectedClients.has(c.id)
+      selectedClients.has(c.id),
     );
-    const headers = ["Nom", "Email", "Type", "Téléphone", "Ville", "Pays", "SIRET"];
+    const headers = [
+      "Nom",
+      "Email",
+      "Type",
+      "Téléphone",
+      "Ville",
+      "Pays",
+      "SIRET",
+    ];
     const rows = selectedData.map((c) => [
       c.name || "",
       c.email || "",
@@ -184,8 +195,12 @@ export default function ClientsTable({
       c.address?.country || "",
       c.siret || "",
     ]);
-    const csv = [headers, ...rows].map((r) => r.map((v) => `"${v}"`).join(",")).join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const csv = [headers, ...rows]
+      .map((r) => r.map((v) => `"${v}"`).join(","))
+      .join("\n");
+    const blob = new Blob(["\uFEFF" + csv], {
+      type: "text/csv;charset=utf-8;",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -198,7 +213,7 @@ export default function ClientsTable({
   const handleDeleteSelected = useCallback(async () => {
     try {
       await Promise.all(
-        Array.from(selectedClients).map((clientId) => deleteClient(clientId))
+        Array.from(selectedClients).map((clientId) => deleteClient(clientId)),
       );
       setSelectedClients(new Set());
       onListsUpdated?.();
@@ -225,7 +240,7 @@ export default function ClientsTable({
       onListsUpdated?.();
     } catch (error) {
       toast.error(
-        error.message || "Impossible de retirer les clients de la liste"
+        error.message || "Impossible de retirer les clients de la liste",
       );
     } finally {
       setAssigningLists(false);
@@ -274,6 +289,7 @@ export default function ClientsTable({
         customFieldDefinitions={customFieldDefinitions}
         externalColumnVisibility={columnVisibility}
         onColumnVisibilityChange={onColumnVisibilityChange}
+        allLists={lists}
       />
 
       <ClientsModal

@@ -1,12 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  Filter,
-  Users,
-  FileCheck,
-  Calendar as CalendarIcon,
-} from "lucide-react";
+import { Users, FileCheck, Calendar as CalendarIcon } from "lucide-react";
 import { SortIcon as ListFilterIcon } from "@/src/components/icons";
 import { Badge } from "@/src/components/ui/badge";
 import { cn } from "@/src/lib/utils";
@@ -14,7 +9,6 @@ import { Button } from "@/src/components/ui/button";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -24,23 +18,18 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import { Calendar } from "@/src/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/src/components/ui/popover";
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
-import { QUOTE_STATUS_LABELS } from "@/src/graphql/quoteQueries";
+import { PURCHASE_ORDER_STATUS_LABELS } from "@/src/graphql/purchaseOrderQueries";
 
-export default function QuoteFilters({
+export default function PurchaseOrderFilters({
   statusFilter,
   setStatusFilter,
   clientFilter,
   setClientFilter,
   dateFilter,
   setDateFilter,
-  quotes = [],
+  purchaseOrders = [],
   table,
   className,
 }) {
@@ -61,18 +50,18 @@ export default function QuoteFilters({
     return [clientFilter];
   }, [clientFilter]);
 
-  // Extraire les clients uniques (par nom pour éviter les doublons)
+  // Extraire les clients uniques
   const uniqueClients = useMemo(() => {
     const clientNames = new Set();
-    quotes.forEach((quote) => {
-      if (quote.client?.name) {
-        clientNames.add(quote.client.name);
+    purchaseOrders.forEach((po) => {
+      if (po.client?.name) {
+        clientNames.add(po.client.name);
       }
     });
     return Array.from(clientNames)
       .map((name) => ({ name }))
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [quotes]);
+  }, [purchaseOrders]);
 
   // Fonction pour définir des plages de dates rapides
   const setQuickDateRange = (rangeType) => {
@@ -105,7 +94,7 @@ export default function QuoteFilters({
     setDateFilter(from && to ? { from, to } : null);
   };
 
-  // Calculer le nombre de filtres actifs
+  // Nombre de filtres actifs
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     if (selectedStatuses.length > 0) count++;
@@ -114,17 +103,16 @@ export default function QuoteFilters({
     return count;
   }, [selectedStatuses, selectedClients, dateFilter]);
 
-  // Gérer la sélection/désélection de tous les statuts
+  const statuses = Object.keys(PURCHASE_ORDER_STATUS_LABELS);
+
   const toggleAllStatuses = () => {
-    const allStatuses = Object.keys(QUOTE_STATUS_LABELS);
-    if (selectedStatuses.length === allStatuses.length) {
+    if (selectedStatuses.length === statuses.length) {
       setStatusFilter([]);
     } else {
-      setStatusFilter(allStatuses);
+      setStatusFilter(statuses);
     }
   };
 
-  // Gérer la sélection/désélection d'un statut
   const toggleStatus = (status) => {
     const newStatuses = selectedStatuses.includes(status)
       ? selectedStatuses.filter((s) => s !== status)
@@ -132,7 +120,6 @@ export default function QuoteFilters({
     setStatusFilter(newStatuses);
   };
 
-  // Gérer la sélection/désélection de tous les clients
   const toggleAllClients = () => {
     if (selectedClients.length === uniqueClients.length) {
       setClientFilter([]);
@@ -141,16 +128,12 @@ export default function QuoteFilters({
     }
   };
 
-  // Gérer la sélection/désélection d'un client
   const toggleClient = (clientName) => {
     const newClients = selectedClients.includes(clientName)
       ? selectedClients.filter((c) => c !== clientName)
       : [...selectedClients, clientName];
     setClientFilter(newClients);
   };
-
-  // Statuts disponibles
-  const statuses = Object.keys(QUOTE_STATUS_LABELS);
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -172,9 +155,9 @@ export default function QuoteFilters({
         {/* Effacer tous les filtres */}
         <DropdownMenuItem
           onClick={() => {
-            setStatusFilter("");
-            setClientFilter("");
-            setDateFilter(null);
+            setStatusFilter?.([]);
+            setClientFilter?.([]);
+            setDateFilter?.(null);
             setDateRange({ from: null, to: null });
           }}
           className="cursor-pointer"
@@ -184,7 +167,7 @@ export default function QuoteFilters({
 
         <DropdownMenuSeparator />
 
-        {/* Date Filter - Nested Dropdown */}
+        {/* Date Filter */}
         <DropdownMenuSub>
           <DropdownMenuSubTrigger className="whitespace-nowrap">
             <CalendarIcon className="h-4 w-4 mr-2" />
@@ -197,7 +180,6 @@ export default function QuoteFilters({
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="w-auto p-0">
             <div className="space-y-0">
-              {/* Plages rapides */}
               <div className="p-3 pb-4">
                 <p className="text-sm font-normal pb-3">Plages rapides</p>
                 <div className="grid grid-cols-2 gap-2">
@@ -236,7 +218,6 @@ export default function QuoteFilters({
                 </div>
               </div>
 
-              {/* Calendrier */}
               <div className="border-t pt-3 pb-5 flex justify-center">
                 <Calendar
                   mode="range"
@@ -251,7 +232,6 @@ export default function QuoteFilters({
                 />
               </div>
 
-              {/* Affichage de la plage sélectionnée */}
               {(dateRange?.from || dateRange?.to) && (
                 <div className="border-t pt-3 px-3 pb-3">
                   <p className="text-xs text-muted-foreground px-2">
@@ -278,7 +258,7 @@ export default function QuoteFilters({
           </DropdownMenuSubContent>
         </DropdownMenuSub>
 
-        {/* Client Filter - Nested Dropdown */}
+        {/* Client Filter */}
         <DropdownMenuSub>
           <DropdownMenuSubTrigger className="whitespace-nowrap">
             <Users className="h-4 w-4 mr-2" />
@@ -292,7 +272,6 @@ export default function QuoteFilters({
           <DropdownMenuSubContent className="w-[250px] max-h-[400px] overflow-y-auto">
             {uniqueClients.length > 0 ? (
               <>
-                {/* Checkbox Tout sélectionner */}
                 <div
                   className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
                   onClick={toggleAllClients}
@@ -326,7 +305,7 @@ export default function QuoteFilters({
           </DropdownMenuSubContent>
         </DropdownMenuSub>
 
-        {/* Status Filter - Nested Dropdown */}
+        {/* Status Filter */}
         <DropdownMenuSub>
           <DropdownMenuSubTrigger className="whitespace-nowrap">
             <FileCheck className="h-4 w-4 mr-2" />
@@ -338,7 +317,6 @@ export default function QuoteFilters({
             )}
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="w-[250px]">
-            {/* Checkbox Tout sélectionner */}
             <div
               className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
               onClick={toggleAllStatuses}
@@ -360,7 +338,7 @@ export default function QuoteFilters({
                   checked={selectedStatuses.includes(status)}
                   className="mr-2 pointer-events-none"
                 />
-                <span>{QUOTE_STATUS_LABELS[status]}</span>
+                <span>{PURCHASE_ORDER_STATUS_LABELS[status]}</span>
               </div>
             ))}
           </DropdownMenuSubContent>

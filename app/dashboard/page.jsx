@@ -86,7 +86,12 @@ import {
 import { useChartColors } from "@/src/hooks/useChartColors";
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 import { InvoicesToCollectCard } from "@/app/dashboard/components/invoices-to-collect-card";
-import { InvoicesToPayCard } from "@/app/dashboard/components/invoices-to-pay-card";
+import { PurchaseInvoicesStatsCard } from "@/app/dashboard/components/purchase-invoices-stats-card";
+import { PendingQuotesCard } from "@/app/dashboard/components/pending-quotes-card";
+import { OverdueInvoicesCard } from "@/app/dashboard/components/overdue-invoices-card";
+import { MonthlyRevenueCard } from "@/app/dashboard/components/monthly-revenue-card";
+import { TopClientsCard } from "@/app/dashboard/components/top-clients-card";
+import { WeekCalendarCard } from "@/app/dashboard/components/week-calendar-card";
 
 function DashboardContent() {
   const { session } = useUser();
@@ -578,14 +583,35 @@ function DashboardContent() {
           />
         </div>
 
-        {/* Factures à encaisser / à payer */}
-        <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
+        {/* Stats principales - 5 cards sur une ligne */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6 w-full">
           <InvoicesToCollectCard
-            className="shadow-xs w-full md:w-1/2"
+            className="shadow-xs"
             invoices={invoices}
             isLoading={invoicesLoading}
           />
-          <InvoicesToPayCard className="shadow-xs w-full md:w-1/2" />
+          <PurchaseInvoicesStatsCard className="shadow-xs" />
+          <PendingQuotesCard className="shadow-xs" />
+          <MonthlyRevenueCard
+            className="shadow-xs"
+            paidInvoices={paidInvoices}
+            isLoading={invoicesLoading}
+          />
+          <OverdueInvoicesCard
+            className="shadow-xs"
+            invoices={invoices}
+            isLoading={invoicesLoading}
+          />
+        </div>
+
+        {/* Top 3 clients + Calendrier de la semaine */}
+        <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
+          <TopClientsCard
+            className="shadow-xs w-full md:w-1/3"
+            paidInvoices={paidInvoices}
+            isLoading={invoicesLoading}
+          />
+          <WeekCalendarCard className="shadow-xs w-full md:w-2/3" />
         </div>
 
         {/* Graphiques de répartition par catégorie (MODE BANCAIRE PUR) */}

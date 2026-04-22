@@ -1,17 +1,15 @@
 "use client";
 
+import { Crown, LogOut, EllipsisVertical, Eye, Check } from "lucide-react";
 import {
-  Moon,
-  Sun,
-  Monitor,
-  CreditCard,
-  Crown,
-  CircleUser,
-  LogOut,
-  EllipsisVertical,
-  Eye,
-  Check,
-} from "lucide-react";
+  ProfileCircleIcon as CircleUser,
+  CardIcon as CreditCard,
+  SunIcon as Sun,
+  MoonIcon as Moon,
+  MonitorIcon as Monitor,
+  GroupIcon,
+} from "@/src/components/icons";
+import { cn } from "@/src/lib/utils";
 
 import {
   Avatar,
@@ -100,6 +98,7 @@ export function NavUser({ user }) {
                     </div>
                   )}
                 </Avatar>
+                {/* Badge violet abonnement actif - désactivé
                 {isActive() && (
                   <span className="absolute -end-1.5 -top-1.5 z-10">
                     <span className="sr-only">Abonnement actif</span>
@@ -125,12 +124,15 @@ export function NavUser({ user }) {
                     </svg>
                   </span>
                 )}
+                */}
               </div>
               {(!isCollapsed || isMobile) && (
                 <>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium">{user.name}</span>
-                    <span className="text-muted-foreground truncate text-xs">
+                    <span className="truncate font-medium text-[#212121]">
+                      {user.name}
+                    </span>
+                    <span className="text-muted-foreground truncate text-xs font-normal">
                       {user.email}
                     </span>
                   </div>
@@ -162,6 +164,7 @@ export function NavUser({ user }) {
                         </div>
                       )}
                     </Avatar>
+                    {/* Badge violet abonnement actif - désactivé
                     {isActive() && (
                       <span className="absolute -end-1.5 -top-1.5">
                         <span className="sr-only">Abonnement actif</span>
@@ -187,10 +190,13 @@ export function NavUser({ user }) {
                         </svg>
                       </span>
                     )}
+                    */}
                   </div>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium">{user.name}</span>
-                    <span className="text-muted-foreground truncate text-xs">
+                    <span className="truncate font-medium text-[#212121]">
+                      {user.name}
+                    </span>
+                    <span className="text-muted-foreground truncate text-xs font-normal">
                       {user.email}
                     </span>
                   </div>
@@ -217,8 +223,8 @@ export function NavUser({ user }) {
                   setSettingsModalOpen(true);
                 }}
               >
-                <CircleUser className="size-4 text-muted-foreground" />
-                <span className="text-sm font-normal">Compte</span>
+                <CircleUser className="size-4 text-sidebar-foreground" />
+                <span className="text-[13px] font-normal">Compte</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="gap-2 cursor-pointer"
@@ -227,8 +233,10 @@ export function NavUser({ user }) {
                   setSettingsModalOpen(true);
                 }}
               >
-                <CreditCard className="size-4 text-muted-foreground" />
-                <span className="text-sm font-normal">Gérer l'abonnement</span>
+                <CreditCard className="size-4 text-sidebar-foreground" />
+                <span className="text-[13px] font-normal">
+                  Gérer l'abonnement
+                </span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
@@ -236,69 +244,71 @@ export function NavUser({ user }) {
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="gap-2 cursor-pointer">
                   {theme === "light" ? (
-                    <Sun className="size-4 text-muted-foreground" />
+                    <Sun className="size-4 text-sidebar-foreground" />
                   ) : theme === "dark" ? (
-                    <Moon className="size-4 text-muted-foreground" />
+                    <Moon className="size-4 text-sidebar-foreground" />
                   ) : (
-                    <Monitor className="size-4 text-muted-foreground" />
+                    <Monitor className="size-4 text-sidebar-foreground" />
                   )}
-                  <span className="text-sm font-normal">Thème</span>
+                  <span className="text-[13px] font-normal">Thème</span>
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
                   <DropdownMenuItem
                     onClick={() => setTheme("light")}
                     className="gap-2 cursor-pointer"
                   >
-                    <Sun className="size-4 text-muted-foreground" />
-                    <span className="text-sm font-normal">Clair</span>
+                    <Sun className="size-4 text-sidebar-foreground" />
+                    <span className="text-[13px] font-normal">Clair</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setTheme("dark")}
                     className="gap-2 cursor-pointer"
                   >
-                    <Moon className="size-4 text-muted-foreground" />
-                    <span className="text-sm font-normal">Sombre</span>
+                    <Moon className="size-4 text-sidebar-foreground" />
+                    <span className="text-[13px] font-normal">Sombre</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setTheme("system")}
                     className="gap-2 cursor-pointer"
                   >
-                    <Monitor className="size-4 text-muted-foreground" />
-                    <span className="text-sm font-normal">Système</span>
+                    <Monitor className="size-4 text-sidebar-foreground" />
+                    <span className="text-[13px] font-normal">Système</span>
                   </DropdownMenuItem>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="gap-2 cursor-pointer">
-                  <Eye className="size-4 text-muted-foreground" />
-                  <span className="text-sm font-normal">Mode daltonien</span>
+                  <GroupIcon className="size-4 text-sidebar-foreground" />
+                  <span className="text-[13px] font-normal">
+                    Mode daltonien
+                  </span>
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
                   <DropdownMenuItem
                     onClick={() => setColorblindMode(false)}
-                    className="gap-2 cursor-pointer"
+                    className={cn(
+                      "gap-2 cursor-pointer",
+                      !colorblindMode && "bg-accent",
+                    )}
                   >
-                    <Check
-                      className={`size-4 ${
-                        !colorblindMode ? "opacity-100" : "opacity-0"
-                      }`}
-                    />
-                    <span className="text-sm font-normal">
-                      Standard (vert et rouge)
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="w-3 h-3 rounded-full bg-emerald-500" />
+                      <span className="w-3 h-3 rounded-full bg-red-500" />
+                    </div>
+                    <span className="text-[13px] font-normal">Standard</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setColorblindMode(true)}
-                    className="gap-2 cursor-pointer"
+                    className={cn(
+                      "gap-2 cursor-pointer",
+                      colorblindMode && "bg-accent",
+                    )}
                   >
-                    <Check
-                      className={`size-4 ${
-                        colorblindMode ? "opacity-100" : "opacity-0"
-                      }`}
-                    />
-                    <span className="text-sm font-normal">
-                      Daltonien (bleu et noir)
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="w-3 h-3 rounded-full bg-blue-500" />
+                      <span className="w-3 h-3 rounded-full bg-gray-900 dark:bg-gray-300" />
+                    </div>
+                    <span className="text-[13px] font-normal">Daltonien</span>
                   </DropdownMenuItem>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
@@ -309,7 +319,7 @@ export function NavUser({ user }) {
               className="gap-2 cursor-pointer text-red-500 hover:!text-red-600 hover:!bg-red-50"
             >
               <LogOut className="size-4 text-red-500" />
-              <span className="text-sm font-normal">Se déconnecter</span>
+              <span className="text-[13px] font-normal">Se déconnecter</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
