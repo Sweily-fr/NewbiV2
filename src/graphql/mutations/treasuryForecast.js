@@ -60,6 +60,26 @@ export const DELETE_MANUAL_CASHFLOW_ENTRY = gql`
   }
 `;
 
+export const UPSERT_FORECAST_SCENARIO = gql`
+  mutation UpsertForecastScenario($input: UpsertForecastScenarioInput!) {
+    upsertForecastScenario(input: $input) {
+      id
+      name
+      incomeMultiplier
+      expenseMultiplier
+    }
+  }
+`;
+
+export const DELETE_FORECAST_SCENARIO = gql`
+  mutation DeleteForecastScenario($id: ID!) {
+    deleteForecastScenario(id: $id) {
+      success
+      message
+    }
+  }
+`;
+
 export const MUTE_DETECTED_RECURRENCE = gql`
   mutation MuteDetectedRecurrence($id: ID!, $muted: Boolean!) {
     muteDetectedRecurrence(id: $id, muted: $muted) {
