@@ -257,6 +257,28 @@ export const useReconciliationGraphQL = () => {
 };
 
 /**
+ * Hook pour le compteur de suggestions de rapprochement (sidebar badge)
+ * Lit le cache Apollo alimenté par le polling du ReconciliationToastProvider.
+ * Ne déclenche aucune requête réseau propre.
+ */
+export const useReconciliationCount = () => {
+  const { workspaceId, loading: workspaceLoading } = useRequiredWorkspace();
+
+  const { data } = useQuery(GET_RECONCILIATION_SUGGESTIONS, {
+    variables: { workspaceId },
+    skip: !workspaceId || workspaceLoading,
+    fetchPolicy: "cache-only",
+  });
+
+  const suggestions = data?.reconciliationSuggestions?.suggestions || [];
+  const highConfidenceCount = suggestions.filter(
+    (s) => s.confidence === "high" && s.matchingInvoices?.length > 0,
+  ).length;
+
+  return highConfidenceCount;
+};
+
+/**
  * Hook léger pour les opérations de rapprochement dans la sidebar
  * N'appelle PAS useReconciliationSuggestions pour éviter les re-renders
  * causés par le pollInterval
