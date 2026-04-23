@@ -16,6 +16,7 @@ export {
   useUnlinkTransactionFromInvoice,
   useIgnoreTransaction,
   useReconciliationGraphQL as useReconciliation,
+  useReconciliationCount,
   useReconciliationForSidebar,
 } from "./useReconciliationGraphQL";
 
@@ -29,7 +30,7 @@ export function useReconciliationToast() {
   // Retourner les nouvelles suggestions non encore affichées
   const getNewSuggestions = useCallback(() => {
     return suggestions.filter(
-      (s) => !shownSuggestions.has(s.transaction.id) && s.confidence === "high"
+      (s) => !shownSuggestions.has(s.transaction.id) && s.confidence === "high",
     );
   }, [suggestions, shownSuggestions]);
 

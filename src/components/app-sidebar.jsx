@@ -67,6 +67,7 @@ import { authClient } from "@/src/lib/auth-client";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import { EmailVerificationBadge } from "@/src/components/email-verification-badge";
 import { useActivityNotifications } from "@/src/hooks/useActivityNotifications";
+import { useReconciliationCount } from "@/src/hooks/useReconciliation";
 
 const data = {
   teams: [
@@ -446,6 +447,7 @@ export function AppSidebar({
 
   // Hook pour les notifications d'activité (assignations de tâches)
   const { unreadCount: activityUnreadCount } = useActivityNotifications();
+  const reconciliationCount = useReconciliationCount();
 
   // Vérifier si l'organisation est un cabinet comptable
   const { isAccountingFirm, loading: orgTypeLoading } = useOrganizationType();
@@ -595,6 +597,7 @@ export function AppSidebar({
                 items={data.navAccounting}
                 onOpenNotifications={onOpenNotifications}
                 notificationCount={notificationCount}
+                reconciliationCount={reconciliationCount}
               />
             ) : (
               // Vue Entreprise : afficher la navigation standard
@@ -609,6 +612,7 @@ export function AppSidebar({
                 navCommunication={data.navCommunication}
                 onOpenNotifications={onOpenNotifications}
                 notificationCount={notificationCount}
+                reconciliationCount={reconciliationCount}
               />
             )}
             <NavSecondary

@@ -1,14 +1,20 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useReconciliation } from "@/src/hooks/useReconciliation";
+import {
+  useReconciliation,
+  useIgnoreTransaction,
+} from "@/src/hooks/useReconciliation";
 import { useRouter } from "next/navigation";
-import { useToastManager } from "@/src/components/ui/toast-manager";
+import { Landmark, X, Undo2 } from "lucide-react";
+import { cn } from "@/src/lib/utils";
+import { toast as sonnerToast } from "sonner";
 
-// Clé pour stocker les suggestions ignorées dans localStorage
+// ---------------------------------------------------------------------------
+// LocalStorage helpers — persistance des suggestions ignorées
+// ---------------------------------------------------------------------------
 const IGNORED_SUGGESTIONS_KEY = "reconciliation_ignored_suggestions";
 
-// Récupérer les suggestions ignorées depuis localStorage
 const getIgnoredSuggestions = () => {
   if (typeof window === "undefined") return new Set();
   try {
@@ -19,7 +25,6 @@ const getIgnoredSuggestions = () => {
   }
 };
 
-// Sauvegarder une suggestion ignorée dans localStorage
 const saveIgnoredSuggestion = (transactionId) => {
   if (typeof window === "undefined") return;
   try {
@@ -31,10 +36,265 @@ const saveIgnoredSuggestion = (transactionId) => {
   }
 };
 
-/**
- * Composant qui affiche des toasts de suggestion de rapprochement
- * quand une transaction bancaire correspond potentiellement à une facture
- */
+const removeIgnoredSuggestion = (transactionId) => {
+  if (typeof window === "undefined") return;
+  try {
+    const ignored = getIgnoredSuggestions();
+    ignored.delete(transactionId);
+    localStorage.setItem(IGNORED_SUGGESTIONS_KEY, JSON.stringify([...ignored]));
+  } catch {
+    // Ignorer les erreurs de localStorage
+  }
+};
+
+// Délai avant confirmation serveur (fenêtre d'undo)
+const UNDO_DELAY_MS = 5000;
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+const formatCurrency = (amount) =>
+  new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+  }).format(amount || 0);
+
+const formatRelativeDate = (dateInput) => {
+  if (!dateInput) return "";
+  try {
+    const date = new Date(dateInput);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return "Aujourd'hui";
+    if (diffDays === 1) return "Hier";
+    if (diffDays < 7) return `il y a ${diffDays} j.`;
+    if (diffDays < 30) return `il y a ${Math.floor(diffDays / 7)} sem.`;
+    return date.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+  } catch {
+    return "";
+  }
+};
+
+// ---------------------------------------------------------------------------
+// ReconciliationCard — Carte individuelle style "inbox notification"
+// ---------------------------------------------------------------------------
+function ReconciliationCard({
+  transaction,
+  invoice,
+  onLink,
+  onIgnore,
+  onNavigate,
+  isExiting,
+}) {
+  return (
+    <div
+      onClick={() => onNavigate(invoice.id)}
+      className={cn(
+        "group relative w-[400px] cursor-pointer",
+        "bg-white dark:bg-zinc-900",
+        "rounded-[20px]",
+        "shadow-[0_4px_20px_rgba(0,0,0,0.1),0_1px_4px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4),0_1px_4px_rgba(0,0,0,0.18)]",
+        "border border-gray-200/60 dark:border-zinc-800/60",
+        "transition-all duration-300 ease-out",
+        "hover:border-gray-200/80 dark:hover:border-zinc-700/80",
+        isExiting && "opacity-0 scale-95 translate-x-8",
+      )}
+    >
+      <div className="px-4 py-3.5">
+        <div className="flex items-start gap-3">
+          {/* Icône banque */}
+          <div className="flex-shrink-0 mt-0.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 dark:bg-zinc-800">
+              <Landmark className="h-4 w-4 text-gray-500 dark:text-zinc-400" />
+            </div>
+          </div>
+
+          {/* Contenu principal */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              {/* Texte fluide */}
+              <p className="text-[13px] leading-relaxed text-gray-600 dark:text-zinc-400">
+                <span className="font-semibold text-gray-900 dark:text-zinc-100">
+                  {transaction.description || "Virement reçu"}
+                </span>
+                {" a payé "}
+                <span className="font-semibold text-gray-900 dark:text-zinc-100">
+                  {formatCurrency(transaction.amount)}
+                </span>
+                {" — "}
+                <span className="font-semibold text-gray-900 dark:text-zinc-100">
+                  Facture {invoice.number}
+                </span>
+              </p>
+
+              {/* Timestamp relatif */}
+              <span className="flex-shrink-0 text-[11px] text-gray-400 dark:text-zinc-500 mt-0.5 whitespace-nowrap">
+                {formatRelativeDate(transaction.date)}
+              </span>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-2 mt-2.5">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onIgnore(transaction.id);
+                }}
+                className={cn(
+                  "h-[30px] px-3.5 text-[12px] font-medium rounded-full cursor-pointer",
+                  "border border-gray-200 dark:border-zinc-700",
+                  "text-gray-600 dark:text-zinc-400",
+                  "bg-transparent",
+                  "hover:bg-gray-50 dark:hover:bg-zinc-800",
+                  "hover:border-gray-300 dark:hover:border-zinc-600",
+                  "transition-colors duration-150",
+                )}
+              >
+                Ignorer
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onLink(transaction.id, invoice.id);
+                }}
+                className={cn(
+                  "h-[30px] px-3.5 text-[12px] font-medium rounded-full cursor-pointer",
+                  "bg-gray-900 dark:bg-zinc-100",
+                  "text-white dark:text-zinc-900",
+                  "hover:bg-gray-800 dark:hover:bg-white",
+                  "transition-colors duration-150",
+                )}
+              >
+                Rattacher
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ReconciliationDeck — Stack "deck de cartes" avec hover expand
+// ---------------------------------------------------------------------------
+function ReconciliationDeck({
+  suggestions,
+  onLink,
+  onIgnore,
+  onNavigate,
+  exitingIds,
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const hoverTimeoutRef = useRef(null);
+  const containerRef = useRef(null);
+
+  // Max 3 cartes visibles dans le deck, badge pour le reste
+  const maxVisible = 3;
+  const visibleSuggestions = suggestions.slice(0, maxVisible);
+  const hiddenCount = Math.max(0, suggestions.length - maxVisible);
+
+  const handleMouseEnter = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    if (suggestions.length > 1) {
+      setIsExpanded(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsExpanded(false);
+    }, 400);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    };
+  }, []);
+
+  // Quand il ne reste qu'une seule carte, pas besoin d'expand
+  useEffect(() => {
+    if (suggestions.length <= 1) setIsExpanded(false);
+  }, [suggestions.length]);
+
+  if (suggestions.length === 0) return null;
+
+  // Constantes de layout
+  const cardHeight = 110; // hauteur estimée d'une carte
+  const stackOffset = 8; // décalage entre les cartes en mode deck
+  const expandedGap = 12; // espace entre les cartes en mode expanded
+
+  return (
+    <div
+      ref={containerRef}
+      className="fixed top-5 right-6 z-[100]"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <div
+        className="relative"
+        style={{
+          minHeight: isExpanded
+            ? `${visibleSuggestions.length * (cardHeight + expandedGap)}px`
+            : `${cardHeight + (visibleSuggestions.length - 1) * stackOffset}px`,
+          transition: "min-height 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
+      >
+        {visibleSuggestions.map((suggestion, index) => {
+          const transaction = suggestion.transaction;
+          const invoice = suggestion.matchingInvoices[0];
+          const isFirst = index === 0;
+          const isExiting = exitingIds.has(transaction.id);
+
+          return (
+            <div
+              key={transaction.id}
+              className="absolute right-0 transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]"
+              style={{
+                top: isExpanded
+                  ? `${index * (cardHeight + expandedGap)}px`
+                  : `${index * stackOffset}px`,
+                transform: isExpanded
+                  ? "scale(1)"
+                  : `scale(${1 - index * 0.03})`,
+                opacity: isExpanded ? 1 : isFirst ? 1 : 0.85 - index * 0.1,
+                zIndex: 100 - index,
+                transformOrigin: "top right",
+                pointerEvents: isExpanded || isFirst ? "auto" : "none",
+              }}
+            >
+              <ReconciliationCard
+                transaction={transaction}
+                invoice={invoice}
+                onLink={onLink}
+                onIgnore={onIgnore}
+                onNavigate={onNavigate}
+                isExiting={isExiting}
+              />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Compteur des cartes cachées */}
+      {hiddenCount > 0 && (
+        <div className="flex justify-end mt-2">
+          <span className="text-[12px] text-gray-400 dark:text-zinc-500">
+            et {hiddenCount} autre{hiddenCount > 1 ? "s" : ""} paiement
+            {hiddenCount > 1 ? "s" : ""}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ReconciliationToastProvider — Logique métier (interface identique)
+// ---------------------------------------------------------------------------
 export function ReconciliationToastProvider({ children }) {
   const router = useRouter();
   const {
@@ -44,153 +304,170 @@ export function ReconciliationToastProvider({ children }) {
     loading,
     error,
   } = useReconciliation();
-  const toastManager = useToastManager();
-  const shownSuggestionsRef = useRef(new Set());
-  const [ignoredSuggestions, setIgnoredSuggestions] = useState(new Set());
-  const [isProcessing, setIsProcessing] = useState(false);
+  const { ignoreTransaction } = useIgnoreTransaction();
 
-  // Debug log supprimé pour performance
+  const [ignoredSuggestions, setIgnoredSuggestions] = useState(new Set());
+  const [exitingIds, setExitingIds] = useState(new Set());
+  const [isProcessing, setIsProcessing] = useState(false);
+  const undoTimersRef = useRef(new Map());
 
   // Charger les suggestions ignorées au montage
   useEffect(() => {
     setIgnoredSuggestions(getIgnoredSuggestions());
   }, []);
 
-  // Formater un montant en euros
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-    }).format(amount || 0);
-  };
+  // Cleanup des timers au démontage
+  useEffect(() => {
+    return () => {
+      undoTimersRef.current.forEach((timer) => clearTimeout(timer));
+    };
+  }, []);
 
-  // Gérer le rattachement depuis le toast
-  // Note: Les toasts de succès/erreur sont gérés par le hook useLinkTransactionToInvoice (via sonner)
+  // Filtrer les suggestions affichables
+  const activeSuggestions = suggestions.filter(
+    (s) =>
+      s.confidence === "high" &&
+      !ignoredSuggestions.has(s.transaction.id) &&
+      !exitingIds.has(s.transaction.id) &&
+      s.matchingInvoices.length > 0,
+  );
+
+  // Animation de sortie puis suppression
+  const animateOut = useCallback((transactionId, callback) => {
+    setExitingIds((prev) => new Set([...prev, transactionId]));
+    setTimeout(() => {
+      setExitingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(transactionId);
+        return next;
+      });
+      callback();
+    }, 300);
+  }, []);
+
+  // Annuler un ignore (undo)
+  const handleUndo = useCallback((transactionId) => {
+    // Annuler le timer de confirmation serveur
+    const timer = undoTimersRef.current.get(transactionId);
+    if (timer) {
+      clearTimeout(timer);
+      undoTimersRef.current.delete(transactionId);
+    }
+
+    // Retirer du localStorage et du state
+    removeIgnoredSuggestion(transactionId);
+    setIgnoredSuggestions((prev) => {
+      const next = new Set(prev);
+      next.delete(transactionId);
+      return next;
+    });
+
+    sonnerToast.dismiss(`undo-${transactionId}`);
+  }, []);
+
+  // Rattacher une transaction à une facture
   const handleLink = useCallback(
-    async (transactionId, invoiceId, toastId) => {
+    async (transactionId, invoiceId) => {
       setIsProcessing(true);
-      // Marquer la transaction comme traitée pour éviter qu'elle réapparaisse
       saveIgnoredSuggestion(transactionId);
-      setIgnoredSuggestions((prev) => new Set([...prev, transactionId]));
-      // Fermer tous les toasts de réconciliation pour éviter la confusion
-      toastManager.closeAll();
+
+      animateOut(transactionId, () => {
+        setIgnoredSuggestions((prev) => new Set([...prev, transactionId]));
+      });
+
       try {
         await linkTransaction(transactionId, invoiceId);
-        // Le toast est géré par le hook useLinkTransactionToInvoice
-      } catch (err) {
-        // L'erreur est gérée par le hook
+      } catch {
+        // Erreur gérée par le hook
       } finally {
         setIsProcessing(false);
       }
     },
-    [linkTransaction, toastManager]
+    [linkTransaction, animateOut],
   );
 
-  // Voir les détails de la facture
-  const handleViewInvoice = useCallback(
-    (invoiceId, toastId) => {
-      toastManager.close(toastId);
-      router.push(`/dashboard/outils/factures?id=${invoiceId}`);
-    },
-    [router, toastManager]
-  );
-
-  // Ignorer une suggestion (ne plus l'afficher)
+  // Ignorer une suggestion — optimistic UI + undo + confirmation serveur
   const handleIgnore = useCallback(
-    (transactionId, toastId) => {
-      toastManager.close(toastId);
-      // Sauvegarder dans localStorage pour persister
+    (transactionId) => {
+      // 1. Optimistic UI : disparition immédiate
       saveIgnoredSuggestion(transactionId);
-      // Mettre à jour le state local
-      setIgnoredSuggestions((prev) => new Set([...prev, transactionId]));
-    },
-    [toastManager]
-  );
-
-  // Formater une date de manière courte
-  const formatShortDate = (dateInput) => {
-    if (!dateInput) return "";
-    try {
-      const date = new Date(dateInput);
-      return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
-    } catch {
-      return "";
-    }
-  };
-
-  // Afficher les toasts pour les nouvelles suggestions à haute confiance
-  // Maintenant en pile (plusieurs toasts simultanés)
-  // Note: shownSuggestionsRef (ref) évite la boucle infinie — pas besoin de le lister en deps
-  useEffect(() => {
-    if (isProcessing) return;
-
-    const shownSet = shownSuggestionsRef.current;
-    const newSuggestions = suggestions.filter(
-      (s) =>
-        s.confidence === "high" &&
-        !shownSet.has(s.transaction.id) &&
-        !ignoredSuggestions.has(s.transaction.id) &&
-        s.matchingInvoices.length > 0
-    );
-
-    // Afficher jusqu'à 5 toasts empilés (du plus récent au plus ancien)
-    const maxToasts = 5;
-    const toastsToShow = newSuggestions.slice(0, maxToasts);
-
-    if (toastsToShow.length > 0) {
-      // Marquer toutes les suggestions comme affichées (mutation du ref, pas de re-render)
-      toastsToShow.forEach((s) => shownSet.add(s.transaction.id));
-
-      // Afficher chaque toast avec un léger délai pour l'effet d'empilement
-      toastsToShow.forEach((suggestion, index) => {
-        const transaction = suggestion.transaction;
-        const invoice = suggestion.matchingInvoices[0];
-        const txDate = formatShortDate(transaction.date);
-
-        // Délai progressif pour l'animation d'empilement
-        setTimeout(() => {
-          const toastId = toastManager.add({
-            title: `Paiement détecté : +${formatCurrency(transaction.amount)}${txDate ? ` (${txDate})` : ""}`,
-            description: `${transaction.description} → Facture ${invoice.number} (${invoice.clientName})`,
-            type: "reconciliation",
-            timeout: 120000, // 2 minutes - les toasts de réconciliation restent longtemps
-            dismissProps: {
-              children: "Ignorer",
-              onClick: () => handleIgnore(transaction.id, toastId),
-            },
-            secondaryActionProps: {
-              children: "Voir",
-              onClick: () => handleViewInvoice(invoice.id, toastId),
-            },
-            actionProps: {
-              children: "Rattacher",
-              onClick: () => handleLink(transaction.id, invoice.id, toastId),
-            },
-          });
-        }, index * 150); // 150ms entre chaque toast pour l'effet d'empilement
+      animateOut(transactionId, () => {
+        setIgnoredSuggestions((prev) => new Set([...prev, transactionId]));
       });
 
-      // Si plus de suggestions que le max, afficher un toast informatif
-      if (newSuggestions.length > maxToasts) {
-        setTimeout(() => {
-          toastManager.add({
-            title: `+${newSuggestions.length - maxToasts} autres paiements détectés`,
-            description: "Consultez la section Rapprochement pour voir toutes les suggestions",
-            type: "info",
-            timeout: 10000,
-          });
-        }, maxToasts * 150 + 100);
-      }
-    }
-  }, [
-    suggestions,
-    ignoredSuggestions,
-    isProcessing,
-    handleLink,
-    handleViewInvoice,
-    handleIgnore,
-    toastManager,
-  ]);
+      // 2. Toast undo (5 secondes pour annuler)
+      sonnerToast.custom(
+        () => (
+          <div
+            className="flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg max-w-[360px]"
+            style={{ backgroundColor: "#202020" }}
+          >
+            <p className="text-sm text-white grow">Transaction ignorée</p>
+            <button
+              onClick={() => handleUndo(transactionId)}
+              className="flex items-center gap-1.5 text-sm font-medium text-white/80 hover:text-white transition-colors cursor-pointer shrink-0"
+            >
+              <Undo2 size={14} />
+              Annuler
+            </button>
+          </div>
+        ),
+        {
+          id: `undo-${transactionId}`,
+          duration: UNDO_DELAY_MS,
+        },
+      );
 
-  return <>{children}</>;
+      // 3. Confirmation serveur après le délai d'undo
+      const timer = setTimeout(async () => {
+        undoTimersRef.current.delete(transactionId);
+        try {
+          const result = await ignoreTransaction(transactionId);
+          if (!result.success) {
+            // Rollback si le serveur refuse
+            removeIgnoredSuggestion(transactionId);
+            setIgnoredSuggestions((prev) => {
+              const next = new Set(prev);
+              next.delete(transactionId);
+              return next;
+            });
+          }
+        } catch {
+          // Rollback en cas d'erreur réseau
+          removeIgnoredSuggestion(transactionId);
+          setIgnoredSuggestions((prev) => {
+            const next = new Set(prev);
+            next.delete(transactionId);
+            return next;
+          });
+        }
+      }, UNDO_DELAY_MS);
+
+      undoTimersRef.current.set(transactionId, timer);
+    },
+    [animateOut, ignoreTransaction, handleUndo],
+  );
+
+  // Naviguer vers la facture (clic sur la carte)
+  const handleNavigate = useCallback(
+    (invoiceId) => {
+      router.push(`/dashboard/outils/factures?id=${invoiceId}`);
+    },
+    [router],
+  );
+
+  return (
+    <>
+      {children}
+      {activeSuggestions.length > 0 && (
+        <ReconciliationDeck
+          suggestions={activeSuggestions}
+          onLink={handleLink}
+          onIgnore={handleIgnore}
+          onNavigate={handleNavigate}
+          exitingIds={exitingIds}
+        />
+      )}
+    </>
+  );
 }

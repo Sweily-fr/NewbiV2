@@ -63,6 +63,7 @@ export function NavMain({
   navCommunication = [],
   onOpenNotifications,
   notificationCount = 0,
+  reconciliationCount = 0,
 }) {
   const pathname = usePathname();
   const { isActive, loading, subscription } = useSubscription();
@@ -1140,8 +1141,14 @@ export function NavMain({
       return undefined;
     };
 
+    const isTransactions = item.title === "Transactions";
+    const showRecoBadge = isTransactions && reconciliationCount > 0;
+
     return (
-      <SidebarMenuItem key={item.title}>
+      <SidebarMenuItem
+        key={item.title}
+        className={showRecoBadge ? "relative" : undefined}
+      >
         <Link
           href={hasAccess ? item.url : "#"}
           className="w-full"
@@ -1166,8 +1173,18 @@ export function NavMain({
             {isProTab && !hasAccess && (
               <Crown className="w-3 h-3 ml-auto text-[#5b4fff]" />
             )}
+            {showRecoBadge && !isCollapsed && (
+              <kbd className="ml-auto inline-flex items-center justify-center rounded border-y border-b-[#5b4eff]/30 border-t-[#5b4eff]/10 bg-[#5b4eff]/20 px-1 font-sans text-[10px] text-[#5b4eff] ring-1 ring-[#5b4eff]/20 h-4 min-w-4">
+                {reconciliationCount}
+              </kbd>
+            )}
           </SidebarMenuButton>
         </Link>
+        {showRecoBadge && isCollapsed && (
+          <kbd className="absolute top-0 right-0 inline-flex items-center justify-center rounded border-y border-b-[#5b4eff]/30 border-t-[#5b4eff]/10 bg-[#5b4eff]/20 px-1 font-sans text-[10px] text-[#5b4eff] ring-1 ring-[#5b4eff]/20 h-4 min-w-4">
+            {reconciliationCount > 9 ? "9+" : reconciliationCount}
+          </kbd>
+        )}
       </SidebarMenuItem>
     );
   };
