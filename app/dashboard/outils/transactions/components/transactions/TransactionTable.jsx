@@ -952,6 +952,10 @@ export default function TransactionTable({
       onRefresh: refetch,
       onDownloadAttachment: handleDownloadAttachment,
       onEditPCG: handleEditPCG,
+      onOpenReconciliation: (transaction) => {
+        setSelectedTransaction(transaction);
+        setIsDetailDrawerOpen(true);
+      },
       bankAccounts,
     },
   });
@@ -979,6 +983,7 @@ export default function TransactionTable({
       all: transactions.length,
       lastMonth: 0,
       missingReceipt: 0,
+      toReconcile: 0,
     };
 
     transactions.forEach((t) => {
@@ -994,6 +999,14 @@ export default function TransactionTable({
         source === "BANK" || source === "BANK_TRANSACTION";
       if (isBankTransaction && !t.hasReceipt && t.receiptRequired !== false) {
         counts.missingReceipt++;
+      }
+
+      // À rapprocher (transactions bancaires sans facture liée, montant positif)
+      const recoStatus = t.reconciliationStatus?.toLowerCase();
+      const isNotReconciled =
+        !recoStatus || recoStatus === "unmatched" || recoStatus === "suggested";
+      if (isNotReconciled && !t.linkedInvoice?.id && t.amount > 0) {
+        counts.toReconcile++;
       }
     });
 
@@ -1024,6 +1037,15 @@ export default function TransactionTable({
         return (
           isBankTransaction && !t.hasReceipt && t.receiptRequired !== false
         );
+      });
+    } else if (activeTab === "toReconcile") {
+      result = result.filter((t) => {
+        const recoStatus = t.reconciliationStatus?.toLowerCase();
+        const isNotReconciled =
+          !recoStatus ||
+          recoStatus === "unmatched" ||
+          recoStatus === "suggested";
+        return isNotReconciled && !t.linkedInvoice?.id && t.amount > 0;
       });
     }
 
@@ -1109,6 +1131,10 @@ export default function TransactionTable({
       onRefresh: refetch,
       onDownloadAttachment: handleDownloadAttachment,
       onEditPCG: handleEditPCG,
+      onOpenReconciliation: (transaction) => {
+        setSelectedTransaction(transaction);
+        setIsDetailDrawerOpen(true);
+      },
       bankAccounts,
     },
   });
@@ -1527,6 +1553,21 @@ export default function TransactionTable({
               <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
                 {transactionCounts.lastMonth}
               </span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="toReconcile"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+            >
+              À rapprocher
+              {transactionCounts.toReconcile > 0 ? (
+                <span className="text-[10px] leading-none bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded px-1 py-0.5">
+                  {transactionCounts.toReconcile}
+                </span>
+              ) : (
+                <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
+                  0
+                </span>
+              )}
             </TabsTrigger>
             <TabsTrigger
               value="missingReceipt"
