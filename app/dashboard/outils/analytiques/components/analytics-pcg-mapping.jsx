@@ -7,41 +7,34 @@ import { TransactionDetailDrawer } from "@/app/dashboard/outils/transactions/com
 import { mapPaymentMethodToEnum } from "@/app/dashboard/outils/transactions/components/transactions/utils/mappers";
 import { Input } from "@/src/components/ui/input";
 import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableHead,
-  TableRow,
-  TableCell,
-} from "@/src/components/ui/table";
-import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import { formatDateToFrench } from "@/src/utils/dateFormatter";
 import { findMerchant } from "@/lib/merchants-config";
-import {
-  Search,
-  ArrowUpDown,
-  Info,
-  ChevronDown,
-  ChevronRight,
-  AlertCircle,
-  PenLine,
-  ExternalLink,
-} from "lucide-react";
+import { Search, ChevronDown, AlertCircle, ExternalLink } from "lucide-react";
+import { Edit2Icon } from "@/src/components/icons";
+import { cn } from "@/src/lib/utils";
 import { CONFIDENCE_CONFIG } from "@/lib/pcg-mapping";
 
-function formatAmount(amount) {
-  return new Intl.NumberFormat("fr-FR", {
+// ─── Formatters ───
+
+const formatAmount = (amount) =>
+  new Intl.NumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount || 0);
-}
+
+const formatNumber = (value) =>
+  new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(
+    Math.round(Math.abs(value || 0)),
+  );
+
+// ─── Confidence Badge ───
 
 function ConfidenceBadge({ confidence }) {
   const key = confidence?.toLowerCase();
@@ -57,6 +50,10 @@ function ConfidenceBadge({ confidence }) {
   );
 }
 
+// ═══════════════════════════════════════════════════════════
+// ─── Main Component ───
+// ═══════════════════════════════════════════════════════════
+
 export function AnalyticsPCGMapping() {
   const { transactions, isLoading, refreshData } = useDashboardData();
   const { updateTransaction } = useUpdateTransaction();
@@ -67,7 +64,8 @@ export function AnalyticsPCGMapping() {
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  // Handler appelé par le drawer quand l'utilisateur sauvegarde les modifications
+  // ─── Handlers ───
+
   const handleSaveTransaction = async (updatedTransaction) => {
     const transactionId =
       updatedTransaction.id ||
@@ -104,7 +102,6 @@ export function AnalyticsPCGMapping() {
   };
 
   const openTransaction = (tx) => {
-    // Mapper les données Transaction (GraphQL) vers le format attendu par le drawer
     setSelectedTransaction({
       id: tx.id,
       amount: tx.amount,
@@ -154,24 +151,19 @@ export function AnalyticsPCGMapping() {
     }
   };
 
-  // Grouper les transactions par compte PCG
+  // ─── Data processing ───
+
   const accountGroups = useMemo(() => {
     if (!transactions?.length) return [];
-
     const groups = new Map();
-    let unassignedCount = 0;
-    let unassignedAmount = 0;
     const unassignedTxs = [];
 
     for (const tx of transactions) {
       const pcg = tx.pcgAccount;
       if (!pcg?.numero) {
-        unassignedCount++;
-        unassignedAmount += Math.abs(tx.amount || 0);
         unassignedTxs.push(tx);
         continue;
       }
-
       if (!groups.has(pcg.numero)) {
         groups.set(pcg.numero, {
           numero: pcg.numero,
@@ -193,34 +185,38 @@ export function AnalyticsPCGMapping() {
       g.transactions.push(tx);
     }
 
-    // Trier les transactions dans chaque groupe par date desc
     for (const g of groups.values()) {
-      g.transactions.sort((a, b) => {
-        const dateA = new Date(a.date || a.createdAt || 0).getTime();
-        const dateB = new Date(b.date || b.createdAt || 0).getTime();
-        return dateB - dateA;
-      });
+      g.transactions.sort(
+        (a, b) =>
+          new Date(b.date || b.createdAt || 0) -
+          new Date(a.date || a.createdAt || 0),
+      );
       g.totalAmount = g.totalDebit + g.totalCredit;
     }
 
     let result = Array.from(groups.values());
 
-    // Ajouter le groupe "non affecté" s'il y en a
-    if (unassignedCount > 0) {
+    if (unassignedTxs.length > 0) {
+      const totalDebit = unassignedTxs
+        .filter((t) => t.amount < 0)
+        .reduce((s, t) => s + Math.abs(t.amount), 0);
+      const totalCredit = unassignedTxs
+        .filter((t) => t.amount > 0)
+        .reduce((s, t) => s + t.amount, 0);
       result.push({
         numero: "",
         intitule: "Non affecté",
-        count: unassignedCount,
-        totalDebit: unassignedAmount,
-        totalCredit: 0,
-        totalNet: -unassignedAmount,
-        totalAmount: unassignedAmount,
+        count: unassignedTxs.length,
+        totalDebit,
+        totalCredit,
+        totalNet: totalCredit - totalDebit,
+        totalAmount: totalDebit + totalCredit,
         manualCount: 0,
-        transactions: unassignedTxs.sort((a, b) => {
-          const dateA = new Date(a.date || a.createdAt || 0).getTime();
-          const dateB = new Date(b.date || b.createdAt || 0).getTime();
-          return dateB - dateA;
-        }),
+        transactions: unassignedTxs.sort(
+          (a, b) =>
+            new Date(b.date || b.createdAt || 0) -
+            new Date(a.date || a.createdAt || 0),
+        ),
         isUnassigned: true,
       });
     }
@@ -230,7 +226,6 @@ export function AnalyticsPCGMapping() {
 
   const filteredGroups = useMemo(() => {
     let items = [...accountGroups];
-
     if (search) {
       const s = search.toLowerCase();
       items = items.filter(
@@ -242,36 +237,29 @@ export function AnalyticsPCGMapping() {
           ),
       );
     }
-
     items.sort((a, b) => {
-      // Toujours mettre "non affecté" en dernier
       if (a.isUnassigned) return 1;
       if (b.isUnassigned) return -1;
-
       let cmp = 0;
       if (sortField === "numero") cmp = a.numero.localeCompare(b.numero);
       else if (sortField === "count") cmp = a.count - b.count;
       else if (sortField === "totalAmount") cmp = a.totalAmount - b.totalAmount;
       return sortDir === "asc" ? cmp : -cmp;
     });
-
     return items;
   }, [accountGroups, search, sortField, sortDir]);
 
-  // Stats globales
   const stats = useMemo(() => {
     const totalTxs = transactions?.length || 0;
     const assignedTxs =
       transactions?.filter((t) => t.pcgAccount?.numero).length || 0;
-    const unassignedTxs = totalTxs - assignedTxs;
     const manualTxs =
       transactions?.filter((t) => t.pcgAccount?.isManual).length || 0;
     const uniqueAccounts = accountGroups.filter((g) => !g.isUnassigned).length;
-
     return {
       totalTxs,
       assignedTxs,
-      unassignedTxs,
+      unassignedTxs: totalTxs - assignedTxs,
       manualTxs,
       uniqueAccounts,
       assignedPercent:
@@ -279,358 +267,276 @@ export function AnalyticsPCGMapping() {
     };
   }, [transactions, accountGroups]);
 
+  // ─── Loading ───
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+      <div className="px-4 sm:px-6 space-y-4">
+        <div className="grid grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="rounded-xl border border-border px-5 py-4">
+              <Skeleton className="h-4 w-24 mb-2" />
+              <Skeleton className="h-7 w-16" />
+            </div>
+          ))}
+        </div>
+        <Skeleton className="h-10 w-full rounded-lg" />
+        <Skeleton className="h-64 w-full rounded-lg" />
       </div>
     );
   }
 
+  // ─── Render ───
+
   return (
-    <div className="space-y-4 px-4 sm:px-6">
-      {/* Info banner */}
-      <div className="rounded-lg border bg-card p-4">
-        <div className="flex items-start gap-3">
-          <Info className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
-          <div className="text-sm text-muted-foreground">
-            <p className="font-medium text-foreground mb-1">
-              Transactions regroupées par compte du Plan Comptable Général
+    <div className="px-4 sm:px-6">
+      {/* ─── KPI Cards ─── */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="rounded-xl border border-border px-5 py-4">
+          <p className="text-sm text-muted-foreground mb-1">Transactions</p>
+          <p className="text-2xl font-medium text-foreground">
+            {stats.totalTxs}
+          </p>
+        </div>
+        <div className="rounded-xl border border-border px-5 py-4">
+          <p className="text-sm text-muted-foreground mb-1">Affectées</p>
+          <div className="flex items-baseline gap-2">
+            <p className="text-2xl font-medium text-foreground">
+              {stats.assignedTxs}
             </p>
-            <p>
-              Visualise tes transactions classées par compte PCG. Clique sur une
-              ligne pour voir le détail des transactions affectées à chaque
-              compte. Les transactions sans PCG apparaissent en bas du tableau.
-            </p>
+            <span className="text-sm text-green-600 font-medium">
+              {stats.assignedPercent}%
+            </span>
           </div>
+        </div>
+        <div className="rounded-xl border border-border px-5 py-4">
+          <p className="text-sm text-muted-foreground mb-1">Non affectées</p>
+          <p
+            className={cn(
+              "text-2xl font-medium",
+              stats.unassignedTxs > 0 ? "text-red-600" : "text-foreground",
+            )}
+          >
+            {stats.unassignedTxs}
+          </p>
         </div>
       </div>
 
-      {/* Stats cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <div className="rounded-lg border p-3">
-          <div className="text-sm text-muted-foreground">Transactions</div>
-          <div className="text-2xl font-semibold">{stats.totalTxs}</div>
-        </div>
-        <div
-          className="rounded-lg border p-3"
-          style={{ borderColor: "#22c55e33" }}
-        >
-          <div className="text-sm" style={{ color: "#22c55e" }}>
-            Affectées
-          </div>
-          <div className="text-2xl font-semibold">{stats.assignedTxs}</div>
-          <div className="text-xs text-muted-foreground">
-            {stats.assignedPercent}%
-          </div>
-        </div>
-        <div
-          className="rounded-lg border p-3"
-          style={{ borderColor: "#ef444433" }}
-        >
-          <div className="text-sm" style={{ color: "#ef4444" }}>
-            Non affectées
-          </div>
-          <div className="text-2xl font-semibold">{stats.unassignedTxs}</div>
-        </div>
-        <div
-          className="rounded-lg border p-3"
-          style={{ borderColor: "#3b82f633" }}
-        >
-          <div className="text-sm" style={{ color: "#3b82f6" }}>
-            Manuelles
-          </div>
-          <div className="text-2xl font-semibold">{stats.manualTxs}</div>
-        </div>
-        <div className="rounded-lg border p-3">
-          <div className="text-sm text-muted-foreground">Comptes PCG</div>
-          <div className="text-2xl font-semibold">{stats.uniqueAccounts}</div>
-        </div>
+      {/* ─── Search ─── */}
+      <div className="relative mb-4 w-80">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Rechercher un compte, une description..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9"
+        />
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher un compte PCG, une description..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+      {/* ─── Table ─── */}
+      <div className="border border-border rounded-lg overflow-hidden">
+        {/* Header */}
+        <div
+          className="grid items-center bg-muted/40 border-b border-border text-[13px] text-muted-foreground"
+          style={{ gridTemplateColumns: "1fr 100px 120px 120px 120px" }}
+        >
+          <div className="px-4 py-3 font-medium">Compte PCG</div>
+          <div
+            className="py-3 text-center cursor-pointer hover:text-foreground transition-colors"
+            onClick={() => toggleSort("count")}
+          >
+            Transactions
+          </div>
+          <div className="py-3 text-right pr-4">Débit</div>
+          <div className="py-3 text-right pr-4">Crédit</div>
+          <div
+            className="py-3 text-right pr-4 cursor-pointer hover:text-foreground transition-colors"
+            onClick={() => toggleSort("totalAmount")}
+          >
+            Solde
+          </div>
         </div>
-      </div>
 
-      {/* Table */}
-      <div className="rounded-lg border overflow-hidden">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead className="w-10" />
-                <TableHead
-                  className="cursor-pointer select-none"
-                  onClick={() => toggleSort("numero")}
+        {/* Rows */}
+        {filteredGroups.length === 0 ? (
+          <div className="py-12 text-center text-sm text-muted-foreground">
+            {transactions?.length === 0
+              ? "Aucune transaction"
+              : "Aucun résultat"}
+          </div>
+        ) : (
+          filteredGroups.map((group) => {
+            const key = group.numero || "__unassigned";
+            const isExpanded = expandedAccounts.has(key);
+            return (
+              <Fragment key={key}>
+                {/* Account row */}
+                <div
+                  className={cn(
+                    "grid items-center border-b border-border/40 cursor-pointer hover:bg-muted/20 transition-colors",
+                    group.isUnassigned && "bg-amber-50/30 dark:bg-amber-950/10",
+                  )}
+                  style={{
+                    gridTemplateColumns: "1fr 100px 120px 120px 120px",
+                  }}
+                  onClick={() => toggleAccount(key)}
                 >
-                  <div className="flex items-center gap-1">
-                    Compte PCG
-                    <ArrowUpDown className="h-3 w-3" />
-                  </div>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer select-none text-center"
-                  onClick={() => toggleSort("count")}
-                >
-                  <div className="flex items-center gap-1 justify-center">
-                    Transactions
-                    <ArrowUpDown className="h-3 w-3" />
-                  </div>
-                </TableHead>
-                <TableHead className="text-right">Débit</TableHead>
-                <TableHead className="text-right">Crédit</TableHead>
-                <TableHead
-                  className="cursor-pointer select-none text-right"
-                  onClick={() => toggleSort("totalAmount")}
-                >
-                  <div className="flex items-center gap-1 justify-end">
-                    Solde
-                    <ArrowUpDown className="h-3 w-3" />
-                  </div>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredGroups.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="text-center py-8 text-muted-foreground"
-                  >
-                    {transactions?.length === 0
-                      ? "Aucune transaction"
-                      : "Aucun résultat"}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredGroups.map((group) => {
-                  const key = group.numero || "__unassigned";
-                  const isExpanded = expandedAccounts.has(key);
-                  return (
-                    <Fragment key={key}>
-                      <TableRow
-                        className={`cursor-pointer hover:bg-muted/30 ${group.isUnassigned ? "bg-amber-50/50 dark:bg-amber-950/20" : ""}`}
-                        onClick={() => toggleAccount(key)}
-                      >
-                        <TableCell className="w-10 px-2">
-                          {isExpanded ? (
-                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {group.isUnassigned ? (
-                              <>
-                                <AlertCircle className="h-4 w-4 text-amber-600" />
-                                <span className="font-medium text-amber-700 dark:text-amber-400">
-                                  {group.intitule}
-                                </span>
-                              </>
-                            ) : (
-                              <>
-                                <code className="rounded bg-muted px-1.5 py-0.5 text-sm font-mono font-semibold">
-                                  {group.numero}
-                                </code>
-                                <span className="text-sm">
-                                  {group.intitule}
-                                </span>
-                                {group.manualCount > 0 && (
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger>
-                                        <PenLine className="h-3 w-3 text-blue-500" />
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        {group.manualCount} affectation(s)
-                                        manuelle(s)
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <span className="text-sm font-medium">
-                            {group.count}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right text-sm text-red-600 dark:text-red-400">
-                          {group.totalDebit > 0
-                            ? formatAmount(group.totalDebit)
-                            : "-"}
-                        </TableCell>
-                        <TableCell className="text-right text-sm text-green-600 dark:text-green-400">
-                          {group.totalCredit > 0
-                            ? formatAmount(group.totalCredit)
-                            : "-"}
-                        </TableCell>
-                        <TableCell
-                          className="text-right font-semibold text-sm"
-                          style={{
-                            color:
-                              group.totalNet > 0
-                                ? "#0E7A3E"
-                                : group.totalNet < 0
-                                  ? "#DC2626"
-                                  : undefined,
-                          }}
-                        >
-                          {formatAmount(group.totalNet)}
-                        </TableCell>
-                      </TableRow>
-
-                      {isExpanded && (
-                        <TableRow>
-                          <TableCell colSpan={6} className="p-0 bg-muted/20">
-                            <div className="px-4 py-3">
-                              <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wide">
-                                Détail des transactions ({group.count})
-                              </div>
-                              <div className="rounded-md border bg-background overflow-hidden">
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead className="h-8 text-xs">
-                                        Date
-                                      </TableHead>
-                                      <TableHead className="h-8 text-xs">
-                                        Description
-                                      </TableHead>
-                                      <TableHead className="h-8 text-xs text-right">
-                                        Montant
-                                      </TableHead>
-                                      <TableHead className="h-8 text-xs text-center">
-                                        Source
-                                      </TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {group.transactions
-                                      .slice(0, 50)
-                                      .map((tx) => {
-                                        const merchant = findMerchant(
-                                          tx.metadata?.vendor ||
-                                            tx.description ||
-                                            "",
-                                        );
-                                        const name =
-                                          merchant?.name ||
-                                          tx.metadata?.vendor ||
-                                          tx.description ||
-                                          "Transaction";
-                                        const isIncome = tx.amount > 0;
-                                        return (
-                                          <TableRow
-                                            key={tx.id}
-                                            className="h-10 cursor-pointer hover:bg-muted/50 group"
-                                            onClick={() => openTransaction(tx)}
-                                          >
-                                            <TableCell className="text-xs">
-                                              {formatDateToFrench(tx.date)}
-                                            </TableCell>
-                                            <TableCell className="text-xs">
-                                              <div className="flex items-center gap-2">
-                                                <div
-                                                  className="truncate max-w-[240px]"
-                                                  title={name}
-                                                >
-                                                  {name}
-                                                </div>
-                                                <ExternalLink
-                                                  size={11}
-                                                  className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-                                                />
-                                              </div>
-                                            </TableCell>
-                                            <TableCell
-                                              className="text-xs text-right font-medium"
-                                              style={{
-                                                color: isIncome
-                                                  ? "#0E7A3E"
-                                                  : "#DC2626",
-                                              }}
-                                            >
-                                              {isIncome ? "+" : ""}
-                                              {formatAmount(tx.amount)}
-                                            </TableCell>
-                                            <TableCell className="text-xs text-center">
-                                              {tx.pcgAccount?.isManual ? (
-                                                <TooltipProvider>
-                                                  <Tooltip>
-                                                    <TooltipTrigger>
-                                                      <PenLine
-                                                        size={12}
-                                                        className="text-blue-500 mx-auto"
-                                                      />
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                      Affecté manuellement
-                                                    </TooltipContent>
-                                                  </Tooltip>
-                                                </TooltipProvider>
-                                              ) : (
-                                                <ConfidenceBadge
-                                                  confidence={
-                                                    tx.pcgAccount?.confidence
-                                                  }
-                                                />
-                                              )}
-                                            </TableCell>
-                                          </TableRow>
-                                        );
-                                      })}
-                                  </TableBody>
-                                </Table>
-                                {group.transactions.length > 50 && (
-                                  <div className="text-center py-2 text-xs text-muted-foreground border-t">
-                                    ... et {group.transactions.length - 50}{" "}
-                                    autre
-                                    {group.transactions.length - 50 > 1
-                                      ? "s"
-                                      : ""}{" "}
-                                    transaction
-                                    {group.transactions.length - 50 > 1
-                                      ? "s"
-                                      : ""}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </TableCell>
-                        </TableRow>
+                  <div className="px-4 py-3.5 flex items-center gap-2.5">
+                    <ChevronDown
+                      size={14}
+                      className={cn(
+                        "text-muted-foreground transition-transform shrink-0",
+                        !isExpanded && "-rotate-90",
                       )}
-                    </Fragment>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                    />
+                    {group.isUnassigned ? (
+                      <>
+                        <AlertCircle
+                          size={14}
+                          className="text-amber-500 shrink-0"
+                        />
+                        <span className="text-[13px] font-medium text-amber-700 dark:text-amber-400">
+                          {group.intitule}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <code className="rounded bg-muted px-1.5 py-0.5 text-[12px] font-mono font-semibold text-foreground">
+                          {group.numero}
+                        </code>
+                        <span className="text-[13px] text-foreground truncate">
+                          {group.intitule}
+                        </span>
+                        {group.manualCount > 0 && (
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Edit2Icon className="w-3 h-3 text-muted-foreground shrink-0" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {group.manualCount} affectation(s) manuelle(s)
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                      </>
+                    )}
+                  </div>
+                  <div className="py-3.5 text-center text-[13px] text-muted-foreground tabular-nums">
+                    {group.count}
+                  </div>
+                  <div className="py-3.5 text-right pr-4 text-[13px] text-red-600 tabular-nums">
+                    {group.totalDebit > 0
+                      ? formatNumber(group.totalDebit)
+                      : "–"}
+                  </div>
+                  <div className="py-3.5 text-right pr-4 text-[13px] text-green-600 tabular-nums">
+                    {group.totalCredit > 0
+                      ? formatNumber(group.totalCredit)
+                      : "–"}
+                  </div>
+                  <div
+                    className="py-3.5 text-right pr-4 text-[13px] font-semibold tabular-nums"
+                    style={{
+                      color:
+                        group.totalNet > 0
+                          ? "#0E7A3E"
+                          : group.totalNet < 0
+                            ? "#DC2626"
+                            : undefined,
+                    }}
+                  >
+                    {formatAmount(group.totalNet)}
+                  </div>
+                </div>
+
+                {/* Expanded transactions */}
+                {isExpanded && (
+                  <div className="border-b border-border/40 bg-muted/10">
+                    <div className="px-4 py-3">
+                      <p className="text-[11px] text-muted-foreground/60 uppercase tracking-wider mb-2 pl-6">
+                        {group.count} transaction
+                        {group.count > 1 ? "s" : ""}
+                      </p>
+                      <div className="space-y-px">
+                        {group.transactions.slice(0, 50).map((tx) => {
+                          const merchant = findMerchant(
+                            tx.metadata?.vendor || tx.description || "",
+                          );
+                          const name =
+                            merchant?.name ||
+                            tx.metadata?.vendor ||
+                            tx.description ||
+                            "Transaction";
+                          const isIncome = tx.amount > 0;
+                          return (
+                            <div
+                              key={tx.id}
+                              className="flex items-center py-2 px-6 rounded-md cursor-pointer hover:bg-muted/40 transition-colors group/tx"
+                              onClick={() => openTransaction(tx)}
+                            >
+                              <span className="text-[12px] text-muted-foreground w-20 shrink-0 tabular-nums">
+                                {formatDateToFrench(tx.date)}
+                              </span>
+                              <span className="text-[12px] text-foreground/80 truncate flex-1 flex items-center gap-1.5">
+                                {name}
+                                <ExternalLink
+                                  size={10}
+                                  className="text-muted-foreground/30 opacity-0 group-hover/tx:opacity-100 transition-opacity shrink-0"
+                                />
+                              </span>
+                              <span
+                                className="text-[12px] font-medium tabular-nums w-24 text-right shrink-0"
+                                style={{
+                                  color: isIncome ? "#0E7A3E" : "#DC2626",
+                                }}
+                              >
+                                {isIncome ? "+" : ""}
+                                {formatAmount(tx.amount)}
+                              </span>
+                              <span className="w-16 text-center shrink-0">
+                                {tx.pcgAccount?.isManual ? (
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Edit2Icon className="w-3 h-3 text-muted-foreground mx-auto" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      Affecté manuellement
+                                    </TooltipContent>
+                                  </Tooltip>
+                                ) : (
+                                  <ConfidenceBadge
+                                    confidence={tx.pcgAccount?.confidence}
+                                  />
+                                )}
+                              </span>
+                            </div>
+                          );
+                        })}
+                        {group.transactions.length > 50 && (
+                          <p className="text-[11px] text-muted-foreground/50 text-center py-2">
+                            et {group.transactions.length - 50} autre
+                            {group.transactions.length - 50 > 1 ? "s" : ""}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </Fragment>
+            );
+          })
+        )}
       </div>
 
-      <div className="text-xs text-muted-foreground text-right">
+      {/* Footer */}
+      <p className="text-[11px] text-muted-foreground/50 text-right mt-3">
         {filteredGroups.filter((g) => !g.isUnassigned).length} compte
         {filteredGroups.filter((g) => !g.isUnassigned).length > 1
           ? "s"
           : ""}{" "}
-        PCG utilisé
-        {filteredGroups.filter((g) => !g.isUnassigned).length > 1 ? "s" : ""}
-      </div>
+        PCG
+      </p>
 
-      {/* Drawer de détail de transaction */}
+      {/* Drawer */}
       <TransactionDetailDrawer
         transaction={selectedTransaction}
         open={isDrawerOpen}

@@ -7,6 +7,7 @@ import {
   Landmark,
   CheckCircle2,
   BookOpen,
+  Sparkles,
 } from "lucide-react";
 import { Link2Icon as Link2, MoneyReciveIcon } from "@/src/components/icons";
 import { formatDateToFrench } from "@/src/utils/dateFormatter";
@@ -291,11 +292,14 @@ export const columns = [
     meta: {
       label: "Justificatif",
     },
-    cell: ({ row }) => {
+    cell: ({ row, table }) => {
       const files = row.original.files || [];
       const receiptFile = row.original.receiptFile;
       const linkedInvoice = row.original.linkedInvoice;
       const hasLinkedInvoice = !!linkedInvoice?.id;
+      const reconciliationStatus =
+        row.original.reconciliationStatus?.toLowerCase();
+      const hasSuggestion = reconciliationStatus === "suggested";
       const hasReceipt =
         row.original.hasReceipt || files.length > 0 || !!receiptFile?.url;
       const filesCount =
@@ -307,7 +311,7 @@ export const columns = [
               ? 1
               : 0;
 
-      // Si une facture est liée, afficher un indicateur spécial
+      // État 4 : Rapproché à une facture (check vert)
       if (hasLinkedInvoice) {
         return (
           <TooltipProvider>
@@ -335,7 +339,49 @@ export const columns = [
         );
       }
 
-      // Sinon, afficher le compteur de fichiers classique
+      // État 2 : Suggestion en attente (ambre pulsant)
+      if (hasSuggestion) {
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className="flex items-center gap-1.5 cursor-pointer group/suggestion"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const onOpenReconciliation =
+                      table.options.meta?.onOpenReconciliation;
+                    if (onOpenReconciliation) {
+                      onOpenReconciliation(row.original);
+                    }
+                  }}
+                >
+                  <div className="relative">
+                    <Sparkles
+                      size={14}
+                      className="text-amber-500 group-hover/suggestion:text-amber-600 transition-colors"
+                    />
+                    <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                  </div>
+                  <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400 group-hover/suggestion:text-amber-700 dark:group-hover/suggestion:text-amber-300 transition-colors">
+                    Match
+                  </span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="text-center">
+                  <div className="font-medium">Suggestion de rapprochement</div>
+                  <div className="text-xs text-muted-foreground">
+                    Cliquez pour voir la facture correspondante
+                  </div>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      }
+
+      // État 3 : Justificatif attaché / État 1 : Vide
       return (
         <TooltipProvider>
           <Tooltip>
