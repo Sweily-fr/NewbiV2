@@ -40,5 +40,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Playwright auth state
+# Playwright auth state + run artifacts
 e2e/.auth/
+/test-results/
+/playwright-report/
+
+# Cypress artifacts (screenshots, videos, downloads from runs)
+cypress/videos/
+cypress/screenshots/
+cypress/downloads/
