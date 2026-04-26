@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useMutation } from "@apollo/client";
-import { SAVE_PURCHASE_ORDER_AS_TEMPLATE, GET_PURCHASE_ORDER_TEMPLATES } from "@/src/graphql/purchaseOrderQueries";
+import {
+  SAVE_PURCHASE_ORDER_AS_TEMPLATE,
+  GET_PURCHASE_ORDER_TEMPLATES,
+} from "@/src/graphql/purchaseOrderQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/components/ui/sonner";
 import { Button } from "@/src/components/ui/button";
@@ -18,9 +21,21 @@ import {
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import { LoaderCircle } from "lucide-react";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
-export function SavePurchaseOrderTemplateDialog({ purchaseOrderId, purchaseOrderNumber, open, onOpenChange }) {
+export function SavePurchaseOrderTemplateDialog({
+  purchaseOrderId,
+  purchaseOrderNumber,
+  open,
+  onOpenChange,
+}) {
   const { workspaceId } = useWorkspace();
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
@@ -31,17 +46,22 @@ export function SavePurchaseOrderTemplateDialog({ purchaseOrderId, purchaseOrder
     }
   }, [open, purchaseOrderNumber]);
 
-  const [saveAsTemplate, { loading }] = useMutation(SAVE_PURCHASE_ORDER_AS_TEMPLATE, {
-    onCompleted: () => {
-      toast.success("Modèle sauvegardé avec succès");
-      onOpenChange(false);
+  const [saveAsTemplate, { loading }] = useMutation(
+    SAVE_PURCHASE_ORDER_AS_TEMPLATE,
+    {
+      onCompleted: () => {
+        toast.success("Modèle sauvegardé avec succès");
+        onOpenChange(false);
+      },
+      onError: (error) => {
+        toast.error("Erreur lors de la sauvegarde du modèle");
+        console.error("Save purchase order template error:", error);
+      },
+      refetchQueries: [
+        { query: GET_PURCHASE_ORDER_TEMPLATES, variables: { workspaceId } },
+      ],
     },
-    onError: (error) => {
-      toast.error("Erreur lors de la sauvegarde du modèle");
-      console.error("Save purchase order template error:", error);
-    },
-    refetchQueries: [{ query: GET_PURCHASE_ORDER_TEMPLATES, variables: { workspaceId } }],
-  });
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -64,12 +84,16 @@ export function SavePurchaseOrderTemplateDialog({ purchaseOrderId, purchaseOrder
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]" onCloseAutoFocus={(e) => e.preventDefault()}>
+      <DialogContent
+        className="sm:max-w-[425px]"
+        onCloseAutoFocus={(e) => e.preventDefault()}
+      >
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Sauvegarder comme modèle</DialogTitle>
             <DialogDescription>
-              Sauvegardez ce bon de commande comme modèle réutilisable (articles, notes, paramètres).
+              Sauvegardez ce bon de commande comme modèle réutilisable
+              (articles, notes, paramètres).
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -95,10 +119,18 @@ export function SavePurchaseOrderTemplateDialog({ purchaseOrderId, purchaseOrder
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               Annuler
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button
+              type="submit"
+              disabled={isReadOnly || loading}
+              title={readOnlyTooltip}
+            >
               {loading ? (
                 <>
                   <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />

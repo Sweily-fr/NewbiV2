@@ -2,11 +2,18 @@
 
 import { useState } from "react";
 import { useMutation } from "@apollo/client";
-import { SAVE_BOARD_AS_TEMPLATE, GET_KANBAN_TEMPLATES } from "@/src/graphql/kanbanQueries";
+import {
+  SAVE_BOARD_AS_TEMPLATE,
+  GET_KANBAN_TEMPLATES,
+} from "@/src/graphql/kanbanQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/components/ui/sonner";
 import { Button } from "@/src/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/src/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -15,26 +22,38 @@ import {
   DialogTrigger,
 } from "@/src/components/ui/dialog";
 import { BookTemplate, LoaderCircle, CornerDownLeft } from "lucide-react";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 export function SaveTemplateDialog({ boardId, boardTitle }) {
   const { workspaceId } = useWorkspace();
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
-  const [saveBoardAsTemplate, { loading }] = useMutation(SAVE_BOARD_AS_TEMPLATE, {
-    onCompleted: () => {
-      toast.success("Template sauvegardé avec succès");
-      setOpen(false);
-      setName("");
-      setDescription("");
+  const [saveBoardAsTemplate, { loading }] = useMutation(
+    SAVE_BOARD_AS_TEMPLATE,
+    {
+      onCompleted: () => {
+        toast.success("Template sauvegardé avec succès");
+        setOpen(false);
+        setName("");
+        setDescription("");
+      },
+      onError: (error) => {
+        toast.error("Erreur lors de la sauvegarde du template");
+        console.error("Save template error:", error);
+      },
+      refetchQueries: [
+        { query: GET_KANBAN_TEMPLATES, variables: { workspaceId } },
+      ],
     },
-    onError: (error) => {
-      toast.error("Erreur lors de la sauvegarde du template");
-      console.error("Save template error:", error);
-    },
-    refetchQueries: [{ query: GET_KANBAN_TEMPLATES, variables: { workspaceId } }],
-  });
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -89,13 +108,16 @@ export function SaveTemplateDialog({ boardId, boardTitle }) {
               {/* Info */}
               <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg border border-border/50">
                 <p className="text-xs text-muted-foreground">
-                  Les colonnes, tâches et couleurs seront sauvegardées comme modèle réutilisable.
+                  Les colonnes, tâches et couleurs seront sauvegardées comme
+                  modèle réutilisable.
                 </p>
               </div>
 
               {/* Nom */}
               <div className="space-y-1.5">
-                <label className="text-sm text-muted-foreground">Nom du modèle</label>
+                <label className="text-sm text-muted-foreground">
+                  Nom du modèle
+                </label>
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -107,7 +129,10 @@ export function SaveTemplateDialog({ boardId, boardTitle }) {
 
               {/* Description */}
               <div className="space-y-1.5">
-                <label className="text-sm text-muted-foreground">Description <span className="text-muted-foreground/40">(optionnel)</span></label>
+                <label className="text-sm text-muted-foreground">
+                  Description{" "}
+                  <span className="text-muted-foreground/40">(optionnel)</span>
+                </label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
@@ -123,7 +148,8 @@ export function SaveTemplateDialog({ boardId, boardTitle }) {
               <Button
                 variant="primary"
                 type="submit"
-                disabled={loading || !name.trim()}
+                disabled={isReadOnly || loading || !name.trim()}
+                title={readOnlyTooltip}
                 className="gap-2"
               >
                 {loading ? (

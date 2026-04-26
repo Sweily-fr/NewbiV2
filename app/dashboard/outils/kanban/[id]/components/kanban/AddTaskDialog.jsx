@@ -7,6 +7,7 @@ import { useMutation } from "@apollo/client";
 import { Dialog, DialogContent } from "@/src/components/ui/dialog";
 import { TaskForm } from "./TaskForm";
 import { CREATE_TASK } from "@/src/graphql/kanbanQueries";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 const AddTaskDialog = ({
   open,
@@ -16,6 +17,12 @@ const AddTaskDialog = ({
   columns = [],
 }) => {
   const { id: boardId } = useParams();
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
   const [isLoading, setIsLoading] = useState(false);
 
   const [createTask] = useMutation(CREATE_TASK, {
@@ -60,6 +67,8 @@ const AddTaskDialog = ({
           onSubmit={handleSubmit}
           onCancel={() => onOpenChange?.(false)}
           isLoading={isLoading}
+          isReadOnly={isReadOnly}
+          readOnlyTooltip={readOnlyTooltip}
           initialColumnId={columnId}
           columns={columns}
           submitButtonText="Créer la tâche"

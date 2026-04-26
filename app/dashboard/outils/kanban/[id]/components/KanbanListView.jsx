@@ -57,6 +57,7 @@ import { Calendar as CalendarComponent } from "@/src/components/ui/calendar";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { MemberSelector } from "./MemberSelector";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 function _formatDate(dateString) {
   if (!dateString) return "";
@@ -1677,6 +1678,12 @@ export function KanbanListView({
   boardId,
   workspaceId,
 }) {
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
   const [collapsedColumns, setCollapsedColumns] = useState(new Set());
   const [expandedEmptyColumns, setExpandedEmptyColumns] = useState(new Set());
   const [inlineAddColumnId, setInlineAddColumnId] = useState(null);
@@ -1983,7 +1990,8 @@ export function KanbanListView({
                             setInlineAddColumnId(column.id);
                           }}
                           className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                          title="Ajouter une tâche"
+                          title={readOnlyTooltip || "Ajouter une tâche"}
+                          disabled={isReadOnly}
                         >
                           <Plus className="h-3.5 w-3.5" />
                         </Button>
@@ -2140,7 +2148,8 @@ export function KanbanListView({
                             setInlineAddColumnId(column.id);
                           }}
                           className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                          title="Ajouter une tâche"
+                          title={readOnlyTooltip || "Ajouter une tâche"}
+                          disabled={isReadOnly}
                         >
                           <Plus className="h-3.5 w-3.5" />
                         </Button>
@@ -2571,8 +2580,11 @@ export function KanbanListView({
                   />
                 ) : (
                   <div
-                    className="px-4 sm:px-6 py-1.5 min-h-[36px] flex items-center hover:bg-muted/50 transition-colors cursor-pointer group/add"
-                    onClick={() => setInlineAddColumnId(column.id)}
+                    className={`px-4 sm:px-6 py-1.5 min-h-[36px] flex items-center hover:bg-muted/50 transition-colors group/add ${isReadOnly ? "opacity-50 pointer-events-none" : "cursor-pointer"}`}
+                    onClick={() =>
+                      !isReadOnly && setInlineAddColumnId(column.id)
+                    }
+                    title={readOnlyTooltip}
                   >
                     <div className="flex items-center gap-3">
                       <div className="h-4 w-4 flex-shrink-0" />

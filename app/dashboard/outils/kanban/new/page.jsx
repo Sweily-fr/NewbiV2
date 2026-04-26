@@ -17,9 +17,16 @@ import { Label } from "@/src/components/ui/label";
 import { Textarea } from "@/src/components/ui/textarea";
 import { toast } from "@/src/components/ui/sonner";
 import { CREATE_BOARD } from "@/src/graphql/kanbanQueries";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 export default function NewKanbanPage() {
   const router = useRouter();
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -155,7 +162,8 @@ export default function NewKanbanPage() {
               </Button>
               <Button
                 type="submit"
-                disabled={loading || !formData.title.trim()}
+                disabled={isReadOnly || loading || !formData.title.trim()}
+                title={readOnlyTooltip}
                 className="flex-1 bg-blue-600 hover:bg-blue-700"
               >
                 {loading ? (
