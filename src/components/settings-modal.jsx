@@ -449,7 +449,7 @@ export function SettingsModal({
           id: "espaces",
           label: "Espaces",
           icon: Boxes,
-          disabled: !isActive(),
+          // Espaces toujours accessible (retirer un membre = sécurité d'accès, même en unpaid)
         },
       ],
     },
