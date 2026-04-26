@@ -328,7 +328,7 @@ const LoginForm = () => {
           }
 
           // Rediriger vers la page préférée de l'utilisateur
-          // dashboard/layout.jsx redirigera vers /onboarding si pas d'abonnement
+          // dashboard/layout.jsx redirigera vers /auth/signup si pas d'abonnement
           const routeMap = {
             dashboard: "/dashboard",
             outils: "/dashboard",
@@ -597,7 +597,7 @@ const LoginForm = () => {
             console.log(
               "🎯 [2FA] Pas d'abonnement Stripe actif, redirection vers onboarding",
             );
-            router.push("/onboarding");
+            router.push("/auth/signup");
             return true;
           }
 
@@ -606,7 +606,7 @@ const LoginForm = () => {
             console.log(
               "🎯 [2FA] Première connexion avec abonnement, redirection vers onboarding",
             );
-            router.push("/onboarding");
+            router.push("/auth/signup");
             return true;
           }
 
@@ -643,8 +643,8 @@ const LoginForm = () => {
             "Erreur lors de la vérification de l'abonnement:",
             error,
           );
-          // En cas d'erreur, rediriger vers /onboarding par sécurité
-          router.push("/onboarding");
+          // En cas d'erreur, rediriger vers /auth/signup par sécurité
+          router.push("/auth/signup");
         }
       }
 
@@ -663,18 +663,12 @@ const LoginForm = () => {
       onSubmit={handleSubmit(onSubmit)}
     >
       <div>
-        <Label
-          htmlFor="email"
-          className="text-sm font-medium text-foreground dark:text-foreground"
-        >
-          Email
-        </Label>
         <InputEmail
           id="email"
           name="email"
           autoComplete="email"
-          placeholder="Email"
-          className="mt-2"
+          placeholder="Saisissez votre email"
+          className="h-11 placeholder:font-normal rounded-lg"
           {...register("email", {
             required: "Email est requis",
             pattern: {
@@ -683,35 +677,28 @@ const LoginForm = () => {
             },
           })}
         />
-        {errors.email && (
-          <p className="mt-2 text-sm text-red-500">{errors.email.message}</p>
-        )}
       </div>
       <div>
-        <Label
-          htmlFor="password"
-          className="text-sm font-medium text-foreground dark:text-foreground"
-        >
-          Mot de passe
-        </Label>
         <InputPassword
           id="password"
           name="password"
           autoComplete="password"
           placeholder="Saisissez votre mot de passe"
-          className="mt-2"
+          className="h-11 placeholder:font-normal rounded-lg"
           {...register("password", {
             required: "Mot de passe est requis",
           })}
         />
-        {errors.password && (
-          <p className="mt-2 text-sm text-red-500">{errors.password.message}</p>
-        )}
       </div>
+      {(errors.email || errors.password) && (
+        <p className="text-xs" style={{ color: "#e1243a" }}>
+          {errors.email?.message || errors.password?.message}
+        </p>
+      )}
       <SubmitButton
         type="submit"
-        size="lg"
-        className="mt-4 w-full cursor-pointer"
+        variant="outline"
+        className="mt-2 w-full h-11 font-medium cursor-pointer bg-white rounded-lg"
         isLoading={isSubmitting}
       >
         Se connecter

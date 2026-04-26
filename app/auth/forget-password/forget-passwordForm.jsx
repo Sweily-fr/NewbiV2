@@ -4,7 +4,6 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { SubmitButton } from "@/src/components/ui/submit-button";
 import { InputEmail } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
 import { forgetPassword } from "../../../src/lib/auth-client";
@@ -14,7 +13,6 @@ const ForgetPasswordForm = () => {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    setError: setFormError,
   } = useForm();
 
   const router = useRouter();
@@ -27,10 +25,10 @@ const ForgetPasswordForm = () => {
           toast.success("Un email vous a été envoyé");
           router.push(`/auth/verify?email=${formData.email}`);
         },
-        onError: (error) => {
-          toast.error("Erreur lors de la reinitialisation du mot de passe");
+        onError: () => {
+          toast.error("Erreur lors de la réinitialisation du mot de passe");
         },
-      }
+      },
     );
   };
 
@@ -38,22 +36,16 @@ const ForgetPasswordForm = () => {
     <form
       action="#"
       method="post"
-      className="mt-6 space-y-4"
+      className="space-y-3"
       onSubmit={handleSubmit(onSubmit)}
     >
       <div>
-        <Label
-          htmlFor="email"
-          className="text-sm font-medium text-foreground dark:text-foreground"
-        >
-          Email
-        </Label>
         <InputEmail
           id="email"
           name="email"
           autoComplete="email"
-          placeholder="ephraim@blocks.so"
-          className="mt-2"
+          placeholder="Saisissez votre email"
+          className="h-11 placeholder:font-normal rounded-lg"
           {...register("email", {
             required: "Email est requis",
             pattern: {
@@ -62,16 +54,19 @@ const ForgetPasswordForm = () => {
             },
           })}
         />
-        {errors.email && (
-          <p className="mt-2 text-sm text-red-500">{errors.email.message}</p>
-        )}
       </div>
+      {errors.email && (
+        <p className="text-xs" style={{ color: "#e1243a" }}>
+          {errors.email.message}
+        </p>
+      )}
       <SubmitButton
         type="submit"
-        className="mt-4 w-full py-2 font-medium"
+        variant="outline"
+        className="mt-2 w-full h-11 font-medium cursor-pointer bg-white rounded-lg"
         isLoading={isSubmitting}
       >
-        Envoyer le mot de passe
+        Envoyer le lien
       </SubmitButton>
     </form>
   );

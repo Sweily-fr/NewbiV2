@@ -1,15 +1,12 @@
 "use client";
 
 import * as React from "react";
-
+import { useState } from "react";
 import { Button } from "@/src/components/ui/button";
-import { Separator } from "@/src/components/ui/separator";
 import LoginForm from "./loginForm";
 import { signIn, clearSessionStorage } from "../../../src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
 import Link from "next/link";
-import { Typewriter } from "@/src/components/ui/typewriter-text";
-import { CircleArrowUp } from "lucide-react";
 import SEOHead from "@/src/components/seo/seo-head";
 import { JsonLd } from "@/src/components/seo/seo-metadata";
 import { useAuthSEO } from "@/src/hooks/use-seo";
@@ -18,19 +15,19 @@ const GoogleIcon = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
     <path
       d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
-      fill="#4285F4"
+      fill="currentColor"
     />
     <path
       d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-      fill="#34A853"
+      fill="currentColor"
     />
     <path
       d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-      fill="#FBBC05"
+      fill="currentColor"
     />
     <path
       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-      fill="#EA4335"
+      fill="currentColor"
     />
   </svg>
 );
@@ -38,7 +35,6 @@ const GoogleIcon = (props) => (
 const signInWithProvider = async (provider) => {
   try {
     clearSessionStorage();
-
     await signIn.social(
       { provider, callbackURL: "/dashboard" },
       {
@@ -53,9 +49,7 @@ const signInWithProvider = async (provider) => {
         },
       },
     );
-  } catch {
-    // Erreur réseau/serveur — silencieux, l'utilisateur peut réessayer
-  }
+  } catch {}
 };
 
 export default function LoginPage() {
@@ -64,166 +58,132 @@ export default function LoginPage() {
     robots: "noindex,nofollow",
   };
 
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  const switchView = (toEmail) => {
+    setIsAnimating(true);
+    setTimeout(() => {
+      setShowEmailForm(toEmail);
+      setTimeout(() => setIsAnimating(false), 20);
+    }, 150);
+  };
+
   return (
     <>
       <SEOHead {...seoData} />
       <JsonLd jsonLd={seoData.jsonLd} />
-      <main>
-        {/* Desktop Layout */}
-        <div className="hidden md:flex h-screen">
-          <div className="w-1/2 flex items-center justify-center p-8">
-            <div className="mx-auto sm:max-w-md w-full">
-              <h3 className="text-3xl font-medium text-foreground dark:text-foreground">
-                Connectez-vous
-              </h3>
-              <p className="mt-2 text-sm text-muted-foreground dark:text-muted-foreground">
-                Vous n'avez pas de compte ?{" "}
-                <Link
-                  href="/auth/signup"
-                  className="font-medium text-primary hover:text-primary/90 dark:text-primary hover:dark:text-primary/90"
-                >
-                  Inscription
-                </Link>
-              </p>
-              <div className="mt-8">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="w-full items-center justify-center cursor-pointer"
-                  onClick={() => signInWithProvider("google")}
-                >
-                  <GoogleIcon className="size-4" aria-hidden={true} />
-                  Connexion avec Google
-                </Button>
-              </div>
-
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <Separator className="w-full" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    ou
-                  </span>
-                </div>
-              </div>
-
-              <LoginForm />
-              <p className="mt-6 text-sm text-muted-foreground dark:text-muted-foreground">
-                Mot de passe oublié?{" "}
-                <Link
-                  href="/auth/forget-password"
-                  className="font-medium text-primary hover:text-primary/90 dark:text-primary hover:dark:text-primary/90"
-                >
-                  Réinitialiser mot de passe
-                </Link>
-              </p>
-            </div>
-          </div>
-          <div className="w-1/2 p-2 flex items-center min-h-screen justify-center">
-            <div className="flex p-5 items-center justify-center w-full h-full rounded-lg bg-[#5A50FF]/30 relative">
-              <div className="bg-white/80 shadow-md rounded-2xl p-6 w-110 mx-auto">
-                <div className="text-lg min-h-[27px] flex items-center justify-between">
-                  <div className="flex-1">
-                    <Typewriter
-                      text={[
-                        "Créez votre compte en quelques secondes.",
-                        "Rejoignez notre communauté.",
-                        "Commencez votre aventure dès maintenant.",
-                      ]}
-                      speed={30}
-                      deleteSpeed={30}
-                      delay={2000}
-                      loop={true}
-                      className="font-medium text-left text-[#1C1C1C] text-[15px]"
-                    />
-                  </div>
-                  <CircleArrowUp className="ml-4 text-[#1C1C1C] flex-shrink-0" />
-                </div>
-              </div>
-              <img
-                src="/ni.svg"
-                alt="Newbi Logo"
-                className="absolute bottom-2 right-3 w-5 h-auto filter brightness-0 invert"
-                style={{ opacity: 0.9 }}
-              />
-            </div>
-          </div>
+      <main
+        className="relative flex min-h-[100dvh] flex-col items-center justify-center px-6"
+        style={{ backgroundColor: "rgb(251, 251, 252)" }}
+      >
+        {/* Logo */}
+        <div className="absolute top-0 left-0 right-0 flex justify-center pt-46">
+          <img
+            src="/newbi-icon.png"
+            alt="Newbi"
+            className="h-10 w-10 rounded-xl"
+          />
         </div>
 
-        {/* Mobile Layout */}
-        <div className="md:hidden h-[100dvh] bg-background flex flex-col">
-          {/* Logo en haut centré */}
-          <div className="pt-6 flex justify-center">
-            <img
-              src="/newbiLetter.png"
-              alt="Newbi"
-              className="h-5 w-auto object-contain"
-            />
-          </div>
+        {/* Animated content */}
+        <div
+          className="flex flex-col items-center w-full transition-all duration-200 ease-in-out"
+          style={{
+            opacity: isAnimating ? 0 : 1,
+            transform: isAnimating ? "scale(0.97)" : "scale(1)",
+          }}
+        >
+          {/* Title */}
+          <h1 className="text-xl font-medium mb-8" style={{ color: "#2f2f31" }}>
+            {showEmailForm
+              ? "Connectez-vous avec votre email"
+              : "Connectez-vous"}
+          </h1>
 
-          {/* Contenu centré verticalement */}
-          <div className="flex-1 flex items-center justify-center px-6">
-            <div className="w-full max-w-sm">
-              <h3 className="text-2xl font-medium text-foreground text-center mb-5">
-                Connexion
-              </h3>
-
-              <Button
-                variant="outline"
-                size="lg"
-                className="w-full items-center justify-center cursor-pointer"
-                onClick={() => signInWithProvider("google")}
-              >
-                <GoogleIcon className="size-4" aria-hidden={true} />
-                Connexion avec Google
-              </Button>
-
-              <div className="relative my-4">
-                <div className="absolute inset-0 flex items-center">
-                  <Separator className="w-full" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    ou
-                  </span>
-                </div>
+          {/* Actions */}
+          <div className="w-full max-w-[320px] space-y-4">
+            {showEmailForm ? (
+              <div>
+                <LoginForm />
+                <p className="mt-3 text-center">
+                  <Link
+                    href="/auth/forget-password"
+                    className="text-[13px] text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Mot de passe oublié ?
+                  </Link>
+                </p>
               </div>
-
-              <LoginForm />
-
-              <p className="mt-3 text-sm text-muted-foreground text-center">
-                <Link
-                  href="/auth/forget-password"
-                  className="font-medium text-primary hover:text-primary/90"
+            ) : (
+              <>
+                <Button
+                  className="w-full h-11 bg-[#5A50FF]/90 hover:bg-[#5A50FF] text-white cursor-pointer border-0 [box-shadow:none] rounded-lg"
+                  onClick={() => signInWithProvider("google")}
                 >
-                  Mot de passe oublié ?
-                </Link>
-              </p>
-            </div>
+                  <GoogleIcon className="size-4 mr-2" aria-hidden />
+                  Continuer avec Google
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full h-11 cursor-pointer bg-white rounded-lg"
+                  onClick={() => switchView(true)}
+                >
+                  Continuer avec l'email
+                </Button>
+              </>
+            )}
           </div>
 
-          {/* Footer en bas */}
-          <div className="pb-4 px-6 text-center space-y-2">
-            <p className="text-xs text-muted-foreground">
-              Vous n'avez pas de compte ?{" "}
-              <Link
-                href="/auth/signup"
-                className="font-medium text-primary hover:text-primary/90"
+          {/* Footer */}
+          <div
+            className={`text-center space-y-4 max-w-[320px] ${showEmailForm ? "mt-4" : "mt-8"}`}
+          >
+            {showEmailForm ? (
+              <button
+                type="button"
+                onClick={() => switchView(false)}
+                className="text-[13px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               >
-                Inscription
-              </Link>
-            </p>
-            <p className="text-[11px] text-muted-foreground/60">
-              En continuant, vous acceptez nos{" "}
-              <Link href="/mentions-legales" className="underline">
-                Conditions générales
-              </Link>{" "}
-              et{" "}
-              <Link href="/politique-confidentialite" className="underline">
-                Politique de confidentialité
-              </Link>
-            </p>
+                Retour à la connexion
+              </button>
+            ) : (
+              <>
+                <p className="text-[13px] text-muted-foreground">
+                  En continuant, vous acceptez nos{" "}
+                  <Link
+                    href="/mentions-legales"
+                    className="text-foreground hover:underline"
+                  >
+                    Conditions générales
+                  </Link>{" "}
+                  et notre{" "}
+                  <Link
+                    href="/politique-confidentialite"
+                    className="text-foreground hover:underline"
+                  >
+                    Politique de confidentialité
+                  </Link>
+                  .
+                </p>
+                <p className="text-[13px] text-muted-foreground">
+                  Pas encore de compte ?{" "}
+                  <Link
+                    href="/auth/signup"
+                    className="text-foreground font-medium hover:underline"
+                  >
+                    S'inscrire
+                  </Link>{" "}
+                  ou{" "}
+                  <Link
+                    href="/"
+                    className="text-foreground font-medium hover:underline"
+                  >
+                    en savoir plus
+                  </Link>
+                </p>
+              </>
+            )}
           </div>
         </div>
       </main>

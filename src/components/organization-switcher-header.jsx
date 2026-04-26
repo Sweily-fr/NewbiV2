@@ -205,12 +205,8 @@ export function OrganizationSwitcherHeader() {
         organizationId,
       });
 
-      // Si l'org n'a pas d'abonnement actif, rediriger vers le pricing
-      if (!targetHasSubscription) {
-        setIsOpen(false);
-        router.push("/onboarding?step=4&renew=true");
-        return;
-      }
+      // Si l'org n'a pas d'abonnement actif, on laisse l'utilisateur y accéder
+      // Le banner "Renouveler l'abonnement" dans le site-header s'affichera automatiquement
 
       // 1. Mettre à jour l'org ID immédiatement pour Apollo (sans attendre useWorkspace)
       setOrganizationIdForApollo(organizationId);
@@ -296,7 +292,7 @@ export function OrganizationSwitcherHeader() {
             ) : (
               <Badge
                 variant="outline"
-                className="text-[8px] px-2.5 py-0 h-4 bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800"
+                className="text-[8px] px-2.5 py-0 h-4 bg-red-50 text-red-600 border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-800"
               >
                 Expiré
               </Badge>
@@ -364,7 +360,7 @@ export function OrganizationSwitcherHeader() {
                   ) : (
                     <Badge
                       variant="outline"
-                      className="text-[8px] px-2 py-0 h-4 bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800"
+                      className="text-[8px] px-2 py-0 h-4 bg-red-50 text-red-600 border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-800"
                     >
                       Expiré
                     </Badge>

@@ -27,10 +27,13 @@ export default function OnboardingGuard({ children }) {
 
       // Si l'utilisateur a vu l'onboarding mais l'organisation n'a pas le flag
       // On vérifie s'il a un abonnement actif (rétrocompatibilité)
-      if (session?.user?.hasSeenOnboarding && !organization?.onboardingCompleted) {
+      if (
+        session?.user?.hasSeenOnboarding &&
+        !organization?.onboardingCompleted
+      ) {
         try {
           const response = await fetch(
-            `/api/organizations/${organization.id}/subscription`
+            `/api/organizations/${organization.id}/subscription`,
           );
           const data = await response.json();
 
@@ -46,17 +49,28 @@ export default function OnboardingGuard({ children }) {
           // Si abonnement actif, mettre à jour onboardingCompleted (migration automatique)
           if (isActive && !organization?.onboardingCompleted) {
             try {
-              await fetch(`/api/organizations/${organization.id}/complete-onboarding`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-              });
-              console.log("✅ [ONBOARDING GUARD] Migration automatique: onboardingCompleted mis à true");
+              await fetch(
+                `/api/organizations/${organization.id}/complete-onboarding`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                },
+              );
+              console.log(
+                "✅ [ONBOARDING GUARD] Migration automatique: onboardingCompleted mis à true",
+              );
             } catch (migrationError) {
-              console.warn("⚠️ [ONBOARDING GUARD] Erreur migration:", migrationError);
+              console.warn(
+                "⚠️ [ONBOARDING GUARD] Erreur migration:",
+                migrationError,
+              );
             }
           }
         } catch (error) {
-          console.warn("⚠️ [ONBOARDING GUARD] Erreur vérification abonnement:", error);
+          console.warn(
+            "⚠️ [ONBOARDING GUARD] Erreur vérification abonnement:",
+            error,
+          );
           setHasActiveSubscription(false);
         }
       }
@@ -76,8 +90,9 @@ export default function OnboardingGuard({ children }) {
     // Si pas de session, laisser le middleware gérer la redirection
     if (!session?.user) return;
 
-    // Si déjà sur la page d'onboarding, ne rien faire
+    // Si déjà sur la page d'onboarding ou signup, ne rien faire
     if (pathname?.startsWith("/onboarding")) return;
+    if (pathname?.startsWith("/auth/signup")) return;
 
     // Vérifier si l'utilisateur a complété l'onboarding
     const hasSeenOnboarding = session.user.hasSeenOnboarding;
@@ -88,13 +103,43 @@ export default function OnboardingGuard({ children }) {
     // Si l'onboarding n'est pas complété, rediriger
     // Mais attendre la vérification d'abonnement si nécessaire
     if (!hasSeenOnboarding) {
-      console.log("🎯 [ONBOARDING GUARD] Redirection vers /onboarding (hasSeenOnboarding=false)");
-      router.push("/onboarding");
-    } else if (organization && !orgOnboardingCompleted && hasCheckedSubscription && !hasActiveSubscription) {
-      console.log("🎯 [ONBOARDING GUARD] Redirection vers /onboarding (pas d'abonnement actif)");
-      router.push("/onboarding");
+      // Check saved step to resume at the right view
+      const savedStep =
+        typeof window !== "undefined"
+          ? localStorage.getItem("onboarding_step")
+          : null;
+      if (!savedStep) {
+        // No step saved — user just logged in without completing setup, start at workspace
+        localStorage.setItem("onboarding_step", "workspace");
+      }
+      console.log(
+        "🎯 [ONBOARDING GUARD] Redirection vers /auth/signup (step: " +
+          (savedStep || "workspace") +
+          ")",
+      );
+      router.push("/auth/signup");
+    } else if (
+      organization &&
+      !orgOnboardingCompleted &&
+      hasCheckedSubscription &&
+      !hasActiveSubscription
+    ) {
+      console.log(
+        "🎯 [ONBOARDING GUARD] Redirection vers /auth/signup (pas d'abonnement actif)",
+      );
+      localStorage.setItem("onboarding_step", "plan");
+      router.push("/auth/signup");
     }
-  }, [session, isPending, pathname, router, organization, orgLoading, hasActiveSubscription, hasCheckedSubscription]);
+  }, [
+    session,
+    isPending,
+    pathname,
+    router,
+    organization,
+    orgLoading,
+    hasActiveSubscription,
+    hasCheckedSubscription,
+  ]);
 
   // Pendant le chargement, afficher un loader
   if (isPending || orgLoading) {
@@ -132,7 +177,11 @@ export default function OnboardingGuard({ children }) {
   }
 
   // Si onboarding non complété et pas sur la page onboarding, afficher loader pendant redirection
-  if (!isOnboardingComplete && !pathname?.startsWith("/onboarding")) {
+  if (
+    !isOnboardingComplete &&
+    !pathname?.startsWith("/onboarding") &&
+    !pathname?.startsWith("/auth/signup")
+  ) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center space-y-4">
