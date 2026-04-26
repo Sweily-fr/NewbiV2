@@ -1,61 +1,56 @@
 "use client";
 
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { Loader2 } from "lucide-react";
 
 /**
  * ProRouteGuard - Garde de route pour les fonctionnalités Pro
  *
- * 🔒 SÉCURISÉ: Bloque l'accès pendant le chargement (affiche un loader)
- * Ne révèle le contenu qu'après confirmation de l'abonnement
+ * Comportement :
+ * - Abonnement actif → accès complet
+ * - Abonnement expiré + page de consultation (listing, détail) → accès lecture seule
+ * - Abonnement expiré + page de création/édition (/new, /edit, /nouveau, /editer, /avoir) → redirection
+ *
+ * Les mutations write sont aussi bloquées côté backend (403 SUBSCRIPTION_READ_ONLY)
  */
+
+const WRITE_PATH_PATTERNS = ["/new", "/nouveau", "/edit", "/editer", "/avoir/"];
+
 export function ProRouteGuard({
   children,
   pageName,
   requirePaidSubscription = false,
 }) {
-  const { isActive, loading, subscription, hasInitialized } = useSubscription();
+  const { isActive, loading, hasInitialized } = useSubscription();
+  const pathname = usePathname();
   const router = useRouter();
-  const [hasAccess, setHasAccess] = useState(false); // 🔒 Par défaut false (bloqué)
+  const [isReady, setIsReady] = useState(false);
   const hasRedirectedRef = useRef(false);
 
-  useEffect(() => {
-    // 🔒 Pendant le chargement, garder l'accès bloqué
-    if (loading || !hasInitialized) {
-      setHasAccess(false);
-      return;
-    }
+  const isWritePage = WRITE_PATH_PATTERNS.some((p) => pathname?.includes(p));
 
-    // Vérifier l'accès avec isActive() qui gère déjà "trialing"
+  useEffect(() => {
+    if (!loading && hasInitialized) {
+      setIsReady(true);
+    }
+  }, [loading, hasInitialized]);
+
+  useEffect(() => {
+    if (!isReady) return;
+
     const hasActiveSubscription = isActive(requirePaidSubscription);
 
-    if (hasActiveSubscription) {
-      setHasAccess(true);
-      hasRedirectedRef.current = false;
-      return;
+    // Si abonnement inactif ET page de création/édition → rediriger
+    if (!hasActiveSubscription && isWritePage && !hasRedirectedRef.current) {
+      hasRedirectedRef.current = true;
+      router.replace("/dashboard");
     }
+  }, [isReady, isActive, isWritePage, requirePaidSubscription, router]);
 
-    // 🔒 Pas d'abonnement valide - rediriger
-    if (!hasActiveSubscription && subscription !== undefined) {
-      setHasAccess(false);
-      if (!hasRedirectedRef.current) {
-        hasRedirectedRef.current = true;
-        router.replace("/dashboard?access=restricted");
-      }
-    }
-  }, [
-    loading,
-    hasInitialized,
-    subscription,
-    router,
-    isActive,
-    requirePaidSubscription,
-  ]);
-
-  // 🔒 Afficher un loader pendant la vérification (sécurisé)
-  if (loading || !hasInitialized) {
+  // Loader pendant le chargement
+  if (!isReady) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-64px)]">
         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -63,15 +58,15 @@ export function ProRouteGuard({
     );
   }
 
-  // ✅ Afficher le contenu si l'accès est autorisé
-  if (hasAccess) {
-    return children;
+  // Si page write + abonnement inactif → loader pendant la redirection
+  if (!isActive(requirePaidSubscription) && isWritePage) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-64px)]">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
-  // 🔒 Si pas d'accès, afficher le loader (redirection en cours)
-  return (
-    <div className="flex items-center justify-center h-[calc(100vh-64px)]">
-      <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-    </div>
-  );
+  // Pages de consultation → toujours accessibles (lecture seule)
+  return children;
 }
