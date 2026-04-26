@@ -154,14 +154,18 @@ function PurchaseOrdersContent() {
               purchaseOrders={purchaseOrders}
               iconOnly={false}
             />
-            <Button
+            <PermissionButton
+              requiresActiveSubscription
+              resource="purchaseOrders"
+              action="create"
               variant="primary"
               onClick={handleNewPurchaseOrder}
               className="cursor-pointer"
+              tooltipNoAccess="Vous n'avez pas la permission de créer des bons de commande"
             >
               <Plus size={14} strokeWidth={2} aria-hidden="true" />
               Nouveau bon de commande
-            </Button>
+            </PermissionButton>
           </div>
         </div>
 
@@ -271,6 +275,7 @@ function PurchaseOrdersContent() {
         </Suspense>
 
         <PermissionButton
+          requiresActiveSubscription
           resource="purchaseOrders"
           action="create"
           onClick={handleNewPurchaseOrder}

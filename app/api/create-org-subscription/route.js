@@ -14,7 +14,7 @@ export async function POST(request) {
     if (!organizationData) {
       return NextResponse.json(
         { error: "organizationData requis" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -23,10 +23,7 @@ export async function POST(request) {
     const planName = organizationData.planName || "freelance";
 
     if (!VALID_PLANS.includes(planName)) {
-      return NextResponse.json(
-        { error: "Plan invalide" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Plan invalide" }, { status: 400 });
     }
 
     const isAnnual = organizationData.isAnnual || false;
@@ -41,7 +38,7 @@ export async function POST(request) {
     }
 
     console.log(
-      `✅ [CREATE-SUB] User: ${session.user.id} (${session.user.email})`
+      `✅ [CREATE-SUB] User: ${session.user.id} (${session.user.email})`,
     );
 
     // 2. Récupérer ou créer le customer Stripe
@@ -64,7 +61,7 @@ export async function POST(request) {
         .collection("user")
         .updateOne(
           { id: session.user.id },
-          { $set: { stripeCustomerId: customerId } }
+          { $set: { stripeCustomerId: customerId } },
         );
     } else {
       console.log(`✅ [CREATE-SUB] Customer Stripe existant: ${customerId}`);
@@ -91,12 +88,12 @@ export async function POST(request) {
       : priceIds[planName]?.monthly;
 
     console.log(
-      `📋 [CREATE-SUB] Plan: ${planName}, Période: ${isAnnual ? "Annuel" : "Mensuel"}, Price ID: ${priceId}`
+      `📋 [CREATE-SUB] Plan: ${planName}, Période: ${isAnnual ? "Annuel" : "Mensuel"}, Price ID: ${priceId}`,
     );
 
     if (!priceId) {
       console.error(
-        `❌ [CREATE-SUB] Price ID manquant pour le plan: ${planName}`
+        `❌ [CREATE-SUB] Price ID manquant pour le plan: ${planName}`,
       );
       return NextResponse.json(
         {
@@ -104,11 +101,11 @@ export async function POST(request) {
           details: {
             planName,
             availablePlans: Object.keys(priceIds).filter(
-              (key) => priceIds[key]
+              (key) => priceIds[key],
             ),
           },
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -125,7 +122,7 @@ export async function POST(request) {
     if (isOnboarding) {
       // Flux onboarding : redirection vers page de succès dédiée
       successUrl = `${baseUrl}/onboarding/success?session_id={CHECKOUT_SESSION_ID}`;
-      cancelUrl = `${baseUrl}/onboarding?step=4&canceled=true`;
+      cancelUrl = `${baseUrl}/auth/signup`;
     } else if (isNewOrganization) {
       successUrl = `${baseUrl}/dashboard?org_created=true&payment_success=true`;
       cancelUrl = `${baseUrl}/create-workspace/payment-error`;
@@ -148,17 +145,20 @@ export async function POST(request) {
       .collection("pending_org_data")
       .insertOne(pendingData);
     const pendingOrgDataId = pendingResult.insertedId.toString();
-    console.log(`✅ [CREATE-SUB] Données pendantes stockées: ${pendingOrgDataId}`);
+    console.log(
+      `✅ [CREATE-SUB] Données pendantes stockées: ${pendingOrgDataId}`,
+    );
 
     console.log(`🔄 [CREATE-SUB] Création session Stripe Checkout...`);
     console.log(
-      `📋 [CREATE-SUB] Type: ${isNewOrganization ? "Nouvelle organisation" : "Upgrade abonnement existant"}`
+      `📋 [CREATE-SUB] Type: ${isNewOrganization ? "Nouvelle organisation" : "Upgrade abonnement existant"}`,
     );
 
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: "subscription",
       payment_method_types: ["card"],
+      payment_method_collection: "always",
       line_items: [
         {
           price: priceId,
@@ -193,7 +193,10 @@ export async function POST(request) {
         addressZipCode: organizationData.addressZipCode || "",
         addressCountry: organizationData.addressCountry || "France",
         activitySector: organizationData.activitySector || "",
-        activityCategory: (organizationData.activityCategory || "").substring(0, 100),
+        activityCategory: (organizationData.activityCategory || "").substring(
+          0,
+          100,
+        ),
       },
       subscription_data: {
         // ✅ Trial de 30 jours - L'utilisateur ne sera pas prélevé avant 30 jours
@@ -226,7 +229,7 @@ export async function POST(request) {
     console.log(`📋 [CREATE-SUB] Metadata session:`, checkoutSession.metadata);
     console.log(
       `📋 [CREATE-SUB] Metadata subscription:`,
-      checkoutSession.subscription_data?.metadata
+      checkoutSession.subscription_data?.metadata,
     );
 
     return NextResponse.json({ url: checkoutSession.url });
@@ -234,7 +237,7 @@ export async function POST(request) {
     console.error("❌ [CREATE-SUB] Erreur création checkout:", error);
     return NextResponse.json(
       { error: error.message || "Erreur lors de la création du checkout" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

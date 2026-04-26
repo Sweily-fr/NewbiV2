@@ -2,6 +2,7 @@
 
 import { Suspense, useState, useEffect, useMemo } from "react";
 import { RoleRouteGuard } from "@/src/components/rbac/RBACRouteGuard";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { Button } from "@/src/components/ui/button";
 import {
   Plus,
@@ -56,6 +57,12 @@ function TransfertsContent() {
     useFileTransfer();
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [transferLink, setTransferLink] = useState("");
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -196,6 +203,8 @@ function TransfertsContent() {
               variant="primary"
               onClick={() => setShowUploadModal(true)}
               className="cursor-pointer"
+              disabled={isReadOnly}
+              title={readOnlyTooltip}
             >
               <Plus size={14} strokeWidth={2} aria-hidden="true" />
               Nouveau transfert
@@ -388,15 +397,16 @@ function TransfertsContent() {
       </AlertDialog>
 
       {/* Upload Modal - Desktop (style invite member dialog) */}
-      <Dialog open={showUploadModal} onOpenChange={(open) => !isUploading && setShowUploadModal(open)}>
+      <Dialog
+        open={showUploadModal}
+        onOpenChange={(open) => !isUploading && setShowUploadModal(open)}
+      >
         <DialogContent className="hidden md:flex flex-col sm:max-w-[980px] h-[85vh] p-1 gap-0 border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
           <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1] flex flex-col h-full">
             <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40 flex-shrink-0">
               <DialogTitle className="text-sm font-medium flex items-center gap-2">
                 <Upload className="size-4" />
-                {isUploading
-                  ? "Transfert en cours..."
-                  : "Nouveau transfert"}
+                {isUploading ? "Transfert en cours..." : "Nouveau transfert"}
               </DialogTitle>
             </DialogHeader>
 

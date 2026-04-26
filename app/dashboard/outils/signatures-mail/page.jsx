@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import { Plus, Monitor } from "lucide-react";
 import { RoleRouteGuard } from "@/src/components/rbac/RBACRouteGuard";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Card, CardContent } from "@/src/components/ui/card";
@@ -133,6 +134,12 @@ const CREATE_EMAIL_SIGNATURE = gql`
 
 function SignaturesContent() {
   const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false);
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
 
   const handleCreateSignature = () => {
     setIsTemplateSelectorOpen(true);
@@ -183,6 +190,8 @@ function SignaturesContent() {
             variant="primary"
             onClick={handleCreateSignature}
             className="cursor-pointer"
+            disabled={isReadOnly}
+            title={readOnlyTooltip}
           >
             <Plus size={14} strokeWidth={2} aria-hidden="true" />
             Créer une signature

@@ -3,6 +3,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { RoleRouteGuard } from "@/src/components/rbac/RBACRouteGuard";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import {
   Plus,
   Trash2,
@@ -108,6 +109,12 @@ import { useKanbanBoardsTable } from "./hooks/useKanbanBoardsTable";
 import { useClients } from "@/src/graphql/clientQueries";
 
 function KanbanPageContent() {
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
   const router = useRouter();
   const [boardPreview, setBoardPreview] = React.useState(null);
   const [isDeleteMultipleOpen, setIsDeleteMultipleOpen] = React.useState(false);
@@ -328,7 +335,12 @@ function KanbanPageContent() {
             }}
           >
             <DialogTrigger asChild>
-              <Button variant="primary" className="cursor-pointer">
+              <Button
+                variant="primary"
+                className="cursor-pointer"
+                disabled={isReadOnly}
+                title={readOnlyTooltip}
+              >
                 <Plus size={14} strokeWidth={2} aria-hidden="true" />
                 Nouvelle liste
               </Button>

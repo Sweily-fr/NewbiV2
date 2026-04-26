@@ -73,11 +73,13 @@ import { ExpenseCategoryChart } from "@/app/dashboard/outils/transactions/compon
 import { IncomeCategoryChart } from "@/app/dashboard/components/income-category-chart";
 
 import { DashboardSkeleton } from "@/src/components/dashboard-skeleton";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import { useDashboardData } from "@/src/hooks/useDashboardData";
 import { useQuery } from "@apollo/client";
 import { GET_TREASURY_CHART } from "@/src/graphql/queries/dashboardAggregation";
 import { useState, useEffect, useMemo, useRef, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
 import { ProSubscriptionOverlay } from "@/src/components/pro-subscription-overlay";
 import { BankSyncOverlay } from "@/src/components/bank-sync-overlay";
@@ -116,11 +118,19 @@ import { WeekCalendarCard } from "@/app/dashboard/components/week-calendar-card"
 
 function DashboardContent() {
   const { session } = useUser();
+  const router = useRouter();
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
   const { checkAndUpdateAccountStatus, refetchStatus } = useStripeConnect(
     session?.user?.id,
   );
 
   const { workspaceId } = useWorkspace();
+
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
 
   // Données factures et achats pour les KPIs
   const { balances: invoiceBalances } = useInvoiceBalances();
@@ -523,47 +533,54 @@ function DashboardContent() {
             variant="primary"
             className="cursor-pointer"
             size="sm"
-            asChild
+            disabled={isReadOnly}
+            title={readOnlyTooltip}
+            onClick={() =>
+              !isReadOnly && router.push("/dashboard/outils/devis/new")
+            }
           >
-            <a
-              href="/dashboard/outils/devis/new"
-              className="flex items-center gap-1.5"
-            >
-              <ClipboardTickIcon className="w-4 h-4" />
-              Créer un devis
-            </a>
+            <ClipboardTickIcon className="w-4 h-4" />
+            Créer un devis
           </Button>
           <Button
             variant="primary"
             className="cursor-pointer"
             size="sm"
-            asChild
+            disabled={isReadOnly}
+            title={readOnlyTooltip}
+            onClick={() =>
+              !isReadOnly && router.push("/dashboard/outils/factures/new")
+            }
           >
-            <a
-              href="/dashboard/outils/factures/new"
-              className="flex items-center gap-1.5"
-            >
-              <DocumentText2Icon className="w-4 h-4" />
-              Créer une facture
-            </a>
+            <DocumentText2Icon className="w-4 h-4" />
+            Créer une facture
           </Button>
-          <Button variant="filter" className="cursor-pointer" size="sm" asChild>
-            <a
-              href="/dashboard/outils/factures-achat"
-              className="flex items-center gap-1.5"
-            >
-              <ClipboardImportIcon className="w-4 h-4" />
-              Ajouter une facture d&apos;achat
-            </a>
+          <Button
+            variant="filter"
+            className="cursor-pointer"
+            size="sm"
+            disabled={isReadOnly}
+            title={readOnlyTooltip}
+            onClick={() =>
+              !isReadOnly && router.push("/dashboard/outils/factures-achat")
+            }
+          >
+            <ClipboardImportIcon className="w-4 h-4" />
+            Ajouter une facture d&apos;achat
           </Button>
-          <Button variant="filter" className="cursor-pointer" size="sm" asChild>
-            <a
-              href="/dashboard/outils/transferts-fichiers/new"
-              className="flex items-center gap-1.5"
-            >
-              <SendIcon className="w-4 h-4" />
-              Transférer un fichier
-            </a>
+          <Button
+            variant="filter"
+            className="cursor-pointer"
+            size="sm"
+            disabled={isReadOnly}
+            title={readOnlyTooltip}
+            onClick={() =>
+              !isReadOnly &&
+              router.push("/dashboard/outils/transferts-fichiers/new")
+            }
+          >
+            <SendIcon className="w-4 h-4" />
+            Transférer un fichier
           </Button>
         </div>
 
@@ -678,147 +695,348 @@ function DashboardContent() {
           </Button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 w-full -mt-2">
-          <Card className="shadow-xs">
-            {(filteredBankAccounts || []).length === 0 ? (
-              <CardContent className="flex flex-col items-center justify-center py-6">
-                <div className="relative w-36 mb-4">
-                  <img
-                    src="/images/bank-cards-empty.png"
-                    alt="Aucun compte bancaire"
-                    className="w-full h-auto"
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-card via-card/60 to-transparent" />
-                </div>
-                <p className="text-sm text-muted-foreground text-center mb-4 max-w-[280px]">
-                  Connectez votre compte bancaire pour suivre votre solde et vos
-                  transactions en temps réel.
-                </p>
-                <div className="flex items-center gap-3">
-                  <Button
-                    size="sm"
-                    className="text-xs font-medium bg-foreground text-background hover:bg-foreground/90"
-                    onClick={() => bankBalanceRef.current?.openConnectModal()}
-                  >
-                    Connecter un compte
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-xs font-medium"
-                    onClick={() =>
-                      window.open("https://docs.newbi.fr", "_blank")
-                    }
-                  >
-                    Documentation
-                  </Button>
-                </div>
-              </CardContent>
-            ) : (
-              <CardHeader>
+          {accountsLoading ? (
+            <>
+              <Card className="shadow-xs">
+                <CardHeader>
+                  <Skeleton className="h-4 w-24 mb-2" />
+                  <Skeleton className="h-8 w-36" />
+                  <div className="flex gap-4 mt-3">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-4 w-28" />
+                  </div>
+                </CardHeader>
+              </Card>
+              <Card className="shadow-xs">
+                <CardHeader>
+                  <Skeleton className="h-4 w-20 mb-2" />
+                  <div className="grid grid-cols-2 gap-4 mt-1">
+                    <div>
+                      <Skeleton className="h-3 w-16 mb-2" />
+                      <Skeleton className="h-7 w-24" />
+                      <Skeleton className="h-3 w-20 mt-2" />
+                    </div>
+                    <div>
+                      <Skeleton className="h-3 w-16 mb-2" />
+                      <Skeleton className="h-7 w-24" />
+                      <Skeleton className="h-3 w-20 mt-2" />
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+            </>
+          ) : (
+            <>
+              <Card className="shadow-xs">
+                {(filteredBankAccounts || []).length === 0 ? (
+                  <CardContent className="flex flex-col items-center justify-center py-6">
+                    <div className="relative w-36 mb-4">
+                      <img
+                        src="/images/bank-cards-empty.png"
+                        alt="Aucun compte bancaire"
+                        className="w-full h-auto"
+                      />
+                      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-card via-card/60 to-transparent" />
+                    </div>
+                    <p className="text-sm text-muted-foreground text-center mb-4 max-w-[280px]">
+                      Connectez votre compte bancaire pour suivre votre solde et
+                      vos transactions en temps réel.
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <Button
+                        size="sm"
+                        className="text-xs font-medium bg-foreground text-background hover:bg-foreground/90"
+                        onClick={() =>
+                          bankBalanceRef.current?.openConnectModal()
+                        }
+                      >
+                        Connecter un compte
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs font-medium"
+                        onClick={() =>
+                          window.open("https://docs.newbi.fr", "_blank")
+                        }
+                      >
+                        Documentation
+                      </Button>
+                    </div>
+                  </CardContent>
+                ) : (
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-normal">
+                        {(bankAccounts || []).length > 1
+                          ? "Solde des comptes"
+                          : "Solde du compte"}
+                      </CardTitle>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() =>
+                          bankBalanceRef.current?.openConnectModal()
+                        }
+                      >
+                        <AddCircleIcon className="w-4 h-4 text-muted-foreground/60" />
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-3xl font-medium">
+                        {formatCurrency(bankBalance)}
+                      </span>
+                      <div className="flex items-center -space-x-2">
+                        {(filteredBankAccounts || [])
+                          .slice(0, 3)
+                          .map((account) => (
+                            <Avatar
+                              key={account.id}
+                              className="size-7 ring-2 ring-background bg-muted"
+                            >
+                              {account.institutionLogo ? (
+                                <AvatarImage
+                                  src={account.institutionLogo}
+                                  alt={
+                                    account.institutionName ||
+                                    account.bankName ||
+                                    account.name
+                                  }
+                                  className="object-contain p-0.5"
+                                />
+                              ) : null}
+                              <AvatarFallback className="text-[10px] bg-muted">
+                                {(
+                                  account.institutionName ||
+                                  account.bankName ||
+                                  account.name ||
+                                  "B"
+                                )
+                                  .slice(0, 2)
+                                  .toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                          ))}
+                        {(filteredBankAccounts || []).length > 3 && (
+                          <div className="size-7 ring-2 ring-background rounded-full flex items-center justify-center text-[10px] font-medium text-foreground bg-muted">
+                            +{(filteredBankAccounts || []).length - 3}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 mt-3">
+                      <div className="flex items-center gap-1.5">
+                        <TrendUpIcon className="size-4 text-emerald-500" />
+                        <span className="text-xs text-muted-foreground">
+                          Encaissement
+                        </span>
+                        <span className="text-xs font-medium">
+                          {formatCurrency(totalIncome)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <TrendDownIcon className="size-4 text-red-500" />
+                        <span className="text-xs text-muted-foreground">
+                          Décaissement
+                        </span>
+                        <span className="text-xs font-medium">
+                          {formatCurrency(totalExpenses)}
+                        </span>
+                      </div>
+                    </div>
+                  </CardHeader>
+                )}
+              </Card>
+              <Card className="shadow-xs">
+                {(filteredBankAccounts || []).length === 0 ? (
+                  <CardContent className="flex flex-col items-center justify-center py-6">
+                    <div className="relative w-36 mb-4">
+                      <img
+                        src="/images/bank-cards-empty.png"
+                        alt="Aucun compte bancaire"
+                        className="w-full h-auto"
+                      />
+                      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-card via-card/60 to-transparent" />
+                    </div>
+                    <p className="text-sm text-muted-foreground text-center mb-4 max-w-[280px]">
+                      Connectez un compte bancaire pour voir vos données de
+                      facturation.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs font-medium"
+                      asChild
+                    >
+                      <a href="/dashboard/outils/factures">Voir les factures</a>
+                    </Button>
+                  </CardContent>
+                ) : (
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-normal">
+                        Facturation
+                      </CardTitle>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 gap-1.5 text-xs text-muted-foreground font-normal"
+                        asChild
+                      >
+                        <a href="/dashboard/outils/factures">
+                          <DocumentText2Icon className="w-3.5 h-3.5" />
+                          Voir les factures
+                        </a>
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-2 divide-x mt-1">
+                      <div className="pr-4">
+                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                          Ventes (TTC)
+                        </p>
+                        <p className="text-2xl font-medium mt-1">
+                          {formatCurrency(invoiceBalances.totalBilled)}
+                        </p>
+                        <a
+                          href="/dashboard/outils/factures?status=PENDING"
+                          className="flex items-center gap-1.5 mt-2 group cursor-pointer"
+                        >
+                          <span className="text-xs text-muted-foreground group-hover:text-amber-600 transition-colors">
+                            En cours
+                          </span>
+                          <span className="text-xs font-medium text-amber-600 group-hover:underline">
+                            {formatCurrency(
+                              invoiceBalances.totalBilled -
+                                invoiceBalances.totalPaid,
+                            )}
+                          </span>
+                        </a>
+                      </div>
+                      <div className="pl-4">
+                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                          Achats (TTC)
+                        </p>
+                        <p className="text-2xl font-medium mt-1">
+                          {formatCurrency(purchaseStats.totalThisMonth)}
+                        </p>
+                        <a
+                          href="/dashboard/outils/factures-achat"
+                          className="flex items-center gap-1.5 mt-2 group cursor-pointer"
+                        >
+                          <span className="text-xs text-muted-foreground group-hover:text-red-500 transition-colors">
+                            À payer
+                          </span>
+                          <span className="text-xs font-medium text-red-500 group-hover:underline">
+                            {formatCurrency(purchaseStats.totalToPay)}
+                          </span>
+                        </a>
+                      </div>
+                    </div>
+                  </CardHeader>
+                )}
+              </Card>
+            </>
+          )}
+        </div>
+
+        {/* Section : À traiter */}
+        <h2 className="text-sm font-medium text-foreground mt-4">À traiter</h2>
+        {invoicesLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 w-full -mt-2">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="shadow-xs">
+                <CardHeader className="pb-3">
+                  <Skeleton className="h-4 w-24 mb-1" />
+                  <Skeleton className="h-3 w-32" />
+                </CardHeader>
+                <CardContent className="space-y-2.5 pt-0">
+                  <Skeleton className="h-8 w-full rounded-md" />
+                  <Skeleton className="h-8 w-full rounded-md" />
+                  <Skeleton className="h-8 w-full rounded-md" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 w-full -mt-2">
+            {/* Card Comptabilité */}
+            <Card className="shadow-xs">
+              <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-normal">
-                    {(bankAccounts || []).length > 1
-                      ? "Solde des comptes"
-                      : "Solde du compte"}
+                    Comptabilité
                   </CardTitle>
                   <Button
                     variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => bankBalanceRef.current?.openConnectModal()}
+                    size="sm"
+                    className="h-7 text-xs text-muted-foreground font-normal"
+                    asChild
                   >
-                    <AddCircleIcon className="w-4 h-4 text-muted-foreground/60" />
+                    <a href="/dashboard/outils/transactions">
+                      Voir les transactions
+                    </a>
                   </Button>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-3xl font-medium">
-                    {formatCurrency(bankBalance)}
-                  </span>
-                  <div className="flex items-center -space-x-2">
-                    {(filteredBankAccounts || []).slice(0, 3).map((account) => (
-                      <Avatar
-                        key={account.id}
-                        className="size-7 ring-2 ring-background bg-muted"
-                      >
-                        {account.institutionLogo ? (
-                          <AvatarImage
-                            src={account.institutionLogo}
-                            alt={
-                              account.institutionName ||
-                              account.bankName ||
-                              account.name
-                            }
-                            className="object-contain p-0.5"
-                          />
-                        ) : null}
-                        <AvatarFallback className="text-[10px] bg-muted">
-                          {(
-                            account.institutionName ||
-                            account.bankName ||
-                            account.name ||
-                            "B"
-                          )
-                            .slice(0, 2)
-                            .toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    ))}
-                    {(filteredBankAccounts || []).length > 3 && (
-                      <div className="size-7 ring-2 ring-background rounded-full flex items-center justify-center text-[10px] font-medium text-foreground bg-muted">
-                        +{(filteredBankAccounts || []).length - 3}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 mt-3">
-                  <div className="flex items-center gap-1.5">
-                    <TrendUpIcon className="size-4 text-emerald-500" />
-                    <span className="text-xs text-muted-foreground">
-                      Encaissement
-                    </span>
-                    <span className="text-xs font-medium">
-                      {formatCurrency(totalIncome)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <TrendDownIcon className="size-4 text-red-500" />
-                    <span className="text-xs text-muted-foreground">
-                      Décaissement
-                    </span>
-                    <span className="text-xs font-medium">
-                      {formatCurrency(totalExpenses)}
-                    </span>
-                  </div>
-                </div>
               </CardHeader>
-            )}
-          </Card>
-          <Card className="shadow-xs">
-            {(filteredBankAccounts || []).length === 0 ? (
-              <CardContent className="flex flex-col items-center justify-center py-6">
-                <div className="relative w-36 mb-4">
-                  <img
-                    src="/images/bank-cards-empty.png"
-                    alt="Aucun compte bancaire"
-                    className="w-full h-auto"
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-card via-card/60 to-transparent" />
-                </div>
-                <p className="text-sm text-muted-foreground text-center mb-4 max-w-[280px]">
-                  Connectez un compte bancaire pour voir vos données de
-                  facturation.
-                </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs font-medium"
-                  asChild
+              <CardContent className="space-y-2.5">
+                <a
+                  href="/dashboard/outils/transactions?filter=unmatched"
+                  className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
                 >
-                  <a href="/dashboard/outils/factures">Voir les factures</a>
-                </Button>
+                  <div className="flex items-center gap-2.5">
+                    <CardCoinIcon className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-foreground/80 group-hover:text-foreground transition-colors">
+                      Rapprochements à faire
+                    </span>
+                  </div>
+                  <Badge
+                    variant="secondary"
+                    className="text-[10px] h-5 px-1.5 font-medium rounded-md"
+                  >
+                    {actionCounts.unmatchedCount}
+                  </Badge>
+                </a>
+                <a
+                  href="/dashboard/outils/transactions?filter=uncategorized"
+                  className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <ReceiptItemIcon className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-foreground/80 group-hover:text-foreground transition-colors">
+                      Transactions à catégoriser
+                    </span>
+                  </div>
+                  <Badge
+                    variant="secondary"
+                    className="text-[10px] h-5 px-1.5 font-medium rounded-md"
+                  >
+                    0
+                  </Badge>
+                </a>
+                <a
+                  href="/dashboard/outils/transactions?filter=missing_receipts"
+                  className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <ReceiptSearchIcon className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-foreground/80 group-hover:text-foreground transition-colors">
+                      Justificatifs manquants
+                    </span>
+                  </div>
+                  <Badge
+                    variant="secondary"
+                    className="text-[10px] h-5 px-1.5 font-medium rounded-md"
+                  >
+                    0
+                  </Badge>
+                </a>
               </CardContent>
-            ) : (
-              <CardHeader>
+            </Card>
+
+            {/* Card Facturation */}
+            <Card className="shadow-xs">
+              <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-normal">
                     Facturation
@@ -826,310 +1044,169 @@ function DashboardContent() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 gap-1.5 text-xs text-muted-foreground font-normal"
+                    className="h-7 text-xs text-muted-foreground font-normal"
                     asChild
                   >
-                    <a href="/dashboard/outils/factures">
-                      <DocumentText2Icon className="w-3.5 h-3.5" />
-                      Voir les factures
+                    <a href="/dashboard/outils/factures/new">
+                      Créer une facture
                     </a>
                   </Button>
                 </div>
-                <div className="grid grid-cols-2 divide-x mt-1">
-                  <div className="pr-4">
-                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-                      Ventes (TTC)
-                    </p>
-                    <p className="text-2xl font-medium mt-1">
-                      {formatCurrency(invoiceBalances.totalBilled)}
-                    </p>
-                    <a
-                      href="/dashboard/outils/factures?status=PENDING"
-                      className="flex items-center gap-1.5 mt-2 group cursor-pointer"
-                    >
-                      <span className="text-xs text-muted-foreground group-hover:text-amber-600 transition-colors">
-                        En cours
-                      </span>
-                      <span className="text-xs font-medium text-amber-600 group-hover:underline">
-                        {formatCurrency(
-                          invoiceBalances.totalBilled -
-                            invoiceBalances.totalPaid,
-                        )}
-                      </span>
-                    </a>
+              </CardHeader>
+              <CardContent className="space-y-2.5">
+                <a
+                  href="/dashboard/outils/factures?status=PENDING"
+                  className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <TrendDownIcon className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-foreground/80 group-hover:text-foreground transition-colors">
+                      Factures en retard
+                    </span>
                   </div>
-                  <div className="pl-4">
-                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-                      Achats (TTC)
-                    </p>
-                    <p className="text-2xl font-medium mt-1">
-                      {formatCurrency(purchaseStats.totalThisMonth)}
-                    </p>
-                    <a
-                      href="/dashboard/outils/factures-achat"
-                      className="flex items-center gap-1.5 mt-2 group cursor-pointer"
+                  {actionCounts.overdueCount > 0 ? (
+                    <Badge
+                      variant="secondary"
+                      className="text-[10px] h-5 px-1.5 font-medium rounded-md !bg-red-500/15 !text-red-600 dark:!text-red-400"
                     >
-                      <span className="text-xs text-muted-foreground group-hover:text-red-500 transition-colors">
-                        À payer
-                      </span>
-                      <span className="text-xs font-medium text-red-500 group-hover:underline">
-                        {formatCurrency(purchaseStats.totalToPay)}
-                      </span>
-                    </a>
+                      {actionCounts.overdueCount}
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="secondary"
+                      className="text-[10px] h-5 px-1.5 font-medium rounded-md"
+                    >
+                      0
+                    </Badge>
+                  )}
+                </a>
+                <a
+                  href="/dashboard/outils/factures"
+                  className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <SendIcon className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-foreground/80 group-hover:text-foreground transition-colors">
+                      Factures à envoyer
+                    </span>
                   </div>
+                  <Badge
+                    variant="secondary"
+                    className="text-[10px] h-5 px-1.5 font-medium rounded-md"
+                  >
+                    {actionCounts.unsentCount}
+                  </Badge>
+                </a>
+                <a
+                  href="/dashboard/outils/devis"
+                  className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <ClipboardTickIcon className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-foreground/80 group-hover:text-foreground transition-colors">
+                      Devis en attente
+                    </span>
+                  </div>
+                  <Badge
+                    variant="secondary"
+                    className="text-[10px] h-5 px-1.5 font-medium rounded-md"
+                  >
+                    {actionCounts.pendingQuotesCount}
+                  </Badge>
+                </a>
+              </CardContent>
+            </Card>
+
+            {/* Card Tâches & Activité */}
+            <Card className="shadow-xs">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-normal">
+                    Tâches & Activité
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs text-muted-foreground font-normal"
+                    asChild
+                  >
+                    <a href="/dashboard/outils/kanban">Voir les tâches</a>
+                  </Button>
                 </div>
               </CardHeader>
-            )}
-          </Card>
-        </div>
-
-        {/* Section : À traiter */}
-        <h2 className="text-sm font-medium text-foreground mt-4">À traiter</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 w-full -mt-2">
-          {/* Card Comptabilité */}
-          <Card className="shadow-xs">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-normal">
-                  Comptabilité
-                </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-xs text-muted-foreground font-normal"
-                  asChild
+              <CardContent className="space-y-2.5">
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.dispatchEvent(
+                      new CustomEvent("openSettingsModal", {
+                        detail: { section: "notifications" },
+                      }),
+                    );
+                  }}
+                  className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
                 >
-                  <a href="/dashboard/outils/transactions">
-                    Voir les transactions
-                  </a>
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-2.5">
-              <a
-                href="/dashboard/outils/transactions?filter=unmatched"
-                className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  <CardCoinIcon className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm text-foreground/80 group-hover:text-foreground transition-colors">
-                    Rapprochements à faire
-                  </span>
-                </div>
-                <Badge
-                  variant="secondary"
-                  className="text-[10px] h-5 px-1.5 font-medium rounded-md"
+                  <div className="flex items-center gap-2.5">
+                    <NotificationIcon className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-foreground/80 group-hover:text-foreground transition-colors">
+                      Notifications non lues
+                    </span>
+                  </div>
+                  {actionCounts.notifCount > 0 ? (
+                    <Badge
+                      variant="secondary"
+                      className="text-[10px] h-5 px-1.5 font-medium rounded-md !bg-red-500/15 !text-red-600 dark:!text-red-400"
+                    >
+                      {actionCounts.notifCount}
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="secondary"
+                      className="text-[10px] h-5 px-1.5 font-medium rounded-md"
+                    >
+                      0
+                    </Badge>
+                  )}
+                </a>
+                <a
+                  href="/dashboard/outils/factures-achat"
+                  className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
                 >
-                  {actionCounts.unmatchedCount}
-                </Badge>
-              </a>
-              <a
-                href="/dashboard/outils/transactions?filter=uncategorized"
-                className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  <ReceiptItemIcon className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm text-foreground/80 group-hover:text-foreground transition-colors">
-                    Transactions à catégoriser
-                  </span>
-                </div>
-                <Badge
-                  variant="secondary"
-                  className="text-[10px] h-5 px-1.5 font-medium rounded-md"
-                >
-                  0
-                </Badge>
-              </a>
-              <a
-                href="/dashboard/outils/transactions?filter=missing_receipts"
-                className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  <ReceiptSearchIcon className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm text-foreground/80 group-hover:text-foreground transition-colors">
-                    Justificatifs manquants
-                  </span>
-                </div>
-                <Badge
-                  variant="secondary"
-                  className="text-[10px] h-5 px-1.5 font-medium rounded-md"
-                >
-                  0
-                </Badge>
-              </a>
-            </CardContent>
-          </Card>
-
-          {/* Card Facturation */}
-          <Card className="shadow-xs">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-normal">
-                  Facturation
-                </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-xs text-muted-foreground font-normal"
-                  asChild
-                >
-                  <a href="/dashboard/outils/factures/new">Créer une facture</a>
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-2.5">
-              <a
-                href="/dashboard/outils/factures?status=PENDING"
-                className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  <TrendDownIcon className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm text-foreground/80 group-hover:text-foreground transition-colors">
-                    Factures en retard
-                  </span>
-                </div>
-                {actionCounts.overdueCount > 0 ? (
+                  <div className="flex items-center gap-2.5">
+                    <ClipboardImportIcon className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-foreground/80 group-hover:text-foreground transition-colors">
+                      Achats à payer
+                    </span>
+                  </div>
                   <Badge
                     variant="secondary"
-                    className="text-[10px] h-5 px-1.5 font-medium rounded-md !bg-red-500/15 !text-red-600 dark:!text-red-400"
+                    className="text-[10px] h-5 px-1.5 font-medium rounded-md"
                   >
-                    {actionCounts.overdueCount}
+                    {purchaseStats.totalToPayCount}
                   </Badge>
-                ) : (
+                </a>
+                <a
+                  href="/dashboard/outils/transferts-fichiers"
+                  className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <SendIcon className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-foreground/80 group-hover:text-foreground transition-colors">
+                      Transferts en cours
+                    </span>
+                  </div>
                   <Badge
                     variant="secondary"
                     className="text-[10px] h-5 px-1.5 font-medium rounded-md"
                   >
                     0
                   </Badge>
-                )}
-              </a>
-              <a
-                href="/dashboard/outils/factures"
-                className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  <SendIcon className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm text-foreground/80 group-hover:text-foreground transition-colors">
-                    Factures à envoyer
-                  </span>
-                </div>
-                <Badge
-                  variant="secondary"
-                  className="text-[10px] h-5 px-1.5 font-medium rounded-md"
-                >
-                  {actionCounts.unsentCount}
-                </Badge>
-              </a>
-              <a
-                href="/dashboard/outils/devis"
-                className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  <ClipboardTickIcon className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm text-foreground/80 group-hover:text-foreground transition-colors">
-                    Devis en attente
-                  </span>
-                </div>
-                <Badge
-                  variant="secondary"
-                  className="text-[10px] h-5 px-1.5 font-medium rounded-md"
-                >
-                  {actionCounts.pendingQuotesCount}
-                </Badge>
-              </a>
-            </CardContent>
-          </Card>
-
-          {/* Card Tâches & Activité */}
-          <Card className="shadow-xs">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-normal">
-                  Tâches & Activité
-                </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-xs text-muted-foreground font-normal"
-                  asChild
-                >
-                  <a href="/dashboard/outils/kanban">Voir les tâches</a>
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-2.5">
-              <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  window.dispatchEvent(
-                    new CustomEvent("openSettingsModal", {
-                      detail: { section: "notifications" },
-                    }),
-                  );
-                }}
-                className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  <NotificationIcon className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm text-foreground/80 group-hover:text-foreground transition-colors">
-                    Notifications non lues
-                  </span>
-                </div>
-                {actionCounts.notifCount > 0 ? (
-                  <Badge
-                    variant="secondary"
-                    className="text-[10px] h-5 px-1.5 font-medium rounded-md !bg-red-500/15 !text-red-600 dark:!text-red-400"
-                  >
-                    {actionCounts.notifCount}
-                  </Badge>
-                ) : (
-                  <Badge
-                    variant="secondary"
-                    className="text-[10px] h-5 px-1.5 font-medium rounded-md"
-                  >
-                    0
-                  </Badge>
-                )}
-              </a>
-              <a
-                href="/dashboard/outils/factures-achat"
-                className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  <ClipboardImportIcon className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm text-foreground/80 group-hover:text-foreground transition-colors">
-                    Achats à payer
-                  </span>
-                </div>
-                <Badge
-                  variant="secondary"
-                  className="text-[10px] h-5 px-1.5 font-medium rounded-md"
-                >
-                  {purchaseStats.totalToPayCount}
-                </Badge>
-              </a>
-              <a
-                href="/dashboard/outils/transferts-fichiers"
-                className="flex items-center justify-between group cursor-pointer py-1.5 px-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  <SendIcon className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm text-foreground/80 group-hover:text-foreground transition-colors">
-                    Transferts en cours
-                  </span>
-                </div>
-                <Badge
-                  variant="secondary"
-                  className="text-[10px] h-5 px-1.5 font-medium rounded-md"
-                >
-                  0
-                </Badge>
-              </a>
-            </CardContent>
-          </Card>
-        </div>
+                </a>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Section : Suivi en temps réel */}
         <h2 className="text-sm font-medium text-foreground mt-4">

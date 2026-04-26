@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/src/components/ui/button";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { Plus } from "lucide-react";
 import {
   ImportIcon as Upload,
@@ -19,6 +20,12 @@ function CataloguesContent() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [customFieldsOpen, setCustomFieldsOpen] = useState(false);
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
 
   // Récupérer les produits pour l'export
   const { products: allProducts, refetch } = useProducts(1, 100, "");
@@ -48,7 +55,9 @@ function CataloguesContent() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => setImportDialogOpen(true)}
+              onClick={() => !isReadOnly && setImportDialogOpen(true)}
+              disabled={isReadOnly}
+              title={readOnlyTooltip}
               className="cursor-pointer"
             >
               <Upload className="w-3.5 h-3.5" />
@@ -57,7 +66,9 @@ function CataloguesContent() {
             <ProductExportButton products={allProducts} iconOnly={false} />
             <Button
               variant="primary"
-              onClick={handleOpenProductDialog}
+              onClick={() => !isReadOnly && handleOpenProductDialog()}
+              disabled={isReadOnly}
+              title={readOnlyTooltip}
               className="cursor-pointer"
             >
               <Plus size={14} strokeWidth={2} aria-hidden="true" />
