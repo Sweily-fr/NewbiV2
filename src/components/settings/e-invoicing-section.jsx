@@ -21,6 +21,7 @@ import {
   useEInvoicingStats,
 } from "@/src/hooks/useEInvoicing";
 import { useSuperPdp } from "@/src/hooks/useSuperPdp";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
@@ -39,6 +40,12 @@ export function EInvoicingSection({ canManageOrgSettings }) {
     status,
   } = useSuperPdp();
   const searchParams = useSearchParams();
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
 
   // Gérer les paramètres de retour OAuth
   useEffect(() => {
@@ -112,7 +119,8 @@ export function EInvoicingSection({ canManageOrgSettings }) {
             </div>
             <Button
               onClick={handleConnect}
-              disabled={!canManageOrgSettings || superPdpLoading}
+              disabled={isReadOnly || !canManageOrgSettings || superPdpLoading}
+              title={readOnlyTooltip}
               className="bg-[#5b4eff] hover:bg-[#4a3ecc] text-white"
             >
               {superPdpLoading ? (
@@ -134,7 +142,7 @@ export function EInvoicingSection({ canManageOrgSettings }) {
                   <span className="text-xs text-muted-foreground">
                     • Activé le{" "}
                     {new Date(
-                      settings.eInvoicingActivatedAt
+                      settings.eInvoicingActivatedAt,
                     ).toLocaleDateString("fr-FR")}
                   </span>
                 )}
