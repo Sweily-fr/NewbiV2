@@ -17,6 +17,7 @@ import { getAllPCGAccounts, getPCGForBridgeCategory } from "@/lib/pcg-mapping";
 import { Search, Check, Star, LoaderCircle } from "lucide-react";
 import { Book2Icon } from "@/src/components/icons";
 import { cn } from "@/src/lib/utils";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 const pcgAccounts = getAllPCGAccounts();
 
@@ -27,6 +28,12 @@ export function PCGSelectDialog({
   onRefresh,
 }) {
   const { workspaceId } = useRequiredWorkspace();
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState("");
 
@@ -202,7 +209,8 @@ export function PCGSelectDialog({
               variant="primary"
               size="sm"
               onClick={handleSave}
-              disabled={!selected || loading}
+              disabled={isReadOnly || !selected || loading}
+              title={readOnlyTooltip}
             >
               {loading ? (
                 <>

@@ -2,6 +2,7 @@
 import { Suspense, useMemo, useState } from "react";
 import TransactionTable from "./components/table";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useSearchParams } from "next/navigation";
 import { useDashboardData } from "@/src/hooks/useDashboardData";
 import { Button } from "@/src/components/ui/button";
@@ -187,6 +188,12 @@ function GestionDepensesContent() {
   const searchParams = useSearchParams();
   const [isBalanceHidden, setIsBalanceHidden] = useState(false);
   const [triggerAddManual, setTriggerAddManual] = useState(false);
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
   const [triggerAddOcr, setTriggerAddOcr] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState("all");
   const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
@@ -557,7 +564,12 @@ function GestionDepensesContent() {
             </TooltipProvider> */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="primary" className="self-start cursor-pointer">
+                <Button
+                  variant="primary"
+                  className="self-start cursor-pointer"
+                  disabled={isReadOnly}
+                  title={readOnlyTooltip}
+                >
                   <MoneyRecive className="w-3.5 h-3.5" aria-hidden="true" />
                   Nouvelle transaction
                   <ChevronDown
@@ -739,6 +751,8 @@ function GestionDepensesContent() {
                   <Button
                     size="icon"
                     className="cursor-pointer rounded-full bg-[#0A0A0A] text-white hover:bg-[#0A0A0A]/90"
+                    disabled={isReadOnly}
+                    title={readOnlyTooltip}
                   >
                     <Plus className="h-5 w-5" />
                   </Button>

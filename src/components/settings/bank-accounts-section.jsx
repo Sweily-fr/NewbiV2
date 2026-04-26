@@ -42,7 +42,7 @@ import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { findBank, getBankLogo } from "@/lib/banks-config";
 import { Callout } from "@/src/components/ui/callout";
 import { authClient } from "@/src/lib/auth-client";
-
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 /**
  * Formate un IBAN pour l'affichage (groupes de 4)
@@ -71,6 +71,12 @@ const formatCurrency = (amount, currency = "EUR") => {
 export function BankAccountsSection({ canManageOrgSettings = true }) {
   const { workspaceId } = useWorkspace();
   const { subscription } = useSubscription();
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
 
   // États pour les comptes bancaires
   const [accounts, setAccounts] = useState([]);
@@ -193,8 +199,7 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
       const response = await fetch(
         "/api/banking-connect/bridge/institutions?country=FR",
         {
-          headers: {
-            },
+          headers: {},
         },
       );
 
@@ -255,7 +260,9 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
       return;
     }
     if (!isEmailVerified) {
-      toast.error("Veuillez vérifier votre adresse email avant de connecter un compte bancaire");
+      toast.error(
+        "Veuillez vérifier votre adresse email avant de connecter un compte bancaire",
+      );
       return;
     }
     setIsModalOpen(true);
@@ -279,7 +286,7 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
         {
           headers: {
             "x-workspace-id": workspaceId,
-            },
+          },
         },
       );
 
@@ -439,14 +446,16 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
       {!canManageOrgSettings && (
         <Callout type="warning" noMargin>
           <p className="text-xs">
-            Seuls les <strong>owners</strong> et <strong>admins</strong> peuvent gérer les comptes bancaires.
+            Seuls les <strong>owners</strong> et <strong>admins</strong> peuvent
+            gérer les comptes bancaires.
           </p>
         </Callout>
       )}
       {!isEmailVerified && (
         <Callout type="warning" noMargin>
           <p className="text-xs">
-            Veuillez vérifier votre adresse email avant de connecter un compte bancaire.
+            Veuillez vérifier votre adresse email avant de connecter un compte
+            bancaire.
           </p>
         </Callout>
       )}
@@ -461,16 +470,16 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
           <div className="w-10 h-10 rounded-xl bg-[#fbfbfb] dark:bg-[#1a1a1a] border border-[#eeeff1] dark:border-[#232323] flex items-center justify-center mb-4">
             <Landmark className="h-5 w-5 text-gray-400" />
           </div>
-          <h3 className="text-sm font-medium mb-1">
-            Aucun compte connecté
-          </h3>
+          <h3 className="text-sm font-medium mb-1">Aucun compte connecté</h3>
           <p className="text-xs text-gray-400 mb-4 text-center max-w-xs">
-            Connectez votre banque pour synchroniser automatiquement vos transactions.
+            Connectez votre banque pour synchroniser automatiquement vos
+            transactions.
           </p>
           <Button
             size="sm"
             onClick={handleOpenModal}
-            disabled={!canManageOrgSettings || !isEmailVerified}
+            disabled={isReadOnly || !canManageOrgSettings || !isEmailVerified}
+            title={readOnlyTooltip}
             className="bg-[#5b4eff] hover:bg-[#4a3ecc] text-white cursor-pointer"
           >
             <Plus className="h-3.5 w-3.5 mr-1.5" />
@@ -493,7 +502,8 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
                   variant="ghost"
                   size="sm"
                   onClick={handleRefresh}
-                  disabled={isLoading}
+                  disabled={isReadOnly || isLoading}
+                  title={readOnlyTooltip}
                   className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 h-7 px-2 cursor-pointer"
                 >
                   <RefreshCw
@@ -506,7 +516,13 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
                     variant="ghost"
                     size="sm"
                     onClick={handleOpenModal}
-                    disabled={!canManageOrgSettings || isConnecting || !isEmailVerified}
+                    disabled={
+                      isReadOnly ||
+                      !canManageOrgSettings ||
+                      isConnecting ||
+                      !isEmailVerified
+                    }
+                    title={readOnlyTooltip}
                     className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 h-7 px-2 cursor-pointer"
                   >
                     <Plus className="h-3 w-3 mr-1" />
@@ -527,11 +543,14 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
                 const bankLogo = getAccountBankLogo(account);
                 const bankName = getAccountBankName(account);
                 const status = getAccountStatus(account);
-                const accountId = account._id || account.id || `account-${index}`;
+                const accountId =
+                  account._id || account.id || `account-${index}`;
                 const isIbanVisible = visibleIbans[accountId];
                 const balance =
                   typeof account.balance === "object"
-                    ? account.balance?.current || account.balance?.available || 0
+                    ? account.balance?.current ||
+                      account.balance?.available ||
+                      0
                     : account.balance || 0;
 
                 return (
@@ -550,7 +569,8 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
                             className="w-full h-full object-contain p-0.5"
                             onError={(e) => {
                               e.target.style.display = "none";
-                              if (e.target.nextSibling) e.target.nextSibling.style.display = "flex";
+                              if (e.target.nextSibling)
+                                e.target.nextSibling.style.display = "flex";
                             }}
                           />
                         ) : null}
@@ -565,7 +585,9 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
                       {/* Infos */}
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <h4 className="text-sm font-medium truncate">{bankName}</h4>
+                          <h4 className="text-sm font-medium truncate">
+                            {bankName}
+                          </h4>
                           {status.variant === "success" ? (
                             <span className="px-2 py-0.5 text-[10px] font-medium bg-green-50 border border-green-200 text-green-600 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 rounded-md">
                               Actif
@@ -582,11 +604,18 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
                           <p className="text-xs text-gray-400 truncate">
-                            {account.name || account.bankName || "Compte courant"}
+                            {account.name ||
+                              account.bankName ||
+                              "Compte courant"}
                           </p>
-                          <span className="text-[10px] text-gray-300 dark:text-gray-600">•</span>
+                          <span className="text-[10px] text-gray-300 dark:text-gray-600">
+                            •
+                          </span>
                           <span className="text-xs text-gray-400 font-mono">
-                            {formatIban(account.iban || account.raw?.iban, isIbanVisible)}
+                            {formatIban(
+                              account.iban || account.raw?.iban,
+                              isIbanVisible,
+                            )}
                           </span>
                           <button
                             type="button"
@@ -634,12 +663,12 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
                               <AlertDialogDescription>
                                 Cette action supprimera la connexion avec{" "}
                                 <strong>{bankName}</strong>. Vos données de
-                                transactions seront conservées mais ne seront plus
-                                synchronisées.
+                                transactions seront conservées mais ne seront
+                                plus synchronisées.
                                 {account.raw?.item_id && (
                                   <span className="block mt-2 text-amber-600 dark:text-amber-400">
-                                    Note : Si plusieurs comptes sont liés à cette
-                                    connexion bancaire, ils seront tous
+                                    Note : Si plusieurs comptes sont liés à
+                                    cette connexion bancaire, ils seront tous
                                     déconnectés.
                                   </span>
                                 )}
@@ -672,7 +701,10 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
             <div className="flex items-center gap-3 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5">
               <Crown className="h-4 w-4 text-amber-500 flex-shrink-0" />
               <p className="text-xs text-gray-400">
-                Limite de {bankConnectionLimit} connexion{bankConnectionLimit > 1 ? "s" : ""} atteinte ({subscription?.plan}). Passez à un plan supérieur pour en ajouter.
+                Limite de {bankConnectionLimit} connexion
+                {bankConnectionLimit > 1 ? "s" : ""} atteinte (
+                {subscription?.plan}). Passez à un plan supérieur pour en
+                ajouter.
               </p>
             </div>
           )}

@@ -79,6 +79,7 @@ import { useUnlinkTransactionFromInvoice } from "@/src/hooks/useReconciliationGr
 import { useRouter } from "next/navigation";
 import { PreviewImage } from "@/src/components/ui/preview-image";
 import { getAllPCGAccounts, PCG_ACCOUNTS } from "@/lib/pcg-mapping";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 const paymentMethodIcons = {
   CARD: CreditCard,
@@ -358,6 +359,12 @@ export function TransactionDetailDrawer({
   isCreating = false,
 }) {
   const router = useRouter();
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -1554,8 +1561,8 @@ export function TransactionDetailDrawer({
                             size="icon"
                             className="h-8 w-8 text-muted-foreground hover:text-destructive"
                             onClick={handleUnlinkInvoice}
-                            disabled={isUnlinking}
-                            title="Détacher la facture"
+                            disabled={isReadOnly || isUnlinking}
+                            title={readOnlyTooltip || "Détacher la facture"}
                           >
                             {isUnlinking ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
@@ -1653,6 +1660,8 @@ export function TransactionDetailDrawer({
                 <Button
                   className="flex-1 font-normal bg-primary hover:bg-primary/90"
                   onClick={handleSubmit}
+                  disabled={isReadOnly}
+                  title={readOnlyTooltip}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Ajouter
@@ -1672,6 +1681,8 @@ export function TransactionDetailDrawer({
                 <Button
                   className="flex-1 font-normal bg-primary hover:bg-primary/90"
                   onClick={handleSubmit}
+                  disabled={isReadOnly}
+                  title={readOnlyTooltip}
                 >
                   <Save className="h-4 w-4 mr-2" />
                   Enregistrer
@@ -1682,6 +1693,8 @@ export function TransactionDetailDrawer({
                 <Button
                   variant="outline"
                   className="flex-1 font-normal"
+                  disabled={isReadOnly}
+                  title={readOnlyTooltip}
                   onClick={() => {
                     // Synchroniser formData.category avec la catégorie actuelle en mode vue
                     setFormData((prev) => ({
@@ -1698,6 +1711,8 @@ export function TransactionDetailDrawer({
                   variant="outline"
                   className="flex-1 font-normal text-red-600 hover:text-red-700 hover:bg-red-50"
                   onClick={() => onDelete?.(transaction)}
+                  disabled={isReadOnly}
+                  title={readOnlyTooltip}
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Supprimer
