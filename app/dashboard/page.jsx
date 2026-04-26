@@ -519,6 +519,8 @@ function DashboardContent() {
               variant="outline"
               size="sm"
               className="gap-2 font-medium"
+              disabled={isReadOnly}
+              title={readOnlyTooltip}
               onClick={() => bankBalanceRef.current?.openConnectModal()}
             >
               <Landmark className="size-3.5" />
@@ -746,6 +748,8 @@ function DashboardContent() {
                       <Button
                         size="sm"
                         className="text-xs font-medium bg-foreground text-background hover:bg-foreground/90"
+                        disabled={isReadOnly}
+                        title={readOnlyTooltip}
                         onClick={() =>
                           bankBalanceRef.current?.openConnectModal()
                         }
