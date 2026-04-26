@@ -39,6 +39,7 @@ import {
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/components/ui/sonner";
 import PurchaseOrderSidebar from "./purchase-order-sidebar";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 // Fonction utilitaire pour formater les dates
 const formatDateForEmail = (dateValue) => {
@@ -77,6 +78,7 @@ export default function PurchaseOrderRowActions({
   const router = useRouter();
   const purchaseOrder = row.original;
 
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
   const { workspaceId } = useRequiredWorkspace();
   const { changeStatus, loading: changingStatus } =
     useChangePurchaseOrderStatus();
@@ -211,6 +213,7 @@ export default function PurchaseOrderRowActions({
                     variant="outline"
                     size="icon"
                     className="h-8 w-8 p-0 cursor-pointer"
+                    disabled={isReadOnly}
                     onClick={(e) => {
                       e.stopPropagation();
                       onSendEmail?.(purchaseOrder);
@@ -247,12 +250,13 @@ export default function PurchaseOrderRowActions({
                   e.stopPropagation();
                   onSaveAsTemplate?.(purchaseOrder);
                 }}
+                disabled={isReadOnly}
               >
                 <BookTemplate className="mr-2 h-4 w-4" />
                 Sauv. modèle
               </DropdownMenuItem>
               {isDraft && (
-                <DropdownMenuItem onClick={handleEdit}>
+                <DropdownMenuItem onClick={handleEdit} disabled={isReadOnly}>
                   <Pencil className="mr-2 h-4 w-4" />
                   Modifier
                 </DropdownMenuItem>
@@ -264,7 +268,10 @@ export default function PurchaseOrderRowActions({
               )}
 
               {isDraft && (
-                <DropdownMenuItem onClick={handleConfirm} disabled={isLoading}>
+                <DropdownMenuItem
+                  onClick={handleConfirm}
+                  disabled={isLoading || isReadOnly}
+                >
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Confirmer
                 </DropdownMenuItem>
@@ -274,19 +281,22 @@ export default function PurchaseOrderRowActions({
                 <>
                   <DropdownMenuItem
                     onClick={handleStartProgress}
-                    disabled={isLoading}
+                    disabled={isLoading || isReadOnly}
                   >
                     <Play className="mr-2 h-4 w-4" />
                     Démarrer le traitement
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={handleRevertToDraft}
-                    disabled={isLoading}
+                    disabled={isLoading || isReadOnly}
                   >
                     <RotateCcw className="mr-2 h-4 w-4" />
                     Repasser en brouillon
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleCancel} disabled={isLoading}>
+                  <DropdownMenuItem
+                    onClick={handleCancel}
+                    disabled={isLoading || isReadOnly}
+                  >
                     <XCircle className="mr-2 h-4 w-4" />
                     Annuler
                   </DropdownMenuItem>
@@ -297,12 +307,15 @@ export default function PurchaseOrderRowActions({
                 <>
                   <DropdownMenuItem
                     onClick={handleDeliver}
-                    disabled={isLoading}
+                    disabled={isLoading || isReadOnly}
                   >
                     <Truck className="mr-2 h-4 w-4" />
                     Marquer comme livré
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleCancel} disabled={isLoading}>
+                  <DropdownMenuItem
+                    onClick={handleCancel}
+                    disabled={isLoading || isReadOnly}
+                  >
                     <XCircle className="mr-2 h-4 w-4" />
                     Annuler
                   </DropdownMenuItem>
@@ -312,7 +325,7 @@ export default function PurchaseOrderRowActions({
               {canConvertToInvoice && (
                 <DropdownMenuItem
                   onClick={handleConvertToInvoice}
-                  disabled={isLoading}
+                  disabled={isLoading || isReadOnly}
                 >
                   <FileCheck className="mr-2 h-4 w-4" />
                   Convertir en facture
@@ -323,10 +336,23 @@ export default function PurchaseOrderRowActions({
               {isDraft && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleDelete}>
+                  <DropdownMenuItem
+                    onClick={handleDelete}
+                    disabled={isReadOnly}
+                  >
                     <Trash2 className="mr-2 h-4 w-4" />
                     Supprimer
                   </DropdownMenuItem>
+                </>
+              )}
+              {isReadOnly && (
+                <>
+                  <DropdownMenuSeparator />
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                    {isOwner
+                      ? "Mode lecture seule · Renouvelez votre abonnement"
+                      : "Mode lecture seule · Contactez l'administrateur"}
+                  </div>
                 </>
               )}
             </DropdownMenuContent>
