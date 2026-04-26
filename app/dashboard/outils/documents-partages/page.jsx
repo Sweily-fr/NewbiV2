@@ -10,6 +10,7 @@ import React, {
 } from "react";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { useIsMobile } from "@/src/hooks/use-mobile";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import {
   useSharedDocuments,
   useSharedFolders,
@@ -217,6 +218,12 @@ const formatTotalSize = (bytes) => {
 
 export default function DocumentsPartagesPage() {
   const isMobile = useIsMobile();
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // États
@@ -1497,6 +1504,8 @@ export default function DocumentsPartagesPage() {
                             ? { backgroundColor: "#5b50ff" }
                             : {}
                         }
+                        disabled={isReadOnly}
+                        title={readOnlyTooltip}
                         onClick={() =>
                           startTransition(() => setShowAutomationsModal(true))
                         }
@@ -1523,6 +1532,8 @@ export default function DocumentsPartagesPage() {
                       <Button
                         variant="secondary"
                         size="icon"
+                        disabled={isReadOnly}
+                        title={readOnlyTooltip}
                         onClick={() => setShowNewFolderModal(true)}
                       >
                         <FolderPlus className="h-4 w-4" strokeWidth={1.5} />
@@ -1539,7 +1550,8 @@ export default function DocumentsPartagesPage() {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
-                      disabled={isUploading || uploadLoading}
+                      disabled={isReadOnly || isUploading || uploadLoading}
+                      title={readOnlyTooltip}
                       className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90 gap-1.5 sm:gap-2"
                     >
                       {isUploading || uploadLoading ? (

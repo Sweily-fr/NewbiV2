@@ -62,6 +62,7 @@ import { TaskImageUpload } from "./TaskImageUpload";
 import { useTaskImageUpload } from "../hooks/useTaskImageUpload";
 import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
 import { cn } from "@/src/lib/utils";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 // Sub-components extracted for maintainability
 import { PendingCommentsView } from "./task-modal/PendingCommentsView";
@@ -94,6 +95,13 @@ export function TaskModal({
   initialFormRef: externalInitialFormRef,
   localMutationRef,
 }) {
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
+
   // Navigation prev/next entre tâches
   const { prevTask, nextTask, currentIndex, totalTasks } = useMemo(() => {
     if (!board?.tasks || !taskForm?.id)
@@ -1438,7 +1446,10 @@ export function TaskModal({
                     </Button>
                     <Button
                       onClick={handleSubmit}
-                      disabled={isLoading || !taskForm.title.trim()}
+                      disabled={
+                        isReadOnly || isLoading || !taskForm.title.trim()
+                      }
+                      title={readOnlyTooltip}
                       className="px-6 text-white hover:opacity-90"
                       style={{ backgroundColor: "#5b50FF" }}
                     >
@@ -2238,7 +2249,10 @@ export function TaskModal({
                     </Button>
                     <Button
                       onClick={handleSubmit}
-                      disabled={isLoading || !taskForm.title.trim()}
+                      disabled={
+                        isReadOnly || isLoading || !taskForm.title.trim()
+                      }
+                      title={readOnlyTooltip}
                       className="flex-1 text-white hover:opacity-90"
                       style={{ backgroundColor: "#5b50FF" }}
                     >

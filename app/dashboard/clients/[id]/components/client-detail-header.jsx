@@ -29,6 +29,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 export default function ClientDetailHeader({
   client,
@@ -45,6 +46,12 @@ export default function ClientDetailHeader({
   hasDocuments = false,
 }) {
   const router = useRouter();
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
   const [showDeleteTooltip, setShowDeleteTooltip] = useState(null);
 
   const displayName =
@@ -89,12 +96,12 @@ export default function ClientDetailHeader({
             <TooltipContent side="bottom">Client suivant</TooltipContent>
           </Tooltip>
         </div>
-        <div
-          className="flex-shrink-0 rounded-md flex items-center justify-center w-6 h-6 bg-[#fbfbfb] dark:bg-[#1a1a1a] shadow-[inset_0_0_0_1px_#eeeff1] dark:shadow-[inset_0_0_0_1px_#232323]"
-        >
+        <div className="flex-shrink-0 rounded-md flex items-center justify-center w-6 h-6 bg-[#fbfbfb] dark:bg-[#1a1a1a] shadow-[inset_0_0_0_1px_#eeeff1] dark:shadow-[inset_0_0_0_1px_#232323]">
           <Blocks className="h-3.5 w-3.5 text-[#242529] dark:text-foreground" />
         </div>
-        <h1 className="text-sm font-medium text-[#242529] dark:text-foreground truncate">{displayName}</h1>
+        <h1 className="text-sm font-medium text-[#242529] dark:text-foreground truncate">
+          {displayName}
+        </h1>
         {client.isBlocked && (
           <span className="flex-shrink-0 inline-flex items-center rounded-md bg-red-50 dark:bg-red-950 px-2 py-0.5 text-[11px] font-medium text-red-600 dark:text-red-400 ring-1 ring-inset ring-red-200 dark:ring-red-900">
             Bloqué
@@ -119,7 +126,9 @@ export default function ClientDetailHeader({
                 variant="outline"
                 size="icon"
                 className="hidden sm:inline-flex"
-                onClick={() => (window.location.href = `mailto:${client.email}`)}
+                onClick={() =>
+                  (window.location.href = `mailto:${client.email}`)
+                }
               >
                 <Mail className="h-3.5 w-3.5" />
               </Button>
@@ -131,24 +140,34 @@ export default function ClientDetailHeader({
         {/* More dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-            >
+            <Button variant="outline" size="icon">
               <Settings2 className="h-3.5 w-3.5" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52">
-            <DropdownMenuItem onClick={onEdit} className="cursor-pointer gap-2 text-xs">
+            <DropdownMenuItem
+              onClick={onEdit}
+              disabled={isReadOnly}
+              title={readOnlyTooltip}
+              className="cursor-pointer gap-2 text-xs"
+            >
               <Pencil className="w-3.5 h-3.5" />
               Modifier
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={client.isBlocked ? onUnblock : onBlock} className="cursor-pointer gap-2 text-xs">
+            <DropdownMenuItem
+              onClick={client.isBlocked ? onUnblock : onBlock}
+              disabled={isReadOnly}
+              title={readOnlyTooltip}
+              className="cursor-pointer gap-2 text-xs"
+            >
               <ShieldOff className="w-3.5 h-3.5" />
               {client.isBlocked ? "Débloquer le contact" : "Bloquer le contact"}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={onAssign} className="cursor-pointer gap-2 text-xs">
+            <DropdownMenuItem
+              onClick={onAssign}
+              className="cursor-pointer gap-2 text-xs"
+            >
               <UserCheck className="w-3.5 h-3.5" />
               Assigner
             </DropdownMenuItem>
@@ -165,8 +184,10 @@ export default function ClientDetailHeader({
             )}
             <DropdownMenuSeparator />
             <DropdownMenuItem
+              disabled={isReadOnly}
+              title={readOnlyTooltip}
               onSelect={(e) => {
-                if (hasDocuments) {
+                if (isReadOnly || hasDocuments) {
                   e.preventDefault();
                 } else {
                   onDelete();
@@ -175,13 +196,17 @@ export default function ClientDetailHeader({
               onMouseEnter={(e) => {
                 if (hasDocuments) {
                   const rect = e.currentTarget.getBoundingClientRect();
-                  setShowDeleteTooltip({ top: rect.bottom + 6, left: rect.right });
+                  setShowDeleteTooltip({
+                    top: rect.bottom + 6,
+                    left: rect.right,
+                  });
                 }
               }}
               onMouseLeave={() => setShowDeleteTooltip(null)}
-              className={hasDocuments
-                ? "cursor-not-allowed gap-2 text-xs opacity-50"
-                : "cursor-pointer gap-2 text-xs text-red-600 focus:text-red-600"
+              className={
+                isReadOnly || hasDocuments
+                  ? "cursor-not-allowed gap-2 text-xs opacity-50"
+                  : "cursor-pointer gap-2 text-xs text-red-600 focus:text-red-600"
               }
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -189,26 +214,26 @@ export default function ClientDetailHeader({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
       </div>
 
-      {showDeleteTooltip && ReactDOM.createPortal(
-        <div
-          className="fixed z-[9999] w-[260px] rounded-md px-3 py-1.5 text-xs text-white whitespace-normal animate-in fade-in-0 zoom-in-95"
-          style={{
-            backgroundColor: "#202020",
-            top: showDeleteTooltip.top,
-            left: showDeleteTooltip.left - 260,
-          }}
-        >
-          Ce contact est lié à des factures, devis ou bons de commande.
+      {showDeleteTooltip &&
+        ReactDOM.createPortal(
           <div
-            className="absolute bottom-full right-4 size-2.5 translate-y-[calc(50%+2px)] rotate-45 rounded-[2px]"
-            style={{ backgroundColor: "#202020" }}
-          />
-        </div>,
-        document.body
-      )}
+            className="fixed z-[9999] w-[260px] rounded-md px-3 py-1.5 text-xs text-white whitespace-normal animate-in fade-in-0 zoom-in-95"
+            style={{
+              backgroundColor: "#202020",
+              top: showDeleteTooltip.top,
+              left: showDeleteTooltip.left - 260,
+            }}
+          >
+            Ce contact est lié à des factures, devis ou bons de commande.
+            <div
+              className="absolute bottom-full right-4 size-2.5 translate-y-[calc(50%+2px)] rotate-45 rounded-[2px]"
+              style={{ backgroundColor: "#202020" }}
+            />
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
