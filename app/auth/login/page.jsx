@@ -78,7 +78,7 @@ export default function LoginPage() {
         style={{ backgroundColor: "rgb(251, 251, 252)" }}
       >
         {/* Logo */}
-        <div className="absolute top-0 left-0 right-0 flex justify-center pt-12 md:pt-46">
+        <div className="absolute top-0 left-0 right-0 flex justify-center pt-20 md:pt-46">
           <img
             src="/newbi-icon.png"
             alt="Newbi"

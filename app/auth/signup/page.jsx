@@ -394,7 +394,7 @@ export default function SignUpPage() {
       >
         {/* Logo — hidden on workspace/plan views */}
         {view !== "workspace" && view !== "plan" && view !== "recap" && (
-          <div className="absolute top-0 left-0 right-0 flex justify-center pt-12 md:pt-46">
+          <div className="absolute top-0 left-0 right-0 flex justify-center pt-20 md:pt-46">
             <img
               src="/newbi-icon.png"
               alt="Newbi"
