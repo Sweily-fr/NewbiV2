@@ -182,7 +182,8 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
   // Charger les organisations et compter les membres
   useEffect(() => {
     if (organizationsList) {
-      setOrganizations(organizationsList);
+      const validOrgs = organizationsList.filter((org) => org && org.id);
+      setOrganizations(validOrgs);
 
       // ✅ FIX: Utiliser Promise.all pour des appels parallèles au lieu de séquentiels
       const fetchMemberData = async () => {
@@ -190,7 +191,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
 
         try {
           // Lancer tous les appels API en parallèle
-          const fetchPromises = organizationsList.map(async (org) => {
+          const fetchPromises = validOrgs.map(async (org) => {
             try {
               const response = await fetch(
                 `/api/organizations/${org.id}/members`,
