@@ -12,15 +12,13 @@ import DashboardClientLayout from "./dashboard-client-layout";
  */
 async function hasValidSubscription(orgId) {
   const subscription = await mongoDb.collection("subscription").findOne({
-    $or: [
-      { referenceId: orgId },
-      { organizationId: orgId },
-    ],
+    $or: [{ referenceId: orgId }, { organizationId: orgId }],
   });
 
   if (!subscription) return false;
 
-  const isActive = subscription.status === "active" || subscription.status === "trialing";
+  const isActive =
+    subscription.status === "active" || subscription.status === "trialing";
   const isCanceledButValid =
     subscription.status === "canceled" &&
     subscription.periodEnd &&
@@ -49,7 +47,13 @@ async function checkSubscription(userId, activeOrgId) {
       }
 
       // Priorité: owner > admin > member > viewer
-      const rolePriority = { owner: 0, admin: 1, member: 2, viewer: 3, accountant: 2 };
+      const rolePriority = {
+        owner: 0,
+        admin: 1,
+        member: 2,
+        viewer: 3,
+        accountant: 2,
+      };
       members.sort((a, b) => {
         const priorityA = rolePriority[a.role] ?? 99;
         const priorityB = rolePriority[b.role] ?? 99;
@@ -59,15 +63,21 @@ async function checkSubscription(userId, activeOrgId) {
       organizationId = members[0].organizationId.toString();
     }
 
-    console.log(`[Dashboard Layout] Vérification abonnement pour org: ${organizationId}`);
+    console.log(
+      `[Dashboard Layout] Vérification abonnement pour org: ${organizationId}`,
+    );
 
     // 2. Vérifier l'abonnement de l'organisation active
     if (await hasValidSubscription(organizationId)) {
-      console.log(`[Dashboard Layout] Abonnement valide pour org active: ${organizationId}`);
+      console.log(
+        `[Dashboard Layout] Abonnement valide pour org active: ${organizationId}`,
+      );
       return { hasSubscription: true, organizationId };
     }
 
-    console.log(`[Dashboard Layout] Pas d'abonnement valide pour org active: ${organizationId}`);
+    console.log(
+      `[Dashboard Layout] Pas d'abonnement valide pour org active: ${organizationId}`,
+    );
 
     // 3. Fallback: Chercher une autre organisation avec un abonnement valide
     const allMembers = await mongoDb
@@ -76,10 +86,20 @@ async function checkSubscription(userId, activeOrgId) {
       .toArray();
 
     if (!allMembers || allMembers.length === 0) {
-      return { hasSubscription: false, reason: "no_subscription", organizationId };
+      return {
+        hasSubscription: false,
+        reason: "no_subscription",
+        organizationId,
+      };
     }
 
-    const rolePriority = { owner: 0, admin: 1, member: 2, viewer: 3, accountant: 2 };
+    const rolePriority = {
+      owner: 0,
+      admin: 1,
+      member: 2,
+      viewer: 3,
+      accountant: 2,
+    };
     allMembers.sort((a, b) => {
       const priorityA = rolePriority[a.role] ?? 99;
       const priorityB = rolePriority[b.role] ?? 99;
@@ -91,22 +111,30 @@ async function checkSubscription(userId, activeOrgId) {
       if (candidateOrgId === organizationId) continue; // Déjà vérifiée
 
       if (await hasValidSubscription(candidateOrgId)) {
-        console.log(`[Dashboard Layout] Abonnement valide trouvé sur org: ${candidateOrgId}, auto-switch`);
+        console.log(
+          `[Dashboard Layout] Abonnement valide trouvé sur org: ${candidateOrgId}, auto-switch`,
+        );
 
         // Mettre à jour toutes les sessions de l'utilisateur
-        const updateResult = await mongoDb.collection("session").updateMany(
-          { userId: userId },
-          { $set: { activeOrganizationId: candidateOrgId } }
-        );
+        const updateResult = await mongoDb
+          .collection("session")
+          .updateMany(
+            { userId: userId },
+            { $set: { activeOrganizationId: candidateOrgId } },
+          );
         console.log(
-          `[Dashboard Layout] ${updateResult.modifiedCount} session(s) updated with activeOrganizationId: ${candidateOrgId}`
+          `[Dashboard Layout] ${updateResult.modifiedCount} session(s) updated with activeOrganizationId: ${candidateOrgId}`,
         );
 
         return { hasSubscription: true, organizationId: candidateOrgId };
       }
     }
 
-    return { hasSubscription: false, reason: "subscription_expired", organizationId };
+    return {
+      hasSubscription: false,
+      reason: "subscription_expired",
+      organizationId,
+    };
   } catch (error) {
     console.error("[Dashboard Layout] Erreur vérification abonnement:", error);
     return { hasSubscription: false, reason: "error" };
@@ -124,22 +152,29 @@ async function checkRecentStripePayment(organizationId) {
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
     // Chercher un abonnement créé très récemment (le webhook peut être en cours)
-    const recentSubscription = await mongoDb.collection("subscription").findOne({
-      $or: [
-        { referenceId: organizationId },
-        { organizationId: organizationId },
-      ],
-      createdAt: { $gte: fiveMinutesAgo },
-    });
+    const recentSubscription = await mongoDb
+      .collection("subscription")
+      .findOne({
+        $or: [
+          { referenceId: organizationId },
+          { organizationId: organizationId },
+        ],
+        createdAt: { $gte: fiveMinutesAgo },
+      });
 
     if (recentSubscription) {
-      console.log("[Dashboard Layout] Abonnement récent trouvé, bypass autorisé");
+      console.log(
+        "[Dashboard Layout] Abonnement récent trouvé, bypass autorisé",
+      );
       return true;
     }
 
     return false;
   } catch (error) {
-    console.error("[Dashboard Layout] Erreur vérification paiement récent:", error);
+    console.error(
+      "[Dashboard Layout] Erreur vérification paiement récent:",
+      error,
+    );
     return false;
   }
 }
@@ -174,25 +209,29 @@ export default async function DashboardLayout({ children }) {
   // Vérifier l'abonnement
   const { hasSubscription, reason, organizationId } = await checkSubscription(
     session.user.id,
-    session.session?.activeOrganizationId
+    session.session?.activeOrganizationId,
   );
 
-  console.log(`[Dashboard Layout] hasSubscription: ${hasSubscription}, reason: ${reason}`);
+  console.log(
+    `[Dashboard Layout] hasSubscription: ${hasSubscription}, reason: ${reason}`,
+  );
 
   // Si pas d'abonnement valide, vérifier s'il y a un paiement Stripe récent (webhook en cours)
   if (!hasSubscription && organizationId) {
     const hasRecentPayment = await checkRecentStripePayment(organizationId);
 
     if (hasRecentPayment) {
-      console.log("[Dashboard Layout] Paiement récent détecté, accès temporaire autorisé");
+      console.log(
+        "[Dashboard Layout] Paiement récent détecté, accès temporaire autorisé",
+      );
       return <DashboardClientLayout>{children}</DashboardClientLayout>;
     }
   }
 
-  // Si pas d'abonnement valide, rediriger vers onboarding
+  // Si pas d'abonnement valide, rediriger vers signup
   if (!hasSubscription) {
-    console.log("[Dashboard Layout] Pas d'abonnement, redirection vers onboarding");
-    redirect("/onboarding");
+    console.log("[Dashboard Layout] Pas d'abonnement, redirection vers signup");
+    redirect("/auth/signup");
   }
 
   // Utilisateur authentifié avec abonnement valide
