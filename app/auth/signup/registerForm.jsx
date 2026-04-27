@@ -35,7 +35,7 @@ const RegisterFormContent = ({ onSuccess: onSuccessProp }) => {
   const onSubmit = async (formData) => {
     // Ajouter le code partenaire si présent
     if (partnerCode) {
-      formData.referralCode = partnerCode;
+      formData.referredBy = partnerCode;
     }
 
     // Selon la doc Better Auth, l'erreur est retournée directement dans { data, error }

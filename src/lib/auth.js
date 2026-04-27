@@ -370,7 +370,12 @@ export const auth = betterAuth({
       referralCode: {
         type: "string",
         required: false,
-        defaultValue: "",
+        defaultValue: null,
+      },
+      referredBy: {
+        type: "string",
+        required: false,
+        defaultValue: null,
       },
       // ✅ Champs pour les utilisateurs invités (pas d'organisation propre)
       isInvitedUser: {

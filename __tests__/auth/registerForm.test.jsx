@@ -172,7 +172,7 @@ describe("RegisterForm", () => {
     await waitFor(() => {
       expect(mockSignUpEmail).toHaveBeenCalledWith(
         expect.objectContaining({
-          referralCode: "PARTNER_XYZ",
+          referredBy: "PARTNER_XYZ",
         }),
         expect.any(Object),
       );
