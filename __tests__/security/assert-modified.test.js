@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it } from "vitest";
 
 describe("assertModified", () => {

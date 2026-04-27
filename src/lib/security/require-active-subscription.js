@@ -1,6 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used in Sprint 1c implementation
 import { mongoDb } from "@/src/lib/mongodb";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used in Sprint 1c implementation
 import { apiError } from "./api-error";
 
 /**
@@ -16,7 +14,38 @@ import { apiError } from "./api-error";
  *   - expiresAt: subscription period end date (if applicable)
  * @throws {NextResponse} 402 "Abonnement requis" if no active subscription found
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- params used in Sprint 1c
-export async function requireActiveSubscription(_userId, _orgId) {
-  throw new Error("Not implemented yet — Sprint 1c");
+export async function requireActiveSubscription(userId, orgId) {
+  // Search by referenceId (string) — this is how org-creation.js stores it
+  const subscription = await mongoDb.collection("subscription").findOne({
+    referenceId: orgId,
+  });
+
+  if (!subscription) {
+    throw apiError(402, "Aucun abonnement actif");
+  }
+
+  const { status, periodEnd, plan } = subscription;
+
+  // Active or trialing — straightforward
+  if (status === "active" || status === "trialing") {
+    return {
+      active: true,
+      plan: plan || "freelance",
+      status,
+      expiresAt: periodEnd ? new Date(periodEnd) : undefined,
+    };
+  }
+
+  // Canceled but still within paid period
+  if (status === "canceled" && periodEnd && new Date(periodEnd) > new Date()) {
+    return {
+      active: true,
+      plan: plan || "freelance",
+      status,
+      expiresAt: new Date(periodEnd),
+    };
+  }
+
+  // Any other status (past_due, incomplete, expired, canceled+expired)
+  throw apiError(402, "Aucun abonnement actif");
 }

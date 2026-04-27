@@ -19,3 +19,4 @@ export { apiError } from "./api-error";
 export { withErrorHandler } from "./with-error-handler";
 export { toObjectId } from "./to-object-id";
 export { assertModified } from "./assert-modified";
+export { ROLE_PERMISSIONS, VALID_ROLES } from "./role-permissions";

@@ -1,8 +1,8 @@
 # Etat d'avancement — Refonte securite
 
-> Derniere mise a jour : 2026-04-28 00:00
-> Sprint en cours : Sprint 1c
-> Statut global : 0/8 sprints termines (Sprint 1a + 1b sous-sprints termines)
+> Derniere mise a jour : 2026-04-28 00:10
+> Sprint en cours : Sprint 1d
+> Statut global : 0/8 sprints termines (Sprint 1a + 1b + 1c sous-sprints termines)
 
 ## Vue d'ensemble
 
@@ -10,7 +10,7 @@
 | ------ | ------------------------------------------------------------------------ | ------- | ---------- | ---------- | ------------------------------------------- |
 | 1a     | Squelette helpers + tests                                                | Termine | 2026-04-27 | 2026-04-27 | 22 fichiers, 57 tests skip, commit 65c9714f |
 | 1b     | Helpers de base (requireSession, apiError, withErrorHandler, toObjectId) | Termine | 2026-04-27 | 2026-04-28 | 27 tests pass, 30 skip                      |
-| 1c     | Helpers RBAC (requireOrgMembership, requireActiveSubscription)           | A faire | —          | —          | —                                           |
+| 1c     | Helpers RBAC (requireOrgMembership, requireActiveSubscription)           | Termine | 2026-04-28 | 2026-04-28 | 44 tests pass, 13 skip                      |
 | 1d     | Helpers complements (requireInternalSecret, assertModified)              | A faire | —          | —          | —                                           |
 | 1e     | Middleware deny-by-default (logging-only puis enforcement)               | A faire | —          | —          | —                                           |
 | 2      | Urgences financieres (input: false, revocation sessions, fallback email) | A faire | —          | —          | —                                           |
@@ -21,31 +21,30 @@
 | 7      | Consistency checks + monitoring                                          | A faire | —          | —          | —                                           |
 | 8      | Cleanup + dette residuelle                                               | A faire | —          | —          | —                                           |
 
-## Sprint en cours : 1c — Helpers RBAC
+## Sprint en cours : 1d — Helpers complements
 
 ### Objectif
 
-Implementer requireOrgMembership et requireActiveSubscription. Ces helpers protegent les routes multi-tenant.
+Implementer requireInternalSecret, hasInternalSecret, et assertModified.
 
 ### Livrables prevus
 
-- [ ] src/lib/security/require-org-membership.js (implementation)
-- [ ] src/lib/security/require-active-subscription.js (implementation)
-- [ ] src/lib/security/role-permissions.js (copie synchronisee du backend)
-- [ ] **tests**/security/require-org-membership.test.js (10 tests actifs)
-- [ ] **tests**/security/require-active-subscription.test.js (7 tests actifs)
+- [ ] src/lib/security/require-internal-secret.js (implementation)
+- [ ] src/lib/security/assert-modified.js (implementation)
+- [ ] **tests**/security/require-internal-secret.test.js (8 tests actifs)
+- [ ] **tests**/security/assert-modified.test.js (5 tests actifs)
 
 ### Tests a passer
 
-- [ ] 44 tests pass (27 existants + 17 nouveaux), 13 skip (Sprint 1d)
+- [ ] 57 tests pass (44 existants + 13 nouveaux), 0 skip
 
 ### Findings resolus par ce sprint
 
-Pattern disponible pour CRITIQUE-8 a 10, MOYEN-16.
+Pattern disponible pour CRITIQUE-1 a 4 (Puppeteer), MOYEN-25 (monitoring).
 
 ### Statut
 
-A faire — en attente de validation Sprint 1b.
+A faire — en attente de validation Sprint 1c.
 
 ---
 
@@ -105,6 +104,14 @@ A faire — en attente de validation Sprint 1b.
 
 ## Journal de bord
 
+### 2026-04-28 — Sprint 1c termine
+
+- 2 helpers implementes : requireOrgMembership, requireActiveSubscription
+- role-permissions.js cree (copie synchronisee du backend)
+- 44 tests pass, 13 skip (Sprint 1d)
+- Annotation @vitest-environment node ajoutee a tous les fichiers de test security (ADR-003)
+- fakeRequest supprime de require-session.test.js grace au switch vers environment node
+
 ### 2026-04-28 — Sprint 1b termine
 
 - 4 helpers implementes : apiError, toObjectId, withErrorHandler, requireSession
@@ -145,3 +152,10 @@ Si tu reprends ce projet dans une nouvelle conversation Claude :
 - **Decision** : Deplacer toObjectId des helpers complementaires (1d) vers les helpers de base (1b).
 - **Raison** : requireSession et Sprint 2 (revocation sessions) en dependent. Le placer en 1b debloque tout le reste.
 - **Impact** : Sprint 1b, Sprint 2.
+
+### ADR-003 : @vitest-environment node pour les tests security
+
+- **Date** : 2026-04-28
+- **Decision** : Utiliser l'annotation `// @vitest-environment node` dans chaque fichier de test sous **tests**/security/ au lieu du environment happy-dom global.
+- **Raison** : Les helpers de securite tournent cote serveur (Node.js). happy-dom filtre le header cookie du constructeur Request, ce qui cassait les tests requireSession. Avec environment node, on teste dans le meme environnement que la production.
+- **Impact** : Tous les fichiers de test security. Le fakeRequest helper introduit en Sprint 1b a ete supprime.

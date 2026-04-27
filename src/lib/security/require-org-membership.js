@@ -1,8 +1,5 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used in Sprint 1c implementation
 import { mongoDb } from "@/src/lib/mongodb";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used in Sprint 1c implementation
 import { toObjectId } from "./to-object-id";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used in Sprint 1c implementation
 import { apiError } from "./api-error";
 
 /**
@@ -16,9 +13,33 @@ import { apiError } from "./api-error";
  * @returns {Promise<{ role: string, organizationId: import("mongodb").ObjectId }>}
  *   - role: the user's role in the organization (normalized to lowercase)
  *   - organizationId: the organization ObjectId (for use in subsequent queries)
- * @throws {NextResponse} 403 "Non autorise" if not a member or insufficient role
+ * @throws {NextResponse} 403 "Non autorisé" if not a member or insufficient role
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- params used in Sprint 1c
-export async function requireOrgMembership(_userId, _orgId, _requiredRole) {
-  throw new Error("Not implemented yet — Sprint 1c");
+export async function requireOrgMembership(userId, orgId, requiredRole) {
+  const userObjectId = toObjectId(userId);
+  const orgObjectId = toObjectId(orgId);
+
+  const member = await mongoDb.collection("member").findOne({
+    userId: userObjectId,
+    organizationId: orgObjectId,
+  });
+
+  if (!member) {
+    throw apiError(403, "Non autorisé");
+  }
+
+  const role = (member.role || "member").toLowerCase();
+
+  if (requiredRole) {
+    const allowedRoles = Array.isArray(requiredRole)
+      ? requiredRole
+      : [requiredRole];
+    const normalizedAllowed = allowedRoles.map((r) => r.toLowerCase());
+
+    if (!normalizedAllowed.includes(role)) {
+      throw apiError(403, "Rôle insuffisant");
+    }
+  }
+
+  return { role, organizationId: orgObjectId };
 }

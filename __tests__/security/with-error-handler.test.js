@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi } from "vitest";
 import { NextResponse } from "next/server";
 import { withErrorHandler } from "@/src/lib/security/with-error-handler";

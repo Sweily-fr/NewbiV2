@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi, afterEach } from "vitest";
 
 // Mock auth.api.getSession — we test the helper logic, not Better Auth itself
@@ -13,29 +14,6 @@ vi.mock("@/src/lib/auth", () => ({
 // Import after mock setup
 const { requireSession } = await import("@/src/lib/security/require-session");
 
-/**
- * Create a fake request with headers that work in happy-dom.
- * happy-dom's Request constructor strips the "cookie" header,
- * so we use a plain object with a headers.get() mock.
- */
-function fakeRequest(cookieHeader) {
-  const headers = new Headers();
-  if (cookieHeader) headers.set("x-test-cookie", cookieHeader);
-
-  return {
-    headers: {
-      get: (name) => {
-        if (name === "cookie") return cookieHeader || "";
-        return headers.get(name);
-      },
-      // Required by auth.api.getSession which may iterate headers
-      [Symbol.iterator]: headers[Symbol.iterator]?.bind(headers),
-      entries: headers.entries.bind(headers),
-      forEach: headers.forEach.bind(headers),
-    },
-  };
-}
-
 describe("requireSession", () => {
   afterEach(() => {
     mockGetSession.mockReset();
@@ -47,7 +25,10 @@ describe("requireSession", () => {
       session: { id: "sess123", activeOrganizationId: "org456" },
     });
 
-    const request = fakeRequest("better-auth.session_token=abc123");
+    const request = new Request("http://localhost/api/test", {
+      headers: { cookie: "better-auth.session_token=abc123" },
+    });
+
     const result = await requireSession(request);
 
     expect(result.user).toEqual({ id: "user123", email: "test@example.com" });
@@ -62,8 +43,10 @@ describe("requireSession", () => {
     mockGetSession.mockResolvedValue(null);
     vi.spyOn(console, "error").mockImplementation(() => {});
 
+    const request = new Request("http://localhost/api/test");
+
     try {
-      await requireSession(fakeRequest());
+      await requireSession(request);
       expect.fail("Should have thrown");
     } catch (response) {
       expect(response.status).toBe(401);
@@ -78,8 +61,12 @@ describe("requireSession", () => {
     mockGetSession.mockResolvedValue({ user: null });
     vi.spyOn(console, "error").mockImplementation(() => {});
 
+    const request = new Request("http://localhost/api/test", {
+      headers: { cookie: "better-auth.session_token=expired" },
+    });
+
     try {
-      await requireSession(fakeRequest("better-auth.session_token=expired"));
+      await requireSession(request);
       expect.fail("Should have thrown");
     } catch (response) {
       expect(response.status).toBe(401);
@@ -92,8 +79,12 @@ describe("requireSession", () => {
     mockGetSession.mockResolvedValue(null);
     vi.spyOn(console, "error").mockImplementation(() => {});
 
+    const request = new Request("http://localhost/api/test", {
+      headers: { cookie: "better-auth.session_token=revoked" },
+    });
+
     try {
-      await requireSession(fakeRequest("better-auth.session_token=revoked"));
+      await requireSession(request);
       expect.fail("Should have thrown");
     } catch (response) {
       expect(response.status).toBe(401);
@@ -110,7 +101,11 @@ describe("requireSession", () => {
       session: { id: "sess1" },
     });
 
-    const result = await requireSession(fakeRequest(cookieValue));
+    const request = new Request("http://localhost/api/test", {
+      headers: { cookie: cookieValue },
+    });
+
+    const result = await requireSession(request);
     expect(result.cookieHeader).toBe(cookieValue);
   });
 });
