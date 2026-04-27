@@ -89,7 +89,7 @@ export const auth = betterAuth({
                 `📨 [USER CREATE] Invitation pending trouvée pour ${user.email}`,
               );
 
-              // Marquer l'utilisateur comme invité
+              // Marquer l'utilisateur comme invité — skip onboarding complet
               await mongoDb.collection("user").updateOne(
                 { _id: new ObjectId(user.id) },
                 {
@@ -97,30 +97,32 @@ export const auth = betterAuth({
                     hasSeenOnboarding: false,
                     isInvitedUser: true,
                     pendingInvitationId: pendingInvitation._id.toString(),
+                    onboardingStep: "completed",
                   },
                 },
               );
 
               console.log(
-                `✅ [USER CREATE] Utilisateur ${user.email} marqué comme invité`,
+                `✅ [USER CREATE] Utilisateur ${user.email} marqué comme invité (onboardingStep: completed)`,
               );
               return user;
             }
 
-            // ✅ NOUVEAU : Ne PAS créer d'organisation ici
-            // L'utilisateur passera par l'onboarding et l'org sera créée après paiement
+            // Nouvel utilisateur standard — onboarding commence à "workspace"
+            // Force onboardingStep en DB (le defaultValue de additionalFields ne s'applique pas en OAuth)
             await mongoDb.collection("user").updateOne(
               { _id: new ObjectId(user.id) },
               {
                 $set: {
                   hasSeenOnboarding: false,
                   isInvitedUser: false,
+                  onboardingStep: "workspace",
                 },
               },
             );
 
             console.log(
-              `✅ [USER CREATE] Utilisateur ${user.email} créé - organisation sera créée après paiement`,
+              `✅ [USER CREATE] Utilisateur ${user.email} créé (onboardingStep: workspace)`,
             );
           } catch (error) {
             console.error("❌ [USER CREATE] Erreur:", error);
@@ -392,6 +394,20 @@ export const auth = betterAuth({
         type: "string",
         required: false,
         defaultValue: "",
+      },
+      // Onboarding multi-step tracking (persisted server-side for cross-device resume)
+      // Values: "workspace" | "plan" | "recap" | "completed"
+      // Legacy users without this field: see getOnboardingStep() helper
+      onboardingStep: {
+        type: "string",
+        required: false,
+        defaultValue: "workspace",
+      },
+      // JSON-stringified intermediate onboarding data (company info, selected plan, etc.)
+      // Parsed with try/catch — null means no data saved yet
+      onboardingData: {
+        type: "string",
+        required: false,
       },
     },
   },

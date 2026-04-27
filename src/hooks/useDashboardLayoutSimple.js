@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSession } from "@/src/lib/auth-client";
 import { authClient } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
+import { getOnboardingStep } from "@/src/lib/onboarding";
 /**
  * Version simplifiée du hook dashboard layout sans cache pour éviter les boucles infinies
  * Version temporaire pendant que nous résolvons les problèmes de cache
@@ -60,7 +61,7 @@ export function useDashboardLayoutSimple() {
             user: session.user,
             organization: session.user.organization,
             timestamp: Date.now(),
-          })
+          }),
         );
         setCachedUser(session.user);
         setCachedOrganization(session.user.organization);
@@ -68,7 +69,15 @@ export function useDashboardLayoutSimple() {
         console.warn("Erreur sauvegarde cache utilisateur:", error);
       }
     }
-  }, [session?.user?.id, session?.user?.name, session?.user?.email, session?.user?.role, session?.user?.hasSeenOnboarding, session?.session?.activeOrganizationId, isHydrated]);
+  }, [
+    session?.user?.id,
+    session?.user?.name,
+    session?.user?.email,
+    session?.user?.role,
+    session?.user?.hasSeenOnboarding,
+    session?.session?.activeOrganizationId,
+    isHydrated,
+  ]);
 
   // Cache minimal pour les données d'abonnement (éviter les flashs)
   useEffect(() => {
@@ -104,7 +113,7 @@ export function useDashboardLayoutSimple() {
       if (isReturningFromStripe) {
         localStorage.removeItem(cacheKey);
         console.log(
-          "🗑️ Cache d'abonnement invalidé (retour Stripe/résiliation/nouvel abonnement)"
+          "🗑️ Cache d'abonnement invalidé (retour Stripe/résiliation/nouvel abonnement)",
         );
       }
 
@@ -122,7 +131,7 @@ export function useDashboardLayoutSimple() {
             setIsInitialized(true);
             console.log(
               "✅ Subscription chargée depuis le cache:",
-              organizationId
+              organizationId,
             );
             return;
           }
@@ -156,7 +165,7 @@ export function useDashboardLayoutSimple() {
         // ✅ Utiliser l'API personnalisée qui récupère directement depuis MongoDB
         // (inclut les abonnements canceled, contrairement à Better Auth subscription.list)
         const response = await fetch(
-          `/api/organizations/${organizationId}/subscription`
+          `/api/organizations/${organizationId}/subscription`,
         );
         const data = await response.json();
 
@@ -192,7 +201,7 @@ export function useDashboardLayoutSimple() {
                 JSON.stringify({
                   data: activeSubscription,
                   timestamp: Date.now(),
-                })
+                }),
               );
             } catch (error) {
               console.warn("Erreur sauvegarde cache abonnement:", error);
@@ -249,7 +258,7 @@ export function useDashboardLayoutSimple() {
 
       try {
         const response = await fetch(
-          `/api/organizations/${session.session.activeOrganizationId}/subscription`
+          `/api/organizations/${session.session.activeOrganizationId}/subscription`,
         );
         const data = await response.json();
 
@@ -270,7 +279,7 @@ export function useDashboardLayoutSimple() {
           const cacheKey = `subscription-${session.session.activeOrganizationId}`;
           localStorage.setItem(
             cacheKey,
-            JSON.stringify({ data, timestamp: Date.now() })
+            JSON.stringify({ data, timestamp: Date.now() }),
           );
         } else if (attempts >= maxAttempts) {
           clearInterval(stripePollingRef.current);
@@ -326,7 +335,7 @@ export function useDashboardLayoutSimple() {
         }
 
         const currentSubscription = subscriptions?.find(
-          (sub) => sub.stripeSubscriptionId
+          (sub) => sub.stripeSubscriptionId,
         );
 
         if (currentSubscription?.stripeSubscriptionId) {
@@ -357,7 +366,7 @@ export function useDashboardLayoutSimple() {
               JSON.stringify({
                 data: updatedSubscription,
                 timestamp: Date.now(),
-              })
+              }),
             );
           }
         }
@@ -393,7 +402,11 @@ export function useDashboardLayoutSimple() {
     }
   }, [isHydrated]);
 
-  // Logique d'onboarding basée sur le champ hasSeenOnboarding du user
+  // Defensive fallback: onboarding modal in the dashboard.
+  // This should normally NEVER trigger — users with incomplete onboarding are
+  // redirected to /auth/signup by dashboard/layout.jsx (server-side) before
+  // reaching client code. If this fires, it means we have an inconsistent state
+  // (e.g. user has a subscription but onboardingStep !== "completed").
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [onboardingLoading, setOnboardingLoading] = useState(false);
 
@@ -401,14 +414,18 @@ export function useDashboardLayoutSimple() {
     if (!session?.user || !isHydrated) return;
 
     const isOwner = session.user.role === "owner";
-    const hasSeenOnboarding = session.user.hasSeenOnboarding;
+    const step = getOnboardingStep(session.user);
 
-    // Afficher l'onboarding si l'utilisateur est owner et n'a jamais vu l'onboarding
-    if (isOwner && !hasSeenOnboarding) {
+    if (isOwner && step !== "completed") {
+      console.warn(
+        `⚠️ [ONBOARDING FALLBACK] Modal affiché pour ${session.user.email} — onboardingStep: "${step}". ` +
+          "Cet état ne devrait pas se produire : l'utilisateur devrait avoir été redirigé par dashboard/layout.jsx.",
+      );
       setIsOnboardingOpen(true);
     }
   }, [
     session?.user?.role,
+    session?.user?.onboardingStep,
     session?.user?.hasSeenOnboarding,
     session?.user?.id,
     isHydrated,
@@ -420,6 +437,7 @@ export function useDashboardLayoutSimple() {
     try {
       await authClient.updateUser({
         hasSeenOnboarding: true,
+        onboardingStep: "completed",
       });
 
       setIsOnboardingOpen(false);
@@ -437,74 +455,97 @@ export function useDashboardLayoutSimple() {
   }, []);
 
   // Logique d'abonnement — stabilisées avec useCallback
-  const hasFeature = useCallback((feature) => {
-    if (!subscription) return false;
-    return subscription.limits?.[feature] > 0;
-  }, [subscription]);
+  const hasFeature = useCallback(
+    (feature) => {
+      if (!subscription) return false;
+      return subscription.limits?.[feature] > 0;
+    },
+    [subscription],
+  );
 
-  const getLimit = useCallback((feature) => {
-    return subscription?.limits?.[feature] || 0;
-  }, [subscription]);
+  const getLimit = useCallback(
+    (feature) => {
+      return subscription?.limits?.[feature] || 0;
+    },
+    [subscription],
+  );
 
-  const isActive = useCallback((requirePaidSubscription = false) => {
-    // 🔒 Si l'abonnement est en cours de chargement, vérifier le cache uniquement
-    // Ne PAS autoriser l'accès par défaut (sécurité)
-    if (isLoading && !subscription) {
-      // Vérifier le cache pour éviter les flashs SI un cache valide existe
-      const organizationId =
-        activeOrganization?.id || session?.session?.activeOrganizationId;
-      if (organizationId) {
-        try {
-          const cacheKey = `subscription-${organizationId}`;
-          const cached = localStorage.getItem(cacheKey);
-          if (cached) {
-            const { data: cachedSub, timestamp } = JSON.parse(cached);
-            // Vérifier que le cache n'est pas expiré (5 minutes)
-            const isValidCache = Date.now() - timestamp < 5 * 60 * 1000;
-            if (isValidCache && (cachedSub?.status === "active" || cachedSub?.status === "trialing")) {
-              return true; // Utiliser le cache valide pendant le chargement
-            }
-            // Vérifier aussi les abonnements canceled mais encore valides
-            if (isValidCache && cachedSub?.status === "canceled" && cachedSub?.periodEnd) {
-              if (new Date(cachedSub.periodEnd) > new Date()) {
-                return true;
+  const isActive = useCallback(
+    (requirePaidSubscription = false) => {
+      // 🔒 Si l'abonnement est en cours de chargement, vérifier le cache uniquement
+      // Ne PAS autoriser l'accès par défaut (sécurité)
+      if (isLoading && !subscription) {
+        // Vérifier le cache pour éviter les flashs SI un cache valide existe
+        const organizationId =
+          activeOrganization?.id || session?.session?.activeOrganizationId;
+        if (organizationId) {
+          try {
+            const cacheKey = `subscription-${organizationId}`;
+            const cached = localStorage.getItem(cacheKey);
+            if (cached) {
+              const { data: cachedSub, timestamp } = JSON.parse(cached);
+              // Vérifier que le cache n'est pas expiré (5 minutes)
+              const isValidCache = Date.now() - timestamp < 5 * 60 * 1000;
+              if (
+                isValidCache &&
+                (cachedSub?.status === "active" ||
+                  cachedSub?.status === "trialing")
+              ) {
+                return true; // Utiliser le cache valide pendant le chargement
+              }
+              // Vérifier aussi les abonnements canceled mais encore valides
+              if (
+                isValidCache &&
+                cachedSub?.status === "canceled" &&
+                cachedSub?.periodEnd
+              ) {
+                if (new Date(cachedSub.periodEnd) > new Date()) {
+                  return true;
+                }
               }
             }
+          } catch {
+            // Ignorer les erreurs de cache
           }
-        } catch {
-          // Ignorer les erreurs de cache
         }
+        // 🔒 Par défaut, NE PAS autoriser l'accès pendant le chargement (sécurité)
+        // Le middleware serveur a déjà validé l'abonnement, donc on attend juste la confirmation client
+        return false;
       }
-      // 🔒 Par défaut, NE PAS autoriser l'accès pendant le chargement (sécurité)
-      // Le middleware serveur a déjà validé l'abonnement, donc on attend juste la confirmation client
-      return false;
-    }
 
-    // Vérifier si l'abonnement Stripe est actif ou en période d'essai Stripe
-    const hasActiveSubscription =
-      subscription?.status === "active" || subscription?.status === "trialing";
+      // Vérifier si l'abonnement Stripe est actif ou en période d'essai Stripe
+      const hasActiveSubscription =
+        subscription?.status === "active" ||
+        subscription?.status === "trialing";
 
-    // ✅ Vérifier aussi si l'abonnement est annulé mais encore dans la période payée (prorata)
-    const hasCanceledButValidSubscription =
-      subscription?.status === "canceled" &&
-      subscription?.periodEnd &&
-      new Date(subscription.periodEnd) > new Date();
+      // ✅ Vérifier aussi si l'abonnement est annulé mais encore dans la période payée (prorata)
+      const hasCanceledButValidSubscription =
+        subscription?.status === "canceled" &&
+        subscription?.periodEnd &&
+        new Date(subscription.periodEnd) > new Date();
 
-    const hasValidSubscription =
-      hasActiveSubscription || hasCanceledButValidSubscription;
+      const hasValidSubscription =
+        hasActiveSubscription || hasCanceledButValidSubscription;
 
-    // Si on exige un abonnement payant, ignorer la période d'essai Stripe (trialing)
-    if (requirePaidSubscription) {
-      return (
-        subscription?.status === "active" || hasCanceledButValidSubscription
-      );
-    }
+      // Si on exige un abonnement payant, ignorer la période d'essai Stripe (trialing)
+      if (requirePaidSubscription) {
+        return (
+          subscription?.status === "active" || hasCanceledButValidSubscription
+        );
+      }
 
-    // ⚠️ IMPORTANT: On ne fait plus de fallback sur le trial organisation
-    // Seuls les abonnements Stripe sont acceptés (active, trialing, canceled valide)
-    // Les anciens utilisateurs avec trial organisation devront souscrire via Stripe
-    return hasValidSubscription;
-  }, [subscription, isLoading, activeOrganization?.id, session?.session?.activeOrganizationId]);
+      // ⚠️ IMPORTANT: On ne fait plus de fallback sur le trial organisation
+      // Seuls les abonnements Stripe sont acceptés (active, trialing, canceled valide)
+      // Les anciens utilisateurs avec trial organisation devront souscrire via Stripe
+      return hasValidSubscription;
+    },
+    [
+      subscription,
+      isLoading,
+      activeOrganization?.id,
+      session?.session?.activeOrganizationId,
+    ],
+  );
 
   // Fonction de rafraîchissement simple
   const refreshLayoutData = useCallback(() => {
@@ -537,7 +578,8 @@ export function useDashboardLayoutSimple() {
 
   const user = session?.user || cachedUser;
   const shouldShowOnboarding =
-    session?.user?.role === "owner" && !session?.user?.hasSeenOnboarding;
+    session?.user?.role === "owner" &&
+    getOnboardingStep(session?.user) !== "completed";
   const combinedLoading = isLoading || sessionLoading || orgLoading;
   const combinedInitialized = isInitialized && isHydrated && !orgLoading;
 
@@ -581,6 +623,6 @@ export function useDashboardLayoutSimple() {
       combinedInitialized,
       isHydrated,
       refreshLayoutData,
-    ]
+    ],
   );
 }

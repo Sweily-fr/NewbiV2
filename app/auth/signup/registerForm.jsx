@@ -133,10 +133,10 @@ const RegisterFormContent = ({ onSuccess: onSuccessProp }) => {
           }
 
           // Transition vers la création d'espace de travail
+          // onboardingStep: "workspace" is already set by user.create hook in auth.js
           if (onSuccessProp) {
             onSuccessProp();
           } else {
-            localStorage.setItem("onboarding_step", "workspace");
             window.location.reload();
           }
         },
