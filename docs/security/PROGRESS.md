@@ -29,11 +29,11 @@ Reecrire le middleware avec logique inversee : toutes les routes /api/\* protege
 
 ### Livrables prevus
 
-- [ ] src/middleware/subscription.js reecrit (logique inversee)
-- [ ] PUBLIC_API_ROUTES avec commentaire justificatif par entree
-- [ ] Mode logging-only (variable MIDDLEWARE_ENFORCE)
-- [ ] Deploy staging + analyse logs 24h
-- [ ] Activation enforcement
+- [x] src/middleware/subscription.js reecrit (logique inversee)
+- [x] PUBLIC_API_ROUTES avec commentaire justificatif par entree (14 routes)
+- [x] Mode logging-only (variable MIDDLEWARE_ENFORCE=false)
+- [ ] Deploy staging + analyse logs 24-48h
+- [ ] Activation enforcement (MIDDLEWARE_ENFORCE=true)
 
 ### Tests a passer
 
@@ -46,7 +46,7 @@ HAUT-12 (routes API echappent au middleware), MOYEN-13 (fail-open sur routes API
 
 ### Statut
 
-A faire — en attente de validation Sprint 1d.
+Phase 1/3 livree (logging-only). En attente de deploy staging + analyse logs.
 
 ---
 
@@ -117,6 +117,15 @@ A faire — en attente de validation Sprint 1d.
 | BAS-32 (Vercel preview)                | Bas      | Sprint 4    | A faire |
 
 ## Journal de bord
+
+### 2026-04-28 — Sprint 1e phase 1/3 livree (logging-only middleware)
+
+- Middleware reecrit en deny-by-default
+- 14 routes dans PUBLIC_API_ROUTES avec commentaires justificatifs
+- Mode dry-run via MIDDLEWARE_ENFORCE=false (loggue sans bloquer)
+- middleware.js simplifie (catch fatal fail-closed)
+- INTERNAL_API_SECRET genere (a ajouter dans Vercel dashboard avant Sprint 3)
+- Prochaine etape : deploy staging, smoke test 30 min, analyse logs 24-48h
 
 ### 2026-04-28 — Sprint 1d termine
 
