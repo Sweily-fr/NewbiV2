@@ -44,8 +44,3 @@ next-env.d.ts
 e2e/.auth/
 /test-results/
 /playwright-report/
-
-# Cypress artifacts (screenshots, videos, downloads from runs)
-cypress/videos/
-cypress/screenshots/
-cypress/downloads/
