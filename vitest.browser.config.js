@@ -5,7 +5,6 @@ import { playwright } from "@vitest/browser-playwright";
 
 /**
  * Browser-mode Vitest config — runs tests in a REAL browser (Chromium via Playwright).
- * Equivalent of Cypress Component Testing for React unit/integration tests.
  *
  * Use the separate `__tests__/browser/` folder so these tests are opt-in and
  * don't slow down `npm test` (which uses happy-dom).

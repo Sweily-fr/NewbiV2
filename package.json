@@ -18,9 +18,6 @@
     "e2e:ui": "playwright test --ui",
     "e2e:debug": "PWDEBUG=1 playwright test --headed",
     "e2e:report": "playwright show-report",
-    "cy:open": "TS_NODE_PROJECT=cypress/tsconfig.json TS_NODE_TRANSPILE_ONLY=true cypress open --e2e",
-    "cy:run": "TS_NODE_PROJECT=cypress/tsconfig.json TS_NODE_TRANSPILE_ONLY=true cypress run",
-    "cy:warmup": "curl -s -o /dev/null http://localhost:3000/auth/login http://localhost:3000/dashboard http://localhost:3000/onboarding http://localhost:3000/dashboard/clients http://localhost:3000/dashboard/outils/factures http://localhost:3000/dashboard/outils/devis && echo 'Routes warmed up.'",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -152,7 +149,6 @@
     "@vitest/coverage-v8": "^4.0.18",
     "@vitest/ui": "^4.1.5",
     "bcryptjs": "^3.0.3",
-    "cypress": "^14.5.4",
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "15.3.4",

@@ -9,14 +9,14 @@ const isCI = !!process.env.CI;
 const isHeaded = process.argv.includes("--headed");
 
 // Use a locally-installed Chromium-based browser instead of Playwright's
-// bundled binary. BRAVE_PATH can be overridden via env if you prefer Arc or Chrome.
-const BRAVE_PATH =
+// bundled binary. PLAYWRIGHT_BROWSER_PATH can be overridden via env.
+const OPERA_PATH =
   process.env.PLAYWRIGHT_BROWSER_PATH ||
-  "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser";
+  "/Applications/Opera.app/Contents/MacOS/Opera";
 
 // Launch options merge: local browser + (optionally) slowMo in headed mode.
 const launchOptions = {
-  executablePath: BRAVE_PATH,
+  executablePath: OPERA_PATH,
   ...(isHeaded && { slowMo: 300 }),
 };
 
