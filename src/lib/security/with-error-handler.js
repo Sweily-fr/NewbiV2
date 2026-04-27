@@ -1,6 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used in Sprint 1b implementation
 import { NextResponse } from "next/server";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used in Sprint 1b implementation
 import { apiError } from "./api-error";
 
 /**
@@ -21,7 +19,19 @@ import { apiError } from "./api-error";
  * @param {(request: Request, context?: any) => Promise<NextResponse>} handler - Route handler function
  * @returns {(request: Request, context?: any) => Promise<NextResponse>} - Wrapped handler
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- params used in Sprint 1b
-export function withErrorHandler(_handler) {
-  throw new Error("Not implemented yet — Sprint 1b");
+export function withErrorHandler(handler) {
+  return async (request, context) => {
+    try {
+      return await handler(request, context);
+    } catch (error) {
+      // NextResponse thrown by security helpers (requireSession, apiError, etc.)
+      // These are intentional "error responses", not crashes — return them as-is.
+      if (error instanceof NextResponse) {
+        return error;
+      }
+
+      // Unexpected error — log details server-side, return generic message to client
+      return apiError(500, "Erreur serveur", error);
+    }
+  };
 }

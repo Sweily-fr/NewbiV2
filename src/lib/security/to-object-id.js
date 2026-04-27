@@ -1,7 +1,7 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used in Sprint 1b implementation
 import { ObjectId } from "mongodb";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used in Sprint 1b implementation
 import { apiError } from "./api-error";
+
+const OBJECT_ID_REGEX = /^[0-9a-f]{24}$/;
 
 /**
  * Convert a string or ObjectId to a MongoDB ObjectId, with validation.
@@ -12,9 +12,17 @@ import { apiError } from "./api-error";
  *
  * @param {string|import("mongodb").ObjectId} id - ID to convert
  * @returns {import("mongodb").ObjectId} - Valid MongoDB ObjectId
- * @throws {NextResponse} 400 "ID invalide" if the string is not a valid 24-char hex ObjectId
+ * @throws {NextResponse} 400 "ID invalide" if the string is not a valid 24-char lowercase hex ObjectId
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- params used in Sprint 1b
-export function toObjectId(_id) {
-  throw new Error("Not implemented yet — Sprint 1b");
+export function toObjectId(id) {
+  // Pass-through if already an ObjectId
+  if (id instanceof ObjectId) {
+    return id;
+  }
+
+  if (typeof id !== "string" || !OBJECT_ID_REGEX.test(id)) {
+    throw apiError(400, "ID invalide");
+  }
+
+  return new ObjectId(id);
 }

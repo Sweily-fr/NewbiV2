@@ -1,4 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used in Sprint 1b implementation
 import { NextResponse } from "next/server";
 
 /**
@@ -14,7 +13,17 @@ import { NextResponse } from "next/server";
  * @param {any} [internalDetails] - Technical details logged server-side only (Error, string, object)
  * @returns {NextResponse} JSON response with { error: publicMessage }
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- params used in Sprint 1b
-export function apiError(_status, _publicMessage, _internalDetails) {
-  throw new Error("Not implemented yet — Sprint 1b");
+export function apiError(status, publicMessage, internalDetails) {
+  if (internalDetails !== undefined) {
+    console.error(
+      `❌ [API ERROR ${status}] ${publicMessage}`,
+      internalDetails instanceof Error
+        ? { message: internalDetails.message, stack: internalDetails.stack }
+        : internalDetails,
+    );
+  } else {
+    console.error(`❌ [API ERROR ${status}] ${publicMessage}`);
+  }
+
+  return NextResponse.json({ error: publicMessage }, { status });
 }

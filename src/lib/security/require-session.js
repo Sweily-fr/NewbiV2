@@ -1,6 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used in Sprint 1b implementation
 import { auth } from "@/src/lib/auth";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used in Sprint 1b implementation
 import { apiError } from "./api-error";
 
 /**
@@ -14,7 +12,18 @@ import { apiError } from "./api-error";
  *   - cookieHeader: raw cookie header string for proxying to backend services
  * @throws {NextResponse} 401 "Non authentifie" if no valid session
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- params used in Sprint 1b
-export async function requireSession(_request) {
-  throw new Error("Not implemented yet — Sprint 1b");
+export async function requireSession(request) {
+  const session = await auth.api.getSession({
+    headers: request.headers,
+  });
+
+  if (!session?.user) {
+    throw apiError(401, "Non authentifié");
+  }
+
+  return {
+    user: session.user,
+    session: session.session,
+    cookieHeader: request.headers.get("cookie") || "",
+  };
 }

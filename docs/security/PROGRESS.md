@@ -1,61 +1,68 @@
 # Etat d'avancement — Refonte securite
 
-> Derniere mise a jour : 2026-04-27 23:00
-> Sprint en cours : Sprint 1a
-> Statut global : 0/8 sprints termines
+> Derniere mise a jour : 2026-04-28 00:00
+> Sprint en cours : Sprint 1c
+> Statut global : 0/8 sprints termines (Sprint 1a + 1b sous-sprints termines)
 
 ## Vue d'ensemble
 
-| Sprint | Description                                                              | Statut   | Date debut | Date fin | Notes |
-| ------ | ------------------------------------------------------------------------ | -------- | ---------- | -------- | ----- |
-| 1a     | Squelette helpers + tests                                                | En cours | 2026-04-27 | —        | —     |
-| 1b     | Helpers de base (requireSession, apiError, withErrorHandler, toObjectId) | A faire  | —          | —        | —     |
-| 1c     | Helpers RBAC (requireOrgMembership, requireActiveSubscription)           | A faire  | —          | —        | —     |
-| 1d     | Helpers complements (requireInternalSecret, assertModified)              | A faire  | —          | —        | —     |
-| 1e     | Middleware deny-by-default (logging-only puis enforcement)               | A faire  | —          | —        | —     |
-| 2      | Urgences financieres (input: false, revocation sessions, fallback email) | A faire  | —          | —        | —     |
-| 3      | Routes donnees sensibles (PDF data, members, invitations)                | A faire  | —          | —        | —     |
-| 4      | Routes proxy et multi-tenant (banking-sync, trustedOrigins)              | A faire  | —          | —        | —     |
-| 5      | Validation inputs + coherence ObjectId                                   | A faire  | —          | —        | —     |
-| 6      | RBAC unifie frontend/backend                                             | A faire  | —          | —        | —     |
-| 7      | Consistency checks + monitoring                                          | A faire  | —          | —        | —     |
-| 8      | Cleanup + dette residuelle                                               | A faire  | —          | —        | —     |
+| Sprint | Description                                                              | Statut  | Date debut | Date fin   | Notes                                       |
+| ------ | ------------------------------------------------------------------------ | ------- | ---------- | ---------- | ------------------------------------------- |
+| 1a     | Squelette helpers + tests                                                | Termine | 2026-04-27 | 2026-04-27 | 22 fichiers, 57 tests skip, commit 65c9714f |
+| 1b     | Helpers de base (requireSession, apiError, withErrorHandler, toObjectId) | Termine | 2026-04-27 | 2026-04-28 | 27 tests pass, 30 skip                      |
+| 1c     | Helpers RBAC (requireOrgMembership, requireActiveSubscription)           | A faire | —          | —          | —                                           |
+| 1d     | Helpers complements (requireInternalSecret, assertModified)              | A faire | —          | —          | —                                           |
+| 1e     | Middleware deny-by-default (logging-only puis enforcement)               | A faire | —          | —          | —                                           |
+| 2      | Urgences financieres (input: false, revocation sessions, fallback email) | A faire | —          | —          | —                                           |
+| 3      | Routes donnees sensibles (PDF data, members, invitations)                | A faire | —          | —          | —                                           |
+| 4      | Routes proxy et multi-tenant (banking-sync, trustedOrigins)              | A faire | —          | —          | —                                           |
+| 5      | Validation inputs + coherence ObjectId                                   | A faire | —          | —          | —                                           |
+| 6      | RBAC unifie frontend/backend                                             | A faire | —          | —          | —                                           |
+| 7      | Consistency checks + monitoring                                          | A faire | —          | —          | —                                           |
+| 8      | Cleanup + dette residuelle                                               | A faire | —          | —          | —                                           |
 
-## Sprint en cours : 1a — Squelette helpers + tests
+## Sprint en cours : 1c — Helpers RBAC
 
 ### Objectif
 
-Creer la structure de fichiers pour les 8 helpers de securite avec JSDoc complet, et la structure de tests associee. Aucune logique implementee a cette etape.
+Implementer requireOrgMembership et requireActiveSubscription. Ces helpers protegent les routes multi-tenant.
 
 ### Livrables prevus
 
-- [x] src/lib/security/require-session.js (squelette + JSDoc)
-- [x] src/lib/security/require-org-membership.js (squelette + JSDoc)
-- [x] src/lib/security/require-internal-secret.js (squelette + JSDoc)
-- [x] src/lib/security/require-active-subscription.js (squelette + JSDoc)
-- [x] src/lib/security/api-error.js (squelette + JSDoc)
-- [x] src/lib/security/with-error-handler.js (squelette + JSDoc)
-- [x] src/lib/security/to-object-id.js (squelette + JSDoc)
-- [x] src/lib/security/assert-modified.js (squelette + JSDoc)
-- [x] src/lib/security/index.js (barrel export)
-- [x] **tests**/security/ (structure de tests)
+- [ ] src/lib/security/require-org-membership.js (implementation)
+- [ ] src/lib/security/require-active-subscription.js (implementation)
+- [ ] src/lib/security/role-permissions.js (copie synchronisee du backend)
+- [ ] **tests**/security/require-org-membership.test.js (10 tests actifs)
+- [ ] **tests**/security/require-active-subscription.test.js (7 tests actifs)
 
 ### Tests a passer
 
-- [ ] npm test passe avec les tests skip
-
-### Decisions prises pendant ce sprint
-
-- toObjectId place dans Sprint 1b (pas 1d) car Sprint 2 en depend (ADR-002)
-- Chaque test file contient les cas limites identifies pendant l'audit (ex: uppercase hex pour toObjectId, matchedCount>0 mais modifiedCount===0 pour assertModified)
+- [ ] 44 tests pass (27 existants + 17 nouveaux), 13 skip (Sprint 1d)
 
 ### Findings resolus par ce sprint
 
-Aucun (squelette uniquement).
+Pattern disponible pour CRITIQUE-8 a 10, MOYEN-16.
 
 ### Statut
 
-En cours — demarre le 2026-04-27. Squelettes et tests crees. En attente de validation + test npm.
+A faire — en attente de validation Sprint 1b.
+
+---
+
+## Sprints termines
+
+### Sprint 1a — Squelette helpers + tests (2026-04-27)
+
+- 22 fichiers crees (4 docs + 9 helpers + 1 barrel + 8 tests)
+- 57 tests skip, 0 erreur
+- Commit: 65c9714f
+
+### Sprint 1b — Helpers de base (2026-04-28)
+
+- 4 helpers implementes : apiError, toObjectId, withErrorHandler, requireSession
+- 27 tests pass, 30 skip, 0 erreur
+- Decision technique : fakeRequest helper dans les tests pour contourner la limitation happy-dom (cookie header filtre par le constructeur Request)
+- Finding HAUT-21 : pattern apiError disponible pour remplacer les error.message dans les routes
 
 ---
 
@@ -97,6 +104,13 @@ En cours — demarre le 2026-04-27. Squelettes et tests crees. En attente de val
 | BAS-32 (Vercel preview)                | Bas      | Sprint 4    | A faire |
 
 ## Journal de bord
+
+### 2026-04-28 — Sprint 1b termine
+
+- 4 helpers implementes : apiError, toObjectId, withErrorHandler, requireSession
+- 27 tests actifs pass, 30 skip restants
+- Contournement happy-dom : fakeRequest helper car Request constructor filtre le header cookie
+- Branche security-refactor creee, Sprint 1a commite (65c9714f)
 
 ### 2026-04-27 — Demarrage du Sprint 1a
 
