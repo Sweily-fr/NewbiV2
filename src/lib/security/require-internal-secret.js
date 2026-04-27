@@ -1,4 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used in Sprint 1d implementation
+import { timingSafeEqual } from "crypto";
 import { apiError } from "./api-error";
 
 /**
@@ -8,11 +8,24 @@ import { apiError } from "./api-error";
  *
  * @param {Request} request - Next.js request object
  * @returns {void}
- * @throws {NextResponse} 401 "Non autorise" if X-Internal-Secret header is missing or invalid
+ * @throws {NextResponse} 401 "Non authentifié" if X-Internal-Secret header is missing or invalid
+ * @throws {NextResponse} 500 "Erreur de configuration" if INTERNAL_API_SECRET env var is not set
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- params used in Sprint 1d
-export function requireInternalSecret(_request) {
-  throw new Error("Not implemented yet — Sprint 1d");
+export function requireInternalSecret(request) {
+  const expected = process.env.INTERNAL_API_SECRET;
+
+  if (!expected) {
+    console.error(
+      "❌ [INTERNAL SECRET] INTERNAL_API_SECRET is not defined in environment variables",
+    );
+    throw apiError(500, "Erreur de configuration");
+  }
+
+  const provided = request.headers.get("x-internal-secret") || "";
+
+  if (!provided || !constantTimeEqual(provided, expected)) {
+    throw apiError(401, "Non authentifié");
+  }
 }
 
 /**
@@ -23,7 +36,49 @@ export function requireInternalSecret(_request) {
  * @param {Request} request - Next.js request object
  * @returns {boolean} true if valid internal secret is present
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- params used in Sprint 1d
-export function hasInternalSecret(_request) {
-  throw new Error("Not implemented yet — Sprint 1d");
+export function hasInternalSecret(request) {
+  const expected = process.env.INTERNAL_API_SECRET;
+
+  if (!expected) {
+    console.warn(
+      "⚠️ [INTERNAL SECRET] INTERNAL_API_SECRET is not defined — hasInternalSecret returns false",
+    );
+    return false;
+  }
+
+  const provided = request.headers.get("x-internal-secret") || "";
+
+  if (!provided) {
+    return false;
+  }
+
+  return constantTimeEqual(provided, expected);
+}
+
+/**
+ * Constant-time string comparison to prevent timing attacks.
+ * Both strings are padded/truncated to the same length before comparison.
+ *
+ * @param {string} a
+ * @param {string} b
+ * @returns {boolean}
+ */
+function constantTimeEqual(a, b) {
+  const bufA = Buffer.from(a, "utf-8");
+  const bufB = Buffer.from(b, "utf-8");
+
+  // timingSafeEqual requires same length — pad the shorter one
+  if (bufA.length !== bufB.length) {
+    // Compare against b anyway to avoid short-circuiting on length
+    const padded = Buffer.alloc(bufB.length);
+    bufA.copy(padded);
+    try {
+      timingSafeEqual(padded, bufB);
+    } catch {
+      // Shouldn't happen with same-length buffers, but be safe
+    }
+    return false;
+  }
+
+  return timingSafeEqual(bufA, bufB);
 }

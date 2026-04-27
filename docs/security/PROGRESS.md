@@ -1,8 +1,8 @@
 # Etat d'avancement — Refonte securite
 
-> Derniere mise a jour : 2026-04-28 00:10
-> Sprint en cours : Sprint 1d
-> Statut global : 0/8 sprints termines (Sprint 1a + 1b + 1c sous-sprints termines)
+> Derniere mise a jour : 2026-04-28 00:15
+> Sprint en cours : Sprint 1e
+> Statut global : 0/8 sprints termines (Sprint 1a-1d sous-sprints termines, tous helpers implementes)
 
 ## Vue d'ensemble
 
@@ -11,7 +11,7 @@
 | 1a     | Squelette helpers + tests                                                | Termine | 2026-04-27 | 2026-04-27 | 22 fichiers, 57 tests skip, commit 65c9714f |
 | 1b     | Helpers de base (requireSession, apiError, withErrorHandler, toObjectId) | Termine | 2026-04-27 | 2026-04-28 | 27 tests pass, 30 skip                      |
 | 1c     | Helpers RBAC (requireOrgMembership, requireActiveSubscription)           | Termine | 2026-04-28 | 2026-04-28 | 44 tests pass, 13 skip                      |
-| 1d     | Helpers complements (requireInternalSecret, assertModified)              | A faire | —          | —          | —                                           |
+| 1d     | Helpers complements (requireInternalSecret, assertModified)              | Termine | 2026-04-28 | 2026-04-28 | 57 tests pass, 0 skip                       |
 | 1e     | Middleware deny-by-default (logging-only puis enforcement)               | A faire | —          | —          | —                                           |
 | 2      | Urgences financieres (input: false, revocation sessions, fallback email) | A faire | —          | —          | —                                           |
 | 3      | Routes donnees sensibles (PDF data, members, invitations)                | A faire | —          | —          | —                                           |
@@ -21,30 +21,32 @@
 | 7      | Consistency checks + monitoring                                          | A faire | —          | —          | —                                           |
 | 8      | Cleanup + dette residuelle                                               | A faire | —          | —          | —                                           |
 
-## Sprint en cours : 1d — Helpers complements
+## Sprint en cours : 1e — Middleware deny-by-default
 
 ### Objectif
 
-Implementer requireInternalSecret, hasInternalSecret, et assertModified.
+Reecrire le middleware avec logique inversee : toutes les routes /api/\* protegees par defaut, seules les routes dans PUBLIC_API_ROUTES sont exclues. Deploy en mode logging-only d'abord, puis enforcement.
 
 ### Livrables prevus
 
-- [ ] src/lib/security/require-internal-secret.js (implementation)
-- [ ] src/lib/security/assert-modified.js (implementation)
-- [ ] **tests**/security/require-internal-secret.test.js (8 tests actifs)
-- [ ] **tests**/security/assert-modified.test.js (5 tests actifs)
+- [ ] src/middleware/subscription.js reecrit (logique inversee)
+- [ ] PUBLIC_API_ROUTES avec commentaire justificatif par entree
+- [ ] Mode logging-only (variable MIDDLEWARE_ENFORCE)
+- [ ] Deploy staging + analyse logs 24h
+- [ ] Activation enforcement
 
 ### Tests a passer
 
-- [ ] 57 tests pass (44 existants + 13 nouveaux), 0 skip
+- [ ] Tous les tests security existants passent (57)
+- [ ] Smoke test manuel en staging (30 min)
 
 ### Findings resolus par ce sprint
 
-Pattern disponible pour CRITIQUE-1 a 4 (Puppeteer), MOYEN-25 (monitoring).
+HAUT-12 (routes API echappent au middleware), MOYEN-13 (fail-open sur routes API).
 
 ### Statut
 
-A faire — en attente de validation Sprint 1c.
+A faire — en attente de validation Sprint 1d.
 
 ---
 
@@ -56,11 +58,23 @@ A faire — en attente de validation Sprint 1c.
 - 57 tests skip, 0 erreur
 - Commit: 65c9714f
 
+### Sprint 1d — Helpers complements (2026-04-28)
+
+- 2 helpers implementes : requireInternalSecret (+ hasInternalSecret), assertModified
+- 57 tests pass, 0 skip — tous les helpers sont implementes
+- Constant-time comparison via crypto.timingSafeEqual
+- INTERNAL_API_SECRET : 500 si non defini (requireInternalSecret), false+warn (hasInternalSecret)
+
+### Sprint 1c — Helpers RBAC (2026-04-28)
+
+- 2 helpers implementes : requireOrgMembership, requireActiveSubscription
+- role-permissions.js copie et verifiee identique au backend
+- 44 tests pass, annotation @vitest-environment node (ADR-003)
+
 ### Sprint 1b — Helpers de base (2026-04-28)
 
 - 4 helpers implementes : apiError, toObjectId, withErrorHandler, requireSession
-- 27 tests pass, 30 skip, 0 erreur
-- Decision technique : fakeRequest helper dans les tests pour contourner la limitation happy-dom (cookie header filtre par le constructeur Request)
+- 27 tests pass, 0 erreur
 - Finding HAUT-21 : pattern apiError disponible pour remplacer les error.message dans les routes
 
 ---
@@ -103,6 +117,14 @@ A faire — en attente de validation Sprint 1c.
 | BAS-32 (Vercel preview)                | Bas      | Sprint 4    | A faire |
 
 ## Journal de bord
+
+### 2026-04-28 — Sprint 1d termine
+
+- 2 helpers implementes : requireInternalSecret (avec hasInternalSecret), assertModified
+- Comparaison constant-time via crypto.timingSafeEqual pour le secret interne
+- assertModified : tolerant pour matchedCount>0/modifiedCount===0 (Decision B)
+- 57 tests pass, 0 skip — tous les helpers de securite sont implementes et testes
+- Pas de .env.example dans le projet — INTERNAL_API_SECRET documente dans le code et PROGRESS.md
 
 ### 2026-04-28 — Sprint 1c termine
 
