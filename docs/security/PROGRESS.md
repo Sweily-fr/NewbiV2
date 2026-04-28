@@ -1,8 +1,10 @@
 # Etat d'avancement — Refonte securite
 
-> Derniere mise a jour : 2026-04-28 13:15
-> Sprint en cours : Sprint 3
-> Statut global : 1/8 sprints termines (Sprint 1a-1d + Sprint 2 termines, Sprint 1e en pause)
+> Derniere mise a jour : 2026-04-28 15:00
+> Sprint en cours : Sprint 3.2 (suppression /api/organization/members)
+> Statut global : 2/8 sprints termines (Sprint 1a-1d + Sprint 2 + Sprint 3.1 termines, Sprint 1e en pause)
+> Findings resolus a ce jour : 4 CRITIQUES + 3 HAUTS sur 29 total
+> Prochain sprint : 3.2 — resout CRITIQUE-5
 
 ## Vue d'ensemble
 
@@ -14,30 +16,29 @@
 | 1d     | Helpers complements (requireInternalSecret, assertModified)              | Termine  | 2026-04-28 | 2026-04-28 | 57 tests pass, 0 skip                       |
 | 1e     | Middleware deny-by-default (logging-only puis enforcement)               | En pause | 2026-04-28 | —          | Bloque: Edge Runtime + mongodb incompatible |
 | 2      | Urgences financieres (input: false, revocation sessions, fallback email) | Termine  | 2026-04-28 | 2026-04-28 | 3 livraisons, HAUT-22/26/34 resolus         |
-| 3      | Routes donnees sensibles (PDF data, members, invitations)                | A faire  | —          | —          | —                                           |
+| 3.1    | Routes PDF data (invoices, credit-notes, quotes, purchase-orders)        | Termine  | 2026-04-28 | 2026-04-28 | CRITIQUE 1-4 resolus, 8 routes securisees   |
+| 3.2    | Suppression /api/organization/members + invitations + subscription/check | A faire  | —          | —          | CRITIQUE-5, HAUT-6, MOYEN-7                 |
 | 4      | Routes proxy et multi-tenant (banking-sync, trustedOrigins)              | A faire  | —          | —          | —                                           |
 | 5      | Validation inputs + coherence ObjectId                                   | A faire  | —          | —          | —                                           |
 | 6      | RBAC unifie frontend/backend                                             | A faire  | —          | —          | —                                           |
 | 7      | Consistency checks + monitoring                                          | A faire  | —          | —          | —                                           |
 | 8      | Cleanup + dette residuelle                                               | A faire  | —          | —          | —                                           |
 
-## Sprint en cours : 3 — Routes donnees sensibles
+## Sprint en cours : 3.2 — Suppression routes non securisees
 
 ### Objectif
 
-Proteger les routes PDF data (dual-access: internal secret OU session+membership), supprimer la double route members, reduire les donnees de l'invitation GET, supprimer subscription/check.
+Supprimer la double route members (CRITIQUE-5), reduire les donnees de l'invitation GET (HAUT-6), supprimer subscription/check dead code (MOYEN-7).
 
 ### Livrables prevus
 
-- [ ] 4 routes PDF data migrees (invoices, credit-notes, quotes, purchase-orders)
-- [ ] Puppeteer: ajout header X-Internal-Secret
-- [ ] Suppression /api/organization/members (ancienne route sans auth)
-- [ ] Reduction donnees /api/invitations/[id] GET
-- [ ] Suppression /api/subscription/check (dead code)
+- [ ] Suppression /api/organization/members (ancienne route sans auth, doublon de /api/organizations/[id]/members)
+- [ ] Reduction donnees /api/invitations/[id] GET (supprimer email, organizationId, inviterId)
+- [ ] Suppression /api/subscription/check (dead code confirme)
 
 ### Findings resolus par ce sprint
 
-CRITIQUE-1 a 5, HAUT-6, MOYEN-7.
+CRITIQUE-5, HAUT-6, MOYEN-7.
 
 ### Statut
 
@@ -94,6 +95,17 @@ Config preview mono-branche a refactorer :
 - 22 fichiers crees (4 docs + 9 helpers + 1 barrel + 8 tests)
 - 57 tests skip, 0 erreur
 - Commit: 65c9714f
+
+### Sprint 3.1 — Routes PDF data securisees (2026-04-28)
+
+- 8 routes securisees : 4 data (dual-access) + 4 generate-pdf (requireSession + requireOrgMembership)
+- Pattern : hasInternalSecret (Puppeteer) OU cookie + membership (user)
+- Ordre auth strict : requireSession AVANT findOne (previent enumeration IDs)
+- 4 fuites de connexion MongoClient.connect() corrigees (remplacees par singleton mongoDb)
+- 8 leaks error.message supprimes (via withErrorHandler)
+- Commits : 298f21f3, a50d7868, cd31819e, 9c0aaeaa, 4a5ef1b6
+- Findings resolus : CRITIQUE-1, CRITIQUE-2, CRITIQUE-3, CRITIQUE-4
+- ADR-005 documente
 
 ### Sprint 2 — Urgences financieres (2026-04-28)
 
@@ -161,6 +173,20 @@ Config preview mono-branche a refactorer :
 | BAS-32 (Vercel preview)                | Bas      | Sprint 4    | A faire  |
 
 ## Journal de bord
+
+### 2026-04-28 — Session marathon : Sprint 1 a 3.1 en une journee
+
+Bilan de la journee :
+
+- Sprint 1a-1d termines : 8 helpers de securite, 57 tests, fondations posees
+- Sprint 1e mis en pause : middleware deny-by-default bloque par Edge Runtime + mongodb incompatible
+- Sprint 2 complet : input: false sur 10 champs, revocation sessions, verify-checkout strict
+- Sprint 3.1 complet : 4 routes PDF data securisees avec pattern dual-access
+- Total : 4 CRITIQUES + 3 HAUTS resolus en une journee
+- 15+ commits sur security-refactor, 194 tests pass en continu
+- Decouvertes : MOYEN-25 confirme empiriquement (ADR-004), INTERNAL_API_SECRET deja existante (reutilisee)
+- Finding corrige en cours de sprint : ordre auth (requireSession AVANT findOne) identifie et corrige apres review
+- Finding additionnel : generate-pdf non securise identifie et corrige dans le meme sprint
 
 ### 2026-04-28 — Sprint 3.1 complet (4 routes PDF data securisees)
 
@@ -291,7 +317,9 @@ Si tu reprends ce projet dans une nouvelle conversation Claude :
 ### ADR-005 : Pattern dual-access pour routes data PDF
 
 - **Date** : 2026-04-28
-- **Decision** : Les routes /api/_/data/[id] utilisent un pattern dual-access : X-Internal-Secret header (Puppeteer) OU session cookie + org membership (user authentifie). Les routes /api/_/generate-pdf verifient session + membership AVANT de lancer Puppeteer.
-- **Raison** : Puppeteer ne peut pas envoyer de cookie session (navigateur headless sans etat). Le secret partage (INTERNAL_API_SECRET) authentifie Puppeteer comme service interne de confiance. L'auth utilisateur est verifiee en amont dans generate-pdf.
-- **Pattern** : generate-pdf (requireSession + requireOrgMembership) → Puppeteer (x-internal-secret) → data route (hasInternalSecret skip auth).
-- **Impact** : 4 routes data (invoices, credit-notes, quotes, purchase-orders) + 4 routes generate-pdf.
+- **Contexte** : Les 4 routes /api/{type}/data/[id] (invoices, credit-notes, quotes, purchase-orders) doivent etre accessibles a la fois par les utilisateurs authentifies (via cookie de session) et par Puppeteer (qui genere les PDF cote serveur).
+- **Decision** : Pattern dual-access avec deux portes d'entree. hasInternalSecret(request) : si le header x-internal-secret matche INTERNAL_API_SECRET, Puppeteer est identifie et accede directement. Sinon : requireSession + requireOrgMembership pour verifier que l'user a acces a l'org proprietaire du document.
+- **Securite Puppeteer** : garantie en amont. La route /api/{type}/generate-pdf verifie session + membership AVANT de lancer Puppeteer. Donc Puppeteer ne recoit que des requetes pour des documents auxquels l'user a deja acces.
+- **Ordre auth strict** : requireSession AVANT toute lecture DB, puis fetch document, puis requireOrgMembership. Cet ordre empeche un attaquant non authentifie de distinguer 'ID existe' (403) vs 'ID n'existe pas' (404).
+- **Pattern** : generate-pdf (requireSession + requireOrgMembership) -> Puppeteer (x-internal-secret) -> data route (hasInternalSecret skip auth).
+- **Impact** : 4 routes data + 4 routes generate-pdf = 8 routes securisees.
