@@ -20,7 +20,17 @@ async function handler(request, { params }) {
   const { id } = await params;
   const invoiceId = toObjectId(id);
 
-  // Fetch the invoice first (needed for both auth paths)
+  const fromPuppeteer = hasInternalSecret(request);
+
+  // Auth check BEFORE any data access — prevents ID enumeration by
+  // unauthenticated attackers (they only see 401, never 404)
+  let authenticatedUserId = null;
+  if (!fromPuppeteer) {
+    const { user } = await requireSession(request);
+    authenticatedUserId = user.id;
+  }
+
+  // Fetch the invoice
   const invoice = await mongoDb.collection("invoices").findOne({
     _id: invoiceId,
   });
@@ -29,10 +39,10 @@ async function handler(request, { params }) {
     return apiError(404, "Facture introuvable");
   }
 
-  // Dual-access: internal secret (Puppeteer) OR session + membership
-  if (!hasInternalSecret(request)) {
-    const { user } = await requireSession(request);
-    await requireOrgMembership(user.id, invoice.workspaceId);
+  // Membership check (only for authenticated users, not Puppeteer —
+  // Puppeteer auth is done upstream in generate-pdf before launching browser)
+  if (authenticatedUserId) {
+    await requireOrgMembership(authenticatedUserId, invoice.workspaceId);
   }
 
   // Fetch related client data if present
