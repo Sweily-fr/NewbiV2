@@ -20,7 +20,7 @@ export async function GET(request, { params }) {
     if (!invitation) {
       return Response.json(
         { error: "Invitation non trouvée" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -54,7 +54,7 @@ export async function GET(request, { params }) {
     console.error("❌ Erreur lors de la récupération de l'invitation:", error);
     return Response.json(
       { error: "Erreur serveur", details: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -75,7 +75,7 @@ export async function POST(request, { params }) {
 
     console.log(
       `👤 Session utilisateur:`,
-      session?.user?.email || "Non connecté"
+      session?.user?.email || "Non connecté",
     );
 
     if (!session) {
@@ -98,7 +98,7 @@ export async function POST(request, { params }) {
         console.log("❌ Invitation non trouvée");
         return Response.json(
           { error: "Invitation non trouvée" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -110,7 +110,7 @@ export async function POST(request, { params }) {
             error: "Invitation expirée",
             details: `Cette invitation a expiré le ${new Date(invitation.expiresAt).toLocaleDateString("fr-FR")}. Veuillez demander une nouvelle invitation.`,
           },
-          { status: 410 }
+          { status: 410 },
         );
       }
 
@@ -122,7 +122,7 @@ export async function POST(request, { params }) {
             error: "Invitation déjà traitée",
             details: `Cette invitation a déjà été ${invitation.status === "accepted" ? "acceptée" : invitation.status === "rejected" ? "refusée" : "annulée"}.`,
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -131,14 +131,14 @@ export async function POST(request, { params }) {
 
       if (invitation.email.toLowerCase() !== session.user.email.toLowerCase()) {
         console.log(
-          "❌ L'utilisateur n'est pas le destinataire de cette invitation"
+          "❌ L'utilisateur n'est pas le destinataire de cette invitation",
         );
         return Response.json(
           {
             error: "Vous n'êtes pas le destinataire de cette invitation",
             details: `Cette invitation a été envoyée à ${invitation.email}, mais vous êtes connecté avec ${session.user.email}`,
           },
-          { status: 403 }
+          { status: 403 },
         );
       }
 
@@ -170,12 +170,12 @@ export async function POST(request, { params }) {
         console.log("❌ Échec acceptInvitation: pas d'organizationId");
         return Response.json(
           { error: "Échec de l'acceptation de l'invitation" },
-          { status: 500 }
+          { status: 500 },
         );
       }
 
       console.log(
-        `✅ ÉTAPE 1 OK: Membre ajouté à l'organisation ${organizationId}`
+        `✅ ÉTAPE 1 OK: Membre ajouté à l'organisation ${organizationId}`,
       );
 
       // ÉTAPE 2: Nettoyer les flags d'utilisateur invité
@@ -188,10 +188,14 @@ export async function POST(request, { params }) {
             $set: {
               isInvitedUser: false,
               pendingInvitationId: "",
+              hasSeenOnboarding: true,
+              onboardingStep: "completed",
             },
-          }
+          },
         );
-        console.log("✅ ÉTAPE 2 OK: Flags utilisateur nettoyés");
+        console.log(
+          "✅ ÉTAPE 2 OK: Flags utilisateur nettoyés + onboarding complété",
+        );
       } catch (cleanupError) {
         console.warn("⚠️ Erreur nettoyage flags (non-bloquant):", cleanupError);
       }
@@ -204,7 +208,7 @@ export async function POST(request, { params }) {
           body: { organizationId },
         });
         console.log(
-          `✅ ÉTAPE 3 OK: Organisation ${organizationId} définie comme active (session courante)`
+          `✅ ÉTAPE 3 OK: Organisation ${organizationId} définie comme active (session courante)`,
         );
 
         // ✅ FIX CRITIQUE: Mettre à jour TOUTES les sessions de l'utilisateur
@@ -213,10 +217,10 @@ export async function POST(request, { params }) {
           .collection("session")
           .updateMany(
             { userId: new ObjectId(session.user.id) },
-            { $set: { activeOrganizationId: organizationId } }
+            { $set: { activeOrganizationId: organizationId } },
           );
         console.log(
-          `✅ ÉTAPE 3 OK: ${updateResult.modifiedCount} session(s) mise(s) à jour avec organizationId`
+          `✅ ÉTAPE 3 OK: ${updateResult.modifiedCount} session(s) mise(s) à jour avec organizationId`,
         );
       } catch (orgError) {
         console.error("⚠️ Erreur setActiveOrganization:", orgError);
@@ -226,12 +230,11 @@ export async function POST(request, { params }) {
       // ÉTAPE 4: Synchroniser la facturation des sièges (NON-BLOQUANT)
       try {
         console.log(
-          `🔄 ÉTAPE 4: Synchronisation facturation pour organisation ${organizationId}`
+          `🔄 ÉTAPE 4: Synchronisation facturation pour organisation ${organizationId}`,
         );
         console.log(`👤 Utilisateur invité: ${session.user.email}`);
 
         const { mongoDb } = await import("@/src/lib/mongodb");
-        const { ObjectId } = await import("mongodb");
 
         // Vérifier que l'organisation a un abonnement avant de synchroniser
         const subscription = await mongoDb.collection("subscription").findOne({
@@ -240,11 +243,11 @@ export async function POST(request, { params }) {
 
         if (!subscription || !subscription.stripeSubscriptionId) {
           console.log(
-            `ℹ️ Organisation ${organizationId} en plan Free, pas de facturation à synchroniser`
+            `ℹ️ Organisation ${organizationId} en plan Free, pas de facturation à synchroniser`,
           );
         } else {
           console.log(
-            `📋 Organisation ${organizationId} a un abonnement Pro, synchronisation...`
+            `📋 Organisation ${organizationId} a un abonnement Pro, synchronisation...`,
           );
 
           const { auth: authInstance } = await import("@/src/lib/auth");
@@ -252,7 +255,7 @@ export async function POST(request, { params }) {
 
           await seatSyncService.syncSeatsAfterInvitationAccepted(
             organizationId,
-            adapter
+            adapter,
           );
 
           console.log(`✅ Facturation synchronisée avec succès`);
@@ -261,10 +264,10 @@ export async function POST(request, { params }) {
         // NE PAS bloquer l'acceptation si la facturation échoue
         console.error(
           "⚠️ Erreur synchronisation facturation (non-bloquant):",
-          billingError
+          billingError,
         );
         console.warn(
-          "⚠️ Le membre a été ajouté mais la facturation n'a pas été synchronisée"
+          "⚠️ Le membre a été ajouté mais la facturation n'a pas été synchronisée",
         );
         // Continuer sans erreur
       }
@@ -332,7 +335,7 @@ export async function POST(request, { params }) {
           console.log(`✅ Email envoyé à l'owner: ${owner.email}`);
         } else {
           console.log(
-            `ℹ️ Pas d'email à l'owner (owner = inviter ou owner non trouvé)`
+            `ℹ️ Pas d'email à l'owner (owner = inviter ou owner non trouvé)`,
           );
         }
 
@@ -350,7 +353,7 @@ export async function POST(request, { params }) {
         // Envoyer l'email de confirmation au nouveau membre
         if (memberUser?.email) {
           console.log(
-            `📧 Envoi email de confirmation au membre: ${memberUser.email}`
+            `📧 Envoi email de confirmation au membre: ${memberUser.email}`,
           );
           await sendEmail({
             to: memberUser.email,
@@ -358,7 +361,7 @@ export async function POST(request, { params }) {
             html: emailTemplates.memberJoinedConfirmation(emailData),
           });
           console.log(
-            `✅ Email de confirmation envoyé au nouveau membre: ${memberUser.email}`
+            `✅ Email de confirmation envoyé au nouveau membre: ${memberUser.email}`,
           );
         }
 
@@ -388,16 +391,21 @@ export async function POST(request, { params }) {
       if (!invitation) {
         return Response.json(
           { error: "Invitation non trouvée" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
       // Si l'invitation est expirée ou déjà traitée, la marquer comme rejetée directement
-      if (invitation.status !== "pending" || (invitation.expiresAt && new Date(invitation.expiresAt) < new Date())) {
-        await mongoDb.collection("invitation").updateOne(
-          { _id: new ObjectId(id) },
-          { $set: { status: "rejected" } }
-        );
+      if (
+        invitation.status !== "pending" ||
+        (invitation.expiresAt && new Date(invitation.expiresAt) < new Date())
+      ) {
+        await mongoDb
+          .collection("invitation")
+          .updateOne(
+            { _id: new ObjectId(id) },
+            { $set: { status: "rejected" } },
+          );
         return Response.json({ success: true });
       }
 
@@ -413,7 +421,7 @@ export async function POST(request, { params }) {
     console.error("❌ Erreur lors de l'action sur l'invitation:", error);
     return Response.json(
       { error: "Erreur serveur", details: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

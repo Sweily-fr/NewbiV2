@@ -435,10 +435,19 @@ export function useDashboardLayoutSimple() {
     setOnboardingLoading(true);
 
     try {
-      await authClient.updateUser({
-        hasSeenOnboarding: true,
-        onboardingStep: "completed",
-      });
+      // hasSeenOnboarding and onboardingStep have input: false (Sprint 2).
+      // Use updateUser for fields that ARE client-writable (hasCompletedTutorial),
+      // and a server-side route for the protected onboarding fields.
+      // This is a defensive fallback — should rarely execute (see comment above useEffect).
+      await fetch(
+        "/api/organizations/" +
+          session?.session?.activeOrganizationId +
+          "/complete-onboarding",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        },
+      );
 
       setIsOnboardingOpen(false);
 

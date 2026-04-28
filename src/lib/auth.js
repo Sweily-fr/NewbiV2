@@ -339,6 +339,7 @@ export const auth = betterAuth({
       createdBy: {
         type: "string",
         required: false,
+        input: false, // Server-only metadata — Principle 5
         defaultValue: "",
       },
       avatar: {
@@ -349,6 +350,7 @@ export const auth = betterAuth({
       isActive: {
         type: "boolean",
         required: false,
+        input: false, // Admin-only — user cannot reactivate themselves — Principle 5
         defaultValue: true,
       },
       redirect_after_login: {
@@ -359,6 +361,7 @@ export const auth = betterAuth({
       hasSeenOnboarding: {
         type: "boolean",
         required: false,
+        input: false, // Set by webhook/org-creation only — Principle 5
         defaultValue: false,
       },
       hasCompletedTutorial: {
@@ -373,27 +376,32 @@ export const auth = betterAuth({
       referralCode: {
         type: "string",
         required: false,
+        input: false, // Auto-generated or assigned by server — Principle 5
         defaultValue: null,
       },
       referredBy: {
         type: "string",
         required: false,
+        input: false, // Set at signup only, immutable — Principle 5
         defaultValue: null,
       },
       // ✅ Champs pour les utilisateurs invités (pas d'organisation propre)
       isInvitedUser: {
         type: "boolean",
         required: false,
+        input: false, // Set by user.create hook only — Principle 5
         defaultValue: false,
       },
       pendingInvitationId: {
         type: "string",
         required: false,
+        input: false, // Set by user.create hook only — Principle 5
         defaultValue: "",
       },
       stripeCustomerId: {
         type: "string",
         required: false,
+        input: false, // Set by Stripe integration only — Principle 5 — HAUT-34 financial risk
         defaultValue: "",
       },
       // Onboarding multi-step tracking (persisted server-side for cross-device resume)
@@ -402,6 +410,7 @@ export const auth = betterAuth({
       onboardingStep: {
         type: "string",
         required: false,
+        input: false, // Set by /api/onboarding/step and webhook only — Principle 5 — HAUT-26
         defaultValue: "workspace",
       },
       // JSON-stringified intermediate onboarding data (company info, selected plan, etc.)
@@ -409,6 +418,7 @@ export const auth = betterAuth({
       onboardingData: {
         type: "string",
         required: false,
+        input: false, // Set by /api/onboarding/step only — Principle 5
       },
     },
   },

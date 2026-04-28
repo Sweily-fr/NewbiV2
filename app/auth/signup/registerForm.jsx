@@ -91,11 +91,7 @@ const RegisterFormContent = ({ onSuccess: onSuccessProp }) => {
                   "Bienvenue ! Vous avez rejoint l'organisation avec succès.",
                 );
 
-                // ✅ Marquer l'onboarding comme vu pour les utilisateurs invités
-                // Ils n'ont pas besoin de passer par l'onboarding complet
-                await authClient.updateUser({
-                  hasSeenOnboarding: true,
-                });
+                // hasSeenOnboarding + onboardingStep set server-side in /api/invitations/[id] (Sprint 2)
 
                 // Rediriger directement vers le dashboard
                 router.push("/dashboard?welcome=invited");

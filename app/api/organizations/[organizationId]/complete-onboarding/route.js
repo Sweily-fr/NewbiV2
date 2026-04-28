@@ -31,7 +31,7 @@ export async function POST(request, { params }) {
 
     if (!memberCheck) {
       console.log(
-        `❌ [COMPLETE-ONBOARDING] Membre non trouvé pour userId: ${session.user.id}, orgId: ${organizationId}`
+        `❌ [COMPLETE-ONBOARDING] Membre non trouvé pour userId: ${session.user.id}, orgId: ${organizationId}`,
       );
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     }
@@ -54,37 +54,47 @@ export async function POST(request, { params }) {
 
     if (!hasActiveSubscription) {
       console.log(
-        `❌ [COMPLETE-ONBOARDING] Pas d'abonnement actif pour orgId: ${organizationId}`
+        `❌ [COMPLETE-ONBOARDING] Pas d'abonnement actif pour orgId: ${organizationId}`,
       );
       return NextResponse.json(
         { error: "Aucun abonnement actif trouvé" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Mettre à jour l'organisation
     const updateResult = await mongoDb.collection("organization").updateOne(
       {
-        $or: [
-          { _id: new ObjectId(organizationId) },
-          { id: organizationId },
-        ],
+        $or: [{ _id: new ObjectId(organizationId) }, { id: organizationId }],
       },
       {
         $set: {
           onboardingCompleted: true,
           updatedAt: new Date(),
         },
-      }
+      },
+    );
+
+    // Also mark the user's onboarding as completed (Sprint 2: input: false on these fields
+    // means authClient.updateUser can no longer set them client-side)
+    await mongoDb.collection("user").updateOne(
+      { _id: new ObjectId(session.user.id) },
+      {
+        $set: {
+          hasSeenOnboarding: true,
+          onboardingStep: "completed",
+          updatedAt: new Date(),
+        },
+      },
     );
 
     if (updateResult.modifiedCount === 0) {
       console.warn(
-        `⚠️ [COMPLETE-ONBOARDING] Organisation non trouvée ou déjà mise à jour: ${organizationId}`
+        `⚠️ [COMPLETE-ONBOARDING] Organisation non trouvée ou déjà mise à jour: ${organizationId}`,
       );
     } else {
       console.log(
-        `✅ [COMPLETE-ONBOARDING] onboardingCompleted défini à true pour org: ${organizationId}`
+        `✅ [COMPLETE-ONBOARDING] onboardingCompleted défini à true pour org: ${organizationId}`,
       );
     }
 

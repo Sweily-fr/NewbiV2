@@ -293,7 +293,7 @@ const LoginForm = () => {
               localStorage.removeItem("pendingInvitation");
 
               if (session?.user?.isInvitedUser) {
-                await authClient.updateUser({ hasSeenOnboarding: true });
+                // hasSeenOnboarding + onboardingStep set server-side in /api/invitations/[id] (Sprint 2)
                 router.push("/dashboard?welcome=invited");
                 return;
               }
@@ -320,9 +320,7 @@ const LoginForm = () => {
           const userRedirectPage = session?.user?.redirect_after_login;
 
           if (isInvitedUser) {
-            if (!session?.user?.hasSeenOnboarding) {
-              await authClient.updateUser({ hasSeenOnboarding: true });
-            }
+            // hasSeenOnboarding + onboardingStep set server-side in /api/invitations/[id] (Sprint 2)
             router.push("/dashboard?welcome=invited");
             return;
           }
@@ -564,9 +562,7 @@ const LoginForm = () => {
         const userRedirectPage = session?.user?.redirect_after_login;
 
         if (isInvitedUser) {
-          if (!session?.user?.hasSeenOnboarding) {
-            await authClient.updateUser({ hasSeenOnboarding: true });
-          }
+          // hasSeenOnboarding + onboardingStep set server-side in /api/invitations/[id] (Sprint 2)
           router.push("/dashboard?welcome=invited");
           return true;
         }
