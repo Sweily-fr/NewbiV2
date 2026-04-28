@@ -62,52 +62,13 @@ export default function AcceptInvitationPage() {
         setInvitation(data);
 
         console.log("📋 Invitation data:", data);
-        console.log("🏢 Organization ID:", data.organizationId);
 
-        // Récupérer les membres de l'organisation (authenticated users only)
-        // Pre-login users see the org name but not the member list
-        if (data.organizationId) {
-          try {
-            const membersResponse = await fetch(
-              `/api/organizations/${data.organizationId}/members`,
-            );
-            console.log("📡 Members response status:", membersResponse.status);
-
-            if (membersResponse.ok) {
-              const result = await membersResponse.json();
-              console.log("👥 Members result:", result);
-
-              // /api/organizations/[id]/members returns { success, data: [...] }
-              const membersData = result.data || result.members || [];
-
-              // Filtrer uniquement les membres actifs et formater
-              const activeMembers = membersData
-                .filter((m) => m.role) // Les membres ont un rôle
-                .map((m) => ({
-                  id: m.userId || m.id,
-                  name: m.user?.name || m.name,
-                  email: m.user?.email || m.email,
-                  avatar: m.user?.image || m.user?.avatar || m.avatar,
-                  role: m.role,
-                }))
-                .slice(0, 4); // Max 4 avatars
-
-              console.log("✅ Active members:", activeMembers);
-              setMembers(activeMembers);
-            } else {
-              console.error(
-                "❌ Members response not OK:",
-                await membersResponse.text(),
-              );
-            }
-          } catch (membersError) {
-            console.error(
-              "❌ Erreur lors de la récupération des membres:",
-              membersError,
-            );
-          }
-        } else {
-          console.warn("⚠️ Pas d'organizationId dans l'invitation");
+        // email is no longer returned by GET /api/invitations/[id] (Sprint 3.3 — Principle 15)
+        // Get it from URL search params instead (set by the invitation email link)
+        const urlEmail =
+          new URLSearchParams(window.location.search).get("email") || "";
+        if (urlEmail) {
+          data.email = urlEmail;
         }
 
         // Vérifier si l'utilisateur existe déjà

@@ -38,15 +38,14 @@ export async function GET(request, { params }) {
       }
     }
 
-    // Principle 15: minimum data returned. inviterId removed (not needed by UI).
+    // Principle 15: minimum data returned for pre-login page.
+    // email, organizationId, inviterId all removed — not needed for UI display.
     const enrichedInvitation = {
       id: invitation._id.toString(),
-      email: invitation.email,
-      role: invitation.role,
       status: invitation.status,
-      expiresAt: invitation.expiresAt,
-      organizationId: invitation.organizationId?.toString(),
       organizationName,
+      role: invitation.role,
+      expiresAt: invitation.expiresAt,
     };
 
     return Response.json(enrichedInvitation);
