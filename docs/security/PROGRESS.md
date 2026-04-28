@@ -307,6 +307,19 @@ Solution future si feedback utilisateur : creer GET /api/invitations/[invitation
 
 ---
 
+## Bugs adjacents decouverts pendant l'audit
+
+### NOUVEAU-3 — Configuration GoCardless invalide en staging
+
+- **Decouvert** : Sprint 4.5 tests fonctionnels
+- **Type** : Bug fonctionnel (pas securite)
+- **Description** : Le backend newbi-api retourne 500 sur /banking-connect/gocardless/institutions avec le message "Configuration invalide pour le provider: gocardless". La variable d'environnement GoCardless est manquante ou mal configuree cote backend en staging.
+- **Impact** : La feature "connecter une banque via GoCardless" ne fonctionne pas en staging. Probablement OK en production si la config y est presente.
+- **Action** : A traiter cote backend newbi-api. Verifier la config GoCardless en staging et production.
+- **Priorite** : Moyenne (impacte une feature payante mais workaround possible avec Bridge)
+
+---
+
 ## Notes pour les futures sessions
 
 Si tu reprends ce projet dans une nouvelle conversation Claude :
