@@ -30,16 +30,18 @@ export const auth = betterAuth({
   // ⚠️ CRITICAL: Secret requis pour signer les tokens en production
   secret: process.env.BETTER_AUTH_SECRET,
 
-  // ⚠️ IMPORTANT: trustedOrigins pour autoriser www et non-www
+  // trustedOrigins — Principle 13: managed by environment
+  // Base origins are always valid (production, mobile, dev local).
+  // Preview/staging/ngrok origins are injected via ADDITIONAL_TRUSTED_ORIGINS env var.
   trustedOrigins: [
     "https://newbi.fr",
     "https://www.newbi.fr",
     "https://newbi-v2.vercel.app",
     "http://localhost:3000",
-    "https://newbi-v2-git-develop-sofianemtimet6-2653s-projects.vercel.app",
-    "https://newbi-v2-git-security-refactor-sofianemtimet6-2653s-projects.vercel.app", // Temporary: Sprint 1e smoke test — remove at Sprint 4 (MOYEN-30)
-    "newbi://", // App mobile Expo
-    "https://013c-2a01-e0a-440-88a0-4131-a2ba-5087-6582.ngrok-free.app", // ngrok dev
+    "newbi://", // Mobile app Expo
+    ...(process.env.ADDITIONAL_TRUSTED_ORIGINS?.split(",")
+      .map((o) => o.trim())
+      .filter(Boolean) ?? []),
   ],
 
   // Configuration de la session
