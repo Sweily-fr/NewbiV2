@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { subscriptionMiddleware } from "./src/middleware/subscription";
 
 export async function middleware(request) {
+  // TEMPORAIRE - Sprint 1e diagnostic - à retirer
+  console.warn(`[MW ENTRY] ${request.method} ${request.nextUrl.pathname}`);
+
   try {
     return await subscriptionMiddleware(request);
   } catch (error) {
