@@ -1,8 +1,8 @@
 # Etat d'avancement — Refonte securite
 
-> Derniere mise a jour : 2026-04-28 12:30
-> Sprint en cours : Sprint 2
-> Statut global : 0/8 sprints termines (Sprint 1a-1d termines, Sprint 1e en pause)
+> Derniere mise a jour : 2026-04-28 13:15
+> Sprint en cours : Sprint 3
+> Statut global : 1/8 sprints termines (Sprint 1a-1d + Sprint 2 termines, Sprint 1e en pause)
 
 ## Vue d'ensemble
 
@@ -13,7 +13,7 @@
 | 1c     | Helpers RBAC (requireOrgMembership, requireActiveSubscription)           | Termine  | 2026-04-28 | 2026-04-28 | 44 tests pass, 13 skip                      |
 | 1d     | Helpers complements (requireInternalSecret, assertModified)              | Termine  | 2026-04-28 | 2026-04-28 | 57 tests pass, 0 skip                       |
 | 1e     | Middleware deny-by-default (logging-only puis enforcement)               | En pause | 2026-04-28 | —          | Bloque: Edge Runtime + mongodb incompatible |
-| 2      | Urgences financieres (input: false, revocation sessions, fallback email) | A faire  | —          | —          | —                                           |
+| 2      | Urgences financieres (input: false, revocation sessions, fallback email) | Termine  | 2026-04-28 | 2026-04-28 | 3 livraisons, HAUT-22/26/34 resolus         |
 | 3      | Routes donnees sensibles (PDF data, members, invitations)                | A faire  | —          | —          | —                                           |
 | 4      | Routes proxy et multi-tenant (banking-sync, trustedOrigins)              | A faire  | —          | —          | —                                           |
 | 5      | Validation inputs + coherence ObjectId                                   | A faire  | —          | —          | —                                           |
@@ -21,26 +21,27 @@
 | 7      | Consistency checks + monitoring                                          | A faire  | —          | —          | —                                           |
 | 8      | Cleanup + dette residuelle                                               | A faire  | —          | —          | —                                           |
 
-## Sprint en cours : 2 — Urgences financieres
+## Sprint en cours : 3 — Routes donnees sensibles
 
 ### Objectif
 
-Appliquer input: false sur les 10 additionalFields vulnerables, revoquer les sessions a la desactivation admin, supprimer le fallback email dans verify-checkout-session.
+Proteger les routes PDF data (dual-access: internal secret OU session+membership), supprimer la double route members, reduire les donnees de l'invitation GET, supprimer subscription/check.
 
 ### Livrables prevus
 
-- [ ] input: false sur 10 champs dans auth.js (stripeCustomerId en priorite)
-- [ ] Revocation de sessions a la desactivation admin
-- [ ] Suppression du fallback email dans verify-checkout-session
-- [ ] Tests manuels
+- [ ] 4 routes PDF data migrees (invoices, credit-notes, quotes, purchase-orders)
+- [ ] Puppeteer: ajout header X-Internal-Secret
+- [ ] Suppression /api/organization/members (ancienne route sans auth)
+- [ ] Reduction donnees /api/invitations/[id] GET
+- [ ] Suppression /api/subscription/check (dead code)
 
 ### Findings resolus par ce sprint
 
-HAUT-26, HAUT-34 (10 champs), HAUT-22.
+CRITIQUE-1 a 5, HAUT-6, MOYEN-7.
 
 ### Statut
 
-A faire.
+A faire — en attente de validation Sprint 2.
 
 ---
 
@@ -94,6 +95,13 @@ Config preview mono-branche a refactorer :
 - 57 tests skip, 0 erreur
 - Commit: 65c9714f
 
+### Sprint 2 — Urgences financieres (2026-04-28)
+
+- 3 livraisons : input: false (10 champs) + session revocation + verify-checkout strict
+- 5 appels updateUser client migres vers serveur (invitations route + complete-onboarding)
+- Commits : 933e13eb, 43d44c94, 83c6fc46
+- Findings resolus : HAUT-22, HAUT-26, HAUT-34
+
 ### Sprint 1d — Helpers complements (2026-04-28)
 
 - 2 helpers implementes : requireInternalSecret (+ hasInternalSecret), assertModified
@@ -131,9 +139,9 @@ Config preview mono-branche a refactorer :
 | HAUT-11 (banking/accounts)             | Haut     | Sprint 4    | A faire  |
 | HAUT-12 (middleware allow-by-default)  | Haut     | Sprint 1f   | En pause |
 | HAUT-21 (error.message leak)           | Haut     | Sprint 1b+3 | A faire  |
-| HAUT-22 (verify-checkout fallback)     | Haut     | Sprint 2    | A faire  |
-| HAUT-26 (onboardingStep updateUser)    | Haut     | Sprint 2    | A faire  |
-| HAUT-34 (10 additionalFields)          | Haut     | Sprint 2    | A faire  |
+| HAUT-22 (verify-checkout fallback)     | Haut     | Sprint 2    | Resolu   |
+| HAUT-26 (onboardingStep updateUser)    | Haut     | Sprint 2    | Resolu   |
+| HAUT-34 (10 additionalFields)          | Haut     | Sprint 2    | Resolu   |
 | MOYEN-7 (subscription/check)           | Moyen    | Sprint 8    | A faire  |
 | MOYEN-13 (fail-open API)               | Moyen    | Sprint 1f   | En pause |
 | MOYEN-16 (routes org sans role)        | Moyen    | Sprint 6    | A faire  |
@@ -153,6 +161,17 @@ Config preview mono-branche a refactorer :
 | BAS-32 (Vercel preview)                | Bas      | Sprint 4    | A faire  |
 
 ## Journal de bord
+
+### 2026-04-28 — Sprint 2 termine (urgences financieres)
+
+- Livraison 1/3 : input: false sur 10 additionalFields + migration 5 appels updateUser client vers serveur
+- Livraison 2/3 : revocation de toutes les sessions a la desactivation admin (deleteMany)
+- Livraison 3/3 : suppression fallback email dans verify-checkout-session (check strict metadata.userId)
+- Smoke test Livraison 1 : login + signup OK sur preview
+- Test fonctionnel Livraison 2 : isActive=false confirme, sessions count=0 confirme
+- Confirmation empirique MOYEN-25 : userId stocke comme ObjectId en DB, toObjectId() fonctionne correctement
+- Findings resolus : HAUT-22, HAUT-26, HAUT-34
+- Fix bonus : 2 erreurs ESLint preexistantes corrigees (updateResult unused, catch parameter unused)
 
 ### 2026-04-28 — Sprint 1e reverte et mis en pause
 
@@ -251,3 +270,10 @@ Si tu reprends ce projet dans une nouvelle conversation Claude :
 - **Decision** : Utiliser l'annotation `// @vitest-environment node` dans chaque fichier de test sous **tests**/security/ au lieu du environment happy-dom global.
 - **Raison** : Les helpers de securite tournent cote serveur (Node.js). happy-dom filtre le header cookie du constructeur Request, ce qui cassait les tests requireSession. Avec environment node, on teste dans le meme environnement que la production.
 - **Impact** : Tous les fichiers de test security. Le fakeRequest helper introduit en Sprint 1b a ete supprime.
+
+### ADR-004 : Confirmation empirique MOYEN-25 (userId ObjectId en DB)
+
+- **Date** : 2026-04-28
+- **Decision** : userId est stocke comme ObjectId dans la collection session (confirme par test fonctionnel Sprint 2.2).
+- **Raison** : Le test de revocation de sessions a montre que `deleteMany({ userId: toObjectId(id) })` fonctionne correctement (sessions count passe de >0 a 0). Cela confirme que le driver MongoDB 7.1.1 ne fait pas de loose match string/ObjectId et que toObjectId() est necessaire pour toutes les queries sur les collections Better Auth.
+- **Impact** : Sprint 5 (correction des queries existantes avec string vs ObjectId). Le bug est reel — les queries avec string userId ne matchent pas.
