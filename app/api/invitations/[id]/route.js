@@ -38,6 +38,7 @@ export async function GET(request, { params }) {
       }
     }
 
+    // Principle 15: minimum data returned. inviterId removed (not needed by UI).
     const enrichedInvitation = {
       id: invitation._id.toString(),
       email: invitation.email,
@@ -46,16 +47,12 @@ export async function GET(request, { params }) {
       expiresAt: invitation.expiresAt,
       organizationId: invitation.organizationId?.toString(),
       organizationName,
-      inviterId: invitation.inviterId?.toString(),
     };
 
     return Response.json(enrichedInvitation);
   } catch (error) {
     console.error("❌ Erreur lors de la récupération de l'invitation:", error);
-    return Response.json(
-      { error: "Erreur serveur", details: error.message },
-      { status: 500 },
-    );
+    return Response.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
 
