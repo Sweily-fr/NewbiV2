@@ -33,15 +33,8 @@ export function TutorialProvider({ children }) {
         const response = await fetch("/api/tutorial/status");
         if (response.ok) {
           const data = await response.json();
-          setHasCompletedTutorial(data.hasCompletedTutorial ?? false);
-
-          // Si l'utilisateur n'a pas complété le tutoriel, le lancer automatiquement
-          if (!data.hasCompletedTutorial) {
-            // Petit délai pour laisser le temps au DOM de se charger
-            setTimeout(() => {
-              setIsRunning(true);
-            }, 1000);
-          }
+          // Hotfix: force tutorial as completed — tutorial is buggy in prod
+          setHasCompletedTutorial(true);
         }
       } catch (error) {
         console.error(
