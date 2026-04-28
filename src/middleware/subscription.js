@@ -91,6 +91,11 @@ function hasSessionCookie(request) {
 export async function subscriptionMiddleware(request) {
   const { pathname } = request.nextUrl;
 
+  // TEMPORAIRE - Sprint 1e diagnostic - à retirer
+  console.warn(
+    `[MW DEBUG] ${request.method} ${pathname} | enforce: ${ENFORCE} | hasCookie: ${request.cookies.get("better-auth.session_token") ? "yes" : "no"}`,
+  );
+
   // ─── PUBLIC API ROUTES: always pass through ────────────────────────────
   const isPublicApi = PUBLIC_API_ROUTES.some((route) =>
     pathname.startsWith(route),
