@@ -1,80 +1,88 @@
 # Etat d'avancement — Refonte securite
 
-> Derniere mise a jour : 2026-04-28 00:15
-> Sprint en cours : Sprint 1e
-> Statut global : 0/8 sprints termines (Sprint 1a-1d sous-sprints termines, tous helpers implementes)
+> Derniere mise a jour : 2026-04-28 12:30
+> Sprint en cours : Sprint 2
+> Statut global : 0/8 sprints termines (Sprint 1a-1d termines, Sprint 1e en pause)
 
 ## Vue d'ensemble
 
-| Sprint | Description                                                              | Statut  | Date debut | Date fin   | Notes                                       |
-| ------ | ------------------------------------------------------------------------ | ------- | ---------- | ---------- | ------------------------------------------- |
-| 1a     | Squelette helpers + tests                                                | Termine | 2026-04-27 | 2026-04-27 | 22 fichiers, 57 tests skip, commit 65c9714f |
-| 1b     | Helpers de base (requireSession, apiError, withErrorHandler, toObjectId) | Termine | 2026-04-27 | 2026-04-28 | 27 tests pass, 30 skip                      |
-| 1c     | Helpers RBAC (requireOrgMembership, requireActiveSubscription)           | Termine | 2026-04-28 | 2026-04-28 | 44 tests pass, 13 skip                      |
-| 1d     | Helpers complements (requireInternalSecret, assertModified)              | Termine | 2026-04-28 | 2026-04-28 | 57 tests pass, 0 skip                       |
-| 1e     | Middleware deny-by-default (logging-only puis enforcement)               | A faire | —          | —          | —                                           |
-| 2      | Urgences financieres (input: false, revocation sessions, fallback email) | A faire | —          | —          | —                                           |
-| 3      | Routes donnees sensibles (PDF data, members, invitations)                | A faire | —          | —          | —                                           |
-| 4      | Routes proxy et multi-tenant (banking-sync, trustedOrigins)              | A faire | —          | —          | —                                           |
-| 5      | Validation inputs + coherence ObjectId                                   | A faire | —          | —          | —                                           |
-| 6      | RBAC unifie frontend/backend                                             | A faire | —          | —          | —                                           |
-| 7      | Consistency checks + monitoring                                          | A faire | —          | —          | —                                           |
-| 8      | Cleanup + dette residuelle                                               | A faire | —          | —          | —                                           |
+| Sprint | Description                                                              | Statut   | Date debut | Date fin   | Notes                                       |
+| ------ | ------------------------------------------------------------------------ | -------- | ---------- | ---------- | ------------------------------------------- |
+| 1a     | Squelette helpers + tests                                                | Termine  | 2026-04-27 | 2026-04-27 | 22 fichiers, 57 tests skip, commit 65c9714f |
+| 1b     | Helpers de base (requireSession, apiError, withErrorHandler, toObjectId) | Termine  | 2026-04-27 | 2026-04-28 | 27 tests pass, 30 skip                      |
+| 1c     | Helpers RBAC (requireOrgMembership, requireActiveSubscription)           | Termine  | 2026-04-28 | 2026-04-28 | 44 tests pass, 13 skip                      |
+| 1d     | Helpers complements (requireInternalSecret, assertModified)              | Termine  | 2026-04-28 | 2026-04-28 | 57 tests pass, 0 skip                       |
+| 1e     | Middleware deny-by-default (logging-only puis enforcement)               | En pause | 2026-04-28 | —          | Bloque: Edge Runtime + mongodb incompatible |
+| 2      | Urgences financieres (input: false, revocation sessions, fallback email) | A faire  | —          | —          | —                                           |
+| 3      | Routes donnees sensibles (PDF data, members, invitations)                | A faire  | —          | —          | —                                           |
+| 4      | Routes proxy et multi-tenant (banking-sync, trustedOrigins)              | A faire  | —          | —          | —                                           |
+| 5      | Validation inputs + coherence ObjectId                                   | A faire  | —          | —          | —                                           |
+| 6      | RBAC unifie frontend/backend                                             | A faire  | —          | —          | —                                           |
+| 7      | Consistency checks + monitoring                                          | A faire  | —          | —          | —                                           |
+| 8      | Cleanup + dette residuelle                                               | A faire  | —          | —          | —                                           |
 
-## Sprint en cours : 1e — Middleware deny-by-default
+## Sprint en cours : 2 — Urgences financieres
 
 ### Objectif
 
-Reecrire le middleware avec logique inversee : toutes les routes /api/\* protegees par defaut, seules les routes dans PUBLIC_API_ROUTES sont exclues. Deploy en mode logging-only d'abord, puis enforcement.
+Appliquer input: false sur les 10 additionalFields vulnerables, revoquer les sessions a la desactivation admin, supprimer le fallback email dans verify-checkout-session.
 
 ### Livrables prevus
 
-- [x] src/middleware/subscription.js reecrit (logique inversee)
-- [x] PUBLIC_API_ROUTES avec commentaire justificatif par entree (14 routes)
-- [x] Mode logging-only (variable MIDDLEWARE_ENFORCE=false)
-- [ ] Deploy staging + analyse logs 24-48h
-- [ ] Activation enforcement (MIDDLEWARE_ENFORCE=true)
-
-### Tests a passer
-
-- [ ] Tous les tests security existants passent (57)
-- [ ] Smoke test manuel en staging (30 min)
+- [ ] input: false sur 10 champs dans auth.js (stripeCustomerId en priorite)
+- [ ] Revocation de sessions a la desactivation admin
+- [ ] Suppression du fallback email dans verify-checkout-session
+- [ ] Tests manuels
 
 ### Findings resolus par ce sprint
 
-HAUT-12 (routes API echappent au middleware), MOYEN-13 (fail-open sur routes API).
+HAUT-26, HAUT-34 (10 champs), HAUT-22.
 
 ### Statut
 
-Phase 1/3 livree et testee. Smoke test OK sur flow critique (auth+inscription+paiement). Tests non-auth skipped par config infra mono-branche (pas par le middleware). Pret pour phase 2/3 (whitelist finale) et 3/3 (enforcement).
+A faire.
 
-### Resultats smoke test Sprint 1e (2026-04-28)
+---
 
-Tests OK :
+## Sprint 1e — Bloque (Edge Runtime + MongoDB)
 
-- Auth (login email/password) : OK
-- Inscription complete (signup → onboarding → workspace → plan → recap → Stripe sandbox → dashboard) : OK
-- Middleware dry-run actif : aucun blocage inattendu sur le flow critique
+### Tentatives
 
-Tests SKIPPED (limites infra preview mono-branche) :
+- Phase 1 implementee (commit 73252cc9) : middleware deny-by-default avec mode dry-run
+- 3 commits de diagnostic successifs (994fd399, 83615d69) : ajout de console.warn inconditionnels
+- Le middleware ne s'execute pas du tout en Edge Runtime sur Vercel preview deployments
+- Aucun log [MW ENTRY] ni [MW DEBUG] visible dans les logs Vercel
 
-- Banking : Bridge redirect URL hardcodee vers develop
-- Creation documents (factures, devis) : CORS backend GraphQL n'autorise que develop
-- Upload fichiers : CORS backend
-- Dashboard navigation partielle : certaines pages bloquees par CORS GraphQL
+### Cause racine
 
-Verdict : le middleware dry-run ne casse pas le flow critique. Les tests skipped sont bloques par la config infra (CORS, redirects, webhooks), pas par le middleware. On peut passer en enforcement sur la branche production apres merge, ou directement sur develop.
+Crash silencieux a l'import du module. La chaine d'imports est :
+middleware.js → subscription.js → auth.js → mongodb.js → MongoClient (driver natif)
+Le driver MongoDB natif utilise des APIs Node.js (TCP sockets, net, dns) incompatibles avec le Edge Runtime de Vercel. Le module ne charge jamais, le middleware ne s'execute pas.
+
+### Decision
+
+Revert du middleware Sprint 1e. Restauration du middleware d'origine (fail-open cookie-only). Les vulnerabilites HAUT-12 et MOYEN-13 ne sont pas resolues a ce stade.
+
+### Options pour Sprint 1f (a creer apres Sprints 2-7)
+
+1. Forcer le middleware en Node.js Runtime (export const config = { runtime: 'nodejs' }) — feature Next.js, a valider sur Vercel
+2. Reecrire le middleware en Edge-compatible (verification cookie presence uniquement, sans appel DB)
+3. Refactorer auth.js pour ne plus importer mongodb directement au top level
+
+### Impact sur la strategie
+
+Les Sprints 2-8 peuvent continuer independamment. Les helpers requireSession, requireOrgMembership, requireActiveSubscription protegent les routes individuellement (defense en profondeur au niveau route). La protection au niveau middleware sera ajoutee en Sprint 1f.
 
 ### Notes pour Sprint 4
 
 Config preview mono-branche a refactorer :
 
-- NEXT_PUBLIC_BETTER_AUTH_URL hardcode vers develop (resolu temporairement par override env var)
-- trustedOrigins Better Auth hardcode vers develop (resolu temporairement par ajout en dur auth.js)
+- NEXT_PUBLIC_BETTER_AUTH_URL hardcode vers develop
+- trustedOrigins Better Auth hardcode vers develop
 - Bridge redirect URL hardcodee vers develop
 - CORS backend GraphQL n'autorise que develop
 - Webhooks Stripe configures vers develop uniquement
-- Pattern global : toutes les URLs de config doivent etre pilotees par env var, pas hardcodees par branche
+- Pattern global : toutes les URLs de config doivent etre pilotees par env var
 
 ---
 
@@ -109,42 +117,51 @@ Config preview mono-branche a refactorer :
 
 ## Findings x Sprints
 
-| Finding                                | Severite | Sprint      | Statut  |
-| -------------------------------------- | -------- | ----------- | ------- |
-| CRITIQUE-1 (invoices/data)             | Critique | Sprint 3    | A faire |
-| CRITIQUE-2 (credit-notes/data)         | Critique | Sprint 3    | A faire |
-| CRITIQUE-3 (quotes/data)               | Critique | Sprint 3    | A faire |
-| CRITIQUE-4 (purchase-orders/data)      | Critique | Sprint 3    | A faire |
-| CRITIQUE-5 (org/members sans auth)     | Critique | Sprint 3    | A faire |
-| CRITIQUE-8 (banking-sync accounts)     | Critique | Sprint 4    | A faire |
-| CRITIQUE-9 (banking-sync transactions) | Critique | Sprint 4    | A faire |
-| CRITIQUE-10 (banking-sync full)        | Critique | Sprint 4    | A faire |
-| HAUT-6 (invitation data leak)          | Haut     | Sprint 3    | A faire |
-| HAUT-11 (banking/accounts)             | Haut     | Sprint 4    | A faire |
-| HAUT-12 (middleware allow-by-default)  | Haut     | Sprint 1e   | A faire |
-| HAUT-21 (error.message leak)           | Haut     | Sprint 1b+3 | A faire |
-| HAUT-22 (verify-checkout fallback)     | Haut     | Sprint 2    | A faire |
-| HAUT-26 (onboardingStep updateUser)    | Haut     | Sprint 2    | A faire |
-| HAUT-34 (10 additionalFields)          | Haut     | Sprint 2    | A faire |
-| MOYEN-7 (subscription/check)           | Moyen    | Sprint 8    | A faire |
-| MOYEN-13 (fail-open API)               | Moyen    | Sprint 1e   | A faire |
-| MOYEN-16 (routes org sans role)        | Moyen    | Sprint 6    | A faire |
-| MOYEN-17 (bypass 5min)                 | Moyen    | Sprint 6    | A faire |
-| MOYEN-18 (invitedMembers)              | Moyen    | Sprint 5    | A faire |
-| MOYEN-19 (double subscription)         | Moyen    | Sprint 7    | A faire |
-| MOYEN-20 (type non whitelist)          | Moyen    | Sprint 5    | A faire |
-| MOYEN-23 (org sans subscription)       | Moyen    | Sprint 7    | A faire |
-| MOYEN-24 (race org creation)           | Moyen    | Sprint 7    | A faire |
-| MOYEN-25 (session updateMany)          | Moyen    | Sprint 5    | A faire |
-| MOYEN-29 (onboardingData)              | Moyen    | Sprint 5    | A faire |
-| MOYEN-30 (ngrok prod)                  | Moyen    | Sprint 4    | A faire |
-| MOYEN-31 (newbi:// scheme)             | Moyen    | Sprint 8    | A faire |
-| MOYEN-33 (email non verifie)           | Moyen    | Sprint 8    | A faire |
-| BAS-27 (step corrompu)                 | Bas      | Sprint 7    | A faire |
-| BAS-28 (dead code invitation)          | Bas      | Sprint 8    | A faire |
-| BAS-32 (Vercel preview)                | Bas      | Sprint 4    | A faire |
+| Finding                                | Severite | Sprint      | Statut   |
+| -------------------------------------- | -------- | ----------- | -------- |
+| CRITIQUE-1 (invoices/data)             | Critique | Sprint 3    | A faire  |
+| CRITIQUE-2 (credit-notes/data)         | Critique | Sprint 3    | A faire  |
+| CRITIQUE-3 (quotes/data)               | Critique | Sprint 3    | A faire  |
+| CRITIQUE-4 (purchase-orders/data)      | Critique | Sprint 3    | A faire  |
+| CRITIQUE-5 (org/members sans auth)     | Critique | Sprint 3    | A faire  |
+| CRITIQUE-8 (banking-sync accounts)     | Critique | Sprint 4    | A faire  |
+| CRITIQUE-9 (banking-sync transactions) | Critique | Sprint 4    | A faire  |
+| CRITIQUE-10 (banking-sync full)        | Critique | Sprint 4    | A faire  |
+| HAUT-6 (invitation data leak)          | Haut     | Sprint 3    | A faire  |
+| HAUT-11 (banking/accounts)             | Haut     | Sprint 4    | A faire  |
+| HAUT-12 (middleware allow-by-default)  | Haut     | Sprint 1f   | En pause |
+| HAUT-21 (error.message leak)           | Haut     | Sprint 1b+3 | A faire  |
+| HAUT-22 (verify-checkout fallback)     | Haut     | Sprint 2    | A faire  |
+| HAUT-26 (onboardingStep updateUser)    | Haut     | Sprint 2    | A faire  |
+| HAUT-34 (10 additionalFields)          | Haut     | Sprint 2    | A faire  |
+| MOYEN-7 (subscription/check)           | Moyen    | Sprint 8    | A faire  |
+| MOYEN-13 (fail-open API)               | Moyen    | Sprint 1f   | En pause |
+| MOYEN-16 (routes org sans role)        | Moyen    | Sprint 6    | A faire  |
+| MOYEN-17 (bypass 5min)                 | Moyen    | Sprint 6    | A faire  |
+| MOYEN-18 (invitedMembers)              | Moyen    | Sprint 5    | A faire  |
+| MOYEN-19 (double subscription)         | Moyen    | Sprint 7    | A faire  |
+| MOYEN-20 (type non whitelist)          | Moyen    | Sprint 5    | A faire  |
+| MOYEN-23 (org sans subscription)       | Moyen    | Sprint 7    | A faire  |
+| MOYEN-24 (race org creation)           | Moyen    | Sprint 7    | A faire  |
+| MOYEN-25 (session updateMany)          | Moyen    | Sprint 5    | A faire  |
+| MOYEN-29 (onboardingData)              | Moyen    | Sprint 5    | A faire  |
+| MOYEN-30 (ngrok prod)                  | Moyen    | Sprint 4    | A faire  |
+| MOYEN-31 (newbi:// scheme)             | Moyen    | Sprint 8    | A faire  |
+| MOYEN-33 (email non verifie)           | Moyen    | Sprint 8    | A faire  |
+| BAS-27 (step corrompu)                 | Bas      | Sprint 7    | A faire  |
+| BAS-28 (dead code invitation)          | Bas      | Sprint 8    | A faire  |
+| BAS-32 (Vercel preview)                | Bas      | Sprint 4    | A faire  |
 
 ## Journal de bord
+
+### 2026-04-28 — Sprint 1e reverte et mis en pause
+
+- Middleware deny-by-default ne s'execute pas en Edge Runtime (crash import mongodb)
+- 3 tentatives de diagnostic (MW DEBUG, MW ENTRY) : aucun log visible
+- Cause : chaine d'import middleware.js → subscription.js → auth.js → mongodb (incompatible Edge)
+- Decision : revert middleware a l'etat pre-Sprint 1e, reporter a Sprint 1f
+- Sprints 2-8 peuvent continuer (helpers protegent les routes individuellement)
+- HAUT-12 et MOYEN-13 reportes a Sprint 1f
 
 ### 2026-04-28 — Sprint 1e smoke test complete
 
