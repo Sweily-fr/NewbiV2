@@ -55,7 +55,7 @@ export default function AcceptInvitationPage() {
 
         if (data.error) {
           throw new Error(
-            data.error || "Erreur lors de la récupération de l'invitation"
+            data.error || "Erreur lors de la récupération de l'invitation",
           );
         }
 
@@ -64,26 +64,21 @@ export default function AcceptInvitationPage() {
         console.log("📋 Invitation data:", data);
         console.log("🏢 Organization ID:", data.organizationId);
 
-        // Récupérer les membres de l'organisation
+        // Récupérer les membres de l'organisation (authenticated users only)
+        // Pre-login users see the org name but not the member list
         if (data.organizationId) {
           try {
-            const membersResponse = await fetch("/api/organization/members", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                organizationId: data.organizationId,
-              }),
-            });
+            const membersResponse = await fetch(
+              `/api/organizations/${data.organizationId}/members`,
+            );
             console.log("📡 Members response status:", membersResponse.status);
 
             if (membersResponse.ok) {
               const result = await membersResponse.json();
               console.log("👥 Members result:", result);
 
-              // Better Auth retourne les membres dans result.members
-              const membersData = result.members || result || [];
+              // /api/organizations/[id]/members returns { success, data: [...] }
+              const membersData = result.data || result.members || [];
 
               // Filtrer uniquement les membres actifs et formater
               const activeMembers = membersData
@@ -102,13 +97,13 @@ export default function AcceptInvitationPage() {
             } else {
               console.error(
                 "❌ Members response not OK:",
-                await membersResponse.text()
+                await membersResponse.text(),
               );
             }
           } catch (membersError) {
             console.error(
               "❌ Erreur lors de la récupération des membres:",
-              membersError
+              membersError,
             );
           }
         } else {
@@ -133,7 +128,7 @@ export default function AcceptInvitationPage() {
           } catch (userCheckError) {
             console.error(
               "❌ Erreur lors de la vérification de l'utilisateur:",
-              userCheckError
+              userCheckError,
             );
             // En cas d'erreur, on assume que l'utilisateur n'existe pas
             setUserExists(false);
@@ -316,14 +311,14 @@ export default function AcceptInvitationPage() {
       <div
         className={cn(
           "bg-background relative flex size-20 rounded-xl dark:bg-transparent",
-          className
+          className,
         )}
       >
         <div
           role="presentation"
           className={cn(
             "absolute inset-0 rounded-xl border border-black/5 dark:border-white/10",
-            borderClassName
+            borderClassName,
           )}
         />
         <div className="relative z-20 m-auto size-fit *:size-6">{children}</div>
@@ -388,7 +383,7 @@ export default function AcceptInvitationPage() {
                 "🎨 Rendering members:",
                 members,
                 "Length:",
-                members.length
+                members.length,
               )}
               {members.length > 0 && (
                 <div className="flex justify-center items-center gap-2">
