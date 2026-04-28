@@ -3,6 +3,7 @@ import { auth } from "@/src/lib/auth";
 import { mongoDb } from "@/src/lib/mongodb";
 import { ObjectId } from "mongodb";
 import Stripe from "stripe";
+import { apiError } from "@/src/lib/security";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -25,15 +26,16 @@ export async function GET(request) {
     const sessionId = searchParams.get("session_id");
 
     if (!sessionId) {
-      return NextResponse.json(
-        { error: "session_id requis" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "session_id requis" }, { status: 400 });
     }
 
     console.log(`🔍 [VERIFY-CHECKOUT] Vérification session: ${sessionId}`);
-    console.log(`👤 [VERIFY-CHECKOUT] User: ${session.user.id} (${session.user.email})`);
-    console.log(`🏢 [VERIFY-CHECKOUT] Active Org: ${session.session?.activeOrganizationId}`);
+    console.log(
+      `👤 [VERIFY-CHECKOUT] User: ${session.user.id} (${session.user.email})`,
+    );
+    console.log(
+      `🏢 [VERIFY-CHECKOUT] Active Org: ${session.session?.activeOrganizationId}`,
+    );
 
     // Récupérer la session Stripe
     const checkoutSession = await stripe.checkout.sessions.retrieve(sessionId, {
@@ -43,28 +45,30 @@ export async function GET(request) {
     if (!checkoutSession) {
       return NextResponse.json(
         { error: "Session non trouvée" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
-    // Vérifier que la session appartient à l'utilisateur actuel
-    // Le customer est déjà expandé dans la requête
-    const customer = checkoutSession.customer;
-    console.log(`📋 [VERIFY-CHECKOUT] Customer: ${customer?.id}, metadata:`, customer?.metadata);
-    console.log(`📋 [VERIFY-CHECKOUT] Session metadata:`, checkoutSession.metadata);
+    // Strict ownership check: metadata.userId must match session.user.id (HAUT-22)
+    // No email fallback — email can be spoofed or shared across Stripe customers.
+    // metadata.userId is set server-side by /api/create-org-subscription and cannot
+    // be modified by the client after checkout creation.
+    const metadataUserId =
+      checkoutSession.metadata?.userId ||
+      checkoutSession.customer?.metadata?.userId;
 
-    if (customer?.metadata?.userId !== session.user.id) {
-      // Vérifier aussi via l'email
-      if (customer?.email !== session.user.email) {
-        console.warn(
-          `⚠️ [VERIFY-CHECKOUT] Session ne correspond pas à l'utilisateur (customer userId: ${customer?.metadata?.userId}, user.id: ${session.user.id})`
-        );
-        // On autorise quand même si le userId dans les metadata de la session checkout correspond
-        if (checkoutSession.metadata?.userId !== session.user.id) {
-          return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-        }
-        console.log(`✅ [VERIFY-CHECKOUT] Autorisé via checkout session metadata`);
-      }
+    if (!metadataUserId) {
+      console.error(
+        `❌ [VERIFY-CHECKOUT] No userId in metadata for session ${sessionId}`,
+      );
+      return apiError(400, "Configuration Stripe invalide");
+    }
+
+    if (metadataUserId !== session.user.id) {
+      console.warn(
+        `⚠️ [VERIFY-CHECKOUT] userId mismatch: metadata=${metadataUserId}, session=${session.user.id}`,
+      );
+      return apiError(403, "Session de paiement non autorisée");
     }
 
     // Vérifier le statut du paiement
@@ -73,7 +77,7 @@ export async function GET(request) {
     const validPaymentStatuses = ["paid", "no_payment_required"];
     if (!validPaymentStatuses.includes(checkoutSession.payment_status)) {
       console.log(
-        `⚠️ [VERIFY-CHECKOUT] Paiement non complété: ${checkoutSession.payment_status}`
+        `⚠️ [VERIFY-CHECKOUT] Paiement non complété: ${checkoutSession.payment_status}`,
       );
       return NextResponse.json({
         success: false,
@@ -83,7 +87,7 @@ export async function GET(request) {
     }
 
     console.log(
-      `✅ [VERIFY-CHECKOUT] Statut paiement valide: ${checkoutSession.payment_status}`
+      `✅ [VERIFY-CHECKOUT] Statut paiement valide: ${checkoutSession.payment_status}`,
     );
 
     // Récupérer l'abonnement Stripe si présent
@@ -94,28 +98,34 @@ export async function GET(request) {
     const subscription = checkoutSession.subscription;
     if (subscription) {
       // subscription peut être un objet ou un string selon le contexte
-      const subscriptionObj = typeof subscription === "string"
-        ? await stripe.subscriptions.retrieve(subscription)
-        : subscription;
+      const subscriptionObj =
+        typeof subscription === "string"
+          ? await stripe.subscriptions.retrieve(subscription)
+          : subscription;
 
       subscriptionStatus = subscriptionObj.status;
       subscriptionId = subscriptionObj.id;
 
       console.log(
-        `✅ [VERIFY-CHECKOUT] Abonnement trouvé: ${subscriptionId}, status: ${subscriptionStatus}`
+        `✅ [VERIFY-CHECKOUT] Abonnement trouvé: ${subscriptionId}, status: ${subscriptionStatus}`,
       );
 
       // ✅ NOUVEAU FLUX: Vérifier si c'est une nouvelle organisation
-      const isNewOrganization = checkoutSession.metadata?.isNewOrganization === "true";
+      const isNewOrganization =
+        checkoutSession.metadata?.isNewOrganization === "true";
       let organizationId =
         checkoutSession.metadata?.organizationId ||
         session.session?.activeOrganizationId;
 
-      console.log(`🏢 [VERIFY-CHECKOUT] Organization ID initial: ${organizationId}, isNewOrganization: ${isNewOrganization}`);
+      console.log(
+        `🏢 [VERIFY-CHECKOUT] Organization ID initial: ${organizationId}, isNewOrganization: ${isNewOrganization}`,
+      );
 
       // ✅ Si c'est une nouvelle org et qu'on n'a pas d'organizationId, créer l'organisation via shared utility
       if (isNewOrganization && !organizationId) {
-        console.log(`🆕 [VERIFY-CHECKOUT] Création de l'organisation (webhook non reçu)...`);
+        console.log(
+          `🆕 [VERIFY-CHECKOUT] Création de l'organisation (webhook non reçu)...`,
+        );
 
         // Récupérer les données volumineuses depuis MongoDB
         let pendingOrgData = null;
@@ -125,20 +135,31 @@ export async function GET(request) {
             pendingOrgData = await mongoDb
               .collection("pending_org_data")
               .findOne({ _id: new ObjectId(pendingOrgDataId) });
-            console.log(`✅ [VERIFY-CHECKOUT] Données pendantes récupérées: ${pendingOrgDataId}`);
-          } catch (e) {
-            console.warn(`⚠️ [VERIFY-CHECKOUT] Données pendantes non trouvées: ${pendingOrgDataId}`);
+            console.log(
+              `✅ [VERIFY-CHECKOUT] Données pendantes récupérées: ${pendingOrgDataId}`,
+            );
+          } catch {
+            console.warn(
+              `⚠️ [VERIFY-CHECKOUT] Données pendantes non trouvées: ${pendingOrgDataId}`,
+            );
           }
         }
 
-        const { createOrganizationWithSubscription } = await import("@/src/lib/org-creation.js");
+        const { createOrganizationWithSubscription } =
+          await import("@/src/lib/org-creation.js");
 
         const creationResult = await createOrganizationWithSubscription({
           mongoDb,
           userId: session.user.id,
           orgData: {
-            companyName: checkoutSession.metadata?.companyName || checkoutSession.metadata?.orgName || "Mon entreprise",
-            orgName: checkoutSession.metadata?.orgName || checkoutSession.metadata?.companyName || "Mon entreprise",
+            companyName:
+              checkoutSession.metadata?.companyName ||
+              checkoutSession.metadata?.orgName ||
+              "Mon entreprise",
+            orgName:
+              checkoutSession.metadata?.orgName ||
+              checkoutSession.metadata?.companyName ||
+              "Mon entreprise",
             siret: checkoutSession.metadata?.siret || "",
             siren: checkoutSession.metadata?.siren || "",
             employeeCount: checkoutSession.metadata?.employeeCount || "",
@@ -147,7 +168,8 @@ export async function GET(request) {
             addressStreet: checkoutSession.metadata?.addressStreet || "",
             addressCity: checkoutSession.metadata?.addressCity || "",
             addressZipCode: checkoutSession.metadata?.addressZipCode || "",
-            addressCountry: checkoutSession.metadata?.addressCountry || "France",
+            addressCountry:
+              checkoutSession.metadata?.addressCountry || "France",
             activitySector: checkoutSession.metadata?.activitySector || "",
             activityCategory: checkoutSession.metadata?.activityCategory || "",
           },
@@ -158,7 +180,9 @@ export async function GET(request) {
         });
 
         organizationId = creationResult.organizationId;
-        console.log(`✅ [VERIFY-CHECKOUT] Organisation traitée via shared utility: ${organizationId}`);
+        console.log(
+          `✅ [VERIFY-CHECKOUT] Organisation traitée via shared utility: ${organizationId}`,
+        );
       } else if (organizationId) {
         // Org exists, just ensure subscription exists
         const existingSub = await mongoDb.collection("subscription").findOne({
@@ -169,21 +193,28 @@ export async function GET(request) {
         });
 
         if (!existingSub) {
-          console.log(`🔄 [VERIFY-CHECKOUT] Création de l'abonnement en base (webhook non reçu)...`);
+          console.log(
+            `🔄 [VERIFY-CHECKOUT] Création de l'abonnement en base (webhook non reçu)...`,
+          );
 
-          const { createOrganizationWithSubscription } = await import("@/src/lib/org-creation.js");
+          const { createOrganizationWithSubscription } =
+            await import("@/src/lib/org-creation.js");
 
           await createOrganizationWithSubscription({
             mongoDb,
             userId: session.user.id,
             orgData: {
-              companyName: checkoutSession.metadata?.companyName || "Mon entreprise",
+              companyName:
+                checkoutSession.metadata?.companyName || "Mon entreprise",
             },
             subscriptionInfo: subscriptionObj,
             sessionMetadata: checkoutSession.metadata || {},
           });
         } else {
-          console.log(`✅ [VERIFY-CHECKOUT] Abonnement déjà existant en base:`, existingSub._id);
+          console.log(
+            `✅ [VERIFY-CHECKOUT] Abonnement déjà existant en base:`,
+            existingSub._id,
+          );
         }
       } else {
         console.error(`❌ [VERIFY-CHECKOUT] Pas d'organizationId trouvé !`);
@@ -204,7 +235,7 @@ export async function GET(request) {
     if (error.type === "StripeInvalidRequestError") {
       return NextResponse.json(
         { error: "Session Stripe invalide" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
