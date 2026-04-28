@@ -1,10 +1,10 @@
 # Etat d'avancement — Refonte securite
 
-> Derniere mise a jour : 2026-04-28 15:00
-> Sprint en cours : Sprint 3.2 (suppression /api/organization/members)
-> Statut global : 2/8 sprints termines (Sprint 1a-1d + Sprint 2 + Sprint 3.1 termines, Sprint 1e en pause)
-> Findings resolus a ce jour : 4 CRITIQUES + 3 HAUTS sur 29 total
-> Prochain sprint : 3.2 — resout CRITIQUE-5
+> Derniere mise a jour : 2026-04-28 16:30
+> Sprint en cours : Sprint 4 (routes proxy et multi-tenant)
+> Statut global : 3/8 sprints termines (Sprint 1a-1d + Sprint 2 + Sprint 3 termines, Sprint 1e en pause)
+> Findings resolus a ce jour : 12 sur 29 (41%) — 5 CRITIQUES (62%), 4 HAUTS (44%), 2 MOYENS (17%)
+> Tous les CRITIQUES frontend resolus. Reste CRITIQUE-8, 9, 10 (banking proxy) pour Sprint 4.
 
 ## Vue d'ensemble
 
@@ -17,28 +17,29 @@
 | 1e     | Middleware deny-by-default (logging-only puis enforcement)               | En pause | 2026-04-28 | —          | Bloque: Edge Runtime + mongodb incompatible |
 | 2      | Urgences financieres (input: false, revocation sessions, fallback email) | Termine  | 2026-04-28 | 2026-04-28 | 3 livraisons, HAUT-22/26/34 resolus         |
 | 3.1    | Routes PDF data (invoices, credit-notes, quotes, purchase-orders)        | Termine  | 2026-04-28 | 2026-04-28 | CRITIQUE 1-4 resolus, 8 routes securisees   |
-| 3.2    | Suppression /api/organization/members + invitations + subscription/check | A faire  | —          | —          | CRITIQUE-5, HAUT-6, MOYEN-7                 |
-| 4      | Routes proxy et multi-tenant (banking-sync, trustedOrigins)              | A faire  | —          | —          | —                                           |
+| 3.2    | Suppression /api/organization/members + invitations + subscription/check | Termine  | 2026-04-28 | 2026-04-28 | CRITIQUE-5, HAUT-6, MOYEN-7 resolus         |
+| 4      | Routes proxy et multi-tenant (banking-sync, trustedOrigins)              | A faire  | —          | —          | CRITIQUE-8/9/10, HAUT-11                    |
 | 5      | Validation inputs + coherence ObjectId                                   | A faire  | —          | —          | —                                           |
 | 6      | RBAC unifie frontend/backend                                             | A faire  | —          | —          | —                                           |
 | 7      | Consistency checks + monitoring                                          | A faire  | —          | —          | —                                           |
 | 8      | Cleanup + dette residuelle                                               | A faire  | —          | —          | —                                           |
 
-## Sprint en cours : 3.2 — Suppression routes non securisees
+## Sprint en cours : 4 — Routes proxy et multi-tenant
 
 ### Objectif
 
-Supprimer la double route members (CRITIQUE-5), reduire les donnees de l'invitation GET (HAUT-6), supprimer subscription/check dead code (MOYEN-7).
+Securiser les routes banking-sync (cross-tenant via x-workspace-id), corriger trustedOrigins par env var.
 
 ### Livrables prevus
 
-- [ ] Suppression /api/organization/members (ancienne route sans auth, doublon de /api/organizations/[id]/members)
-- [ ] Reduction donnees /api/invitations/[id] GET (supprimer email, organizationId, inviterId)
-- [ ] Suppression /api/subscription/check (dead code confirme)
+- [ ] 3 routes banking-sync migrees (requireSession + requireOrgMembership + requireActiveSubscription)
+- [ ] Route /api/banking/accounts migree
+- [ ] Pattern x-workspace-id : accepter header ET verifier membership
+- [ ] trustedOrigins par environnement (supprimer ngrok + preview hardcode)
 
 ### Findings resolus par ce sprint
 
-CRITIQUE-5, HAUT-6, MOYEN-7.
+CRITIQUE-8, 9, 10, HAUT-11, MOYEN-30, BAS-32.
 
 ### Statut
 
@@ -96,6 +97,14 @@ Config preview mono-branche a refactorer :
 - 57 tests skip, 0 erreur
 - Commit: 65c9714f
 
+### Sprint 3.2-3.4 — Suppression routes non securisees (2026-04-28)
+
+- Sprint 3.2 : suppression /api/organization/members + migration accept-invitation (CRITIQUE-5)
+- Sprint 3.3 : reduction donnees /api/invitations/[id] GET — 7 champs reduits a 5 (HAUT-6)
+- Sprint 3.4 : suppression dead code /api/subscription/check + retrait EXCLUDED_ROUTES (MOYEN-7)
+- Migration accept-invitation : email source URL params au lieu de API response
+- Commits : 71db7529, 300de50e, 95a6e328, caabd2e4
+
 ### Sprint 3.1 — Routes PDF data securisees (2026-04-28)
 
 - 8 routes securisees : 4 data (dual-access) + 4 generate-pdf (requireSession + requireOrgMembership)
@@ -143,18 +152,18 @@ Config preview mono-branche a refactorer :
 | CRITIQUE-2 (credit-notes/data)         | Critique | Sprint 3.1  | Resolu   |
 | CRITIQUE-3 (quotes/data)               | Critique | Sprint 3.1  | Resolu   |
 | CRITIQUE-4 (purchase-orders/data)      | Critique | Sprint 3.1  | Resolu   |
-| CRITIQUE-5 (org/members sans auth)     | Critique | Sprint 3    | A faire  |
+| CRITIQUE-5 (org/members sans auth)     | Critique | Sprint 3.2  | Resolu   |
 | CRITIQUE-8 (banking-sync accounts)     | Critique | Sprint 4    | A faire  |
 | CRITIQUE-9 (banking-sync transactions) | Critique | Sprint 4    | A faire  |
 | CRITIQUE-10 (banking-sync full)        | Critique | Sprint 4    | A faire  |
-| HAUT-6 (invitation data leak)          | Haut     | Sprint 3    | A faire  |
+| HAUT-6 (invitation data leak)          | Haut     | Sprint 3.3  | Resolu   |
 | HAUT-11 (banking/accounts)             | Haut     | Sprint 4    | A faire  |
 | HAUT-12 (middleware allow-by-default)  | Haut     | Sprint 1f   | En pause |
 | HAUT-21 (error.message leak)           | Haut     | Sprint 1b+3 | A faire  |
 | HAUT-22 (verify-checkout fallback)     | Haut     | Sprint 2    | Resolu   |
 | HAUT-26 (onboardingStep updateUser)    | Haut     | Sprint 2    | Resolu   |
 | HAUT-34 (10 additionalFields)          | Haut     | Sprint 2    | Resolu   |
-| MOYEN-7 (subscription/check)           | Moyen    | Sprint 8    | A faire  |
+| MOYEN-7 (subscription/check)           | Moyen    | Sprint 3.4  | Resolu   |
 | MOYEN-13 (fail-open API)               | Moyen    | Sprint 1f   | En pause |
 | MOYEN-16 (routes org sans role)        | Moyen    | Sprint 6    | A faire  |
 | MOYEN-17 (bypass 5min)                 | Moyen    | Sprint 6    | A faire  |
@@ -173,6 +182,20 @@ Config preview mono-branche a refactorer :
 | BAS-32 (Vercel preview)                | Bas      | Sprint 4    | A faire  |
 
 ## Journal de bord
+
+### 2026-04-28 — Sprint 3 complet
+
+Sprint 3 termine en une session. 8 findings resolus :
+
+- Sprint 3.1 : pattern dual-access sur 4 routes PDF data + securisation 4 routes generate-pdf (CRITIQUE-1 a 4)
+- Sprint 3.2 : suppression /api/organization/members + migration accept-invitation (CRITIQUE-5)
+- Sprint 3.3 : reduction donnees /api/invitations/[id] GET — email et organizationId supprimes (HAUT-6)
+- Sprint 3.4 : suppression dead code /api/subscription/check (MOYEN-7)
+
+Tous les CRITIQUES frontend resolus. Reste CRITIQUE-8, 9, 10 (banking proxy) pour Sprint 4.
+13+ commits Sprint 3 sur security-refactor. 194 tests pass.
+
+Regression UX acceptee : liste membres accept-invitation non affichee pre-login.
 
 ### 2026-04-28 — Session marathon : Sprint 1 a 3.1 en une journee
 
@@ -271,6 +294,16 @@ Bilan de la journee :
 - Creation de la structure docs/security/ (principles.md, architecture.md, migration-plan.md, PROGRESS.md)
 - Creation des squelettes de helpers dans src/lib/security/
 - Creation de la structure de tests dans **tests**/security/
+
+---
+
+## Dette UX a traiter post-audit
+
+### Sprint 3.2 — Page accept-invitation : regression UX
+
+La liste des membres n'est plus affichee pour les utilisateurs non authentifies sur la page d'acceptation d'invitation. Le nom de l'organisation et le role propose sont toujours affiches.
+
+Solution future si feedback utilisateur : creer GET /api/invitations/[invitationId]/preview avec auth via token d'invitation (pas de session requise), retournant uniquement nom + avatar des membres. Priorite faible.
 
 ---
 
