@@ -37,6 +37,7 @@ export const auth = betterAuth({
     "https://newbi-v2.vercel.app",
     "http://localhost:3000",
     "https://newbi-v2-git-develop-sofianemtimet6-2653s-projects.vercel.app",
+    "https://newbi-v2-git-security-refactor-sofianemtimet6-2653s-projects.vercel.app", // Temporary: Sprint 1e smoke test — remove at Sprint 4 (MOYEN-30)
     "newbi://", // App mobile Expo
     "https://013c-2a01-e0a-440-88a0-4131-a2ba-5087-6582.ngrok-free.app", // ngrok dev
   ],

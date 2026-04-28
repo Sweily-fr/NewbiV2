@@ -118,6 +118,13 @@ Phase 1/3 livree (logging-only). En attente de deploy staging + analyse logs.
 
 ## Journal de bord
 
+### 2026-04-28 — Sprint 1e workaround: trustedOrigins preview URL
+
+- URL preview security-refactor ajoutee temporairement a trustedOrigins dans auth.js
+- Cause : Better Auth retourne "Invalid origin" 403 sur le preview deployment
+- URL : https://newbi-v2-git-security-refactor-sofianemtimet6-2653s-projects.vercel.app
+- A retirer au Sprint 4 lors du refactor MOYEN-30 (trustedOrigins par env var)
+
 ### 2026-04-28 — Sprint 1e phase 1/3 livree (logging-only middleware)
 
 - Middleware reecrit en deny-by-default
