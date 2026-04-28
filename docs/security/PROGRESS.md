@@ -1,45 +1,51 @@
 # Etat d'avancement — Refonte securite
 
-> Derniere mise a jour : 2026-04-28 16:30
-> Sprint en cours : Sprint 4 (routes proxy et multi-tenant)
-> Statut global : 3/8 sprints termines (Sprint 1a-1d + Sprint 2 + Sprint 3 termines, Sprint 1e en pause)
-> Findings resolus a ce jour : 12 sur 29 (41%) — 5 CRITIQUES (62%), 4 HAUTS (44%), 2 MOYENS (17%)
-> Tous les CRITIQUES frontend resolus. Reste CRITIQUE-8, 9, 10 (banking proxy) pour Sprint 4.
+> Derniere mise a jour : 2026-04-28 22:00
+> Sprint en cours : Sprint 5 (validation inputs + coherence ObjectId)
+> Statut global : 4/8 sprints termines (Sprint 1a-1d + Sprint 2 + Sprint 3 + Sprint 4, Sprint 1e en pause)
+> **TOUS LES CRITIQUES DE L'AUDIT SONT RESOLUS (8/8 = 100%)**
+> Findings resolus : 18 sur 29 + 2 NOUVEAU = 20 total
+>
+> - 8 CRITIQUES sur 8 (100%)
+> - 5 HAUTS sur 9 (56%)
+> - 3 MOYENS sur 12 (25%)
+> - 1 BAS sur 3 (33%)
+> - 2 NOUVEAU resolus (NOUVEAU-1, NOUVEAU-2)
 
 ## Vue d'ensemble
 
-| Sprint | Description                                                              | Statut   | Date debut | Date fin   | Notes                                       |
-| ------ | ------------------------------------------------------------------------ | -------- | ---------- | ---------- | ------------------------------------------- |
-| 1a     | Squelette helpers + tests                                                | Termine  | 2026-04-27 | 2026-04-27 | 22 fichiers, 57 tests skip, commit 65c9714f |
-| 1b     | Helpers de base (requireSession, apiError, withErrorHandler, toObjectId) | Termine  | 2026-04-27 | 2026-04-28 | 27 tests pass, 30 skip                      |
-| 1c     | Helpers RBAC (requireOrgMembership, requireActiveSubscription)           | Termine  | 2026-04-28 | 2026-04-28 | 44 tests pass, 13 skip                      |
-| 1d     | Helpers complements (requireInternalSecret, assertModified)              | Termine  | 2026-04-28 | 2026-04-28 | 57 tests pass, 0 skip                       |
-| 1e     | Middleware deny-by-default (logging-only puis enforcement)               | En pause | 2026-04-28 | —          | Bloque: Edge Runtime + mongodb incompatible |
-| 2      | Urgences financieres (input: false, revocation sessions, fallback email) | Termine  | 2026-04-28 | 2026-04-28 | 3 livraisons, HAUT-22/26/34 resolus         |
-| 3.1    | Routes PDF data (invoices, credit-notes, quotes, purchase-orders)        | Termine  | 2026-04-28 | 2026-04-28 | CRITIQUE 1-4 resolus, 8 routes securisees   |
-| 3.2    | Suppression /api/organization/members + invitations + subscription/check | Termine  | 2026-04-28 | 2026-04-28 | CRITIQUE-5, HAUT-6, MOYEN-7 resolus         |
-| 4      | Routes proxy et multi-tenant (banking-sync, trustedOrigins)              | A faire  | —          | —          | CRITIQUE-8/9/10, HAUT-11                    |
-| 5      | Validation inputs + coherence ObjectId                                   | A faire  | —          | —          | —                                           |
-| 6      | RBAC unifie frontend/backend                                             | A faire  | —          | —          | —                                           |
-| 7      | Consistency checks + monitoring                                          | A faire  | —          | —          | —                                           |
-| 8      | Cleanup + dette residuelle                                               | A faire  | —          | —          | —                                           |
+| Sprint | Description                                                              | Statut   | Date debut | Date fin   | Notes                                                |
+| ------ | ------------------------------------------------------------------------ | -------- | ---------- | ---------- | ---------------------------------------------------- |
+| 1a     | Squelette helpers + tests                                                | Termine  | 2026-04-27 | 2026-04-27 | 22 fichiers, 57 tests skip, commit 65c9714f          |
+| 1b     | Helpers de base (requireSession, apiError, withErrorHandler, toObjectId) | Termine  | 2026-04-27 | 2026-04-28 | 27 tests pass, 30 skip                               |
+| 1c     | Helpers RBAC (requireOrgMembership, requireActiveSubscription)           | Termine  | 2026-04-28 | 2026-04-28 | 44 tests pass, 13 skip                               |
+| 1d     | Helpers complements (requireInternalSecret, assertModified)              | Termine  | 2026-04-28 | 2026-04-28 | 57 tests pass, 0 skip                                |
+| 1e     | Middleware deny-by-default (logging-only puis enforcement)               | En pause | 2026-04-28 | —          | Bloque: Edge Runtime + mongodb incompatible          |
+| 2      | Urgences financieres (input: false, revocation sessions, fallback email) | Termine  | 2026-04-28 | 2026-04-28 | 3 livraisons, HAUT-22/26/34 resolus                  |
+| 3.1    | Routes PDF data (invoices, credit-notes, quotes, purchase-orders)        | Termine  | 2026-04-28 | 2026-04-28 | CRITIQUE 1-4 resolus, 8 routes securisees            |
+| 3.2    | Suppression /api/organization/members + invitations + subscription/check | Termine  | 2026-04-28 | 2026-04-28 | CRITIQUE-5, HAUT-6, MOYEN-7 resolus                  |
+| 4      | Routes proxy et multi-tenant (banking-sync, trustedOrigins)              | Termine  | 2026-04-28 | 2026-04-28 | 8 CRITIQUES 100%, 10 routes banking, MOYEN-30/BAS-32 |
+| 5      | Validation inputs + coherence ObjectId                                   | A faire  | —          | —          | —                                                    |
+| 6      | RBAC unifie frontend/backend                                             | A faire  | —          | —          | —                                                    |
+| 7      | Consistency checks + monitoring                                          | A faire  | —          | —          | —                                                    |
+| 8      | Cleanup + dette residuelle                                               | A faire  | —          | —          | —                                                    |
 
-## Sprint en cours : 4 — Routes proxy et multi-tenant
+## Sprint en cours : 5 — Validation inputs + coherence ObjectId
 
 ### Objectif
 
-Securiser les routes banking-sync (cross-tenant via x-workspace-id), corriger trustedOrigins par env var.
+Implementer les schemas Zod centralises pour la validation des inputs, verifier et corriger le bug string vs ObjectId (MOYEN-25), valider les invitedMembers (MOYEN-18), whitelister le type (MOYEN-20), valider onboardingData (MOYEN-29).
 
 ### Livrables prevus
 
-- [ ] 3 routes banking-sync migrees (requireSession + requireOrgMembership + requireActiveSubscription)
-- [ ] Route /api/banking/accounts migree
-- [ ] Pattern x-workspace-id : accepter header ET verifier membership
-- [ ] trustedOrigins par environnement (supprimer ngrok + preview hardcode)
+- [ ] Schemas Zod centralises (onboarding, organization, common)
+- [ ] Migration routes vers schemas Zod
+- [ ] Verification empirique bug string vs ObjectId (contre base prod read-only)
+- [ ] Correction des queries si bug confirme
 
 ### Findings resolus par ce sprint
 
-CRITIQUE-8, 9, 10, HAUT-11, MOYEN-30, BAS-32.
+MOYEN-18, MOYEN-20, MOYEN-25, MOYEN-29.
 
 ### Statut
 
@@ -97,6 +103,17 @@ Config preview mono-branche a refactorer :
 - 57 tests skip, 0 erreur
 - Commit: 65c9714f
 
+### Sprint 4 — Routes proxy et multi-tenant (2026-04-28)
+
+- 7 micro-livraisons : 4.1 (accounts), 4.2 (transactions+full), 4.3 (banking/accounts), 4.4 (bridge), 4.5 (gocardless), 4.6 (disconnect+status), 4.7 (trustedOrigins)
+- 10 routes banking securisees : 3 banking-sync + 1 banking + 6 banking-connect
+- Pattern : requireSession + requireOrgMembership(workspaceId) + requireActiveSubscription
+- trustedOrigins refactore : 5 origines permanentes + ADDITIONAL_TRUSTED_ORIGINS env var
+- NOUVEAU-2 resolu : 6 routes banking-connect decouvertes et securisees pendant Sprint 4
+- NOUVEAU-3 decouvert : config GoCardless invalide en staging (bug backend, pas securite)
+- Findings resolus : CRITIQUE-8/9/10, HAUT-11, MOYEN-30, BAS-32, NOUVEAU-2
+- **TOUS LES CRITIQUES DE L'AUDIT SONT RESOLUS (8/8 = 100%)**
+
 ### Sprint 3.2-3.4 — Suppression routes non securisees (2026-04-28)
 
 - Sprint 3.2 : suppression /api/organization/members + migration accept-invitation (CRITIQUE-5)
@@ -153,11 +170,11 @@ Config preview mono-branche a refactorer :
 | CRITIQUE-3 (quotes/data)               | Critique | Sprint 3.1  | Resolu   |
 | CRITIQUE-4 (purchase-orders/data)      | Critique | Sprint 3.1  | Resolu   |
 | CRITIQUE-5 (org/members sans auth)     | Critique | Sprint 3.2  | Resolu   |
-| CRITIQUE-8 (banking-sync accounts)     | Critique | Sprint 4    | A faire  |
-| CRITIQUE-9 (banking-sync transactions) | Critique | Sprint 4    | A faire  |
-| CRITIQUE-10 (banking-sync full)        | Critique | Sprint 4    | A faire  |
+| CRITIQUE-8 (banking-sync accounts)     | Critique | Sprint 4.1  | Resolu   |
+| CRITIQUE-9 (banking-sync transactions) | Critique | Sprint 4.2  | Resolu   |
+| CRITIQUE-10 (banking-sync full)        | Critique | Sprint 4.2  | Resolu   |
 | HAUT-6 (invitation data leak)          | Haut     | Sprint 3.3  | Resolu   |
-| HAUT-11 (banking/accounts)             | Haut     | Sprint 4    | A faire  |
+| HAUT-11 (banking/accounts)             | Haut     | Sprint 4.3  | Resolu   |
 | HAUT-12 (middleware allow-by-default)  | Haut     | Sprint 1f   | En pause |
 | HAUT-21 (error.message leak)           | Haut     | Sprint 1b+3 | A faire  |
 | HAUT-22 (verify-checkout fallback)     | Haut     | Sprint 2    | Resolu   |
@@ -174,14 +191,23 @@ Config preview mono-branche a refactorer :
 | MOYEN-24 (race org creation)           | Moyen    | Sprint 7    | A faire  |
 | MOYEN-25 (session updateMany)          | Moyen    | Sprint 5    | A faire  |
 | MOYEN-29 (onboardingData)              | Moyen    | Sprint 5    | A faire  |
-| MOYEN-30 (ngrok prod)                  | Moyen    | Sprint 4    | A faire  |
+| MOYEN-30 (ngrok prod)                  | Moyen    | Sprint 4.7  | Resolu   |
 | MOYEN-31 (newbi:// scheme)             | Moyen    | Sprint 8    | A faire  |
 | MOYEN-33 (email non verifie)           | Moyen    | Sprint 8    | A faire  |
 | BAS-27 (step corrompu)                 | Bas      | Sprint 7    | A faire  |
 | BAS-28 (dead code invitation)          | Bas      | Sprint 8    | A faire  |
-| BAS-32 (Vercel preview)                | Bas      | Sprint 4    | A faire  |
+| BAS-32 (Vercel preview)                | Bas      | Sprint 4.7  | Resolu   |
 
 ## Journal de bord
+
+### 2026-04-28 — Sprint 4 complet — TOUS LES CRITIQUES RESOLUS
+
+Sprint 4 termine en une session. 7 micro-livraisons. 10 routes banking securisees.
+6 findings audit resolus + 1 finding nouveau (NOUVEAU-2 = 6 routes banking-connect).
+trustedOrigins refactore pour scoping par environnement.
+**Milestone : 8/8 CRITIQUES resolus (100%).**
+Decouverte NOUVEAU-3 : config GoCardless invalide en staging (bug backend pre-existant).
+Total session : 30+ commits sur security-refactor, 194 tests pass.
 
 ### 2026-04-28 — Sprint 3 complet
 
