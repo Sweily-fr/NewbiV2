@@ -48,6 +48,16 @@ HAUT-12 (routes API echappent au middleware), MOYEN-13 (fail-open sur routes API
 
 Phase 1/3 livree (logging-only). En attente de deploy staging + analyse logs.
 
+### Notes smoke test Sprint 1e
+
+- Login/signup : OK apres ajout URL preview dans trustedOrigins (workaround 34b12d99)
+- Banking : SKIPPED — la redirect URL Bridge (apres connexion sandbox) est hardcodee vers le preview develop. L'utilisateur est redirige vers le mauvais deploiement apres auth Bridge. A corriger au Sprint 4.
+- Autres features : en cours de test
+
+### Notes pour Sprint 4
+
+- Bridge redirect URL hardcodee vers develop, a corriger en meme temps que MOYEN-30 (trustedOrigins via env var). Les redirect URLs des services externes (Bridge, GoCardless, Google Calendar) doivent utiliser une variable d'environnement, pas une URL en dur.
+
 ---
 
 ## Sprints termines
