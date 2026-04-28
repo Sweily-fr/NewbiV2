@@ -127,10 +127,10 @@ Config preview mono-branche a refactorer :
 
 | Finding                                | Severite | Sprint      | Statut   |
 | -------------------------------------- | -------- | ----------- | -------- |
-| CRITIQUE-1 (invoices/data)             | Critique | Sprint 3    | A faire  |
-| CRITIQUE-2 (credit-notes/data)         | Critique | Sprint 3    | A faire  |
-| CRITIQUE-3 (quotes/data)               | Critique | Sprint 3    | A faire  |
-| CRITIQUE-4 (purchase-orders/data)      | Critique | Sprint 3    | A faire  |
+| CRITIQUE-1 (invoices/data)             | Critique | Sprint 3.1  | Resolu   |
+| CRITIQUE-2 (credit-notes/data)         | Critique | Sprint 3.1  | Resolu   |
+| CRITIQUE-3 (quotes/data)               | Critique | Sprint 3.1  | Resolu   |
+| CRITIQUE-4 (purchase-orders/data)      | Critique | Sprint 3.1  | Resolu   |
 | CRITIQUE-5 (org/members sans auth)     | Critique | Sprint 3    | A faire  |
 | CRITIQUE-8 (banking-sync accounts)     | Critique | Sprint 4    | A faire  |
 | CRITIQUE-9 (banking-sync transactions) | Critique | Sprint 4    | A faire  |
@@ -161,6 +161,16 @@ Config preview mono-branche a refactorer :
 | BAS-32 (Vercel preview)                | Bas      | Sprint 4    | A faire  |
 
 ## Journal de bord
+
+### 2026-04-28 — Sprint 3.1 complet (4 routes PDF data securisees)
+
+- 4 routes data securisees avec pattern dual-access (x-internal-secret OU cookie+membership)
+- 4 routes generate-pdf securisees avec requireSession + requireOrgMembership avant launchBrowser
+- Ordre auth corrige : requireSession AVANT findOne (previent enumeration IDs)
+- MongoClient.connect() remplace par singleton mongoDb (4 fuites de connexion corrigees)
+- error.message supprime des reponses 500 (8 routes, via withErrorHandler)
+- Findings resolus : CRITIQUE-1, CRITIQUE-2, CRITIQUE-3, CRITIQUE-4
+- Commits : 298f21f3, a50d7868, cd31819e, 9c0aaeaa, + ce commit
 
 ### 2026-04-28 — Sprint 2 termine (urgences financieres)
 
@@ -277,3 +287,11 @@ Si tu reprends ce projet dans une nouvelle conversation Claude :
 - **Decision** : userId est stocke comme ObjectId dans la collection session (confirme par test fonctionnel Sprint 2.2).
 - **Raison** : Le test de revocation de sessions a montre que `deleteMany({ userId: toObjectId(id) })` fonctionne correctement (sessions count passe de >0 a 0). Cela confirme que le driver MongoDB 7.1.1 ne fait pas de loose match string/ObjectId et que toObjectId() est necessaire pour toutes les queries sur les collections Better Auth.
 - **Impact** : Sprint 5 (correction des queries existantes avec string vs ObjectId). Le bug est reel — les queries avec string userId ne matchent pas.
+
+### ADR-005 : Pattern dual-access pour routes data PDF
+
+- **Date** : 2026-04-28
+- **Decision** : Les routes /api/_/data/[id] utilisent un pattern dual-access : X-Internal-Secret header (Puppeteer) OU session cookie + org membership (user authentifie). Les routes /api/_/generate-pdf verifient session + membership AVANT de lancer Puppeteer.
+- **Raison** : Puppeteer ne peut pas envoyer de cookie session (navigateur headless sans etat). Le secret partage (INTERNAL_API_SECRET) authentifie Puppeteer comme service interne de confiance. L'auth utilisateur est verifiee en amont dans generate-pdf.
+- **Pattern** : generate-pdf (requireSession + requireOrgMembership) → Puppeteer (x-internal-secret) → data route (hasInternalSecret skip auth).
+- **Impact** : 4 routes data (invoices, credit-notes, quotes, purchase-orders) + 4 routes generate-pdf.
