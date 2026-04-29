@@ -115,11 +115,11 @@ async function checkSubscription(userId, activeOrgId) {
           `[Dashboard Layout] Abonnement valide trouvé sur org: ${candidateOrgId}, auto-switch`,
         );
 
-        // Mettre à jour toutes les sessions de l'utilisateur
+        // MOYEN-25 fix: userId is stored as ObjectId in session collection (ADR-004)
         const updateResult = await mongoDb
           .collection("session")
           .updateMany(
-            { userId: userId },
+            { userId: userObjectId },
             { $set: { activeOrganizationId: candidateOrgId } },
           );
         console.log(

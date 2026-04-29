@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
 import { mongoDb } from "@/src/lib/mongodb";
-import { ObjectId } from "mongodb";
+import { toObjectId } from "@/src/lib/security";
 
 /**
  * POST /api/organizations/[organizationId]/complete-onboarding
@@ -20,13 +20,10 @@ export async function POST(request, { params }) {
 
     const { organizationId } = await params;
 
-    // Vérifier que l'utilisateur appartient à cette organisation
+    // MOYEN-25 fix: member.organizationId is stored as ObjectId (ADR-004)
     const memberCheck = await mongoDb.collection("member").findOne({
-      userId: new ObjectId(session.user.id),
-      $or: [
-        { organizationId: organizationId },
-        { organizationId: new ObjectId(organizationId) },
-      ],
+      userId: toObjectId(session.user.id),
+      organizationId: toObjectId(organizationId),
     });
 
     if (!memberCheck) {
@@ -64,9 +61,7 @@ export async function POST(request, { params }) {
 
     // Mettre à jour l'organisation
     const updateResult = await mongoDb.collection("organization").updateOne(
-      {
-        $or: [{ _id: new ObjectId(organizationId) }, { id: organizationId }],
-      },
+      { _id: toObjectId(organizationId) },
       {
         $set: {
           onboardingCompleted: true,
@@ -78,7 +73,7 @@ export async function POST(request, { params }) {
     // Also mark the user's onboarding as completed (Sprint 2: input: false on these fields
     // means authClient.updateUser can no longer set them client-side)
     await mongoDb.collection("user").updateOne(
-      { _id: new ObjectId(session.user.id) },
+      { _id: toObjectId(session.user.id) },
       {
         $set: {
           hasSeenOnboarding: true,

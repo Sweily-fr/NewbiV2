@@ -215,10 +215,11 @@ export async function createOrganizationWithSubscription({
   // ──────────────────────────────────────────────
   // 3. Update sessions with activeOrganizationId
   // ──────────────────────────────────────────────
+  // MOYEN-25 fix: userId is stored as ObjectId in session collection (ADR-004)
   const updateResult = await mongoDb
     .collection("session")
     .updateMany(
-      { userId: userId },
+      { userId: new ObjectId(userId) },
       { $set: { activeOrganizationId: result.organizationId } },
     );
   console.log(
