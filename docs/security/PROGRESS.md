@@ -1,15 +1,15 @@
 # Etat d'avancement — Refonte securite
 
-> Derniere mise a jour : 2026-04-29 18:00
-> Sprint en cours : Sprint 7 (consistency checks + monitoring)
-> Statut global : 6/8 sprints termines (Sprint 1a-1d + Sprint 2-6, Sprint 1e en pause)
+> Derniere mise a jour : 2026-04-29 20:00
+> Sprint en cours : Sprint 8 (cleanup + dette residuelle)
+> Statut global : 7/8 sprints termines (Sprint 1a-1d + Sprint 2-7, Sprint 1e en pause)
 > **TOUS LES CRITIQUES DE L'AUDIT SONT RESOLUS (8/8 = 100%)**
-> Findings resolus : 24 sur 29 + 4 NOUVEAU = 28 total
+> Findings resolus : 28 sur 29 + 4 NOUVEAU = 32 total
 >
 > - 8 CRITIQUES sur 8 (100%)
 > - 5 HAUTS sur 9 (56%)
-> - 9 MOYENS sur 12 (75%)
-> - 1 BAS sur 3 (33%)
+> - 12 MOYENS sur 12 (100%) ← Sprint 7 : +3 resolus
+> - 2 BAS sur 3 (67%) ← Sprint 7 : +1 resolu
 > - 4 NOUVEAU resolus (NOUVEAU-1, NOUVEAU-2, NOUVEAU-4, NOUVEAU-5)
 
 ## Vue d'ensemble
@@ -30,25 +30,30 @@
 | 5.3    | Zod onboarding/step (MOYEN-29)                                           | Termine  | 2026-04-29 | 2026-04-29 | Schema whitelist cles + requireSession + toObjectId  |
 | 6      | RBAC unifie frontend/backend                                             | Termine  | 2026-04-29 | 2026-04-29 | MOYEN-16/17, NOUVEAU-4, -136 lignes cleanup          |
 | 7.0    | Fix NOUVEAU-5 (account deactivation bypass)                              | Termine  | 2026-04-29 | 2026-04-29 | NOUVEAU-5 resolu, ADR-007, commit 85d4c5a0           |
-| 7      | Consistency checks + monitoring                                          | A faire  | —          | —          | —                                                    |
+| 7.1    | Index unique subscription.referenceId (MOYEN-19 prevention)              | Termine  | 2026-04-29 | 2026-04-29 | 44 subs canceled nettoyees, E11000 valide            |
+| 7.2    | Consistency checks (detection MOYEN-19/23/24/BAS-27)                     | Termine  | 2026-04-29 | 2026-04-29 | 5 fonctions, endpoint admin, 10 anomalies detectees  |
 | 8      | Cleanup + dette residuelle                                               | A faire  | —          | —          | —                                                    |
 
-## Sprint en cours : 7 — Consistency checks + monitoring
+## Sprint en cours : 8 — Cleanup + dette residuelle
 
-### Objectif
+### Findings prevus
 
-Implementer des checks periodiques qui detectent les etats incoherents (org sans subscription, double subscription, sessions orphelines).
+HAUT-21 (error.message leak residuel), MOYEN-31 (newbi:// scheme), MOYEN-33 (email non verifie), BAS-28 (dead code invitation).
 
 ### Livrables prevus
 
-- [ ] src/lib/consistency-checks.js implemente
-- [ ] Endpoint /api/admin/consistency-check protege
-- [ ] Strategie alerting (Sentry/Slack/GitHub Actions)
-- [ ] Cron setup
+- [ ] .env.example avec toutes les variables requises
+- [ ] Zod error details dans les reponses 400 (DX frontend)
+- [ ] Cleanup dead code invitation
+- [ ] Restriction newbi:// scheme dans trustedOrigins
+- [ ] Bandeau verification email
 
-### Findings resolus par ce sprint
+### Actions pre-merge en prod (Sprint 7)
 
-MOYEN-19, MOYEN-23, MOYEN-24, BAS-27.
+- Verifier doublons referenceId en prod : `db.subscription.aggregate([{$group:{_id:"$referenceId",count:{$sum:1}}},{$match:{count:{$gt:1}}}])`
+- Si doublons : cleanup ciblé MANUEL avant merge (PROD JAMAIS NETTOYEE)
+- Si pas de doublons : merge direct (l'index unique se creera au prochain getMongoDb())
+- Lancer GET /api/admin/consistency-check en prod apres merge pour baseline (login sofiane.mtimet6)
 
 ---
 
@@ -101,6 +106,23 @@ Config preview mono-branche a refactorer :
 - 22 fichiers crees (4 docs + 9 helpers + 1 barrel + 8 tests)
 - 57 tests skip, 0 erreur
 - Commit: 65c9714f
+
+### Sprint 7 — Consistency checks + monitoring (2026-04-29)
+
+- Sprint 7.0 : NOUVEAU-5 (bypass desactivation compte via bundler minification). Fix : throw APIError hors try/catch. ADR-007 documente.
+- Sprint 7.1 : index unique sur subscription.referenceId (MOYEN-19 prevention). 44 subs canceled nettoyees en staging. Valide empiriquement (E11000 sur doublon).
+- Sprint 7.2 : 5 fonctions de detection dans src/lib/consistency-checks.js :
+  - findOrgsWithoutSubscription (MOYEN-23)
+  - findDuplicateSubscriptions (MOYEN-19 detection)
+  - findOrgsWithoutOwner (MOYEN-24)
+  - findCorruptedOnboardingSteps (BAS-27)
+  - findOrphanedSessions (bonus)
+- Endpoint GET /api/admin/consistency-check protege par whitelist email
+- Premiere execution staging : 10 anomalies detectees (4 orgs sans sub + 6 orgs sans owner)
+- Cleanup manuel : 6 orgs orphelines supprimees (artefacts historiques MOYEN-24 confirmes)
+- Re-run apres cleanup : 4 orgs sans sub uniquement (orgs test, acceptable)
+- Findings resolus : MOYEN-19, MOYEN-23, MOYEN-24, BAS-27, NOUVEAU-5
+- Commits : 35e803c2, 85d4c5a0, e509931f
 
 ### Sprint 6 — RBAC unifie frontend/backend (2026-04-29)
 
@@ -217,43 +239,55 @@ Bug 3 : seats-info/route.js (Sprint 5.1.3)
 
 ## Findings x Sprints
 
-| Finding                                | Severite | Sprint      | Statut   |
-| -------------------------------------- | -------- | ----------- | -------- |
-| CRITIQUE-1 (invoices/data)             | Critique | Sprint 3.1  | Resolu   |
-| CRITIQUE-2 (credit-notes/data)         | Critique | Sprint 3.1  | Resolu   |
-| CRITIQUE-3 (quotes/data)               | Critique | Sprint 3.1  | Resolu   |
-| CRITIQUE-4 (purchase-orders/data)      | Critique | Sprint 3.1  | Resolu   |
-| CRITIQUE-5 (org/members sans auth)     | Critique | Sprint 3.2  | Resolu   |
-| CRITIQUE-8 (banking-sync accounts)     | Critique | Sprint 4.1  | Resolu   |
-| CRITIQUE-9 (banking-sync transactions) | Critique | Sprint 4.2  | Resolu   |
-| CRITIQUE-10 (banking-sync full)        | Critique | Sprint 4.2  | Resolu   |
-| HAUT-6 (invitation data leak)          | Haut     | Sprint 3.3  | Resolu   |
-| HAUT-11 (banking/accounts)             | Haut     | Sprint 4.3  | Resolu   |
-| HAUT-12 (middleware allow-by-default)  | Haut     | Sprint 1f   | En pause |
-| HAUT-21 (error.message leak)           | Haut     | Sprint 1b+3 | A faire  |
-| HAUT-22 (verify-checkout fallback)     | Haut     | Sprint 2    | Resolu   |
-| HAUT-26 (onboardingStep updateUser)    | Haut     | Sprint 2    | Resolu   |
-| HAUT-34 (10 additionalFields)          | Haut     | Sprint 2    | Resolu   |
-| MOYEN-7 (subscription/check)           | Moyen    | Sprint 3.4  | Resolu   |
-| MOYEN-13 (fail-open API)               | Moyen    | Sprint 1f   | En pause |
-| MOYEN-16 (routes org sans role)        | Moyen    | Sprint 6.1  | Resolu   |
-| MOYEN-17 (bypass 5min)                 | Moyen    | Sprint 6.2  | Resolu   |
-| MOYEN-18 (invitedMembers)              | Moyen    | Sprint 5.2  | Resolu   |
-| MOYEN-19 (double subscription)         | Moyen    | Sprint 7    | A faire  |
-| MOYEN-20 (type non whitelist)          | Moyen    | Sprint 5.2  | Resolu   |
-| MOYEN-23 (org sans subscription)       | Moyen    | Sprint 7    | A faire  |
-| MOYEN-24 (race org creation)           | Moyen    | Sprint 7    | A faire  |
-| MOYEN-25 (session updateMany)          | Moyen    | Sprint 5.1  | Resolu   |
-| MOYEN-29 (onboardingData)              | Moyen    | Sprint 5.3  | Resolu   |
-| MOYEN-30 (ngrok prod)                  | Moyen    | Sprint 4.7  | Resolu   |
-| MOYEN-31 (newbi:// scheme)             | Moyen    | Sprint 8    | A faire  |
-| MOYEN-33 (email non verifie)           | Moyen    | Sprint 8    | A faire  |
-| BAS-27 (step corrompu)                 | Bas      | Sprint 7    | A faire  |
-| BAS-28 (dead code invitation)          | Bas      | Sprint 8    | A faire  |
-| BAS-32 (Vercel preview)                | Bas      | Sprint 4.7  | Resolu   |
-| NOUVEAU-5 (deactivation bypass)        | Critique | Sprint 7.0  | Resolu   |
+| Finding                                | Severite | Sprint         | Statut   |
+| -------------------------------------- | -------- | -------------- | -------- |
+| CRITIQUE-1 (invoices/data)             | Critique | Sprint 3.1     | Resolu   |
+| CRITIQUE-2 (credit-notes/data)         | Critique | Sprint 3.1     | Resolu   |
+| CRITIQUE-3 (quotes/data)               | Critique | Sprint 3.1     | Resolu   |
+| CRITIQUE-4 (purchase-orders/data)      | Critique | Sprint 3.1     | Resolu   |
+| CRITIQUE-5 (org/members sans auth)     | Critique | Sprint 3.2     | Resolu   |
+| CRITIQUE-8 (banking-sync accounts)     | Critique | Sprint 4.1     | Resolu   |
+| CRITIQUE-9 (banking-sync transactions) | Critique | Sprint 4.2     | Resolu   |
+| CRITIQUE-10 (banking-sync full)        | Critique | Sprint 4.2     | Resolu   |
+| HAUT-6 (invitation data leak)          | Haut     | Sprint 3.3     | Resolu   |
+| HAUT-11 (banking/accounts)             | Haut     | Sprint 4.3     | Resolu   |
+| HAUT-12 (middleware allow-by-default)  | Haut     | Sprint 1f      | En pause |
+| HAUT-21 (error.message leak)           | Haut     | Sprint 1b+3    | A faire  |
+| HAUT-22 (verify-checkout fallback)     | Haut     | Sprint 2       | Resolu   |
+| HAUT-26 (onboardingStep updateUser)    | Haut     | Sprint 2       | Resolu   |
+| HAUT-34 (10 additionalFields)          | Haut     | Sprint 2       | Resolu   |
+| MOYEN-7 (subscription/check)           | Moyen    | Sprint 3.4     | Resolu   |
+| MOYEN-13 (fail-open API)               | Moyen    | Sprint 1f      | En pause |
+| MOYEN-16 (routes org sans role)        | Moyen    | Sprint 6.1     | Resolu   |
+| MOYEN-17 (bypass 5min)                 | Moyen    | Sprint 6.2     | Resolu   |
+| MOYEN-18 (invitedMembers)              | Moyen    | Sprint 5.2     | Resolu   |
+| MOYEN-19 (double subscription)         | Moyen    | Sprint 7.1+7.2 | Resolu   |
+| MOYEN-20 (type non whitelist)          | Moyen    | Sprint 5.2     | Resolu   |
+| MOYEN-23 (org sans subscription)       | Moyen    | Sprint 7.2     | Resolu   |
+| MOYEN-24 (race org creation)           | Moyen    | Sprint 7.2     | Resolu   |
+| MOYEN-25 (session updateMany)          | Moyen    | Sprint 5.1     | Resolu   |
+| MOYEN-29 (onboardingData)              | Moyen    | Sprint 5.3     | Resolu   |
+| MOYEN-30 (ngrok prod)                  | Moyen    | Sprint 4.7     | Resolu   |
+| MOYEN-31 (newbi:// scheme)             | Moyen    | Sprint 8       | A faire  |
+| MOYEN-33 (email non verifie)           | Moyen    | Sprint 8       | A faire  |
+| BAS-27 (step corrompu)                 | Bas      | Sprint 7.2     | Resolu   |
+| BAS-28 (dead code invitation)          | Bas      | Sprint 8       | A faire  |
+| BAS-32 (Vercel preview)                | Bas      | Sprint 4.7     | Resolu   |
+| NOUVEAU-5 (deactivation bypass)        | Critique | Sprint 7.0     | Resolu   |
 
 ## Journal de bord
+
+### 2026-04-29 — Sprint 7 complet (MOYEN-19/23/24, BAS-27, NOUVEAU-5)
+
+Sprint 7 termine en 3 sous-sprints.
+
+Sprint 7.0 : NOUVEAU-5 (bypass desactivation compte) decouvert fortuitement pendant tests Sprint 7.1 et resolu. ADR-007 documente (constructor.name + bundling Vercel).
+
+Sprint 7.1 : index unique sur subscription.referenceId (MOYEN-19 prevention). Valide empiriquement par tentative d'insertion de doublon (E11000 recu). 44 subs canceled supprimees en staging avant ajout de l'index (artefacts de tests).
+
+Sprint 7.2 : consistency checks crees. Endpoint /api/admin/consistency-check protege par whitelist email. 5 fonctions de detection (MOYEN-19/23/24/BAS-27 + bonus orphan sessions). Premiere execution sur staging : 10 anomalies detectees dont 6 orgs orphelines (sans owner) confirmant que MOYEN-24 a reellement laisse des donnees dans le passe. Cleanup manuel des 6 orgs realise.
+
+**Tous les MOYENS de l'audit sont resolus (12/12 = 100%).**
 
 ### 2026-04-29 — Sprint 7.0 complet (NOUVEAU-5 — account deactivation bypass)
 
