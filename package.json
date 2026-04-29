@@ -14,10 +14,15 @@
     "test:browser": "vitest run --config vitest.browser.config.js",
     "test:browser:ui": "vitest --ui --config vitest.browser.config.js",
     "e2e": "playwright test",
-    "e2e:headed": "playwright test --headed",
+    "e2e:headed": "playwright test --headed --workers=1",
     "e2e:ui": "playwright test --ui",
-    "e2e:debug": "PWDEBUG=1 playwright test --headed",
+    "e2e:debug": "PWDEBUG=1 playwright test --headed --workers=1",
     "e2e:report": "playwright show-report",
+    "e2e:trace": "playwright show-trace",
+    "e2e:smoke": "playwright test e2e/smoke",
+    "e2e:a11y": "playwright test --project=a11y",
+    "e2e:codegen": "playwright codegen --browser=chromium http://localhost:3000",
+    "e2e:install": "playwright install --with-deps",
     "prepare": "husky"
   },
   "lint-staged": {
