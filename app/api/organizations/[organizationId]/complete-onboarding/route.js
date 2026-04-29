@@ -1,104 +1,70 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/src/lib/auth";
 import { mongoDb } from "@/src/lib/mongodb";
-import { toObjectId } from "@/src/lib/security";
+import {
+  requireSession,
+  requireOrgMembership,
+  toObjectId,
+  apiError,
+  withErrorHandler,
+} from "@/src/lib/security";
 
 /**
  * POST /api/organizations/[organizationId]/complete-onboarding
- * Marque l'onboarding comme complété pour une organisation
- * Cette API sert de fallback si Better Auth organization.update échoue
+ *
+ * Marks onboarding as completed for an organization.
+ * Auth: session + org membership with owner or admin role (MOYEN-16).
  */
-export async function POST(request, { params }) {
-  try {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
+async function handler(request, { params }) {
+  const { user } = await requireSession(request);
+  const { organizationId } = await params;
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-    }
+  // MOYEN-16: role check — only owner/admin can complete onboarding
+  await requireOrgMembership(user.id, organizationId, ["owner", "admin"]);
 
-    const { organizationId } = await params;
+  // Verify active subscription before marking onboarding complete
+  const subscription = await mongoDb.collection("subscription").findOne({
+    $or: [{ organizationId: organizationId }, { referenceId: organizationId }],
+  });
 
-    // MOYEN-25 fix: member.organizationId is stored as ObjectId (ADR-004)
-    const memberCheck = await mongoDb.collection("member").findOne({
-      userId: toObjectId(session.user.id),
-      organizationId: toObjectId(organizationId),
-    });
+  const hasActiveSubscription =
+    subscription &&
+    (subscription.status === "active" ||
+      subscription.status === "trialing" ||
+      (subscription.status === "canceled" &&
+        subscription.periodEnd &&
+        new Date(subscription.periodEnd) > new Date()));
 
-    if (!memberCheck) {
-      console.log(
-        `❌ [COMPLETE-ONBOARDING] Membre non trouvé pour userId: ${session.user.id}, orgId: ${organizationId}`,
-      );
-      return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-    }
-
-    // Vérifier que l'organisation a bien un abonnement actif avant de marquer l'onboarding comme complété
-    const subscription = await mongoDb.collection("subscription").findOne({
-      $or: [
-        { organizationId: organizationId },
-        { referenceId: organizationId },
-      ],
-    });
-
-    const hasActiveSubscription =
-      subscription &&
-      (subscription.status === "active" ||
-        subscription.status === "trialing" ||
-        (subscription.status === "canceled" &&
-          subscription.periodEnd &&
-          new Date(subscription.periodEnd) > new Date()));
-
-    if (!hasActiveSubscription) {
-      console.log(
-        `❌ [COMPLETE-ONBOARDING] Pas d'abonnement actif pour orgId: ${organizationId}`,
-      );
-      return NextResponse.json(
-        { error: "Aucun abonnement actif trouvé" },
-        { status: 400 },
-      );
-    }
-
-    // Mettre à jour l'organisation
-    const updateResult = await mongoDb.collection("organization").updateOne(
-      { _id: toObjectId(organizationId) },
-      {
-        $set: {
-          onboardingCompleted: true,
-          updatedAt: new Date(),
-        },
-      },
-    );
-
-    // Also mark the user's onboarding as completed (Sprint 2: input: false on these fields
-    // means authClient.updateUser can no longer set them client-side)
-    await mongoDb.collection("user").updateOne(
-      { _id: toObjectId(session.user.id) },
-      {
-        $set: {
-          hasSeenOnboarding: true,
-          onboardingStep: "completed",
-          updatedAt: new Date(),
-        },
-      },
-    );
-
-    if (updateResult.modifiedCount === 0) {
-      console.warn(
-        `⚠️ [COMPLETE-ONBOARDING] Organisation non trouvée ou déjà mise à jour: ${organizationId}`,
-      );
-    } else {
-      console.log(
-        `✅ [COMPLETE-ONBOARDING] onboardingCompleted défini à true pour org: ${organizationId}`,
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: "Onboarding complété avec succès",
-    });
-  } catch (error) {
-    console.error("[COMPLETE-ONBOARDING] Erreur:", error);
-    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+  if (!hasActiveSubscription) {
+    return apiError(400, "Aucun abonnement actif trouvé");
   }
+
+  // Update organization
+  await mongoDb.collection("organization").updateOne(
+    { _id: toObjectId(organizationId) },
+    {
+      $set: {
+        onboardingCompleted: true,
+        updatedAt: new Date(),
+      },
+    },
+  );
+
+  // Also mark user's onboarding as completed
+  await mongoDb.collection("user").updateOne(
+    { _id: toObjectId(user.id) },
+    {
+      $set: {
+        hasSeenOnboarding: true,
+        onboardingStep: "completed",
+        updatedAt: new Date(),
+      },
+    },
+  );
+
+  return NextResponse.json({
+    success: true,
+    message: "Onboarding complété avec succès",
+  });
 }
+
+export const POST = withErrorHandler(handler);
