@@ -1,14 +1,14 @@
 # Etat d'avancement — Refonte securite
 
-> Derniere mise a jour : 2026-04-29 14:00
-> Sprint en cours : Sprint 5.2 (Zod create-org-subscription)
-> Statut global : 4/8 sprints termines + Sprint 5.1 (Sprint 1a-1d + Sprint 2 + Sprint 3 + Sprint 4, Sprint 1e en pause)
+> Derniere mise a jour : 2026-04-29 14:30
+> Sprint en cours : Sprint 6 (RBAC unifie frontend/backend)
+> Statut global : 5/8 sprints termines (Sprint 1a-1d + Sprint 2 + Sprint 3 + Sprint 4 + Sprint 5, Sprint 1e en pause)
 > **TOUS LES CRITIQUES DE L'AUDIT SONT RESOLUS (8/8 = 100%)**
-> Findings resolus : 19 sur 29 + 2 NOUVEAU = 21 total
+> Findings resolus : 22 sur 29 + 2 NOUVEAU = 24 total
 >
 > - 8 CRITIQUES sur 8 (100%)
 > - 5 HAUTS sur 9 (56%)
-> - 4 MOYENS sur 12 (33%)
+> - 7 MOYENS sur 12 (58%)
 > - 1 BAS sur 3 (33%)
 > - 2 NOUVEAU resolus (NOUVEAU-1, NOUVEAU-2)
 
@@ -26,28 +26,28 @@
 | 3.2    | Suppression /api/organization/members + invitations + subscription/check | Termine  | 2026-04-28 | 2026-04-28 | CRITIQUE-5, HAUT-6, MOYEN-7 resolus                  |
 | 4      | Routes proxy et multi-tenant (banking-sync, trustedOrigins)              | Termine  | 2026-04-28 | 2026-04-28 | 8 CRITIQUES 100%, 10 routes banking, MOYEN-30/BAS-32 |
 | 5.1    | Fix string → ObjectId (MOYEN-25)                                         | Termine  | 2026-04-29 | 2026-04-29 | 10 queries corrigees, 3 bugs silencieux decouverts   |
-| 5.2    | Zod create-org-subscription (MOYEN-18, MOYEN-20)                         | A faire  | —          | —          | —                                                    |
-| 5.3    | Zod onboarding/step (MOYEN-29)                                           | A faire  | —          | —          | —                                                    |
+| 5.2    | Zod create-org-subscription (MOYEN-18, MOYEN-20)                         | Termine  | 2026-04-29 | 2026-04-29 | 1er schema Zod, convention .strict() etablie         |
+| 5.3    | Zod onboarding/step (MOYEN-29)                                           | Termine  | 2026-04-29 | 2026-04-29 | Schema whitelist cles + requireSession + toObjectId  |
 | 6      | RBAC unifie frontend/backend                                             | A faire  | —          | —          | —                                                    |
 | 7      | Consistency checks + monitoring                                          | A faire  | —          | —          | —                                                    |
 | 8      | Cleanup + dette residuelle                                               | A faire  | —          | —          | —                                                    |
 
-## Sprint en cours : 5.2 — Zod create-org-subscription
+## Sprint en cours : 6 — RBAC unifie frontend/backend
 
 ### Objectif
 
-Implementer un schema Zod pour valider le body de /api/create-org-subscription (MOYEN-18 invitedMembers, MOYEN-20 type whitelist).
+Migrer les 4 routes /api/organizations/[id]/\* vers requireOrgMembership(role?), ajouter requireActiveSubscription sur les routes business, filtrer checkRecentStripePayment par status.
 
 ### Livrables prevus
 
-- [ ] src/lib/schemas/organization.js (schema Zod)
-- [ ] Migration create-org-subscription vers schema Zod
-- [ ] Validation invitedMembers (role sans "owner", max 25)
-- [ ] Validation type (enum: "onboarding", "new", "existing")
+- [ ] 4 routes /api/organizations/[id]/\* migrees vers requireOrgMembership
+- [ ] requireActiveSubscription sur routes business
+- [ ] Filtre status sur checkRecentStripePayment
+- [ ] Matrice RBAC partagee avec test de coherence
 
 ### Findings resolus par ce sprint
 
-MOYEN-18, MOYEN-20.
+MOYEN-16, MOYEN-17.
 
 ---
 
@@ -100,6 +100,14 @@ Config preview mono-branche a refactorer :
 - 22 fichiers crees (4 docs + 9 helpers + 1 barrel + 8 tests)
 - 57 tests skip, 0 erreur
 - Commit: 65c9714f
+
+### Sprint 5.2-5.3 — Schemas Zod (2026-04-29)
+
+- Sprint 5.2 : schema Zod pour create-org-subscription (MOYEN-18 invitedMembers role != owner, MOYEN-20 type whitelist)
+- Sprint 5.3 : schema Zod pour onboarding/step (MOYEN-29 whitelist cles data, step enum)
+- Convention etablie : schemas dans src/lib/schemas/, .strict(), apiError(400) pour erreurs
+- 2 routes migrees vers withErrorHandler + requireSession + Zod
+- Commits : 3bc74471, 26836712
 
 ### Sprint 5.1 — Fix string → ObjectId (2026-04-29)
 
@@ -218,13 +226,13 @@ Bug 3 : seats-info/route.js (Sprint 5.1.3)
 | MOYEN-13 (fail-open API)               | Moyen    | Sprint 1f   | En pause |
 | MOYEN-16 (routes org sans role)        | Moyen    | Sprint 6    | A faire  |
 | MOYEN-17 (bypass 5min)                 | Moyen    | Sprint 6    | A faire  |
-| MOYEN-18 (invitedMembers)              | Moyen    | Sprint 5    | A faire  |
+| MOYEN-18 (invitedMembers)              | Moyen    | Sprint 5.2  | Resolu   |
 | MOYEN-19 (double subscription)         | Moyen    | Sprint 7    | A faire  |
-| MOYEN-20 (type non whitelist)          | Moyen    | Sprint 5    | A faire  |
+| MOYEN-20 (type non whitelist)          | Moyen    | Sprint 5.2  | Resolu   |
 | MOYEN-23 (org sans subscription)       | Moyen    | Sprint 7    | A faire  |
 | MOYEN-24 (race org creation)           | Moyen    | Sprint 7    | A faire  |
 | MOYEN-25 (session updateMany)          | Moyen    | Sprint 5.1  | Resolu   |
-| MOYEN-29 (onboardingData)              | Moyen    | Sprint 5    | A faire  |
+| MOYEN-29 (onboardingData)              | Moyen    | Sprint 5.3  | Resolu   |
 | MOYEN-30 (ngrok prod)                  | Moyen    | Sprint 4.7  | Resolu   |
 | MOYEN-31 (newbi:// scheme)             | Moyen    | Sprint 8    | A faire  |
 | MOYEN-33 (email non verifie)           | Moyen    | Sprint 8    | A faire  |
@@ -233,6 +241,16 @@ Bug 3 : seats-info/route.js (Sprint 5.1.3)
 | BAS-32 (Vercel preview)                | Bas      | Sprint 4.7  | Resolu   |
 
 ## Journal de bord
+
+### 2026-04-29 — Sprint 5 complet (4 MOYENS resolus)
+
+Sprint 5 termine. 3 sous-sprints, 4 MOYENS resolus :
+
+- Sprint 5.1 : MOYEN-25 (10 queries string→ObjectId, 3 bugs silencieux decouverts, ADR-006)
+- Sprint 5.2 : MOYEN-18 + MOYEN-20 (1er schema Zod, convention .strict() etablie)
+- Sprint 5.3 : MOYEN-29 (schema Zod onboarding/step, whitelist cles data)
+  1ere utilisation de Zod dans les routes API : convention centralisee dans src/lib/schemas/.
+  Note Sprint 8 : exposer les details Zod dans les reponses 400 pour la DX frontend.
 
 ### 2026-04-29 — Sprint 5.1 termine (MOYEN-25 resolu)
 
@@ -371,6 +389,10 @@ Bilan de la journee :
 La liste des membres n'est plus affichee pour les utilisateurs non authentifies sur la page d'acceptation d'invitation. Le nom de l'organisation et le role propose sont toujours affiches.
 
 Solution future si feedback utilisateur : creer GET /api/invitations/[invitationId]/preview avec auth via token d'invitation (pas de session requise), retournant uniquement nom + avatar des membres. Priorite faible.
+
+### Sprint 5.2/5.3 — Erreurs Zod 400 sans details
+
+Les reponses 400 de validation Zod retournent uniquement {"error":"Données invalides"} sans les details de l'erreur (champs manquants, types incorrects, etc.). Pour la DX frontend, exposer validation.error.flatten() dans les reponses permettrait d'afficher des messages d'erreur precis aux utilisateurs. A traiter en Sprint 8 (cleanup) ou plus tard.
 
 ---
 
