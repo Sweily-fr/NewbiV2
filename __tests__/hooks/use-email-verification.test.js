@@ -54,8 +54,21 @@ describe("useEmailVerification", () => {
     });
 
     expect(authClientMock.sendVerificationEmail).toHaveBeenCalledWith(
-      expect.objectContaining({ email: "user@test.fr" }),
+      expect.objectContaining({
+        email: "user@test.fr",
+        callbackURL: expect.stringContaining("/api/auth/verify-email"),
+      }),
     );
+  });
+
+  it("resendVerificationEmail is a no-op when session has no user", async () => {
+    authClientMock.getSession.mockResolvedValue({ data: { user: null } });
+    const { result } = renderHook(() => useEmailVerification());
+
+    await act(async () => {
+      await result.current.resendVerificationEmail();
+    });
+    expect(authClientMock.sendVerificationEmail).not.toHaveBeenCalled();
   });
 
   it("resendVerificationEmail is a no-op when there is no session", async () => {

@@ -72,6 +72,17 @@ describe("useOrganizationType", () => {
     const { result } = renderHook(() => useOrganizationType());
     expect(result.current.hasType).toBe(false);
   });
+
+  it("propagates loading and error from the underlying hook", () => {
+    useActiveOrganization.mockReturnValue({
+      organization: null,
+      loading: true,
+      error: new Error("oops"),
+    });
+    const { result } = renderHook(() => useOrganizationType());
+    expect(result.current.loading).toBe(true);
+    expect(result.current.error.message).toBe("oops");
+  });
 });
 
 describe("useIsAccountingFirm", () => {

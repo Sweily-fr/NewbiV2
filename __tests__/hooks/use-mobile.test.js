@@ -68,4 +68,12 @@ describe("useIsMobile", () => {
     const { result: r2 } = renderHook(() => useIsMobile());
     expect(r2.current).toBe(false);
   });
+
+  it("removes listener on unmount", () => {
+    setWidth(1024);
+    const { unmount } = renderHook(() => useIsMobile());
+    expect(mqlListeners.length).toBeGreaterThan(0);
+    unmount();
+    expect(mqlListeners.length).toBe(0);
+  });
 });
