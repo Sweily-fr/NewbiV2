@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { toObjectId } from "@/src/lib/security/to-object-id";
 
 /**
  * Shared idempotent utility for organization + member + subscription + invitations creation.
@@ -219,7 +220,7 @@ export async function createOrganizationWithSubscription({
   const updateResult = await mongoDb
     .collection("session")
     .updateMany(
-      { userId: new ObjectId(userId) },
+      { userId: toObjectId(userId) },
       { $set: { activeOrganizationId: result.organizationId } },
     );
   console.log(

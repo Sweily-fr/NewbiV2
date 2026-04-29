@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { auth } from "@/src/lib/auth";
 import { mongoDb } from "@/src/lib/mongodb";
-import { ObjectId } from "mongodb";
+import { toObjectId } from "@/src/lib/security";
 import DashboardClientLayout from "./dashboard-client-layout";
 
 /**
@@ -29,7 +29,7 @@ async function hasValidSubscription(orgId) {
 
 async function checkSubscription(userId, activeOrgId) {
   try {
-    const userObjectId = new ObjectId(userId);
+    const userObjectId = toObjectId(userId);
 
     // 1. Récupérer l'organisation active
     let organizationId = activeOrgId;
