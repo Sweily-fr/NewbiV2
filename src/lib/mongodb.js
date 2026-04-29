@@ -53,7 +53,7 @@ async function ensureIndexes(db) {
     {
       coll: "subscription",
       idx: { referenceId: 1 },
-      opts: { background: true },
+      opts: { unique: true, background: true }, // MOYEN-19: prevent double subscription per org
     },
     {
       coll: "stripeWebhookEvents",
@@ -73,11 +73,35 @@ async function ensureIndexes(db) {
     },
   ];
 
-  await Promise.allSettled(
+  const results = await Promise.allSettled(
     indexes.map(({ coll, idx, opts }) =>
       db.collection(coll).createIndex(idx, opts),
     ),
   );
+
+  // Migration: if subscription.referenceId index existed without unique,
+  // createIndex with unique:true fails (IndexOptionsConflict 85/86).
+  // Drop the old index and recreate with unique constraint.
+  const referenceIdResult = results[4]; // 5th index in the array (0-indexed)
+  if (referenceIdResult.status === "rejected") {
+    const code = referenceIdResult.reason?.code;
+    if (code === 85 || code === 86) {
+      try {
+        await db.collection("subscription").dropIndex("referenceId_1");
+        await db
+          .collection("subscription")
+          .createIndex({ referenceId: 1 }, { unique: true, background: true });
+        console.log(
+          "[mongodb] Migrated subscription.referenceId index to unique",
+        );
+      } catch (migrationError) {
+        console.error(
+          "[mongodb] Failed to migrate referenceId index:",
+          migrationError.message,
+        );
+      }
+    }
+  }
 }
 
 /**
