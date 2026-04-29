@@ -1,14 +1,14 @@
 # Etat d'avancement — Refonte securite
 
-> Derniere mise a jour : 2026-04-28 22:00
-> Sprint en cours : Sprint 5 (validation inputs + coherence ObjectId)
-> Statut global : 4/8 sprints termines (Sprint 1a-1d + Sprint 2 + Sprint 3 + Sprint 4, Sprint 1e en pause)
+> Derniere mise a jour : 2026-04-29 14:00
+> Sprint en cours : Sprint 5.2 (Zod create-org-subscription)
+> Statut global : 4/8 sprints termines + Sprint 5.1 (Sprint 1a-1d + Sprint 2 + Sprint 3 + Sprint 4, Sprint 1e en pause)
 > **TOUS LES CRITIQUES DE L'AUDIT SONT RESOLUS (8/8 = 100%)**
-> Findings resolus : 18 sur 29 + 2 NOUVEAU = 20 total
+> Findings resolus : 19 sur 29 + 2 NOUVEAU = 21 total
 >
 > - 8 CRITIQUES sur 8 (100%)
 > - 5 HAUTS sur 9 (56%)
-> - 3 MOYENS sur 12 (25%)
+> - 4 MOYENS sur 12 (33%)
 > - 1 BAS sur 3 (33%)
 > - 2 NOUVEAU resolus (NOUVEAU-1, NOUVEAU-2)
 
@@ -25,31 +25,29 @@
 | 3.1    | Routes PDF data (invoices, credit-notes, quotes, purchase-orders)        | Termine  | 2026-04-28 | 2026-04-28 | CRITIQUE 1-4 resolus, 8 routes securisees            |
 | 3.2    | Suppression /api/organization/members + invitations + subscription/check | Termine  | 2026-04-28 | 2026-04-28 | CRITIQUE-5, HAUT-6, MOYEN-7 resolus                  |
 | 4      | Routes proxy et multi-tenant (banking-sync, trustedOrigins)              | Termine  | 2026-04-28 | 2026-04-28 | 8 CRITIQUES 100%, 10 routes banking, MOYEN-30/BAS-32 |
-| 5      | Validation inputs + coherence ObjectId                                   | A faire  | —          | —          | —                                                    |
+| 5.1    | Fix string → ObjectId (MOYEN-25)                                         | Termine  | 2026-04-29 | 2026-04-29 | 10 queries corrigees, 3 bugs silencieux decouverts   |
+| 5.2    | Zod create-org-subscription (MOYEN-18, MOYEN-20)                         | A faire  | —          | —          | —                                                    |
+| 5.3    | Zod onboarding/step (MOYEN-29)                                           | A faire  | —          | —          | —                                                    |
 | 6      | RBAC unifie frontend/backend                                             | A faire  | —          | —          | —                                                    |
 | 7      | Consistency checks + monitoring                                          | A faire  | —          | —          | —                                                    |
 | 8      | Cleanup + dette residuelle                                               | A faire  | —          | —          | —                                                    |
 
-## Sprint en cours : 5 — Validation inputs + coherence ObjectId
+## Sprint en cours : 5.2 — Zod create-org-subscription
 
 ### Objectif
 
-Implementer les schemas Zod centralises pour la validation des inputs, verifier et corriger le bug string vs ObjectId (MOYEN-25), valider les invitedMembers (MOYEN-18), whitelister le type (MOYEN-20), valider onboardingData (MOYEN-29).
+Implementer un schema Zod pour valider le body de /api/create-org-subscription (MOYEN-18 invitedMembers, MOYEN-20 type whitelist).
 
 ### Livrables prevus
 
-- [ ] Schemas Zod centralises (onboarding, organization, common)
-- [ ] Migration routes vers schemas Zod
-- [ ] Verification empirique bug string vs ObjectId (contre base prod read-only)
-- [ ] Correction des queries si bug confirme
+- [ ] src/lib/schemas/organization.js (schema Zod)
+- [ ] Migration create-org-subscription vers schema Zod
+- [ ] Validation invitedMembers (role sans "owner", max 25)
+- [ ] Validation type (enum: "onboarding", "new", "existing")
 
 ### Findings resolus par ce sprint
 
-MOYEN-18, MOYEN-20, MOYEN-25, MOYEN-29.
-
-### Statut
-
-A faire — en attente de validation Sprint 2.
+MOYEN-18, MOYEN-20.
 
 ---
 
@@ -102,6 +100,17 @@ Config preview mono-branche a refactorer :
 - 22 fichiers crees (4 docs + 9 helpers + 1 barrel + 8 tests)
 - 57 tests skip, 0 erreur
 - Commit: 65c9714f
+
+### Sprint 5.1 — Fix string → ObjectId (2026-04-29)
+
+- 3 sous-livraisons : 5.1.1 (session queries), 5.1.2 (org-creation + dashboard + complete-onboarding), 5.1.3 (seats-info)
+- 10 queries MongoDB corrigees (string → toObjectId())
+- 4 $or workarounds defensifs supprimes (code plus propre et plus rapide)
+- 3 bugs silencieux decouverts et corriges (voir section ci-dessous)
+- 2 faux positifs de l'investigation initiale identifies (signatures/auto-save, cloudflare/cleanup-temp = GraphQL, pas MongoDB)
+- ADR-006 documente
+- Commits : f36e85d8, 94510874, b959c22e, 0bdb2e0d
+- Finding resolu : MOYEN-25
 
 ### Sprint 4 — Routes proxy et multi-tenant (2026-04-28)
 
@@ -161,6 +170,31 @@ Config preview mono-branche a refactorer :
 
 ---
 
+## Bugs silencieux decouverts pendant l'audit
+
+### Sprint 5.1 — 3 bugs silencieux corriges au passage de MOYEN-25
+
+Bug 1 : org-creation.js:221 (Sprint 5.1.2)
+
+- Symptome : session.updateMany avec userId en string
+- Consequence : modifiedCount toujours 0, le hook session.create.before compensait au login suivant
+- Fix : userId en toObjectId() → updateMany fonctionne reellement
+
+Bug 2 : dashboard/layout.jsx:122 (Sprint 5.1.2)
+
+- Symptome : session.updateMany avec userId en string (Server Component)
+- Consequence : identique au Bug 1, modifiedCount toujours 0
+- Fix : userId → userObjectId (deja defini plus haut dans le meme scope)
+
+Bug 3 : seats-info/route.js (Sprint 5.1.3)
+
+- Symptome : memberCheck AND query avec organizationId en string vs ObjectId en DB
+- Consequence : memberCheck retournait toujours null → 403 systematique pour TOUS les users
+- Impact UI : sections facturation/abonnement affichaient des donnees par defaut (frontend gerait 403 silencieusement avec if response.ok)
+- Fix : organizationId en toObjectId() → la route fonctionne enfin
+
+---
+
 ## Findings x Sprints
 
 | Finding                                | Severite | Sprint      | Statut   |
@@ -189,7 +223,7 @@ Config preview mono-branche a refactorer :
 | MOYEN-20 (type non whitelist)          | Moyen    | Sprint 5    | A faire  |
 | MOYEN-23 (org sans subscription)       | Moyen    | Sprint 7    | A faire  |
 | MOYEN-24 (race org creation)           | Moyen    | Sprint 7    | A faire  |
-| MOYEN-25 (session updateMany)          | Moyen    | Sprint 5    | A faire  |
+| MOYEN-25 (session updateMany)          | Moyen    | Sprint 5.1  | Resolu   |
 | MOYEN-29 (onboardingData)              | Moyen    | Sprint 5    | A faire  |
 | MOYEN-30 (ngrok prod)                  | Moyen    | Sprint 4.7  | Resolu   |
 | MOYEN-31 (newbi:// scheme)             | Moyen    | Sprint 8    | A faire  |
@@ -199,6 +233,13 @@ Config preview mono-branche a refactorer :
 | BAS-32 (Vercel preview)                | Bas      | Sprint 4.7  | Resolu   |
 
 ## Journal de bord
+
+### 2026-04-29 — Sprint 5.1 termine (MOYEN-25 resolu)
+
+Sprint 5.1 termine via 3 sous-livraisons. 10 queries MongoDB corrigees + suppression 4 $or workarounds.
+Decouverte de 3 bugs silencieux : 2 updateMany ne faisant rien (org-creation, dashboard layout), 1 memberCheck retournant systematiquement 403 (seats-info, impactant l'UI facturation des users payants).
+2 faux positifs de l'investigation corrigees (signatures/auto-save et cloudflare/cleanup-temp sont GraphQL, pas MongoDB).
+ADR-006 documente : criteres pour conserver new ObjectId() vs migrer vers toObjectId().
 
 ### 2026-04-28 — Sprint 4 complet — TOUS LES CRITIQUES RESOLUS
 
@@ -395,3 +436,14 @@ Si tu reprends ce projet dans une nouvelle conversation Claude :
 - **Ordre auth strict** : requireSession AVANT toute lecture DB, puis fetch document, puis requireOrgMembership. Cet ordre empeche un attaquant non authentifie de distinguer 'ID existe' (403) vs 'ID n'existe pas' (404).
 - **Pattern** : generate-pdf (requireSession + requireOrgMembership) -> Puppeteer (x-internal-secret) -> data route (hasInternalSecret skip auth).
 - **Impact** : 4 routes data + 4 routes generate-pdf = 8 routes securisees.
+
+### ADR-006 : Quand utiliser toObjectId() vs new ObjectId()
+
+- **Date** : 2026-04-29
+- **Contexte** : Sprint 5.1.2 a souleve la question des cas ou conserver new ObjectId() est legitime dans org-creation.js (8 occurrences).
+- **Decision** :
+  - toObjectId() : pour TOUT input qui pourrait venir d'un client (body, query, header, route param). Validation stricte hex 24 chars + erreur 400 claire.
+  - new ObjectId() : acceptable UNIQUEMENT pour (a) IDs lus directement depuis MongoDB, (b) IDs de webhooks tiers avec signature crypto verifiee (Stripe constructEvent), (c) IDs de session Better Auth apres getSession.
+- **Verification** : avant de garder new ObjectId(), tracer TOUS les appelants de la fonction. S'il existe au moins un appelant qui passe un input client non verifie, migrer vers toObjectId().
+- **Precedent** : 8 occurrences new ObjectId() conservees dans org-creation.js apres audit complet des 3 appelants (webhook Stripe + 2 verify-checkout, tous verifies).
+- **Impact** : Principe 10 (IDs types de maniere coherente).
