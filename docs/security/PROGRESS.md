@@ -1,16 +1,16 @@
 # Etat d'avancement — Refonte securite
 
-> Derniere mise a jour : 2026-04-29 15:00
+> Derniere mise a jour : 2026-04-29 18:00
 > Sprint en cours : Sprint 7 (consistency checks + monitoring)
 > Statut global : 6/8 sprints termines (Sprint 1a-1d + Sprint 2-6, Sprint 1e en pause)
 > **TOUS LES CRITIQUES DE L'AUDIT SONT RESOLUS (8/8 = 100%)**
-> Findings resolus : 24 sur 29 + 3 NOUVEAU = 27 total
+> Findings resolus : 24 sur 29 + 4 NOUVEAU = 28 total
 >
 > - 8 CRITIQUES sur 8 (100%)
 > - 5 HAUTS sur 9 (56%)
 > - 9 MOYENS sur 12 (75%)
 > - 1 BAS sur 3 (33%)
-> - 3 NOUVEAU resolus (NOUVEAU-1, NOUVEAU-2, NOUVEAU-4)
+> - 4 NOUVEAU resolus (NOUVEAU-1, NOUVEAU-2, NOUVEAU-4, NOUVEAU-5)
 
 ## Vue d'ensemble
 
@@ -29,6 +29,7 @@
 | 5.2    | Zod create-org-subscription (MOYEN-18, MOYEN-20)                         | Termine  | 2026-04-29 | 2026-04-29 | 1er schema Zod, convention .strict() etablie         |
 | 5.3    | Zod onboarding/step (MOYEN-29)                                           | Termine  | 2026-04-29 | 2026-04-29 | Schema whitelist cles + requireSession + toObjectId  |
 | 6      | RBAC unifie frontend/backend                                             | Termine  | 2026-04-29 | 2026-04-29 | MOYEN-16/17, NOUVEAU-4, -136 lignes cleanup          |
+| 7.0    | Fix NOUVEAU-5 (account deactivation bypass)                              | Termine  | 2026-04-29 | 2026-04-29 | NOUVEAU-5 resolu, ADR-007, commit 85d4c5a0           |
 | 7      | Consistency checks + monitoring                                          | A faire  | —          | —          | —                                                    |
 | 8      | Cleanup + dette residuelle                                               | A faire  | —          | —          | —                                                    |
 
@@ -250,8 +251,17 @@ Bug 3 : seats-info/route.js (Sprint 5.1.3)
 | BAS-27 (step corrompu)                 | Bas      | Sprint 7    | A faire  |
 | BAS-28 (dead code invitation)          | Bas      | Sprint 8    | A faire  |
 | BAS-32 (Vercel preview)                | Bas      | Sprint 4.7  | Resolu   |
+| NOUVEAU-5 (deactivation bypass)        | Critique | Sprint 7.0  | Resolu   |
 
 ## Journal de bord
+
+### 2026-04-29 — Sprint 7.0 complet (NOUVEAU-5 — account deactivation bypass)
+
+Bug critique decouvert en production : l'utilisateur luffy93 (isActive: false) pouvait se connecter malgre le hook beforeSignInHook.
+Cause racine : le bundler Vercel (SWC/Terser) minifie les noms de classes. Le try/catch dans le hook attrapait l'APIError lancee, et le code en aval qui testait `error.constructor.name === "APIError"` recevait `"a"` apres minification → l'erreur etait avalee silencieusement.
+Fix : restructuration du hook dans src/lib/auth-hooks.js — le throw APIError est maintenant HORS du try/catch (le try/catch ne couvre que le lookup DB). L'APIError ne peut plus etre attrapee accidentellement.
+Validation fonctionnelle : luffy93 bloque avec erreur 400, sofiane.mtimet6 peut toujours se connecter.
+ADR-007 documente. Commit 85d4c5a0.
 
 ### 2026-04-29 — Sprint 6 complet (MOYEN-16/17 + NOUVEAU-4)
 
@@ -427,6 +437,19 @@ Les reponses 400 de validation Zod retournent uniquement {"error":"Données inva
 - **Action** : resolu en Sprint 6.1 par l'ajout de requireOrgMembership(user.id, orgId)
 - **Statut** : Resolu
 
+### NOUVEAU-5 — Bypass desactivation compte (bundler minification) (CRITIQUE)
+
+- **Decouvert** : Sprint 7.0 — test fonctionnel en production (luffy93 pouvait se connecter malgre isActive: false)
+- **Type** : Securite — bypass d'authentification
+- **Severite** : CRITIQUE (un utilisateur desactive peut acceder a l'application)
+- **Description** : Le hook beforeSignInHook dans src/lib/auth-hooks.js lancait un `throw new APIError("BAD_REQUEST", ...)` a l'interieur d'un try/catch. Le bundler Vercel (SWC/Terser) minifie les noms de classes : `APIError` devient `a` en production. Le code en aval dans Better Auth qui identifie les erreurs via `error.constructor.name === "APIError"` ne reconnaissait plus l'erreur → elle etait traitee comme une erreur generique et avalee silencieusement, laissant le login se poursuivre.
+- **Diagnostic** : Ajout de console.log dans le hook pour tracer le comportement. Logs confirmes : `error.constructor.name = "a"` en production, `"APIError"` en local (dev non minifie).
+- **Fix** : Restructuration du hook — le try/catch ne couvre plus que le lookup DB (getMongoDb + findOne). Le `throw new APIError(...)` est place APRES le try/catch, dans le scope principal du middleware. L'erreur ne peut plus etre attrapee par le catch du hook.
+- **Pattern general** : Ne JAMAIS identifier des erreurs par constructor.name dans du code qui sera bundle/minifie. Utiliser des proprietes custom, instanceof dans le meme module, ou des codes d'erreur string.
+- **Validation** : luffy93 bloque avec erreur 400 "compte desactive", sofiane.mtimet6 login OK.
+- **Commit** : 85d4c5a0
+- **Statut** : Resolu
+
 ### NOUVEAU-3 — Configuration GoCardless invalide en staging
 
 - **Decouvert** : Sprint 4.5 tests fonctionnels
@@ -487,6 +510,19 @@ Si tu reprends ce projet dans une nouvelle conversation Claude :
 - **Ordre auth strict** : requireSession AVANT toute lecture DB, puis fetch document, puis requireOrgMembership. Cet ordre empeche un attaquant non authentifie de distinguer 'ID existe' (403) vs 'ID n'existe pas' (404).
 - **Pattern** : generate-pdf (requireSession + requireOrgMembership) -> Puppeteer (x-internal-secret) -> data route (hasInternalSecret skip auth).
 - **Impact** : 4 routes data + 4 routes generate-pdf = 8 routes securisees.
+
+### ADR-007 : Ne jamais utiliser error.constructor.name pour identifier les erreurs apres bundling
+
+- **Date** : 2026-04-29
+- **Contexte** : NOUVEAU-5. Le hook beforeSignInHook lancait `throw new APIError(...)` dans un try/catch. En production, le bundler Vercel minifie `APIError` en `a`. Le code Better Auth qui teste `error.constructor.name === "APIError"` ne reconnaissait plus l'erreur → bypass de la desactivation de compte.
+- **Decision** : Ne jamais se fier a `error.constructor.name` pour identifier des erreurs dans du code qui sera bundle/minifie. Alternatives valides :
+  - (a) Placer le throw hors du try/catch (solution appliquee ici)
+  - (b) Utiliser une propriete custom stable (ex: `error.code`, `error.type`)
+  - (c) Utiliser `instanceof` dans le meme module (pas cross-module apres bundling)
+  - (d) Utiliser des codes d'erreur string (ex: `error.status === "BAD_REQUEST"`)
+- **Pattern dangereux** : `try { throw new CustomError() } catch(e) { if (e.constructor.name === "CustomError") ... }` — le nom sera minifie en production.
+- **Pattern sur** : Separer le throw du catch. Le try/catch ne couvre que les operations qui peuvent echouer (DB, I/O). Le throw d'erreur metier est dans le scope principal, non attrapable par le catch local.
+- **Impact** : Tout code qui lance des erreurs typees dans un contexte bundle (Next.js, Vite, webpack, etc.).
 
 ### ADR-006 : Quand utiliser toObjectId() vs new ObjectId()
 
