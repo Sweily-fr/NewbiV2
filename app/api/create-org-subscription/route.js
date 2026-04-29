@@ -1,42 +1,39 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
 import Stripe from "stripe";
+import { createOrgSubscriptionSchema } from "@/src/lib/schemas/create-org-subscription";
+import { apiError, withErrorHandler } from "@/src/lib/security";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-export async function POST(request) {
+async function handler(request) {
+  // 1. Auth check first (Principle 1)
+  const session = await auth.api.getSession({
+    headers: request.headers,
+  });
+
+  if (!session?.user) {
+    throw apiError(401, "Non authentifié");
+  }
+
+  // 2. Parse and validate body (Principle 7)
+  let body;
   try {
-    const body = await request.json();
-    const { organizationData } = body;
+    body = await request.json();
+  } catch {
+    return apiError(400, "Body JSON invalide");
+  }
 
-    console.log(`🔄 [CREATE-SUB] Création session Stripe pour organisation`);
+  const validation = createOrgSubscriptionSchema.safeParse(body);
+  if (!validation.success) {
+    return apiError(400, "Données invalides", validation.error.flatten());
+  }
 
-    if (!organizationData) {
-      return NextResponse.json(
-        { error: "organizationData requis" },
-        { status: 400 },
-      );
-    }
+  const { organizationData } = validation.data;
+  const planName = organizationData.planName;
+  const isAnnual = organizationData.isAnnual;
 
-    // Déterminer le plan (par défaut freelance si non spécifié)
-    const VALID_PLANS = ["freelance", "pme", "entreprise"];
-    const planName = organizationData.planName || "freelance";
-
-    if (!VALID_PLANS.includes(planName)) {
-      return NextResponse.json({ error: "Plan invalide" }, { status: 400 });
-    }
-
-    const isAnnual = organizationData.isAnnual || false;
-
-    // 1. Vérifier la session utilisateur
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-    }
-
+  try {
     console.log(
       `✅ [CREATE-SUB] User: ${session.user.id} (${session.user.email})`,
     );
@@ -234,10 +231,9 @@ export async function POST(request) {
 
     return NextResponse.json({ url: checkoutSession.url });
   } catch (error) {
-    console.error("❌ [CREATE-SUB] Erreur création checkout:", error);
-    return NextResponse.json(
-      { error: error.message || "Erreur lors de la création du checkout" },
-      { status: 500 },
-    );
+    // Re-throw for withErrorHandler (removes error.message leak — Principle 8)
+    throw error;
   }
 }
+
+export const POST = withErrorHandler(handler);
