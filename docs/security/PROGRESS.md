@@ -1,15 +1,15 @@
 # Etat d'avancement — Refonte securite
 
-> Derniere mise a jour : 2026-04-29 20:00
-> Sprint en cours : Sprint 8 (cleanup + dette residuelle)
-> Statut global : 7/8 sprints termines (Sprint 1a-1d + Sprint 2-7, Sprint 1e en pause)
+> Derniere mise a jour : 2026-04-29 22:00
+> Statut : **AUDIT CLOTURE** — branche security-refactor prete pour merge
+> Statut global : 8/8 sprints termines (Sprint 1e reporte en Sprint 1f)
 > **TOUS LES CRITIQUES DE L'AUDIT SONT RESOLUS (8/8 = 100%)**
-> Findings resolus : 28 sur 29 + 4 NOUVEAU = 32 total
+> Findings resolus : 31 sur 32 + 4 NOUVEAU = 35 total (2 reportes Sprint 1f)
 >
 > - 8 CRITIQUES sur 8 (100%)
-> - 5 HAUTS sur 9 (56%)
-> - 12 MOYENS sur 12 (100%) ← Sprint 7 : +3 resolus
-> - 2 BAS sur 3 (67%) ← Sprint 7 : +1 resolu
+> - 6 HAUTS sur 9 (67%) — HAUT-12 reporte Sprint 1f
+> - 12 MOYENS sur 12 (100%)
+> - 3 BAS sur 3 (100%)
 > - 4 NOUVEAU resolus (NOUVEAU-1, NOUVEAU-2, NOUVEAU-4, NOUVEAU-5)
 
 ## Vue d'ensemble
@@ -32,28 +32,68 @@
 | 7.0    | Fix NOUVEAU-5 (account deactivation bypass)                              | Termine  | 2026-04-29 | 2026-04-29 | NOUVEAU-5 resolu, ADR-007, commit 85d4c5a0           |
 | 7.1    | Index unique subscription.referenceId (MOYEN-19 prevention)              | Termine  | 2026-04-29 | 2026-04-29 | 44 subs canceled nettoyees, E11000 valide            |
 | 7.2    | Consistency checks (detection MOYEN-19/23/24/BAS-27)                     | Termine  | 2026-04-29 | 2026-04-29 | 5 fonctions, endpoint admin, 10 anomalies detectees  |
-| 8      | Cleanup + dette residuelle                                               | A faire  | —          | —          | —                                                    |
+| 8.1    | Wrap 14 routes simples withErrorHandler                                  | Termine  | 2026-04-29 | 2026-04-29 | cloudflare, icons, uploads, auth, expenses           |
+| 8.2    | Wrap 6 routes billing/subscription withErrorHandler                      | Termine  | 2026-04-29 | 2026-04-29 | change-plan, preview, sync, check-limit, sync-seats  |
+| 8.3    | Wrap 13 routes auth/admin/stripe + fixes                                 | Termine  | 2026-04-29 | 2026-04-29 | HAUT-21 100%, invitations null check, leads header   |
+| 8.4    | Zod details DX + newbi:// scheme                                         | Termine  | 2026-04-29 | 2026-04-29 | apiError publicDetails, MOYEN-31 resolu              |
+| 8.5    | Bandeau email verification                                               | Skip     | —          | —          | MOYEN-33 resolu de facto (composants existants)      |
+| 8.6    | .env.example exhaustif                                                   | Termine  | 2026-04-29 | 2026-04-29 | 48 vars, 12 categories, 5 vars inutilisees exclues   |
+| 1f     | Middleware Edge Runtime deny-by-default                                  | Reporte  | —          | —          | HAUT-12 + MOYEN-13 (incompatibilite Edge + mongodb)  |
 
-## Sprint en cours : 8 — Cleanup + dette residuelle
+## Actions OBLIGATOIRES avant merge security-refactor → main
 
-### Findings prevus
+### A. Verifications DB en production
 
-HAUT-21 (error.message leak residuel), MOYEN-31 (newbi:// scheme), MOYEN-33 (email non verifie), BAS-28 (dead code invitation).
+```
+db.subscription.aggregate([
+  { $group: { _id: "$referenceId", count: { $sum: 1 } } },
+  { $match: { count: { $gt: 1 } } }
+])
+```
 
-### Livrables prevus
+- Si 0 doublon : merge OK, l'index unique sera cree au prochain boot
+- Si > 0 : cleanup cible MANUEL avant merge (PROD JAMAIS NETTOYEE)
 
-- [ ] .env.example avec toutes les variables requises
-- [ ] Zod error details dans les reponses 400 (DX frontend)
-- [ ] Cleanup dead code invitation
-- [ ] Restriction newbi:// scheme dans trustedOrigins
-- [ ] Bandeau verification email
+### B. Rotation INTERNAL_API_SECRET en prod
 
-### Actions pre-merge en prod (Sprint 7)
+Le secret prod est potentiellement une valeur faible. Rotation a faire AVEC COORDINATION :
 
-- Verifier doublons referenceId en prod : `db.subscription.aggregate([{$group:{_id:"$referenceId",count:{$sum:1}}},{$match:{count:{$gt:1}}}])`
-- Si doublons : cleanup ciblé MANUEL avant merge (PROD JAMAIS NETTOYEE)
-- Si pas de doublons : merge direct (l'index unique se creera au prochain getMongoDb())
-- Lancer GET /api/admin/consistency-check en prod apres merge pour baseline (login sofiane.mtimet6)
+1. Generer nouveau secret fort : `openssl rand -base64 64`
+2. Update SIMULTANE dans newbiv2 ET newbi-api (env vars Vercel)
+3. Activer "Sensitive" sur la var dans Vercel
+4. Rolling restart
+
+### C. Configuration ADDITIONAL_TRUSTED_ORIGINS en prod
+
+Verifier que cette var est configuree si necessaire pour preview deployments.
+
+### D. Test post-merge en prod
+
+Apres merge en main et deploiement :
+
+1. Lancer `GET /api/admin/consistency-check` (logge sofiane.mtimet6) → baseline prod
+2. Verifier le bandeau email verification visible pour users non verifies
+3. Tester le flow leads/notify (creation de lead cote newbi-api → verifier 200)
+
+### E. Coordination newbi-api
+
+Le commit newbi-api e9337bd (sur develop) doit etre merge en main et deploye pour que l'harmonisation x-internal-secret fonctionne completement. La retro-compat newbiv2 permet un deploiement non-coordonne.
+
+---
+
+## Sprint 1f — Reporte post-audit (HAUT-12 + MOYEN-13)
+
+Bloque par : incompatibilite mongodb / Edge Runtime Next.js.
+
+Mitigation actuelle : tous les sprints 2-8 ont mis du defensif explicite par route (requireSession, requireOrgMembership, withErrorHandler). Meme sans middleware deny-by-default, chaque route a son check.
+
+Risque residuel : faible (un dev qui ajouterait une nouvelle route sans check d'auth est detectable en review).
+
+Options techniques :
+
+1. Migrer mongodb vers MongoDB Atlas Data API (compatible Edge)
+2. Middleware light qui verifie juste la presence du cookie session (sans DB)
+3. Continuer avec le pattern actuel (defensif explicite par route)
 
 ---
 
@@ -106,6 +146,18 @@ Config preview mono-branche a refactorer :
 - 22 fichiers crees (4 docs + 9 helpers + 1 barrel + 8 tests)
 - 57 tests skip, 0 erreur
 - Commit: 65c9714f
+
+### Sprint 8 — Cleanup + dette residuelle (2026-04-29)
+
+- Sprint 8.1 : 14 routes simples wrappees avec withErrorHandler (cloudflare, icons, uploads, auth, expenses)
+- Sprint 8.2 : 6 routes billing/subscription wrappees (change-plan avec rollback Stripe preserve, preview, sync, check-limit avec safe defaults, sync-seats POST+GET)
+- Sprint 8.3 : 13 routes auth/admin/stripe-connect wrappees. Fix defensif invitations/[id] null check (!session → !session?.user). Header harmonise leads/notify (x-api-secret → x-internal-secret, retro-compatible). stripe/invoices Stripe error type discrimination preservee. Hotfix retro-compat pour deploiement non-coordonne newbiv2/newbi-api.
+- Sprint 8.4 : apiError() accepte publicDetails (4e param optionnel). Zod validation details exposees dans reponses 400 (create-org-subscription, onboarding/step). newbi:// retire de trustedOrigins (MOYEN-31).
+- Sprint 8.5 : SKIP — MOYEN-33 resolu de facto (EmailVerificationBadge + EmailVerificationBadgeHeader existants dans site-header + sidebar, avec hook polling + bouton renvoyer + dismiss 24h)
+- Sprint 8.6 : .env.example cree (48 vars, 12 categories). .gitignore mis a jour (!.env.example). 5 vars inutilisees exclues.
+- **HAUT-21 entierement resolu : 33 routes wrappees avec withErrorHandler sur 3 sous-sprints**
+- Findings resolus : HAUT-21, MOYEN-31, MOYEN-33, BAS-28
+- Commits : 7ca44620, a51634da, e94d5b2f, 0cff6807, 90043fac, 5718d513
 
 ### Sprint 7 — Consistency checks + monitoring (2026-04-29)
 
@@ -252,7 +304,7 @@ Bug 3 : seats-info/route.js (Sprint 5.1.3)
 | HAUT-6 (invitation data leak)          | Haut     | Sprint 3.3     | Resolu   |
 | HAUT-11 (banking/accounts)             | Haut     | Sprint 4.3     | Resolu   |
 | HAUT-12 (middleware allow-by-default)  | Haut     | Sprint 1f      | En pause |
-| HAUT-21 (error.message leak)           | Haut     | Sprint 1b+3    | A faire  |
+| HAUT-21 (error.message leak)           | Haut     | Sprint 8.1-8.3 | Resolu   |
 | HAUT-22 (verify-checkout fallback)     | Haut     | Sprint 2       | Resolu   |
 | HAUT-26 (onboardingStep updateUser)    | Haut     | Sprint 2       | Resolu   |
 | HAUT-34 (10 additionalFields)          | Haut     | Sprint 2       | Resolu   |
@@ -268,14 +320,42 @@ Bug 3 : seats-info/route.js (Sprint 5.1.3)
 | MOYEN-25 (session updateMany)          | Moyen    | Sprint 5.1     | Resolu   |
 | MOYEN-29 (onboardingData)              | Moyen    | Sprint 5.3     | Resolu   |
 | MOYEN-30 (ngrok prod)                  | Moyen    | Sprint 4.7     | Resolu   |
-| MOYEN-31 (newbi:// scheme)             | Moyen    | Sprint 8       | A faire  |
-| MOYEN-33 (email non verifie)           | Moyen    | Sprint 8       | A faire  |
+| MOYEN-31 (newbi:// scheme)             | Moyen    | Sprint 8.4     | Resolu   |
+| MOYEN-33 (email non verifie)           | Moyen    | Sprint 8.5     | Resolu   |
 | BAS-27 (step corrompu)                 | Bas      | Sprint 7.2     | Resolu   |
-| BAS-28 (dead code invitation)          | Bas      | Sprint 8       | A faire  |
+| BAS-28 (dead code invitation)          | Bas      | Sprint 3.2     | Resolu   |
 | BAS-32 (Vercel preview)                | Bas      | Sprint 4.7     | Resolu   |
 | NOUVEAU-5 (deactivation bypass)        | Critique | Sprint 7.0     | Resolu   |
 
 ## Journal de bord
+
+### 2026-04-29 — AUDIT CLOTURE
+
+Audit securite Newbi — Cloture.
+
+Demarre le 2026-04-27 sur la branche security-refactor. 8 sprints majeurs (1-8), 1 sprint reporte (1f).
+
+Bilan final :
+
+- 33 findings resolus sur 35 prevus (2 reportes Sprint 1f : HAUT-12, MOYEN-13)
+- 5 NOUVEAU findings ajoutes pendant l'audit, 4 resolus
+- 4 bugs silencieux corriges en bonus (Sprint 5.1)
+- 33 routes API wrappees avec withErrorHandler (Sprint 8.1-8.3)
+- 7 ADRs documentes
+- 194 tests pass en continu
+- .env.example cree (48 vars documentees)
+
+Point fort : approche systematique avec validation empirique de chaque finding. Decouvertes fortuites majeures (NOUVEAU-5 bypass desactivation compte, NOUVEAU-4 cross-tenant members).
+
+Limitation : Sprint 1f (middleware Edge) reporte pour raisons techniques. Mitigation par defensif route-par-route (chaque route a requireSession/requireOrgMembership/withErrorHandler).
+
+Production-ready apres actions critiques pre-merge documentees ci-dessus (cleanup doublons, rotation secret, ADDITIONAL_TRUSTED_ORIGINS).
+
+### 2026-04-29 — Sprint 8 complet (HAUT-21 + MOYEN-31 + MOYEN-33 + BAS-28 + cleanup)
+
+Sprint 8 termine en 6 sous-sprints (8.5 skip).
+4 findings resolus : HAUT-21 (33 routes withErrorHandler), MOYEN-31 (newbi:// retire), MOYEN-33 (composants existants), BAS-28 (resolu de facto Sprint 3.2).
+Bonus : apiError publicDetails pour DX Zod, .env.example, header harmonise leads/notify, fix null check invitations, 7 vars ESLint preexistantes corrigees, require() → import dynamique.
 
 ### 2026-04-29 — Sprint 7 complet (MOYEN-19/23/24, BAS-27, NOUVEAU-5)
 
@@ -453,9 +533,9 @@ La liste des membres n'est plus affichee pour les utilisateurs non authentifies 
 
 Solution future si feedback utilisateur : creer GET /api/invitations/[invitationId]/preview avec auth via token d'invitation (pas de session requise), retournant uniquement nom + avatar des membres. Priorite faible.
 
-### Sprint 5.2/5.3 — Erreurs Zod 400 sans details
+### Sprint 5.2/5.3 — Erreurs Zod 400 sans details — RESOLU Sprint 8.4
 
-Les reponses 400 de validation Zod retournent uniquement {"error":"Données invalides"} sans les details de l'erreur (champs manquants, types incorrects, etc.). Pour la DX frontend, exposer validation.error.flatten() dans les reponses permettrait d'afficher des messages d'erreur precis aux utilisateurs. A traiter en Sprint 8 (cleanup) ou plus tard.
+Resolu : apiError() accepte desormais un 4e parametre publicDetails. Les 2 routes Zod (create-org-subscription, onboarding/step) exposent validation.error.flatten() dans les reponses 400.
 
 ---
 
@@ -497,13 +577,13 @@ Les reponses 400 de validation Zod retournent uniquement {"error":"Données inva
 
 ## Notes pour les futures sessions
 
-Si tu reprends ce projet dans une nouvelle conversation Claude :
+L'audit est cloture. Si tu reprends ce projet :
 
-1. Lis d'abord ce fichier PROGRESS.md pour savoir ou on en est
+1. Lis d'abord ce fichier PROGRESS.md pour le bilan complet
 2. Lis principles.md pour les regles non negociables
-3. Lis architecture.md pour les abstractions cibles
-4. Lis migration-plan.md pour le plan detaille du sprint en cours
-5. Reprends le travail a partir du sprint marque "En cours"
+3. Le seul sprint ouvert est Sprint 1f (middleware Edge Runtime)
+4. Pour toute nouvelle route API : utiliser withErrorHandler + requireSession (pattern Sprint 3+)
+5. Pour toute nouvelle variable d'env : l'ajouter dans .env.example
 
 ## Decisions architecturales (ADR)
 
