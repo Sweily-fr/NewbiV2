@@ -152,6 +152,7 @@ async function checkRecentStripePayment(organizationId) {
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
     // Chercher un abonnement créé très récemment (le webhook peut être en cours)
+    // MOYEN-17 fix: only accept subscriptions with valid status (not incomplete/past_due)
     const recentSubscription = await mongoDb
       .collection("subscription")
       .findOne({
@@ -160,6 +161,7 @@ async function checkRecentStripePayment(organizationId) {
           { organizationId: organizationId },
         ],
         createdAt: { $gte: fiveMinutesAgo },
+        status: { $in: ["active", "trialing"] },
       });
 
     if (recentSubscription) {
