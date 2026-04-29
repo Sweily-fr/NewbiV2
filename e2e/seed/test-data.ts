@@ -79,6 +79,9 @@ export const TEST_ORGANIZATION = {
   slug: "newbi-test-sasu",
   logo: null,
   metadata: null,
+  // Mark onboarding as completed so OnboardingGuard does not redirect to /onboarding
+  organizationType: "business",
+  onboardingCompleted: true,
   createdAt: new Date(),
 };
 

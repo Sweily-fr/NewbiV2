@@ -105,13 +105,25 @@ export default async function globalSetup() {
     }
     const realUserId = userDoc._id;
 
+    // Mark the user as having seen onboarding so OnboardingGuard does not
+    // redirect to /auth/signup. Also set hasCompletedTutorial to skip tutorial
+    // overlay on the dashboard.
+    await db
+      .collection("user")
+      .updateOne(
+        { _id: realUserId },
+        { $set: { hasSeenOnboarding: true, hasCompletedTutorial: true } },
+      );
+
     // Targeted cleanup — only the deterministic seeded IDs. Real dev data stays.
     const clientIds = TEST_CLIENTS.map((c) => c._id);
     const invoiceIds = TEST_INVOICES.map((i) => i._id);
     const quoteIds = TEST_QUOTES.map((q) => q._id);
 
     await db.collection("organization").deleteOne({ _id: IDS.organizationId });
-    await db.collection("member").deleteMany({ userId: realUserId.toString() });
+    await db.collection("member").deleteMany({
+      $or: [{ userId: realUserId.toString() }, { userId: realUserId }],
+    });
     await db.collection("clients").deleteMany({ _id: { $in: clientIds } });
     await db.collection("invoices").deleteMany({ _id: { $in: invoiceIds } });
     await db.collection("quotes").deleteMany({ _id: { $in: quoteIds } });
@@ -124,9 +136,13 @@ export default async function globalSetup() {
       ...TEST_ORGANIZATION,
       createdBy: realUserId.toString(),
     });
+    // Better Auth's session.create.before hook looks up `member` with
+    // userId as ObjectId — insert as ObjectId, not string, otherwise the
+    // hook fails to find the member and activeOrganizationId is never set
+    // on new sessions.
     await db.collection("member").insertOne({
       ...TEST_MEMBER,
-      userId: realUserId.toString(),
+      userId: realUserId,
       organizationId: IDS.organizationId.toString(),
     });
     console.log("  ↳ Inserted organization + member");
@@ -171,13 +187,11 @@ export default async function globalSetup() {
     await db.collection("clients").insertMany(rewire(TEST_CLIENTS));
     await db.collection("invoices").insertMany(rewire(TEST_INVOICES));
     await db.collection("quotes").insertMany(rewire(TEST_QUOTES));
-    await db
-      .collection("expenses")
-      .insertOne({
-        ...TEST_SUPPLIER_EXPENSE,
-        workspaceId: IDS.organizationId,
-        createdBy: realUserId,
-      });
+    await db.collection("expenses").insertOne({
+      ...TEST_SUPPLIER_EXPENSE,
+      workspaceId: IDS.organizationId,
+      createdBy: realUserId,
+    });
     console.log(
       `  ↳ Inserted ${TEST_CLIENTS.length} clients, ${TEST_INVOICES.length} invoices, ${TEST_QUOTES.length} quotes, 1 expense`,
     );
