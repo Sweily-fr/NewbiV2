@@ -35,7 +35,8 @@ async function handler(request) {
 
   const validation = onboardingStepSchema.safeParse(body);
   if (!validation.success) {
-    return apiError(400, "Données invalides", validation.error.flatten());
+    const flat = validation.error.flatten();
+    return apiError(400, "Données invalides", flat, flat);
   }
 
   const { step: targetStep, data: incomingData } = validation.data;

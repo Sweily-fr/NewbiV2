@@ -38,7 +38,8 @@ export const auth = betterAuth({
     "https://www.newbi.fr",
     "https://newbi-v2.vercel.app",
     "http://localhost:3000",
-    "newbi://", // Mobile app Expo
+    // newbi:// scheme removed — no mobile app in production (MOYEN-31).
+    // Re-add via ADDITIONAL_TRUSTED_ORIGINS if a mobile app is deployed.
     ...(process.env.ADDITIONAL_TRUSTED_ORIGINS?.split(",")
       .map((o) => o.trim())
       .filter(Boolean) ?? []),

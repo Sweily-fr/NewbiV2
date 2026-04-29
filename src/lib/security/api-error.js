@@ -11,9 +11,15 @@ import { NextResponse } from "next/server";
  * @param {number} status - HTTP status code (400, 401, 403, 404, 500, etc.)
  * @param {string} publicMessage - Safe message for the client response
  * @param {any} [internalDetails] - Technical details logged server-side only (Error, string, object)
- * @returns {NextResponse} JSON response with { error: publicMessage }
+ * @param {any} [publicDetails] - Safe details included in the response body (e.g. Zod validation errors)
+ * @returns {NextResponse} JSON response with { error: publicMessage, details?: publicDetails }
  */
-export function apiError(status, publicMessage, internalDetails) {
+export function apiError(
+  status,
+  publicMessage,
+  internalDetails,
+  publicDetails,
+) {
   if (internalDetails !== undefined) {
     console.error(
       `❌ [API ERROR ${status}] ${publicMessage}`,
@@ -25,5 +31,10 @@ export function apiError(status, publicMessage, internalDetails) {
     console.error(`❌ [API ERROR ${status}] ${publicMessage}`);
   }
 
-  return NextResponse.json({ error: publicMessage }, { status });
+  const body = { error: publicMessage };
+  if (publicDetails !== undefined) {
+    body.details = publicDetails;
+  }
+
+  return NextResponse.json(body, { status });
 }

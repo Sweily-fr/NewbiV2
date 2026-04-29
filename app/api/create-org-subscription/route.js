@@ -26,7 +26,8 @@ async function handler(request) {
 
   const validation = createOrgSubscriptionSchema.safeParse(body);
   if (!validation.success) {
-    return apiError(400, "Données invalides", validation.error.flatten());
+    const flat = validation.error.flatten();
+    return apiError(400, "Données invalides", flat, flat);
   }
 
   const { organizationData } = validation.data;
