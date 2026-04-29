@@ -1,16 +1,16 @@
 # Etat d'avancement — Refonte securite
 
-> Derniere mise a jour : 2026-04-29 14:30
-> Sprint en cours : Sprint 6 (RBAC unifie frontend/backend)
-> Statut global : 5/8 sprints termines (Sprint 1a-1d + Sprint 2 + Sprint 3 + Sprint 4 + Sprint 5, Sprint 1e en pause)
+> Derniere mise a jour : 2026-04-29 15:00
+> Sprint en cours : Sprint 7 (consistency checks + monitoring)
+> Statut global : 6/8 sprints termines (Sprint 1a-1d + Sprint 2-6, Sprint 1e en pause)
 > **TOUS LES CRITIQUES DE L'AUDIT SONT RESOLUS (8/8 = 100%)**
-> Findings resolus : 22 sur 29 + 2 NOUVEAU = 24 total
+> Findings resolus : 24 sur 29 + 3 NOUVEAU = 27 total
 >
 > - 8 CRITIQUES sur 8 (100%)
 > - 5 HAUTS sur 9 (56%)
-> - 7 MOYENS sur 12 (58%)
+> - 9 MOYENS sur 12 (75%)
 > - 1 BAS sur 3 (33%)
-> - 2 NOUVEAU resolus (NOUVEAU-1, NOUVEAU-2)
+> - 3 NOUVEAU resolus (NOUVEAU-1, NOUVEAU-2, NOUVEAU-4)
 
 ## Vue d'ensemble
 
@@ -28,26 +28,26 @@
 | 5.1    | Fix string → ObjectId (MOYEN-25)                                         | Termine  | 2026-04-29 | 2026-04-29 | 10 queries corrigees, 3 bugs silencieux decouverts   |
 | 5.2    | Zod create-org-subscription (MOYEN-18, MOYEN-20)                         | Termine  | 2026-04-29 | 2026-04-29 | 1er schema Zod, convention .strict() etablie         |
 | 5.3    | Zod onboarding/step (MOYEN-29)                                           | Termine  | 2026-04-29 | 2026-04-29 | Schema whitelist cles + requireSession + toObjectId  |
-| 6      | RBAC unifie frontend/backend                                             | A faire  | —          | —          | —                                                    |
+| 6      | RBAC unifie frontend/backend                                             | Termine  | 2026-04-29 | 2026-04-29 | MOYEN-16/17, NOUVEAU-4, -136 lignes cleanup          |
 | 7      | Consistency checks + monitoring                                          | A faire  | —          | —          | —                                                    |
 | 8      | Cleanup + dette residuelle                                               | A faire  | —          | —          | —                                                    |
 
-## Sprint en cours : 6 — RBAC unifie frontend/backend
+## Sprint en cours : 7 — Consistency checks + monitoring
 
 ### Objectif
 
-Migrer les 4 routes /api/organizations/[id]/\* vers requireOrgMembership(role?), ajouter requireActiveSubscription sur les routes business, filtrer checkRecentStripePayment par status.
+Implementer des checks periodiques qui detectent les etats incoherents (org sans subscription, double subscription, sessions orphelines).
 
 ### Livrables prevus
 
-- [ ] 4 routes /api/organizations/[id]/\* migrees vers requireOrgMembership
-- [ ] requireActiveSubscription sur routes business
-- [ ] Filtre status sur checkRecentStripePayment
-- [ ] Matrice RBAC partagee avec test de coherence
+- [ ] src/lib/consistency-checks.js implemente
+- [ ] Endpoint /api/admin/consistency-check protege
+- [ ] Strategie alerting (Sentry/Slack/GitHub Actions)
+- [ ] Cron setup
 
 ### Findings resolus par ce sprint
 
-MOYEN-16, MOYEN-17.
+MOYEN-19, MOYEN-23, MOYEN-24, BAS-27.
 
 ---
 
@@ -100,6 +100,17 @@ Config preview mono-branche a refactorer :
 - 22 fichiers crees (4 docs + 9 helpers + 1 barrel + 8 tests)
 - 57 tests skip, 0 erreur
 - Commit: 65c9714f
+
+### Sprint 6 — RBAC unifie frontend/backend (2026-04-29)
+
+- Sprint 6.1 : 4 routes organizations/[orgId]/\* migrees vers requireSession + requireOrgMembership + withErrorHandler
+  - complete-onboarding : ajout role check ["owner", "admin"] (MOYEN-16)
+  - members GET : ajout membership check (NOUVEAU-4 — cross-tenant fermé)
+  - seats-info + subscription : uniformisation pattern (cleanup $or workarounds)
+  - -136 lignes net (369 → 233)
+- Sprint 6.2 : filtre status: { $in: ["active", "trialing"] } sur checkRecentStripePayment (MOYEN-17)
+- Commits : b7d03dcd, 78ab4789
+- Findings resolus : MOYEN-16, MOYEN-17, NOUVEAU-4
 
 ### Sprint 5.2-5.3 — Schemas Zod (2026-04-29)
 
@@ -224,8 +235,8 @@ Bug 3 : seats-info/route.js (Sprint 5.1.3)
 | HAUT-34 (10 additionalFields)          | Haut     | Sprint 2    | Resolu   |
 | MOYEN-7 (subscription/check)           | Moyen    | Sprint 3.4  | Resolu   |
 | MOYEN-13 (fail-open API)               | Moyen    | Sprint 1f   | En pause |
-| MOYEN-16 (routes org sans role)        | Moyen    | Sprint 6    | A faire  |
-| MOYEN-17 (bypass 5min)                 | Moyen    | Sprint 6    | A faire  |
+| MOYEN-16 (routes org sans role)        | Moyen    | Sprint 6.1  | Resolu   |
+| MOYEN-17 (bypass 5min)                 | Moyen    | Sprint 6.2  | Resolu   |
 | MOYEN-18 (invitedMembers)              | Moyen    | Sprint 5.2  | Resolu   |
 | MOYEN-19 (double subscription)         | Moyen    | Sprint 7    | A faire  |
 | MOYEN-20 (type non whitelist)          | Moyen    | Sprint 5.2  | Resolu   |
@@ -241,6 +252,14 @@ Bug 3 : seats-info/route.js (Sprint 5.1.3)
 | BAS-32 (Vercel preview)                | Bas      | Sprint 4.7  | Resolu   |
 
 ## Journal de bord
+
+### 2026-04-29 — Sprint 6 complet (MOYEN-16/17 + NOUVEAU-4)
+
+Sprint 6 termine. 2 sous-sprints.
+3 findings resolus : MOYEN-16, MOYEN-17, NOUVEAU-4 (decouvert pendant investigation).
+Decouverte NOUVEAU-4 : trou cross-tenant CRITIQUE sur members GET (getSession sans memberCheck). Rate par audit initial car la route avait getSession() donnant l'illusion de securite.
+Bonus cleanup : -136 lignes sur 4 routes organizations/[orgId]/\*.
+Application systematique du pattern requireSession + requireOrgMembership(role?) sur les routes RBAC.
 
 ### 2026-04-29 — Sprint 5 complet (4 MOYENS resolus)
 
@@ -397,6 +416,16 @@ Les reponses 400 de validation Zod retournent uniquement {"error":"Données inva
 ---
 
 ## Bugs adjacents decouverts pendant l'audit
+
+### NOUVEAU-4 — /api/organizations/[orgId]/members GET sans membership check (CRITIQUE)
+
+- **Decouvert** : Sprint 6 investigation prealable
+- **Type** : Securite — cross-tenant data leak
+- **Severite** : CRITIQUE (comparable a CRITIQUE-8/9/10)
+- **Description** : La route GET /api/organizations/[orgId]/members faisait juste un getSession() sans verifier que l'user etait membre de l'org. Un user authentifie pouvait lire les membres (emails, noms, roles) de N'IMPORTE QUELLE organisation en passant un orgId arbitraire.
+- **Pourquoi rate par l'audit initial** : la route avait getSession() qui donnait l'illusion de securite. L'audit Zone 7 avait note "4 routes sous /api/organizations/ ont getSession" mais n'avait pas verifie que chaque route avait aussi un memberCheck.
+- **Action** : resolu en Sprint 6.1 par l'ajout de requireOrgMembership(user.id, orgId)
+- **Statut** : Resolu
 
 ### NOUVEAU-3 — Configuration GoCardless invalide en staging
 
