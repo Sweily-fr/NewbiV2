@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
 import { mongoDb } from "@/src/lib/mongodb";
-import { ObjectId } from "mongodb";
+import { toObjectId } from "@/src/lib/security";
 
 /**
  * GET /api/organizations/[organizationId]/seats-info
@@ -17,13 +17,13 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    // Next.js 15 : params doit être await avant d'accéder à ses propriétés
     const { organizationId } = await params;
+    const orgObjectId = toObjectId(organizationId);
 
-    // Vérifier que l'utilisateur appartient à cette organisation via la collection member
+    // MOYEN-25 fix: member.userId and member.organizationId are stored as ObjectId (ADR-004)
     const memberCheck = await mongoDb.collection("member").findOne({
-      userId: new ObjectId(session.user.id),
-      organizationId: organizationId,
+      userId: toObjectId(session.user.id),
+      organizationId: orgObjectId,
     });
 
     if (!memberCheck) {
@@ -31,14 +31,16 @@ export async function GET(request, { params }) {
     }
 
     // 1. Récupérer l'abonnement de l'organisation
+    // Note: subscription.organizationId may be stored as string (referenceId pattern)
+    // Try both ObjectId and string for backward compat with org-creation.js
     const subscription = await mongoDb.collection("subscription").findOne({
-      organizationId: organizationId,
+      $or: [{ organizationId: orgObjectId }, { referenceId: organizationId }],
     });
 
     if (!subscription) {
       return NextResponse.json(
         { error: "Aucun abonnement trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -55,7 +57,7 @@ export async function GET(request, { params }) {
     const members = await mongoDb
       .collection("member")
       .find({
-        organizationId: organizationId,
+        organizationId: orgObjectId,
         status: { $in: ["active", "pending"] },
       })
       .toArray();
@@ -76,7 +78,7 @@ export async function GET(request, { params }) {
       availableSeats,
       additionalSeats,
       plan: subscription.plan,
-      seatCost: 7.49, // Prix par siège additionnel
+      seatCost: 7.49,
     });
   } catch (error) {
     console.error("Erreur lors de la récupération des sièges:", error);
