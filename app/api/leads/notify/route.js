@@ -4,9 +4,12 @@ import { emailTemplates } from "@/src/lib/email-templates";
 import { withErrorHandler } from "@/src/lib/security";
 
 async function handler(request) {
-  // Vérifier le secret partagé (harmonized header name — was x-api-secret)
-  const authHeader = request.headers.get("x-internal-secret");
-  if (authHeader !== process.env.INTERNAL_API_SECRET) {
+  // Vérifier le secret partagé
+  // TODO: retirer x-api-secret après migration de tous les appelants (~Sprint 9)
+  const apiSecret =
+    request.headers.get("x-internal-secret") ||
+    request.headers.get("x-api-secret"); // rétro-compat temporaire
+  if (!apiSecret || apiSecret !== process.env.INTERNAL_API_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
