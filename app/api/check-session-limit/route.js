@@ -2,23 +2,19 @@ import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
 import { headers } from "next/headers";
 import { mongoDb } from "@/src/lib/mongodb";
-import { ObjectId } from "mongodb";
+import { toObjectId } from "@/src/lib/security";
 
-export async function GET(req) {
+export async function GET() {
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
     });
 
     if (!session?.user) {
-      return NextResponse.json(
-        { error: "Non authentifié" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    const userId = session.user.id;
-    const userObjectId = new ObjectId(userId);
+    const userObjectId = toObjectId(session.user.id);
     const now = new Date();
 
     // Lire les settings de l'organisation (maxSessions, inactivityTimeout)
@@ -31,29 +27,27 @@ export async function GET(req) {
         const org = await mongoDb
           .collection("organization")
           .findOne(
-            { _id: new ObjectId(orgId) },
-            { projection: { sessionSettings: 1 } }
+            { _id: toObjectId(orgId) },
+            { projection: { sessionSettings: 1 } },
           );
         if (org?.sessionSettings) {
           maxSessions = org.sessionSettings.maxSessions ?? 1;
           inactivityTimeoutHours = org.sessionSettings.inactivityTimeout ?? 12;
         }
-      } catch (e) {
+      } catch {
         // Continuer avec les valeurs par défaut
       }
     }
 
     // Seuil d'inactivité : supprimer les sessions sans activité depuis X heures
     const inactivityThreshold = new Date(
-      now.getTime() - inactivityTimeoutHours * 60 * 60 * 1000
+      now.getTime() - inactivityTimeoutHours * 60 * 60 * 1000,
     );
 
     // Nettoyer les sessions inactives (updatedAt < seuil) en une seule opération
+    // MOYEN-25 fix: userId is stored as ObjectId in session collection (ADR-004)
     await mongoDb.collection("session").deleteMany({
-      $or: [
-        { userId: userObjectId },
-        { userId: userId },
-      ],
+      userId: userObjectId,
       updatedAt: { $lt: inactivityThreshold },
       // Ne pas supprimer la session actuelle
       token: { $ne: session.session?.token },
@@ -63,10 +57,7 @@ export async function GET(req) {
     const activeSessions = await mongoDb
       .collection("session")
       .find({
-        $or: [
-          { userId: userObjectId },
-          { userId: userId },
-        ],
+        userId: userObjectId,
         expiresAt: { $gt: now },
       })
       .toArray();
@@ -78,7 +69,7 @@ export async function GET(req) {
       sessionCount: activeSessions.length,
       maxSessions,
       currentSessionToken: session.session?.token || null,
-      sessions: activeSessions.map(s => ({
+      sessions: activeSessions.map((s) => ({
         id: s._id.toString(),
         token: s.token,
         userAgent: s.userAgent,
@@ -91,7 +82,7 @@ export async function GET(req) {
     console.error("❌ [CHECK-SESSION-LIMIT] Erreur:", error);
     return NextResponse.json(
       { error: "Erreur serveur", details: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
