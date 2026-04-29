@@ -3,9 +3,17 @@ import { sendReactivationEmail } from "./auth-utils";
 
 // Hook avant connexion pour vérifier les comptes désactivés
 export const beforeSignInHook = createAuthMiddleware(async (ctx) => {
+  // TEMPORAIRE — Sprint 7.0 diagnostic NOUVEAU-5
+  console.warn(
+    `[HOOK DEBUG] beforeSignIn ENTRY path=${ctx.path} email=${ctx.body?.email}`,
+  );
+
   if (ctx.path !== "/sign-in/email") {
     return;
   }
+
+  // TEMPORAIRE — Sprint 7.0 diagnostic
+  console.warn("[HOOK DEBUG] PATH MATCHED, proceeding with isActive check");
 
   const email = ctx.body?.email;
   if (!email) {
@@ -15,14 +23,24 @@ export const beforeSignInHook = createAuthMiddleware(async (ctx) => {
   try {
     // Vérifier si l'utilisateur existe et s'il est actif
     const { getMongoDb } = await import("./mongodb");
-    const db = await getMongoDb(); // Attendre la connexion MongoDB
+    const db = await getMongoDb();
     const usersCollection = db.collection("user");
 
     const user = await usersCollection.findOne({ email: email });
 
+    // TEMPORAIRE — Sprint 7.0 diagnostic
+    console.warn(
+      `[HOOK DEBUG] User lookup result: exists=${!!user} isActive=${user?.isActive}`,
+    );
+
     if (user && user.isActive === false) {
       // Envoyer l'email de réactivation
       await sendReactivationEmail(user);
+
+      // TEMPORAIRE — Sprint 7.0 diagnostic
+      console.warn(
+        `[HOOK DEBUG] BLOCKING ${email} — isActive: false, about to throw APIError`,
+      );
 
       // Bloquer la connexion
       const { APIError } = await import("better-auth/api");
@@ -32,11 +50,22 @@ export const beforeSignInHook = createAuthMiddleware(async (ctx) => {
       });
     }
   } catch (error) {
+    // TEMPORAIRE — Sprint 7.0 diagnostic
+    console.warn(
+      `[HOOK DEBUG] CATCH triggered. constructor.name=${error?.constructor?.name} message=${error?.message} status=${error?.status}`,
+    );
+
     console.error("❌ Erreur dans beforeSignInHook:", error);
     // Si c'est déjà une APIError, la relancer
     if (error.constructor.name === "APIError") {
       throw error;
     }
+
+    // TEMPORAIRE — Sprint 7.0 diagnostic
+    console.warn(
+      "[HOOK DEBUG] SWALLOWING error, allowing login despite isActive check",
+    );
+
     // Sinon, logger mais ne pas bloquer la connexion
     console.error(
       "⚠️ Impossible de vérifier le statut du compte, connexion autorisée",
