@@ -131,16 +131,19 @@ export default async function globalSetup() {
       },
       { upsert: true },
     );
-    // Better Auth's session.create.before hook looks up `member` with
-    // userId as ObjectId — insert as ObjectId, not string, otherwise the
-    // hook fails to find the member and activeOrganizationId is never set
-    // on new sessions.
+    // Better Auth's Mongo adapter coerces `userId` and `organizationId`
+    // (both have `references: { field: "id" }` in the schema) to ObjectId
+    // before querying. Real members written by Better Auth itself have these
+    // fields stored as ObjectId. If the seed inserts strings, lookups like
+    // `findFullOrganization` (which joins member by organizationId) and
+    // `findMemberByOrgId` silently return null → 403/400 cascade in the
+    // dashboard.
     await db.collection("member").replaceOne(
       { _id: TEST_MEMBER._id },
       {
         ...TEST_MEMBER,
         userId: realUserId,
-        organizationId: IDS.organizationId.toString(),
+        organizationId: IDS.organizationId,
       },
       { upsert: true },
     );
