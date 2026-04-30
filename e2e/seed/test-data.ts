@@ -73,6 +73,9 @@ export const TEST_USER = {
 };
 
 // ─── Organization (Better Auth — raw collection) ────────────────────
+// All `company*` + address + legal fields are required by isCompanyInfoComplete
+// (src/hooks/useCompanyInfoGuard.js). Without them CompanyInfoGuard shows the
+// "Configuration de votre entreprise" alert instead of the requested page.
 export const TEST_ORGANIZATION = {
   _id: IDS.organizationId,
   name: "Newbi Test SASU",
@@ -82,6 +85,17 @@ export const TEST_ORGANIZATION = {
   // Mark onboarding as completed so OnboardingGuard does not redirect to /onboarding
   organizationType: "business",
   onboardingCompleted: true,
+  // Company info (required by CompanyInfoGuard for /factures/new etc.)
+  companyName: "Newbi Test SASU",
+  companyEmail: "billing@newbi-test.fr",
+  companyPhone: "+33123456789",
+  addressStreet: "1 rue de la Paix",
+  addressCity: "Paris",
+  addressZipCode: "75001",
+  addressCountry: "France",
+  siret: "98765432100012",
+  legalForm: "SASU",
+  vatNumber: "FR98765432100",
   createdAt: new Date(),
 };
 
