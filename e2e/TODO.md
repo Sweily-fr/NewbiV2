@@ -1,5 +1,70 @@
 # TODO E2E — non-bloquants pour Phase P0
 
+## 🚨 P0 SÉCURITÉ — Faille multi-tenant confirmée (1er mai 2026)
+
+**État au 1 mai 2026** : faille confirmée présente sur newbi-api/develop@44d05da.
+Le workstream sécurité backend en cours (Phase A.x : subscription enforcement)
+est orthogonal — il ne touche ni à `withRBAC` fallback, ni à `withWorkspace`,
+ni aux patterns `args.workspaceId` directs dans les queries.
+
+**Pour réactiver Test C** : retirer le `test.skip()` au début du test, relancer
+`npm run e2e -- e2e/security/multi-tenant-isolation.spec.js`. Si Test C passe,
+étendre à Test D (quote), Test E (kanban) pour valider la généralité du fix.
+
+`e2e/security/multi-tenant-isolation.spec.js` Test C échoue avec un vrai bug.
+
+**Symptôme** : un utilisateur authentifié peut récupérer la facture d'un AUTRE
+tenant en envoyant `GetInvoice(id: <foreign>, workspaceId: <foreign>)`. Le
+backend accepte le `workspaceId` fourni par le client sans vérifier que
+l'utilisateur appartient à cet espace.
+
+**Reproduction** :
+
+```
+operationName: GetInvoice
+variables: { id: "ffffffffffffffff00000001", workspaceId: "ffffffffffffffff00000099" }
+```
+
+Réponse observée (devrait être null/error) :
+
+```json
+{
+  "id": "ffffffffffffffff00000001",
+  "prefix": "F-209912",
+  "number": "9999",
+  "totalTTC": 119998.8,
+  "client": {
+    "name": "Foreign Tenant Client (DO NOT LEAK)",
+    "email": "leak-canary@foreign-tenant.test"
+  }
+}
+```
+
+**Test B passe** : quand `workspaceId=ours`, le filtre `_id + workspaceId` du
+resolver retourne null pour un id étranger. Le filtre Mongo fonctionne.
+
+**Test C échoue** : quand `workspaceId=foreign`, le resolver applique le filtre
+`{_id: foreign, workspaceId: foreign}` qui matche → retour du payload. Le
+middleware `requireRead("invoices")` ne vérifie PAS que l'utilisateur est
+membre du `workspaceId` passé en argument.
+
+**Code suspect** : `newbi-api/src/middlewares/rbac.js` →
+`requireRead("invoices")` et/ou `resolveWorkspaceId`. Le resolver
+`newbi-api/src/resolvers/invoice.js:280-286` ne fait que filtrer sur
+`{_id, workspaceId}` sans cross-check avec la session.
+
+**Action attendue** : la correction doit forcer
+`workspaceId === context.activeOrganizationId` au niveau du middleware RBAC,
+ou au minimum vérifier que l'utilisateur est membre du `workspaceId` requesté
+avant d'exécuter le resolver. Cette faille existe probablement aussi sur
+TOUS les autres resolvers qui acceptent un `workspaceId` en argument
+(clients, quotes, expenses, etc.) — vérifier en bloc.
+
+**Note** : on ne touche pas au backend dans cette session. Le test reste rouge
+intentionnellement jusqu'à validation produit + correction côté API.
+
+---
+
 ## A11y violations réelles (à surfacer côté produit)
 
 Découvertes lors du run complet du 30 avril 2026 (commit `feat/e2e-p0-coverage`).

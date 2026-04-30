@@ -17,6 +17,7 @@ import {
   TEST_INVOICES,
   TEST_QUOTES,
   TEST_SUPPLIER_EXPENSE,
+  FOREIGN_INVOICE,
 } from "./seed/test-data";
 
 function getMongoUri(): string {
@@ -209,8 +210,17 @@ export default async function globalSetup() {
       },
       { upsert: true },
     );
+
+    // Foreign tenant invoice — bypasses rewire() on purpose: its workspaceId
+    // must remain foreign for multi-tenant isolation tests to be meaningful.
+    await db
+      .collection("invoices")
+      .replaceOne({ _id: FOREIGN_INVOICE._id }, FOREIGN_INVOICE, {
+        upsert: true,
+      });
+
     console.log(
-      `  ↳ Inserted ${TEST_CLIENTS.length} clients, ${TEST_INVOICES.length} invoices, ${TEST_QUOTES.length} quotes, 1 expense`,
+      `  ↳ Inserted ${TEST_CLIENTS.length} clients, ${TEST_INVOICES.length} invoices (+1 foreign), ${TEST_QUOTES.length} quotes, 1 expense`,
     );
 
     console.log("[E2E Seed] Done ✓");

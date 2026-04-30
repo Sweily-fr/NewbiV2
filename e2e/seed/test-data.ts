@@ -555,6 +555,79 @@ export const TEST_SUPPLIER_EXPENSE = {
   updatedAt: now,
 };
 
+// ─── Foreign tenant — multi-tenant isolation tests ─────────────────
+// A separate organization+invoice that DOES NOT belong to our test user.
+// Used by e2e/security/multi-tenant-isolation.spec.js to assert that
+// resolvers + page guards reject access to other tenants' data even when
+// the attacker knows the document's _id.
+//
+// IMPORTANT: do NOT route this fixture through the seed `rewire()` helper
+// — its workspaceId must remain foreign to be a valid cross-tenant target.
+export const FOREIGN_IDS = {
+  organizationId: new ObjectId("ffffffffffffffff00000099"),
+  invoiceId: new ObjectId("ffffffffffffffff00000001"),
+  clientId: new ObjectId("ffffffffffffffff00000002"),
+  userId: new ObjectId("ffffffffffffffff00000003"),
+};
+
+export const FOREIGN_INVOICE = {
+  _id: FOREIGN_IDS.invoiceId,
+  workspaceId: FOREIGN_IDS.organizationId,
+  createdBy: FOREIGN_IDS.userId,
+  prefix: "F-209912",
+  number: "9999",
+  issueDate: new Date("2099-12-01"),
+  dueDate: new Date("2099-12-31"),
+  invoiceType: "standard",
+  status: "PENDING",
+  client: {
+    _id: FOREIGN_IDS.clientId,
+    name: "Foreign Tenant Client (DO NOT LEAK)",
+    email: "leak-canary@foreign-tenant.test",
+    phone: "+33000000000",
+    type: "COMPANY",
+    siret: "00000000000000",
+    vatNumber: "FR00000000000",
+    address: {
+      street: "1 rue Foreign",
+      city: "Foreign City",
+      postalCode: "00000",
+      country: "France",
+    },
+  },
+  companyInfo: {
+    name: "Foreign Tenant SAS",
+    email: "billing@foreign-tenant.test",
+    siret: "11111111111111",
+    vatNumber: "FR11111111111",
+  },
+  items: [
+    {
+      description: "Foreign tenant secret line item",
+      quantity: 1,
+      unitPrice: 99999,
+      vatRate: 20,
+      unit: "forfait",
+      discount: 0,
+      discountType: "PERCENTAGE",
+      progressPercentage: 100,
+    },
+  ],
+  totalHT: 99999,
+  totalVAT: 19999.8,
+  totalTTC: 119998.8,
+  finalTotalHT: 99999,
+  finalTotalVAT: 19999.8,
+  finalTotalTTC: 119998.8,
+  discount: 0,
+  discountType: "PERCENTAGE",
+  showBankDetails: false,
+  headerNotes: "",
+  footerNotes: "DO NOT LEAK — foreign tenant fixture",
+  createdAt: new Date("2099-12-01"),
+  updatedAt: new Date("2099-12-01"),
+};
+
 // ─── Collections to seed / clean ────────────────────────────────────
 export const SEEDED_COLLECTIONS = [
   "user",
