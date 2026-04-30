@@ -83,6 +83,34 @@ Probable cause : la page d'accueil dashboard ne charge plus le même contenu
 (stats, badges, cards) qu'au moment où le spec a été écrit. À traiter avec
 le P0 dashboard si on en écrit un.
 
+## P0 Facture — chaîne workspace bloquée (29 avril 2026)
+
+Spec `e2e/invoices/create-invoice-p0.spec.js` créée puis `test.skip` après
+diagnostic. Voir le commentaire en tête du describe block pour le détail des
+4 fixes seed déjà déployés (member.userId/orgId ObjectId, hasSeenOnboarding,
+TEST_ORGANIZATION 9 champs company info, idempotent replaceOne+upsert).
+
+**Symptôme final** : le popover de sélection client reste en état
+"Recherche..." pendant 10s. La query `GetClients` est envoyée avec les bonnes
+variables (vérifié via graphql-trace.json), les clients sont en DB avec le bon
+type ObjectId (vérifié via accès Mongo direct après seed), mais le hook
+`useClients` ne sort jamais de `loading`.
+
+**Pistes à explorer** quand on reprendra :
+
+1. Inspecter la réponse GraphQL réelle de GetClients (le fixture trace ne
+   capture que les responses non-OK ; étendre à tous les `/graphql` responses
+   pour voir si `data.clients` est `null` ou `{ items: [] }`).
+2. Vérifier que le contexte RBAC backend reçoit bien `activeOrganizationId`
+   depuis le cookie de session — ajouter un log temporaire dans
+   `requireRead("clients")` pour tracer.
+3. Tester si le problème est spécifique au popover ou s'il touche aussi la
+   liste `/dashboard/clients` (si liste OK et popover KO → bug front, sinon
+   → bug backend RBAC).
+
+Estimation : 30-60 min de fix supplémentaire si on reprend avec une instance
+du backend en mode debug.
+
 ---
 
 ## Verdict global du run du 30 avril 2026
