@@ -133,3 +133,8 @@ Tests qui ne s'exécutent JAMAIS dans la configuration actuelle (le seed crée t
   - **App** : déplacer une partie des hooks dashboard dans des Server Components (Next App Router) pour mounter plus tôt. Ou fournir une page initiale shell statique avant l'hydration.
   - **Workaround court terme** : ajouter `await page.waitForLoadState("networkidle", { timeout: 30000 }).catch(() => {})` après le goto fixture (ne bloque pas si jamais réseau jamais idle).
 - **Owner suggéré** : front (perf rendering) + e2e (robustesse fixture). Pas un fix backend.
+- **Tentative de workaround e2e (2026-05-01, commit b9049bc3) — ÉCHEC documenté** :
+  - `waitFor [data-sidebar="menu"]` : matchait l'`<ul>` du logo en SSR avant hydration, pas d'amélioration.
+  - `waitFor getByRole("button", "Accueil")` : timeout 30s quand la sidebar reste collapsed, +1 fail.
+  - `waitForLoadState("networkidle", 15s)` : stabilise L6 mais casse L54 (Apollo cache-first ne re-fetch pas après reload si déjà chaud).
+  - Décision : revert au state initial (`domcontentloaded` seul). Le fix doit venir côté src/ (perf hooks dashboard) ou test par test (waitFor explicite sur sélecteur stable, déjà appliqué à L37 dans commit a6b0c921). Tentatives ultérieures sur la fixture devraient explorer une autre piste (ex: bypass authenticatedPage pour les tests dashboard et utiliser une fixture dédiée `dashboardReady` qui attend une condition spécifique au domaine du test).
