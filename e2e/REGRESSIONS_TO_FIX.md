@@ -96,3 +96,19 @@ Tests qui ne s'exécutent JAMAIS dans la configuration actuelle (le seed crée t
   - Corrigé indépendamment le contraste de la 404 elle-même (`not-found.jsx` : `text-gray-400 → text-gray-600`).
 - **Impact** : aucun pour les utilisateurs (le settings modal couvre la fonctionnalité). Pour la couverture e2e a11y : on perd l'audit a11y du compte/sécurité — à réintroduire en testant le modal au lieu d'une route, si jugé prioritaire.
 - **Owner suggéré** : aucun fix backend/front nécessaire. Si on veut couvrir le modal en a11y : nouvelle spec qui ouvre le modal puis lance axe.
+
+---
+
+## R6 — A11y bouton primary CTA (contraste 4.4 vs 4.5 requis)
+
+- **Découvert** : audit a11y du 2026-05-01, `e2e/A11Y_FIX_PLAN.md` G2
+- **Catégorie** : DESIGN_DECISION (impact visuel marque)
+- **Symptôme** : violation `color-contrast` (serious) sur `/auth/login` et `/auth/signup`. Ratio mesuré 4.4, requis WCAG AA 4.5. Le bouton primary utilise `#5A50FF` (couleur de marque) avec overlay `/90` au hover qui fait basculer le ratio sous le seuil.
+- **Composant** : `src/components/ui/button.jsx:15` (variante primary)
+- **Impact réel** : 0 (différence visuelle imperceptible). Bloquant pour conformité RGAA stricte ou audit accessibilité externe.
+- **Options de fix** :
+  - A) Assombrir le token primary `#5A50FF` → `#5044F0`. Touche tous les écrans utilisant la couleur de marque.
+  - B) Retirer l'overlay `/90` au hover. Perte du feedback visuel hover.
+  - C) Passer `font-medium` → `font-semibold` sur les boutons primary. Boutons plus gras partout.
+- **Décision** : reportée. Pas de fix urgent — sera traité quand un audit RGAA, un client public ou une refonte design le rendra prioritaire.
+- **Owner suggéré** : design (validation marque) + front (application).
