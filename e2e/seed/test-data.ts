@@ -96,6 +96,11 @@ export const TEST_ORGANIZATION = {
   siret: "98765432100012",
   legalForm: "SASU",
   vatNumber: "FR98765432100",
+  // Required by backend invoice validation for SASU/SAS/SARL legal forms
+  // (companyInfo.capitalSocial + companyInfo.rcs sont obligatoires sinon
+  // CreateInvoice mutation throw VALIDATION_ERROR)
+  capitalSocial: "10000",
+  rcs: "Paris B 987 654 321",
   createdAt: new Date(),
 };
 

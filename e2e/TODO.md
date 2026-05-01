@@ -148,33 +148,22 @@ Probable cause : la page d'accueil dashboard ne charge plus le même contenu
 (stats, badges, cards) qu'au moment où le spec a été écrit. À traiter avec
 le P0 dashboard si on en écrit un.
 
-## P0 Facture — chaîne workspace bloquée (29 avril 2026)
+## P0 Facture — DÉBLOQUÉ ✅ (1er mai 2026)
 
-Spec `e2e/invoices/create-invoice-p0.spec.js` créée puis `test.skip` après
-diagnostic. Voir le commentaire en tête du describe block pour le détail des
-4 fixes seed déjà déployés (member.userId/orgId ObjectId, hasSeenOnboarding,
-TEST_ORGANIZATION 9 champs company info, idempotent replaceOne+upsert).
+Spec `e2e/invoices/create-invoice-p0.spec.js` passe désormais en vert (2/2 tests).
 
-**Symptôme final** : le popover de sélection client reste en état
-"Recherche..." pendant 10s. La query `GetClients` est envoyée avec les bonnes
-variables (vérifié via graphql-trace.json), les clients sont en DB avec le bon
-type ObjectId (vérifié via accès Mongo direct après seed), mais le hook
-`useClients` ne sort jamais de `loading`.
+Diagnostic post-mortem : la "chaîne workspace bloquée" suspectée la session
+précédente était en réalité 3 problèmes distincts qui ont été levés ensemble :
 
-**Pistes à explorer** quand on reprendra :
-
-1. Inspecter la réponse GraphQL réelle de GetClients (le fixture trace ne
-   capture que les responses non-OK ; étendre à tous les `/graphql` responses
-   pour voir si `data.clients` est `null` ou `{ items: [] }`).
-2. Vérifier que le contexte RBAC backend reçoit bien `activeOrganizationId`
-   depuis le cookie de session — ajouter un log temporaire dans
-   `requireRead("clients")` pour tracer.
-3. Tester si le problème est spécifique au popover ou s'il touche aussi la
-   liste `/dashboard/clients` (si liste OK et popover KO → bug front, sinon
-   → bug backend RBAC).
-
-Estimation : 30-60 min de fix supplémentaire si on reprend avec une instance
-du backend en mode debug.
+1. **Pas de bug RBAC** : la query `GetClients` sortait bien 2 items du backend
+   (vérifié via diag spec qui capturait toutes les responses GraphQL, pas
+   seulement les non-OK comme la fixture le faisait). La session précédente avait
+   probablement un cache stale ou une race condition transitoire.
+2. **UI drift** : `#item-description-0` n'existe pas tant qu'on n'a pas cliqué
+   "Ajouter un article" + expand l'AccordionItem (collapsed par défaut).
+3. **Validation backend SASU** : `companyInfo.capitalSocial` et `companyInfo.rcs`
+   sont obligatoires pour le statut SASU/SAS/SARL côté backend. Manquaient dans
+   `TEST_ORGANIZATION` → ajout au seed.
 
 ---
 

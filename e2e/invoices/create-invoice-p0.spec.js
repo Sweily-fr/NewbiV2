@@ -63,8 +63,22 @@ async function createInvoiceViaUI(
     );
   });
 
-  await test.step("Saisir un article", async () => {
-    // Le premier item existe déjà à l'index 0 — pas besoin d'ajouter
+  await test.step("Ajouter et saisir un article", async () => {
+    // Step 2 démarre avec une liste d'items vide — cliquer "Ajouter un article"
+    // crée une ligne dans un Accordion (Radix), collapsed par défaut.
+    await page.getByRole("button", { name: /Ajouter un article/i }).click();
+
+    // La ligne est rendue mais l'input #item-description-0 est dans
+    // <AccordionContent> — il faut expand l'item pour qu'il soit dans le DOM.
+    // Le trigger est la row "Article 1" elle-même.
+    await page
+      .getByText(/^Article 1$/)
+      .first()
+      .click();
+
+    await expect(page.locator("#item-description-0")).toBeVisible({
+      timeout: 5000,
+    });
     await page.locator("#item-description-0").fill(description);
     await page.getByLabel("Quantité").first().fill(String(quantity));
     await page.locator("#item-price-0").fill(String(unitPriceHT));
@@ -103,23 +117,6 @@ async function createInvoiceViaUI(
 }
 
 test.describe("[P0][Factures] Création + numérotation séquentielle", () => {
-  // SKIP — bloqué par un dernier maillon de la chaîne workspace/RBAC.
-  // État vérifié au 30/04/2026 :
-  //   ✓ seed insère bien `Entreprise Alpha SAS` avec workspaceId=ObjectId('bbbb...0001')
-  //     (vérifié via mongodb direct : 2 clients matchent la requête resolver-style)
-  //   ✓ frontend envoie bien `GetClients(workspaceId: "bbbbbbbbbbbbbbbbbbbb0001")`
-  //     (vérifié dans graphql-trace.json du run en échec)
-  //   ✓ resolver coerce input string → ObjectId via `new mongoose.Types.ObjectId(...)`
-  //   ✗ pourtant le popover reste en "Recherche..." pendant 10s → la query soit
-  //     n'aboutit pas, soit aboutit avec items=[]
-  // Hypothèses restantes (à investiguer hors-budget P0) :
-  //   - RBAC `requireRead("clients")` rejette silencieusement (vérifier role propagation
-  //     depuis member.role="owner")
-  //   - resolveWorkspaceId tombe sur context.workspaceId=undefined (Better Auth context
-  //     ne propage pas l'org active correctement malgré le seed activeOrganizationId)
-  //   - Apollo Client cache hit avec `data.clients = null` qui bloque le re-render
-  // Voir e2e/TODO.md → "P0 Facture — chaîne workspace bloquée"
-  test.skip();
   test("Crée une facture standard et vérifie le format prefix/number + status PENDING", async ({
     authenticatedPage: page,
   }) => {
