@@ -275,7 +275,11 @@ export function OrganizationSwitcherHeader() {
           asChild
           data-tutorial="organization-switcher-header"
         >
-          <div className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-label={`Changer d'espace de travail (actuel : ${currentOrganization.name})`}
+            className="flex items-center gap-2 bg-transparent border-0 p-0 cursor-pointer outline-none"
+          >
             {/* Nom de l'organisation */}
             <Boxes className="size-3 text-[#707070]" />
             <span className="text-xs font-normal truncate max-w-[150px]">
@@ -297,11 +301,11 @@ export function OrganizationSwitcherHeader() {
                 Expiré
               </Badge>
             )}
-            {/* Bouton chevron avec hover */}
-            <button className="p-1 rounded-md hover:bg-accent transition-colors cursor-pointer outline-none">
+            {/* Chevron avec hover (span — était <button> mais imbriqué dans le trigger) */}
+            <span className="p-1 rounded-md hover:bg-accent transition-colors">
               <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
-            </button>
-          </div>
+            </span>
+          </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
           className="w-80 rounded-lg"
