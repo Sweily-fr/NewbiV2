@@ -177,3 +177,8 @@ Tests qui ne s'exécutent JAMAIS dans la configuration actuelle (le seed crée t
 - **Hypothèse de fix** : remplacer `userId: realUserId.toString()` par `userId: realUserId` ligne 113 de `e2e/onboarding/seed-helpers.js`. 1 ligne de code, fix 8 tests d'un coup.
 
 - **Owner suggéré** : e2e (seed). Pas de fix backend ni frontend nécessaire.
+- **État** : **PARTIELLEMENT RÉSOLU** (commit d02d6df1) — 5 tests récupérés sur 8 attendus :
+  - ✅ `invoices/create-invoice.spec.js` × 4 (L95, L189, L216, L241)
+  - ✅ `purchase-orders/purchase-order-backend-p0.spec.js:40`
+  - ❌ `invoices/create-invoice-p0.spec.js:120, 138` + `create-deposit-invoice-p0:19` reclassés en **R7_PERF cascade** : `page.goto Timeout 45s` sur `/factures/new` (la page editor met >45s à monter sous charge — pas lié à R8). Voir R7.
+- **Cascade observée — visual baselines invalidées** : le fix R8 a réveillé les visual tests (`e2e/visual/dashboard-visual.spec.js`, 52 tests pixel-à-pixel) qui étaient skippés au run précédent (108/30/133) parce que les pages dashboard échouaient en amont avec FORBIDDEN. Maintenant ces tests s'exécutent et 51/52 fail car les baselines `.png` ne matchent plus les fix UI a11y déjà commitées (`text-gray-700` footer, button trigger org-switcher, suppression wrappers `data-tutorial`, `text-gray-600` 404). À régénérer avec `npx playwright test --update-snapshots --project=chromium e2e/visual/` après validation design — hors scope phase B.
