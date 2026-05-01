@@ -70,15 +70,11 @@ test.describe("Signatures Mail", () => {
   }) => {
     await waitForSignaturesPage(page);
 
-    // Si on est sur la notice mobile/desktop-only, skip
-    const mobileNotice = await page
-      .locator("text=Fonctionnalité Desktop")
-      .first()
-      .isVisible({ timeout: 2000 })
-      .catch(() => false);
-    if (mobileNotice) {
-      test.skip(true, "Vue mobile — création de signature désactivée");
-    }
+    // Note: aucune protection "vue mobile" ici — playwright.config.js n'inclut
+    // pas signatures-crud dans le projet `mobile` (testMatch limité à
+    // smoke|public-pages|navigation), donc ce spec ne s'exécute qu'en
+    // chromium desktop 1280×720. Le check `if (mobileNotice)` était du code
+    // mort jamais déclenché.
 
     const createBtn = page
       .locator('button:has-text("Créer une signature")')
@@ -94,14 +90,9 @@ test.describe("Signatures Mail", () => {
   }) => {
     await waitForSignaturesPage(page);
 
-    const mobileNotice = await page
-      .locator("text=Fonctionnalité Desktop")
-      .first()
-      .isVisible({ timeout: 2000 })
-      .catch(() => false);
-    if (mobileNotice) {
-      test.skip(true, "Vue mobile — pas de liste affichée");
-    }
+    // Pas de check "vue mobile" : ce spec ne tourne qu'en chromium desktop
+    // (cf. playwright.config.js — projet `mobile` filtre testMatch sur
+    // smoke|public-pages|navigation uniquement).
 
     // Soit un tableau/grille, soit un état "vide"
     const table = page.locator("table").first();
@@ -126,14 +117,8 @@ test.describe("Signatures Mail", () => {
   }) => {
     await waitForSignaturesPage(page);
 
-    const mobileNotice = await page
-      .locator("text=Fonctionnalité Desktop")
-      .first()
-      .isVisible({ timeout: 2000 })
-      .catch(() => false);
-    if (mobileNotice) {
-      test.skip(true, "Vue mobile — création de signature désactivée");
-    }
+    // Pas de check "vue mobile" : ce spec ne tourne qu'en chromium desktop
+    // (cf. playwright.config.js).
 
     const createBtn = page
       .locator('button:has-text("Créer une signature")')
