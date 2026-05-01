@@ -112,3 +112,24 @@ Tests qui ne s'exécutent JAMAIS dans la configuration actuelle (le seed crée t
   - C) Passer `font-medium` → `font-semibold` sur les boutons primary. Boutons plus gras partout.
 - **Décision** : reportée. Pas de fix urgent — sera traité quand un audit RGAA, un client public ou une refonte design le rendra prioritaire.
 - **Owner suggéré** : design (validation marque) + front (application).
+
+---
+
+## R7 — Perf : pages dashboard lentes à monter le RSC sous charge
+
+- **Découvert** : tests `dashboard-home.spec.js:6` (sidebar visible), `dashboard-home.spec.js:37` (liens menu présents), `kanban-crud.spec.js:130` (reorder keyboard) — tous avec `page.goto Timeout` ou DOM minimal au moment de l'assertion.
+- **Catégorie** : APP_PERF (intermittent, dépend de la charge dev server)
+- **Symptôme** :
+  - Sur `dashboard-home.spec.js:6` : la fixture `authenticatedPage` fait `goto("/dashboard", waitUntil: "domcontentloaded")`. Le DOM rendu après la fixture contient parfois uniquement `<button NewBi Logo disabled>` + `<button Toggle Sidebar>` — ni h1/h2 ni items de nav. Sous isolation d'un seul test : passe. Sous charge parallèle (worker=2) : fail intermittent.
+  - Sur `kanban-crud.spec.js:130` : `page.goto("/dashboard/outils/kanban/new")` timeout systématiquement après 30s. La page kanban/new est connue lente (TODO.md ligne 137 mentionne d'autres pages avec le même symptôme).
+- **Cause probable** :
+  - `domcontentloaded` n'attend pas que les composants client React/Apollo soient mountés. La sidebar (`Sidebar` Shadcn) demande plusieurs hooks (`useSession`, `useSubscription`, `usePermissions`, `useWorkspace`) qui chaînent des queries GraphQL — sous charge le mount peut prendre >10s.
+  - Pour kanban/new : composant heavy avec `@dnd-kit` + nombreux providers, mount plus lent que la médiane.
+- **Impact e2e** :
+  - 2 tests dashboard-home toujours fragiles (L6, L37) malgré les fix labels/wait posés dans le commit a6b0c921.
+  - kanban-crud:130 reste rouge — couverture D&D clavier nulle (cumulé avec R2 dnd-kit handle, le D&D kanban est totalement non testé).
+- **Hypothèses de fix** :
+  - **e2e** : changer la fixture `authenticatedPage` pour utiliser `waitUntil: "networkidle"` (au prix de tests plus lents). Ou attendre un sélecteur stable monté tardivement (ex: nav `<aside data-sidebar>` rendu après hydration complète).
+  - **App** : déplacer une partie des hooks dashboard dans des Server Components (Next App Router) pour mounter plus tôt. Ou fournir une page initiale shell statique avant l'hydration.
+  - **Workaround court terme** : ajouter `await page.waitForLoadState("networkidle", { timeout: 30000 }).catch(() => {})` après le goto fixture (ne bloque pas si jamais réseau jamais idle).
+- **Owner suggéré** : front (perf rendering) + e2e (robustesse fixture). Pas un fix backend.
