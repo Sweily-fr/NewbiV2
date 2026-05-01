@@ -138,3 +138,42 @@ Tests qui ne s'exécutent JAMAIS dans la configuration actuelle (le seed crée t
   - `waitFor getByRole("button", "Accueil")` : timeout 30s quand la sidebar reste collapsed, +1 fail.
   - `waitForLoadState("networkidle", 15s)` : stabilise L6 mais casse L54 (Apollo cache-first ne re-fetch pas après reload si déjà chaud).
   - Décision : revert au state initial (`domcontentloaded` seul). Le fix doit venir côté src/ (perf hooks dashboard) ou test par test (waitFor explicite sur sélecteur stable, déjà appliqué à L37 dans commit a6b0c921). Tentatives ultérieures sur la fixture devraient explorer une autre piste (ex: bypass authenticatedPage pour les tests dashboard et utiliser une fixture dédiée `dashboardReady` qui attend une condition spécifique au domaine du test).
+
+---
+
+## R8 — `restoreOrganization` casse le contexte org pour tous les specs après onboarding
+
+- **Découvert** : run final phase B (commit 9ec04e02), cluster de 7 tests invoices qui utilisent `selectFirstClient()` rendent "Aucun client trouvé" malgré 9 clients seedés. Cause confirmée par replay direct GraphQL.
+- **Catégorie** : SEED_BUG (impacte tous les specs alphabétiquement après `e2e/onboarding/onboarding.spec.js`)
+- **Symptôme test** : combobox client s'ouvre, textbox de recherche actif, panel rend `<paragraph>Aucun client trouvé</paragraph>`. Sur `purchase-order-backend-p0:40` (raw GraphQL), erreur `FORBIDDEN: "Aucune organisation active trouvée"`.
+- **Réponse GraphQL réelle** (capturée via curl avec cookie session de la fixture) :
+
+```json
+{
+  "errors": [
+    {
+      "message": "Aucune organisation active trouvée. Veuillez rejoindre ou créer une organisation.",
+      "extensions": { "code": "FORBIDDEN", "details": null },
+      "path": ["clients"]
+    }
+  ]
+}
+```
+
+- **État DB** : la collection `member` contient bien un document avec `_id: bbbbbbbbbbbbbbbbbbbb0002`, mais avec `userId` typé `string` au lieu d'`ObjectId`. Le RBAC middleware (`getActiveOrganization` côté Better Auth) lookup par ObjectId → ne trouve pas → fallback throw FORBIDDEN.
+- **Composant frontend** : `app/dashboard/outils/factures/components/invoices-form-sections/client-selector.jsx:165` consomme `useClients()` → `GET_CLIENTS` → resolver retourne errors GraphQL → Apollo (avec `errorPolicy: "all"`) résout `clients = []` → message "Aucun client trouvé".
+- **Variables envoyées** : `{ workspaceId: "bbbbbbbbbbbbbbbbbbbb0001", page: 1, limit: 50, search: "" }` — variables OK, ce n'est pas un bug de filtre.
+- **Cause précise** : incohérence de typing entre le seed initial et le seed de restoration :
+  - `e2e/global-setup.ts:146` (initial) : `userId: realUserId` → **ObjectId** ✅
+  - `e2e/onboarding/seed-helpers.js:113` (restore après onboarding spec) : `userId: realUserId.toString()` → **string** ❌
+
+  Better Auth's Mongo adapter coerce `userId` (déclaré comme `references: { field: "id" }` dans le schema) en ObjectId avant query. Un member avec `userId: string` est invisible aux lookups Better Auth. Le warning est explicitement documenté dans `global-setup.ts:135-141` mais la fonction `restoreOrganization` ajoutée ultérieurement ne respecte pas la convention.
+
+- **Impact** :
+  - **8 tests e2e bloqués** (cluster 7 invoices `selectFirstClient` + 1 `purchase-order-backend-p0:40`).
+  - **Prod : aucun impact**. Le seed n'existe que dans les tests. Better Auth en prod écrit toujours en ObjectId via son adapter.
+  - **Tests passants** : tous les specs alphabétiquement avant `onboarding/` (clients, dashboard, kanban, etc.) tournent sur le seed initial intact. Seuls ceux qui tournent APRÈS onboarding (afterAll restoreOrganization) sont impactés — d'où le pattern "fail uniquement sur les invoices" (alphabétiquement après onboarding).
+
+- **Hypothèse de fix** : remplacer `userId: realUserId.toString()` par `userId: realUserId` ligne 113 de `e2e/onboarding/seed-helpers.js`. 1 ligne de code, fix 8 tests d'un coup.
+
+- **Owner suggéré** : e2e (seed). Pas de fix backend ni frontend nécessaire.
