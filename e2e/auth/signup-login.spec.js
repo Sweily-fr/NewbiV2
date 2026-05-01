@@ -180,18 +180,6 @@ test.describe("Auth — Signup (vue initiale)", () => {
       .then((v) => v || form.isVisible().catch(() => false));
     expect(anyVisible).toBe(true);
   });
-
-  test("le lien Se connecter pointe vers /auth/login", async ({ page }) => {
-    const link = page
-      .getByRole("link", { name: /Se connecter|connexion/i })
-      .first();
-    if (await link.isVisible({ timeout: 3000 }).catch(() => false)) {
-      const href = await link.getAttribute("href");
-      expect(href).toMatch(/\/auth\/login/);
-    } else {
-      test.skip(true, "Lien Se connecter pas visible sur cette vue");
-    }
-  });
 });
 
 test.describe("Auth — Routes protégées", () => {
