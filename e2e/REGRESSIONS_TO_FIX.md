@@ -82,3 +82,17 @@ Tests qui ne s'exécutent JAMAIS dans la configuration actuelle (le seed crée t
 - `e2e/onboarding/onboarding-steps.spec.js:26-77` "Étape entreprise — champs SIRET/nom" + "Boutons de navigation entre étapes" (2 tests) : skippés via `if (!page.url().includes("/onboarding"))` — le seed marque `hasSeenOnboarding: true` et `onboardingCompleted: true`, l'utilisateur est immédiatement redirigé vers `/dashboard`. L'onboarding complet est déjà couvert par `e2e/onboarding/onboarding.spec.js` qui utilise une autre fixture.
 
 **Décision** : marqués `test.fixme()` (commit ed0029e1). Les tests restent visibles dans le rapport Playwright comme TODO (annotation `fixme`, distincte d'un skip ordinaire) mais ne s'exécutent pas. Pour activer : créer un user de test "free" ou "fresh" (cf. `e2e/seed/test-data.ts`) ou un projet Playwright dédié, puis retirer le `.fixme` ET le check conditionnel interne `if (...) test.skip(...)` qui devient obsolète.
+
+---
+
+## R5 — Route `/dashboard/account` supprimée (test e2e à jour)
+
+- **Découvert** : `e2e/a11y/dashboard-a11y.spec.js:17` testait `/dashboard/account` qui retournait HTTP 404 (page Next.js `not-found.jsx`). Le test a11y détectait alors un color-contrast sur la 404, masquant le vrai problème (route inexistante).
+- **Catégorie** : TEST_OBSOLETE (route supprimée, fonctionnalité déplacée)
+- **Symptôme** : `app/dashboard/account/page.jsx` n'existe plus. La requête `/dashboard/account` tombe sur `app/not-found.jsx` → 404.
+- **Origine** : commit `8d21709a` (2026-02-25, "feature(ui): style sidebar, dialog invite members et navigation") a supprimé `app/dashboard/account/page.jsx` et `app/dashboard/account/formAccount.jsx`. Les composants modaux (`Setup2FAModal`, `ChangePasswordModal`, etc.) sont conservés sous `app/dashboard/account/components/` mais sont désormais consommés depuis `src/components/settings-modal.jsx` (modal accessible via la sidebar/profil), pas depuis une page dédiée.
+- **Action prise** :
+  - Retiré `/dashboard/account` du tableau `PAGES_TO_AUDIT` dans `e2e/a11y/dashboard-a11y.spec.js` (commit à venir).
+  - Corrigé indépendamment le contraste de la 404 elle-même (`not-found.jsx` : `text-gray-400 → text-gray-600`).
+- **Impact** : aucun pour les utilisateurs (le settings modal couvre la fonctionnalité). Pour la couverture e2e a11y : on perd l'audit a11y du compte/sécurité — à réintroduire en testant le modal au lieu d'une route, si jugé prioritaire.
+- **Owner suggéré** : aucun fix backend/front nécessaire. Si on veut couvrir le modal en a11y : nouvelle spec qui ouvre le modal puis lance axe.
