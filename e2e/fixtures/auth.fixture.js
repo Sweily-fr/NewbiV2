@@ -27,6 +27,19 @@ export const test = base.extend({
       test.skip(true, "Session expired — re-run setup to re-authenticate");
     }
 
+    // NOTE — Tentative robustification fixture R7 (2026-05-01) :
+    // - waitFor [data-sidebar="menu"]: matchait l'<ul> du logo SSR-only
+    //   sans hydration → 0 amélioration.
+    // - waitFor getByRole("button", "Accueil") : timeout 30s sur certaines
+    //   conditions où la sidebar reste collapsed → +1 fail (régression).
+    // - waitForLoadState("networkidle"): stabilise L6 (perf) mais casse
+    //   L54 (Apollo cache-first ne re-fetch pas après reload si déjà
+    //   chaud) → -1 net.
+    // Décision : laisser la fixture en domcontentloaded seul, accepter
+    // l'intermittence L6/L37/kanban-L130 documentée en R7, faire les
+    // waits explicites dans les tests qui en ont besoin (cf.
+    // dashboard-home.spec.js:37 qui waitFor la sidebar lui-même).
+
     // Capture all GraphQL traffic (requests + non-OK responses + console errors).
     // Attached as graphql-trace.json on failure for post-mortem.
     const gqlLog = [];
