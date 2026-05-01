@@ -195,6 +195,39 @@ pour avancer le reste de la couverture.
 
 ---
 
+## Bons de commande — `GetNextPurchaseOrderNumber` ne répond pas (1er mai 2026)
+
+Tentative P0 BDC abandonnée après inventaire complet. Tout pointait vers un
+quick win :
+
+- Pattern UI **strictement identique** à devis (BDC importe directement le
+  composant `EnhancedQuoteForm` avec `documentType="purchaseOrder"`)
+- Mutation `CreatePurchaseOrder(workspaceId, input)` claire
+- Format prefix `BC-YYYYMM` (vu dans le resolver backend)
+- Réutilise les TEST_CLIENTS (pas de fournisseurs à seed)
+
+**Symptôme bloquant** : sur `/dashboard/outils/bons-commande/new`, le champ
+"Numéro automatique de bon de commande" reste à `...` indéfiniment, même
+après 30s+ de wait. Le bouton "Suivant" reste donc disabled (validation
+step 1 exige `data.number !== ""`).
+
+**Hypothèse** : la query `GetNextPurchaseOrderNumber` ne se déclenche pas ou
+ne répond pas. À investiguer :
+
+1. Vérifier si la query est bien envoyée (capture network similaire au diag
+   Apollo race fait sur `/factures/new`)
+2. Si elle est envoyée et retourne 200 : c'est le frontend qui ne déclenche
+   pas le `setValue("number", ...)` correctement
+3. Si elle ne part pas : peut-être un problème de `skip:` mal configuré dans
+   `useNextPurchaseOrderNumber` (ex: `skip: !workspaceId` qui ne se met
+   jamais à false)
+
+**Estimation** : 30-60 min de diag pour comprendre, vs ~20 min pour faire un
+P0 clients à la place. Décision : bascule sur clients, BDC repris quand on
+aura plus de bande passante diagnostic.
+
+---
+
 ## Verdict global du run du 30 avril 2026
 
 ```
