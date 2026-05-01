@@ -110,7 +110,12 @@ export async function restoreOrganization(email) {
 
     await db.collection("member").insertOne({
       _id: IDS.memberId,
-      userId: realUserId.toString(),
+      // userId stocké en ObjectId (cohérent avec global-setup.ts:146).
+      // Better Auth's Mongo adapter coerce userId en ObjectId via son schema
+      // (`references: { field: "id" }`) — un member avec userId string est
+      // invisible à `getActiveOrganization` → cascade FORBIDDEN sur tous les
+      // resolvers RBAC pour les specs après onboarding. Voir REGRESSIONS_TO_FIX.md R8.
+      userId: realUserId,
       organizationId: IDS.organizationId.toString(),
       role: "owner",
       createdAt: new Date(),
