@@ -51,8 +51,11 @@ export const TEST_USER = {
     siret: "12345678901234",
     vatNumber: "FR12345678901",
     companyStatus: "SASU",
-    capitalSocial: "1000",
-    rcs: "Paris",
+    capitalSocial: "10000",
+    // Backend invoice/quote validation requires full RCS format
+    // (ex: "Paris B 123 456 789") for SASU. Used by companyInfoSnapshot
+    // baked into seeded TEST_INVOICES/TEST_QUOTES.
+    rcs: "Paris B 987 654 321",
     transactionCategory: "SERVICES",
     vatPaymentCondition: "ENCAISSEMENTS",
     address: {
