@@ -17,6 +17,7 @@ import {
   TEST_INVOICES,
   TEST_QUOTES,
   TEST_SUPPLIER_EXPENSE,
+  FOREIGN_INVOICE,
 } from "./seed/test-data";
 
 function getMongoUri(): string {
@@ -105,31 +106,49 @@ export default async function globalSetup() {
     }
     const realUserId = userDoc._id;
 
-    // Targeted cleanup — only the deterministic seeded IDs. Real dev data stays.
-    const clientIds = TEST_CLIENTS.map((c) => c._id);
-    const invoiceIds = TEST_INVOICES.map((i) => i._id);
-    const quoteIds = TEST_QUOTES.map((q) => q._id);
-
-    await db.collection("organization").deleteOne({ _id: IDS.organizationId });
-    await db.collection("member").deleteMany({ userId: realUserId.toString() });
-    await db.collection("clients").deleteMany({ _id: { $in: clientIds } });
-    await db.collection("invoices").deleteMany({ _id: { $in: invoiceIds } });
-    await db.collection("quotes").deleteMany({ _id: { $in: quoteIds } });
+    // Mark the user as having seen onboarding so OnboardingGuard does not
+    // redirect to /auth/signup. Also set hasCompletedTutorial to skip tutorial
+    // overlay on the dashboard.
     await db
-      .collection("expenses")
-      .deleteOne({ _id: TEST_SUPPLIER_EXPENSE._id });
+      .collection("user")
+      .updateOne(
+        { _id: realUserId },
+        { $set: { hasSeenOnboarding: true, hasCompletedTutorial: true } },
+      );
+
+    // Idempotent seed — all writes are replaceOne+upsert so reruns (with or
+    // without teardown) never hit duplicate-key errors. Members with stale
+    // userIds (e.g. from a previous test user) are still cleaned up.
+    await db.collection("member").deleteMany({
+      $or: [{ userId: realUserId.toString() }, { userId: realUserId }],
+    });
 
     // Organization + membership (Better Auth raw collections)
-    await db.collection("organization").insertOne({
-      ...TEST_ORGANIZATION,
-      createdBy: realUserId.toString(),
-    });
-    await db.collection("member").insertOne({
-      ...TEST_MEMBER,
-      userId: realUserId.toString(),
-      organizationId: IDS.organizationId.toString(),
-    });
-    console.log("  ↳ Inserted organization + member");
+    await db.collection("organization").replaceOne(
+      { _id: IDS.organizationId },
+      {
+        ...TEST_ORGANIZATION,
+        createdBy: realUserId.toString(),
+      },
+      { upsert: true },
+    );
+    // Better Auth's Mongo adapter coerces `userId` and `organizationId`
+    // (both have `references: { field: "id" }` in the schema) to ObjectId
+    // before querying. Real members written by Better Auth itself have these
+    // fields stored as ObjectId. If the seed inserts strings, lookups like
+    // `findFullOrganization` (which joins member by organizationId) and
+    // `findMemberByOrgId` silently return null → 403/400 cascade in the
+    // dashboard.
+    await db.collection("member").replaceOne(
+      { _id: TEST_MEMBER._id },
+      {
+        ...TEST_MEMBER,
+        userId: realUserId,
+        organizationId: IDS.organizationId,
+      },
+      { upsert: true },
+    );
+    console.log("  ↳ Upserted organization + member");
 
     // Subscription — the dashboard layout redirects to /onboarding when the
     // active organization has no active/trialing subscription. Seed a trialing
@@ -168,18 +187,40 @@ export default async function globalSetup() {
         createdBy: realUserId,
       }));
 
-    await db.collection("clients").insertMany(rewire(TEST_CLIENTS));
-    await db.collection("invoices").insertMany(rewire(TEST_INVOICES));
-    await db.collection("quotes").insertMany(rewire(TEST_QUOTES));
-    await db
-      .collection("expenses")
-      .insertOne({
+    // Idempotent bulk upserts (replaceOne with upsert per document) instead
+    // of insertMany, so a rerun without teardown never hits duplicate-key.
+    const upsertOps = <T extends { _id: unknown }>(docs: T[]) =>
+      docs.map((d) => ({
+        replaceOne: {
+          filter: { _id: d._id },
+          replacement: d,
+          upsert: true,
+        },
+      }));
+
+    await db.collection("clients").bulkWrite(upsertOps(rewire(TEST_CLIENTS)));
+    await db.collection("invoices").bulkWrite(upsertOps(rewire(TEST_INVOICES)));
+    await db.collection("quotes").bulkWrite(upsertOps(rewire(TEST_QUOTES)));
+    await db.collection("expenses").replaceOne(
+      { _id: TEST_SUPPLIER_EXPENSE._id },
+      {
         ...TEST_SUPPLIER_EXPENSE,
         workspaceId: IDS.organizationId,
         createdBy: realUserId,
+      },
+      { upsert: true },
+    );
+
+    // Foreign tenant invoice — bypasses rewire() on purpose: its workspaceId
+    // must remain foreign for multi-tenant isolation tests to be meaningful.
+    await db
+      .collection("invoices")
+      .replaceOne({ _id: FOREIGN_INVOICE._id }, FOREIGN_INVOICE, {
+        upsert: true,
       });
+
     console.log(
-      `  ↳ Inserted ${TEST_CLIENTS.length} clients, ${TEST_INVOICES.length} invoices, ${TEST_QUOTES.length} quotes, 1 expense`,
+      `  ↳ Inserted ${TEST_CLIENTS.length} clients, ${TEST_INVOICES.length} invoices (+1 foreign), ${TEST_QUOTES.length} quotes, 1 expense`,
     );
 
     console.log("[E2E Seed] Done ✓");

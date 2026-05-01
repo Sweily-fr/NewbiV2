@@ -6,12 +6,15 @@ async function waitForClientsPage(page) {
     waitUntil: "domcontentloaded",
     timeout: 45000,
   });
-  // Attendre un indicateur de la page clients
-  await expect(
-    page
-      .locator("text=Nouveau contact")
-      .or(page.locator("text=Contacts").first()),
-  ).toBeVisible({ timeout: 30000 });
+  // Attendre que le h1 de la page clients soit rendu (desktop: "Gestion des
+  // contacts", mobile: "Contacts"). Utilise getByRole pour éviter une strict
+  // mode violation (le précédent .or(text=Contacts) matchait aussi le bouton
+  // "Nouveau contact").
+  // Timeout généreux : sur le 7e test consécutif, le dev server Next peut
+  // mettre >30s à monter le RSC sous charge parallèle.
+  await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible({
+    timeout: 60000,
+  });
   // Attendre que les données chargent
   // Wait for the clients GraphQL query to settle instead of an arbitrary timeout
   await page

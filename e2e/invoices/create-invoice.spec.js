@@ -141,8 +141,12 @@ test.describe("Factures", () => {
     await page.locator('button:has-text("Ajouter un article")').first().click();
     await page.waitForTimeout(500);
 
-    // Ouvrir l'accordion de l'article
-    const accordionTrigger = page.locator('[data-state="closed"]').first();
+    // Ouvrir l'accordion de l'article. Scope sur data-slot pour ne pas
+    // matcher d'autres composants Radix fermés (le team-switcher du sidebar
+    // a aussi data-state="closed" et était sélectionné en premier).
+    const accordionTrigger = page
+      .locator('[data-slot="accordion-trigger"][data-state="closed"]')
+      .first();
     if (await accordionTrigger.isVisible({ timeout: 3000 })) {
       await accordionTrigger.click();
       await page.waitForTimeout(300);

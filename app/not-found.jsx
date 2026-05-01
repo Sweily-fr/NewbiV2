@@ -16,23 +16,23 @@ export default function NotFound() {
           <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
             <Search className="w-10 h-10 text-gray-400" />
           </div>
-          
+
           {/* Titre principal */}
           <h1 className="text-2xl font-semibold text-gray-900 mb-3">
             Page introuvable
           </h1>
-          
+
           {/* Description */}
           <p className="text-gray-600 text-sm leading-relaxed mb-8">
-            La page que vous recherchez n'existe pas ou a été déplacée. 
-            Vérifiez l'URL ou retournez à l'accueil.
+            La page que vous recherchez n'existe pas ou a été déplacée. Vérifiez
+            l'URL ou retournez à l'accueil.
           </p>
         </div>
 
         {/* Actions */}
         <div className="space-y-3">
           {/* Bouton principal - Retour à l'accueil */}
-          <Button 
+          <Button
             asChild
             className="w-full h-10 bg-black hover:bg-gray-800 text-white font-medium"
           >
@@ -43,7 +43,7 @@ export default function NotFound() {
           </Button>
 
           {/* Bouton secondaire - Retour en arrière */}
-          <Button 
+          <Button
             variant="ghost"
             onClick={() => router.back()}
             className="w-full h-10 text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium"
@@ -55,9 +55,7 @@ export default function NotFound() {
 
         {/* Code d'erreur discret */}
         <div className="mt-12 pt-8 border-t border-gray-100">
-          <p className="text-xs text-gray-400 font-mono">
-            Erreur 404
-          </p>
+          <p className="text-xs text-gray-600 font-mono">Erreur 404</p>
         </div>
       </div>
     </div>

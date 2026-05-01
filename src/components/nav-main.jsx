@@ -807,6 +807,7 @@ export function NavMain({
     isOpen,
     setIsOpen,
     isSubActive,
+    dataTutorial,
   ) => {
     const IconComponent = icon;
 
@@ -817,7 +818,7 @@ export function NavMain({
           key={title}
           onOpenChange={handleDropdownOpenChange(title)}
         >
-          <SidebarMenuItem>
+          <SidebarMenuItem data-tutorial={dataTutorial}>
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
                 tooltip={title}
@@ -935,7 +936,7 @@ export function NavMain({
 
     return (
       <Collapsible key={title} open={isOpen} onOpenChange={setIsOpen}>
-        <SidebarMenuItem>
+        <SidebarMenuItem data-tutorial={dataTutorial}>
           <div
             className={cn(
               "flex items-center w-full rounded-md transition-colors overflow-hidden",
@@ -1214,18 +1215,16 @@ export function NavMain({
             })()}
 
           {/* Menu Finances (Transactions + Prévision) */}
-          {navFinances.length > 0 && (
-            <div data-tutorial="nav-finances">
-              {renderCollapsibleMenu(
-                "Pilotage",
-                Landmark,
-                navFinances,
-                isFinancesOpen,
-                setIsFinancesOpen,
-                isFinancesSubActive,
-              )}
-            </div>
-          )}
+          {navFinances.length > 0 &&
+            renderCollapsibleMenu(
+              "Pilotage",
+              Landmark,
+              navFinances,
+              isFinancesOpen,
+              setIsFinancesOpen,
+              isFinancesSubActive,
+              "nav-finances",
+            )}
 
           {/* Menu Clients (CRM) avec sous-menus et action rapide */}
           {navClients.length > 0 && renderClientsMenu()}
@@ -1252,17 +1251,15 @@ export function NavMain({
                     )
                   : navDocuments;
               return (
-                filteredNavDocuments.length > 0 && (
-                  <div data-tutorial="nav-documents">
-                    {renderCollapsibleMenu(
-                      "Documents",
-                      FileText,
-                      filteredNavDocuments,
-                      isDocumentsOpen,
-                      setIsDocumentsOpen,
-                      isDocumentsSubActive,
-                    )}
-                  </div>
+                filteredNavDocuments.length > 0 &&
+                renderCollapsibleMenu(
+                  "Documents",
+                  FileText,
+                  filteredNavDocuments,
+                  isDocumentsOpen,
+                  setIsDocumentsOpen,
+                  isDocumentsSubActive,
+                  "nav-documents",
                 )
               );
             })()}
