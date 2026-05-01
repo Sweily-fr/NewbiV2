@@ -167,6 +167,34 @@ précédente était en réalité 3 problèmes distincts qui ont été levés ens
 
 ---
 
+## Avoirs (Credit notes) — race Apollo auth (1er mai 2026)
+
+`e2e/credit-notes/credit-note-p0.spec.js` skippé après diagnostic.
+
+**Symptôme** : `/dashboard/outils/factures/<id>/avoir/nouveau` fire ~17 queries
+GraphQL en parallèle au mount, toutes retournent UNAUTHENTICATED avant que le
+JWT soit dans le cache Apollo. La page rend "Facture introuvable".
+
+**Pourquoi /factures/new marche mais pas /avoir/nouveau** : la page avoir mount
+BEAUCOUP plus de hooks Apollo en parallèle (useInvoice + useCreditNote +
+useCreditNotesByInvoice + useCreditNoteNumber + autres). Apollo `errorLink`
+retry sur auth ne se déclenche pas dans ce contexte.
+
+**Pistes à explorer** quand on reprendra :
+
+1. Inspecter `apolloClient.js:357+` (le errorLink) — le retry sur UNAUTHENTICATED
+   est-il bien en place pour TOUTES les operations, ou seulement une whitelist ?
+2. Le hook `useCreditNoteEditor` mount-il les queries dans le bon ordre ? Si
+   `useInvoice` est lancé avant que le JWT cache soit warm, il faut le chaîner
+   en `skip: !jwt` ou similaire.
+3. Tester si d'autres pages "heavy-GraphQL" ont le même symptôme (kanban,
+   dashboard analytics).
+
+**Estimation** : 30-60 min de fix supplémentaire si on reprend. Pas un blocker
+pour avancer le reste de la couverture.
+
+---
+
 ## Verdict global du run du 30 avril 2026
 
 ```
