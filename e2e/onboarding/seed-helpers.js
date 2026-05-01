@@ -77,7 +77,17 @@ export async function restoreOrganization(email) {
     const realUserId = await findUserId(db, email);
 
     await db.collection("organization").deleteOne({ _id: IDS.organizationId });
-    await db.collection("member").deleteMany({ userId: realUserId.toString() });
+    // Cleanup member par _id ET par userId (string + ObjectId) — Better Auth
+    // peut écrire userId comme ObjectId quand il crée un member en réponse au
+    // "Choisir ce plan", ce qui fait passer à travers `deleteMany({userId:
+    // string})` et fait échouer le insertOne suivant avec E11000 sur _id.
+    await db.collection("member").deleteMany({
+      $or: [
+        { _id: IDS.memberId },
+        { userId: realUserId.toString() },
+        { userId: realUserId },
+      ],
+    });
     await db
       .collection("subscription")
       .deleteMany({ referenceId: IDS.organizationId.toString() });
