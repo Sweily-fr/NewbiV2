@@ -167,6 +167,27 @@ précédente était en réalité 3 problèmes distincts qui ont été levés ens
 
 ---
 
+## Avoirs (Credit notes) — DOUBLEMENT bloqués (1er mai 2026)
+
+**État** : 2 specs écrites et skippées, 0 test exécutable côté avoirs.
+
+1. `credit-note-p0.spec.js` (UI) — bloqué par race Apollo (~17 hooks parallèles)
+2. `credit-note-backend-p0.spec.js` (raw GraphQL, 3 tests compliance FR) — bloqué
+   par `DATA_ENCRYPTION_KEY` manquant dans `newbi-api/.env`. Le modèle CreditNote
+   applique AES-256-GCM sur IBAN/BIC à la save (`models/CreditNote.js:2,394` +
+   `utils/encryption.js:8`). Toute mutation `createCreditNote` throw
+   `INTERNAL_SERVER_ERROR: "DATA_ENCRYPTION_KEY environment variable is required"`.
+
+**Action attendue** : ajouter `DATA_ENCRYPTION_KEY=<32 chars hex>` à
+`newbi-api/.env` (config infra, à coordonner avec Dylan). Ensuite retirer le
+`test.skip()` au début du describe block dans `credit-note-backend-p0.spec.js`.
+
+**Pourquoi cette dette est gérable** : les 3 tests backend testent des
+invariants compliance FR critiques (status, lien original, sum check) — la
+seule chose qui bloque c'est une env var manquante, pas un bug code.
+
+---
+
 ## Avoirs (Credit notes) — race Apollo auth (1er mai 2026)
 
 `e2e/credit-notes/credit-note-p0.spec.js` skippé après diagnostic.
