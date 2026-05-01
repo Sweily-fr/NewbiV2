@@ -57,7 +57,12 @@ test.describe("Trésorerie / Prévision", () => {
     expect(hasTitle || hasUpgrade || hasUpgradeTitle).toBeTruthy();
   });
 
-  test("Flow: Si plan limité — message d'upgrade visible", async ({
+  // Test inactif — voir REGRESSIONS_TO_FIX.md R4.
+  // Pour activer : seed un user "free" (subscription absente ou expirée) ou
+  // créer un projet Playwright "free-user" dédié. Quand activé, retirer le
+  // `.fixme` ET le check `if (!hasUpgrade)` (le test pourra simplement
+  // asserter la présence de la bannière sans guard conditionnel).
+  test.fixme("Flow: Si plan limité — message d'upgrade visible", async ({
     authenticatedPage: page,
   }) => {
     await waitForForecastPage(page);
@@ -72,11 +77,6 @@ test.describe("Trésorerie / Prévision", () => {
       .catch(() => false);
 
     if (!hasUpgrade) {
-      // ⚠️ Le seed actuel (e2e/seed/test-data.ts) crée toujours un user PME
-      // trialing → ce skip se déclenche SYSTÉMATIQUEMENT, ce test ne tourne
-      // jamais. Pour tester réellement le flow upgrade il faudrait soit un
-      // user/projet "free" dédié, soit dégrader temporairement la subscription
-      // dans une fixture spécifique. Voir REGRESSIONS_TO_FIX.md (test mort).
       test.skip(true, "Plan déjà premium — bannière upgrade absente");
     }
 
