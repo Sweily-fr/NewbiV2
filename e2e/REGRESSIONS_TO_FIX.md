@@ -182,3 +182,39 @@ Tests qui ne s'exécutent JAMAIS dans la configuration actuelle (le seed crée t
   - ✅ `purchase-orders/purchase-order-backend-p0.spec.js:40`
   - ❌ `invoices/create-invoice-p0.spec.js:120, 138` + `create-deposit-invoice-p0:19` reclassés en **R7_PERF cascade** : `page.goto Timeout 45s` sur `/factures/new` (la page editor met >45s à monter sous charge — pas lié à R8). Voir R7.
 - **Cascade observée — visual baselines invalidées** : le fix R8 a réveillé les visual tests (`e2e/visual/dashboard-visual.spec.js`, 52 tests pixel-à-pixel) qui étaient skippés au run précédent (108/30/133) parce que les pages dashboard échouaient en amont avec FORBIDDEN. Maintenant ces tests s'exécutent et 51/52 fail car les baselines `.png` ne matchent plus les fix UI a11y déjà commitées (`text-gray-700` footer, button trigger org-switcher, suppression wrappers `data-tutorial`, `text-gray-600` 404). À régénérer avec `npx playwright test --update-snapshots --project=chromium e2e/visual/` après validation design — hors scope phase B.
+
+---
+
+## R9 — Bulk delete sur sélection mixte : suppression partielle silencieuse
+
+- **Découvert** : prompt 3 phase Tests Factures (commit pieges-critiques.spec.js Test 4)
+- **Catégorie** : UX (suppression partielle non signalée à l'utilisateur)
+- **Symptôme** : sur `/dashboard/outils/factures`, sélectionner via checkbox une facture DRAFT + une facture COMPLETED, cliquer "Supprimer (2)", confirmer dans l'AlertDialog → seul le DRAFT est supprimé. Le COMPLETED reste en base (verrou backend) sans aucun toast d'erreur côté UI.
+- **Code source** :
+  - `app/dashboard/outils/factures/components/invoice-table.jsx:494-530` rend l'AlertDialog avec un texte d'avertissement "Seules les factures en brouillon et les factures importées peuvent être supprimées" mais n'empêche pas la sélection.
+  - `app/dashboard/outils/factures/hooks/use-invoice-table.js handleDeleteSelected` itère sur `selectedRows` et appelle `deleteInvoice` / `deleteImportedInvoice` en parallèle. Les rejets backend sont catchés silencieusement (Promise.all avec catch).
+  - Backend : `newbi-api/src/resolvers/invoice.js deleteInvoice` rejette les COMPLETED (verrou §46.10 / `createResourceLockedError`).
+- **Reproduction (test e2e)** : `e2e/factures/pieges-critiques.spec.js:319` (Test 4) crée 1 DRAFT + 1 COMPLETED, déclenche le bulk delete via UI, vérifie via `getInvoiceById` que le DRAFT est supprimé et le COMPLETED est conservé. Le test passe **au vert** car il documente le comportement actuel — mais ce comportement est mauvais UX.
+- **Hypothèse de fix** :
+  1. Pré-filtrer la sélection : désactiver la checkbox pour les COMPLETED/CANCELED (visuel "verrouillé") — `use-invoice-table.js` colonne `select`, ajouter `disabled={!row.original.deletable}`.
+  2. OU afficher un toast d'erreur partielle après le delete : "1 facture supprimée, 1 facture verrouillée non supprimée".
+  3. L'option 1 est plus défensive ; option 2 corrige juste le feedback. Idéalement combiner les deux.
+- **Owner suggéré** : front (pré-filtrage UI). Pas de fix backend nécessaire — le verrou est correct.
+
+---
+
+## R10 — Impossible de matérialiser une PENDING avec dueDate dans le passé via mutation publique
+
+- **Découvert** : prompt 3 phase Tests Factures (limitation rencontrée pour pieges-critiques.spec.js Test 2 §46.4)
+- **Catégorie** : LIMITATION_TEST (pas un bug applicatif — un blocage de testabilité)
+- **Contexte** : §46.4 documente un piège — l'onglet "En retard" filtre `status === "PENDING" && dueDate < now` côté front. Pour le tester proprement, il faut une PENDING avec `dueDate < today`. Impossible via la mutation publique :
+  - **Mongoose** : validateur sur `dueDate` qui exige `dueDate >= issueDate`.
+  - **Resolver** : `validateInvoiceIssueDate` (`newbi-api/src/resolvers/invoice.js:1161-1163`) exige `issueDate >= latestInvoiceIssueDate` pour tout statut ≠ DRAFT. Comme tous les tests précédents pushent latestInvoiceIssueDate à today, impossible de remonter.
+  - **Transition DRAFT → PENDING** : `changeInvoiceStatus` (resolver:2229-2236) appelle aussi `validateInvoiceIssueDate`, donc même un DRAFT antidaté ne peut pas être finalisé avec dueDate passée.
+  - **Seed** : contient `invoicePaid` (COMPLETED, dueDate=now-1j) qui aurait pu servir de canary "COMPLETED ne doit PAS apparaître en En retard". Mais avec >50 invoices créés par les tests CRUD, il sort du premier page (pagination=50, sort issueDate desc) et n'est plus accessible via tableau.
+- **Conséquence** : `pieges-critiques.spec.js` Test 2 a été simplifié pour tester l'invariant STRUCTUREL (la PENDING fraîche avec dueDate future apparaît bien dans "Toutes" et "À encaisser" mais PAS dans "En retard"). La preuve "PENDING+dueDate passé apparaîtrait DANS En retard alors que COMPLETED+dueDate passé n'apparaîtrait PAS" reste théorique.
+- **Hypothèse de fix (test infra)** :
+  1. Ajouter une 2e facture seedée `invoicePaidVisible` créée avec une date plus récente, OU
+  2. Ajouter une mutation backend "admin only" `setInvoiceFields` permettant de bypasser la validation pour les besoins de test, OU
+  3. Faire un global-teardown qui purge les tests-créés invoices entre runs (rétablit la situation où invoicePaid est en page 1).
+- **Owner suggéré** : e2e infra (option 3 la plus simple) ou backend (option 2 si on veut un canary fiable).
