@@ -122,6 +122,13 @@ async function captureCreateInvoiceResponse(page) {
 }
 
 test.describe("[Factures] CRUD UI — flows complets", () => {
+  // Retry une fois sur les UI tests : ils interagissent avec /factures/new
+  // qui pré-fetch le prochain numéro via nextInvoiceNumber. Sous worker
+  // parallèle (2 workers en local), un autre fichier de test peut créer
+  // une PENDING entre le moment où la page UI lit son numéro et le moment
+  // où elle soumet — le backend rejette alors avec "Le numéro F-* existe
+  // déjà". Retry = solution pragmatique sans toucher la source.
+  test.describe.configure({ retries: 1 });
   test.setTimeout(120000);
 
   test("Test 1 — Multi-articles : totaux corrects dans la mutation et la liste", async ({
