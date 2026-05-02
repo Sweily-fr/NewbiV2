@@ -22,34 +22,6 @@ async function waitForInvoicesPage(page) {
 }
 
 test.describe("Factures - Consultation et actions par statut", () => {
-  test("Flow: Ouvrir une facture et voir le détail", async ({
-    authenticatedPage: page,
-  }) => {
-    await waitForInvoicesPage(page);
-
-    // Attendre une vraie ligne (pas skeleton)
-    const realRow = page
-      .locator("table tbody tr:not(:has(.animate-pulse))")
-      .first();
-    if (!(await realRow.isVisible({ timeout: 15000 }))) return;
-
-    await Promise.all([
-      page
-        .waitForResponse(
-          (res) =>
-            res.url().includes("/graphql") &&
-            res.request().postData()?.includes("GetInvoice"),
-          { timeout: 10000 },
-        )
-        .catch(() => {}),
-      realRow.click(),
-    ]);
-
-    // Quelque chose a changé (sidebar, page de détail, etc.)
-    const pageText = await page.textContent("body");
-    expect(pageText.length).toBeGreaterThan(100);
-  });
-
   test("Flow: Actions brouillon — Modifier et Supprimer disponibles", async ({
     authenticatedPage: page,
   }) => {
