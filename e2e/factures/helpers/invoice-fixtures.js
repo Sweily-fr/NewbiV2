@@ -16,9 +16,15 @@ const DEFAULT_CLIENT = TEST_CLIENTS[0]; // Entreprise Alpha SAS
 /**
  * Build a ClientInput from a seeded TEST_CLIENT or override fields.
  * Strips internal Mongo fields to match the GraphQL ClientInput shape.
+ *
+ * IMPORTANT — passing `id` is required when reusing a seeded client:
+ * the resolver (newbi-api/src/resolvers/invoice.js:1178-1201) only checks
+ * the unique-email constraint for NEW clients (id absent). Without this,
+ * every test invoice rejects with "client existe déjà".
  */
 export function buildClientInput(client = DEFAULT_CLIENT) {
   return {
+    id: client._id?.toString?.() ?? client.id,
     name: client.name,
     email: client.email,
     phone: client.phone,
