@@ -103,6 +103,93 @@ const LATEST_ISSUE_DATE_QUERY = `
   }
 `;
 
+const CREATE_LINKED_INVOICE_MUTATION = `
+  mutation CreateLinkedInvoice($quoteId: ID!, $workspaceId: ID!, $amount: Float!, $isDeposit: Boolean!) {
+    createLinkedInvoice(quoteId: $quoteId, workspaceId: $workspaceId, amount: $amount, isDeposit: $isDeposit) {
+      invoice {
+        ${INVOICE_FIELDS}
+        purchaseOrderNumber
+      }
+      quote {
+        id
+        prefix
+        number
+        status
+        finalTotalTTC
+      }
+    }
+  }
+`;
+
+const CREATE_QUOTE_MUTATION = `
+  mutation CreateQuote($workspaceId: ID!, $input: CreateQuoteInput!) {
+    createQuote(workspaceId: $workspaceId, input: $input) {
+      id
+      number
+      prefix
+      status
+      finalTotalTTC
+      totalTTC
+      client { id name }
+    }
+  }
+`;
+
+const CHANGE_QUOTE_STATUS_MUTATION = `
+  mutation ChangeQuoteStatus($id: ID!, $status: QuoteStatus!) {
+    changeQuoteStatus(id: $id, status: $status) {
+      id
+      status
+    }
+  }
+`;
+
+const CREDIT_NOTE_FIELDS = `
+  id
+  number
+  prefix
+  creditType
+  status
+  refundMethod
+  totalHT
+  totalVAT
+  totalTTC
+  finalTotalHT
+  finalTotalVAT
+  finalTotalTTC
+  originalInvoice { id number prefix }
+  originalInvoiceNumber
+  client { id name }
+`;
+
+const CREATE_CREDIT_NOTE_MUTATION = `
+  mutation CreateCreditNote($workspaceId: ID!, $input: CreateCreditNoteInput!) {
+    createCreditNote(workspaceId: $workspaceId, input: $input) {
+      ${CREDIT_NOTE_FIELDS}
+    }
+  }
+`;
+
+const GET_CREDIT_NOTE_QUERY = `
+  query GetCreditNote($id: ID!, $workspaceId: ID!) {
+    creditNote(id: $id, workspaceId: $workspaceId) {
+      ${CREDIT_NOTE_FIELDS}
+    }
+  }
+`;
+
+const CREDIT_NOTES_BY_INVOICE_QUERY = `
+  query CreditNotesByInvoice($invoiceId: ID!, $workspaceId: ID!) {
+    creditNotesByInvoice(invoiceId: $invoiceId, workspaceId: $workspaceId) {
+      id
+      number
+      prefix
+      creditType
+      finalTotalTTC
+    }
+  }
+`;
+
 async function gql(request, body, { workspaceId = WORKSPACE_ID } = {}) {
   const response = await request.post(GRAPHQL_URL, {
     headers: { "x-workspace-id": workspaceId },
@@ -210,6 +297,94 @@ export async function latestInvoiceIssueDate(request, opts = {}) {
       operationName: "LatestInvoiceIssueDate",
       query: LATEST_ISSUE_DATE_QUERY,
       variables: { workspaceId: opts.workspaceId || WORKSPACE_ID },
+    },
+    opts,
+  );
+}
+
+// ──── Linked invoice + quote helpers (prompt 4 — workflows) ────
+
+export async function createLinkedInvoiceMutation(
+  request,
+  { quoteId, amount, isDeposit },
+  opts = {},
+) {
+  return gql(
+    request,
+    {
+      operationName: "CreateLinkedInvoice",
+      query: CREATE_LINKED_INVOICE_MUTATION,
+      variables: {
+        quoteId,
+        workspaceId: opts.workspaceId || WORKSPACE_ID,
+        amount,
+        isDeposit,
+      },
+    },
+    opts,
+  );
+}
+
+export async function createQuoteMutation(request, input, opts = {}) {
+  return gql(
+    request,
+    {
+      operationName: "CreateQuote",
+      query: CREATE_QUOTE_MUTATION,
+      variables: { workspaceId: opts.workspaceId || WORKSPACE_ID, input },
+    },
+    opts,
+  );
+}
+
+export async function changeQuoteStatus(request, id, status, opts = {}) {
+  return gql(
+    request,
+    {
+      operationName: "ChangeQuoteStatus",
+      query: CHANGE_QUOTE_STATUS_MUTATION,
+      variables: { id, status },
+    },
+    opts,
+  );
+}
+
+// ──── Credit note helpers ────
+
+export async function createCreditNoteMutation(request, input, opts = {}) {
+  return gql(
+    request,
+    {
+      operationName: "CreateCreditNote",
+      query: CREATE_CREDIT_NOTE_MUTATION,
+      variables: { workspaceId: opts.workspaceId || WORKSPACE_ID, input },
+    },
+    opts,
+  );
+}
+
+export async function getCreditNoteById(request, id, opts = {}) {
+  return gql(
+    request,
+    {
+      operationName: "GetCreditNote",
+      query: GET_CREDIT_NOTE_QUERY,
+      variables: { id, workspaceId: opts.workspaceId || WORKSPACE_ID },
+    },
+    opts,
+  );
+}
+
+export async function creditNotesByInvoice(request, invoiceId, opts = {}) {
+  return gql(
+    request,
+    {
+      operationName: "CreditNotesByInvoice",
+      query: CREDIT_NOTES_BY_INVOICE_QUERY,
+      variables: {
+        invoiceId,
+        workspaceId: opts.workspaceId || WORKSPACE_ID,
+      },
     },
     opts,
   );

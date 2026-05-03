@@ -56,6 +56,35 @@ export function buildItem(overrides = {}) {
 }
 
 /**
+ * Build a CreateQuoteInput. Same defaults as buildInvoiceInput but uses
+ * `validUntil` (instead of dueDate) and no status field by default — caller
+ * sets status: "PENDING" or via changeQuoteStatus to COMPLETED to make it
+ * convertible.
+ */
+export function buildQuoteInput(overrides = {}) {
+  const today = new Date();
+  const validUntil = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+  const {
+    client = DEFAULT_CLIENT,
+    items = [buildItem()],
+    status = "PENDING",
+    issueDate = today.toISOString().slice(0, 10),
+    validUntil: validUntilStr = validUntil.toISOString().slice(0, 10),
+    ...rest
+  } = overrides;
+
+  return {
+    client: buildClientInput(client),
+    items,
+    status,
+    issueDate,
+    validUntil: validUntilStr,
+    ...rest,
+  };
+}
+
+/**
  * Build a CreateInvoiceInput. The caller passes items + optional overrides
  * (status, discount, escompte, isReverseCharge, shipping, dates...).
  *
