@@ -48,6 +48,7 @@
   - À vérifier : autres types ayant des champs non-null mal alignés (Quote, CreditNote, PurchaseOrder ont des structures voisines).
 - **Hypothèse de fix** : passer `Invoice.number` à nullable dans le schema GraphQL (`number: String` au lieu de `number: String!`) — c'est l'option qui s'aligne sur le modèle. Côté frontend, vérifier que `INVOICE_LIST_FRAGMENT` et tous les composants traitant `invoice.number` gèrent déjà la valeur null (probable, car les DRAFTs sont rendus dans la liste avec un placeholder type "—" en prod).
 - **Owner suggéré** : backend (resolver / schema). Pas d'action e2e ou seed nécessaire.
+- **Workaround e2e appliqué (2026-05-03)** : le seed crée maintenant `invoiceDraft.number = "DRAFT-0001"` et `quoteDraft.number = "DRAFT-0001"` (au lieu de `null`) pour aligner sur ce que le resolver génère réellement pour les DRAFTs créés via UI/mutation (cf `invoice.js:1118-1122`). Permet aux tests UI de charger `/factures` et `/devis`. Le fix produit (schema nullable) reste à faire côté backend pour les utilisateurs prod qui ont des DRAFTs antérieurs au déploiement de cette norme. Voir `e2e/seed/test-data.ts:223,404` pour le commentaire en place.
 
 ---
 
