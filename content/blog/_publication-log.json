@@ -86,5 +86,16 @@
       "calendrier-fiscal-independant-2026",
       "erreurs-declaration-tva-eviter"
     ]
+  },
+  {
+    "date": "2026-05-04",
+    "articles": [
+      "facture-restaurant-cafe-hotel",
+      "facture-restauration-rapide-obligations",
+      "obligations-facture-electronique-pme",
+      "facturx-format-facture-electronique",
+      "quest-ce-que-pdp-plateforme-dematerialisation",
+      "quest-ce-que-ppf-portail-public-facturation"
+    ]
   }
 ]
