@@ -170,10 +170,10 @@ export default defineConfig({
           timeout: 120000,
         },
         {
-          command: "npm run dev:e2e",
+          command: "npm run build:e2e && npm run start:e2e",
           url: "http://localhost:3000",
           reuseExistingServer: !isCI,
-          timeout: 120000,
+          timeout: 180000,
         },
       ],
 });
