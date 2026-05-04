@@ -155,12 +155,25 @@ export default defineConfig({
       testMatch: /a11y\/.*\.spec\.js/,
     },
   ],
+  // Two web servers: a dedicated test backend on :4001 wired to invoice-app-test
+  // (so dev's :4000 backend on invoice-app stays untouched), and the Next.js
+  // frontend on :3000 with API URLs overridden to hit the test backend.
+  // Both must be down before running e2e — the frontend in particular conflicts
+  // with `npm run dev` on the same port.
   webServer: process.env.PLAYWRIGHT_BASE_URL
     ? undefined
-    : {
-        command: "npm run dev",
-        url: "http://localhost:3000",
-        reuseExistingServer: !isCI,
-        timeout: 120000,
-      },
+    : [
+        {
+          command: "cd ../newbi-api && npm run dev:e2e",
+          url: "http://localhost:4001/graphql",
+          reuseExistingServer: !isCI,
+          timeout: 120000,
+        },
+        {
+          command: "npm run dev:e2e",
+          url: "http://localhost:3000",
+          reuseExistingServer: !isCI,
+          timeout: 120000,
+        },
+      ],
 });

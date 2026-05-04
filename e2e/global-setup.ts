@@ -29,18 +29,22 @@ function getMongoUri(): string {
     );
   }
 
+  // Require the DB *name* itself to mark it as a test database — relying on
+  // "localhost" alone would let a misconfig silently seed into invoice-app
+  // (the dev DB), which is exactly the bug this check is here to prevent.
   const lower = uri.toLowerCase();
-  const isSafe =
-    lower.includes("localhost") ||
-    lower.includes("127.0.0.1") ||
-    lower.includes("test") ||
-    lower.includes("e2e") ||
-    lower.includes("staging");
+  const dbName = uri.split("/").pop()?.split("?")[0]?.toLowerCase() || "";
+  const dbNameIsSafe = dbName.includes("test") || dbName.includes("e2e");
+  const hostIsSafe =
+    lower.includes("staging") ||
+    ((lower.includes("localhost") || lower.includes("127.0.0.1")) &&
+      dbNameIsSafe);
 
-  if (!isSafe) {
+  if (!hostIsSafe) {
     throw new Error(
-      `[E2E Seed] MONGODB_URI looks like a production database. ` +
-        `URI must contain "test", "e2e", "staging", or "localhost". Got: ${uri.slice(0, 60)}…`,
+      `[E2E Seed] Refusing to seed into ${uri.slice(0, 80)}… — ` +
+        `the database name must contain "test" or "e2e" (got "${dbName}"), ` +
+        `or the host must contain "staging".`,
     );
   }
 
