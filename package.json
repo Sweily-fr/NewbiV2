@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "dev:e2e": "NODE_ENV=test MONGODB_URI=mongodb://localhost:27017/invoice-app-test MONGODB_DB_NAME=invoice-app-test NEXT_PUBLIC_API_URL=http://localhost:4001/ NEXT_PUBLIC_WS_URL=ws://localhost:4001/graphql NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3000 next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
