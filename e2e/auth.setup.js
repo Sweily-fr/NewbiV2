@@ -73,6 +73,20 @@ setup("authenticate", async ({ page, context, baseURL }) => {
     await page.waitForURL(/\/(dashboard|onboarding)/, { timeout: 20000 });
   }
 
-  // 3. Persist the storage state (cookies + localStorage) for downstream tests.
+  // 3. Warm up critical routes so the first navigation in each spec doesn't
+  //    pay the on-demand compile cost (dev mode) or first-hit JIT (prod).
+  const ROUTES_TO_WARMUP = [
+    "/dashboard",
+    "/dashboard/outils/factures",
+    "/dashboard/outils/factures/new",
+    "/dashboard/outils/devis",
+    "/dashboard/clients",
+  ];
+  for (const route of ROUTES_TO_WARMUP) {
+    await page.goto(route, { waitUntil: "domcontentloaded", timeout: 60000 });
+  }
+  console.log("  ↳ Warmed up", ROUTES_TO_WARMUP.length, "routes");
+
+  // 4. Persist the storage state (cookies + localStorage) for downstream tests.
   await context.storageState({ path: authFile });
 });
