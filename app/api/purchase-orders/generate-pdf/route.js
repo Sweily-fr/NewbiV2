@@ -1,43 +1,73 @@
-import { NextResponse } from 'next/server';
-import { launchBrowser } from '@/src/lib/puppeteer';
+import { NextResponse } from "next/server";
+import { launchBrowser } from "@/src/lib/puppeteer";
+import { mongoDb } from "@/src/lib/mongodb";
+import {
+  requireSession,
+  requireOrgMembership,
+  toObjectId,
+  apiError,
+  withErrorHandler,
+} from "@/src/lib/security";
 
-export async function POST(request) {
+/**
+ * POST /api/purchase-orders/generate-pdf
+ *
+ * Generate a PDF for a purchase order via Puppeteer.
+ * Auth check (session + org membership) is done HERE, before launching the browser.
+ * Puppeteer then calls /api/purchase-orders/data/[id] with X-Internal-Secret to fetch data.
+ */
+async function handler(request) {
+  const { purchaseOrderId } = await request.json();
+
+  if (!purchaseOrderId) {
+    return apiError(400, "purchaseOrderId est requis");
+  }
+
+  // Auth check BEFORE launching Puppeteer
+  const { user } = await requireSession(request);
+  const purchaseOrder = await mongoDb.collection("purchaseorders").findOne({
+    _id: toObjectId(purchaseOrderId),
+  });
+  if (!purchaseOrder) {
+    return apiError(404, "Bon de commande introuvable");
+  }
+  await requireOrgMembership(user.id, purchaseOrder.workspaceId);
+
+  // User is authorized — launch Puppeteer to generate the PDF
   let browser = null;
-
   try {
-    const { purchaseOrderId } = await request.json();
-
-    if (!purchaseOrderId) {
-      return NextResponse.json(
-        { error: 'purchaseOrderId est requis' },
-        { status: 400 }
-      );
-    }
-
-    console.log(`📄 [PDF API] Génération PDF pour bon de commande ${purchaseOrderId}`);
+    console.log(
+      `📄 [PDF API] Génération PDF pour bon de commande ${purchaseOrderId}`,
+    );
 
     browser = await launchBrowser();
-
     const page = await browser.newPage();
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL
-      || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
-      || 'http://localhost:3000';
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+      "http://localhost:3000";
     const generatorUrl = `${baseUrl}/pdf-generator/purchase-order/${purchaseOrderId}`;
 
     console.log(`🌐 [PDF API] Navigation vers: ${generatorUrl}`);
 
+    // Authenticate Puppeteer requests via internal secret (Principle 4)
+    if (process.env.INTERNAL_API_SECRET) {
+      await page.setExtraHTTPHeaders({
+        "x-internal-secret": process.env.INTERNAL_API_SECRET,
+      });
+    }
+
     await page.goto(generatorUrl, {
-      waitUntil: 'networkidle0',
+      waitUntil: "networkidle0",
       timeout: 60000,
     });
 
-    console.log('✅ [PDF API] Page chargée, attente de la génération...');
+    console.log("✅ [PDF API] Page chargée, attente de la génération...");
 
-    await page.waitForFunction(
-      () => window.pdfGenerationResult !== undefined,
-      { timeout: 60000 }
-    );
+    await page.waitForFunction(() => window.pdfGenerationResult !== undefined, {
+      timeout: 60000,
+    });
 
     const pdfData = await page.evaluate(() => window.pdfGenerationResult);
 
@@ -46,10 +76,10 @@ export async function POST(request) {
     }
 
     if (!pdfData.success || !pdfData.buffer) {
-      throw new Error('PDF non généré');
+      throw new Error("PDF non généré");
     }
 
-    console.log('✅ [PDF API] PDF généré côté client');
+    console.log("✅ [PDF API] PDF généré côté client");
 
     const finalBuffer = Buffer.from(pdfData.buffer);
 
@@ -61,24 +91,20 @@ export async function POST(request) {
     return new NextResponse(finalBuffer, {
       status: 200,
       headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="purchase-order-${purchaseOrderId}.pdf"`,
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="purchase-order-${purchaseOrderId}.pdf"`,
       },
     });
   } catch (error) {
-    console.error('❌ [PDF API] Erreur:', error);
-
     if (browser) {
       try {
         await browser.close();
       } catch (closeError) {
-        console.error('Erreur fermeture browser:', closeError);
+        console.error("Erreur fermeture browser:", closeError);
       }
     }
-
-    return NextResponse.json(
-      { error: 'Erreur lors de la génération du PDF', details: error.message },
-      { status: 500 }
-    );
+    throw error;
   }
 }
+
+export const POST = withErrorHandler(handler);

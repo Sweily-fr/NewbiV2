@@ -134,7 +134,21 @@ function SuccessContent() {
           const data = await res.json();
 
           if (data.success) {
-            localStorage.removeItem("onboarding_step");
+            // Refresh client session & set the newly created org as active.
+            // The Stripe webhook updated sessions in DB but the client still
+            // has the old (org-less) session in memory. Without this refresh,
+            // the invite step fails with "Aucune organisation trouvée".
+            try {
+              await authClient.getSession({
+                fetchOptions: { cache: "no-store" },
+              });
+              const { data: orgs } = await authClient.organization.list();
+              if (orgs?.length > 0) {
+                await authClient.organization.setActive({
+                  organizationId: orgs[0].id,
+                });
+              }
+            } catch {}
             setReady(true);
             return;
           }

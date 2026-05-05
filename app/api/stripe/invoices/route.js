@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { auth } from "@/src/lib/auth";
+import { withErrorHandler } from "@/src/lib/security";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-02-24.acacia",
 });
 
-export async function GET(request) {
+async function handler(request) {
   try {
     // Vérifier l'authentification
     const session = await auth.api.getSession({
@@ -16,19 +17,22 @@ export async function GET(request) {
     if (!session?.user) {
       return NextResponse.json(
         { success: false, message: "Non authentifié" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     // Récupérer le customer ID depuis les paramètres de la requête
     const url = new URL(request.url);
-    const stripeCustomerId = url.searchParams.get('customerId');
+    const stripeCustomerId = url.searchParams.get("customerId");
 
     if (!stripeCustomerId) {
-      return NextResponse.json({
-        success: false,
-        message: "Customer ID manquant",
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Customer ID manquant",
+        },
+        { status: 400 },
+      );
     }
 
     // Récupérer les factures Stripe pour ce customer
@@ -86,7 +90,7 @@ export async function GET(request) {
     if (error.type === "StripeCardError") {
       return NextResponse.json(
         { success: false, message: "Erreur de carte de paiement" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -96,35 +100,35 @@ export async function GET(request) {
           success: false,
           message: "Trop de requêtes, veuillez réessayer plus tard",
         },
-        { status: 429 }
+        { status: 429 },
       );
     }
 
     if (error.type === "StripeInvalidRequestError") {
       return NextResponse.json(
         { success: false, message: "Requête invalide" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (error.type === "StripeAPIError") {
       return NextResponse.json(
         { success: false, message: "Erreur de l'API Stripe" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     if (error.type === "StripeConnectionError") {
       return NextResponse.json(
         { success: false, message: "Erreur de connexion à Stripe" },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
     if (error.type === "StripeAuthenticationError") {
       return NextResponse.json(
         { success: false, message: "Erreur d'authentification Stripe" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -132,10 +136,10 @@ export async function GET(request) {
       {
         success: false,
         message: "Erreur interne du serveur",
-        error:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
+
+export const GET = withErrorHandler(handler);

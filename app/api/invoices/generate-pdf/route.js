@@ -1,53 +1,74 @@
-import { NextResponse } from 'next/server';
-import { launchBrowser } from '@/src/lib/puppeteer';
+import { NextResponse } from "next/server";
+import { launchBrowser } from "@/src/lib/puppeteer";
+import { mongoDb } from "@/src/lib/mongodb";
+import {
+  requireSession,
+  requireOrgMembership,
+  toObjectId,
+  apiError,
+  withErrorHandler,
+} from "@/src/lib/security";
 
 /**
- * API Route pour générer un PDF de facture
- * Utilise Puppeteer pour exécuter le code de génération PDF du frontend
- * Compatible avec Vercel serverless via @sparticuz/chromium
+ * POST /api/invoices/generate-pdf
+ *
+ * Generate a PDF for an invoice via Puppeteer.
+ * Auth check (session + org membership) is done HERE, before launching the browser.
+ * Puppeteer then calls /api/invoices/data/[id] with X-Internal-Secret to fetch data.
  */
-export async function POST(request) {
+async function handler(request) {
+  const { invoiceId } = await request.json();
+
+  if (!invoiceId) {
+    return apiError(400, "invoiceId est requis");
+  }
+
+  // Auth check BEFORE launching Puppeteer — this is where we verify
+  // the user has access to this invoice's organization
+  const { user } = await requireSession(request);
+  const invoice = await mongoDb.collection("invoices").findOne({
+    _id: toObjectId(invoiceId),
+  });
+  if (!invoice) {
+    return apiError(404, "Facture introuvable");
+  }
+  await requireOrgMembership(user.id, invoice.workspaceId);
+
+  // User is authorized — launch Puppeteer to generate the PDF
   let browser = null;
-
   try {
-    const { invoiceId } = await request.json();
-
-    if (!invoiceId) {
-      return NextResponse.json(
-        { error: 'invoiceId est requis' },
-        { status: 400 }
-      );
-    }
-
     console.log(`📄 [PDF API] Génération PDF pour facture ${invoiceId}`);
 
     browser = await launchBrowser();
-
     const page = await browser.newPage();
 
-    // Naviguer vers la page de génération PDF
-    // Sur Vercel, utiliser VERCEL_URL ou NEXT_PUBLIC_APP_URL
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL 
-      || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
-      || 'http://localhost:3000';
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+      "http://localhost:3000";
     const generatorUrl = `${baseUrl}/pdf-generator/invoice/${invoiceId}`;
 
     console.log(`🌐 [PDF API] Navigation vers: ${generatorUrl}`);
 
+    // Authenticate Puppeteer requests via internal secret (Principle 4)
+    // The data route checks this header and skips session verification
+    if (process.env.INTERNAL_API_SECRET) {
+      await page.setExtraHTTPHeaders({
+        "x-internal-secret": process.env.INTERNAL_API_SECRET,
+      });
+    }
+
     await page.goto(generatorUrl, {
-      waitUntil: 'networkidle0',
+      waitUntil: "networkidle0",
       timeout: 60000,
     });
 
-    console.log('✅ [PDF API] Page chargée, attente de la génération...');
+    console.log("✅ [PDF API] Page chargée, attente de la génération...");
 
-    // Attendre que le PDF soit généré (la page stocke le résultat dans window.pdfGenerationResult)
-    await page.waitForFunction(
-      () => window.pdfGenerationResult !== undefined,
-      { timeout: 60000 }
-    );
+    await page.waitForFunction(() => window.pdfGenerationResult !== undefined, {
+      timeout: 60000,
+    });
 
-    // Récupérer le résultat
     const pdfData = await page.evaluate(() => window.pdfGenerationResult);
 
     if (pdfData.error) {
@@ -55,12 +76,11 @@ export async function POST(request) {
     }
 
     if (!pdfData.success || !pdfData.buffer) {
-      throw new Error('PDF non généré');
+      throw new Error("PDF non généré");
     }
 
-    console.log('✅ [PDF API] PDF généré côté client');
+    console.log("✅ [PDF API] PDF généré côté client");
 
-    // Convertir le tableau en Buffer
     const finalBuffer = Buffer.from(pdfData.buffer);
 
     await browser.close();
@@ -68,28 +88,25 @@ export async function POST(request) {
 
     console.log(`✅ [PDF API] PDF généré (${finalBuffer.length} bytes)`);
 
-    // Retourner le PDF
     return new NextResponse(finalBuffer, {
       status: 200,
       headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="invoice-${invoiceId}.pdf"`,
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="invoice-${invoiceId}.pdf"`,
       },
     });
   } catch (error) {
-    console.error('❌ [PDF API] Erreur:', error);
-
+    // Puppeteer errors need special handling — must close browser before re-throwing
     if (browser) {
       try {
         await browser.close();
       } catch (closeError) {
-        console.error('Erreur fermeture browser:', closeError);
+        console.error("Erreur fermeture browser:", closeError);
       }
     }
-
-    return NextResponse.json(
-      { error: 'Erreur lors de la génération du PDF', details: error.message },
-      { status: 500 }
-    );
+    // Re-throw so withErrorHandler converts it to apiError(500)
+    throw error;
   }
 }
+
+export const POST = withErrorHandler(handler);

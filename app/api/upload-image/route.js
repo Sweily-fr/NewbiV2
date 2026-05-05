@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
+import { withErrorHandler } from "@/src/lib/security";
 
 /**
  * API Route pour uploader des images sur Cloudflare R2
@@ -6,43 +7,40 @@ import { NextResponse } from 'next/server';
  * Utilise la même infrastructure GraphQL que les images de signature
  */
 
+async function handler(request) {
+  const formData = await request.formData();
+  const file = formData.get("file");
+  // const type = formData.get('type'); // Unused variable || 'social-logo';
 
+  if (!file) {
+    return NextResponse.json(
+      { error: "Aucun fichier fourni" },
+      { status: 400 },
+    );
+  }
 
-export async function POST(request) {
+  // Vérifier que c'est bien une image
+  if (!file.type.startsWith("image/")) {
+    return NextResponse.json(
+      { error: "Le fichier doit être une image" },
+      { status: 400 },
+    );
+  }
+
+  // Extraire logoType et color des métadonnées du fichier
+  const logoType = formData.get("logoType") || "facebook";
+  const color = formData.get("color") || "#1877F2";
+
   try {
-    const formData = await request.formData();
-    const file = formData.get('file');
-    // const type = formData.get('type'); // Unused variable || 'social-logo';
+    // Convertir le fichier en buffer pour l'upload
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
-    if (!file) {
-      return NextResponse.json(
-        { error: 'Aucun fichier fourni' },
-        { status: 400 }
-      );
-    }
+    // Créer un FormData pour l'upload GraphQL
+    const uploadFormData = new FormData();
 
-    // Vérifier que c'est bien une image
-    if (!file.type.startsWith('image/')) {
-      return NextResponse.json(
-        { error: 'Le fichier doit être une image' },
-        { status: 400 }
-      );
-    }
-
-    // Extraire logoType et color des métadonnées du fichier
-    const logoType = formData.get('logoType') || 'facebook';
-    const color = formData.get('color') || '#1877F2';
-
-    try {
-      // Convertir le fichier en buffer pour l'upload
-      const arrayBuffer = await file.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      
-      // Créer un FormData pour l'upload GraphQL
-      const uploadFormData = new FormData();
-      
-      const operations = JSON.stringify({
-        query: `
+    const operations = JSON.stringify({
+      query: `
           mutation UploadSocialLogo($file: Upload!, $logoType: String!, $color: String!) {
             uploadSocialLogo(file: $file, logoType: $logoType, color: $color) {
               success
@@ -51,66 +49,62 @@ export async function POST(request) {
             }
           }
         `,
-        variables: {
-          file: null,
-          logoType,
-          color
-        }
-      });
-      
-      const map = JSON.stringify({
-        '0': ['variables.file']
-      });
-      
-      uploadFormData.append('operations', operations);
-      uploadFormData.append('map', map);
-      uploadFormData.append('0', new Blob([buffer], { type: file.type }), file.name);
-      
-      // Faire l'appel direct au backend GraphQL
-      const response = await fetch('http://localhost:4000/graphql', {
-        method: 'POST',
-        body: uploadFormData
-      });
-      
-      const result = await response.json();
-      
-      if (!response.ok || !result.data) {
-        throw new Error(result.errors?.[0]?.message || 'Erreur lors de l\'upload');
-      }
-      
-      const data = result.data;
+      variables: {
+        file: null,
+        logoType,
+        color,
+      },
+    });
 
-      if (!data.uploadSocialLogo.success) {
-        throw new Error(data.uploadSocialLogo.message || 'Erreur lors de l\'upload');
-      }
-      
-      return NextResponse.json({
-        success: true,
-        url: data.uploadSocialLogo.url,
-        key: data.uploadSocialLogo.key,
-        filename: file.name,
-        size: file.size,
-        type: file.type,
-        contentType: data.uploadSocialLogo.contentType
-      });
-      
-    } catch (uploadError) {
-      console.error('Erreur upload Cloudflare:', uploadError);
-      
-      return NextResponse.json(
-        { 
-          error: 'Erreur lors de l\'upload sur Cloudflare', 
-          details: uploadError.message 
-        },
-        { status: 500 }
+    const map = JSON.stringify({
+      0: ["variables.file"],
+    });
+
+    uploadFormData.append("operations", operations);
+    uploadFormData.append("map", map);
+    uploadFormData.append(
+      "0",
+      new Blob([buffer], { type: file.type }),
+      file.name,
+    );
+
+    // Faire l'appel direct au backend GraphQL
+    const response = await fetch("http://localhost:4000/graphql", {
+      method: "POST",
+      body: uploadFormData,
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.data) {
+      throw new Error(result.errors?.[0]?.message || "Erreur lors de l'upload");
+    }
+
+    const data = result.data;
+
+    if (!data.uploadSocialLogo.success) {
+      throw new Error(
+        data.uploadSocialLogo.message || "Erreur lors de l'upload",
       );
     }
 
-  } catch (error) {
-    console.error('Erreur upload image:', error);
+    return NextResponse.json({
+      success: true,
+      url: data.uploadSocialLogo.url,
+      key: data.uploadSocialLogo.key,
+      filename: file.name,
+      size: file.size,
+      type: file.type,
+      contentType: data.uploadSocialLogo.contentType,
+    });
+  } catch (uploadError) {
+    console.error("Erreur upload Cloudflare:", uploadError);
+
     return NextResponse.json(
-      { error: 'Erreur lors de l\'upload', details: error.message },
-      { status: 500 }
+      { error: "Erreur lors de l'upload sur Cloudflare" },
+      { status: 500 },
     );
   }
 }
+
+export const POST = withErrorHandler(handler);

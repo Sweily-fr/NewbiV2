@@ -1,24 +1,25 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
 import { getPlanLimits } from "@/src/lib/plan-limits";
+import { withErrorHandler } from "@/src/lib/security";
 
 /**
  * API pour vérifier si un changement de rôle est autorisé
  * Vérifie notamment la limite de comptables
  */
-export async function POST(request) {
+async function handler(request) {
   try {
     const body = await request.json();
-    const { organizationId, memberId, currentRole, newRole } = body;
+    const { organizationId, currentRole, newRole } = body;
 
     console.log(
-      `🔍 [CHECK-ROLE] Vérification changement: ${currentRole} → ${newRole}`
+      `🔍 [CHECK-ROLE] Vérification changement: ${currentRole} → ${newRole}`,
     );
 
     if (!organizationId || !newRole) {
       return NextResponse.json(
         { error: "organizationId et newRole requis" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -42,7 +43,7 @@ export async function POST(request) {
     if (!subscription) {
       return NextResponse.json(
         { canChange: false, reason: "Aucun abonnement actif." },
-        { status: 200 }
+        { status: 200 },
       );
     }
 
@@ -64,7 +65,7 @@ export async function POST(request) {
       .toArray();
 
     const currentAccountants = members.filter(
-      (m) => m.role === "accountant"
+      (m) => m.role === "accountant",
     ).length;
 
     // Compter les invitations comptables pending
@@ -111,10 +112,12 @@ export async function POST(request) {
     console.error("❌ [CHECK-ROLE] Erreur:", error);
     return NextResponse.json(
       {
-        error: error.message || "Erreur lors de la vérification",
+        error: "Erreur lors de la vérification",
         canChange: false,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
+
+export const POST = withErrorHandler(handler);

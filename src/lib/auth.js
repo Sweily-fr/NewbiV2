@@ -30,15 +30,19 @@ export const auth = betterAuth({
   // ⚠️ CRITICAL: Secret requis pour signer les tokens en production
   secret: process.env.BETTER_AUTH_SECRET,
 
-  // ⚠️ IMPORTANT: trustedOrigins pour autoriser www et non-www
+  // trustedOrigins — Principle 13: managed by environment
+  // Base origins are always valid (production, mobile, dev local).
+  // Preview/staging/ngrok origins are injected via ADDITIONAL_TRUSTED_ORIGINS env var.
   trustedOrigins: [
     "https://newbi.fr",
     "https://www.newbi.fr",
     "https://newbi-v2.vercel.app",
     "http://localhost:3000",
-    "https://newbi-v2-git-develop-sofianemtimet6-2653s-projects.vercel.app",
-    "newbi://", // App mobile Expo
-    "https://013c-2a01-e0a-440-88a0-4131-a2ba-5087-6582.ngrok-free.app", // ngrok dev
+    // newbi:// scheme removed — no mobile app in production (MOYEN-31).
+    // Re-add via ADDITIONAL_TRUSTED_ORIGINS if a mobile app is deployed.
+    ...(process.env.ADDITIONAL_TRUSTED_ORIGINS?.split(",")
+      .map((o) => o.trim())
+      .filter(Boolean) ?? []),
   ],
 
   // Configuration de la session
@@ -89,7 +93,7 @@ export const auth = betterAuth({
                 `📨 [USER CREATE] Invitation pending trouvée pour ${user.email}`,
               );
 
-              // Marquer l'utilisateur comme invité
+              // Marquer l'utilisateur comme invité — skip onboarding complet
               await mongoDb.collection("user").updateOne(
                 { _id: new ObjectId(user.id) },
                 {
@@ -97,30 +101,32 @@ export const auth = betterAuth({
                     hasSeenOnboarding: false,
                     isInvitedUser: true,
                     pendingInvitationId: pendingInvitation._id.toString(),
+                    onboardingStep: "completed",
                   },
                 },
               );
 
               console.log(
-                `✅ [USER CREATE] Utilisateur ${user.email} marqué comme invité`,
+                `✅ [USER CREATE] Utilisateur ${user.email} marqué comme invité (onboardingStep: completed)`,
               );
               return user;
             }
 
-            // ✅ NOUVEAU : Ne PAS créer d'organisation ici
-            // L'utilisateur passera par l'onboarding et l'org sera créée après paiement
+            // Nouvel utilisateur standard — onboarding commence à "workspace"
+            // Force onboardingStep en DB (le defaultValue de additionalFields ne s'applique pas en OAuth)
             await mongoDb.collection("user").updateOne(
               { _id: new ObjectId(user.id) },
               {
                 $set: {
                   hasSeenOnboarding: false,
                   isInvitedUser: false,
+                  onboardingStep: "workspace",
                 },
               },
             );
 
             console.log(
-              `✅ [USER CREATE] Utilisateur ${user.email} créé - organisation sera créée après paiement`,
+              `✅ [USER CREATE] Utilisateur ${user.email} créé (onboardingStep: workspace)`,
             );
           } catch (error) {
             console.error("❌ [USER CREATE] Erreur:", error);
@@ -336,6 +342,7 @@ export const auth = betterAuth({
       createdBy: {
         type: "string",
         required: false,
+        input: false, // Server-only metadata — Principle 5
         defaultValue: "",
       },
       avatar: {
@@ -346,6 +353,7 @@ export const auth = betterAuth({
       isActive: {
         type: "boolean",
         required: false,
+        input: false, // Admin-only — user cannot reactivate themselves — Principle 5
         defaultValue: true,
       },
       redirect_after_login: {
@@ -356,6 +364,7 @@ export const auth = betterAuth({
       hasSeenOnboarding: {
         type: "boolean",
         required: false,
+        input: false, // Set by webhook/org-creation only — Principle 5
         defaultValue: false,
       },
       hasCompletedTutorial: {
@@ -370,28 +379,49 @@ export const auth = betterAuth({
       referralCode: {
         type: "string",
         required: false,
+        input: false, // Auto-generated or assigned by server — Principle 5
         defaultValue: null,
       },
       referredBy: {
         type: "string",
         required: false,
+        input: false, // Set at signup only, immutable — Principle 5
         defaultValue: null,
       },
       // ✅ Champs pour les utilisateurs invités (pas d'organisation propre)
       isInvitedUser: {
         type: "boolean",
         required: false,
+        input: false, // Set by user.create hook only — Principle 5
         defaultValue: false,
       },
       pendingInvitationId: {
         type: "string",
         required: false,
+        input: false, // Set by user.create hook only — Principle 5
         defaultValue: "",
       },
       stripeCustomerId: {
         type: "string",
         required: false,
+        input: false, // Set by Stripe integration only — Principle 5 — HAUT-34 financial risk
         defaultValue: "",
+      },
+      // Onboarding multi-step tracking (persisted server-side for cross-device resume)
+      // Values: "workspace" | "plan" | "recap" | "completed"
+      // Legacy users without this field: see getOnboardingStep() helper
+      onboardingStep: {
+        type: "string",
+        required: false,
+        input: false, // Set by /api/onboarding/step and webhook only — Principle 5 — HAUT-26
+        defaultValue: "workspace",
+      },
+      // JSON-stringified intermediate onboarding data (company info, selected plan, etc.)
+      // Parsed with try/catch — null means no data saved yet
+      onboardingData: {
+        type: "string",
+        required: false,
+        input: false, // Set by /api/onboarding/step only — Principle 5
       },
     },
   },

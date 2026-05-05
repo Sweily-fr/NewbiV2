@@ -293,7 +293,7 @@ const LoginForm = () => {
               localStorage.removeItem("pendingInvitation");
 
               if (session?.user?.isInvitedUser) {
-                await authClient.updateUser({ hasSeenOnboarding: true });
+                // hasSeenOnboarding + onboardingStep set server-side in /api/invitations/[id] (Sprint 2)
                 router.push("/dashboard?welcome=invited");
                 return;
               }
@@ -320,9 +320,7 @@ const LoginForm = () => {
           const userRedirectPage = session?.user?.redirect_after_login;
 
           if (isInvitedUser) {
-            if (!session?.user?.hasSeenOnboarding) {
-              await authClient.updateUser({ hasSeenOnboarding: true });
-            }
+            // hasSeenOnboarding + onboardingStep set server-side in /api/invitations/[id] (Sprint 2)
             router.push("/dashboard?welcome=invited");
             return;
           }
@@ -344,6 +342,8 @@ const LoginForm = () => {
             "documents-partages": "/dashboard/outils/documents-partages",
             catalogues: "/dashboard/catalogues",
             collaborateurs: "/dashboard/collaborateurs",
+            analytics: "/dashboard/analytics",
+            favoris: "/dashboard/favoris",
           };
 
           const redirectPath =
@@ -555,97 +555,43 @@ const LoginForm = () => {
       if (callbackUrl) {
         router.push(callbackUrl);
       } else {
-        // Vérifier l'abonnement Stripe AVANT de rediriger
-        try {
-          const { data: session } = await authClient.getSession();
-          const organizationId = session?.session?.activeOrganizationId;
-          const hasSeenOnboarding = session?.user?.hasSeenOnboarding;
-          const userRedirectPage = session?.user?.redirect_after_login;
-          const isInvitedUser = session?.user?.isInvitedUser;
+        // Aligned with standard login: redirect to dashboard, let
+        // dashboard/layout.jsx handle subscription checks server-side
+        const { data: session } = await authClient.getSession();
+        const isInvitedUser = session?.user?.isInvitedUser;
+        const userRedirectPage = session?.user?.redirect_after_login;
 
-          // ✅ Les utilisateurs invités n'ont pas besoin d'abonnement (ils utilisent celui de l'owner)
-          if (isInvitedUser) {
-            console.log(
-              "🎯 [2FA] Utilisateur invité, redirection vers dashboard",
-            );
-            if (!hasSeenOnboarding) {
-              await authClient.updateUser({
-                hasSeenOnboarding: true,
-              });
-            }
-            router.push("/dashboard?welcome=invited");
-            return true;
-          }
-
-          // ⚠️ IMPORTANT: Vérifier l'abonnement Stripe en priorité
-          let hasActiveSubscription = false;
-
-          if (organizationId) {
-            const { data: subscriptions } = await authClient.subscription.list({
-              query: {
-                referenceId: organizationId,
-              },
-            });
-
-            hasActiveSubscription = subscriptions?.some(
-              (sub) => sub.status === "active" || sub.status === "trialing",
-            );
-          }
-
-          // Si pas d'abonnement Stripe actif, TOUJOURS rediriger vers onboarding
-          if (!hasActiveSubscription) {
-            console.log(
-              "🎯 [2FA] Pas d'abonnement Stripe actif, redirection vers onboarding",
-            );
-            router.push("/auth/signup");
-            return true;
-          }
-
-          // Si l'utilisateur n'a pas vu l'onboarding mais a un abonnement, le rediriger quand même
-          if (!hasSeenOnboarding) {
-            console.log(
-              "🎯 [2FA] Première connexion avec abonnement, redirection vers onboarding",
-            );
-            router.push("/auth/signup");
-            return true;
-          }
-
-          // L'utilisateur a un abonnement actif, rediriger vers sa page préférée
-          let redirectPath = "/dashboard";
-
-          if (userRedirectPage && userRedirectPage !== "last-page") {
-            // Mapper les pages vers leurs vraies routes
-            const routeMap = {
-              dashboard: "/dashboard",
-              outils: "/dashboard",
-              kanban: "/dashboard/outils/kanban",
-              calendar: "/dashboard/calendar",
-              factures: "/dashboard/outils/factures",
-              devis: "/dashboard/outils/devis",
-              clients: "/dashboard/clients",
-              transactions: "/dashboard/outils/transactions",
-              depenses: "/dashboard/outils/transactions",
-              signatures: "/dashboard/outils/signatures-mail",
-              transferts: "/dashboard/outils/transferts-fichiers",
-              "documents-partages": "/dashboard/outils/documents-partages",
-              catalogues: "/dashboard/catalogues",
-              collaborateurs: "/dashboard/collaborateurs",
-              analytics: "/dashboard/analytics",
-              favoris: "/dashboard/favoris",
-            };
-
-            redirectPath = routeMap[userRedirectPage] || "/dashboard";
-          }
-
-          router.push(redirectPath);
-        } catch (error) {
-          console.error(
-            "Erreur lors de la vérification de l'abonnement:",
-            error,
-          );
-          // En cas d'erreur, rediriger vers /auth/signup par sécurité
-          router.push("/auth/signup");
+        if (isInvitedUser) {
+          // hasSeenOnboarding + onboardingStep set server-side in /api/invitations/[id] (Sprint 2)
+          router.push("/dashboard?welcome=invited");
+          return true;
         }
+
+        const routeMap = {
+          dashboard: "/dashboard",
+          outils: "/dashboard",
+          kanban: "/dashboard/outils/kanban",
+          calendar: "/dashboard/calendar",
+          factures: "/dashboard/outils/factures",
+          devis: "/dashboard/outils/devis",
+          clients: "/dashboard/clients",
+          transactions: "/dashboard/outils/transactions",
+          depenses: "/dashboard/outils/transactions",
+          signatures: "/dashboard/outils/signatures-mail",
+          transferts: "/dashboard/outils/transferts-fichiers",
+          "documents-partages": "/dashboard/outils/documents-partages",
+          catalogues: "/dashboard/catalogues",
+          collaborateurs: "/dashboard/collaborateurs",
+          analytics: "/dashboard/analytics",
+          favoris: "/dashboard/favoris",
+        };
+
+        const redirectPath =
+          userRedirectPage && userRedirectPage !== "last-page"
+            ? routeMap[userRedirectPage] || "/dashboard"
+            : "/dashboard";
+
+        router.push(redirectPath);
       }
 
       return true;

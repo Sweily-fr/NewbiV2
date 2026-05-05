@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { toObjectId } from "@/src/lib/security/to-object-id";
 
 /**
  * Shared idempotent utility for organization + member + subscription + invitations creation.
@@ -78,7 +79,7 @@ export async function createOrganizationWithSubscription({
         // Different SIRET = user is creating a SECOND org, don't reuse the old one
         organizationObjectId = null;
         console.log(
-          `🆕 [ORG-CREATION] User ${userId} creating new org (different SIRET: ${siret} vs ${existingOrg.siret})`
+          `🆕 [ORG-CREATION] User ${userId} creating new org (different SIRET: ${siret} vs ${existingOrg.siret})`,
         );
       }
     }
@@ -87,7 +88,7 @@ export async function createOrganizationWithSubscription({
       // Update the existing org with new data
       result.orgUpdated = true;
       console.log(
-        `♻️ [ORG-CREATION] Existing org found for userId ${userId}: ${organizationObjectId}`
+        `♻️ [ORG-CREATION] Existing org found for userId ${userId}: ${organizationObjectId}`,
       );
 
       await mongoDb.collection("organization").updateOne(
@@ -110,7 +111,7 @@ export async function createOrganizationWithSubscription({
             onboardingCompleted: true,
             updatedAt: new Date(),
           },
-        }
+        },
       );
     }
   }
@@ -125,7 +126,7 @@ export async function createOrganizationWithSubscription({
       organizationObjectId = existingOrg._id;
       result.orgUpdated = true;
       console.log(
-        `♻️ [ORG-CREATION] Existing org found by SIRET ${siret}, attaching user ${userId}`
+        `♻️ [ORG-CREATION] Existing org found by SIRET ${siret}, attaching user ${userId}`,
       );
 
       await mongoDb.collection("organization").updateOne(
@@ -135,7 +136,7 @@ export async function createOrganizationWithSubscription({
             onboardingCompleted: true,
             updatedAt: new Date(),
           },
-        }
+        },
       );
     }
   }
@@ -196,7 +197,7 @@ export async function createOrganizationWithSubscription({
           createdAt: new Date(),
         },
       },
-      { upsert: true }
+      { upsert: true },
     );
     result.memberCreated = true;
     console.log(`✅ [ORG-CREATION] Member owner upserted for userId ${userId}`);
@@ -204,7 +205,9 @@ export async function createOrganizationWithSubscription({
     if (error.code === 11000) {
       // Already exists — idempotent
       result.memberCreated = false;
-      console.log(`♻️ [ORG-CREATION] Member already exists (duplicate key), skipping`);
+      console.log(
+        `♻️ [ORG-CREATION] Member already exists (duplicate key), skipping`,
+      );
     } else {
       throw error;
     }
@@ -213,27 +216,36 @@ export async function createOrganizationWithSubscription({
   // ──────────────────────────────────────────────
   // 3. Update sessions with activeOrganizationId
   // ──────────────────────────────────────────────
-  const updateResult = await mongoDb.collection("session").updateMany(
-    { userId: userId },
-    { $set: { activeOrganizationId: result.organizationId } }
-  );
+  // MOYEN-25 fix: userId is stored as ObjectId in session collection (ADR-004)
+  const updateResult = await mongoDb
+    .collection("session")
+    .updateMany(
+      { userId: toObjectId(userId) },
+      { $set: { activeOrganizationId: result.organizationId } },
+    );
   console.log(
-    `✅ [ORG-CREATION] ${updateResult.modifiedCount} session(s) updated with activeOrganizationId`
+    `✅ [ORG-CREATION] ${updateResult.modifiedCount} session(s) updated with activeOrganizationId`,
   );
 
   // ──────────────────────────────────────────────
-  // 4. Update user — hasSeenOnboarding: true
+  // 4. Update user — mark onboarding as completed
   // ──────────────────────────────────────────────
   await mongoDb.collection("user").updateOne(
     { _id: new ObjectId(userId) },
     {
       $set: {
         hasSeenOnboarding: true,
+        onboardingStep: "completed",
         updatedAt: new Date(),
       },
-    }
+      $unset: {
+        onboardingData: "",
+      },
+    },
   );
-  console.log(`✅ [ORG-CREATION] hasSeenOnboarding set to true for userId: ${userId}`);
+  console.log(
+    `✅ [ORG-CREATION] onboardingStep set to "completed" for userId: ${userId}`,
+  );
 
   // ──────────────────────────────────────────────
   // 5. Create subscription (with duplicate key catch)
@@ -280,11 +292,11 @@ export async function createOrganizationWithSubscription({
         await mongoDb.collection("subscription").insertOne(subscriptionData);
         result.subscriptionCreated = true;
         console.log(
-          `✅ [ORG-CREATION] Subscription created for org: ${result.organizationId} (plan: ${planName})`
+          `✅ [ORG-CREATION] Subscription created for org: ${result.organizationId} (plan: ${planName})`,
         );
       } else {
         console.log(
-          `♻️ [ORG-CREATION] Subscription already exists for org: ${result.organizationId}`
+          `♻️ [ORG-CREATION] Subscription already exists for org: ${result.organizationId}`,
         );
       }
     } catch (error) {
@@ -321,12 +333,12 @@ export async function createOrganizationWithSubscription({
 
       await mongoDb
         .collection("organization")
-        .updateOne(
-          { _id: organizationObjectId },
-          { $set: orgUpdateData }
-        );
+        .updateOne({ _id: organizationObjectId }, { $set: orgUpdateData });
     } catch (trialError) {
-      console.warn(`⚠️ [ORG-CREATION] Trial status update error:`, trialError.message);
+      console.warn(
+        `⚠️ [ORG-CREATION] Trial status update error:`,
+        trialError.message,
+      );
     }
   }
 
@@ -366,14 +378,12 @@ export async function createOrganizationWithSubscription({
 
               if (existingInvitation) {
                 console.log(
-                  `♻️ [ORG-CREATION] Invitation already exists for ${memberEmail}, skipping`
+                  `♻️ [ORG-CREATION] Invitation already exists for ${memberEmail}, skipping`,
                 );
                 return { skipped: true, email: memberEmail };
               }
 
-              const expiresAt = new Date(
-                Date.now() + 7 * 24 * 60 * 60 * 1000
-              );
+              const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
               const insertResult = await mongoDb
                 .collection("invitation")
@@ -389,9 +399,8 @@ export async function createOrganizationWithSubscription({
 
               const invitationId = insertResult.insertedId.toString();
 
-              const { sendOrganizationInvitationEmail } = await import(
-                "./auth-utils.js"
-              );
+              const { sendOrganizationInvitationEmail } =
+                await import("./auth-utils.js");
 
               await sendOrganizationInvitationEmail({
                 id: invitationId,
@@ -410,20 +419,22 @@ export async function createOrganizationWithSubscription({
                 },
               });
 
-              console.log(`✅ [ORG-CREATION] Invitation sent to ${memberEmail}`);
+              console.log(
+                `✅ [ORG-CREATION] Invitation sent to ${memberEmail}`,
+              );
               return { sent: true, email: memberEmail };
-            })
+            }),
         );
 
         result.invitationsSent = invitationResults.filter(
-          (r) => r.status === "fulfilled" && r.value?.sent
+          (r) => r.status === "fulfilled" && r.value?.sent,
         ).length;
         result.invitationErrors = invitationResults.filter(
-          (r) => r.status === "rejected"
+          (r) => r.status === "rejected",
         ).length;
 
         console.log(
-          `✅ [ORG-CREATION] Invitations: ${result.invitationsSent} sent, ${result.invitationErrors} errors`
+          `✅ [ORG-CREATION] Invitations: ${result.invitationsSent} sent, ${result.invitationErrors} errors`,
         );
       }
     } catch (inviteError) {

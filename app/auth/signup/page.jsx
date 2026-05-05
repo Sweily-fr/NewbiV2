@@ -33,6 +33,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useSession, performLogout } from "@/src/lib/auth-client";
+import { getOnboardingStep, parseOnboardingData } from "@/src/lib/onboarding";
 
 const GoogleIcon = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
@@ -63,20 +64,36 @@ export default function SignUpPage() {
   };
 
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, isPending: sessionPending } = useSession();
   const userEmail = session?.user?.email;
 
-  // Resume workspace/plan view only if user is authenticated
-  const [view, setView] = useState("signup");
+  // View is derived from session state — no localStorage dependency
+  // "null" means "not yet determined" (session still loading)
+  const [view, setView] = useState(null);
+  const [sessionHydrated, setSessionHydrated] = useState(false);
 
-  // Restore saved step only when session is confirmed
+  // Determine the initial view once the session resolves
   useEffect(() => {
-    if (!session?.user) return;
-    const saved = localStorage.getItem("onboarding_step");
-    if (["workspace", "plan", "invite", "recap"].includes(saved)) {
-      setView(saved);
+    if (sessionPending) return;
+
+    // Already hydrated — don't override user navigation
+    if (sessionHydrated) return;
+
+    if (!session?.user) {
+      // Not authenticated → show signup form
+      setView("signup");
+    } else {
+      const step = getOnboardingStep(session.user);
+      if (step === "completed") {
+        // Onboarding done — shouldn't be on this page, redirect to dashboard
+        router.replace("/dashboard");
+        return;
+      }
+      // Authenticated with incomplete onboarding → resume at the right step
+      setView(step);
     }
-  }, [session]);
+    setSessionHydrated(true);
+  }, [sessionPending, session, sessionHydrated, router]);
 
   const [isAnnual, setIsAnnual] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState(null);
@@ -134,6 +151,7 @@ export default function SignUpPage() {
   };
 
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isSavingStep, setIsSavingStep] = useState(false);
   const [companyName, setCompanyName] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -143,6 +161,70 @@ export default function SignUpPage() {
   const [siretError, setSiretError] = useState(null);
   const [billingCountry, setBillingCountry] = useState("FR");
   const contentRef = useRef(null);
+
+  // Persist onboarding step + data to DB via API, then refetch session
+  const { refetch: refetchSession } = useSession();
+  const updateOnboardingStep = useCallback(
+    async (step, data) => {
+      setIsSavingStep(true);
+      try {
+        const res = await fetch("/api/onboarding/step", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ step, data: data || undefined }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          console.error("❌ [ONBOARDING] PATCH failed:", err);
+          toast.error("Erreur lors de la sauvegarde, veuillez réessayer");
+          return false;
+        }
+        // Re-sync session so other tabs / next reload see the new step
+        await refetchSession();
+        return true;
+      } catch (error) {
+        console.error("❌ [ONBOARDING] Network error:", error);
+        toast.error("Erreur de connexion");
+        return false;
+      } finally {
+        setIsSavingStep(false);
+      }
+    },
+    [refetchSession],
+  );
+
+  // Hydrate form fields from saved onboardingData when session is ready
+  useEffect(() => {
+    if (!session?.user) return;
+    const saved = parseOnboardingData(session.user.onboardingData);
+    if (!saved) return;
+
+    // Restore company data (workspace step)
+    if (saved.companyName && !companyData) {
+      setCompanyData({
+        companyName: saved.companyName,
+        siret: saved.siret || "",
+        siren: saved.siren || "",
+        legalForm: saved.legalForm || "",
+        addressStreet: saved.addressStreet || "",
+        addressCity: saved.addressCity || "",
+        addressZipCode: saved.addressZipCode || "",
+        addressCountry: saved.addressCountry || "France",
+      });
+      setCompanyName(saved.companyName);
+      if (saved.billingCountry) setBillingCountry(saved.billingCountry);
+    }
+
+    // Restore plan selection (plan step)
+    if (saved.selectedPlan && !selectedPlan) {
+      setSelectedPlan(saved.selectedPlan);
+    }
+    if (saved.isAnnual !== undefined) {
+      setIsAnnual(saved.isAnnual);
+    }
+    // Run once when session loads — not on every render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.onboardingData]);
 
   // Company search debounce
   useEffect(() => {
@@ -219,8 +301,8 @@ export default function SignUpPage() {
   };
 
   // Called by RegisterForm after successful signup
+  // No PATCH needed — user.create hook already set onboardingStep: "workspace"
   const handleSignupSuccess = () => {
-    localStorage.setItem("onboarding_step", "workspace");
     switchView("workspace");
   };
 
@@ -239,11 +321,11 @@ export default function SignUpPage() {
     9220: "Association déclarée",
   };
 
-  const handleWorkspaceSubmit = (e) => {
+  const handleWorkspaceSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedCompany) return;
+    if (!selectedCompany || isSavingStep) return;
     const siege = selectedCompany.siege || {};
-    setCompanyData({
+    const newCompanyData = {
       companyName,
       siret: siege.siret || "",
       siren: selectedCompany.siren || "",
@@ -252,15 +334,25 @@ export default function SignUpPage() {
       addressCity: siege.libelle_commune || "",
       addressZipCode: siege.code_postal || "",
       addressCountry: billingCountry === "FR" ? "France" : billingCountry,
+    };
+    setCompanyData(newCompanyData);
+
+    const ok = await updateOnboardingStep("plan", {
+      ...newCompanyData,
+      billingCountry,
     });
-    localStorage.setItem("onboarding_step", "plan");
-    switchView("plan");
+    if (ok) switchView("plan");
   };
 
-  const handleSelectPlan = (planKey) => {
+  const handleSelectPlan = async (planKey) => {
+    if (isSavingStep) return;
     setSelectedPlan(planKey);
-    localStorage.setItem("onboarding_step", "recap");
-    switchView("recap");
+
+    const ok = await updateOnboardingStep("recap", {
+      selectedPlan: planKey,
+      isAnnual,
+    });
+    if (ok) switchView("recap");
   };
 
   const handlePayment = async () => {
@@ -383,6 +475,18 @@ export default function SignUpPage() {
   const currentStepIndex = steps.indexOf(view);
   const currentDotIndex = dotSteps.indexOf(view);
   const showDots = currentDotIndex >= 0;
+
+  // Show nothing while session is loading — prevents flash of signup view
+  if (view === null) {
+    return (
+      <main
+        className="flex min-h-[100dvh] items-center justify-center"
+        style={{ backgroundColor: "rgb(251, 251, 252)" }}
+      >
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </main>
+    );
+  }
 
   return (
     <>
@@ -635,10 +739,14 @@ export default function SignUpPage() {
               <div className="flex justify-center mt-6">
                 <Button
                   type="submit"
-                  disabled={!selectedCompany}
+                  disabled={!selectedCompany || isSavingStep}
                   className="h-9 px-16 bg-[#5A50FF]/90 hover:bg-[#5A50FF] text-white cursor-pointer border-0 [box-shadow:none] rounded-lg disabled:opacity-40"
                 >
-                  Continuer
+                  {isSavingStep ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    "Continuer"
+                  )}
                 </Button>
               </div>
             </form>
@@ -751,7 +859,7 @@ export default function SignUpPage() {
                     {/* CTA */}
                     <Button
                       onClick={() => handleSelectPlan(plan.key)}
-                      disabled={loadingPlan !== null}
+                      disabled={loadingPlan !== null || isSavingStep}
                       className={`w-full h-10 rounded-lg cursor-pointer ${
                         plan.featured
                           ? "bg-white text-[#5A50FF] hover:bg-white/90"
@@ -904,10 +1012,10 @@ export default function SignUpPage() {
                 key={step}
                 type="button"
                 disabled={i >= currentDotIndex}
-                onClick={() => {
-                  if (i < currentDotIndex) {
-                    localStorage.setItem("onboarding_step", step);
-                    switchView(step);
+                onClick={async () => {
+                  if (i < currentDotIndex && !isSavingStep) {
+                    const ok = await updateOnboardingStep(step);
+                    if (ok) switchView(step);
                   }
                 }}
                 className={`w-1.5 h-1.5 rounded-full transition-colors ${

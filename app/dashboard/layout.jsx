@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { auth } from "@/src/lib/auth";
 import { mongoDb } from "@/src/lib/mongodb";
-import { ObjectId } from "mongodb";
+import { toObjectId } from "@/src/lib/security";
 import DashboardClientLayout from "./dashboard-client-layout";
 
 /**
@@ -29,7 +29,7 @@ async function hasValidSubscription(orgId) {
 
 async function checkSubscription(userId, activeOrgId) {
   try {
-    const userObjectId = new ObjectId(userId);
+    const userObjectId = toObjectId(userId);
 
     // 1. Récupérer l'organisation active
     let organizationId = activeOrgId;
@@ -115,11 +115,11 @@ async function checkSubscription(userId, activeOrgId) {
           `[Dashboard Layout] Abonnement valide trouvé sur org: ${candidateOrgId}, auto-switch`,
         );
 
-        // Mettre à jour toutes les sessions de l'utilisateur
+        // MOYEN-25 fix: userId is stored as ObjectId in session collection (ADR-004)
         const updateResult = await mongoDb
           .collection("session")
           .updateMany(
-            { userId: userId },
+            { userId: userObjectId },
             { $set: { activeOrganizationId: candidateOrgId } },
           );
         console.log(
@@ -152,6 +152,7 @@ async function checkRecentStripePayment(organizationId) {
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
     // Chercher un abonnement créé très récemment (le webhook peut être en cours)
+    // MOYEN-17 fix: only accept subscriptions with valid status (not incomplete/past_due)
     const recentSubscription = await mongoDb
       .collection("subscription")
       .findOne({
@@ -160,6 +161,7 @@ async function checkRecentStripePayment(organizationId) {
           { organizationId: organizationId },
         ],
         createdAt: { $gte: fiveMinutesAgo },
+        status: { $in: ["active", "trialing"] },
       });
 
     if (recentSubscription) {

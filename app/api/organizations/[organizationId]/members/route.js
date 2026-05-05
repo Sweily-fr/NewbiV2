@@ -1,122 +1,100 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/src/lib/auth";
 import { mongoDb } from "@/src/lib/mongodb";
-import { ObjectId } from "mongodb";
+import {
+  requireSession,
+  requireOrgMembership,
+  toObjectId,
+  withErrorHandler,
+} from "@/src/lib/security";
 
 /**
  * GET /api/organizations/[organizationId]/members
- * Récupère les membres d'une organisation spécifique directement depuis MongoDB
+ *
+ * Retrieve members and invitations for an organization.
+ * Auth: session + org membership (any role can view members).
+ * NOUVEAU-4 fix: was missing membership check — cross-tenant read was possible.
  */
-export async function GET(request, { params }) {
-  try {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
+async function handler(request, { params }) {
+  const { user } = await requireSession(request);
+  const { organizationId } = await params;
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-    }
+  // Membership check — closes cross-tenant gap (NOUVEAU-4)
+  await requireOrgMembership(user.id, organizationId);
 
-    // Next.js 15 : params doit être await avant d'accéder à ses propriétés
-    const { organizationId } = await params;
+  const orgObjectId = toObjectId(organizationId);
 
-    console.log(
-      `📊 API - Récupération des membres pour org: ${organizationId}`
-    );
-
-    // Récupérer tous les membres de cette organisation
-    const members = await mongoDb
-      .collection("member")
-      .aggregate([
-        {
-          $match: {
-            organizationId: new ObjectId(organizationId),
+  // Fetch members with user lookup
+  const members = await mongoDb
+    .collection("member")
+    .aggregate([
+      {
+        $match: {
+          organizationId: orgObjectId,
+        },
+      },
+      {
+        $addFields: {
+          userIdAsObjectId: {
+            $cond: {
+              if: { $eq: [{ $type: "$userId" }, "string"] },
+              then: { $toObjectId: "$userId" },
+              else: "$userId",
+            },
           },
         },
-        {
-          // Convertir userId en ObjectId si c'est une string
-          $addFields: {
-            userIdAsObjectId: {
-              $cond: {
-                if: { $eq: [{ $type: "$userId" }, "string"] },
-                then: { $toObjectId: "$userId" },
-                else: "$userId"
-              }
-            }
-          }
+      },
+      {
+        $lookup: {
+          from: "user",
+          localField: "userIdAsObjectId",
+          foreignField: "_id",
+          as: "user",
         },
-        {
-          $lookup: {
-            from: "user",
-            localField: "userIdAsObjectId",
-            foreignField: "_id",
-            as: "user",
-          },
+      },
+      {
+        $unwind: {
+          path: "$user",
+          preserveNullAndEmptyArrays: true,
         },
-        {
-          $unwind: {
-            path: "$user",
-            preserveNullAndEmptyArrays: true,
-          },
+      },
+      {
+        $project: {
+          id: { $toString: "$_id" },
+          role: 1,
+          createdAt: 1,
+          status: 1,
+          email: "$user.email",
+          name: "$user.name",
+          avatar: { $ifNull: ["$user.avatar", "$user.image"] },
+          image: "$user.image",
+          type: { $literal: "member" },
         },
-        {
-          $project: {
-            id: { $toString: "$_id" },
-            role: 1,
-            createdAt: 1,
-            status: 1,
-            email: "$user.email",
-            name: "$user.name",
-            avatar: { $ifNull: ["$user.avatar", "$user.image"] },
-            image: "$user.image",
-            type: { $literal: "member" },
-          },
-        },
-      ])
-      .toArray();
+      },
+    ])
+    .toArray();
 
-    // Récupérer les invitations pour cette organisation
-    const invitations = await mongoDb
-      .collection("invitation")
-      .find({
-        organizationId: new ObjectId(organizationId),
-        status: { $ne: "canceled" },
-      })
-      .toArray();
+  // Fetch invitations
+  const invitations = await mongoDb
+    .collection("invitation")
+    .find({
+      organizationId: orgObjectId,
+      status: { $ne: "canceled" },
+    })
+    .toArray();
 
-    const formattedInvitations = invitations.map((inv) => ({
-      id: inv._id.toString(),
-      email: inv.email,
-      role: inv.role,
-      status: inv.status || "pending",
-      createdAt: inv.createdAt,
-      type: "invitation",
-    }));
+  const formattedInvitations = invitations.map((inv) => ({
+    id: inv._id.toString(),
+    email: inv.email,
+    role: inv.role,
+    status: inv.status || "pending",
+    createdAt: inv.createdAt,
+    type: "invitation",
+  }));
 
-    const allData = [...members, ...formattedInvitations];
-
-    console.log(
-      `✅ API - ${members.length} membres + ${invitations.length} invitations pour org ${organizationId}`
-    );
-
-    // Debug: afficher les avatars des membres
-    if (members.length > 0) {
-      console.log("🖼️ Avatars des membres:", members.map(m => ({
-        email: m.email,
-        avatar: m.avatar,
-        image: m.image
-      })));
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: allData,
-    });
-  } catch (error) {
-    console.error("❌ Erreur lors de la récupération des membres:", error);
-    return NextResponse.json(
-      { error: "Erreur serveur", details: error.message },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json({
+    success: true,
+    data: [...members, ...formattedInvitations],
+  });
 }
+
+export const GET = withErrorHandler(handler);

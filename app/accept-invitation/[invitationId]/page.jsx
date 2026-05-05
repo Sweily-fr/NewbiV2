@@ -55,64 +55,20 @@ export default function AcceptInvitationPage() {
 
         if (data.error) {
           throw new Error(
-            data.error || "Erreur lors de la récupération de l'invitation"
+            data.error || "Erreur lors de la récupération de l'invitation",
           );
         }
 
         setInvitation(data);
 
         console.log("📋 Invitation data:", data);
-        console.log("🏢 Organization ID:", data.organizationId);
 
-        // Récupérer les membres de l'organisation
-        if (data.organizationId) {
-          try {
-            const membersResponse = await fetch("/api/organization/members", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                organizationId: data.organizationId,
-              }),
-            });
-            console.log("📡 Members response status:", membersResponse.status);
-
-            if (membersResponse.ok) {
-              const result = await membersResponse.json();
-              console.log("👥 Members result:", result);
-
-              // Better Auth retourne les membres dans result.members
-              const membersData = result.members || result || [];
-
-              // Filtrer uniquement les membres actifs et formater
-              const activeMembers = membersData
-                .filter((m) => m.role) // Les membres ont un rôle
-                .map((m) => ({
-                  id: m.userId || m.id,
-                  name: m.user?.name || m.name,
-                  email: m.user?.email || m.email,
-                  avatar: m.user?.image || m.user?.avatar || m.avatar,
-                  role: m.role,
-                }))
-                .slice(0, 4); // Max 4 avatars
-
-              console.log("✅ Active members:", activeMembers);
-              setMembers(activeMembers);
-            } else {
-              console.error(
-                "❌ Members response not OK:",
-                await membersResponse.text()
-              );
-            }
-          } catch (membersError) {
-            console.error(
-              "❌ Erreur lors de la récupération des membres:",
-              membersError
-            );
-          }
-        } else {
-          console.warn("⚠️ Pas d'organizationId dans l'invitation");
+        // email is no longer returned by GET /api/invitations/[id] (Sprint 3.3 — Principle 15)
+        // Get it from URL search params instead (set by the invitation email link)
+        const urlEmail =
+          new URLSearchParams(window.location.search).get("email") || "";
+        if (urlEmail) {
+          data.email = urlEmail;
         }
 
         // Vérifier si l'utilisateur existe déjà
@@ -133,7 +89,7 @@ export default function AcceptInvitationPage() {
           } catch (userCheckError) {
             console.error(
               "❌ Erreur lors de la vérification de l'utilisateur:",
-              userCheckError
+              userCheckError,
             );
             // En cas d'erreur, on assume que l'utilisateur n'existe pas
             setUserExists(false);
@@ -316,14 +272,14 @@ export default function AcceptInvitationPage() {
       <div
         className={cn(
           "bg-background relative flex size-20 rounded-xl dark:bg-transparent",
-          className
+          className,
         )}
       >
         <div
           role="presentation"
           className={cn(
             "absolute inset-0 rounded-xl border border-black/5 dark:border-white/10",
-            borderClassName
+            borderClassName,
           )}
         />
         <div className="relative z-20 m-auto size-fit *:size-6">{children}</div>
@@ -388,7 +344,7 @@ export default function AcceptInvitationPage() {
                 "🎨 Rendering members:",
                 members,
                 "Length:",
-                members.length
+                members.length,
               )}
               {members.length > 0 && (
                 <div className="flex justify-center items-center gap-2">

@@ -154,7 +154,6 @@ export function clearSessionStorage() {
     localStorage.removeItem("user-cache");
     localStorage.removeItem("active_organization_id");
     localStorage.removeItem("user_role");
-    localStorage.removeItem("onboarding_step");
 
     // Vider tous les caches d'abonnement
     Object.keys(localStorage).forEach((key) => {
