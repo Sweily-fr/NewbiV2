@@ -331,7 +331,7 @@ describe("createOrganizationWithSubscription — sessions and user", () => {
     });
 
     expect(collections.session.updateMany).toHaveBeenCalledWith(
-      { userId },
+      { userId: new ObjectId(userId) },
       { $set: { activeOrganizationId: result.organizationId } },
     );
 

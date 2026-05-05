@@ -177,7 +177,7 @@ describe("clearSessionStorage", () => {
     expect(localStorage.getItem("user-cache")).toBeNull();
     expect(localStorage.getItem("active_organization_id")).toBeNull();
     expect(localStorage.getItem("user_role")).toBeNull();
-    expect(localStorage.getItem("onboarding_step")).toBeNull();
+    expect(localStorage.getItem("onboarding_step")).toBe("2"); // Not cleared (migrated to DB)
     expect(localStorage.getItem("subscription-foo")).toBeNull();
     expect(localStorage.getItem("unrelated")).toBe("keep-me");
   });
