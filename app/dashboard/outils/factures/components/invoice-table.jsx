@@ -29,7 +29,6 @@ import {
   TrashIcon,
   Upload,
   FileUp,
-  UserPlus,
 } from "lucide-react";
 
 import { cn } from "@/src/lib/utils";
@@ -106,7 +105,6 @@ import { SendDocumentModal } from "./send-document-modal";
 import { SaveInvoiceTemplateDialog } from "./SaveInvoiceTemplateDialog";
 import { ImportInvoiceModal } from "./import-invoice-modal";
 import { ImportedInvoiceSidebar } from "./imported-invoice-sidebar";
-import AssignImportedInvoicesDialog from "./assign-imported-invoices-dialog";
 import { useImportedInvoices } from "@/src/graphql/importedInvoiceQueries";
 import { useEmailTrackingSubscription } from "@/src/graphql/documentEmailQueries";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
@@ -136,7 +134,6 @@ export default function InvoiceTable({
   // États pour les factures importées
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [selectedImportedInvoice, setSelectedImportedInvoice] = useState(null);
-  const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false);
   const { workspaceId } = useRequiredWorkspace();
 
   // Subscription temps réel pour le tracking d'ouverture d'email
@@ -492,17 +489,6 @@ export default function InvoiceTable({
 
           {/* Actions à droite */}
           <div className="flex items-center gap-2">
-            {/* Bulk assign - visible quand au moins une importée est sélectionnée */}
-            {selectedRows.some((r) => r._type === "imported") && (
-              <Button
-                variant="outline"
-                onClick={() => setIsBulkAssignOpen(true)}
-              >
-                <UserPlus className="mr-2 h-4 w-4" />
-                Assigner (
-                {selectedRows.filter((r) => r._type === "imported").length})
-              </Button>
-            )}
             {/* Bulk delete - visible quand des rows sont sélectionnées */}
             {selectedRows.length > 0 && (
               <AlertDialog>
@@ -1180,20 +1166,6 @@ export default function InvoiceTable({
           refetchImported();
           onBalancesRefetch?.();
           setSelectedImportedInvoice(null);
-        }}
-      />
-
-      {/* Dialog d'assignation groupée des factures importées */}
-      <AssignImportedInvoicesDialog
-        open={isBulkAssignOpen}
-        onOpenChange={setIsBulkAssignOpen}
-        invoiceIds={selectedRows
-          .filter((r) => r._type === "imported")
-          .map((r) => r.id)}
-        onAssigned={() => {
-          refetchImported();
-          onBalancesRefetch?.();
-          table.resetRowSelection?.();
         }}
       />
 

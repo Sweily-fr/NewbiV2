@@ -3,6 +3,7 @@
 import { useState, useRef, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { Input } from "@/src/components/ui/input";
 import { Plus, Search, CircleXIcon } from "lucide-react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
@@ -14,6 +15,12 @@ import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { cn } from "@/src/lib/utils";
 
 function ListesContent() {
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
   const { workspaceId } = useWorkspace();
   const searchParams = useSearchParams();
   const listIdFromUrl = searchParams.get("listId");
@@ -59,6 +66,8 @@ function ListesContent() {
               variant="primary"
               onClick={() => setCreateListDialogOpen(true)}
               className="self-start"
+              disabled={isReadOnly}
+              title={readOnlyTooltip}
             >
               <Plus size={14} strokeWidth={2} aria-hidden="true" />
               Nouvelle liste
@@ -71,7 +80,7 @@ function ListesContent() {
                 ref={inputRef}
                 className={cn(
                   "w-full sm:w-[300px] ps-9",
-                  Boolean(globalFilter) && "pe-9"
+                  Boolean(globalFilter) && "pe-9",
                 )}
                 value={globalFilter}
                 onChange={(e) => setGlobalFilter(e.target.value)}

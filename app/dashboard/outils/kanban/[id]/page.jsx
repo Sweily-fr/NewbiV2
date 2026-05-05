@@ -199,6 +199,7 @@ import { useKanbanDnD } from "./hooks/useKanbanDnD";
 import { useListDnD } from "./hooks/useListDnD";
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 // Components
 import { KanbanColumnSimple } from "./components/KanbanColumnSimple";
@@ -478,6 +479,12 @@ function KanbanBoardPageContent({ params }) {
   const { id } = use(params);
   const [isRedirecting, setIsRedirecting] = React.useState(false);
   const taskIdFromUrl = searchParams.get("task");
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
 
   // Hook viewMode en premier pour avoir le bon skeleton dès le début
   const {
@@ -985,6 +992,8 @@ function KanbanBoardPageContent({ params }) {
               variant="ghost"
               className="w-full h-16 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:bg-transparent cursor-pointer"
               onClick={openAddModal}
+              disabled={isReadOnly}
+              title={readOnlyTooltip}
             >
               <Plus className="h-5 w-5" />
               <span className="text-sm font-medium">Ajouter une colonne</span>
@@ -1510,6 +1519,8 @@ function KanbanBoardPageContent({ params }) {
               variant="primary"
               className="cursor-pointer"
               onClick={openAddModal}
+              disabled={isReadOnly}
+              title={readOnlyTooltip}
             >
               <Plus size={14} strokeWidth={2} aria-hidden="true" />
               {isBoard ? "Ajouter une colonne" : "Nouveau status"}

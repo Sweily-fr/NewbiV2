@@ -236,6 +236,21 @@ let _pendingRetryQueue = [];
 const errorLink = onError(
   ({ graphQLErrors, networkError, operation, forward }) => {
     if (graphQLErrors) {
+      // Intercept SUBSCRIPTION_READ_ONLY errors → trigger modal
+      const hasSubscriptionBlock = graphQLErrors.some(
+        (e) =>
+          e.extensions?.code === "SUBSCRIPTION_READ_ONLY" ||
+          e.extensions?.exception?.code === "SUBSCRIPTION_READ_ONLY" ||
+          e.code === "SUBSCRIPTION_READ_ONLY",
+      );
+      if (hasSubscriptionBlock) {
+        // Trigger the subscription blocked dialog (deduplication handled in the component)
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("subscription-blocked"));
+        }
+        return; // Don't process further — the dialog handles it
+      }
+
       let hasCriticalError = false;
       const processedMessages = new Set();
 

@@ -224,14 +224,18 @@ function InvoicesContent() {
               Importer
             </Button>
             <InvoiceExportButton invoices={filteredData} iconOnly={false} />
-            <Button
+            <PermissionButton
+              requiresActiveSubscription
+              resource="invoices"
+              action="create"
               variant="primary"
               onClick={handleNewInvoice}
               className="cursor-pointer"
+              tooltipNoAccess="Vous n'avez pas la permission de créer des factures"
             >
               <Plus size={14} strokeWidth={2} aria-hidden="true" />
               Nouvelle facture
-            </Button>
+            </PermissionButton>
           </div>
         </div>
 
@@ -385,6 +389,7 @@ function InvoicesContent() {
                 <Settings className="h-4 w-4" />
               </Button>
               <PermissionButton
+                requiresActiveSubscription
                 resource="invoices"
                 action="create"
                 onClick={handleNewInvoice}

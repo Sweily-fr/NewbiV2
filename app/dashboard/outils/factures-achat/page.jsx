@@ -8,6 +8,7 @@ import { ExportDialog } from "./components/export-dialog";
 import { GmailConnectionDialog } from "./components/gmail-connection";
 // GmailStatusBanner remplacé par un bouton inline dans la toolbar
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import {
   usePurchaseInvoices,
   usePurchaseInvoiceStats,
@@ -69,7 +70,10 @@ function StatsCard({ label, tooltip, amount, count, alert }) {
               <TooltipTrigger asChild>
                 <Info className="h-3 w-3 text-muted-foreground cursor-help" />
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="bg-[#202020] text-white border-0">
+              <TooltipContent
+                side="bottom"
+                className="bg-[#202020] text-white border-0"
+              >
                 <p>{tooltip}</p>
               </TooltipContent>
             </Tooltip>
@@ -91,12 +95,20 @@ function PurchaseInvoicesContent() {
   const { invoices, loading, refetch } = usePurchaseInvoices({ limit: 200 });
   const { stats, loading: statsLoading } = usePurchaseInvoiceStats();
   const { connection: gmailConnection } = useGmailConnection();
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
   const { workspaceId } = useWorkspace();
   const {
     importedInvoices,
     loading: importedLoading,
     refetch: refetchImported,
-  } = useImportedInvoices(workspaceId, { filters: { status: "PENDING_REVIEW" } });
+  } = useImportedInvoices(workspaceId, {
+    filters: { status: "PENDING_REVIEW" },
+  });
 
   const handleImportedConverted = () => {
     refetch?.();
@@ -114,12 +126,16 @@ function PurchaseInvoicesContent() {
   // Handle OAuth callback query params
   useEffect(() => {
     if (searchParams.get("gmail_connected") === "true") {
-      toast.success("Gmail connecté ! Le scan initial de vos emails est en cours...");
+      toast.success(
+        "Gmail connecté ! Le scan initial de vos emails est en cours...",
+      );
       // Clean URL
       window.history.replaceState({}, "", window.location.pathname);
     }
     if (searchParams.get("gmail_error")) {
-      toast.error(`Erreur connexion Gmail : ${searchParams.get("gmail_error")}`);
+      toast.error(
+        `Erreur connexion Gmail : ${searchParams.get("gmail_error")}`,
+      );
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, [searchParams]);
@@ -152,16 +168,17 @@ function PurchaseInvoicesContent() {
             <h1 className="text-2xl font-medium mb-2">Factures d&apos;achat</h1>
           </div>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsExportOpen(true)}
-            >
+            <Button variant="outline" onClick={() => setIsExportOpen(true)}>
               <Download size={14} strokeWidth={1.5} aria-hidden="true" />
               Exporter
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="primary">
+                <Button
+                  variant="primary"
+                  disabled={isReadOnly}
+                  title={readOnlyTooltip}
+                >
                   <Plus size={14} strokeWidth={2} aria-hidden="true" />
                   Nouvelle facture
                   <ChevronDown size={12} aria-hidden="true" />
@@ -208,13 +225,18 @@ function PurchaseInvoicesContent() {
               <div className="bg-background border rounded-lg px-4 py-3 flex items-center gap-0">
                 <div className="pr-4">
                   <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-xs text-muted-foreground">Total à payer</span>
+                    <span className="text-xs text-muted-foreground">
+                      Total à payer
+                    </span>
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Info className="h-3 w-3 text-muted-foreground cursor-help" />
                         </TooltipTrigger>
-                        <TooltipContent side="bottom" className="bg-[#202020] text-white border-0">
+                        <TooltipContent
+                          side="bottom"
+                          className="bg-[#202020] text-white border-0"
+                        >
                           <p>Factures à payer + en retard</p>
                         </TooltipContent>
                       </Tooltip>
@@ -230,13 +252,18 @@ function PurchaseInvoicesContent() {
                 <div className="w-px h-10 bg-border mx-4" />
                 <div className="pl-0">
                   <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-xs text-muted-foreground">Payé ce mois</span>
+                    <span className="text-xs text-muted-foreground">
+                      Payé ce mois
+                    </span>
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Info className="h-3 w-3 text-muted-foreground cursor-help" />
                         </TooltipTrigger>
-                        <TooltipContent side="bottom" className="bg-[#202020] text-white border-0">
+                        <TooltipContent
+                          side="bottom"
+                          className="bg-[#202020] text-white border-0"
+                        >
                           <p>Total des factures payées ce mois</p>
                         </TooltipContent>
                       </Tooltip>
@@ -288,15 +315,14 @@ function PurchaseInvoicesContent() {
         <div className="px-4 py-6 flex-shrink-0">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-2xl font-medium mb-2">Factures d&apos;achat</h1>
+              <h1 className="text-2xl font-medium mb-2">
+                Factures d&apos;achat
+              </h1>
             </div>
             <div className="flex gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button
-                    size="icon"
-                    className="rounded-full"
-                  >
+                  <Button size="icon" className="rounded-full">
                     <Plus className="h-5 w-5" />
                   </Button>
                 </DropdownMenuTrigger>

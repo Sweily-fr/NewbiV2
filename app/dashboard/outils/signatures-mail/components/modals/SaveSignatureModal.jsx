@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import { useSignatureData } from "@/src/hooks/use-signature-data";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 // Mutation GraphQL pour créer une signature
 const CREATE_EMAIL_SIGNATURE = gql`
@@ -144,6 +145,12 @@ const normalizeFontWeight = (weight) => {
 export default function SaveSignatureModal({ existingSignatureId = null }) {
   const router = useRouter();
   const client = useApolloClient();
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
   const { signatureData, showSaveModal, closeSaveModal, rootContainer } =
     useSignatureData();
 
@@ -710,7 +717,8 @@ export default function SaveSignatureModal({ existingSignatureId = null }) {
               <Button
                 variant="primary"
                 onClick={handleSave}
-                disabled={isLoading || !signatureName.trim()}
+                disabled={isReadOnly || isLoading || !signatureName.trim()}
+                title={readOnlyTooltip}
                 className="gap-2"
               >
                 {isLoading ? (

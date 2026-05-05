@@ -1,186 +1,85 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { useCallback, useEffect, useRef } from "react";
 import { useTutorial } from "@/src/contexts/tutorial-context";
-import { useSidebar } from "@/src/components/ui/sidebar";
-import { tutorialSteps } from "./tutorial-steps";
-
-// Import dynamique de Joyride pour éviter les erreurs SSR
-const Joyride = dynamic(
-  () => import("react-joyride").then((mod) => mod.Joyride),
-  { ssr: false },
-);
-
-// Styles personnalisés pour correspondre à la charte graphique Newbi
-const joyrideStyles = {
-  options: {
-    arrowColor: "transparent",
-    backgroundColor: "#ffffff",
-    overlayColor: "rgba(0, 0, 0, 0.5)",
-    primaryColor: "#5a54fa",
-    spotlightShadow: "0 0 15px rgba(0, 0, 0, 0.3)",
-    textColor: "#1a1a1a",
-    width: 360,
-    zIndex: 10000,
-  },
-  tooltip: {
-    borderRadius: "0.75rem",
-    padding: "1rem 1.25rem",
-  },
-  tooltipContainer: {
-    textAlign: "left",
-  },
-  tooltipTitle: {
-    fontSize: "1rem",
-    fontWeight: 600,
-    marginBottom: "0.25rem",
-    color: "#1a1a1a",
-  },
-  tooltipContent: {
-    fontSize: "0.875rem",
-    lineHeight: 1.4,
-    color: "#6b7280",
-    marginBottom: "0.5rem",
-  },
-  buttonNext: {
-    backgroundColor: "#5a54fa",
-    borderRadius: "0.5rem",
-    color: "#ffffff",
-    fontSize: "0.875rem",
-    fontWeight: 500,
-    padding: "0.5rem 1rem",
-    outline: "none",
-    border: "none",
-    cursor: "pointer",
-  },
-  buttonBack: {
-    backgroundColor: "transparent",
-    borderRadius: "0.5rem",
-    color: "#6b7280",
-    fontSize: "0.875rem",
-    fontWeight: 500,
-    marginRight: "0.5rem",
-    padding: "0.5rem 1rem",
-    outline: "none",
-    border: "1px solid #e5e7eb",
-    cursor: "pointer",
-  },
-  buttonSkip: {
-    backgroundColor: "transparent",
-    color: "#9ca3af",
-    fontSize: "0.8125rem",
-    padding: "0.5rem",
-    outline: "none",
-    border: "none",
-    cursor: "pointer",
-  },
-  buttonClose: {
-    display: "none",
-  },
-  spotlight: {
-    borderRadius: "0.5rem",
-  },
-  beacon: {
-    display: "none",
-  },
-};
-
-// Textes personnalisés en français
-const locale = {
-  back: "Précédent",
-  close: "Fermer",
-  last: "Terminer",
-  next: "Suivant",
-  open: "Ouvrir",
-  skip: "Ignorer",
-};
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
+import { Button } from "@/src/components/ui/button";
+import { Sparkles } from "lucide-react";
 
 export function TutorialOverlay() {
-  const {
-    isRunning,
-    stepIndex,
-    setStepIndex,
-    stopTutorial,
-    completeTutorial,
-    isLoading,
-    runKey,
-  } = useTutorial();
+  const { isRunning, completeTutorial, isLoading } = useTutorial();
 
-  const { open: sidebarOpen, setOpen: setSidebarOpen } = useSidebar();
-  const sidebarWasOpen = useRef(sidebarOpen);
-
-  // Forcer la sidebar ouverte pendant le tutoriel
-  useEffect(() => {
-    if (isRunning) {
-      sidebarWasOpen.current = sidebarOpen;
-      setSidebarOpen(true);
-    } else if (sidebarWasOpen.current !== undefined) {
-      // Restaurer l'état précédent quand le tutoriel se termine
-      setSidebarOpen(sidebarWasOpen.current);
-    }
-  }, [isRunning]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleJoyrideCallback = useCallback(
-    (data) => {
-      const { action, index, status, type } = data;
-
-      // Gestion des différents événements
-      if (type === "step:after") {
-        // Passer à l'étape suivante
-        if (action === "next") {
-          setStepIndex(index + 1);
-        }
-        // Revenir à l'étape précédente
-        if (action === "prev") {
-          setStepIndex(index - 1);
-        }
-      }
-
-      // Tutoriel terminé (dernière étape)
-      if (status === "finished") {
-        completeTutorial();
-      }
-
-      // Tutoriel ignoré (skip)
-      if (status === "skipped" || action === "skip") {
-        stopTutorial();
-      }
-
-      // Fermeture du tutoriel
-      if (action === "close") {
-        stopTutorial();
-      }
-    },
-    [setStepIndex, completeTutorial, stopTutorial],
-  );
-
-  // Ne pas afficher pendant le chargement
-  if (isLoading) {
-    return null;
-  }
+  if (isLoading || !isRunning) return null;
 
   return (
-    <Joyride
-      key={runKey}
-      steps={tutorialSteps}
-      run={isRunning}
-      stepIndex={stepIndex}
-      continuous
-      showProgress
-      showSkipButton
-      hideCloseButton
-      disableOverlayClose
-      disableCloseOnEsc={false}
-      scrollToFirstStep
-      spotlightClicks={false}
-      spotlightPadding={10}
-      callback={handleJoyrideCallback}
-      styles={joyrideStyles}
-      locale={locale}
-      floaterProps={{
-        disableAnimation: false,
-      }}
-    />
+    <Dialog open={isRunning} onOpenChange={() => completeTutorial()}>
+      <DialogContent className="sm:max-w-[480px] p-1 gap-0 top-[40%] border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
+        <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
+          <DialogHeader className="px-6 pt-6 pb-0">
+            <DialogTitle className="text-lg font-medium flex items-center gap-2.5">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#5A50FF]/10">
+                <Sparkles className="size-4 text-[#5A50FF]" />
+              </div>
+              Bienvenue sur Newbi
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="px-6 pt-4 pb-0">
+            <p className="text-[14px] text-muted-foreground leading-relaxed">
+              Votre espace de travail est prêt. Tout est en place pour gérer
+              votre facturation, suivre votre trésorerie et piloter votre
+              activité.
+            </p>
+
+            <div className="mt-5 space-y-3">
+              <div className="flex items-start gap-3">
+                <span className="w-1 h-1 rounded-full bg-foreground/30 mt-2 shrink-0" />
+                <p className="text-[13px] text-foreground/70">
+                  Utilisez le{" "}
+                  <span className="text-foreground font-medium">
+                    menu latéral
+                  </span>{" "}
+                  pour naviguer entre vos outils
+                </p>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="w-1 h-1 rounded-full bg-foreground/30 mt-2 shrink-0" />
+                <p className="text-[13px] text-foreground/70">
+                  Créez votre première{" "}
+                  <span className="text-foreground font-medium">
+                    facture ou devis
+                  </span>{" "}
+                  en quelques clics
+                </p>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="w-1 h-1 rounded-full bg-foreground/30 mt-2 shrink-0" />
+                <p className="text-[13px] text-foreground/70">
+                  Connectez votre{" "}
+                  <span className="text-foreground font-medium">
+                    compte bancaire
+                  </span>{" "}
+                  pour synchroniser vos transactions
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end border-t border-border/40 mt-6 px-6 py-4 -mx-6">
+              <Button
+                variant="primary"
+                onClick={() => completeTutorial()}
+                className="gap-2 cursor-pointer"
+              >
+                Commencer
+              </Button>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

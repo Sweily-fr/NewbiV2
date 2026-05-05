@@ -1,0 +1,221 @@
+# Régressions à corriger (hors scope "réparation sélecteurs")
+
+## R1 — GetInvoices : erreur de chargement page liste factures
+
+- **Découvert** : commit 60fb2ded, test `e2e/invoices/create-invoice.spec.js:261` (Actions liste — clic ligne, menu, paramètres, relances)
+- **Catégorie** : BACKEND_BUG
+- **Symptôme frontend** : page `/dashboard/outils/factures` rend `<h3>Erreur de chargement</h3>` + paragraphe "Impossible de charger les factures" + bouton "Réessayer"
+- **Erreur backend (response GraphQL réelle, capturée via trace Playwright `test-results/.../trace.zip` → `resources/3852a40...json`)** :
+
+```json
+{
+  "errors": [
+    {
+      "message": "Cannot return null for non-nullable field Invoice.number.",
+      "extensions": { "code": "INTERNAL_SERVER_ERROR" },
+      "path": ["invoices", "invoices", 0, "number"]
+    }
+  ],
+  "data": null
+}
+```
+
+- **Resolver** : `newbi-api/src/resolvers/invoice.js:290` (`invoices: requireRead("invoices")(...)`) — le resolver lui-même tourne sans erreur ; c'est la sérialisation GraphQL qui échoue au moment de retourner le payload, parce que la 1ère facture (DRAFT seedée) a `number: null`.
+- **Variables envoyées par le frontend** :
+
+```json
+{
+  "workspaceId": "bbbbbbbbbbbbbbbbbbbb0001",
+  "page": 1,
+  "limit": 50,
+  "sortField": "issueDate",
+  "sortOrder": "desc",
+  "filters": {}
+}
+```
+
+(`sortField`, `sortOrder` et `filters` ne sont pas déclarés dans la `query GetInvoices(...)` — Apollo les drop avant l'envoi. Pas la cause.)
+
+- **État DB observé** : seed e2e standard, 3 invoices dans le workspace test (DRAFT sans number, PENDING `001`, COMPLETED `002`) + 1 FOREIGN_INVOICE (`F-209912/9999`). Reproduit avec un seed propre et un seul test isolé (`-g "Actions liste"`) — donc PAS DATA_CORRUPT.
+- **Origine du conflit** :
+  - Schema GraphQL `newbi-api/src/schemas/invoice.graphql:7` : `number: String!` (non-null)
+  - Modèle Mongoose `newbi-api/src/models/Invoice.js:42-46` : `number` est `required: function() { return this.status !== "DRAFT" }` — autorisé null pour les brouillons
+  - Le seed crée une facture `status: "DRAFT"` avec `number: null` (`e2e/seed/test-data.ts:223`, commentaire `// drafts have no number`) → conforme au modèle, viole le schema
+- **RBAC** : aucun rôle dans la cause. Logs backend (`newbi-api/logs/combined.log:33827-33829`) montrent `op=invoices` autorisé pour `test-e2e@newbi.fr (owner)` sur l'org `bbbbbbbbbbbbbbbbbbbb0001` sans erreur côté middleware.
+- **Impact estimé** :
+  - **Toute organisation ayant au moins un DRAFT en DB** voit la liste factures planter avec ce message. C'est presque tous les comptes en prod (un brouillon non finalisé suffit).
+  - Tests e2e impactés : `create-invoice.spec.js:261` (déjà rouge) ; `invoice-table.jsx` est aussi consommé par `useDashboardData.js:54` → potentiellement le dashboard home aussi.
+  - À vérifier : autres types ayant des champs non-null mal alignés (Quote, CreditNote, PurchaseOrder ont des structures voisines).
+- **Hypothèse de fix** : passer `Invoice.number` à nullable dans le schema GraphQL (`number: String` au lieu de `number: String!`) — c'est l'option qui s'aligne sur le modèle. Côté frontend, vérifier que `INVOICE_LIST_FRAGMENT` et tous les composants traitant `invoice.number` gèrent déjà la valeur null (probable, car les DRAFTs sont rendus dans la liste avec un placeholder type "—" en prod).
+- **Owner suggéré** : backend (resolver / schema). Pas d'action e2e ou seed nécessaire.
+- **Workaround e2e appliqué (2026-05-03)** : le seed crée maintenant `invoiceDraft.number = "DRAFT-0001"` et `quoteDraft.number = "DRAFT-0001"` (au lieu de `null`) pour aligner sur ce que le resolver génère réellement pour les DRAFTs créés via UI/mutation (cf `invoice.js:1118-1122`). Permet aux tests UI de charger `/factures` et `/devis`. Le fix produit (schema nullable) reste à faire côté backend pour les utilisateurs prod qui ont des DRAFTs antérieurs au déploiement de cette norme. Voir `e2e/seed/test-data.ts:223,404` pour le commentaire en place.
+
+---
+
+## R2 — Kanban : poignée @dnd-kit introuvable (selector drift)
+
+- **Découvert** : skip conditionnel `e2e/kanban/kanban-crud.spec.js:176` (`No @dnd-kit sortable handle found — UI selector drift`). Confirmé par `e2e/TODO.md` ligne 154 : "kanban-crud (sera remplacé par nouveau P0 subscription temps réel)".
+- **Catégorie** : SELECTOR (régression UI cachée par un skip défensif)
+- **Symptôme test** : le test "reorders columns with keyboard navigation" tente de localiser `[aria-roledescription*="sortable"], [data-dnd-kit-sortable]` sur `/dashboard/outils/kanban/<board>`. `count()` retourne 0 → skip silencieux, le test ne valide jamais le drag-and-drop clavier.
+- **Impact** : couverture nulle sur le D&D kanban (feature critique, GraphQL subscriptions). Une régression D&D ne serait détectée qu'en revue manuelle.
+- **Cause probable** : refonte du composant KanbanBoard sans préserver les attrs `aria-roledescription="sortable"` ou `data-dnd-kit-sortable` — soit la lib dnd-kit a changé d'API, soit le code applicatif a abandonné les data-attributes au profit d'autres handles.
+- **Hypothèse de fix** : ouvrir `app/dashboard/outils/kanban/[id]/` et identifier comment le composant rend les colonnes/cartes draggables aujourd'hui. Probablement un `data-testid="kanban-column-handle"` à ajouter, OU mettre à jour le sélecteur du test si dnd-kit utilise un nouvel attr. Le TODO.md évoque un remplacement par "nouveau P0 subscription temps réel" — coordonner avant de fixer en surface.
+- **Owner suggéré** : e2e (refonte du spec) + frontend (data-testid sur les handles).
+
+---
+
+## R3 — Bons de commande : bouton "Nouveau bon de commande" introuvable
+
+- **Découvert** : skip conditionnel `e2e/purchase-orders/purchase-order-crud.spec.js:119` (`Bouton de création de BC non disponible`). Cohérent avec `e2e/TODO.md` ligne 248-277 : "GetNextPurchaseOrderNumber ne répond pas".
+- **Catégorie** : BACKEND_BUG (cascade frontend) — le bouton ne se monte pas car la query GetNextPurchaseOrderNumber reste pending indéfiniment, bloquant le formulaire en step 1 (number == "" → bouton "Suivant" disabled). Le bouton "Nouveau bon de commande" sur la page liste pourrait avoir un symptôme distinct à vérifier.
+- **Symptôme test** : `page.locator('button:has-text("Nouveau bon de commande")').isVisible({ timeout: 5000 })` retourne `false` → skip silencieux. Le test ne valide jamais l'ouverture du formulaire.
+- **Impact** : couverture nulle sur le CRUD BC. Combinée à R3 backend (next number qui ne répond pas), tout le domaine BC est non-testé en e2e.
+- **Hypothèse de fix** : double piste — (a) côté backend, identifier pourquoi `GetNextPurchaseOrderNumber` ne répond pas (resolver présent ? subscription bloque ?). (b) côté frontend, vérifier si le bouton "Nouveau bon de commande" est wrappé dans une condition `isReady` qui dépend de la query. Voir `useNextPurchaseOrderNumber` mentionné dans TODO.md.
+- **Owner suggéré** : backend (resolver) + frontend (suppression du gating sur la query).
+
+---
+
+## R4 — Tests morts (skips systématiques liés au seed actuel)
+
+Tests qui ne s'exécutent JAMAIS dans la configuration actuelle (le seed crée toujours un user PME trialing avec onboarding complété). Ils dorment depuis la création du fichier sans signal.
+
+- `e2e/treasury/treasury-forecast.spec.js:60-90` "Si plan limité — message d'upgrade visible" : skippé via `if (!hasUpgrade)` — la bannière d'upgrade n'apparaît jamais pour un user PME. Pour le tester il faudrait soit un user/projet "free user" dédié, soit dégrader temporairement la subscription dans une fixture spécifique.
+- `e2e/onboarding/onboarding-steps.spec.js:26-77` "Étape entreprise — champs SIRET/nom" + "Boutons de navigation entre étapes" (2 tests) : skippés via `if (!page.url().includes("/onboarding"))` — le seed marque `hasSeenOnboarding: true` et `onboardingCompleted: true`, l'utilisateur est immédiatement redirigé vers `/dashboard`. L'onboarding complet est déjà couvert par `e2e/onboarding/onboarding.spec.js` qui utilise une autre fixture.
+
+**Décision** : marqués `test.fixme()` (commit ed0029e1). Les tests restent visibles dans le rapport Playwright comme TODO (annotation `fixme`, distincte d'un skip ordinaire) mais ne s'exécutent pas. Pour activer : créer un user de test "free" ou "fresh" (cf. `e2e/seed/test-data.ts`) ou un projet Playwright dédié, puis retirer le `.fixme` ET le check conditionnel interne `if (...) test.skip(...)` qui devient obsolète.
+
+---
+
+## R5 — Route `/dashboard/account` supprimée (test e2e à jour)
+
+- **Découvert** : `e2e/a11y/dashboard-a11y.spec.js:17` testait `/dashboard/account` qui retournait HTTP 404 (page Next.js `not-found.jsx`). Le test a11y détectait alors un color-contrast sur la 404, masquant le vrai problème (route inexistante).
+- **Catégorie** : TEST_OBSOLETE (route supprimée, fonctionnalité déplacée)
+- **Symptôme** : `app/dashboard/account/page.jsx` n'existe plus. La requête `/dashboard/account` tombe sur `app/not-found.jsx` → 404.
+- **Origine** : commit `8d21709a` (2026-02-25, "feature(ui): style sidebar, dialog invite members et navigation") a supprimé `app/dashboard/account/page.jsx` et `app/dashboard/account/formAccount.jsx`. Les composants modaux (`Setup2FAModal`, `ChangePasswordModal`, etc.) sont conservés sous `app/dashboard/account/components/` mais sont désormais consommés depuis `src/components/settings-modal.jsx` (modal accessible via la sidebar/profil), pas depuis une page dédiée.
+- **Action prise** :
+  - Retiré `/dashboard/account` du tableau `PAGES_TO_AUDIT` dans `e2e/a11y/dashboard-a11y.spec.js` (commit à venir).
+  - Corrigé indépendamment le contraste de la 404 elle-même (`not-found.jsx` : `text-gray-400 → text-gray-600`).
+- **Impact** : aucun pour les utilisateurs (le settings modal couvre la fonctionnalité). Pour la couverture e2e a11y : on perd l'audit a11y du compte/sécurité — à réintroduire en testant le modal au lieu d'une route, si jugé prioritaire.
+- **Owner suggéré** : aucun fix backend/front nécessaire. Si on veut couvrir le modal en a11y : nouvelle spec qui ouvre le modal puis lance axe.
+
+---
+
+## R6 — A11y bouton primary CTA (contraste 4.4 vs 4.5 requis)
+
+- **Découvert** : audit a11y du 2026-05-01, `e2e/A11Y_FIX_PLAN.md` G2
+- **Catégorie** : DESIGN_DECISION (impact visuel marque)
+- **Symptôme** : violation `color-contrast` (serious) sur `/auth/login` et `/auth/signup`. Ratio mesuré 4.4, requis WCAG AA 4.5. Le bouton primary utilise `#5A50FF` (couleur de marque) avec overlay `/90` au hover qui fait basculer le ratio sous le seuil.
+- **Composant** : `src/components/ui/button.jsx:15` (variante primary)
+- **Impact réel** : 0 (différence visuelle imperceptible). Bloquant pour conformité RGAA stricte ou audit accessibilité externe.
+- **Options de fix** :
+  - A) Assombrir le token primary `#5A50FF` → `#5044F0`. Touche tous les écrans utilisant la couleur de marque.
+  - B) Retirer l'overlay `/90` au hover. Perte du feedback visuel hover.
+  - C) Passer `font-medium` → `font-semibold` sur les boutons primary. Boutons plus gras partout.
+- **Décision** : reportée. Pas de fix urgent — sera traité quand un audit RGAA, un client public ou une refonte design le rendra prioritaire.
+- **Owner suggéré** : design (validation marque) + front (application).
+
+---
+
+## R7 — Perf : pages dashboard lentes à monter le RSC sous charge
+
+- **Découvert** : tests `dashboard-home.spec.js:6` (sidebar visible), `dashboard-home.spec.js:37` (liens menu présents), `kanban-crud.spec.js:130` (reorder keyboard) — tous avec `page.goto Timeout` ou DOM minimal au moment de l'assertion.
+- **Catégorie** : APP_PERF (intermittent, dépend de la charge dev server)
+- **Symptôme** :
+  - Sur `dashboard-home.spec.js:6` : la fixture `authenticatedPage` fait `goto("/dashboard", waitUntil: "domcontentloaded")`. Le DOM rendu après la fixture contient parfois uniquement `<button NewBi Logo disabled>` + `<button Toggle Sidebar>` — ni h1/h2 ni items de nav. Sous isolation d'un seul test : passe. Sous charge parallèle (worker=2) : fail intermittent.
+  - Sur `kanban-crud.spec.js:130` : `page.goto("/dashboard/outils/kanban/new")` timeout systématiquement après 30s. La page kanban/new est connue lente (TODO.md ligne 137 mentionne d'autres pages avec le même symptôme).
+- **Cause probable** :
+  - `domcontentloaded` n'attend pas que les composants client React/Apollo soient mountés. La sidebar (`Sidebar` Shadcn) demande plusieurs hooks (`useSession`, `useSubscription`, `usePermissions`, `useWorkspace`) qui chaînent des queries GraphQL — sous charge le mount peut prendre >10s.
+  - Pour kanban/new : composant heavy avec `@dnd-kit` + nombreux providers, mount plus lent que la médiane.
+- **Impact e2e** :
+  - 2 tests dashboard-home toujours fragiles (L6, L37) malgré les fix labels/wait posés dans le commit a6b0c921.
+  - kanban-crud:130 reste rouge — couverture D&D clavier nulle (cumulé avec R2 dnd-kit handle, le D&D kanban est totalement non testé).
+- **Hypothèses de fix** :
+  - **e2e** : changer la fixture `authenticatedPage` pour utiliser `waitUntil: "networkidle"` (au prix de tests plus lents). Ou attendre un sélecteur stable monté tardivement (ex: nav `<aside data-sidebar>` rendu après hydration complète).
+  - **App** : déplacer une partie des hooks dashboard dans des Server Components (Next App Router) pour mounter plus tôt. Ou fournir une page initiale shell statique avant l'hydration.
+  - **Workaround court terme** : ajouter `await page.waitForLoadState("networkidle", { timeout: 30000 }).catch(() => {})` après le goto fixture (ne bloque pas si jamais réseau jamais idle).
+- **Owner suggéré** : front (perf rendering) + e2e (robustesse fixture). Pas un fix backend.
+- **Tentative de workaround e2e (2026-05-01, commit b9049bc3) — ÉCHEC documenté** :
+  - `waitFor [data-sidebar="menu"]` : matchait l'`<ul>` du logo en SSR avant hydration, pas d'amélioration.
+  - `waitFor getByRole("button", "Accueil")` : timeout 30s quand la sidebar reste collapsed, +1 fail.
+  - `waitForLoadState("networkidle", 15s)` : stabilise L6 mais casse L54 (Apollo cache-first ne re-fetch pas après reload si déjà chaud).
+  - Décision : revert au state initial (`domcontentloaded` seul). Le fix doit venir côté src/ (perf hooks dashboard) ou test par test (waitFor explicite sur sélecteur stable, déjà appliqué à L37 dans commit a6b0c921). Tentatives ultérieures sur la fixture devraient explorer une autre piste (ex: bypass authenticatedPage pour les tests dashboard et utiliser une fixture dédiée `dashboardReady` qui attend une condition spécifique au domaine du test).
+
+---
+
+## R8 — `restoreOrganization` casse le contexte org pour tous les specs après onboarding
+
+- **Découvert** : run final phase B (commit 9ec04e02), cluster de 7 tests invoices qui utilisent `selectFirstClient()` rendent "Aucun client trouvé" malgré 9 clients seedés. Cause confirmée par replay direct GraphQL.
+- **Catégorie** : SEED_BUG (impacte tous les specs alphabétiquement après `e2e/onboarding/onboarding.spec.js`)
+- **Symptôme test** : combobox client s'ouvre, textbox de recherche actif, panel rend `<paragraph>Aucun client trouvé</paragraph>`. Sur `purchase-order-backend-p0:40` (raw GraphQL), erreur `FORBIDDEN: "Aucune organisation active trouvée"`.
+- **Réponse GraphQL réelle** (capturée via curl avec cookie session de la fixture) :
+
+```json
+{
+  "errors": [
+    {
+      "message": "Aucune organisation active trouvée. Veuillez rejoindre ou créer une organisation.",
+      "extensions": { "code": "FORBIDDEN", "details": null },
+      "path": ["clients"]
+    }
+  ]
+}
+```
+
+- **État DB** : la collection `member` contient bien un document avec `_id: bbbbbbbbbbbbbbbbbbbb0002`, mais avec `userId` typé `string` au lieu d'`ObjectId`. Le RBAC middleware (`getActiveOrganization` côté Better Auth) lookup par ObjectId → ne trouve pas → fallback throw FORBIDDEN.
+- **Composant frontend** : `app/dashboard/outils/factures/components/invoices-form-sections/client-selector.jsx:165` consomme `useClients()` → `GET_CLIENTS` → resolver retourne errors GraphQL → Apollo (avec `errorPolicy: "all"`) résout `clients = []` → message "Aucun client trouvé".
+- **Variables envoyées** : `{ workspaceId: "bbbbbbbbbbbbbbbbbbbb0001", page: 1, limit: 50, search: "" }` — variables OK, ce n'est pas un bug de filtre.
+- **Cause précise** : incohérence de typing entre le seed initial et le seed de restoration :
+  - `e2e/global-setup.ts:146` (initial) : `userId: realUserId` → **ObjectId** ✅
+  - `e2e/onboarding/seed-helpers.js:113` (restore après onboarding spec) : `userId: realUserId.toString()` → **string** ❌
+
+  Better Auth's Mongo adapter coerce `userId` (déclaré comme `references: { field: "id" }` dans le schema) en ObjectId avant query. Un member avec `userId: string` est invisible aux lookups Better Auth. Le warning est explicitement documenté dans `global-setup.ts:135-141` mais la fonction `restoreOrganization` ajoutée ultérieurement ne respecte pas la convention.
+
+- **Impact** :
+  - **8 tests e2e bloqués** (cluster 7 invoices `selectFirstClient` + 1 `purchase-order-backend-p0:40`).
+  - **Prod : aucun impact**. Le seed n'existe que dans les tests. Better Auth en prod écrit toujours en ObjectId via son adapter.
+  - **Tests passants** : tous les specs alphabétiquement avant `onboarding/` (clients, dashboard, kanban, etc.) tournent sur le seed initial intact. Seuls ceux qui tournent APRÈS onboarding (afterAll restoreOrganization) sont impactés — d'où le pattern "fail uniquement sur les invoices" (alphabétiquement après onboarding).
+
+- **Hypothèse de fix** : remplacer `userId: realUserId.toString()` par `userId: realUserId` ligne 113 de `e2e/onboarding/seed-helpers.js`. 1 ligne de code, fix 8 tests d'un coup.
+
+- **Owner suggéré** : e2e (seed). Pas de fix backend ni frontend nécessaire.
+- **État** : **PARTIELLEMENT RÉSOLU** (commit d02d6df1) — 5 tests récupérés sur 8 attendus :
+  - ✅ `invoices/create-invoice.spec.js` × 4 (L95, L189, L216, L241)
+  - ✅ `purchase-orders/purchase-order-backend-p0.spec.js:40`
+  - ❌ `invoices/create-invoice-p0.spec.js:120, 138` + `create-deposit-invoice-p0:19` reclassés en **R7_PERF cascade** : `page.goto Timeout 45s` sur `/factures/new` (la page editor met >45s à monter sous charge — pas lié à R8). Voir R7.
+- **Cascade observée — visual baselines invalidées** : le fix R8 a réveillé les visual tests (`e2e/visual/dashboard-visual.spec.js`, 52 tests pixel-à-pixel) qui étaient skippés au run précédent (108/30/133) parce que les pages dashboard échouaient en amont avec FORBIDDEN. Maintenant ces tests s'exécutent et 51/52 fail car les baselines `.png` ne matchent plus les fix UI a11y déjà commitées (`text-gray-700` footer, button trigger org-switcher, suppression wrappers `data-tutorial`, `text-gray-600` 404). À régénérer avec `npx playwright test --update-snapshots --project=chromium e2e/visual/` après validation design — hors scope phase B.
+
+---
+
+## R9 — Bulk delete sur sélection mixte : suppression partielle silencieuse
+
+- **Découvert** : prompt 3 phase Tests Factures (commit pieges-critiques.spec.js Test 4)
+- **Catégorie** : UX (suppression partielle non signalée à l'utilisateur)
+- **Symptôme** : sur `/dashboard/outils/factures`, sélectionner via checkbox une facture DRAFT + une facture COMPLETED, cliquer "Supprimer (2)", confirmer dans l'AlertDialog → seul le DRAFT est supprimé. Le COMPLETED reste en base (verrou backend) sans aucun toast d'erreur côté UI.
+- **Code source** :
+  - `app/dashboard/outils/factures/components/invoice-table.jsx:494-530` rend l'AlertDialog avec un texte d'avertissement "Seules les factures en brouillon et les factures importées peuvent être supprimées" mais n'empêche pas la sélection.
+  - `app/dashboard/outils/factures/hooks/use-invoice-table.js handleDeleteSelected` itère sur `selectedRows` et appelle `deleteInvoice` / `deleteImportedInvoice` en parallèle. Les rejets backend sont catchés silencieusement (Promise.all avec catch).
+  - Backend : `newbi-api/src/resolvers/invoice.js deleteInvoice` rejette les COMPLETED (verrou §46.10 / `createResourceLockedError`).
+- **Reproduction (test e2e)** : `e2e/factures/pieges-critiques.spec.js:319` (Test 4) crée 1 DRAFT + 1 COMPLETED, déclenche le bulk delete via UI, vérifie via `getInvoiceById` que le DRAFT est supprimé et le COMPLETED est conservé. Le test passe **au vert** car il documente le comportement actuel — mais ce comportement est mauvais UX.
+- **Hypothèse de fix** :
+  1. Pré-filtrer la sélection : désactiver la checkbox pour les COMPLETED/CANCELED (visuel "verrouillé") — `use-invoice-table.js` colonne `select`, ajouter `disabled={!row.original.deletable}`.
+  2. OU afficher un toast d'erreur partielle après le delete : "1 facture supprimée, 1 facture verrouillée non supprimée".
+  3. L'option 1 est plus défensive ; option 2 corrige juste le feedback. Idéalement combiner les deux.
+- **Owner suggéré** : front (pré-filtrage UI). Pas de fix backend nécessaire — le verrou est correct.
+
+---
+
+## R10 — Impossible de matérialiser une PENDING avec dueDate dans le passé via mutation publique
+
+- **Découvert** : prompt 3 phase Tests Factures (limitation rencontrée pour pieges-critiques.spec.js Test 2 §46.4)
+- **Catégorie** : LIMITATION_TEST (pas un bug applicatif — un blocage de testabilité)
+- **Contexte** : §46.4 documente un piège — l'onglet "En retard" filtre `status === "PENDING" && dueDate < now` côté front. Pour le tester proprement, il faut une PENDING avec `dueDate < today`. Impossible via la mutation publique :
+  - **Mongoose** : validateur sur `dueDate` qui exige `dueDate >= issueDate`.
+  - **Resolver** : `validateInvoiceIssueDate` (`newbi-api/src/resolvers/invoice.js:1161-1163`) exige `issueDate >= latestInvoiceIssueDate` pour tout statut ≠ DRAFT. Comme tous les tests précédents pushent latestInvoiceIssueDate à today, impossible de remonter.
+  - **Transition DRAFT → PENDING** : `changeInvoiceStatus` (resolver:2229-2236) appelle aussi `validateInvoiceIssueDate`, donc même un DRAFT antidaté ne peut pas être finalisé avec dueDate passée.
+  - **Seed** : contient `invoicePaid` (COMPLETED, dueDate=now-1j) qui aurait pu servir de canary "COMPLETED ne doit PAS apparaître en En retard". Mais avec >50 invoices créés par les tests CRUD, il sort du premier page (pagination=50, sort issueDate desc) et n'est plus accessible via tableau.
+- **Conséquence** : `pieges-critiques.spec.js` Test 2 a été simplifié pour tester l'invariant STRUCTUREL (la PENDING fraîche avec dueDate future apparaît bien dans "Toutes" et "À encaisser" mais PAS dans "En retard"). La preuve "PENDING+dueDate passé apparaîtrait DANS En retard alors que COMPLETED+dueDate passé n'apparaîtrait PAS" reste théorique.
+- **Hypothèse de fix (test infra)** :
+  1. Ajouter une 2e facture seedée `invoicePaidVisible` créée avec une date plus récente, OU
+  2. Ajouter une mutation backend "admin only" `setInvoiceFields` permettant de bypasser la validation pour les besoins de test, OU
+  3. Faire un global-teardown qui purge les tests-créés invoices entre runs (rétablit la situation où invoicePaid est en page 1).
+- **Owner suggéré** : e2e infra (option 3 la plus simple) ou backend (option 2 si on veut un canary fiable).

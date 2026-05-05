@@ -23,7 +23,21 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/src/components/ui/alert-dialog";
-import { Plus, Search, CircleXIcon, ListPlus, MoreHorizontal, Pencil, ShieldOff, UserCheck, Trash2, CircleAlertIcon, Upload, Settings2, ChevronDown } from "lucide-react";
+import {
+  Plus,
+  Search,
+  CircleXIcon,
+  ListPlus,
+  MoreHorizontal,
+  Pencil,
+  ShieldOff,
+  UserCheck,
+  Trash2,
+  CircleAlertIcon,
+  Upload,
+  Settings2,
+  ChevronDown,
+} from "lucide-react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useClientLists } from "@/src/hooks/useClientLists";
 import { useAddClientToLists } from "@/src/hooks/useClientLists";
@@ -36,6 +50,7 @@ import ClientFilters from "./components/client-filters";
 import AutomationsPopover from "./components/automations-popover";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import ClientImportDialog from "./components/client-import-dialog";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 const STANDARD_COLUMNS = [
   { id: "email", label: "Email" },
@@ -70,6 +85,12 @@ function ClientsContent() {
   const inputRef = useRef(null);
 
   const { workspaceId } = useWorkspace();
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
   const { fields: customFieldDefinitions } = useClientCustomFields(workspaceId);
 
   // Ouvrir automatiquement le modal si ?new=true dans l'URL
@@ -113,26 +134,31 @@ function ClientsContent() {
 
   const selectedClientIds = Array.from(selectedClients);
 
-  const handleAddToList = useCallback(async (listId) => {
-    if (selectedClients.size === 0) return;
-    setAssigningList(true);
-    try {
-      for (const clientId of selectedClients) {
-        await addToLists(workspaceId, clientId, [listId]);
+  const handleAddToList = useCallback(
+    async (listId) => {
+      if (selectedClients.size === 0) return;
+      setAssigningList(true);
+      try {
+        for (const clientId of selectedClients) {
+          await addToLists(workspaceId, clientId, [listId]);
+        }
+        toast.success(
+          `${selectedClients.size} contact(s) ajouté(s) à la liste`,
+        );
+        refetchLists?.();
+      } catch (error) {
+        toast.error("Impossible d'ajouter les contacts à la liste");
+      } finally {
+        setAssigningList(false);
       }
-      toast.success(`${selectedClients.size} contact(s) ajouté(s) à la liste`);
-      refetchLists?.();
-    } catch (error) {
-      toast.error("Impossible d'ajouter les contacts à la liste");
-    } finally {
-      setAssigningList(false);
-    }
-  }, [selectedClients, workspaceId, addToLists, refetchLists]);
+    },
+    [selectedClients, workspaceId, addToLists, refetchLists],
+  );
 
   const handleDeleteSelected = useCallback(async () => {
     try {
       await Promise.all(
-        Array.from(selectedClients).map((clientId) => deleteClient(clientId))
+        Array.from(selectedClients).map((clientId) => deleteClient(clientId)),
       );
       setSelectedClients(new Set());
       refetchLists?.();
@@ -145,7 +171,7 @@ function ClientsContent() {
     if (selectedClients.size === 0) return;
     try {
       await Promise.all(
-        Array.from(selectedClients).map((clientId) => blockClient(clientId))
+        Array.from(selectedClients).map((clientId) => blockClient(clientId)),
       );
       setSelectedClients(new Set());
     } catch {
@@ -180,44 +206,73 @@ function ClientsContent() {
                 <Button
                   variant="outline"
                   className="self-start gap-1.5"
+                  disabled={isReadOnly}
+                  title={readOnlyTooltip}
                 >
                   <Upload size={14} strokeWidth={2} aria-hidden="true" />
                   Importer
-                  <ChevronDown size={12} strokeWidth={2} className="text-muted-foreground" aria-hidden="true" />
+                  <ChevronDown
+                    size={12}
+                    strokeWidth={2}
+                    className="text-muted-foreground"
+                    aria-hidden="true"
+                  />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64">
                 <DropdownMenuItem
-                  onClick={() => { setImportDialogView("import"); setImportDialogOpen(true); }}
+                  onClick={() => {
+                    setImportDialogView("import");
+                    setImportDialogOpen(true);
+                  }}
                   className="cursor-pointer gap-2"
                 >
-                  <Upload size={14} strokeWidth={2} className="text-muted-foreground" />
+                  <Upload
+                    size={14}
+                    strokeWidth={2}
+                    className="text-muted-foreground"
+                  />
                   <div>
                     <div className="text-sm">Importer un fichier</div>
-                    <div className="text-xs text-muted-foreground">CSV, Excel — import en masse</div>
+                    <div className="text-xs text-muted-foreground">
+                      CSV, Excel — import en masse
+                    </div>
                   </div>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={() => { setImportDialogView("fields"); setImportDialogOpen(true); }}
+                  onClick={() => {
+                    setImportDialogView("fields");
+                    setImportDialogOpen(true);
+                  }}
                   className="cursor-pointer gap-2"
                 >
-                  <Settings2 size={14} strokeWidth={2} className="text-muted-foreground" />
+                  <Settings2
+                    size={14}
+                    strokeWidth={2}
+                    className="text-muted-foreground"
+                  />
                   <div>
                     <div className="text-sm">Gérer les champs perso</div>
-                    <div className="text-xs text-muted-foreground">Configurez vos champs avant d'importer</div>
+                    <div className="text-xs text-muted-foreground">
+                      Configurez vos champs avant d'importer
+                    </div>
                   </div>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button
+            <PermissionButton
+              requiresActiveSubscription
+              resource="clients"
+              action="create"
               variant="primary"
               onClick={handleOpenInviteDialog}
               className="self-start"
+              tooltipNoAccess="Vous n'avez pas la permission de créer des contacts"
             >
               <Plus size={14} strokeWidth={2} aria-hidden="true" />
               Nouveau contact
-            </Button>
+            </PermissionButton>
           </div>
         </div>
 
@@ -225,7 +280,11 @@ function ClientsContent() {
         <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 flex-shrink-0">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2 h-8 w-full sm:w-[300px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
-              <Search size={16} className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
+              <Search
+                size={16}
+                className="text-muted-foreground/80 shrink-0"
+                aria-hidden="true"
+              />
               <Input
                 variant="ghost"
                 ref={inputRef}
@@ -256,7 +315,10 @@ function ClientsContent() {
               onColumnVisibilityChange={setColumnVisibility}
               allColumns={allToggleableColumns}
               customFieldNames={Object.fromEntries(
-                (customFieldDefinitions || []).map((f) => [`cf_${f.id}`, f.name])
+                (customFieldDefinitions || []).map((f) => [
+                  `cf_${f.id}`,
+                  f.name,
+                ]),
               )}
             />
           </div>
@@ -334,7 +396,10 @@ function ClientsContent() {
                         onSelect={(e) => e.preventDefault()}
                       >
                         <ShieldOff className="w-3.5 h-3.5" />
-                        Bloquer {selectedClients.size > 1 ? "les contacts" : "le contact"}
+                        Bloquer{" "}
+                        {selectedClients.size > 1
+                          ? "les contacts"
+                          : "le contact"}
                       </DropdownMenuItem>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
@@ -346,7 +411,13 @@ function ClientsContent() {
                           <ShieldOff className="opacity-80" size={16} />
                         </div>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Bloquer {selectedClients.size > 1 ? "les contacts" : "le contact"} ?</AlertDialogTitle>
+                          <AlertDialogTitle>
+                            Bloquer{" "}
+                            {selectedClients.size > 1
+                              ? "les contacts"
+                              : "le contact"}{" "}
+                            ?
+                          </AlertDialogTitle>
                           <AlertDialogDescription>
                             {selectedClients.size > 1
                               ? `${selectedClients.size} contacts seront bloqués. Ils seront exclus de la création de documents et des communications.`
@@ -392,10 +463,16 @@ function ClientsContent() {
                           <CircleAlertIcon className="opacity-80" size={16} />
                         </div>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Supprimer définitivement ?</AlertDialogTitle>
+                          <AlertDialogTitle>
+                            Supprimer définitivement ?
+                          </AlertDialogTitle>
                           <AlertDialogDescription>
-                            Cette action est irréversible. {selectedClients.size}{" "}
-                            contact{selectedClients.size > 1 ? "s" : ""} sera{selectedClients.size > 1 ? "ont" : ""} supprimé{selectedClients.size > 1 ? "s" : ""} définitivement.
+                            Cette action est irréversible.{" "}
+                            {selectedClients.size} contact
+                            {selectedClients.size > 1 ? "s" : ""} sera
+                            {selectedClients.size > 1 ? "ont" : ""} supprimé
+                            {selectedClients.size > 1 ? "s" : ""}{" "}
+                            définitivement.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                       </div>
@@ -442,13 +519,20 @@ function ClientsContent() {
             <div className="flex gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon" className="cursor-pointer">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="cursor-pointer"
+                  >
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuItem
-                    onClick={() => { setImportDialogView("import"); setImportDialogOpen(true); }}
+                    onClick={() => {
+                      setImportDialogView("import");
+                      setImportDialogOpen(true);
+                    }}
                     className="cursor-pointer gap-2"
                   >
                     <Upload size={14} strokeWidth={2} />
@@ -456,7 +540,10 @@ function ClientsContent() {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={() => { setImportDialogView("fields"); setImportDialogOpen(true); }}
+                    onClick={() => {
+                      setImportDialogView("fields");
+                      setImportDialogOpen(true);
+                    }}
                     className="cursor-pointer gap-2"
                   >
                     <Settings2 size={14} strokeWidth={2} />
@@ -465,6 +552,7 @@ function ClientsContent() {
                 </DropdownMenuContent>
               </DropdownMenu>
               <PermissionButton
+                requiresActiveSubscription
                 resource="clients"
                 action="create"
                 onClick={handleOpenInviteDialog}
@@ -494,7 +582,11 @@ function ClientsContent() {
       </div>
 
       <ClientsModal open={dialogOpen} onOpenChange={setDialogOpen} />
-      <ClientImportDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} initialView={importDialogView} />
+      <ClientImportDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        initialView={importDialogView}
+      />
     </>
   );
 }

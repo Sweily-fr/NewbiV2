@@ -205,12 +205,8 @@ export function OrganizationSwitcherHeader() {
         organizationId,
       });
 
-      // Si l'org n'a pas d'abonnement actif, rediriger vers le pricing
-      if (!targetHasSubscription) {
-        setIsOpen(false);
-        router.push("/onboarding?step=4&renew=true");
-        return;
-      }
+      // Si l'org n'a pas d'abonnement actif, on laisse l'utilisateur y accéder
+      // Le banner "Renouveler l'abonnement" dans le site-header s'affichera automatiquement
 
       // 1. Mettre à jour l'org ID immédiatement pour Apollo (sans attendre useWorkspace)
       setOrganizationIdForApollo(organizationId);
@@ -279,7 +275,11 @@ export function OrganizationSwitcherHeader() {
           asChild
           data-tutorial="organization-switcher-header"
         >
-          <div className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-label={`Changer d'espace de travail (actuel : ${currentOrganization.name})`}
+            className="flex items-center gap-2 bg-transparent border-0 p-0 cursor-pointer outline-none"
+          >
             {/* Nom de l'organisation */}
             <Boxes className="size-3 text-[#707070]" />
             <span className="text-xs font-normal truncate max-w-[150px]">
@@ -296,16 +296,16 @@ export function OrganizationSwitcherHeader() {
             ) : (
               <Badge
                 variant="outline"
-                className="text-[8px] px-2.5 py-0 h-4 bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800"
+                className="text-[8px] px-2.5 py-0 h-4 bg-red-50 text-red-600 border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-800"
               >
                 Expiré
               </Badge>
             )}
-            {/* Bouton chevron avec hover */}
-            <button className="p-1 rounded-md hover:bg-accent transition-colors cursor-pointer outline-none">
+            {/* Chevron avec hover (span — était <button> mais imbriqué dans le trigger) */}
+            <span className="p-1 rounded-md hover:bg-accent transition-colors">
               <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
-            </button>
-          </div>
+            </span>
+          </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
           className="w-80 rounded-lg"
@@ -364,7 +364,7 @@ export function OrganizationSwitcherHeader() {
                   ) : (
                     <Badge
                       variant="outline"
-                      className="text-[8px] px-2 py-0 h-4 bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800"
+                      className="text-[8px] px-2 py-0 h-4 bg-red-50 text-red-600 border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-800"
                     >
                       Expiré
                     </Badge>

@@ -24,14 +24,9 @@ const IMPORTED_INVOICE_FRAGMENT = gql`
       address
       city
       postalCode
-      country
       siret
-      vatNumber
-      email
-      phone
       clientNumber
     }
-    clientId
     invoiceDate
     dueDate
     paymentDate
@@ -289,12 +284,6 @@ export const DELETE_IMPORTED_INVOICES = gql`
   }
 `;
 
-export const ASSIGN_IMPORTED_INVOICES_TO_CLIENT = gql`
-  mutation AssignImportedInvoicesToClient($ids: [ID!]!, $clientId: ID) {
-    assignImportedInvoicesToClient(ids: $ids, clientId: $clientId)
-  }
-`;
-
 export const PURCHASE_EXTRA_OCR_IMPORTS = gql`
   mutation PurchaseExtraOcrImports(
     $workspaceId: ID!
@@ -486,16 +475,6 @@ export function useDeleteImportedInvoices() {
     },
   );
   return { deleteImportedInvoices, loading, error };
-}
-
-export function useAssignImportedInvoicesToClient() {
-  const [assignImportedInvoicesToClient, { loading, error }] = useMutation(
-    ASSIGN_IMPORTED_INVOICES_TO_CLIENT,
-    {
-      refetchQueries: [...IMPORTED_INVOICE_REFETCH, "GetClient"],
-    },
-  );
-  return { assignImportedInvoicesToClient, loading, error };
 }
 
 export function useUserOcrQuota(workspaceId) {

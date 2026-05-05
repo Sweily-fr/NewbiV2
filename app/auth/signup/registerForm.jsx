@@ -12,7 +12,7 @@ import { signUp } from "../../../src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 
-const RegisterFormContent = () => {
+const RegisterFormContent = ({ onSuccess: onSuccessProp }) => {
   const {
     register,
     handleSubmit,
@@ -35,7 +35,7 @@ const RegisterFormContent = () => {
   const onSubmit = async (formData) => {
     // Ajouter le code partenaire si présent
     if (partnerCode) {
-      formData.referralCode = partnerCode;
+      formData.referredBy = partnerCode;
     }
 
     // Selon la doc Better Auth, l'erreur est retournée directement dans { data, error }
@@ -91,11 +91,7 @@ const RegisterFormContent = () => {
                   "Bienvenue ! Vous avez rejoint l'organisation avec succès.",
                 );
 
-                // ✅ Marquer l'onboarding comme vu pour les utilisateurs invités
-                // Ils n'ont pas besoin de passer par l'onboarding complet
-                await authClient.updateUser({
-                  hasSeenOnboarding: true,
-                });
+                // hasSeenOnboarding + onboardingStep set server-side in /api/invitations/[id] (Sprint 2)
 
                 // Rediriger directement vers le dashboard
                 router.push("/dashboard?welcome=invited");
@@ -132,8 +128,13 @@ const RegisterFormContent = () => {
             );
           }
 
-          // Redirection vers l'onboarding pour les utilisateurs normaux (non invités)
-          router.push("/onboarding?step=1");
+          // Transition vers la création d'espace de travail
+          // onboardingStep: "workspace" is already set by user.create hook in auth.js
+          if (onSuccessProp) {
+            onSuccessProp();
+          } else {
+            window.location.reload();
+          }
         },
         onError: (ctx) => {
           // L'erreur est gérée via le retour { data, error }
@@ -186,18 +187,12 @@ const RegisterFormContent = () => {
       onSubmit={handleSubmit(onSubmit)}
     >
       <div>
-        <Label
-          htmlFor="email-register-04"
-          className="text-sm font-medium text-foreground dark:text-foreground"
-        >
-          Email
-        </Label>
         <InputEmail
           id="email"
           name="email"
           autoComplete="email"
           placeholder="Saisissez votre email"
-          className="mt-2"
+          className="h-11 placeholder:font-normal rounded-lg"
           defaultValue={invitationEmail || ""}
           {...register("email", {
             required: "Email est requis",
@@ -207,9 +202,6 @@ const RegisterFormContent = () => {
             },
           })}
         />
-        {errors.email && (
-          <p className="mt-2 text-sm text-red-500">{errors.email.message}</p>
-        )}
       </div>
       <div>
         <Controller
@@ -233,15 +225,26 @@ const RegisterFormContent = () => {
           render={({ field }) => (
             <PasswordStrengthInput
               {...field}
-              label="Mot de passe"
-              error={errors.password?.message}
+              label=""
+              error=""
+              className="h-11 placeholder:font-normal rounded-lg"
             />
           )}
         />
       </div>
+      {(errors.email || errors.password) && (
+        <p className="text-xs" style={{ color: "#e1243a" }}>
+          {errors.email
+            ? "Veuillez saisir une adresse email valide pour continuer."
+            : errors.password?.type === "required"
+              ? "Un mot de passe est nécessaire pour sécuriser votre compte."
+              : "Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule et un chiffre."}
+        </p>
+      )}
       <SubmitButton
         type="submit"
-        className="mt-4 w-full py-2 font-medium cursor-pointer"
+        variant="outline"
+        className="mt-2 w-full h-11 font-medium cursor-pointer bg-white rounded-lg"
         isLoading={isSubmitting}
       >
         S'inscrire
@@ -250,10 +253,10 @@ const RegisterFormContent = () => {
   );
 };
 
-const RegisterForm = () => {
+const RegisterForm = ({ onSuccess }) => {
   return (
     <Suspense fallback={null}>
-      <RegisterFormContent />
+      <RegisterFormContent onSuccess={onSuccess} />
     </Suspense>
   );
 };

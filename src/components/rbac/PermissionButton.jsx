@@ -1,6 +1,7 @@
 "use client";
 
 import { usePermissions } from "@/src/hooks/usePermissions";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { Button } from "@/src/components/ui/button";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
@@ -8,23 +9,16 @@ import { Loader2 } from "lucide-react";
 /**
  * Composant PermissionButton
  * Bouton qui se désactive automatiquement si l'utilisateur n'a pas les permissions
- * 
+ * OU si l'abonnement est en lecture seule (requiresActiveSubscription).
+ *
  * @example
- * <PermissionButton 
- *   resource="invoices" 
+ * <PermissionButton
+ *   resource="invoices"
  *   action="create"
+ *   requiresActiveSubscription
  *   onClick={handleCreate}
  * >
  *   Créer une facture
- * </PermissionButton>
- * 
- * @example
- * <PermissionButton 
- *   roles={["owner", "admin"]}
- *   onClick={handleDelete}
- *   variant="destructive"
- * >
- *   Supprimer
  * </PermissionButton>
  */
 export function PermissionButton({
@@ -35,12 +29,22 @@ export function PermissionButton({
   onClick,
   disabled = false,
   hideIfNoAccess = false,
+  requiresActiveSubscription = false,
   tooltipNoAccess = "Vous n'avez pas la permission d'effectuer cette action",
   ...buttonProps
 }) {
-  const { hasPermission, hasRole, isLoading: isPermissionLoading, isReady } = usePermissions();
+  const {
+    hasPermission,
+    hasRole,
+    isLoading: isPermissionLoading,
+    isReady,
+  } = usePermissions();
+  const { isReadOnly, isOwner, loading: subLoading } = useSubscriptionAccess();
   const [hasAccess, setHasAccess] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
+
+  // Subscription blocks write actions
+  const isSubscriptionBlocked = requiresActiveSubscription && isReadOnly;
 
   useEffect(() => {
     let isMounted = true;
@@ -48,11 +52,9 @@ export function PermissionButton({
     const checkPermission = async () => {
       if (!isMounted) return;
 
-      // ✅ FIX: Attendre que les permissions soient prêtes avant de vérifier
-      // Cela évite les faux "permission denied" pendant le chargement
       if (isPermissionLoading || !isReady) {
         setIsChecking(true);
-        return; // Ne pas encore vérifier, attendre que isReady soit true
+        return;
       }
 
       setIsChecking(true);
@@ -60,16 +62,11 @@ export function PermissionButton({
       try {
         let access = false;
 
-        // Vérification par rôle
         if (roles) {
           access = hasRole(roles);
-        }
-        // Vérification par permission
-        else if (resource && action) {
+        } else if (resource && action) {
           access = await hasPermission(resource, action);
-        }
-        // Si aucun critère, autoriser par défaut
-        else {
+        } else {
           access = true;
         }
 
@@ -101,17 +98,27 @@ export function PermissionButton({
     return null;
   }
 
-  // Désactiver le bouton si pas d'accès ou en cours de vérification
-  const isDisabled = disabled || isChecking || !hasAccess;
+  const isDisabled =
+    disabled || isChecking || !hasAccess || isSubscriptionBlocked;
+
+  // Determine tooltip
+  let tooltip = buttonProps.title;
+  if (isSubscriptionBlocked) {
+    tooltip = isOwner
+      ? "Votre abonnement est en lecture seule. Renouvelez pour effectuer cette action."
+      : "Cet espace est en lecture seule. Contactez l'administrateur.";
+  } else if (!hasAccess && !isChecking) {
+    tooltip = tooltipNoAccess;
+  }
 
   return (
     <Button
       {...buttonProps}
       disabled={isDisabled}
-      onClick={hasAccess ? onClick : undefined}
-      title={!hasAccess && !isChecking ? tooltipNoAccess : buttonProps.title}
+      onClick={hasAccess && !isSubscriptionBlocked ? onClick : undefined}
+      title={tooltip}
     >
-      {isChecking ? (
+      {isChecking && !isSubscriptionBlocked ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           Vérification...
@@ -126,16 +133,6 @@ export function PermissionButton({
 /**
  * Composant PermissionMenuItem
  * Item de menu qui se désactive automatiquement si l'utilisateur n'a pas les permissions
- * 
- * @example
- * <PermissionMenuItem 
- *   resource="invoices" 
- *   action="delete"
- *   onClick={handleDelete}
- * >
- *   <Trash className="mr-2 h-4 w-4" />
- *   Supprimer
- * </PermissionMenuItem>
  */
 export function PermissionMenuItem({
   children,
@@ -145,16 +142,24 @@ export function PermissionMenuItem({
   onClick,
   disabled = false,
   hideIfNoAccess = false,
+  requiresActiveSubscription = false,
   className = "",
   ...props
 }) {
-  const { hasPermission, hasRole, isLoading: isPermissionLoading, isReady } = usePermissions();
+  const {
+    hasPermission,
+    hasRole,
+    isLoading: isPermissionLoading,
+    isReady,
+  } = usePermissions();
+  const { isReadOnly } = useSubscriptionAccess();
   const [hasAccess, setHasAccess] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
 
+  const isSubscriptionBlocked = requiresActiveSubscription && isReadOnly;
+
   useEffect(() => {
     const checkPermission = async () => {
-      // ✅ FIX: Attendre que les permissions soient prêtes
       if (isPermissionLoading || !isReady) {
         setIsChecking(true);
         return;
@@ -183,19 +188,29 @@ export function PermissionMenuItem({
     };
 
     checkPermission();
-  }, [resource, action, roles, hasPermission, hasRole, isPermissionLoading, isReady]);
+  }, [
+    resource,
+    action,
+    roles,
+    hasPermission,
+    hasRole,
+    isPermissionLoading,
+    isReady,
+  ]);
 
-  // Masquer l'item si pas d'accès et hideIfNoAccess = true
   if (!isChecking && !hasAccess && hideIfNoAccess) {
     return null;
   }
 
-  const isDisabled = disabled || isChecking || !hasAccess;
+  const isDisabled =
+    disabled || isChecking || !hasAccess || isSubscriptionBlocked;
 
   return (
     <div
       className={`${className} ${isDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-      onClick={hasAccess && !disabled ? onClick : undefined}
+      onClick={
+        hasAccess && !disabled && !isSubscriptionBlocked ? onClick : undefined
+      }
       {...props}
     >
       {children}

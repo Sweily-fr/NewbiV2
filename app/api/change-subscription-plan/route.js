@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { auth } from "@/src/lib/auth";
 import { mongoDb } from "@/src/lib/mongodb";
 import { SeatSyncService } from "@/src/services/seatSyncService";
+import { withErrorHandler } from "@/src/lib/security";
 import crypto from "crypto";
 import { ObjectId } from "mongodb";
 
@@ -49,7 +50,10 @@ function validatePreviewToken(token, currentData) {
 
     // Vérifier l'expiration (5 minutes)
     if (Date.now() > payload.expiresAt) {
-      return { valid: false, reason: "Token expiré. Veuillez renouveler la prévisualisation." };
+      return {
+        valid: false,
+        reason: "Token expiré. Veuillez renouveler la prévisualisation.",
+      };
     }
 
     // Vérifier que les données n'ont pas changé
@@ -57,7 +61,10 @@ function validatePreviewToken(token, currentData) {
       return { valid: false, reason: "L'organisation a changé" };
     }
     if (payload.currentPlan !== currentData.currentPlan) {
-      return { valid: false, reason: "Le plan actuel a changé. Veuillez renouveler." };
+      return {
+        valid: false,
+        reason: "Le plan actuel a changé. Veuillez renouveler.",
+      };
     }
     if (payload.newPlan !== currentData.newPlan) {
       return { valid: false, reason: "Le plan cible a changé" };
@@ -95,99 +102,107 @@ function validatePreviewToken(token, currentData) {
  * API pour changer le plan d'abonnement
  * Gère les upgrades et downgrades avec vérifications renforcées
  */
-export async function POST(request) {
-  try {
-    // 1. Vérifier l'authentification
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
+async function handler(request) {
+  // 1. Vérifier l'authentification
+  const session = await auth.api.getSession({
+    headers: request.headers,
+  });
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-    }
+  if (!session?.user) {
+    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  }
 
-    // 2. Récupérer les paramètres
-    const { newPlan, isAnnual, organizationId, validationToken } = await request.json();
+  // 2. Récupérer les paramètres
+  const { newPlan, isAnnual, organizationId, validationToken } =
+    await request.json();
 
-    if (!newPlan || !organizationId) {
-      return NextResponse.json(
-        { error: "Plan et organizationId requis" },
-        { status: 400 }
-      );
-    }
-
-    // ✅ CRITIQUE #2: Valider le nom du plan (whitelist)
-    if (!VALID_PLANS.includes(newPlan)) {
-      return NextResponse.json(
-        { error: "Plan invalide", validPlans: VALID_PLANS },
-        { status: 400 }
-      );
-    }
-
-    // ✅ CRITIQUE #1: Vérifier que l'utilisateur est owner de l'organisation
-    const member = await mongoDb.collection("member").findOne({
-      userId: new ObjectId(session.user.id),
-      organizationId: new ObjectId(organizationId),
-    });
-
-    if (!member) {
-      return NextResponse.json(
-        { error: "Vous n'êtes pas membre de cette organisation" },
-        { status: 403 }
-      );
-    }
-
-    if (member.role !== "owner") {
-      return NextResponse.json(
-        { error: "Seul le propriétaire de l'organisation peut changer le plan d'abonnement" },
-        { status: 403 }
-      );
-    }
-
-    console.log(
-      `🔄 [CHANGE PLAN] Changement vers ${newPlan} (${isAnnual ? "annuel" : "mensuel"}) par owner ${session.user.id}`
+  if (!newPlan || !organizationId) {
+    return NextResponse.json(
+      { error: "Plan et organizationId requis" },
+      { status: 400 },
     );
+  }
 
-    // 3. Récupérer l'abonnement actuel avec lock pour éviter les requêtes concurrentes
-    // ✅ CRITIQUE #5: Lock pour éviter les modifications concurrentes
-    const lockResult = await mongoDb.collection("subscription").findOneAndUpdate(
-      {
-        referenceId: organizationId,
-        $or: [
-          { _lock: { $exists: false } },
-          { _lock: false },
-          { _lockUntil: { $lt: Date.now() } }
-        ]
-      },
-      {
-        $set: {
-          _lock: true,
-          _lockUntil: Date.now() + 30000 // Lock pour 30 secondes max
-        }
-      },
-      { returnDocument: "after" }
+  // ✅ CRITIQUE #2: Valider le nom du plan (whitelist)
+  if (!VALID_PLANS.includes(newPlan)) {
+    return NextResponse.json(
+      { error: "Plan invalide", validPlans: VALID_PLANS },
+      { status: 400 },
     );
+  }
 
-    if (!lockResult) {
-      return NextResponse.json(
-        { error: "Un changement de plan est déjà en cours. Veuillez réessayer dans quelques secondes." },
-        { status: 409 }
-      );
-    }
+  // ✅ CRITIQUE #1: Vérifier que l'utilisateur est owner de l'organisation
+  const member = await mongoDb.collection("member").findOne({
+    userId: new ObjectId(session.user.id),
+    organizationId: new ObjectId(organizationId),
+  });
 
-    // Fonction pour libérer le lock
-    const releaseLock = async () => {
-      try {
-        await mongoDb.collection("subscription").updateOne(
-          { referenceId: organizationId },
-          { $set: { _lock: false }, $unset: { _lockUntil: 1 } }
-        );
-      } catch (e) {
-        console.error("Erreur libération lock:", e);
-      }
-    };
+  if (!member) {
+    return NextResponse.json(
+      { error: "Vous n'êtes pas membre de cette organisation" },
+      { status: 403 },
+    );
+  }
 
+  if (member.role !== "owner") {
+    return NextResponse.json(
+      {
+        error:
+          "Seul le propriétaire de l'organisation peut changer le plan d'abonnement",
+      },
+      { status: 403 },
+    );
+  }
+
+  console.log(
+    `🔄 [CHANGE PLAN] Changement vers ${newPlan} (${isAnnual ? "annuel" : "mensuel"}) par owner ${session.user.id}`,
+  );
+
+  // 3. Récupérer l'abonnement actuel avec lock pour éviter les requêtes concurrentes
+  // ✅ CRITIQUE #5: Lock pour éviter les modifications concurrentes
+  const lockResult = await mongoDb.collection("subscription").findOneAndUpdate(
+    {
+      referenceId: organizationId,
+      $or: [
+        { _lock: { $exists: false } },
+        { _lock: false },
+        { _lockUntil: { $lt: Date.now() } },
+      ],
+    },
+    {
+      $set: {
+        _lock: true,
+        _lockUntil: Date.now() + 30000, // Lock pour 30 secondes max
+      },
+    },
+    { returnDocument: "after" },
+  );
+
+  if (!lockResult) {
+    return NextResponse.json(
+      {
+        error:
+          "Un changement de plan est déjà en cours. Veuillez réessayer dans quelques secondes.",
+      },
+      { status: 409 },
+    );
+  }
+
+  // Fonction pour libérer le lock
+  const releaseLock = async () => {
     try {
+      await mongoDb
+        .collection("subscription")
+        .updateOne(
+          { referenceId: organizationId },
+          { $set: { _lock: false }, $unset: { _lockUntil: 1 } },
+        );
+    } catch (e) {
+      console.error("Erreur libération lock:", e);
+    }
+  };
+
+  try {
     // 3. Utiliser l'abonnement récupéré avec le lock
     const subscription = lockResult;
 
@@ -195,7 +210,7 @@ export async function POST(request) {
       await releaseLock();
       return NextResponse.json(
         { error: "Aucun abonnement trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -205,7 +220,7 @@ export async function POST(request) {
 
     // 4. Récupérer l'abonnement Stripe
     const stripeSubscription = await stripe.subscriptions.retrieve(
-      subscription.stripeSubscriptionId
+      subscription.stripeSubscriptionId,
     );
 
     // ✅ AMÉLIORATION CRITIQUE #3: Vérifier les états problématiques
@@ -229,7 +244,7 @@ export async function POST(request) {
             "Votre abonnement présente un problème. Contactez le support.",
           subscriptionStatus: stripeSubscription.status,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -239,7 +254,7 @@ export async function POST(request) {
 
     // ✅ AMÉLIORATION CRITIQUE #2: Vérifier les sièges payants
     const seatItem = stripeSubscription.items.data.find(
-      (item) => item.price.id === process.env.STRIPE_SEAT_PRICE_ID
+      (item) => item.price.id === process.env.STRIPE_SEAT_PRICE_ID,
     );
     const paidSeatsCount = seatItem?.quantity || 0;
 
@@ -250,7 +265,7 @@ export async function POST(request) {
           message: `Vous avez ${paidSeatsCount} siège(s) supplémentaire(s) payant(s) actif(s). Veuillez d'abord retirer ces sièges dans la section "Espaces" avant de changer de plan.`,
           paidSeats: paidSeatsCount,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -260,7 +275,7 @@ export async function POST(request) {
 
     if (isDowngrade) {
       console.log(
-        `⬇️ [CHANGE PLAN] Downgrade détecté: ${currentPlan} → ${newPlan}`
+        `⬇️ [CHANGE PLAN] Downgrade détecté: ${currentPlan} → ${newPlan}`,
       );
 
       // ObjectId déjà importé en haut du fichier
@@ -272,7 +287,7 @@ export async function POST(request) {
         .toArray();
 
       const billableMembers = members.filter(
-        (m) => m.role !== "accountant" && m.role !== "owner"
+        (m) => m.role !== "accountant" && m.role !== "owner",
       );
       memberCount = billableMembers.length;
 
@@ -313,14 +328,16 @@ export async function POST(request) {
         });
 
         if (!tokenValidation.valid) {
-          console.log(`⚠️ [CHANGE PLAN] Token invalide: ${tokenValidation.reason}`);
+          console.log(
+            `⚠️ [CHANGE PLAN] Token invalide: ${tokenValidation.reason}`,
+          );
           return NextResponse.json(
             {
               error: "Prévisualisation expirée ou données modifiées",
               message: tokenValidation.reason,
               requireNewPreview: true,
             },
-            { status: 400 }
+            { status: 400 },
           );
         }
         console.log(`✅ [CHANGE PLAN] Token validé`);
@@ -343,13 +360,13 @@ export async function POST(request) {
             totalAfterPending,
             newLimit,
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
       // Vérifier aussi les comptables
       const currentAccountants = members.filter(
-        (m) => m.role === "accountant"
+        (m) => m.role === "accountant",
       ).length;
       const pendingAccountants = await mongoDb
         .collection("invitation")
@@ -371,7 +388,7 @@ export async function POST(request) {
             totalAccountants,
             newAccountantLimit: newPlanLimits.accountants,
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
@@ -399,7 +416,7 @@ export async function POST(request) {
     if (!newPriceId) {
       return NextResponse.json(
         { error: `Price ID non configuré pour le plan ${newPlan}` },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -407,13 +424,13 @@ export async function POST(request) {
 
     // 7. Trouver l'item du plan de base (pas les sièges)
     const basePlanItem = stripeSubscription.items.data.find(
-      (item) => item.price.id !== process.env.STRIPE_SEAT_PRICE_ID
+      (item) => item.price.id !== process.env.STRIPE_SEAT_PRICE_ID,
     );
 
     if (!basePlanItem) {
       return NextResponse.json(
         { error: "Item du plan de base non trouvé" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -441,7 +458,7 @@ export async function POST(request) {
             isAnnual: isAnnual ? "true" : "false",
           },
         },
-        { idempotencyKey }
+        { idempotencyKey },
       );
       stripeUpdateSuccess = true;
       console.log(`✅ [CHANGE PLAN] Abonnement Stripe mis à jour`);
@@ -449,8 +466,8 @@ export async function POST(request) {
       console.error(`❌ [CHANGE PLAN] Erreur Stripe:`, stripeError);
       await releaseLock();
       return NextResponse.json(
-        { error: "Erreur lors de la mise à jour Stripe", details: stripeError.message },
-        { status: 500 }
+        { error: "Erreur lors de la mise à jour Stripe" },
+        { status: 500 },
       );
     }
 
@@ -466,11 +483,14 @@ export async function POST(request) {
             _lock: false,
           },
           $unset: { _lockUntil: 1 },
-        }
+        },
       );
       console.log(`✅ [CHANGE PLAN] MongoDB mis à jour`);
     } catch (mongoError) {
-      console.error(`❌ [CHANGE PLAN] Erreur MongoDB, tentative de rollback Stripe:`, mongoError);
+      console.error(
+        `❌ [CHANGE PLAN] Erreur MongoDB, tentative de rollback Stripe:`,
+        mongoError,
+      );
 
       // Tenter de rollback Stripe
       if (stripeUpdateSuccess) {
@@ -482,19 +502,25 @@ export async function POST(request) {
           await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
             items: [{ id: basePlanItem.id, price: rollbackPriceId }],
             proration_behavior: "none", // Pas de prorata pour le rollback
-            metadata: { ...stripeSubscription.metadata, planName: previousPlan },
+            metadata: {
+              ...stripeSubscription.metadata,
+              planName: previousPlan,
+            },
           });
           console.log(`✅ [CHANGE PLAN] Rollback Stripe effectué`);
         } catch (rollbackError) {
-          console.error(`❌ [CHANGE PLAN] CRITIQUE: Rollback Stripe échoué!`, rollbackError);
+          console.error(
+            `❌ [CHANGE PLAN] CRITIQUE: Rollback Stripe échoué!`,
+            rollbackError,
+          );
           // TODO: Envoyer alerte admin, créer ticket support
         }
       }
 
       await releaseLock();
       return NextResponse.json(
-        { error: "Erreur lors de la mise à jour. Veuillez réessayer.", details: mongoError.message },
-        { status: 500 }
+        { error: "Erreur lors de la mise à jour. Veuillez réessayer." },
+        { status: 500 },
       );
     }
 
@@ -510,7 +536,7 @@ export async function POST(request) {
 
       await seatSyncService.syncSeatsAfterInvitationAccepted(
         organizationId,
-        adapter
+        adapter,
       );
 
       console.log(`✅ [CHANGE PLAN] Sièges synchronisés avec succès`);
@@ -518,19 +544,19 @@ export async function POST(request) {
       console.error(`⚠️ [CHANGE PLAN] Erreur sync sièges:`, seatError);
       warnings.push({
         type: "seat_sync",
-        message: "La synchronisation des sièges a échoué. Rechargez la page pour vérifier.",
+        message:
+          "La synchronisation des sièges a échoué. Rechargez la page pour vérifier.",
       });
     }
 
     // 11. Envoyer l'email de confirmation
     try {
       const customer = await stripe.customers.retrieve(
-        subscription.stripeCustomerId
+        subscription.stripeCustomerId,
       );
 
-      const { sendSubscriptionChangedEmail } = await import(
-        "@/src/lib/auth-utils"
-      );
+      const { sendSubscriptionChangedEmail } =
+        await import("@/src/lib/auth-utils");
 
       const upgradeCheck = planHierarchy[newPlan] > planHierarchy[currentPlan];
 
@@ -560,12 +586,12 @@ export async function POST(request) {
       });
 
       console.log(
-        `✅ [CHANGE PLAN] Email de confirmation envoyé à ${customer.email}`
+        `✅ [CHANGE PLAN] Email de confirmation envoyé à ${customer.email}`,
       );
     } catch (emailError) {
       console.error(
         `⚠️ [CHANGE PLAN] Erreur envoi email confirmation:`,
-        emailError
+        emailError,
       );
       warnings.push({
         type: "email",
@@ -576,27 +602,19 @@ export async function POST(request) {
     // ✅ CRITIQUE #6: Retourner les warnings à l'utilisateur
     return NextResponse.json({
       success: true,
-      message: warnings.length > 0
-        ? `Plan changé vers ${newPlan.toUpperCase()} avec ${warnings.length} avertissement(s)`
-        : `Plan changé avec succès vers ${newPlan.toUpperCase()}`,
+      message:
+        warnings.length > 0
+          ? `Plan changé vers ${newPlan.toUpperCase()} avec ${warnings.length} avertissement(s)`
+          : `Plan changé avec succès vers ${newPlan.toUpperCase()}`,
       newPlan,
       isAnnual,
       warnings: warnings.length > 0 ? warnings : undefined,
     });
-
-    } catch (error) {
-      // Libérer le lock en cas d'erreur non gérée
-      await releaseLock();
-      throw error;
-    }
   } catch (error) {
-    console.error("❌ [CHANGE PLAN] Erreur:", error);
-    return NextResponse.json(
-      {
-        error: "Erreur lors du changement de plan",
-        details: error.message,
-      },
-      { status: 500 }
-    );
+    // Libérer le lock en cas d'erreur non gérée
+    await releaseLock();
+    throw error;
   }
 }
+
+export const POST = withErrorHandler(handler);

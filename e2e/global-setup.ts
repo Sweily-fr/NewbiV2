@@ -1,19 +1,23 @@
 /**
  * Playwright Global Setup — seeds the test MongoDB with deterministic E2E data.
  *
+ * Credential creation goes through the Better Auth HTTP signup endpoint so the
+ * password is hashed with Better Auth's own format (scrypt, not bcrypt) — this
+ * is the only reliable way to make login work without duplicating the auth
+ * library's internals.
+ *
  * Runs once before all test suites.
  */
 import { MongoClient } from "mongodb";
-import bcrypt from "bcryptjs";
 import {
-  TEST_USER,
+  IDS,
   TEST_ORGANIZATION,
   TEST_MEMBER,
   TEST_CLIENTS,
   TEST_INVOICES,
   TEST_QUOTES,
   TEST_SUPPLIER_EXPENSE,
-  SEEDED_COLLECTIONS,
+  FOREIGN_INVOICE,
 } from "./seed/test-data";
 
 function getMongoUri(): string {
@@ -21,31 +25,75 @@ function getMongoUri(): string {
 
   if (!uri) {
     throw new Error(
-      "[E2E Seed] MONGODB_URI_TEST (or MONGODB_URI) is not set. Aborting."
+      "[E2E Seed] MONGODB_URI_TEST (or MONGODB_URI) is not set. Aborting.",
     );
   }
 
-  // Safety guard: refuse to run against anything that looks like production
+  // Require the DB *name* itself to mark it as a test database — relying on
+  // "localhost" alone would let a misconfig silently seed into invoice-app
+  // (the dev DB), which is exactly the bug this check is here to prevent.
   const lower = uri.toLowerCase();
-  const isSafe =
-    lower.includes("localhost") ||
-    lower.includes("127.0.0.1") ||
-    lower.includes("test") ||
-    lower.includes("e2e") ||
-    lower.includes("staging");
+  const dbName = uri.split("/").pop()?.split("?")[0]?.toLowerCase() || "";
+  const dbNameIsSafe = dbName.includes("test") || dbName.includes("e2e");
+  const hostIsSafe =
+    lower.includes("staging") ||
+    ((lower.includes("localhost") || lower.includes("127.0.0.1")) &&
+      dbNameIsSafe);
 
-  if (!isSafe) {
+  if (!hostIsSafe) {
     throw new Error(
-      `[E2E Seed] MONGODB_URI looks like a production database. ` +
-        `URI must contain "test", "e2e", "staging", or "localhost". Got: ${uri.slice(0, 60)}…`
+      `[E2E Seed] Refusing to seed into ${uri.slice(0, 80)}… — ` +
+        `the database name must contain "test" or "e2e" (got "${dbName}"), ` +
+        `or the host must contain "staging".`,
     );
   }
 
   return uri;
 }
 
+async function ensureTestUser(
+  baseUrl: string,
+  email: string,
+  password: string,
+) {
+  // Try to sign up. If user already exists, Better Auth returns 4xx — we ignore it.
+  const res = await fetch(`${baseUrl}/api/auth/sign-up/email`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Origin: baseUrl, // Better Auth requires a non-null Origin
+    },
+    body: JSON.stringify({ email, password, name: "Test E2E" }),
+  });
+  if (res.ok) {
+    console.log(`  ↳ Created Better Auth user ${email}`);
+  } else if (res.status === 422 || res.status === 400) {
+    console.log(`  ↳ Test user ${email} already exists — reusing`);
+  } else {
+    const text = await res.text();
+    throw new Error(
+      `[E2E Seed] signup failed (${res.status}): ${text.slice(0, 200)}`,
+    );
+  }
+}
+
 export default async function globalSetup() {
   const uri = getMongoUri();
+  const baseUrl = process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3000";
+  const email = process.env.TEST_USER_EMAIL;
+  const password = process.env.TEST_USER_PASSWORD;
+
+  if (!email || !password) {
+    throw new Error(
+      "[E2E Seed] TEST_USER_EMAIL and TEST_USER_PASSWORD must be set in .env.test",
+    );
+  }
+
+  // 1. Create (or reuse) the test user through Better Auth. This populates
+  //    both the `user` and `account` collections with a valid credential.
+  await ensureTestUser(baseUrl, email, password);
+
+  // 2. Seed the rest of the deterministic fixtures directly in Mongo.
   const client = new MongoClient(uri);
 
   try {
@@ -54,46 +102,130 @@ export default async function globalSetup() {
 
     console.log(`[E2E Seed] Connected to ${db.databaseName}`);
 
-    // 1. Clean all seeded collections
-    for (const col of SEEDED_COLLECTIONS) {
-      const collection = db.collection(col);
-      const { deletedCount } = await collection.deleteMany({});
-      if (deletedCount > 0) {
-        console.log(`  ↳ Cleaned ${col}: ${deletedCount} docs removed`);
-      }
+    // Look up the created user by email so we can wire the organization/member
+    // references to the real Better Auth user id.
+    const userDoc = await db.collection("user").findOne({ email });
+    if (!userDoc) {
+      throw new Error(`[E2E Seed] Could not find user ${email} after signup`);
     }
+    const realUserId = userDoc._id;
 
-    // 2. Hash user password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(TEST_USER.password, salt);
+    // Mark the user as having seen onboarding so OnboardingGuard does not
+    // redirect to /auth/signup. Also set hasCompletedTutorial to skip tutorial
+    // overlay on the dashboard.
+    await db
+      .collection("user")
+      .updateOne(
+        { _id: realUserId },
+        { $set: { hasSeenOnboarding: true, hasCompletedTutorial: true } },
+      );
 
-    // 3. Insert user (with hashed password)
-    await db.collection("user").insertOne({
-      ...TEST_USER,
-      password: hashedPassword,
+    // Idempotent seed — all writes are replaceOne+upsert so reruns (with or
+    // without teardown) never hit duplicate-key errors. Members with stale
+    // userIds (e.g. from a previous test user) are still cleaned up.
+    await db.collection("member").deleteMany({
+      $or: [{ userId: realUserId.toString() }, { userId: realUserId }],
     });
-    console.log("  ↳ Inserted test user");
 
-    // 4. Insert organization + member (Better Auth tables)
-    await db.collection("organization").insertOne(TEST_ORGANIZATION);
-    await db.collection("member").insertOne(TEST_MEMBER);
-    console.log("  ↳ Inserted organization + member");
+    // Organization + membership (Better Auth raw collections)
+    await db.collection("organization").replaceOne(
+      { _id: IDS.organizationId },
+      {
+        ...TEST_ORGANIZATION,
+        createdBy: realUserId.toString(),
+      },
+      { upsert: true },
+    );
+    // Better Auth's Mongo adapter coerces `userId` and `organizationId`
+    // (both have `references: { field: "id" }` in the schema) to ObjectId
+    // before querying. Real members written by Better Auth itself have these
+    // fields stored as ObjectId. If the seed inserts strings, lookups like
+    // `findFullOrganization` (which joins member by organizationId) and
+    // `findMemberByOrgId` silently return null → 403/400 cascade in the
+    // dashboard.
+    await db.collection("member").replaceOne(
+      { _id: TEST_MEMBER._id },
+      {
+        ...TEST_MEMBER,
+        userId: realUserId,
+        organizationId: IDS.organizationId,
+      },
+      { upsert: true },
+    );
+    console.log("  ↳ Upserted organization + member");
 
-    // 5. Insert clients
-    await db.collection("clients").insertMany(TEST_CLIENTS);
-    console.log(`  ↳ Inserted ${TEST_CLIENTS.length} clients`);
+    // Subscription — the dashboard layout redirects to /onboarding when the
+    // active organization has no active/trialing subscription. Seed a trialing
+    // one so the test user lands directly on /dashboard.
+    await db.collection("subscription").deleteMany({
+      referenceId: IDS.organizationId.toString(),
+    });
+    await db.collection("subscription").insertOne({
+      referenceId: IDS.organizationId.toString(),
+      organizationId: IDS.organizationId.toString(),
+      plan: "pme",
+      status: "trialing",
+      periodStart: new Date(),
+      periodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // +30 days
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    console.log("  ↳ Inserted trialing subscription");
 
-    // 6. Insert invoices
-    await db.collection("invoices").insertMany(TEST_INVOICES);
-    console.log(`  ↳ Inserted ${TEST_INVOICES.length} invoices`);
+    // Also set activeOrganizationId on any existing sessions for this user so
+    // the dashboard layout's first check picks our seeded org.
+    await db
+      .collection("session")
+      .updateMany(
+        { userId: realUserId.toString() },
+        { $set: { activeOrganizationId: IDS.organizationId.toString() } },
+      );
 
-    // 7. Insert quotes
-    await db.collection("quotes").insertMany(TEST_QUOTES);
-    console.log(`  ↳ Inserted ${TEST_QUOTES.length} quotes`);
+    // Rewrite fixtures with the real userId + organizationId
+    const rewire = <T extends { workspaceId?: unknown; createdBy?: unknown }>(
+      docs: T[],
+    ) =>
+      docs.map((d) => ({
+        ...d,
+        workspaceId: IDS.organizationId,
+        createdBy: realUserId,
+      }));
 
-    // 8. Insert supplier expense
-    await db.collection("expenses").insertOne(TEST_SUPPLIER_EXPENSE);
-    console.log("  ↳ Inserted supplier expense");
+    // Idempotent bulk upserts (replaceOne with upsert per document) instead
+    // of insertMany, so a rerun without teardown never hits duplicate-key.
+    const upsertOps = <T extends { _id: unknown }>(docs: T[]) =>
+      docs.map((d) => ({
+        replaceOne: {
+          filter: { _id: d._id },
+          replacement: d,
+          upsert: true,
+        },
+      }));
+
+    await db.collection("clients").bulkWrite(upsertOps(rewire(TEST_CLIENTS)));
+    await db.collection("invoices").bulkWrite(upsertOps(rewire(TEST_INVOICES)));
+    await db.collection("quotes").bulkWrite(upsertOps(rewire(TEST_QUOTES)));
+    await db.collection("expenses").replaceOne(
+      { _id: TEST_SUPPLIER_EXPENSE._id },
+      {
+        ...TEST_SUPPLIER_EXPENSE,
+        workspaceId: IDS.organizationId,
+        createdBy: realUserId,
+      },
+      { upsert: true },
+    );
+
+    // Foreign tenant invoice — bypasses rewire() on purpose: its workspaceId
+    // must remain foreign for multi-tenant isolation tests to be meaningful.
+    await db
+      .collection("invoices")
+      .replaceOne({ _id: FOREIGN_INVOICE._id }, FOREIGN_INVOICE, {
+        upsert: true,
+      });
+
+    console.log(
+      `  ↳ Inserted ${TEST_CLIENTS.length} clients, ${TEST_INVOICES.length} invoices (+1 foreign), ${TEST_QUOTES.length} quotes, 1 expense`,
+    );
 
     console.log("[E2E Seed] Done ✓");
   } finally {

@@ -22,11 +22,13 @@ import {
 } from "@/src/components/ui/dropdown-menu";
 import { toast } from "@/src/components/ui/sonner";
 import { useDeleteExpense } from "@/src/hooks/useExpenses";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 export function RowActions({ row, onEdit, onRefresh, onDownloadAttachment }) {
   const transaction = row.original;
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { deleteExpense, loading: deleteLoading } = useDeleteExpense();
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
 
   const handleEdit = () => {
     if (onEdit) {
@@ -37,7 +39,7 @@ export function RowActions({ row, onEdit, onRefresh, onDownloadAttachment }) {
   const handleDelete = async () => {
     if (transaction.source === "invoice") {
       toast.error(
-        "Les factures ne peuvent pas être supprimées depuis cette interface"
+        "Les factures ne peuvent pas être supprimées depuis cette interface",
       );
       setShowDeleteDialog(false);
       return;
@@ -80,7 +82,7 @@ export function RowActions({ row, onEdit, onRefresh, onDownloadAttachment }) {
           <DropdownMenuGroup>
             <DropdownMenuItem
               onClick={handleEdit}
-              disabled={transaction.source === "invoice"}
+              disabled={transaction.source === "invoice" || isReadOnly}
             >
               <span>Modifier</span>
               <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
@@ -89,7 +91,9 @@ export function RowActions({ row, onEdit, onRefresh, onDownloadAttachment }) {
               <span>Copier description</span>
               <DropdownMenuShortcut>⌘C</DropdownMenuShortcut>
             </DropdownMenuItem>
-            {(transaction.receiptFile?.url || transaction.attachment || (transaction.files && transaction.files.length > 0)) && (
+            {(transaction.receiptFile?.url ||
+              transaction.attachment ||
+              (transaction.files && transaction.files.length > 0)) && (
               <DropdownMenuItem
                 onClick={() =>
                   onDownloadAttachment && onDownloadAttachment(transaction)
@@ -105,11 +109,23 @@ export function RowActions({ row, onEdit, onRefresh, onDownloadAttachment }) {
             className="text-destructive focus:text-destructive"
             onClick={() => setShowDeleteDialog(true)}
             variant="destructive"
-            disabled={deleteLoading || transaction.source === "invoice"}
+            disabled={
+              deleteLoading || transaction.source === "invoice" || isReadOnly
+            }
           >
             <span>{deleteLoading ? "Suppression..." : "Supprimer"}</span>
             <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
           </DropdownMenuItem>
+          {isReadOnly && (
+            <>
+              <DropdownMenuSeparator />
+              <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                {isOwner
+                  ? "Mode lecture seule · Renouvelez votre abonnement"
+                  : "Mode lecture seule · Contactez l'administrateur"}
+              </div>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 

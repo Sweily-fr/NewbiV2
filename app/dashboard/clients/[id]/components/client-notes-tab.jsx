@@ -41,14 +41,24 @@ import {
   useDeleteClientNote,
 } from "@/src/graphql/clientQueries";
 import { GET_ORGANIZATION_MEMBERS } from "@/src/graphql/kanbanQueries";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 const toolbarItems = [
   { icon: Bold, tooltip: "Gras", command: "bold" },
   { icon: Italic, tooltip: "Italique", command: "italic" },
   { icon: Underline, tooltip: "Souligné", command: "underline" },
   { icon: List, tooltip: "Liste à puces", command: "insertUnorderedList" },
-  { icon: ListOrdered, tooltip: "Liste numérotée", command: "insertOrderedList" },
-  { icon: Quote, tooltip: "Citation", command: "formatBlock", value: "blockquote" },
+  {
+    icon: ListOrdered,
+    tooltip: "Liste numérotée",
+    command: "insertOrderedList",
+  },
+  {
+    icon: Quote,
+    tooltip: "Citation",
+    command: "formatBlock",
+    value: "blockquote",
+  },
   { icon: Code, tooltip: "Code", command: "formatBlock", value: "pre" },
   { icon: Link, tooltip: "Lien", command: "createLink" },
 ];
@@ -88,7 +98,10 @@ function MentionDropdown({ members, query, onSelect, position }) {
     const q = query.toLowerCase();
     return members.filter((m) => {
       const displayName = m.name || m.email || "";
-      return displayName.toLowerCase().includes(q) || (m.email || "").toLowerCase().includes(q);
+      return (
+        displayName.toLowerCase().includes(q) ||
+        (m.email || "").toLowerCase().includes(q)
+      );
     });
   }, [members, query]);
 
@@ -131,7 +144,9 @@ function MentionDropdown({ members, query, onSelect, position }) {
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => onSelect(member)}
           className={`flex items-center gap-2.5 w-full px-3 py-2 text-left text-sm transition-colors cursor-pointer ${
-            index === selectedIndex ? "bg-[#f8f9fa] dark:bg-[#303030]" : "hover:bg-[#f8f9fa] dark:hover:bg-[#303030]"
+            index === selectedIndex
+              ? "bg-[#f8f9fa] dark:bg-[#303030]"
+              : "hover:bg-[#f8f9fa] dark:hover:bg-[#303030]"
           }`}
         >
           <UserAvatar
@@ -154,11 +169,16 @@ function MentionDropdown({ members, query, onSelect, position }) {
         </button>
       ))}
     </div>,
-    document.body
+    document.body,
   );
 }
 
-function NoteComposer({ onSubmit, disabled, initialContent = "", members = [] }) {
+function NoteComposer({
+  onSubmit,
+  disabled,
+  initialContent = "",
+  members = [],
+}) {
   const editorRef = useRef(null);
   const [isEmpty, setIsEmpty] = useState(!initialContent);
   const [mentionState, setMentionState] = useState(null); // { query, position }
@@ -172,7 +192,10 @@ function NoteComposer({ onSubmit, disabled, initialContent = "", members = [] })
         if (selection && selection.rangeCount > 0) {
           let node = selection.anchorNode;
           while (node && node !== editorRef.current) {
-            if (node.nodeName === "A") { formats["createLink"] = true; break; }
+            if (node.nodeName === "A") {
+              formats["createLink"] = true;
+              break;
+            }
             node = node.parentNode;
           }
         }
@@ -194,12 +217,16 @@ function NoteComposer({ onSubmit, disabled, initialContent = "", members = [] })
 
   useEffect(() => {
     const handleSelectionChange = () => {
-      if (editorRef.current?.contains(document.activeElement) || editorRef.current?.contains(window.getSelection()?.anchorNode)) {
+      if (
+        editorRef.current?.contains(document.activeElement) ||
+        editorRef.current?.contains(window.getSelection()?.anchorNode)
+      ) {
         updateActiveFormats();
       }
     };
     document.addEventListener("selectionchange", handleSelectionChange);
-    return () => document.removeEventListener("selectionchange", handleSelectionChange);
+    return () =>
+      document.removeEventListener("selectionchange", handleSelectionChange);
   }, [updateActiveFormats]);
 
   useEffect(() => {
@@ -239,77 +266,90 @@ function NoteComposer({ onSubmit, disabled, initialContent = "", members = [] })
     }
   }, []);
 
-  const insertMention = useCallback((member) => {
-    if (!member) {
-      setMentionState(null);
-      return;
-    }
-
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return;
-
-    const range = selection.getRangeAt(0);
-    const node = range.startContainer;
-
-    if (node.nodeType === Node.TEXT_NODE) {
-      const textBefore = node.textContent.substring(0, range.startOffset);
-      const match = textBefore.match(/(?:^|\s)@(\w*)$/);
-      if (match) {
-        const atStart = textBefore.length - match[0].length;
-        const keepSpace = match[0].startsWith(" ") ? 1 : 0;
-
-        // Delete the @query text
-        const deleteRange = document.createRange();
-        deleteRange.setStart(node, atStart + keepSpace);
-        deleteRange.setEnd(node, range.startOffset);
-        deleteRange.deleteContents();
-
-        // Insert the mention span
-        const displayName = member.name || member.email;
-        const mentionSpan = document.createElement("span");
-        mentionSpan.contentEditable = "false";
-        mentionSpan.className = "inline-flex items-center gap-1 bg-[#5a50ff]/10 text-[#5a50ff] rounded px-1.5 py-0.5 text-xs font-medium mx-0.5 align-baseline";
-        mentionSpan.dataset.mentionId = member.id;
-        mentionSpan.dataset.mentionName = displayName;
-        mentionSpan.textContent = `@${displayName}`;
-
-        // Insert mention + trailing space
-        const insertRange = selection.getRangeAt(0);
-        insertRange.insertNode(mentionSpan);
-
-        // Add a space after mention
-        const space = document.createTextNode("\u00A0");
-        mentionSpan.parentNode.insertBefore(space, mentionSpan.nextSibling);
-
-        // Move cursor after the space
-        const newRange = document.createRange();
-        newRange.setStartAfter(space);
-        newRange.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(newRange);
+  const insertMention = useCallback(
+    (member) => {
+      if (!member) {
+        setMentionState(null);
+        return;
       }
-    }
 
-    setMentionState(null);
-    checkEmpty();
-  }, [checkEmpty]);
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) return;
 
-  const applyFormat = useCallback((item) => {
-    if (item.command === "createLink") {
-      const url = prompt("URL du lien :");
-      if (url) document.execCommand("createLink", false, url);
-    } else if (item.value) {
-      document.execCommand(item.command, false, item.value);
-    } else {
-      document.execCommand(item.command, false, null);
-    }
-    editorRef.current?.focus();
-    setTimeout(updateActiveFormats, 0);
-  }, [updateActiveFormats]);
+      const range = selection.getRangeAt(0);
+      const node = range.startContainer;
+
+      if (node.nodeType === Node.TEXT_NODE) {
+        const textBefore = node.textContent.substring(0, range.startOffset);
+        const match = textBefore.match(/(?:^|\s)@(\w*)$/);
+        if (match) {
+          const atStart = textBefore.length - match[0].length;
+          const keepSpace = match[0].startsWith(" ") ? 1 : 0;
+
+          // Delete the @query text
+          const deleteRange = document.createRange();
+          deleteRange.setStart(node, atStart + keepSpace);
+          deleteRange.setEnd(node, range.startOffset);
+          deleteRange.deleteContents();
+
+          // Insert the mention span
+          const displayName = member.name || member.email;
+          const mentionSpan = document.createElement("span");
+          mentionSpan.contentEditable = "false";
+          mentionSpan.className =
+            "inline-flex items-center gap-1 bg-[#5a50ff]/10 text-[#5a50ff] rounded px-1.5 py-0.5 text-xs font-medium mx-0.5 align-baseline";
+          mentionSpan.dataset.mentionId = member.id;
+          mentionSpan.dataset.mentionName = displayName;
+          mentionSpan.textContent = `@${displayName}`;
+
+          // Insert mention + trailing space
+          const insertRange = selection.getRangeAt(0);
+          insertRange.insertNode(mentionSpan);
+
+          // Add a space after mention
+          const space = document.createTextNode("\u00A0");
+          mentionSpan.parentNode.insertBefore(space, mentionSpan.nextSibling);
+
+          // Move cursor after the space
+          const newRange = document.createRange();
+          newRange.setStartAfter(space);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+        }
+      }
+
+      setMentionState(null);
+      checkEmpty();
+    },
+    [checkEmpty],
+  );
+
+  const applyFormat = useCallback(
+    (item) => {
+      if (item.command === "createLink") {
+        const url = prompt("URL du lien :");
+        if (url) document.execCommand("createLink", false, url);
+      } else if (item.value) {
+        document.execCommand(item.command, false, item.value);
+      } else {
+        document.execCommand(item.command, false, null);
+      }
+      editorRef.current?.focus();
+      setTimeout(updateActiveFormats, 0);
+    },
+    [updateActiveFormats],
+  );
 
   const handleKeyDown = (e) => {
     // Let mention dropdown handle arrow keys and enter
-    if (mentionState && (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Enter" || e.key === "Escape")) {
+    if (
+      mentionState &&
+      (e.key === "ArrowDown" ||
+        e.key === "ArrowUp" ||
+        e.key === "Enter" ||
+        e.key === "Escape")
+    ) {
       return;
     }
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
@@ -350,31 +390,32 @@ function NoteComposer({ onSubmit, disabled, initialContent = "", members = [] })
       <div className="flex items-center justify-between px-2 py-1.5 border-b border-[#eeeff1] dark:border-[#232323]">
         <div className="flex items-center gap-0.5">
           {toolbarItems.map((item, index) => {
-            const isActive = item.command === "createLink"
-              ? activeFormats["createLink"]
-              : item.command === "formatBlock"
-                ? activeFormats[item.command + "-" + item.value]
-                : activeFormats[item.command];
+            const isActive =
+              item.command === "createLink"
+                ? activeFormats["createLink"]
+                : item.command === "formatBlock"
+                  ? activeFormats[item.command + "-" + item.value]
+                  : activeFormats[item.command];
             return (
-            <Tooltip key={index}>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    applyFormat(item);
-                  }}
-                  className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${isActive ? "bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 dark:text-[#7c74ff]" : "text-[#606164] dark:text-muted-foreground hover:bg-[#f8f9fa] dark:hover:bg-[#232323] hover:text-[#242529] dark:hover:text-foreground"}`}
-                >
-                  <item.icon className="h-3.5 w-3.5" strokeWidth={1.75} />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p>{item.tooltip}</p>
-              </TooltipContent>
-            </Tooltip>
-          );
+              <Tooltip key={index}>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      applyFormat(item);
+                    }}
+                    className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${isActive ? "bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 dark:text-[#7c74ff]" : "text-[#606164] dark:text-muted-foreground hover:bg-[#f8f9fa] dark:hover:bg-[#232323] hover:text-[#242529] dark:hover:text-foreground"}`}
+                  >
+                    <item.icon className="h-3.5 w-3.5" strokeWidth={1.75} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>{item.tooltip}</p>
+                </TooltipContent>
+              </Tooltip>
+            );
           })}
         </div>
         <Tooltip>
@@ -416,7 +457,6 @@ function NoteComposer({ onSubmit, disabled, initialContent = "", members = [] })
           onKeyDown={handleKeyDown}
           className="w-full text-sm text-foreground focus:outline-none min-h-[56px] [&_b]:font-bold [&_i]:italic [&_u]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-[#eeeff1] dark:border-[#232323] [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground [&_pre]:bg-[#f8f9fa] [&_pre]:rounded [&_pre]:px-2 [&_pre]:py-1 [&_pre]:font-mono [&_pre]:text-xs [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-[#5a50ff] [&_a]:underline"
         />
-
       </div>
 
       {/* Mention dropdown (portal) */}
@@ -431,9 +471,7 @@ function NoteComposer({ onSubmit, disabled, initialContent = "", members = [] })
 
       {/* Send bar */}
       <div className="flex items-center justify-between px-3 py-2 border-t border-[#eeeff1] dark:border-[#232323]">
-        <span className="text-xs text-muted-foreground">
-          Cmd/Ctrl + Entrée
-        </span>
+        <span className="text-xs text-muted-foreground">Cmd/Ctrl + Entrée</span>
         <Button
           variant="default"
           disabled={isEmpty || disabled}
@@ -447,14 +485,26 @@ function NoteComposer({ onSubmit, disabled, initialContent = "", members = [] })
   );
 }
 
-export default function ClientNotesTab({ client, workspaceId, onClientUpdate }) {
+export default function ClientNotesTab({
+  client,
+  workspaceId,
+  onClientUpdate,
+}) {
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [noteToDelete, setNoteToDelete] = useState(null);
   const { data: session } = useSession();
 
   const { addNote, loading: addingNote } = useAddClientNote(workspaceId);
-  const { updateNote, loading: updatingNote } = useUpdateClientNote(workspaceId);
-  const { deleteNote, loading: deletingNote } = useDeleteClientNote(workspaceId);
+  const { updateNote, loading: updatingNote } =
+    useUpdateClientNote(workspaceId);
+  const { deleteNote, loading: deletingNote } =
+    useDeleteClientNote(workspaceId);
 
   // Fetch workspace members for @mentions
   const { data: membersData } = useQuery(GET_ORGANIZATION_MEMBERS, {
@@ -465,7 +515,7 @@ export default function ClientNotesTab({ client, workspaceId, onClientUpdate }) 
 
   const notes = useMemo(() => {
     return [...(client?.notes || [])].sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
     );
   }, [client?.notes]);
 
@@ -508,7 +558,7 @@ export default function ClientNotesTab({ client, workspaceId, onClientUpdate }) 
       <div className="px-4 sm:px-6 py-4 border-b border-[#eeeff1] dark:border-[#232323] flex-shrink-0">
         <NoteComposer
           onSubmit={handleAddNote}
-          disabled={addingNote}
+          disabled={isReadOnly || addingNote}
           members={members}
         />
       </div>
@@ -535,7 +585,9 @@ export default function ClientNotesTab({ client, workspaceId, onClientUpdate }) 
                     {editingNoteId === note.id ? (
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">{note.userName}</span>
+                          <span className="text-sm font-medium">
+                            {note.userName}
+                          </span>
                           <span className="text-xs text-muted-foreground">
                             {formatNoteDate(note.createdAt)}
                           </span>
@@ -557,7 +609,9 @@ export default function ClientNotesTab({ client, workspaceId, onClientUpdate }) 
                       <>
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium">{note.userName}</span>
+                            <span className="text-sm font-medium">
+                              {note.userName}
+                            </span>
                             <span className="text-xs text-muted-foreground">
                               {formatNoteDate(note.createdAt)}
                             </span>
@@ -568,32 +622,43 @@ export default function ClientNotesTab({ client, workspaceId, onClientUpdate }) 
                                 size="icon"
                                 variant="ghost"
                                 className="!size-7 text-muted-foreground hover:text-[#5a50ff]"
+                                disabled={isReadOnly}
+                                title={readOnlyTooltip}
                                 onClick={() => setEditingNoteId(note.id)}
                               >
                                 <Edit2 className="h-3.5 w-3.5" />
                               </Button>
                               <AlertDialog
                                 open={noteToDelete === note.id}
-                                onOpenChange={(open) => !open && setNoteToDelete(null)}
+                                onOpenChange={(open) =>
+                                  !open && setNoteToDelete(null)
+                                }
                               >
                                 <AlertDialogTrigger asChild>
                                   <Button
                                     size="icon"
                                     variant="ghost"
                                     className="!size-7 text-muted-foreground hover:text-destructive"
+                                    disabled={isReadOnly}
+                                    title={readOnlyTooltip}
                                     onClick={() => setNoteToDelete(note.id)}
                                   >
                                     <Trash2 className="h-3.5 w-3.5" />
                                   </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
-                                  <AlertDialogTitle>Supprimer la note</AlertDialogTitle>
+                                  <AlertDialogTitle>
+                                    Supprimer la note
+                                  </AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    Êtes-vous sûr de vouloir supprimer cette note ? Cette action
-                                    ne peut pas être annulée.
+                                    Êtes-vous sûr de vouloir supprimer cette
+                                    note ? Cette action ne peut pas être
+                                    annulée.
                                   </AlertDialogDescription>
                                   <div className="flex gap-2 justify-end">
-                                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                    <AlertDialogCancel>
+                                      Annuler
+                                    </AlertDialogCancel>
                                     <AlertDialogAction
                                       onClick={() => {
                                         handleDeleteNote(note.id);

@@ -1,52 +1,72 @@
-import { NextResponse } from 'next/server';
-import { launchBrowser } from '@/src/lib/puppeteer';
+import { NextResponse } from "next/server";
+import { launchBrowser } from "@/src/lib/puppeteer";
+import { mongoDb } from "@/src/lib/mongodb";
+import {
+  requireSession,
+  requireOrgMembership,
+  toObjectId,
+  apiError,
+  withErrorHandler,
+} from "@/src/lib/security";
 
 /**
- * API Route pour générer un PDF d'avoir
- * Utilise Puppeteer pour exécuter le code de génération PDF du frontend
+ * POST /api/credit-notes/generate-pdf
+ *
+ * Generate a PDF for a credit note via Puppeteer.
+ * Auth check (session + org membership) is done HERE, before launching the browser.
+ * Puppeteer then calls /api/credit-notes/data/[id] with X-Internal-Secret to fetch data.
  */
-export async function POST(request) {
+async function handler(request) {
+  const { creditNoteId } = await request.json();
+
+  if (!creditNoteId) {
+    return apiError(400, "creditNoteId est requis");
+  }
+
+  // Auth check BEFORE launching Puppeteer
+  const { user } = await requireSession(request);
+  const creditNote = await mongoDb.collection("creditnotes").findOne({
+    _id: toObjectId(creditNoteId),
+  });
+  if (!creditNote) {
+    return apiError(404, "Avoir introuvable");
+  }
+  await requireOrgMembership(user.id, creditNote.workspaceId);
+
+  // User is authorized — launch Puppeteer to generate the PDF
   let browser = null;
-
   try {
-    const { creditNoteId } = await request.json();
-
-    if (!creditNoteId) {
-      return NextResponse.json(
-        { error: 'creditNoteId est requis' },
-        { status: 400 }
-      );
-    }
-
     console.log(`📄 [PDF API] Génération PDF pour avoir ${creditNoteId}`);
 
     browser = await launchBrowser();
-
     const page = await browser.newPage();
 
-    // Naviguer vers la page de génération PDF
-    // Sur Vercel, utiliser VERCEL_URL ou NEXT_PUBLIC_APP_URL
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL 
-      || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
-      || 'http://localhost:3000';
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+      "http://localhost:3000";
     const generatorUrl = `${baseUrl}/pdf-generator/credit-note/${creditNoteId}`;
 
     console.log(`🌐 [PDF API] Navigation vers: ${generatorUrl}`);
 
+    // Authenticate Puppeteer requests via internal secret (Principle 4)
+    if (process.env.INTERNAL_API_SECRET) {
+      await page.setExtraHTTPHeaders({
+        "x-internal-secret": process.env.INTERNAL_API_SECRET,
+      });
+    }
+
     await page.goto(generatorUrl, {
-      waitUntil: 'networkidle0',
+      waitUntil: "networkidle0",
       timeout: 60000,
     });
 
-    console.log('✅ [PDF API] Page chargée, attente de la génération...');
+    console.log("✅ [PDF API] Page chargée, attente de la génération...");
 
-    // Attendre que le PDF soit généré (la page stocke le résultat dans window.pdfGenerationResult)
-    await page.waitForFunction(
-      () => window.pdfGenerationResult !== undefined,
-      { timeout: 60000 }
-    );
+    await page.waitForFunction(() => window.pdfGenerationResult !== undefined, {
+      timeout: 60000,
+    });
 
-    // Récupérer le résultat
     const pdfData = await page.evaluate(() => window.pdfGenerationResult);
 
     if (pdfData.error) {
@@ -54,12 +74,11 @@ export async function POST(request) {
     }
 
     if (!pdfData.success || !pdfData.buffer) {
-      throw new Error('PDF non généré');
+      throw new Error("PDF non généré");
     }
 
-    console.log('✅ [PDF API] PDF généré côté client');
+    console.log("✅ [PDF API] PDF généré côté client");
 
-    // Convertir le tableau en Buffer
     const finalBuffer = Buffer.from(pdfData.buffer);
 
     await browser.close();
@@ -67,28 +86,23 @@ export async function POST(request) {
 
     console.log(`✅ [PDF API] PDF généré (${finalBuffer.length} bytes)`);
 
-    // Retourner le PDF
     return new NextResponse(finalBuffer, {
       status: 200,
       headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="credit-note-${creditNoteId}.pdf"`,
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="credit-note-${creditNoteId}.pdf"`,
       },
     });
   } catch (error) {
-    console.error('❌ [PDF API] Erreur:', error);
-
     if (browser) {
       try {
         await browser.close();
       } catch (closeError) {
-        console.error('Erreur fermeture browser:', closeError);
+        console.error("Erreur fermeture browser:", closeError);
       }
     }
-
-    return NextResponse.json(
-      { error: 'Erreur lors de la génération du PDF', details: error.message },
-      { status: 500 }
-    );
+    throw error;
   }
 }
+
+export const POST = withErrorHandler(handler);

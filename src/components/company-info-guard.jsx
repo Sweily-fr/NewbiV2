@@ -3,35 +3,23 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  AlertCircle,
   LoaderCircle,
   Building2,
-  FileText,
-  CheckCircle2,
   Check,
-  X,
+  Circle,
+  CornerDownLeft,
 } from "lucide-react";
 import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/src/components/ui/alert-dialog";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
 import { Button } from "@/src/components/ui/button";
-import { Callout } from "@/src/components/ui/callout";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/src/components/ui/table";
 import { useDashboardLayoutContext } from "@/src/contexts/dashboard-layout-context";
 import { isCompanyInfoComplete } from "@/src/hooks/useCompanyInfoGuard";
 import { SettingsModal } from "@/src/components/settings-modal";
+import { cn } from "@/src/lib/utils";
 
 /**
  * Composant Guard pour protéger les pages nécessitant des informations d'entreprise complètes
@@ -87,7 +75,7 @@ export function CompanyInfoGuard({ children }) {
 
   const handleGoToSettings = () => {
     const hasGeneralMissing = fieldsInfo.generalFields.some(
-      (f) => !f.completed
+      (f) => !f.completed,
     );
     const tab = hasGeneralMissing ? "generale" : "informations-legales";
     setSettingsInitialTab(tab);
@@ -99,6 +87,11 @@ export function CompanyInfoGuard({ children }) {
     setShowDialog(false);
     router.push("/dashboard");
   };
+
+  // Calcul de la progression
+  const allFields = [...fieldsInfo.generalFields, ...fieldsInfo.legalFields];
+  const completedCount = allFields.filter((f) => f.completed).length;
+  const totalCount = allFields.length;
 
   if (isLoading) {
     return (
@@ -117,124 +110,149 @@ export function CompanyInfoGuard({ children }) {
   if (organization && !isCompanyInfoComplete(organization)) {
     return (
       <>
-        <AlertDialog open={showDialog} onOpenChange={setShowDialog}>
-          <AlertDialogContent className="max-w-2xl w-[calc(100%-2rem)] sm:w-full max-h-[90vh] overflow-y-auto border-none shadow-2xl">
-            <AlertDialogHeader className="text-left space-y-4 pb-4">
-              {/* En-tête épuré */}
-              <div className="space-y-2">
-                <AlertDialogTitle className="text-xl font-normal text-foreground">
+        <Dialog open={showDialog} onOpenChange={setShowDialog}>
+          <DialogContent className="sm:max-w-[520px] p-1 gap-0 top-[40%] border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
+            <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
+              {/* Header */}
+              <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
+                <DialogTitle className="text-sm font-medium">
                   Configuration de votre entreprise
-                </AlertDialogTitle>
-                <p className="text-sm font-normal text-muted-foreground">
-                  Quelques informations sont nécessaires pour continuer
-                </p>
-              </div>
-            </AlertDialogHeader>
+                </DialogTitle>
+              </DialogHeader>
 
-            <div className="space-y-4">
-              {/* Callout d'information */}
-              <Callout type="info" noMargin>
-                <p className="text-sm font-normal">
-                  Ces informations seront utilisées pour générer automatiquement
-                  vos documents professionnels (factures, devis, etc.).
-                </p>
-              </Callout>
-
-              {/* Section Informations générales */}
-              <div className="space-y-1">
-                <h3 className="text-xs font-medium text-muted-foreground px-1 mb-2">
-                  Informations générales
-                </h3>
-                <div className="space-y-0 border border-border/40 rounded-lg overflow-hidden">
-                  {fieldsInfo.generalFields?.map((field, index) => (
-                    <div
-                      key={`general-${index}`}
-                      className={`flex items-center justify-between px-4 py-3 hover:bg-accent/50 transition-colors ${
-                        index !== fieldsInfo.generalFields.length - 1
-                          ? "border-b border-border/40"
-                          : ""
-                      }`}
-                    >
-                      <span className="text-sm text-foreground">
-                        {field.name}
-                      </span>
-                      {field.completed ? (
-                        <Check
-                          className="stroke-green-600 shrink-0"
-                          size={16}
-                          strokeWidth={2}
-                          aria-hidden="true"
-                        />
-                      ) : (
-                        <X
-                          className="stroke-red-500 shrink-0"
-                          size={16}
-                          strokeWidth={2}
-                          aria-hidden="true"
-                        />
-                      )}
-                    </div>
-                  ))}
+              <div className="px-5 pt-4 pb-0">
+                {/* Description + progression */}
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-[13px] text-muted-foreground">
+                    Complétez ces informations pour générer vos documents.
+                  </p>
+                  <span className="text-xs text-muted-foreground tabular-nums shrink-0 ml-3">
+                    {completedCount}/{totalCount}
+                  </span>
                 </div>
-              </div>
 
-              {/* Section Informations légales */}
-              <div className="space-y-1">
-                <h3 className="text-xs font-medium text-muted-foreground px-1 mb-2">
-                  Informations légales
-                </h3>
-                <div className="space-y-0 border border-border/40 rounded-lg overflow-hidden">
-                  {fieldsInfo.legalFields?.map((field, index) => (
-                    <div
-                      key={`legal-${index}`}
-                      className={`flex items-center justify-between px-4 py-3 hover:bg-accent/50 transition-colors ${
-                        index !== fieldsInfo.legalFields.length - 1
-                          ? "border-b border-border/40"
-                          : ""
-                      }`}
-                    >
-                      <span className="text-sm text-foreground">
-                        {field.name}
-                      </span>
-                      {field.completed ? (
-                        <Check
-                          className="stroke-green-600 shrink-0"
-                          size={16}
-                          strokeWidth={2}
-                          aria-hidden="true"
-                        />
-                      ) : (
-                        <X
-                          className="stroke-red-500 shrink-0"
-                          size={16}
-                          strokeWidth={2}
-                          aria-hidden="true"
-                        />
-                      )}
+                {/* Barre de progression */}
+                <div className="h-1 bg-muted rounded-full overflow-hidden mb-5">
+                  <div
+                    className="h-full bg-foreground rounded-full transition-all duration-500"
+                    style={{
+                      width: `${totalCount > 0 ? (completedCount / totalCount) * 100 : 0}%`,
+                    }}
+                  />
+                </div>
+
+                {/* Sections côte à côte */}
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  {/* Informations générales */}
+                  <div>
+                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                      Général
+                    </p>
+                    <div className="rounded-lg border border-border/50 overflow-hidden">
+                      {fieldsInfo.generalFields?.map((field, index) => (
+                        <div
+                          key={`general-${index}`}
+                          className={cn(
+                            "flex items-center gap-2.5 px-3 py-2",
+                            index !== fieldsInfo.generalFields.length - 1 &&
+                              "border-b border-border/40",
+                          )}
+                        >
+                          {field.completed ? (
+                            <div className="flex items-center justify-center size-4 rounded-full bg-foreground shrink-0">
+                              <Check
+                                className="size-2.5 text-background"
+                                strokeWidth={3}
+                              />
+                            </div>
+                          ) : (
+                            <Circle
+                              className="size-4 text-border shrink-0"
+                              strokeWidth={2}
+                            />
+                          )}
+                          <span
+                            className={cn(
+                              "text-[13px]",
+                              field.completed
+                                ? "text-muted-foreground line-through"
+                                : "text-foreground",
+                            )}
+                          >
+                            {field.name}
+                          </span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+
+                  {/* Informations légales */}
+                  <div>
+                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                      Légal
+                    </p>
+                    <div className="rounded-lg border border-border/50 overflow-hidden">
+                      {fieldsInfo.legalFields?.map((field, index) => (
+                        <div
+                          key={`legal-${index}`}
+                          className={cn(
+                            "flex items-center gap-2.5 px-3 py-2",
+                            index !== fieldsInfo.legalFields.length - 1 &&
+                              "border-b border-border/40",
+                          )}
+                        >
+                          {field.completed ? (
+                            <div className="flex items-center justify-center size-4 rounded-full bg-foreground shrink-0">
+                              <Check
+                                className="size-2.5 text-background"
+                                strokeWidth={3}
+                              />
+                            </div>
+                          ) : (
+                            <Circle
+                              className="size-4 text-border shrink-0"
+                              strokeWidth={2}
+                            />
+                          )}
+                          <span
+                            className={cn(
+                              "text-[13px]",
+                              field.completed
+                                ? "text-muted-foreground line-through"
+                                : "text-foreground",
+                            )}
+                          >
+                            {field.name}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between border-t border-border/40 -mx-5 px-5 py-3">
+                  <button
+                    onClick={handleCancel}
+                    className="text-[13px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  >
+                    Retour
+                  </button>
+                  <Button
+                    variant="primary"
+                    onClick={handleGoToSettings}
+                    className="gap-2 cursor-pointer"
+                  >
+                    Compléter
+                    <kbd className="inline-flex items-center justify-center size-5 rounded bg-white/20 ml-0.5">
+                      <CornerDownLeft className="size-3" />
+                    </kbd>
+                  </Button>
                 </div>
               </div>
             </div>
-
-            <AlertDialogFooter className="gap-3 flex-col sm:flex-row pt-6 border-t">
-              <Button
-                variant="ghost"
-                onClick={handleCancel}
-                className="cursor-pointer w-full sm:w-auto font-normal order-2 sm:order-1"
-              >
-                Retour aux outils
-              </Button>
-              <Button
-                onClick={handleGoToSettings}
-                className="bg-[#5a50ff] hover:bg-[#4a40ef] text-white cursor-pointer w-full sm:w-auto font-normal order-1 sm:order-2 shadow-sm"
-              >
-                <CheckCircle2 className="w-4 h-4 mr-2" />
-                Compléter maintenant
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+          </DialogContent>
+        </Dialog>
 
         {/* Modal de paramètres */}
         <SettingsModal

@@ -39,8 +39,15 @@ import { useAutoReconcile } from "@/src/hooks/useAutoReconcile";
 import { Callout } from "@/src/components/ui/callout";
 import OcrEditableDisplay from "./ocr-editable-display";
 import { Badge } from "@/src/components/ui/badge";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -99,36 +106,33 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
   }, []);
 
   // Gestion de la sélection de fichier
-  const handleFileSelect = useCallback(
-    (file) => {
-      // Validation du fichier
-      const allowedTypes = [
-        "image/jpeg",
-        "image/png",
-        "image/webp",
-        "application/pdf",
-      ];
-      const maxSize = 10 * 1024 * 1024; // 10MB
+  const handleFileSelect = useCallback((file) => {
+    // Validation du fichier
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "application/pdf",
+    ];
+    const maxSize = 10 * 1024 * 1024; // 10MB
 
-      if (!allowedTypes.includes(file.type)) {
-        console.error("❌ Type de fichier non supporté:", file.type);
-        return;
-      }
+    if (!allowedTypes.includes(file.type)) {
+      console.error("❌ Type de fichier non supporté:", file.type);
+      return;
+    }
 
-      if (file.size > maxSize) {
-        console.error("❌ Fichier trop volumineux:", file.size);
-        return;
-      }
+    if (file.size > maxSize) {
+      console.error("❌ Fichier trop volumineux:", file.size);
+      return;
+    }
 
-      // Révoquer l'ancien blob URL si existant
-      setPreviewUrl((prev) => {
-        if (prev) URL.revokeObjectURL(prev);
-        return URL.createObjectURL(file);
-      });
-      setSelectedFile(file);
-    },
-    []
-  );
+    // Révoquer l'ancien blob URL si existant
+    setPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
+    setSelectedFile(file);
+  }, []);
 
   // Gestion de l'input file
   const handleFileInputChange = useCallback(
@@ -138,7 +142,7 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
         handleFileSelect(file);
       }
     },
-    [handleFileSelect]
+    [handleFileSelect],
   );
 
   // Suppression du fichier
@@ -216,7 +220,7 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
         await findMatchingTransaction({ amount, date, vendor });
       }
     },
-    [findMatchingTransaction]
+    [findMatchingTransaction],
   );
 
   // Déclencher automatiquement la recherche de correspondances après l'OCR
@@ -249,7 +253,7 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
           let isoDate = rawDate;
           if (rawDate) {
             const frenchMatch = rawDate.match(
-              /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/
+              /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/,
             );
             if (frenchMatch) {
               const day = frenchMatch[1].padStart(2, "0");
@@ -273,7 +277,7 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
           const result = await autoReconcile(
             selectedFile,
             ocrData,
-            selectedTransactionId
+            selectedTransactionId,
           );
 
           if (result?.success) {
@@ -305,7 +309,7 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
       selectedTransactionId,
       onUploadSuccess,
       handleClose,
-    ]
+    ],
   );
 
   // Sélectionner une transaction pour le rapprochement manuel
@@ -381,7 +385,7 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
                     "border-1 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer",
                     isDragging
                       ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20"
-                      : "border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500"
+                      : "border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500",
                   )}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
@@ -431,7 +435,6 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
                       <XIcon className="h-3 w-3" />
                     </Button>
                   </div>
-
                 </div>
               )}
             </div>
@@ -503,7 +506,7 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
                           "flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors",
                           selectedTransactionId === match.id
                             ? "border-primary bg-primary/5 ring-1 ring-primary"
-                            : "hover:bg-muted/50"
+                            : "hover:bg-muted/50",
                         )}
                       >
                         <div className="flex items-center gap-3">
@@ -512,7 +515,7 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
                               "h-8 w-8 rounded-full flex items-center justify-center",
                               selectedTransactionId === match.id
                                 ? "bg-primary text-primary-foreground"
-                                : "bg-muted"
+                                : "bg-muted",
                             )}
                           >
                             {selectedTransactionId === match.id ? (
@@ -528,7 +531,7 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
                             <p className="text-xs text-muted-foreground">
                               {match.date
                                 ? new Date(match.date).toLocaleDateString(
-                                    "fr-FR"
+                                    "fr-FR",
                                   )
                                 : "Date inconnue"}
                             </p>
@@ -616,7 +619,8 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
               </Button>
               <Button
                 onClick={handleProcessReceipt}
-                disabled={!selectedFile || isProcessing}
+                disabled={isReadOnly || !selectedFile || isProcessing}
+                title={readOnlyTooltip}
                 className="bg-primary hover:bg-primary/90 cursor-pointer font-normal"
               >
                 {isProcessing ? (
@@ -645,9 +649,12 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
                   </Button>
                   <Button
                     onClick={() =>
-                      handleValidateOcr(editedFinancialAnalysis || ocrResult?.financialAnalysis)
+                      handleValidateOcr(
+                        editedFinancialAnalysis || ocrResult?.financialAnalysis,
+                      )
                     }
-                    disabled={isCreatingExpense}
+                    disabled={isReadOnly || isCreatingExpense}
+                    title={readOnlyTooltip}
                     className="bg-primary hover:bg-primary/90 cursor-pointer font-normal"
                   >
                     {isCreatingExpense ? (
@@ -679,9 +686,12 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
                   </div>
                   <Button
                     onClick={() =>
-                      handleValidateOcr(editedFinancialAnalysis || ocrResult?.financialAnalysis)
+                      handleValidateOcr(
+                        editedFinancialAnalysis || ocrResult?.financialAnalysis,
+                      )
                     }
-                    disabled={isCreatingExpense || isReconciling}
+                    disabled={isReadOnly || isCreatingExpense || isReconciling}
+                    title={readOnlyTooltip}
                     className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-popover dark:text-popover-foreground dark:hover:bg-popover/90"
                   >
                     {isCreatingExpense || isReconciling ? (

@@ -120,14 +120,18 @@ function QuotesContent() {
               Importer
             </Button>
             <QuoteExportButton quotes={quotes} iconOnly={false} />
-            <Button
+            <PermissionButton
+              requiresActiveSubscription
+              resource="quotes"
+              action="create"
               variant="primary"
               onClick={handleNewQuote}
               className="cursor-pointer"
+              tooltipNoAccess="Vous n'avez pas la permission de créer des devis"
             >
               <Plus size={14} strokeWidth={2} aria-hidden="true" />
               Nouveau devis
-            </Button>
+            </PermissionButton>
           </div>
         </div>
 
@@ -233,6 +237,7 @@ function QuotesContent() {
                 <Settings className="h-4 w-4" />
               </Button>
               <PermissionButton
+                requiresActiveSubscription
                 resource="quotes"
                 action="create"
                 onClick={handleNewQuote}

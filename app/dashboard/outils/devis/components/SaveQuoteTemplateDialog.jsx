@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@apollo/client";
-import { SAVE_QUOTE_AS_TEMPLATE, GET_QUOTE_TEMPLATES } from "@/src/graphql/quoteQueries";
+import {
+  SAVE_QUOTE_AS_TEMPLATE,
+  GET_QUOTE_TEMPLATES,
+} from "@/src/graphql/quoteQueries";
 import { GET_INVOICE_TEMPLATES } from "@/src/graphql/invoiceQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
@@ -21,10 +24,22 @@ import {
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import { LoaderCircle } from "lucide-react";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
-export function SaveQuoteTemplateDialog({ quoteId, quoteNumber, open, onOpenChange }) {
+export function SaveQuoteTemplateDialog({
+  quoteId,
+  quoteNumber,
+  open,
+  onOpenChange,
+}) {
   const { workspaceId } = useWorkspace();
   const { subscription } = useSubscription();
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
@@ -64,7 +79,9 @@ export function SaveQuoteTemplateDialog({ quoteId, quoteNumber, open, onOpenChan
       toast.error("Erreur lors de la sauvegarde du modèle");
       console.error("Save quote template error:", error);
     },
-    refetchQueries: [{ query: GET_QUOTE_TEMPLATES, variables: { workspaceId } }],
+    refetchQueries: [
+      { query: GET_QUOTE_TEMPLATES, variables: { workspaceId } },
+    ],
   });
 
   const handleSubmit = async (e) => {
@@ -88,12 +105,16 @@ export function SaveQuoteTemplateDialog({ quoteId, quoteNumber, open, onOpenChan
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]" onCloseAutoFocus={(e) => e.preventDefault()}>
+      <DialogContent
+        className="sm:max-w-[425px]"
+        onCloseAutoFocus={(e) => e.preventDefault()}
+      >
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Sauvegarder comme modèle</DialogTitle>
             <DialogDescription>
-              Sauvegardez ce devis comme modèle réutilisable (articles, notes, paramètres).
+              Sauvegardez ce devis comme modèle réutilisable (articles, notes,
+              paramètres).
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -120,14 +141,23 @@ export function SaveQuoteTemplateDialog({ quoteId, quoteNumber, open, onOpenChan
           </div>
           {isLimitReached && (
             <p className="text-sm text-destructive mb-2">
-              Limite atteinte ({currentCount}/{templateLimit} modèles). Passez au plan {nextPlanLabel} pour plus de modèles.
+              Limite atteinte ({currentCount}/{templateLimit} modèles). Passez
+              au plan {nextPlanLabel} pour plus de modèles.
             </p>
           )}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               Annuler
             </Button>
-            <Button type="submit" disabled={loading || isLimitReached}>
+            <Button
+              type="submit"
+              disabled={isReadOnly || loading || isLimitReached}
+              title={readOnlyTooltip}
+            >
               {loading ? (
                 <>
                   <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />

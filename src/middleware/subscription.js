@@ -20,11 +20,11 @@ const EXCLUDED_ROUTES = [
   "/api/webhooks/stripe",
   "/api/organizations",
   "/api/invitations",
-  "/api/subscription",
   "/pricing",
   "/checkout",
   "/billing",
   "/onboarding",
+  "/auth/signup",
 ];
 
 /**

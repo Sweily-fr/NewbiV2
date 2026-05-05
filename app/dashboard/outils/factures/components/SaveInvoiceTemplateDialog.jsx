@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@apollo/client";
-import { SAVE_INVOICE_AS_TEMPLATE, GET_INVOICE_TEMPLATES } from "@/src/graphql/invoiceQueries";
+import {
+  SAVE_INVOICE_AS_TEMPLATE,
+  GET_INVOICE_TEMPLATES,
+} from "@/src/graphql/invoiceQueries";
 import { GET_QUOTE_TEMPLATES } from "@/src/graphql/quoteQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
@@ -21,10 +24,22 @@ import {
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import { LoaderCircle } from "lucide-react";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
-export function SaveInvoiceTemplateDialog({ invoiceId, invoiceNumber, open, onOpenChange }) {
+export function SaveInvoiceTemplateDialog({
+  invoiceId,
+  invoiceNumber,
+  open,
+  onOpenChange,
+}) {
   const { workspaceId } = useWorkspace();
   const { subscription } = useSubscription();
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
@@ -64,7 +79,9 @@ export function SaveInvoiceTemplateDialog({ invoiceId, invoiceNumber, open, onOp
       toast.error("Erreur lors de la sauvegarde du modèle");
       console.error("Save invoice template error:", error);
     },
-    refetchQueries: [{ query: GET_INVOICE_TEMPLATES, variables: { workspaceId } }],
+    refetchQueries: [
+      { query: GET_INVOICE_TEMPLATES, variables: { workspaceId } },
+    ],
   });
 
   const handleSubmit = async (e) => {
@@ -88,12 +105,16 @@ export function SaveInvoiceTemplateDialog({ invoiceId, invoiceNumber, open, onOp
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]" onCloseAutoFocus={(e) => e.preventDefault()}>
+      <DialogContent
+        className="sm:max-w-[425px]"
+        onCloseAutoFocus={(e) => e.preventDefault()}
+      >
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Sauvegarder comme modèle</DialogTitle>
             <DialogDescription>
-              Sauvegardez cette facture comme modèle réutilisable (articles, notes, paramètres).
+              Sauvegardez cette facture comme modèle réutilisable (articles,
+              notes, paramètres).
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -120,14 +141,23 @@ export function SaveInvoiceTemplateDialog({ invoiceId, invoiceNumber, open, onOp
           </div>
           {isLimitReached && (
             <p className="text-sm text-destructive mb-2">
-              Limite atteinte ({currentCount}/{templateLimit} modèles). Passez au plan {nextPlanLabel} pour plus de modèles.
+              Limite atteinte ({currentCount}/{templateLimit} modèles). Passez
+              au plan {nextPlanLabel} pour plus de modèles.
             </p>
           )}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               Annuler
             </Button>
-            <Button type="submit" disabled={loading || isLimitReached}>
+            <Button
+              type="submit"
+              disabled={isReadOnly || loading || isLimitReached}
+              title={readOnlyTooltip}
+            >
               {loading ? (
                 <>
                   <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />

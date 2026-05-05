@@ -51,8 +51,11 @@ export const TEST_USER = {
     siret: "12345678901234",
     vatNumber: "FR12345678901",
     companyStatus: "SASU",
-    capitalSocial: "1000",
-    rcs: "Paris",
+    capitalSocial: "10000",
+    // Backend invoice/quote validation requires full RCS format
+    // (ex: "Paris B 123 456 789") for SASU. Used by companyInfoSnapshot
+    // baked into seeded TEST_INVOICES/TEST_QUOTES.
+    rcs: "Paris B 987 654 321",
     transactionCategory: "SERVICES",
     vatPaymentCondition: "ENCAISSEMENTS",
     address: {
@@ -73,12 +76,34 @@ export const TEST_USER = {
 };
 
 // ─── Organization (Better Auth — raw collection) ────────────────────
+// All `company*` + address + legal fields are required by isCompanyInfoComplete
+// (src/hooks/useCompanyInfoGuard.js). Without them CompanyInfoGuard shows the
+// "Configuration de votre entreprise" alert instead of the requested page.
 export const TEST_ORGANIZATION = {
   _id: IDS.organizationId,
   name: "Newbi Test SASU",
   slug: "newbi-test-sasu",
   logo: null,
   metadata: null,
+  // Mark onboarding as completed so OnboardingGuard does not redirect to /onboarding
+  organizationType: "business",
+  onboardingCompleted: true,
+  // Company info (required by CompanyInfoGuard for /factures/new etc.)
+  companyName: "Newbi Test SASU",
+  companyEmail: "billing@newbi-test.fr",
+  companyPhone: "+33123456789",
+  addressStreet: "1 rue de la Paix",
+  addressCity: "Paris",
+  addressZipCode: "75001",
+  addressCountry: "France",
+  siret: "98765432100012",
+  legalForm: "SASU",
+  vatNumber: "FR98765432100",
+  // Required by backend invoice validation for SASU/SAS/SARL legal forms
+  // (companyInfo.capitalSocial + companyInfo.rcs sont obligatoires sinon
+  // CreateInvoice mutation throw VALIDATION_ERROR)
+  capitalSocial: "10000",
+  rcs: "Paris B 987 654 321",
   createdAt: new Date(),
 };
 
@@ -195,7 +220,14 @@ export const TEST_INVOICES = [
   {
     _id: IDS.invoiceDraft,
     prefix,
-    number: null, // drafts have no number
+    // Workaround R1 (cf e2e/REGRESSIONS_TO_FIX.md) : le schema GraphQL
+    // déclare Invoice.number: String! mais le modèle Mongoose autorise
+    // null pour les DRAFTs. Sans valeur, GetInvoices crash sur la
+    // sérialisation et /factures ne charge jamais. On aligne sur ce que
+    // le resolver génère réellement pour les DRAFTs créés via UI/mutation
+    // (cf invoice.js:1118-1122 → "DRAFT-0001"). Fix produit (schema
+    // nullable) reste à faire côté backend.
+    number: "DRAFT-0001",
     issueDate: now,
     dueDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
     invoiceType: "standard",
@@ -376,7 +408,10 @@ export const TEST_QUOTES = [
   {
     _id: IDS.quoteDraft,
     prefix: quotePrefix,
-    number: null,
+    // Même workaround R1 que invoiceDraft : Quote.number est aussi String!
+    // dans le schema GraphQL — sans valeur, GetQuotes crash et /devis ne
+    // charge pas non plus.
+    number: "DRAFT-0001",
     issueDate: now,
     validUntil: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
     status: "DRAFT",
@@ -536,6 +571,79 @@ export const TEST_SUPPLIER_EXPENSE = {
   isReconciled: false,
   createdAt: now,
   updatedAt: now,
+};
+
+// ─── Foreign tenant — multi-tenant isolation tests ─────────────────
+// A separate organization+invoice that DOES NOT belong to our test user.
+// Used by e2e/security/multi-tenant-isolation.spec.js to assert that
+// resolvers + page guards reject access to other tenants' data even when
+// the attacker knows the document's _id.
+//
+// IMPORTANT: do NOT route this fixture through the seed `rewire()` helper
+// — its workspaceId must remain foreign to be a valid cross-tenant target.
+export const FOREIGN_IDS = {
+  organizationId: new ObjectId("ffffffffffffffff00000099"),
+  invoiceId: new ObjectId("ffffffffffffffff00000001"),
+  clientId: new ObjectId("ffffffffffffffff00000002"),
+  userId: new ObjectId("ffffffffffffffff00000003"),
+};
+
+export const FOREIGN_INVOICE = {
+  _id: FOREIGN_IDS.invoiceId,
+  workspaceId: FOREIGN_IDS.organizationId,
+  createdBy: FOREIGN_IDS.userId,
+  prefix: "F-209912",
+  number: "9999",
+  issueDate: new Date("2099-12-01"),
+  dueDate: new Date("2099-12-31"),
+  invoiceType: "standard",
+  status: "PENDING",
+  client: {
+    _id: FOREIGN_IDS.clientId,
+    name: "Foreign Tenant Client (DO NOT LEAK)",
+    email: "leak-canary@foreign-tenant.test",
+    phone: "+33000000000",
+    type: "COMPANY",
+    siret: "00000000000000",
+    vatNumber: "FR00000000000",
+    address: {
+      street: "1 rue Foreign",
+      city: "Foreign City",
+      postalCode: "00000",
+      country: "France",
+    },
+  },
+  companyInfo: {
+    name: "Foreign Tenant SAS",
+    email: "billing@foreign-tenant.test",
+    siret: "11111111111111",
+    vatNumber: "FR11111111111",
+  },
+  items: [
+    {
+      description: "Foreign tenant secret line item",
+      quantity: 1,
+      unitPrice: 99999,
+      vatRate: 20,
+      unit: "forfait",
+      discount: 0,
+      discountType: "PERCENTAGE",
+      progressPercentage: 100,
+    },
+  ],
+  totalHT: 99999,
+  totalVAT: 19999.8,
+  totalTTC: 119998.8,
+  finalTotalHT: 99999,
+  finalTotalVAT: 19999.8,
+  finalTotalTTC: 119998.8,
+  discount: 0,
+  discountType: "PERCENTAGE",
+  showBankDetails: false,
+  headerNotes: "",
+  footerNotes: "DO NOT LEAK — foreign tenant fixture",
+  createdAt: new Date("2099-12-01"),
+  updatedAt: new Date("2099-12-01"),
 };
 
 // ─── Collections to seed / clean ────────────────────────────────────

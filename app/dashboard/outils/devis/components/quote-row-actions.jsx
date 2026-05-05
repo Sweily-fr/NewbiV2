@@ -43,6 +43,7 @@ import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { getPlanLimits } from "@/src/lib/plan-limits";
 import { toast } from "@/src/components/ui/sonner";
 import QuoteMobileFullscreen from "./quote-mobile-fullscreen";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 // Fonction utilitaire pour formater les dates
 const formatDateForEmail = (dateValue) => {
@@ -101,6 +102,7 @@ export default function QuoteRowActions({
   const { subscription } = useSubscription();
   const planLimits = getPlanLimits(subscription?.plan);
   const esignatureAccess = planLimits.esignature; // false | "ses" | "qes"
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
   const { deleteQuote, loading: isDeleting } = useDeleteQuote();
   const handleView = () => {
@@ -260,6 +262,7 @@ export default function QuoteRowActions({
                     variant="outline"
                     size="icon"
                     className="h-8 w-8 p-0 cursor-pointer"
+                    disabled={isReadOnly}
                     onClick={(e) => {
                       e.stopPropagation();
                       onSendEmail?.(quote);
@@ -296,13 +299,14 @@ export default function QuoteRowActions({
                   e.stopPropagation();
                   onSaveAsTemplate?.(quote);
                 }}
+                disabled={isReadOnly}
               >
                 <BookTemplate className="mr-2 h-4 w-4" />
                 Sauv. modèle
               </DropdownMenuItem>
               {(quote.status === QUOTE_STATUS.DRAFT ||
                 quote.status === QUOTE_STATUS.PENDING) && (
-                <DropdownMenuItem onClick={handleEdit}>
+                <DropdownMenuItem onClick={handleEdit} disabled={isReadOnly}>
                   <Pencil className="mr-2 h-4 w-4" />
                   Éditer
                 </DropdownMenuItem>
@@ -314,7 +318,7 @@ export default function QuoteRowActions({
               {quote.status === QUOTE_STATUS.DRAFT && (
                 <DropdownMenuItem
                   onClick={handleSendQuote}
-                  disabled={isLoading}
+                  disabled={isLoading || isReadOnly}
                 >
                   <FileText className="mr-2 h-4 w-4" />
                   Envoyer le devis
@@ -323,7 +327,10 @@ export default function QuoteRowActions({
 
               {quote.status === QUOTE_STATUS.PENDING && (
                 <>
-                  <DropdownMenuItem onClick={handleAccept} disabled={isLoading}>
+                  <DropdownMenuItem
+                    onClick={handleAccept}
+                    disabled={isLoading || isReadOnly}
+                  >
                     <CheckCircle className="mr-2 h-4 w-4" />
                     Accepter le devis
                   </DropdownMenuItem>
@@ -333,7 +340,7 @@ export default function QuoteRowActions({
               {canConvertToInvoice && (
                 <DropdownMenuItem
                   onClick={handleConvertToInvoice}
-                  disabled={isLoading}
+                  disabled={isLoading || isReadOnly}
                 >
                   <FileCheck className="mr-2 h-4 w-4" />
                   Convertir en facture
@@ -343,7 +350,7 @@ export default function QuoteRowActions({
               {canConvertToPO && (
                 <DropdownMenuItem
                   onClick={handleConvertToPurchaseOrder}
-                  disabled={isLoading}
+                  disabled={isLoading || isReadOnly}
                 >
                   <ShoppingCart className="mr-2 h-4 w-4" />
                   Convertir en bon de commande
@@ -365,6 +372,7 @@ export default function QuoteRowActions({
                           e.stopPropagation();
                           onRequestSignature?.(quote);
                         }}
+                        disabled={isReadOnly}
                       >
                         <PenLine className="mr-2 h-4 w-4" />
                         Faire signer
@@ -396,7 +404,7 @@ export default function QuoteRowActions({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleReject}
-                    disabled={isLoading}
+                    disabled={isLoading || isReadOnly}
                     className="text-red-600 focus:text-red-600"
                   >
                     <XCircle className="mr-2 h-4 w-4 text-red-600" />
@@ -411,11 +419,22 @@ export default function QuoteRowActions({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleDelete}
+                    disabled={isReadOnly}
                     className="text-red-600 focus:text-red-600"
                   >
                     <Trash2 className="mr-2 h-4 w-4 text-red-600" />
                     Supprimer
                   </DropdownMenuItem>
+                </>
+              )}
+              {isReadOnly && (
+                <>
+                  <DropdownMenuSeparator />
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                    {isOwner
+                      ? "Mode lecture seule · Renouvelez votre abonnement"
+                      : "Mode lecture seule · Contactez l'administrateur"}
+                  </div>
                 </>
               )}
             </DropdownMenuContent>

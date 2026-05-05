@@ -42,6 +42,8 @@ import { toast } from "@/src/components/ui/sonner";
 import { findBank } from "@/lib/banks-config";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { usePermissions } from "@/src/hooks/usePermissions";
+import { authClient } from "@/src/lib/auth-client";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 function BankBalanceCardInner(
   {
@@ -59,6 +61,12 @@ function BankBalanceCardInner(
   const { workspaceId } = useWorkspace();
   const { subscription } = useSubscription();
   const { getUserRole } = usePermissions();
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
   const userRole = getUserRole();
 
   // Utiliser les props si disponibles, sinon état local
@@ -197,8 +205,17 @@ function BankBalanceCardInner(
     );
   }, [institutions, searchQuery]);
 
-  // Ouvrir le modal de sélection
-  const handleOpenModal = () => {
+  // Ouvrir le modal de sélection (vérifie l'email d'abord)
+  const handleOpenModal = async () => {
+    try {
+      const { data: session } = await authClient.getSession();
+      if (session?.user?.emailVerified === false) {
+        toast.error(
+          "Veuillez vérifier votre adresse email avant de connecter un compte bancaire.",
+        );
+        return;
+      }
+    } catch {}
     setIsModalOpen(true);
     setSearchQuery("");
     setSelectedBank(null);
@@ -387,7 +404,8 @@ function BankBalanceCardInner(
                 size="sm"
                 className="text-xs font-medium bg-foreground text-background hover:bg-foreground/90"
                 onClick={handleOpenModal}
-                disabled={isConnecting}
+                disabled={isReadOnly || isConnecting}
+                title={readOnlyTooltip}
               >
                 {isConnecting ? "Connexion..." : "Connecter un compte"}
               </Button>
@@ -582,7 +600,8 @@ function BankBalanceCardInner(
             size="sm"
             className="w-full mt-4"
             onClick={handleOpenModal}
-            disabled={isConnecting}
+            disabled={isReadOnly || isConnecting}
+            title={readOnlyTooltip}
           >
             {isConnecting ? (
               <LoaderCircle className="h-4 w-4 animate-spin mr-2" />

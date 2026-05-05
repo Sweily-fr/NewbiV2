@@ -56,6 +56,7 @@ import CategorySearchSelect from "./category-search-select";
 import { Calendar } from "@/src/components/ui/calendar-rac";
 import { DateInput } from "@/src/components/ui/datefield-rac";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 export function AddTransactionDrawer({
   open,
@@ -64,6 +65,12 @@ export function AddTransactionDrawer({
   transaction = null,
   organizationMembers = [],
 }) {
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
   const [formData, setFormData] = useState({
     type: "EXPENSE", // Défaut à EXPENSE pour les dépenses
     amount: "",
@@ -834,6 +841,8 @@ export function AddTransactionDrawer({
               <Button
                 type="submit"
                 className="bg-primary hover:bg-primary/90 cursor-pointer font-normal"
+                disabled={isReadOnly}
+                title={readOnlyTooltip}
               >
                 {transaction
                   ? "Modifier la transaction"

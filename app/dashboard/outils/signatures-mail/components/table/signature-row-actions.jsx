@@ -30,6 +30,7 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import SignaturePreviewModal from "../preview/signature-preview-modal";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 export default function SignatureRowActions({
   signature,
@@ -41,6 +42,7 @@ export default function SignatureRowActions({
   const router = useRouter();
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
 
   const handleEdit = (e) => {
     e?.stopPropagation();
@@ -82,7 +84,7 @@ export default function SignatureRowActions({
             <EyeIcon className="mr-2 h-4 w-4" />
             Voir
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleEdit}>
+          <DropdownMenuItem onClick={handleEdit} disabled={isReadOnly}>
             <EditIcon className="mr-2 h-4 w-4" />
             Modifier
           </DropdownMenuItem>
@@ -96,11 +98,22 @@ export default function SignatureRowActions({
               e.stopPropagation();
               setShowDeleteAlert(true);
             }}
+            disabled={isReadOnly}
             className="text-red-600"
           >
             <TrashIcon className="mr-2 h-4 w-4 text-red-600" />
             Supprimer
           </DropdownMenuItem>
+          {isReadOnly && (
+            <>
+              <DropdownMenuSeparator />
+              <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                {isOwner
+                  ? "Mode lecture seule · Renouvelez votre abonnement"
+                  : "Mode lecture seule · Contactez l'administrateur"}
+              </div>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -109,7 +122,10 @@ export default function SignatureRowActions({
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
             <AlertDialogDescription>
-              Êtes-vous sûr de vouloir <span className="font-semibold text-destructive">supprimer</span> la signature "{signature.signatureName}" ? Cette action est irréversible.
+              Êtes-vous sûr de vouloir{" "}
+              <span className="font-semibold text-destructive">supprimer</span>{" "}
+              la signature "{signature.signatureName}" ? Cette action est
+              irréversible.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

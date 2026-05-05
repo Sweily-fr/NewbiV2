@@ -13,6 +13,7 @@ import { useInstalledApps } from "@/src/hooks/useInstalledApps";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useActiveOrganization } from "@/src/lib/organization-client";
 import { usePermissions } from "@/src/hooks/usePermissions";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useSession } from "@/src/lib/auth-client";
 import { StripeConnectOnboardingModal } from "@/src/components/stripe-connect-onboarding-modal";
 import {
@@ -597,10 +598,12 @@ function PennylaneConnectionPanel({
             size="sm"
             onClick={handleSyncAll}
             disabled={
+              actions.isReadOnly ||
               isSyncing ||
               actions.syncStatus === "IN_PROGRESS" ||
               !actions.canManage
             }
+            title={actions.readOnlyTooltip}
             className="bg-[#222] hover:bg-[#222]/90 text-white cursor-pointer"
           >
             {isSyncing ? (
@@ -700,7 +703,13 @@ function PennylaneConnectionPanel({
           variant="outline"
           size="sm"
           onClick={handleTest}
-          disabled={!apiToken.trim() || isTesting || !actions.canManage}
+          disabled={
+            actions.isReadOnly ||
+            !apiToken.trim() ||
+            isTesting ||
+            !actions.canManage
+          }
+          title={actions.readOnlyTooltip}
           className="cursor-pointer"
         >
           {isTesting ? (
@@ -714,7 +723,13 @@ function PennylaneConnectionPanel({
           type="button"
           size="sm"
           onClick={handleConnect}
-          disabled={!apiToken.trim() || actions.isLoading || !actions.canManage}
+          disabled={
+            actions.isReadOnly ||
+            !apiToken.trim() ||
+            actions.isLoading ||
+            !actions.canManage
+          }
+          title={actions.readOnlyTooltip}
           className="bg-[#222] hover:bg-[#222]/90 text-white cursor-pointer"
         >
           {actions.isLoading ? (
@@ -751,6 +766,8 @@ function AppDetailView({
   installLoading,
   uninstallLoading,
   canManage,
+  isReadOnly,
+  readOnlyTooltip,
 }) {
   return (
     <div className="space-y-6">
@@ -822,9 +839,12 @@ function AppDetailView({
                 type="button"
                 size="sm"
                 onClick={() => onInstall(app.id)}
-                disabled={installLoading || !canManage}
+                disabled={isReadOnly || installLoading || !canManage}
                 className="bg-[#5b4eff] hover:bg-[#4a3eee] text-white cursor-pointer"
-                title={!canManage ? "Réservé aux owners et admins" : ""}
+                title={
+                  readOnlyTooltip ||
+                  (!canManage ? "Réservé aux owners et admins" : "")
+                }
               >
                 {installLoading ? (
                   <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
@@ -958,13 +978,16 @@ function AppDetailView({
                           size="sm"
                           onClick={stripeActions.onConnect}
                           disabled={
-                            stripeActions.isLoading || !stripeActions.canManage
+                            isReadOnly ||
+                            stripeActions.isLoading ||
+                            !stripeActions.canManage
                           }
                           className="bg-[#635BFF] hover:bg-[#5A54E5] text-white cursor-pointer"
                           title={
-                            !stripeActions.canManage
+                            readOnlyTooltip ||
+                            (!stripeActions.canManage
                               ? "Réservé aux owners et admins"
-                              : ""
+                              : "")
                           }
                         >
                           {stripeActions.isLoading
@@ -1080,6 +1103,8 @@ function AppDetailView({
                         <Button
                           type="button"
                           size="sm"
+                          disabled={isReadOnly}
+                          title={readOnlyTooltip}
                           className="bg-[#5b4eff] hover:bg-[#4a3eee] dark:text-white cursor-pointer"
                         >
                           <Plus className="w-3.5 h-3.5 mr-1.5" />
@@ -1306,6 +1331,12 @@ export function ApplicationsSection() {
   const { activeOrganization, workspaceId } = useWorkspace();
   const organizationId = organization?.id;
   const { isOwner, isAdmin } = usePermissions();
+  const { isReadOnly, isOwner: isSubOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isSubOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
   const canManageStripeConnect = isOwner() || isAdmin();
   const canManageApps = isOwner() || isAdmin();
 
@@ -1501,6 +1532,8 @@ export function ApplicationsSection() {
   // Actions Pennylane pour la vue détail
   const pennylaneActions = {
     canManage: canManageStripeConnect, // même permission owner/admin
+    isReadOnly,
+    readOnlyTooltip,
     isLoading: isPennylaneLoading,
     account: pennylaneAccount,
     syncStatus: pennylaneSyncStatus,
@@ -1533,6 +1566,8 @@ export function ApplicationsSection() {
           installLoading={installLoading}
           uninstallLoading={uninstallLoading}
           canManage={canManageApps}
+          isReadOnly={isReadOnly}
+          readOnlyTooltip={readOnlyTooltip}
           stripeActions={stripeActions}
           bankingActions={bankingActions}
           pennylaneActions={pennylaneActions}

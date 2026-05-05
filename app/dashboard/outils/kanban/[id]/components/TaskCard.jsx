@@ -24,6 +24,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import {
@@ -54,6 +55,7 @@ import { fr } from "date-fns/locale";
 import { formatDateRelative } from "../../../../../../src/utils/kanbanHelpers";
 import { AvatarGroup, UserAvatar } from "@/src/components/ui/user-avatar";
 import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 function DescriptionPopover({ description }) {
   return (
@@ -361,6 +363,7 @@ const TaskCard = memo(
     allBoardTags = [],
     members = [],
   }) {
+    const { isReadOnly, isOwner } = useSubscriptionAccess();
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [showImagePreview, setShowImagePreview] = useState(false);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -509,11 +512,12 @@ const TaskCard = memo(
                 variant="ghost"
                 size="sm"
                 className="h-6 w-6 p-0"
-                onClick={startEditingTitle}
+                disabled={isReadOnly}
+                onClick={isReadOnly ? undefined : startEditingTitle}
               >
                 <Pencil className="h-3.5 w-3.5" />
               </Button>
-              {updateTask && (
+              {updateTask && !isReadOnly && (
                 <CardTagPopover
                   task={task}
                   updateTask={updateTask}
@@ -548,6 +552,7 @@ const TaskCard = memo(
                       e.stopPropagation();
                       e.nativeEvent.stopImmediatePropagation();
                     }}
+                    disabled={isReadOnly}
                     className="cursor-pointer"
                   >
                     <Edit className="mr-2 h-3.5 w-3.5" />
@@ -563,11 +568,22 @@ const TaskCard = memo(
                       e.stopPropagation();
                       e.nativeEvent.stopImmediatePropagation();
                     }}
+                    disabled={isReadOnly}
                     className="text-red-600 cursor-pointer"
                   >
                     <Trash2 className="mr-2 h-3 w-3 text-red-600" />
                     Supprimer
                   </DropdownMenuItem>
+                  {isReadOnly && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                        {isOwner
+                          ? "Mode lecture seule · Renouvelez votre abonnement"
+                          : "Mode lecture seule · Contactez l'administrateur"}
+                      </div>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -654,7 +670,7 @@ const TaskCard = memo(
                 <TimerDisplay timeTracking={task.timeTracking} />
 
                 {/* Avatars avec popover assignation */}
-                {updateTask ? (
+                {updateTask && !isReadOnly ? (
                   <Popover
                     onOpenChange={(open) => {
                       if (!open) lockInteraction();
@@ -751,7 +767,7 @@ const TaskCard = memo(
                 )}
 
                 {/* Date avec popover calendrier */}
-                {updateTask ? (
+                {updateTask && !isReadOnly ? (
                   <Popover
                     onOpenChange={(open) => {
                       if (!open) lockInteraction();
@@ -849,7 +865,7 @@ const TaskCard = memo(
                 )}
 
                 {/* Priorité avec popover */}
-                {updateTask ? (
+                {updateTask && !isReadOnly ? (
                   <Popover
                     onOpenChange={(open) => {
                       if (!open) lockInteraction();

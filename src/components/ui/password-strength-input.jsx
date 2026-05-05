@@ -6,7 +6,10 @@ import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 
 export const PasswordStrengthInput = forwardRef(
-  ({ label = "Mot de passe", value, onChange, error, ...props }, ref) => {
+  (
+    { label = "Mot de passe", value, onChange, error, className, ...props },
+    ref,
+  ) => {
     const id = useId();
     const [isVisible, setIsVisible] = useState(false);
 
@@ -50,17 +53,19 @@ export const PasswordStrengthInput = forwardRef(
     return (
       <div>
         {/* Password input field with toggle visibility button */}
-        <Label
-          htmlFor={id}
-          className="text-sm font-medium text-foreground dark:text-foreground"
-        >
-          {label}
-        </Label>
-        <div className="relative mt-2">
+        {label && (
+          <Label
+            htmlFor={id}
+            className="text-sm font-medium text-foreground dark:text-foreground"
+          >
+            {label}
+          </Label>
+        )}
+        <div className={label ? "relative mt-2" : "relative"}>
           <Input
             ref={ref}
             id={id}
-            className="pe-9"
+            className={`pe-9 ${className || ""}`}
             placeholder="Saisissez votre mot de passe"
             type={isVisible ? "text" : "password"}
             value={value}
@@ -89,63 +94,43 @@ export const PasswordStrengthInput = forwardRef(
         {/* Error message */}
         {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
 
-        {/* Password strength indicator */}
-        <div
-          className="bg-border mt-3 mb-4 h-1 w-full overflow-hidden rounded-full"
-          role="progressbar"
-          aria-valuenow={strengthScore}
-          aria-valuemin={0}
-          aria-valuemax={4}
-          aria-label="Force du mot de passe"
-        >
+        {/* Password strength indicator — only shown when typing */}
+        {value && (
           <div
-            className={`h-full ${getStrengthColor(strengthScore)} transition-all duration-500 ease-out`}
-            style={{ width: `${(strengthScore / 4) * 100}%` }}
-          ></div>
-        </div>
+            className="bg-border mt-3 mb-2 h-1 w-full overflow-hidden rounded-full"
+            role="progressbar"
+            aria-valuenow={strengthScore}
+            aria-valuemin={0}
+            aria-valuemax={4}
+            aria-label="Force du mot de passe"
+          >
+            <div
+              className={`h-full ${getStrengthColor(strengthScore)} transition-all duration-500 ease-out`}
+              style={{ width: `${(strengthScore / 4) * 100}%` }}
+            ></div>
+          </div>
+        )}
 
-        {/* Password strength description */}
-        <p
-          id={`${id}-description`}
-          className="text-foreground mb-2 text-sm font-medium"
-        >
-          {getStrengthText(strengthScore)}. Doit contenir :
-        </p>
-
-        {/* Password requirements list */}
-        <ul
-          className="grid grid-cols-2 gap-x-4 gap-y-1.5"
-          aria-label="Exigences du mot de passe"
-        >
-          {strength.map((req, index) => (
-            <li key={index} className="flex items-center gap-2">
-              {req.met ? (
-                <CheckIcon
-                  size={16}
-                  className="text-[#5a50ff]"
-                  aria-hidden="true"
-                />
-              ) : (
-                <XIcon
-                  size={16}
-                  className="text-muted-foreground/80"
-                  aria-hidden="true"
-                />
-              )}
+        {/* Password requirements — inline, minimal */}
+        {value && (
+          <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
+            {strength.map((req, index) => (
               <span
-                className={`text-xs ${req.met ? "text-[#5a50ff]" : "text-muted-foreground"}`}
+                key={index}
+                className={`text-[11px] transition-colors ${
+                  req.met
+                    ? "text-muted-foreground/40 line-through"
+                    : "text-muted-foreground"
+                }`}
               >
                 {req.text}
-                <span className="sr-only">
-                  {req.met ? " - Exigence remplie" : " - Exigence non remplie"}
-                </span>
               </span>
-            </li>
-          ))}
-        </ul>
+            ))}
+          </div>
+        )}
       </div>
     );
-  }
+  },
 );
 
 PasswordStrengthInput.displayName = "PasswordStrengthInput";

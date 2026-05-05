@@ -25,6 +25,7 @@ import {
 } from "@/src/lib/validation";
 import { Callout } from "@/src/components/ui/callout";
 import { toast } from "@/src/components/ui/sonner";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 const COUNTRIES = [
   { value: "France", label: "France" },
@@ -57,6 +58,12 @@ export function GeneraleSection({
   } = useFormContext();
 
   const { workspaceId } = useWorkspace();
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
   const [updateCompanyLogo] = useMutation(UPDATE_COMPANY_LOGO);
   const logoContainerRef = useRef(null);
 
@@ -144,7 +151,8 @@ export function GeneraleSection({
                   type="button"
                   variant="primary"
                   size="sm"
-                  disabled={!canManageOrgSettings}
+                  disabled={!canManageOrgSettings || isReadOnly}
+                  title={readOnlyTooltip}
                   onClick={() => {
                     const input =
                       logoContainerRef.current?.querySelector(
@@ -161,7 +169,8 @@ export function GeneraleSection({
                     type="button"
                     variant="outline"
                     size="icon"
-                    disabled={!canManageOrgSettings}
+                    disabled={!canManageOrgSettings || isReadOnly}
+                    title={readOnlyTooltip}
                     onClick={async () => {
                       try {
                         // 1. Mettre à jour le formulaire local

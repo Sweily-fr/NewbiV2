@@ -201,30 +201,14 @@ function SettingsDropdownMenu() {
           </DropdownMenuItem>
 
           <DropdownMenuItem
-            className={cn(
-              "cursor-pointer",
-              !isActive() && "opacity-60 cursor-not-allowed",
-            )}
+            className="cursor-pointer"
             onClick={() => {
-              // Toujours ouvrir le modal sur l'onglet espaces
               setSettingsInitialTab("espaces");
               setSettingsModalOpen(true);
             }}
           >
-            {isActive() ? (
-              <>
-                <PeopleIcon className="size-4 text-sidebar-foreground" />
-                <span className="text-[13px]">Collaborateurs</span>
-              </>
-            ) : (
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-2">
-                  <PeopleIcon className="size-4 text-sidebar-foreground" />
-                  <span className="text-[13px]">Collaborateurs</span>
-                </div>
-                <Crown className="w-3 h-3 text-[#5b4fff]" />
-              </div>
-            )}
+            <PeopleIcon className="size-4 text-sidebar-foreground" />
+            <span className="text-[13px]">Collaborateurs</span>
           </DropdownMenuItem>
 
           {/* <DropdownMenuItem className="cursor-pointer" asChild>

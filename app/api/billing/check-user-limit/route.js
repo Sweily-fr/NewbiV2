@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
 import { seatSyncService } from "@/src/services/seatSyncService";
+import { withErrorHandler } from "@/src/lib/security";
 
 /**
  * API pour vérifier si l'organisation peut inviter un nouveau membre
@@ -11,19 +12,19 @@ import { seatSyncService } from "@/src/services/seatSyncService";
  * - PME : 10 utilisateurs inclus, 3 comptables, sièges payants possibles (7,49€/mois)
  * - Entreprise : 25 utilisateurs inclus, 5 comptables, sièges payants possibles (7,49€/mois)
  */
-export async function POST(request) {
+async function handler(request) {
   try {
     const body = await request.json();
     const { organizationId, role = "member" } = body;
 
     console.log(
-      `🔍 [CHECK-LIMIT] Vérification limite pour org: ${organizationId}, role: ${role}`
+      `🔍 [CHECK-LIMIT] Vérification limite pour org: ${organizationId}, role: ${role}`,
     );
 
     if (!organizationId) {
       return NextResponse.json(
         { error: "organizationId requis" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -48,7 +49,7 @@ export async function POST(request) {
     if (!member) {
       return NextResponse.json(
         { error: "Vous n'êtes pas membre de cette organisation" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -66,11 +67,13 @@ export async function POST(request) {
     console.error("❌ [CHECK-LIMIT] Erreur:", error);
     return NextResponse.json(
       {
-        error: error.message || "Erreur lors de la vérification de la limite",
+        error: "Erreur lors de la vérification de la limite",
         canAdd: false,
         canInvite: false,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
+
+export const POST = withErrorHandler(handler);

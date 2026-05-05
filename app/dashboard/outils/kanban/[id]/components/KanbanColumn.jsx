@@ -7,16 +7,22 @@ import {
   ChevronDown,
   GripVertical,
 } from "lucide-react";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import {
+  useSortable,
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { TaskCard } from "./TaskCard";
 import { TaskCardSkeleton } from "./TaskCardSkeleton";
 
@@ -39,6 +45,7 @@ export function KanbanColumn({
   isDragging,
   isOver, // Passé depuis SortableColumn
 }) {
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
   return (
     <div
       className={`bg-muted/30 rounded-xl p-1.5 sm:p-2 min-w-[240px] max-w-[240px] sm:min-w-[300px] sm:max-w-[300px] border border-border flex flex-col flex-shrink-0 transition-all duration-200 ${
@@ -46,10 +53,10 @@ export function KanbanColumn({
       } ${isDragging ? "opacity-50" : ""}`}
     >
       {/* Header de la colonne - Draggable sur toute la zone */}
-      <div 
+      <div
         {...dragHandleProps}
         className="flex items-center justify-between mb-2 sm:mb-3 gap-2 cursor-grab active:cursor-grabbing"
-        style={{ touchAction: 'none' }}
+        style={{ touchAction: "none" }}
       >
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {/* Icône de drag */}
@@ -76,7 +83,10 @@ export function KanbanColumn({
           )}
         </div>
 
-        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="flex items-center gap-1"
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* Bouton collapse/expand */}
           <Button
             variant="ghost"
@@ -103,17 +113,28 @@ export function KanbanColumn({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={onEditColumn}>
+                <DropdownMenuItem onClick={onEditColumn} disabled={isReadOnly}>
                   <Edit className="mr-2 h-4 w-4" />
                   Modifier
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={onDeleteColumn}
+                  disabled={isReadOnly}
                   className="text-destructive"
                 >
                   <Trash2 className="mr-2 h-4 w-4 text-destructive" />
                   Supprimer
                 </DropdownMenuItem>
+                {isReadOnly && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                      {isOwner
+                        ? "Mode lecture seule · Renouvelez votre abonnement"
+                        : "Mode lecture seule · Contactez l'administrateur"}
+                    </div>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           )}
@@ -122,12 +143,12 @@ export function KanbanColumn({
 
       {/* Zone droppable pour les tâches ou colonnes effondrées */}
       <div
-        className={`flex-1 ${!isCollapsed ? 'overflow-y-auto p-2' : ''} min-h-[200px] rounded-lg transition-colors ${
-          isOver ? 'bg-accent/20 border-2 border-accent' : ''
+        className={`flex-1 ${!isCollapsed ? "overflow-y-auto p-2" : ""} min-h-[200px] rounded-lg transition-colors ${
+          isOver ? "bg-accent/20 border-2 border-accent" : ""
         }`}
         style={{
           // Assurer une hauteur minimale pour une meilleure détection
-          minHeight: isCollapsed ? '100px' : '200px'
+          minHeight: isCollapsed ? "100px" : "200px",
         }}
       >
         {!isCollapsed && (
@@ -170,6 +191,7 @@ export function KanbanColumn({
           variant="ghost"
           size="sm"
           className="w-full mt-2 sm:mt-3 justify-start text-muted-foreground hover:text-foreground"
+          disabled={isReadOnly}
           onClick={() => onAddTask(column.id)}
         >
           <Plus className="mr-2 h-4 w-4" />
@@ -194,7 +216,7 @@ function SortableTaskItem({ task, onEdit, onDelete }) {
   } = useSortable({
     id: task.id,
     data: {
-      type: 'task',
+      type: "task",
       task,
     },
   });

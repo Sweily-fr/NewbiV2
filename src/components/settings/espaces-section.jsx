@@ -72,6 +72,7 @@ import { Callout } from "@/src/components/ui/callout";
 import { Separator } from "@/src/components/ui/separator";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { cn } from "@/src/lib/utils";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 export default function EspacesSection({ canManageOrgSettings = true }) {
   const [organizations, setOrganizations] = useState([]);
@@ -97,6 +98,12 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
   const [selectedNewRole, setSelectedNewRole] = useState("");
 
   const { data: session } = useSession();
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const readOnlyTooltip = isReadOnly
+    ? isOwner
+      ? "Mode lecture seule · Renouvelez votre abonnement"
+      : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
 
   // Utiliser le hook pour les invitations
   const {
@@ -122,7 +129,8 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
           id: item.id,
           email: item.user?.email || item.email,
           name: item.user?.name || item.name || item.user?.email?.split("@")[0],
-          avatar: item.avatar || item.image || item.user?.avatar || item.user?.image,
+          avatar:
+            item.avatar || item.image || item.user?.avatar || item.user?.image,
           role: item.role,
           status: "active",
           type: "member",
@@ -174,7 +182,8 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
   // Charger les organisations et compter les membres
   useEffect(() => {
     if (organizationsList) {
-      setOrganizations(organizationsList);
+      const validOrgs = organizationsList.filter((org) => org && org.id);
+      setOrganizations(validOrgs);
 
       // ✅ FIX: Utiliser Promise.all pour des appels parallèles au lieu de séquentiels
       const fetchMemberData = async () => {
@@ -182,13 +191,18 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
 
         try {
           // Lancer tous les appels API en parallèle
-          const fetchPromises = organizationsList.map(async (org) => {
+          const fetchPromises = validOrgs.map(async (org) => {
             try {
-              const response = await fetch(`/api/organizations/${org.id}/members`);
+              const response = await fetch(
+                `/api/organizations/${org.id}/members`,
+              );
               const result = await response.json();
 
               if (result.success) {
-                return { orgId: org.id, members: formatAndDeduplicateMembers(result.data) };
+                return {
+                  orgId: org.id,
+                  members: formatAndDeduplicateMembers(result.data),
+                };
               }
               return { orgId: org.id, members: [] };
             } catch (error) {
@@ -245,7 +259,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
         }
 
         const response = await fetch(
-          `/api/organizations/${selectedOrg.id}/members`
+          `/api/organizations/${selectedOrg.id}/members`,
         );
         const result = await response.json();
 
@@ -278,7 +292,12 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
       member.role?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
 
     // Status filter
-    const memberStatus = member.status === "pending" ? "pending" : member.status === "suspended" ? "suspended" : "active";
+    const memberStatus =
+      member.status === "pending"
+        ? "pending"
+        : member.status === "suspended"
+          ? "suspended"
+          : "active";
     const matchesStatus = statusFilters[memberStatus];
 
     return matchesSearch && matchesStatus;
@@ -288,7 +307,9 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
     setStatusFilters((prev) => ({ ...prev, [status]: !prev[status] }));
   };
 
-  const activeFilterCount = Object.values(statusFilters).filter((v) => !v).length;
+  const activeFilterCount = Object.values(statusFilters).filter(
+    (v) => !v,
+  ).length;
 
   const handleDeleteMember = (member) => {
     setMemberToDelete(member);
@@ -307,7 +328,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
         // Trouver et annuler l'invitation associée si elle existe
         if (result.success) {
           const invitation = members.find(
-            (m) => m.type === "invitation" && m.email === memberToDelete.email
+            (m) => m.type === "invitation" && m.email === memberToDelete.email,
           );
           if (invitation) {
             await cancelInvitation(invitation.id);
@@ -393,14 +414,16 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
 
       if (member.type === "invitation") {
         // Pour les invitations, annuler et re-inviter avec le nouveau rôle
-        result = await resendInvitation(member.email, newRole, member.id, { silent: true });
+        result = await resendInvitation(member.email, newRole, member.id, {
+          silent: true,
+        });
       } else {
         // Pour les membres actifs, utiliser updateMemberRole de Better Auth
         result = await updateMemberRole(
           member.id,
           newRole,
           selectedOrg?.id,
-          member.role
+          member.role,
         );
       }
 
@@ -411,7 +434,9 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
         // Rafraîchir la liste des membres
         setRefreshTrigger((prev) => prev + 1);
       } else if (member.type === "invitation") {
-        toast.error(result.error?.message || "Erreur lors du changement de rôle");
+        toast.error(
+          result.error?.message || "Erreur lors du changement de rôle",
+        );
       }
     } catch (error) {
       console.error("Erreur lors du changement de rôle:", error);
@@ -430,12 +455,14 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
             "transition-all duration-300 ease-in-out",
             selectedOrg
               ? "-translate-x-full opacity-0 absolute inset-0 pointer-events-none"
-              : "translate-x-0 opacity-100"
+              : "translate-x-0 opacity-100",
           )}
         >
           {/* Header */}
           <div className="flex flex-col gap-1 mb-0 md:mb-6">
-            <h3 className="text-lg font-medium hidden md:block">Gestion des espaces</h3>
+            <h3 className="text-lg font-medium hidden md:block">
+              Gestion des espaces
+            </h3>
             <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
           </div>
 
@@ -510,14 +537,19 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                             <div className="h-7 w-7 rounded-md bg-muted flex items-center justify-center">
                               <Boxes className="h-3.5 w-3.5 text-muted-foreground" />
                             </div>
-                            <span className="font-normal text-sm">{org.name}</span>
+                            <span className="font-normal text-sm">
+                              {org.name}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell className="py-2">
                           {memberCount > 0 ? (
                             <AvatarGroup>
                               {displayedMembers.map((member, index) => (
-                                <Avatar key={member.email || index} className="h-7 w-7 border-2 border-background">
+                                <Avatar
+                                  key={member.email || index}
+                                  className="h-7 w-7 border-2 border-background"
+                                >
                                   <AvatarImage
                                     src={member.avatar}
                                     alt={member.name || member.email}
@@ -563,7 +595,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
             "transition-all duration-300 ease-in-out",
             selectedOrg
               ? "translate-x-0 opacity-100"
-              : "translate-x-full opacity-0 absolute inset-0 pointer-events-none"
+              : "translate-x-full opacity-0 absolute inset-0 pointer-events-none",
           )}
         >
           {/* Header avec bouton retour */}
@@ -608,11 +640,18 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button type="button" variant="outline" className="cursor-pointer gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="cursor-pointer gap-2"
+                >
                   <SlidersHorizontal className="h-4 w-4" />
                   Filtrer
                   {activeFilterCount > 0 && (
-                    <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]">
+                    <Badge
+                      variant="secondary"
+                      className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]"
+                    >
                       {activeFilterCount}
                     </Badge>
                   )}
@@ -642,12 +681,13 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
             <Button
               type="button"
               onClick={() => setInviteDialogOpen(true)}
-              disabled={!canManageOrgSettings}
+              disabled={!canManageOrgSettings || isReadOnly}
               className="cursor-pointer gap-2 bg-[#5b4fff] hover:bg-[#5b4fff]/90 dark:text-white whitespace-nowrap"
               title={
-                !canManageOrgSettings
+                readOnlyTooltip ||
+                (!canManageOrgSettings
                   ? "Seuls les owners et admins peuvent ajouter des membres"
-                  : ""
+                  : "")
               }
             >
               <UserRoundPlusIcon size={14} />
@@ -690,7 +730,10 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                   </TableRow>
                 ) : filteredMembers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-8 text-sm text-muted-foreground">
+                    <TableCell
+                      colSpan={4}
+                      className="text-center py-8 text-sm text-muted-foreground"
+                    >
                       {searchTerm ? "Aucun membre trouvé" : "Aucun membre"}
                     </TableCell>
                   </TableRow>
@@ -719,7 +762,10 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                               <span className="font-medium text-sm">
                                 {member.name || "Sans nom"}
                                 {isCurrentUser && (
-                                  <span className="text-muted-foreground font-normal"> (Vous)</span>
+                                  <span className="text-muted-foreground font-normal">
+                                    {" "}
+                                    (Vous)
+                                  </span>
                                 )}
                               </span>
                               <span className="text-sm text-muted-foreground truncate max-w-[160px]">
@@ -738,14 +784,18 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                             variant="outline"
                             className={cn(
                               "font-normal",
-                              getRoleBadgeStyle(member.role)
+                              getRoleBadgeStyle(member.role),
                             )}
                           >
-                            {updatingRoleForMember === member.id ? "..." : getRoleLabel(member.role)}
+                            {updatingRoleForMember === member.id
+                              ? "..."
+                              : getRoleLabel(member.role)}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <span className="text-xs text-muted-foreground">—</span>
+                          <span className="text-xs text-muted-foreground">
+                            —
+                          </span>
                         </TableCell>
                         <TableCell className="text-right">
                           {canManageOrgSettings && member.role !== "owner" && (
@@ -762,7 +812,10 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem
                                   className="cursor-pointer"
+                                  disabled={isReadOnly}
+                                  title={readOnlyTooltip}
                                   onClick={() => {
+                                    if (isReadOnly) return;
                                     setMemberToChangeRole(member);
                                     setSelectedNewRole(member.role);
                                     setRoleChangeDialogOpen(true);
@@ -852,7 +905,10 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                 <label className="text-sm text-muted-foreground">
                   Nouveau rôle
                 </label>
-                <Select value={selectedNewRole} onValueChange={setSelectedNewRole}>
+                <Select
+                  value={selectedNewRole}
+                  onValueChange={setSelectedNewRole}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue>{getRoleLabel(selectedNewRole)}</SelectValue>
                   </SelectTrigger>
@@ -890,7 +946,10 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                     onClick={async () => {
                       if (memberToChangeRole && selectedNewRole) {
                         setRoleChangeDialogOpen(false);
-                        await handleRoleChange(memberToChangeRole, selectedNewRole);
+                        await handleRoleChange(
+                          memberToChangeRole,
+                          selectedNewRole,
+                        );
                         setMemberToChangeRole(null);
                         setSelectedNewRole("");
                       }
@@ -920,9 +979,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
               {memberToDelete?.type === "invitation" ? (
                 <>
                   Êtes-vous sûr de vouloir annuler l'invitation envoyée à{" "}
-                  <span className="font-semibold">
-                    {memberToDelete?.email}
-                  </span>{" "}
+                  <span className="font-semibold">{memberToDelete?.email}</span>{" "}
                   ? Cette personne ne pourra plus rejoindre l'espace.
                 </>
               ) : (
@@ -937,7 +994,9 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">Annuler</AlertDialogCancel>
+            <AlertDialogCancel className="cursor-pointer">
+              Annuler
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteMember}
               className="bg-red-600 hover:bg-red-700 text-white cursor-pointer"

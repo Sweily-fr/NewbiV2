@@ -24,14 +24,9 @@ const IMPORTED_PURCHASE_ORDER_FRAGMENT = gql`
       address
       city
       postalCode
-      country
       siret
-      vatNumber
-      email
-      phone
       clientNumber
     }
-    clientId
     purchaseOrderDate
     deliveryDate
     dueDate
@@ -202,14 +197,11 @@ export const IMPORTED_PURCHASE_ORDER_STATUS_COLORS = {
 export function useImportedPurchaseOrders(workspaceId, options = {}) {
   const { page = 1, limit = 1000, filters = {} } = options;
 
-  const { data, loading, error, refetch } = useQuery(
-    GET_IMPORTED_PURCHASE_ORDERS,
-    {
-      variables: { workspaceId, page, limit, filters },
-      skip: !workspaceId,
-      fetchPolicy: "cache-and-network",
-    },
-  );
+  const { data, loading, error, refetch } = useQuery(GET_IMPORTED_PURCHASE_ORDERS, {
+    variables: { workspaceId, page, limit, filters },
+    skip: !workspaceId,
+    fetchPolicy: "cache-and-network",
+  });
 
   return {
     importedPurchaseOrders: data?.importedPurchaseOrders?.purchaseOrders || [],
@@ -222,13 +214,10 @@ export function useImportedPurchaseOrders(workspaceId, options = {}) {
 }
 
 export function useImportedPurchaseOrder(id) {
-  const { data, loading, error, refetch } = useQuery(
-    GET_IMPORTED_PURCHASE_ORDER,
-    {
-      variables: { id },
-      skip: !id,
-    },
-  );
+  const { data, loading, error, refetch } = useQuery(GET_IMPORTED_PURCHASE_ORDER, {
+    variables: { id },
+    skip: !id,
+  });
 
   return {
     importedPurchaseOrder: data?.importedPurchaseOrder,
@@ -239,13 +228,10 @@ export function useImportedPurchaseOrder(id) {
 }
 
 export function useImportedPurchaseOrderStats(workspaceId) {
-  const { data, loading, error, refetch } = useQuery(
-    GET_IMPORTED_PURCHASE_ORDER_STATS,
-    {
-      variables: { workspaceId },
-      skip: !workspaceId,
-    },
-  );
+  const { data, loading, error, refetch } = useQuery(GET_IMPORTED_PURCHASE_ORDER_STATS, {
+    variables: { workspaceId },
+    skip: !workspaceId,
+  });
 
   return {
     stats: data?.importedPurchaseOrderStats,
@@ -255,67 +241,46 @@ export function useImportedPurchaseOrderStats(workspaceId) {
   };
 }
 
-const IMPORTED_PO_REFETCH = [
-  "GetImportedPurchaseOrders",
-  "GetImportedPurchaseOrderStats",
-];
+const IMPORTED_PO_REFETCH = ["GetImportedPurchaseOrders", "GetImportedPurchaseOrderStats"];
 
 export function useUpdateImportedPurchaseOrder() {
-  const [updateImportedPurchaseOrder, { loading, error }] = useMutation(
-    UPDATE_IMPORTED_PURCHASE_ORDER,
-    {
-      refetchQueries: IMPORTED_PO_REFETCH,
-    },
-  );
+  const [updateImportedPurchaseOrder, { loading, error }] = useMutation(UPDATE_IMPORTED_PURCHASE_ORDER, {
+    refetchQueries: IMPORTED_PO_REFETCH,
+  });
   return { updateImportedPurchaseOrder, loading, error };
 }
 
 export function useValidateImportedPurchaseOrder() {
-  const [validateImportedPurchaseOrder, { loading, error }] = useMutation(
-    VALIDATE_IMPORTED_PURCHASE_ORDER,
-    {
-      refetchQueries: IMPORTED_PO_REFETCH,
-    },
-  );
+  const [validateImportedPurchaseOrder, { loading, error }] = useMutation(VALIDATE_IMPORTED_PURCHASE_ORDER, {
+    refetchQueries: IMPORTED_PO_REFETCH,
+  });
   return { validateImportedPurchaseOrder, loading, error };
 }
 
 export function useRejectImportedPurchaseOrder() {
-  const [rejectImportedPurchaseOrder, { loading, error }] = useMutation(
-    REJECT_IMPORTED_PURCHASE_ORDER,
-    {
-      refetchQueries: IMPORTED_PO_REFETCH,
-    },
-  );
+  const [rejectImportedPurchaseOrder, { loading, error }] = useMutation(REJECT_IMPORTED_PURCHASE_ORDER, {
+    refetchQueries: IMPORTED_PO_REFETCH,
+  });
   return { rejectImportedPurchaseOrder, loading, error };
 }
 
 export function useArchiveImportedPurchaseOrder() {
-  const [archiveImportedPurchaseOrder, { loading, error }] = useMutation(
-    ARCHIVE_IMPORTED_PURCHASE_ORDER,
-    {
-      refetchQueries: IMPORTED_PO_REFETCH,
-    },
-  );
+  const [archiveImportedPurchaseOrder, { loading, error }] = useMutation(ARCHIVE_IMPORTED_PURCHASE_ORDER, {
+    refetchQueries: IMPORTED_PO_REFETCH,
+  });
   return { archiveImportedPurchaseOrder, loading, error };
 }
 
 export function useDeleteImportedPurchaseOrder() {
-  const [deleteImportedPurchaseOrder, { loading, error }] = useMutation(
-    DELETE_IMPORTED_PURCHASE_ORDER,
-    {
-      refetchQueries: IMPORTED_PO_REFETCH,
-    },
-  );
+  const [deleteImportedPurchaseOrder, { loading, error }] = useMutation(DELETE_IMPORTED_PURCHASE_ORDER, {
+    refetchQueries: IMPORTED_PO_REFETCH,
+  });
   return { deleteImportedPurchaseOrder, loading, error };
 }
 
 export function useDeleteImportedPurchaseOrders() {
-  const [deleteImportedPurchaseOrders, { loading, error }] = useMutation(
-    DELETE_IMPORTED_PURCHASE_ORDERS,
-    {
-      refetchQueries: IMPORTED_PO_REFETCH,
-    },
-  );
+  const [deleteImportedPurchaseOrders, { loading, error }] = useMutation(DELETE_IMPORTED_PURCHASE_ORDERS, {
+    refetchQueries: IMPORTED_PO_REFETCH,
+  });
   return { deleteImportedPurchaseOrders, loading, error };
 }

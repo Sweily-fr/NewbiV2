@@ -2,6 +2,8 @@ import { createAuthMiddleware } from "better-auth/api";
 import { sendReactivationEmail } from "./auth-utils";
 
 // Hook avant connexion pour vérifier les comptes désactivés
+// NOUVEAU-5 fix: APIError throw is OUTSIDE try/catch to prevent
+// bundler minification from breaking error.constructor.name check.
 export const beforeSignInHook = createAuthMiddleware(async (ctx) => {
   if (ctx.path !== "/sign-in/email") {
     return;
@@ -12,35 +14,39 @@ export const beforeSignInHook = createAuthMiddleware(async (ctx) => {
     return;
   }
 
+  // DB lookup in try/catch — fail-open if DB is temporarily unavailable
+  let user = null;
+  let dbCheckFailed = false;
+
   try {
-    // Vérifier si l'utilisateur existe et s'il est actif
     const { getMongoDb } = await import("./mongodb");
-    const db = await getMongoDb(); // Attendre la connexion MongoDB
-    const usersCollection = db.collection("user");
-
-    const user = await usersCollection.findOne({ email: email });
-
-    if (user && user.isActive === false) {
-      // Envoyer l'email de réactivation
-      await sendReactivationEmail(user);
-
-      // Bloquer la connexion
-      const { APIError } = await import("better-auth/api");
-      throw new APIError("BAD_REQUEST", {
-        message:
-          "Votre compte a été désactivé. Un email de réactivation vous a été envoyé.",
-      });
-    }
-  } catch (error) {
-    console.error("❌ Erreur dans beforeSignInHook:", error);
-    // Si c'est déjà une APIError, la relancer
-    if (error.constructor.name === "APIError") {
-      throw error;
-    }
-    // Sinon, logger mais ne pas bloquer la connexion
+    const db = await getMongoDb();
+    user = await db.collection("user").findOne({ email });
+  } catch (dbError) {
+    dbCheckFailed = true;
     console.error(
-      "⚠️ Impossible de vérifier le statut du compte, connexion autorisée",
+      "⚠️ [beforeSignIn] DB check failed, allowing login:",
+      dbError?.message,
     );
+  }
+
+  if (dbCheckFailed) {
+    return; // Fail-open: allow login if DB check failed
+  }
+
+  // Block deactivated users — throw OUTSIDE try/catch (cannot be swallowed)
+  if (user && user.isActive === false) {
+    console.warn(`[beforeSignIn] BLOCKING ${email} — isActive: false`);
+
+    await sendReactivationEmail(user).catch((err) =>
+      console.error("Failed to send reactivation email:", err?.message),
+    );
+
+    const { APIError } = await import("better-auth/api");
+    throw new APIError("BAD_REQUEST", {
+      message:
+        "Votre compte a été désactivé. Un email de réactivation vous a été envoyé.",
+    });
   }
 });
 

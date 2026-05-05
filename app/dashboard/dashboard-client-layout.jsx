@@ -28,6 +28,8 @@ import {
 } from "@/src/components/ui/toast-manager";
 import { AccountingViewProvider } from "@/src/contexts/accounting-view-context";
 import { FloatingTimer } from "@/src/components/FloatingTimer";
+import { SubscriptionBlockedDialog } from "@/src/components/subscription-blocked-dialog";
+import { SubscriptionReadOnlyBanner } from "@/src/components/subscription-readonly-banner";
 import { OAuthCallbackHandler } from "@/src/components/oauth-callback-handler";
 // DÉSACTIVÉ: SuperPDP API pas encore active
 // import { EInvoicingPromoModal } from "@/src/components/e-invoicing-promo-modal";
@@ -219,10 +221,35 @@ function DashboardContent({ children }) {
     isLoading: subscriptionLoading,
   } = useDashboardLayoutContext();
 
+  // Welcome animation (zoom-in after onboarding)
+  const [welcomeAnim, setWelcomeAnim] = useState(false);
+  const [welcomeReady, setWelcomeReady] = useState(false);
+
   // Protection contre l'erreur d'hydratation
   useEffect(() => {
     setIsHydrated(true);
   }, []);
+
+  // Detect ?welcome=true and trigger zoom animation
+  useEffect(() => {
+    if (!isHydrated) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("welcome") === "true") {
+      setWelcomeAnim(true);
+      // Remove the param from URL without reload
+      params.delete("welcome");
+      const newUrl = params.toString()
+        ? `${window.location.pathname}?${params.toString()}`
+        : window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
+      // Wait for the page to fully paint at the zoomed-in state, then animate out
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setTimeout(() => setWelcomeReady(true), 300);
+        });
+      });
+    }
+  }, [isHydrated]);
 
   // DÉSACTIVÉ: SuperPDP API pas encore active
   // Afficher le modal de facturation électronique automatiquement après connexion
@@ -298,119 +325,138 @@ function DashboardContent({ children }) {
   }, [isToolPage]);
 
   return (
-    <SidebarProvider open={sidebarOpen} onOpenChange={handleSidebarChange}>
-      <AppSidebar
-        variant="inset"
-        onCommunityClick={() => {
-          // Ouvrir la sidebar communautaire uniquement si l'utilisateur a un plan Pro
-          if (isActive()) {
-            setIsCommunitySidebarOpen(true);
-          }
-        }}
-        onOpenNotifications={() => {
-          setSettingsInitialTab("notifications");
-          setSettingsModalOpen(true);
-        }}
-        // DÉSACTIVÉ: SuperPDP API pas encore active
-        // onOpenEInvoicingPromo={() => setEInvoicingPromoOpen(true)}
-      />
-      <SidebarInset>
-        <SiteHeader />
-        <div className="flex flex-1 flex-col overflow-y-auto">
-          <div className="flex flex-1 flex-col gap-2 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0">
-            <SessionGateProvider>{children}</SessionGateProvider>
-            <InactivityDetector />
-          </div>
-        </div>
-      </SidebarInset>
-
-      {/* Sidebar droite miroir - Affichée uniquement sur la page de signature */}
-      {isSignaturePage && <SignatureSidebarRight />}
-
-      <SearchCommand />
-
-      {/* Modal de pricing pour upgrade - DÉSACTIVÉ car géré dans chaque page */}
-      {/* <PricingModal
-        isOpen={isPricingModalOpen}
-        onClose={() => setIsPricingModalOpen(false)}
-      /> */}
-
-      {/* Modal d'onboarding pour les nouveaux utilisateurs */}
-      <OnboardingModal
-        isOpen={isOnboardingOpen}
-        onClose={completeOnboarding}
-        onComplete={completeOnboarding}
-      />
-
-      {/* Sidebar communautaire */}
-      <CommunitySidebar
-        open={isCommunitySidebarOpen}
-        onOpenChange={setIsCommunitySidebarOpen}
-      />
-
-      {/* Animation de succès d'abonnement Pro */}
-      <Suspense fallback={null}>
-        <ProSubscriptionOverlayHandler />
-      </Suspense>
-
-      {/* Gestionnaire d'activation d'organisation après création */}
-      <Suspense fallback={null}>
-        <OrgActivationHandler />
-      </Suspense>
-
-      {/* Gestionnaire d'URL pour Stripe Connect */}
-      <Suspense fallback={null}>
-        <StripeConnectUrlHandler />
-      </Suspense>
-
-      {/* Gestionnaire de callback OAuth (SuperPDP, etc.) */}
-      <Suspense fallback={null}>
-        <OAuthCallbackHandler
-          onOpenSettings={setSettingsModalOpen}
-          onSetSettingsTab={setSettingsInitialTab}
-        />
-      </Suspense>
-
-      {/* Modal de paramètres avec notifications */}
-      <SettingsModal
-        open={settingsModalOpen}
-        onOpenChange={setSettingsModalOpen}
-        initialTab={settingsInitialTab}
-      />
-
-      {/* Timer flottant - visible sur toutes les pages quand un timer est actif */}
-      <FloatingTimer />
-
-      {/* DÉSACTIVÉ: SuperPDP API pas encore active */}
-      {/* Modal de promotion facturation électronique */}
-      {/* <EInvoicingPromoModal
-        open={eInvoicingPromoOpen}
-        onOpenChange={setEInvoicingPromoOpen}
-      /> */}
-
-      {/* Tutoriel interactif */}
-      <TutorialOverlay />
-
-      {/* PWA install banner — mobile uniquement */}
-      <PwaInstallBanner />
-
-      {/* Bottom Navigation Bar — mobile uniquement */}
-      {!settingsModalOpen && (
-        <BottomNavBar
-          onOpenSettings={() => {
-            setSettingsInitialTab("preferences");
-            setSettingsModalOpen(true);
+    <div
+      style={
+        welcomeAnim
+          ? {
+              transform: welcomeReady ? "scale(1)" : "scale(1.15)",
+              opacity: welcomeReady ? 1 : 0,
+              transition: welcomeReady
+                ? "transform 1.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 1.4s cubic-bezier(0.16, 1, 0.3, 1)"
+                : "none",
+              transformOrigin: "center center",
+            }
+          : undefined
+      }
+    >
+      <SidebarProvider open={sidebarOpen} onOpenChange={handleSidebarChange}>
+        <AppSidebar
+          variant="inset"
+          onCommunityClick={() => {
+            // Ouvrir la sidebar communautaire uniquement si l'utilisateur a un plan Pro
+            if (isActive()) {
+              setIsCommunitySidebarOpen(true);
+            }
           }}
           onOpenNotifications={() => {
             setSettingsInitialTab("notifications");
             setSettingsModalOpen(true);
           }}
+          // DÉSACTIVÉ: SuperPDP API pas encore active
+          // onOpenEInvoicingPromo={() => setEInvoicingPromoOpen(true)}
         />
-      )}
+        <SidebarInset>
+          <SiteHeader />
+          <SubscriptionReadOnlyBanner />
+          <div className="flex flex-1 flex-col overflow-y-auto">
+            <div className="flex flex-1 flex-col gap-2 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0">
+              <SessionGateProvider>{children}</SessionGateProvider>
+              <InactivityDetector />
+            </div>
+          </div>
+        </SidebarInset>
 
-      {/* Panel de debug session — dev uniquement */}
-      {/* {process.env.NODE_ENV === "development" && <SessionDebugPanel />} */}
-    </SidebarProvider>
+        {/* Sidebar droite miroir - Affichée uniquement sur la page de signature */}
+        {isSignaturePage && <SignatureSidebarRight />}
+
+        <SearchCommand />
+
+        {/* Modal de pricing pour upgrade - DÉSACTIVÉ car géré dans chaque page */}
+        {/* <PricingModal
+        isOpen={isPricingModalOpen}
+        onClose={() => setIsPricingModalOpen(false)}
+      /> */}
+
+        {/* Modal d'onboarding — désactivé, géré par le nouvel onboarding /auth/signup */}
+        {/* <OnboardingModal
+        isOpen={isOnboardingOpen}
+        onClose={completeOnboarding}
+        onComplete={completeOnboarding}
+      /> */}
+
+        {/* Sidebar communautaire */}
+        <CommunitySidebar
+          open={isCommunitySidebarOpen}
+          onOpenChange={setIsCommunitySidebarOpen}
+        />
+
+        {/* Animation de succès d'abonnement Pro */}
+        <Suspense fallback={null}>
+          <ProSubscriptionOverlayHandler />
+        </Suspense>
+
+        {/* Gestionnaire d'activation d'organisation après création */}
+        <Suspense fallback={null}>
+          <OrgActivationHandler />
+        </Suspense>
+
+        {/* Gestionnaire d'URL pour Stripe Connect */}
+        <Suspense fallback={null}>
+          <StripeConnectUrlHandler />
+        </Suspense>
+
+        {/* Gestionnaire de callback OAuth (SuperPDP, etc.) */}
+        <Suspense fallback={null}>
+          <OAuthCallbackHandler
+            onOpenSettings={setSettingsModalOpen}
+            onSetSettingsTab={setSettingsInitialTab}
+          />
+        </Suspense>
+
+        {/* Modal de paramètres avec notifications */}
+        <SettingsModal
+          open={settingsModalOpen}
+          onOpenChange={setSettingsModalOpen}
+          initialTab={settingsInitialTab}
+        />
+
+        {/* Timer flottant - visible sur toutes les pages quand un timer est actif */}
+        <FloatingTimer />
+
+        {/* Dialog de blocage subscription — déclenché par Apollo errorLink */}
+        <SubscriptionBlockedDialog />
+
+        {/* DÉSACTIVÉ: SuperPDP API pas encore active */}
+        {/* Modal de promotion facturation électronique */}
+        {/* <EInvoicingPromoModal
+        open={eInvoicingPromoOpen}
+        onOpenChange={setEInvoicingPromoOpen}
+      /> */}
+
+        {/* Tutoriel interactif */}
+        <TutorialOverlay />
+
+        {/* PWA install banner — mobile uniquement */}
+        <PwaInstallBanner />
+
+        {/* Bottom Navigation Bar — mobile uniquement */}
+        {!settingsModalOpen && (
+          <BottomNavBar
+            onOpenSettings={() => {
+              setSettingsInitialTab("preferences");
+              setSettingsModalOpen(true);
+            }}
+            onOpenNotifications={() => {
+              setSettingsInitialTab("notifications");
+              setSettingsModalOpen(true);
+            }}
+          />
+        )}
+
+        {/* Panel de debug session — dev uniquement */}
+        {/* {process.env.NODE_ENV === "development" && <SessionDebugPanel />} */}
+      </SidebarProvider>
+    </div>
   );
 }
 
