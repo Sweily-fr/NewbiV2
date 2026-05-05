@@ -11,6 +11,7 @@ import {
   TEST_INVOICES,
   TEST_QUOTES,
   TEST_SUPPLIER_EXPENSE,
+  FOREIGN_INVOICE,
 } from "./seed/test-data";
 
 export default async function globalTeardown() {
@@ -31,7 +32,10 @@ export default async function globalTeardown() {
 
     // Targeted cleanup — same rationale as global-setup: leave dev data alone.
     const clientIds = TEST_CLIENTS.map((c) => c._id);
-    const invoiceIds = TEST_INVOICES.map((i) => i._id);
+    const invoiceIds = [
+      ...TEST_INVOICES.map((i) => i._id),
+      FOREIGN_INVOICE._id,
+    ];
     const quoteIds = TEST_QUOTES.map((q) => q._id);
 
     await db.collection("user").deleteOne({ _id: IDS.user });

@@ -120,7 +120,7 @@ const Footer7 = ({
                 </div>
               </div>
               <div className="col-span-1">
-                <h3 className="text-sm/6 font-medium text-gray-950/50 mb-2 sm:mb-3 md:mb-6">
+                <h3 className="text-sm/6 font-medium text-gray-700 mb-2 sm:mb-3 md:mb-6">
                   Produits
                 </h3>
                 <ul className="mt-2 sm:mt-3 md:mt-6 space-y-2 sm:space-y-3 md:space-y-4 text-sm/6">
@@ -167,7 +167,7 @@ const Footer7 = ({
                 </ul>
               </div>
               <div className="col-span-1">
-                <h3 className="text-sm/6 font-medium text-gray-950/50 mb-2 sm:mb-3 md:mb-6">
+                <h3 className="text-sm/6 font-medium text-gray-700 mb-2 sm:mb-3 md:mb-6">
                   Ressources
                 </h3>
                 <ul className="mt-2 sm:mt-3 md:mt-6 space-y-2 sm:space-y-3 md:space-y-4 text-sm/6">
@@ -218,7 +218,7 @@ const Footer7 = ({
                 </ul>
               </div>
               <div className="col-span-1">
-                <h3 className="text-sm/6 font-medium text-gray-950/50 mb-2 sm:mb-3 md:mb-6">
+                <h3 className="text-sm/6 font-medium text-gray-700 mb-2 sm:mb-3 md:mb-6">
                   Support
                 </h3>
                 <ul className="mt-2 sm:mt-3 md:mt-6 space-y-2 sm:space-y-3 md:space-y-4 text-sm/6">
@@ -235,7 +235,7 @@ const Footer7 = ({
                 </ul>
               </div>
               <div className="col-span-1">
-                <h3 className="text-sm/6 font-medium text-gray-950/50 mb-2 sm:mb-3 md:mb-6">
+                <h3 className="text-sm/6 font-medium text-gray-700 mb-2 sm:mb-3 md:mb-6">
                   Legal
                 </h3>
                 <ul className="mt-2 sm:mt-3 md:mt-6 space-y-2 sm:space-y-3 md:space-y-4 text-sm/6">
@@ -277,7 +277,10 @@ const Footer7 = ({
           </div>
         </div>
         <div className="px-4 md:px-0 pt-4 pb-2">
-          <Link href="/produits/facturation-electronique" className="inline-block">
+          <Link
+            href="/produits/facturation-electronique"
+            className="inline-block"
+          >
             <img
               src="/logo_Compatible_Facturation_electronique-footer.png"
               alt="Solution compatible Facturation électronique"

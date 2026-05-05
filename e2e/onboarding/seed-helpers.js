@@ -77,7 +77,17 @@ export async function restoreOrganization(email) {
     const realUserId = await findUserId(db, email);
 
     await db.collection("organization").deleteOne({ _id: IDS.organizationId });
-    await db.collection("member").deleteMany({ userId: realUserId.toString() });
+    // Cleanup member par _id ET par userId (string + ObjectId) — Better Auth
+    // peut écrire userId comme ObjectId quand il crée un member en réponse au
+    // "Choisir ce plan", ce qui fait passer à travers `deleteMany({userId:
+    // string})` et fait échouer le insertOne suivant avec E11000 sur _id.
+    await db.collection("member").deleteMany({
+      $or: [
+        { _id: IDS.memberId },
+        { userId: realUserId.toString() },
+        { userId: realUserId },
+      ],
+    });
     await db
       .collection("subscription")
       .deleteMany({ referenceId: IDS.organizationId.toString() });
@@ -100,7 +110,12 @@ export async function restoreOrganization(email) {
 
     await db.collection("member").insertOne({
       _id: IDS.memberId,
-      userId: realUserId.toString(),
+      // userId stocké en ObjectId (cohérent avec global-setup.ts:146).
+      // Better Auth's Mongo adapter coerce userId en ObjectId via son schema
+      // (`references: { field: "id" }`) — un member avec userId string est
+      // invisible à `getActiveOrganization` → cascade FORBIDDEN sur tous les
+      // resolvers RBAC pour les specs après onboarding. Voir REGRESSIONS_TO_FIX.md R8.
+      userId: realUserId,
       organizationId: IDS.organizationId.toString(),
       role: "owner",
       createdAt: new Date(),
