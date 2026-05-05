@@ -56,7 +56,6 @@ async function ensureTestUser(
   email: string,
   password: string,
 ) {
-  // Try to sign up. If user already exists, Better Auth returns 4xx — we ignore it.
   const res = await fetch(`${baseUrl}/api/auth/sign-up/email`, {
     method: "POST",
     headers: {
@@ -65,16 +64,43 @@ async function ensureTestUser(
     },
     body: JSON.stringify({ email, password, name: "Test E2E" }),
   });
-  if (res.ok) {
-    console.log(`  ↳ Created Better Auth user ${email}`);
-  } else if (res.status === 422 || res.status === 400) {
-    console.log(`  ↳ Test user ${email} already exists — reusing`);
-  } else {
-    const text = await res.text();
-    throw new Error(
-      `[E2E Seed] signup failed (${res.status}): ${text.slice(0, 200)}`,
-    );
+
+  const bodyText = await res.text();
+  let bodyJson: { code?: string; message?: string } | null = null;
+  try {
+    bodyJson = bodyText ? JSON.parse(bodyText) : null;
+  } catch {
+    // Body wasn't JSON — keep the raw text for the error message.
   }
+
+  if (res.ok) {
+    console.log(`  ↳ Created Better Auth user ${email} (status ${res.status})`);
+    return;
+  }
+
+  // Better Auth signals "user already exists" with code USER_ALREADY_EXISTS
+  // (or a 4xx message containing those words). Treat anything else — including
+  // generic 400/422 responses — as a real failure so we don't silently skip
+  // signup and crash later on the missing-user lookup.
+  const haystack = [bodyJson?.code, bodyJson?.message, bodyText]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  const isAlreadyExists =
+    haystack.includes("already exists") ||
+    haystack.includes("user_already_exists") ||
+    haystack.includes("user_exists");
+
+  if (isAlreadyExists) {
+    console.log(
+      `  ↳ Test user ${email} already exists — reusing (status ${res.status})`,
+    );
+    return;
+  }
+
+  throw new Error(
+    `[E2E Seed] Signup failed for ${email}: status=${res.status}, body=${bodyText.slice(0, 500)}`,
+  );
 }
 
 export default async function globalSetup() {
@@ -89,11 +115,6 @@ export default async function globalSetup() {
     );
   }
 
-  // 1. Create (or reuse) the test user through Better Auth. This populates
-  //    both the `user` and `account` collections with a valid credential.
-  await ensureTestUser(baseUrl, email, password);
-
-  // 2. Seed the rest of the deterministic fixtures directly in Mongo.
   const client = new MongoClient(uri);
 
   try {
@@ -102,11 +123,51 @@ export default async function globalSetup() {
 
     console.log(`[E2E Seed] Connected to ${db.databaseName}`);
 
-    // Look up the created user by email so we can wire the organization/member
-    // references to the real Better Auth user id.
+    // Belt-and-suspenders cleanup: if the previous teardown was skipped
+    // (e.g. `--ui` killed with Ctrl+C, process crash), a stale user is still
+    // in the DB. Signup would then no-op via the 422 branch in
+    // ensureTestUser, and login would fail 401 because the stored hash was
+    // computed from the *previous* TEST_USER_PASSWORD. Wipe first so signup
+    // always recreates the credential against the current .env.test value.
+    const stale = await db.collection("user").findOne({ email });
+    if (stale) {
+      const id = stale._id;
+      const idStr = id.toString();
+      await db.collection("account").deleteMany({
+        $or: [{ userId: idStr }, { userId: id }],
+      });
+      await db.collection("session").deleteMany({
+        $or: [{ userId: idStr }, { userId: id }],
+      });
+      await db.collection("user").deleteOne({ _id: id });
+      console.log(`  ↳ Cleared stale user ${email} from previous run`);
+    }
+
+    // 1. Create the test user through Better Auth. After the wipe above this
+    //    always hits the "created" path on a healthy DB; the 422 branch in
+    //    ensureTestUser remains as a safety net for concurrent runs.
+    await ensureTestUser(baseUrl, email, password);
+
+    // 2. Look up the created user by email so we can wire the organization/
+    //    member references to the real Better Auth user id.
     const userDoc = await db.collection("user").findOne({ email });
     if (!userDoc) {
-      throw new Error(`[E2E Seed] Could not find user ${email} after signup`);
+      const userCount = await db.collection("user").countDocuments();
+      const sampleEmails = await db
+        .collection("user")
+        .find({}, { projection: { email: 1, _id: 0 } })
+        .limit(5)
+        .toArray();
+      const safeUri = uri.replace(/\/\/[^@]*@/, "//***@");
+      throw new Error(
+        `[E2E Seed] Could not find user "${email}" after signup. ` +
+          `Looked in db="${db.databaseName}" via uri="${safeUri}". ` +
+          `Total users in this DB: ${userCount}. ` +
+          `Sample emails: ${JSON.stringify(sampleEmails.map((u) => u.email))}. ` +
+          `If the signup logged status 200 but the user is missing, the frontend ` +
+          `wrote to a different database — confirm MONGODB_URI / MONGODB_DB_NAME ` +
+          `are identical between the seed and the Next server (npm run start:e2e).`,
+      );
     }
     const realUserId = userDoc._id;
 
