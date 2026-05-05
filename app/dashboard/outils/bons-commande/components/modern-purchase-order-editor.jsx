@@ -51,6 +51,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/src/components/ui/popover";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
 
 export default function ModernPurchaseOrderEditor({
   mode = "create",
@@ -73,6 +83,10 @@ export default function ModernPurchaseOrderEditor({
   const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
   const [showManageTemplates, setShowManageTemplates] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState("none");
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const bypassGuardRef = useRef(false);
+  const sentinelPushedRef = useRef(false);
   const pdfRef = useRef(null);
 
   // Template selector (create mode only)
@@ -171,8 +185,64 @@ export default function ModernPurchaseOrderEditor({
   const isEditing = mode === "edit";
   const isCreating = mode === "create";
 
-  const handleBack = () => {
+  // La modal de confirmation ne s'affiche que si le bon de commande est "draftable" :
+  // un client sélectionné ET au moins un article.
+  const watchedFormItems = form.watch("items");
+  const watchedClient = form.watch("client");
+  const hasItems =
+    Array.isArray(watchedFormItems) && watchedFormItems.length > 0;
+  const hasClient = !!(watchedClient && watchedClient.id);
+  const hasUserChanges = hasClient && hasItems;
+  const guardActive = hasUserChanges && !isReadOnly;
+
+  useEffect(() => {
+    if (!guardActive) return;
+
+    if (!sentinelPushedRef.current) {
+      window.history.pushState({ purchaseOrderEditorGuard: true }, "");
+      sentinelPushedRef.current = true;
+    }
+
+    const handlePopState = () => {
+      if (bypassGuardRef.current) {
+        bypassGuardRef.current = false;
+        return;
+      }
+      window.history.pushState({ purchaseOrderEditorGuard: true }, "");
+      setShowUnsavedDialog(true);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [guardActive]);
+
+  const leaveEditor = () => {
+    bypassGuardRef.current = true;
     router.push("/dashboard/outils/bons-commande");
+  };
+
+  const handleSaveDraftAndLeave = async () => {
+    setSavingDraft(true);
+    const ok = await onSave(formData);
+    setSavingDraft(false);
+    if (ok) {
+      setShowUnsavedDialog(false);
+    }
+  };
+
+  const handleLeaveWithoutSaving = () => {
+    setShowUnsavedDialog(false);
+    leaveEditor();
+  };
+
+  const handleBack = () => {
+    if (!isReadOnly && hasUserChanges) {
+      setShowUnsavedDialog(true);
+      return;
+    }
+    leaveEditor();
   };
 
   const handleSettingsClick = () => {
@@ -414,7 +484,7 @@ export default function ModernPurchaseOrderEditor({
                       </>
                     )}
                   </h1>
-                  {!showSettings && isDirty && !isReadOnly && (
+                  {!showSettings && hasUserChanges && !isReadOnly && (
                     <p className="text-sm text-muted-foreground">
                       {saving
                         ? "Sauvegarde en cours..."
@@ -430,7 +500,7 @@ export default function ModernPurchaseOrderEditor({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => window.history.back()}
+                      onClick={handleBack}
                       className="h-8 w-8 p-0 md:hidden"
                     >
                       <X className="h-4 w-4 text-muted-foreground" />
@@ -589,6 +659,8 @@ export default function ModernPurchaseOrderEditor({
                       saving={saving}
                       onSave={onSave}
                       onSubmit={handleSubmitWithEmail}
+                      onLeave={leaveEditor}
+                      hasUserChanges={hasUserChanges}
                       setFormData={setFormData}
                       canEdit={!isReadOnly}
                       nextQuoteNumber={nextPurchaseOrderNumber}
@@ -636,6 +708,53 @@ export default function ModernPurchaseOrderEditor({
           onSave={handleClientUpdated}
         />
       )}
+
+      {/* Modal de confirmation avant de quitter avec des changements non sauvegardés */}
+      <AlertDialog
+        open={showUnsavedDialog}
+        onOpenChange={(open) => {
+          if (!savingDraft) setShowUnsavedDialog(open);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Enregistrer en brouillon&nbsp;?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Vous avez des modifications non sauvegardées. Voulez-vous
+              enregistrer ce bon de commande en brouillon avant de
+              quitter&nbsp;?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={savingDraft}>
+              Annuler
+            </AlertDialogCancel>
+            <Button
+              variant="outline"
+              onClick={handleLeaveWithoutSaving}
+              disabled={savingDraft}
+            >
+              Quitter sans enregistrer
+            </Button>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleSaveDraftAndLeave();
+              }}
+              disabled={savingDraft}
+            >
+              {savingDraft ? (
+                <>
+                  <LoaderCircle className="h-4 w-4 animate-spin mr-2" />
+                  Enregistrement...
+                </>
+              ) : (
+                "Enregistrer en brouillon"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Modal d'envoi par email */}
       {createdPurchaseOrderData && (

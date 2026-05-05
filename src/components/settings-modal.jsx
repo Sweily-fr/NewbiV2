@@ -202,12 +202,11 @@ export function SettingsModal({
     }
   }, [open, initialTab]);
 
-  // Initialiser le formulaire avec les données du hook (pour le cas initial et les updates en temps réel)
-  useEffect(() => {
-    if (organization) {
-      reset(buildFormData(organization));
-    }
-  }, [organization, reset]);
+  // NOTE: Le useEffect qui faisait reset(buildFormData(organization)) sur chaque
+  // changement de `organization` a été supprimé — il provoquait un reset parasite
+  // du formulaire (les champs saisis se vidaient) car `organization` change de
+  // référence à chaque refetch/forceUpdateCounter.
+  // Le chargement initial est déjà assuré par le useEffect ci-dessus (open).
 
   // Fonction de sauvegarde
   const handleSaveAll = async (formData) => {
@@ -339,7 +338,7 @@ export function SettingsModal({
       case "espaces":
         return <EspacesSection canManageOrgSettings={canManageOrgSettings} />;
       case "preferences":
-        return <PreferencesSection />;
+        return <PreferencesSection onClose={() => onOpenChange(false)} />;
       case "notifications":
         return <NotificationsSection onClose={() => onOpenChange(false)} />;
       case "generale":

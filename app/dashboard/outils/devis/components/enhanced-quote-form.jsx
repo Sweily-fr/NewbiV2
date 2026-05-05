@@ -2,11 +2,7 @@
 
 import { useState, useEffect, useId } from "react";
 import { useFormContext } from "react-hook-form";
-import {
-  ChevronDownIcon,
-  ChevronRight,
-  ChevronLeft,
-} from "lucide-react";
+import { ChevronDownIcon, ChevronRight, ChevronLeft } from "lucide-react";
 import { useQuery } from "@apollo/client";
 import { GET_PRODUCTS } from "@/src/graphql/queries/products";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
@@ -142,7 +138,7 @@ function ProductSearchCombobox({
           className={cn(
             "w-full justify-between",
             !value && "text-muted-foreground",
-            className
+            className,
           )}
         >
           {value
@@ -218,6 +214,8 @@ function ProductSearchCombobox({
 export default function EnhancedQuoteForm({
   onSave,
   onSubmit,
+  onLeave,
+  hasUserChanges,
   loading,
   saving,
   readOnly,
@@ -300,7 +298,7 @@ export default function EnhancedQuoteForm({
     setValue(
       "items",
       items.filter((_, i) => i !== index),
-      { shouldDirty: true }
+      { shouldDirty: true },
     );
   };
 
@@ -365,7 +363,11 @@ export default function EnhancedQuoteForm({
       data.items &&
       data.items.length > 0 &&
       data.items.every(
-        (item) => item.description && item.quantity && item.unitPrice != null && item.unitPrice !== ""
+        (item) =>
+          item.description &&
+          item.quantity &&
+          item.unitPrice != null &&
+          item.unitPrice !== "",
       )
     );
   };
@@ -380,9 +382,7 @@ export default function EnhancedQuoteForm({
             <>
               {/* Section 1: Sélection d'un client (en premier comme pour les factures) */}
               <div>
-                <h3 className="font-medium text-lg">
-                  Sélection d'un client
-                </h3>
+                <h3 className="font-medium text-lg">Sélection d'un client</h3>
                 <ClientSelector
                   selectedClient={data.client}
                   onSelect={(client) => updateField("client", client)}
@@ -433,7 +433,10 @@ export default function EnhancedQuoteForm({
               />
 
               {/* Options avancées (retenue, escompte, livraison) */}
-              <Collapsible open={advancedOpen} onOpenChange={handleAdvancedToggle}>
+              <Collapsible
+                open={advancedOpen}
+                onOpenChange={handleAdvancedToggle}
+              >
                 <CollapsibleTrigger asChild>
                   <button
                     type="button"
@@ -442,7 +445,7 @@ export default function EnhancedQuoteForm({
                     <ChevronRight
                       className={cn(
                         "size-3.5 transition-transform duration-200",
-                        advancedOpen && "rotate-90"
+                        advancedOpen && "rotate-90",
                       )}
                     />
                     Options avancées
@@ -510,15 +513,21 @@ export default function EnhancedQuoteForm({
       </div>
 
       {/* Footer avec boutons d'action - Positionné en dehors du flux normal */}
-      <div
-        className="pt-4 pb-6 z-50 border-t lg:relative lg:bottom-auto lg:pt-4 lg:pb-0 fixed bottom-0 left-0 right-0 bg-background lg:bg-transparent px-4 lg:p-0"
-      >
+      <div className="pt-4 pb-6 z-50 border-t lg:relative lg:bottom-auto lg:pt-4 lg:pb-0 fixed bottom-0 left-0 right-0 bg-background lg:bg-transparent px-4 lg:p-0">
         <div className="max-w-2xl mx-auto px-2 md:px-6 lg:px-0">
           <div className="flex justify-between items-center">
             <div className="flex gap-3">
               <Button
                 variant="outline"
-                onClick={() => setShowCancelDialog(true)}
+                onClick={() => {
+                  if (hasUserChanges) {
+                    setShowCancelDialog(true);
+                  } else if (onLeave) {
+                    onLeave();
+                  } else {
+                    window.history.back();
+                  }
+                }}
                 disabled={loading || saving}
                 className="hidden md:flex"
               >
@@ -564,10 +573,16 @@ export default function EnhancedQuoteForm({
                     className="px-6"
                   >
                     {saving
-                      ? (mode === "edit" ? "Mise à jour..." : "Création...")
+                      ? mode === "edit"
+                        ? "Mise à jour..."
+                        : "Création..."
                       : documentType === "purchaseOrder"
-                        ? (mode === "edit" ? "Modifier le bon de commande" : "Créer le bon de commande")
-                        : (mode === "edit" ? "Modifier le devis" : "Créer le devis")}
+                        ? mode === "edit"
+                          ? "Modifier le bon de commande"
+                          : "Créer le bon de commande"
+                        : mode === "edit"
+                          ? "Modifier le devis"
+                          : "Créer le devis"}
                   </Button>
                 </>
               )}
@@ -596,7 +611,11 @@ export default function EnhancedQuoteForm({
               variant="danger"
               onClick={() => {
                 setShowCancelDialog(false);
-                window.history.back();
+                if (onLeave) {
+                  onLeave();
+                } else {
+                  window.history.back();
+                }
               }}
             >
               Quitter

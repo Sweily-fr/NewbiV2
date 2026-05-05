@@ -46,5 +46,56 @@
       "gestion-facturation-infirmier-liberal",
       "quest-ce-que-numero-facture"
     ]
+  },
+  {
+    "date": "2026-03-30",
+    "articles": [
+      "facturer-prestations-kinesitherapeute",
+      "obligation-assurance-decennale-artisan",
+      "evoliz-vs-newbi-comparatif"
+    ]
+  },
+  {
+    "date": "2026-04-06",
+    "articles": [
+      "comment-creer-catalogue-produits-services",
+      "erreurs-creation-micro-entreprise",
+      "comptabilite-simplifiee-tpe-obligations"
+    ]
+  },
+  {
+    "date": "2026-04-13",
+    "articles": [
+      "obligations-comptables-micro-entreprise",
+      "conseils-organiser-comptabilite-debut-activite",
+      "quest-ce-que-acompte-facture"
+    ]
+  },
+  {
+    "date": "2026-04-20",
+    "articles": [
+      "facturer-prestation-service-consultant",
+      "facture-situation-travaux-btp",
+      "top-logiciels-facturation-profession-liberale"
+    ]
+  },
+  {
+    "date": "2026-04-27",
+    "articles": [
+      "devis-travaux-btp-guide",
+      "calendrier-fiscal-independant-2026",
+      "erreurs-declaration-tva-eviter"
+    ]
+  },
+  {
+    "date": "2026-05-04",
+    "articles": [
+      "facture-restaurant-cafe-hotel",
+      "facture-restauration-rapide-obligations",
+      "obligations-facture-electronique-pme",
+      "facturx-format-facture-electronique",
+      "quest-ce-que-pdp-plateforme-dematerialisation",
+      "quest-ce-que-ppf-portail-public-facturation"
+    ]
   }
 ]

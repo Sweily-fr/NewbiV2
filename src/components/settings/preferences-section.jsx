@@ -16,7 +16,7 @@ import { useSession, updateUser } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
 import { useTutorial } from "@/src/contexts/tutorial-context";
 
-export function PreferencesSection() {
+export function PreferencesSection({ onClose }) {
   const { data: session, refetch: refetchSession } = useSession();
   const {
     resetTutorial,
@@ -137,7 +137,10 @@ export function PreferencesSection() {
               type="button"
               variant="outline"
               size="sm"
-              onClick={resetTutorial}
+              onClick={() => {
+                onClose?.();
+                resetTutorial();
+              }}
               disabled={tutorialLoading}
               className="ml-4 flex-shrink-0 cursor-pointer"
             >

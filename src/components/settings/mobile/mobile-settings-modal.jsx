@@ -152,6 +152,7 @@ export function MobileSettingsModal({
             organization={organization}
             updateOrganization={updateOrganization}
             refetchOrganization={refetchOrganization}
+            onClose={onClose}
           />
         );
       case "notifications":

@@ -189,9 +189,7 @@ function ProductSearchCombobox({
           disabled={disabled}
           className={cn("w-full justify-between", className)}
         >
-          <span className="truncate text-muted-foreground">
-            {placeholder}
-          </span>
+          <span className="truncate text-muted-foreground">{placeholder}</span>
           <ChevronDownIcon className="size-3.5 text-muted-foreground shrink-0" />
         </Button>
       </PopoverTrigger>
@@ -219,7 +217,9 @@ function ProductSearchCombobox({
           {loading ? (
             <div className="flex items-center justify-center gap-2 p-4">
               <LoaderCircle className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Recherche...</span>
+              <span className="text-sm text-muted-foreground">
+                Recherche...
+              </span>
             </div>
           ) : products.length === 0 ? (
             <div className="p-4 text-center text-sm text-muted-foreground">
@@ -263,6 +263,8 @@ function ProductSearchCombobox({
 export default function EnhancedInvoiceForm({
   onSave,
   onSubmit,
+  onLeave,
+  hasUserChanges,
   loading,
   saving,
   readOnly,
@@ -319,7 +321,7 @@ export default function EnhancedInvoiceForm({
   const resetItems = useCallback(() => {
     console.log(
       "📋 [RESET ITEMS] Réinitialisation des articles, items actuels:",
-      items.length
+      items.length,
     );
     replaceItems([]);
     console.log("📋 [RESET ITEMS] Articles vidés");
@@ -352,9 +354,12 @@ export default function EnhancedInvoiceForm({
 
       // Appliquer le pourcentage d'avancement
       const progressPercentage =
-        item.progressPercentage !== undefined && item.progressPercentage !== null
+        item.progressPercentage !== undefined &&
+        item.progressPercentage !== null
           ? parseFloat(item.progressPercentage)
-          : isSituationInvoice ? 0 : 100;
+          : isSituationInvoice
+            ? 0
+            : 100;
       itemTotal = itemTotal * (progressPercentage / 100);
 
       const itemDiscount =
@@ -378,9 +383,12 @@ export default function EnhancedInvoiceForm({
 
       // Appliquer le pourcentage d'avancement
       const progressPercentage =
-        item.progressPercentage !== undefined && item.progressPercentage !== null
+        item.progressPercentage !== undefined &&
+        item.progressPercentage !== null
           ? parseFloat(item.progressPercentage)
-          : isSituationInvoice ? 0 : 100;
+          : isSituationInvoice
+            ? 0
+            : 100;
       itemTotal = itemTotal * (progressPercentage / 100);
 
       const itemDiscount =
@@ -568,7 +576,11 @@ export default function EnhancedInvoiceForm({
     const itemsAreValid =
       hasItems &&
       data.items.every(
-        (item) => item.description && item.quantity && item.unitPrice != null && item.unitPrice !== ""
+        (item) =>
+          item.description &&
+          item.quantity &&
+          item.unitPrice != null &&
+          item.unitPrice !== "",
       );
 
     return (
@@ -656,7 +668,10 @@ export default function EnhancedInvoiceForm({
               />
 
               {/* Options avancées (retenue, escompte, livraison, champs perso) */}
-              <Collapsible open={advancedOpen} onOpenChange={handleAdvancedToggle}>
+              <Collapsible
+                open={advancedOpen}
+                onOpenChange={handleAdvancedToggle}
+              >
                 <CollapsibleTrigger asChild>
                   <button
                     type="button"
@@ -665,7 +680,7 @@ export default function EnhancedInvoiceForm({
                     <ChevronRight
                       className={cn(
                         "size-3.5 transition-transform duration-200",
-                        advancedOpen && "rotate-90"
+                        advancedOpen && "rotate-90",
                       )}
                     />
                     Options avancées
@@ -733,15 +748,21 @@ export default function EnhancedInvoiceForm({
       </div>
 
       {/* Footer avec boutons d'action - Positionné en dehors du flux normal */}
-      <div
-        className="pt-4 pb-6 z-50 border-t lg:relative lg:bottom-auto lg:pt-4 lg:pb-0 fixed bottom-0 left-0 right-0 bg-background lg:bg-transparent px-4 lg:p-0"
-      >
+      <div className="pt-4 pb-6 z-50 border-t lg:relative lg:bottom-auto lg:pt-4 lg:pb-0 fixed bottom-0 left-0 right-0 bg-background lg:bg-transparent px-4 lg:p-0">
         <div className="max-w-2xl mx-auto px-2 md:px-6 lg:px-0">
           <div className="flex justify-between items-center">
             <div className="flex gap-3">
               <Button
                 variant="outline"
-                onClick={() => setShowCancelDialog(true)}
+                onClick={() => {
+                  if (hasUserChanges) {
+                    setShowCancelDialog(true);
+                  } else if (onLeave) {
+                    onLeave();
+                  } else {
+                    window.history.back();
+                  }
+                }}
                 disabled={loading || saving}
                 className="hidden md:flex"
               >
@@ -815,7 +836,11 @@ export default function EnhancedInvoiceForm({
               variant="danger"
               onClick={() => {
                 setShowCancelDialog(false);
-                window.history.back();
+                if (onLeave) {
+                  onLeave();
+                } else {
+                  window.history.back();
+                }
               }}
             >
               Quitter

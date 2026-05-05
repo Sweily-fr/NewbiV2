@@ -285,6 +285,8 @@ export default function EnhancedCreditNoteForm({
   organization,
   onSave,
   onSubmit,
+  onLeave,
+  hasUserChanges,
   loading,
   saving,
 }) {
@@ -555,7 +557,15 @@ export default function EnhancedCreditNoteForm({
           <div className="flex justify-between items-center">
             <Button
               variant="outline"
-              onClick={() => setShowCancelDialog(true)}
+              onClick={() => {
+                if (hasUserChanges) {
+                  setShowCancelDialog(true);
+                } else if (onLeave) {
+                  onLeave();
+                } else {
+                  window.history.back();
+                }
+              }}
               disabled={loading || saving}
               className="text-sm font-normal"
             >
@@ -608,7 +618,15 @@ export default function EnhancedCreditNoteForm({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Rester</AlertDialogCancel>
-            <AlertDialogAction onClick={() => window.history.back()}>
+            <AlertDialogAction
+              onClick={() => {
+                if (onLeave) {
+                  onLeave();
+                } else {
+                  window.history.back();
+                }
+              }}
+            >
               Quitter
             </AlertDialogAction>
           </AlertDialogFooter>

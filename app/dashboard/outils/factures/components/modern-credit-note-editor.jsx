@@ -20,6 +20,16 @@ import EnhancedCreditNoteForm from "./enhanced-credit-note-form";
 import { toast } from "@/src/components/ui/sonner";
 import { getActiveOrganization } from "@/src/lib/organization-client";
 import { SendDocumentModal } from "./send-document-modal";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
 
 export default function ModernCreditNoteEditor({
   mode = "create",
@@ -31,6 +41,9 @@ export default function ModernCreditNoteEditor({
   const [organization, setOrganization] = useState(null);
   const [showSendEmailModal, setShowSendEmailModal] = useState(false);
   const [createdCreditNoteData, setCreatedCreditNoteData] = useState(null);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const bypassGuardRef = useRef(false);
+  const sentinelPushedRef = useRef(false);
   const pdfRef = useRef(null);
 
   // Récupérer l'organisation au chargement
@@ -68,12 +81,57 @@ export default function ModernCreditNoteEditor({
   const isEditing = mode === "edit";
   const isCreating = mode === "create";
 
-  const handleBack = () => {
-    if (invoiceId) {
-      router.push(`/dashboard/outils/factures/${invoiceId}`);
-    } else {
-      router.push("/dashboard/outils/factures");
+  // La modal de confirmation ne s'affiche que si l'avoir a au moins un article.
+  // (Les avoirs n'ont pas de concept de brouillon : on propose juste de rester ou quitter.)
+  const watchedFormItems = form.watch("items");
+  const hasItems =
+    Array.isArray(watchedFormItems) && watchedFormItems.length > 0;
+  const hasUserChanges = hasItems;
+  const guardActive = hasUserChanges && !isReadOnly;
+
+  const backUrl = invoiceId
+    ? `/dashboard/outils/factures/${invoiceId}`
+    : "/dashboard/outils/factures";
+
+  useEffect(() => {
+    if (!guardActive) return;
+
+    if (!sentinelPushedRef.current) {
+      window.history.pushState({ creditNoteEditorGuard: true }, "");
+      sentinelPushedRef.current = true;
     }
+
+    const handlePopState = () => {
+      if (bypassGuardRef.current) {
+        bypassGuardRef.current = false;
+        return;
+      }
+      window.history.pushState({ creditNoteEditorGuard: true }, "");
+      setShowUnsavedDialog(true);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [guardActive]);
+
+  const leaveEditor = () => {
+    bypassGuardRef.current = true;
+    router.push(backUrl);
+  };
+
+  const handleLeaveWithoutSaving = () => {
+    setShowUnsavedDialog(false);
+    leaveEditor();
+  };
+
+  const handleBack = () => {
+    if (!isReadOnly && hasUserChanges) {
+      setShowUnsavedDialog(true);
+      return;
+    }
+    leaveEditor();
   };
 
   const handleSaveAsDraft = async () => {
@@ -133,7 +191,7 @@ export default function ModernCreditNoteEditor({
         if (typeof window !== "undefined") {
           sessionStorage.setItem(
             "newCreditNoteData",
-            JSON.stringify(creditNoteData)
+            JSON.stringify(creditNoteData),
           );
         }
 
@@ -242,6 +300,8 @@ export default function ModernCreditNoteEditor({
                   originalInvoice={originalInvoice}
                   organization={organization}
                   onSubmit={handleFinalize}
+                  onLeave={leaveEditor}
+                  hasUserChanges={hasUserChanges}
                 />
               </FormProvider>
             </div>
@@ -261,6 +321,30 @@ export default function ModernCreditNoteEditor({
         </div>
       </div>
 
+      {/* Modal de confirmation avant de quitter avec des articles renseignés */}
+      <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Quitter l'éditeur&nbsp;?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir quitter&nbsp;? Les modifications non
+              enregistrées seront perdues.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Rester</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleLeaveWithoutSaving();
+              }}
+            >
+              Quitter sans enregistrer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Modal d'envoi par email */}
       {createdCreditNoteData && (
         <SendDocumentModal
@@ -278,7 +362,7 @@ export default function ModernCreditNoteEditor({
           onSent={handleEmailModalClose}
           onClose={() =>
             router.push(
-              createdCreditNoteData.redirectUrl || "/dashboard/outils/factures"
+              createdCreditNoteData.redirectUrl || "/dashboard/outils/factures",
             )
           }
           pdfRef={pdfRef}
