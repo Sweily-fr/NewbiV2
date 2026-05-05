@@ -12,7 +12,9 @@ const authFile = "e2e/.auth/user.json";
  * updates, React Hook Form timing, or layout changes.
  */
 setup("authenticate", async ({ page, context, baseURL }) => {
-  setup.setTimeout(60000);
+  // Generous budget: the warmup loop walks 5 routes that each cold-compile in
+  // Turbopack on the first hit (up to ~90s each on a busy machine).
+  setup.setTimeout(600000);
 
   const email = requireEnv("TEST_USER_EMAIL");
   const password = requireEnv("TEST_USER_PASSWORD");
@@ -74,7 +76,9 @@ setup("authenticate", async ({ page, context, baseURL }) => {
   }
 
   // 3. Warm up critical routes so the first navigation in each spec doesn't
-  //    pay the on-demand compile cost (dev mode) or first-hit JIT (prod).
+  //    pay the on-demand compile cost. Tolerate failures — Turbopack's first
+  //    compile of a heavy route can occasionally exceed our budget; better to
+  //    let the spec retry it than fail the whole setup.
   const ROUTES_TO_WARMUP = [
     "/dashboard",
     "/dashboard/outils/factures",
@@ -82,10 +86,19 @@ setup("authenticate", async ({ page, context, baseURL }) => {
     "/dashboard/outils/devis",
     "/dashboard/clients",
   ];
+  let warmed = 0;
   for (const route of ROUTES_TO_WARMUP) {
-    await page.goto(route, { waitUntil: "domcontentloaded", timeout: 60000 });
+    try {
+      await page.goto(route, {
+        waitUntil: "domcontentloaded",
+        timeout: 90000,
+      });
+      warmed++;
+    } catch (e) {
+      console.log(`  ⚠️ Warmup failed for ${route}: ${e.message}`);
+    }
   }
-  console.log("  ↳ Warmed up", ROUTES_TO_WARMUP.length, "routes");
+  console.log(`  ↳ Warmed up ${warmed}/${ROUTES_TO_WARMUP.length} routes`);
 
   // 4. Persist the storage state (cookies + localStorage) for downstream tests.
   await context.storageState({ path: authFile });
