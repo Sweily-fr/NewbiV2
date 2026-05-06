@@ -1,56 +1,63 @@
-import { useState } from 'react';
-import { useMutation } from '@apollo/client';
-import { CREATE_PAYMENT_SESSION_FOR_FILE_TRANSFER } from '@/src/graphql/mutations/stripe';
-import { toast } from '@/src/components/ui/sonner';
+import { useState } from "react";
+import { useMutation } from "@apollo/client";
+import { CREATE_PAYMENT_SESSION_FOR_FILE_TRANSFER } from "@/src/graphql/mutations/stripe";
+import { toast } from "@/src/components/ui/sonner";
 
 export const useStripePayment = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const [createPaymentSession] = useMutation(CREATE_PAYMENT_SESSION_FOR_FILE_TRANSFER, {
-    onCompleted: (data) => {
-      if (data.createPaymentSessionForFileTransfer.success) {
-        // Rediriger vers Stripe Checkout
-        const sessionUrl = data.createPaymentSessionForFileTransfer.sessionUrl;
-        if (sessionUrl) {
-          window.location.href = sessionUrl;
+  const [createPaymentSession] = useMutation(
+    CREATE_PAYMENT_SESSION_FOR_FILE_TRANSFER,
+    {
+      onCompleted: (data) => {
+        if (data.createPaymentSessionForFileTransfer.success) {
+          // Rediriger vers Stripe Checkout
+          const sessionUrl =
+            data.createPaymentSessionForFileTransfer.sessionUrl;
+          if (sessionUrl) {
+            window.location.href = sessionUrl;
+          } else {
+            toast.error("URL de paiement manquante");
+          }
         } else {
-          toast.error('URL de paiement manquante');
+          toast.error(
+            data.createPaymentSessionForFileTransfer.message ||
+              "Erreur lors de la création de la session de paiement",
+          );
         }
-      } else {
-        toast.error(data.createPaymentSessionForFileTransfer.message || 'Erreur lors de la création de la session de paiement');
-      }
-      setIsProcessing(false);
+        setIsProcessing(false);
+      },
+      onError: () => {
+        toast.error("Erreur lors de la création de la session de paiement");
+        setIsProcessing(false);
+      },
     },
-    onError: (error) => {
-      toast.error('Erreur lors de la création de la session de paiement');
-      setIsProcessing(false);
-    }
-  });
+  );
 
-  const initiatePayment = async (transferId) => {
+  const initiatePayment = async (transferId, accessKey) => {
     if (!transferId) {
-      toast.error('ID de transfert manquant');
+      toast.error("ID de transfert manquant");
       return;
     }
 
     setIsProcessing(true);
-    
+
     try {
-      
       await createPaymentSession({
         variables: {
-          transferId
-        }
+          transferId,
+          accessKey: accessKey || undefined,
+        },
       });
-    } catch (error) {
-      toast.error('Erreur lors de l\'initiation du paiement');
+    } catch {
+      toast.error("Erreur lors de l'initiation du paiement");
       setIsProcessing(false);
     }
   };
 
   return {
     initiatePayment,
-    isProcessing
+    isProcessing,
   };
 };
 
