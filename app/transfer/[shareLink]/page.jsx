@@ -711,7 +711,7 @@ export default function TransferPage() {
         <PaymentModal
           amount={transfer?.fileTransfer?.paymentAmount}
           currency={transfer?.fileTransfer?.paymentCurrency}
-          onPay={() => initiatePayment(transfer?.fileTransfer?.id)}
+          onPay={() => initiatePayment(transfer?.fileTransfer?.id, accessKey)}
           isProcessing={isProcessing}
         />
       )}

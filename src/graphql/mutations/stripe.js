@@ -41,8 +41,14 @@ export const CHECK_STRIPE_CONNECT_ACCOUNT_STATUS = gql`
 
 // Créer une session de paiement pour un transfert de fichiers
 export const CREATE_PAYMENT_SESSION_FOR_FILE_TRANSFER = gql`
-  mutation CreatePaymentSessionForFileTransfer($transferId: ID!) {
-    createPaymentSessionForFileTransfer(transferId: $transferId) {
+  mutation CreatePaymentSessionForFileTransfer(
+    $transferId: ID!
+    $accessKey: String
+  ) {
+    createPaymentSessionForFileTransfer(
+      transferId: $transferId
+      accessKey: $accessKey
+    ) {
       success
       message
       sessionId
