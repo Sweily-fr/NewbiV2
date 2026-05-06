@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useMutation, gql } from "@apollo/client";
 import { Loader2 } from "lucide-react";
@@ -17,7 +17,7 @@ const CONSUME_PAYMENT_RETURN_TOKEN = gql`
   }
 `;
 
-export default function TransferReturnPage() {
+function TransferReturnContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [error, setError] = useState(null);
@@ -71,5 +71,19 @@ export default function TransferReturnPage() {
         <p className="mt-4 text-muted-foreground">Redirection en cours...</p>
       </div>
     </div>
+  );
+}
+
+export default function TransferReturnPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <TransferReturnContent />
+    </Suspense>
   );
 }
