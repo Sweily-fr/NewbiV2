@@ -220,14 +220,10 @@ export const TEST_INVOICES = [
   {
     _id: IDS.invoiceDraft,
     prefix,
-    // Workaround R1 (cf e2e/REGRESSIONS_TO_FIX.md) : le schema GraphQL
-    // déclare Invoice.number: String! mais le modèle Mongoose autorise
-    // null pour les DRAFTs. Sans valeur, GetInvoices crash sur la
-    // sérialisation et /factures ne charge jamais. On aligne sur ce que
-    // le resolver génère réellement pour les DRAFTs créés via UI/mutation
-    // (cf invoice.js:1118-1122 → "DRAFT-0001"). Fix produit (schema
-    // nullable) reste à faire côté backend.
-    number: "DRAFT-0001",
+    // R1 fix: Invoice.number is now nullable in the GraphQL schema, so
+    // DRAFTs without a number reflect the real prod state (the number is
+    // assigned only on transition to PENDING/COMPLETED).
+    number: null,
     issueDate: now,
     dueDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
     invoiceType: "standard",
@@ -408,9 +404,9 @@ export const TEST_QUOTES = [
   {
     _id: IDS.quoteDraft,
     prefix: quotePrefix,
-    // Même workaround R1 que invoiceDraft : Quote.number est aussi String!
-    // dans le schema GraphQL — sans valeur, GetQuotes crash et /devis ne
-    // charge pas non plus.
+    // Quote.number is `required: true` in the Mongoose model and `String!`
+    // in the GraphQL schema — DRAFTs are always seeded with a value
+    // matching what the resolver assigns when creating a draft via UI.
     number: "DRAFT-0001",
     issueDate: now,
     validUntil: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),

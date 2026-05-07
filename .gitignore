@@ -45,3 +45,13 @@ next-env.d.ts
 e2e/.auth/
 /test-results/
 /playwright-report/
+
+# IDE / local-only
+.vscode/
+.claude/
+
+# Mutation testing cache
+.stryker-tmp/
+
+# Local reports output
+/reports/
