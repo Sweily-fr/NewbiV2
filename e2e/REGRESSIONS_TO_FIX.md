@@ -219,3 +219,62 @@ Tests qui ne s'exécutent JAMAIS dans la configuration actuelle (le seed crée t
   2. Ajouter une mutation backend "admin only" `setInvoiceFields` permettant de bypasser la validation pour les besoins de test, OU
   3. Faire un global-teardown qui purge les tests-créés invoices entre runs (rétablit la situation où invoicePaid est en page 1).
 - **Owner suggéré** : e2e infra (option 3 la plus simple) ou backend (option 2 si on veut un canary fiable).
+
+---
+
+## R11 — Tests "default = today" instables : invoices futures non nettoyées par le teardown
+
+- **Découvert** : prompt phase 1 Densification factures clients — `e2e/factures/issue-date-default.spec.js` Tests 1.1 et 1.2.
+- **Catégorie** : LIMITATION_TEST (cascade du teardown ciblé)
+- **Contexte** : R10 documente déjà l'impossibilité de matérialiser une PENDING avec dueDate dans le passé. R11 documente un effet de bord du même teardown ciblé : les invoices créées dynamiquement par les tests (Tests 1.3/1.4 ici, mais aussi tous les CRUD UI/mutation tests) restent en DB entre runs car `global-teardown.ts:35-38` ne supprime que les invoices avec `_id` seedé. Conséquence : `latestInvoiceIssueDate` est durablement > today après le 1er run qui crée une PENDING postdatée.
+- **Symptôme** : Tests 1.1 et 1.2 (qui asseyent l'invariant "default = today quand latest ≤ today") skippent silencieusement à partir du 2e run. Ils ne sont vraiment exécutés qu'après un teardown manuel `db.invoices.deleteMany({ workspaceId: ... })` ou un fresh dev environment.
+- **Mitigation appliquée (2026-05-07)** : les tests utilisent `test.skip(true, ...)` quand `latestInvoiceIssueDate > today`, plutôt que de faussement échouer. Le run reste vert mais la couverture est partielle.
+- **Hypothèse de fix** :
+  1. Étendre `global-teardown.ts` pour supprimer toutes les invoices de `IDS.organizationId` (pas juste celles seedées). Risque : casser les autres specs qui s'appuient sur la persistence inter-tests dans le même run (peu probable).
+  2. Faire un `beforeAll` dans `issue-date-default.spec.js` qui delete les invoices futures du workspace.
+  3. Combiner avec R10 — un setInvoiceFields admin-only permettrait de matérialiser ET nettoyer.
+- **Owner suggéré** : e2e infra (option 1 ou 2). Pas de fix produit nécessaire.
+
+---
+
+## R12 — Impossible de créer une PENDING avec issueDate < today via mutation publique
+
+- **Découvert** : prompt phase 1 Densification factures clients — `e2e/factures/issue-date-default.spec.js` Test 1.2.
+- **Catégorie** : LIMITATION_TEST (équivalent à R10 mais sur issueDate au lieu de dueDate)
+- **Contexte** : Le scénario du prompt pour Test 1.2 ("Crée une PENDING avec issueDate = aujourd'hui − 5 jours via mutation") n'est pas réalisable. Le resolver `validateInvoiceIssueDate` (cf invoice.js:1161-1163, et cf §45) exige `issueDate ≥ latestInvoiceIssueDate` pour tout statut ≠ DRAFT — par construction, on ne peut jamais antidater une PENDING au-delà de la PENDING la plus récente déjà en base.
+- **Symptôme** : Test 1.2 ne peut pas matérialiser activement le scénario. Il a été restructuré pour fixer l'invariant FAIBLE "tant que latest ≤ today, default reste today (pas de drift en arrière)" — couvre la même règle §17 mais via un sous-cas pilotable.
+- **Hypothèse de fix** : aucune côté produit (le rejet est correct par compliance FR). Côté test infra : option 2 de R10 (mutation admin-only de bypass) lèverait aussi cette limitation. Sinon, accepter que Test 1.2 soit un canary réduit.
+- **Owner suggéré** : e2e infra (si bypass jugé pertinent). Pas de fix produit.
+
+---
+
+## R13 — Date d'échéance ne se recalcule pas quand l'utilisateur change la date d'émission
+
+- **Découvert** : prompt phase 1 Densification factures clients — `e2e/factures/due-date-recalc.spec.js` Tests 2.1, 2.2, 2.3, 2.5.
+- **Catégorie** : FRONTEND_BUG (gap fonctionnel — comportement spécifié par le produit, pas implémenté)
+- **Symptôme** : sur `/dashboard/outils/factures/new`, quand l'utilisateur change la date d'émission via le Calendar (issueDate), la date d'échéance (dueDate) ne se recalcule pas automatiquement = `nouvelle issueDate + délai sélectionné`. Elle reste à sa valeur précédente (souvent `ancienne issueDate + 30j`).
+- **Comportement attendu (rule produit)** : `dueDate = issueDate + N` où N est le délai courant (Select PAYMENT_TERMS_SUGGESTIONS). Doit re-fire à chaque changement d'`issueDate` ET à chaque changement de `N`. Couvre §17 (validation submit) et §45 (cohérence date).
+- **État du code** :
+  - Changer le Select délai → `onValueChange` recalcule explicitement dueDate (cf `InvoiceInfoSection.jsx:753-763`). Implémenté ✓ (Test 2.6 PASS).
+  - Changer issueDate via Calendar → `onSelect` met à jour issueDate seulement (cf `InvoiceInfoSection.jsx:661-667`). Aucun useEffect ne watche `issueDate` pour resynchroniser dueDate. Non implémenté ✗ (Tests 2.1-2.5 FAIL).
+- **Cas particulier confirmé** :
+  - Test 2.5 (délai "Paiement à réception", N=0) : après sélection, dueDate = issueDate (correct, Select onValueChange). Mais après changement d'issueDate, dueDate reste figé sur l'ancienne valeur (ne suit pas).
+- **Impact estimé** :
+  - **UX** : l'utilisateur peut soumettre une facture avec dueDate < issueDate (`validateDueDate` bloque ce cas via RHF), OU avec un délai incohérent (35 jours au lieu de 30) sans s'en rendre compte. Conséquence : litiges paiement / pénalités de retard mal calculées.
+  - **Validation existante** : la fonction `validateDueDate` (`InvoiceInfoSection.jsx:552-560`) interdit dueDate < issueDate, donc le pire cas (négatif) est bloqué. Mais un délai _supérieur_ au délai configuré passe sans avertissement.
+- **Hypothèse de fix** : ajouter un `useEffect` dans `InvoiceInfoSection.jsx` qui watch `data.issueDate` ET stocke le délai courant en local state, puis re-set dueDate. Pseudo :
+
+  ```js
+  const [paymentDelay, setPaymentDelay] = React.useState(30);
+  // ...
+  React.useEffect(() => {
+    if (!data.issueDate) return;
+    const newDue = new Date(data.issueDate);
+    newDue.setDate(newDue.getDate() + paymentDelay);
+    setValue("dueDate", formatLocalDate(newDue), { shouldDirty: true });
+  }, [data.issueDate, paymentDelay]);
+  ```
+
+  Et faire en sorte que le `Select onValueChange` mette à jour `paymentDelay` (au lieu de calculer dueDate inline). Le seul effet `[issueDate, paymentDelay]` recalcule alors dueDate dans les deux cas.
+
+- **Owner suggéré** : front (composant `InvoiceInfoSection.jsx`). Pas de changement backend ni de schéma.
