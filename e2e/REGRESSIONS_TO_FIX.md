@@ -278,3 +278,34 @@ Tests qui ne s'exécutent JAMAIS dans la configuration actuelle (le seed crée t
   Et faire en sorte que le `Select onValueChange` mette à jour `paymentDelay` (au lieu de calculer dueDate inline). Le seul effet `[issueDate, paymentDelay]` recalcule alors dueDate dans les deux cas.
 
 - **Owner suggéré** : front (composant `InvoiceInfoSection.jsx`). Pas de changement backend ni de schéma.
+
+---
+
+## R14 — Numérotation : pré-check resolver ignore `issueYear` (incohérent avec l'index unique)
+
+- **Découvert** : prompt phase 2 Densification factures clients — `e2e/factures/numbering-sequential.spec.js` Test 6 (premier draft).
+- **Catégorie** : BACKEND_BUG (non-bloquant, mais incohérence interne)
+- **Symptôme** : l'index unique Mongoose sur `Invoice` (`prefix_number_workspaceId_year_unique`, cf `Invoice.js:537-549`) inclut explicitement `issueYear`. Cela autorise techniquement deux factures avec même `(prefix, number)` sur des années différentes — c'est exactement la sémantique de §4 R3 ("au 1er janvier le compteur repart à 0001").
+- **Mais** le resolver `createInvoice` (cf `invoice.js:1131-1142`) pré-vérifie via une query qui **n'inclut pas** `issueYear` :
+
+  ```js
+  const existingInvoice = await Invoice.findOne({
+    prefix,
+    number: input.number,
+    status: { $ne: "DRAFT" },
+    workspaceId: workspaceId,
+  });
+  if (existingInvoice) {
+    throw new AppError(`Le numéro de facture ${prefix}${input.number} existe déjà`, ...);
+  }
+  ```
+
+  Donc une 2e facture avec même `(prefix, number)` mais `issueYear` différent est rejetée par le resolver, alors que l'index l'autoriserait.
+
+- **Impact estimé** :
+  - Faible en pratique : la convention métier R3 prévoit que le préfixe change à chaque année (F-2026- → F-2027-), donc le couple `(prefix, number)` est déjà unique par construction.
+  - L'incohérence apparaît si un utilisateur garde le même préfixe d'une année à l'autre (ex. préfixe sans année), dans ce cas les numéros ne peuvent jamais se réinitialiser malgré l'index permissif.
+  - Le pré-check est cohérent avec la compliance FR (séquentialité stricte sur tout l'historique d'un préfixe), donc la "bonne" interprétation est probablement : retirer `issueYear` de l'index plutôt que l'ajouter au resolver.
+- **Hypothèse de fix** : aligner index et resolver. Soit (a) ajouter `issueYear` à la query du resolver pour matcher l'index, soit (b) retirer `issueYear` de l'index pour matcher le resolver. (b) est plus prudent compliance-wise.
+- **Cible test** : `numbering-sequential.spec.js` Test 6 documente le comportement actuel (resolver-based) en testant via deux préfixes annuels distincts au lieu d'essayer la collision sur même préfixe + années différentes.
+- **Owner suggéré** : backend (model + resolver à aligner).
