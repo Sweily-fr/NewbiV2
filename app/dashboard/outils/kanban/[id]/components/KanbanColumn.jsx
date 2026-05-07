@@ -55,6 +55,8 @@ export function KanbanColumn({
       {/* Header de la colonne - Draggable sur toute la zone */}
       <div
         {...dragHandleProps}
+        data-testid="kanban-column-handle"
+        data-column-id={column.id}
         className="flex items-center justify-between mb-2 sm:mb-3 gap-2 cursor-grab active:cursor-grabbing"
         style={{ touchAction: "none" }}
       >
