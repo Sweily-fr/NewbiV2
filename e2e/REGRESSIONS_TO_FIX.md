@@ -309,3 +309,46 @@ Tests qui ne s'exécutent JAMAIS dans la configuration actuelle (le seed crée t
 - **Hypothèse de fix** : aligner index et resolver. Soit (a) ajouter `issueYear` à la query du resolver pour matcher l'index, soit (b) retirer `issueYear` de l'index pour matcher le resolver. (b) est plus prudent compliance-wise.
 - **Cible test** : `numbering-sequential.spec.js` Test 6 documente le comportement actuel (resolver-based) en testant via deux préfixes annuels distincts au lieu d'essayer la collision sur même préfixe + années différentes.
 - **Owner suggéré** : backend (model + resolver à aligner).
+
+---
+
+## R15 — `changeInvoiceStatus` exige un MongoDB replica set, infaisable sur le test env standalone
+
+- **Découvert** : prompt phase 3 (Pièges §46) — `e2e/factures/pieges-critiques.spec.js` Test 7 (§46.9 préfixe DRAFT → PENDING).
+- **Catégorie** : LIMITATION_TEST + FRONTEND_BUG méta (deux paths divergents sur la même transition)
+- **Symptôme** : la mutation `changeInvoiceStatus(id, "PENDING")` lève côté backend :
+
+  ```
+  "Erreur lors de la vérification des permissions: Transaction numbers
+   are only allowed on a replica set member or mongos"
+  ```
+
+  Cause racine : le resolver utilise `mongoose.startSession()` +
+  `session.withTransaction(...)` (cf `invoice.js:2280-2334`) pour
+  encapsuler le rename atomique du brouillon. MongoDB transactions
+  exigent un replica set ; le test e2e tourne sur un standalone
+  (`mongodb://localhost:27017/invoice-app-test`).
+
+- **Conséquence** :
+  - Le path dynamique de `changeInvoiceStatus` ne peut pas être testé
+    sur le test env actuel.
+  - `pieges-critiques.spec.js` Test 7 (§46.9) a été restructuré pour
+    fixer uniquement l'invariant STATIQUE "préfixe DRAFT préservé à la
+    lecture". L'invariant dynamique "préfixe recalculé à la finalisation"
+    reste non testé.
+- **Écart code méta** : `updateInvoice` (cf `invoice.js:1900-1970`) gère
+  AUSSI la transition DRAFT → PENDING mais sans transaction et avec
+  une logique préfixe DIFFÉRENTE (préserve `invoiceData.prefix` au
+  lieu de l'écraser avec `lastInvoice.prefix`). Donc le préfixe final
+  d'une facture finalisée dépend de la mutation utilisée — incohérence
+  applicative à clarifier.
+- **Hypothèses de fix** :
+  1. Configurer le test env Mongo en mode replica set (init via
+     `rs.initiate()` ou `mongod --replSet rs0` dans le compose). Solution
+     officielle pour tester les transactions.
+  2. Wrapper le resolver avec un fallback non-transactionnel quand
+     `session.withTransaction` n'est pas disponible (perte de l'atomicité
+     mais permet le test).
+  3. Aligner `updateInvoice` et `changeInvoiceStatus` sur la même logique
+     préfixe — supprime l'écart méta-§46.9 et facilite le testing.
+- **Owner suggéré** : e2e infra (option 1) ou backend (options 2/3).
