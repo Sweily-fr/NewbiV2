@@ -352,3 +352,25 @@ Tests qui ne s'exécutent JAMAIS dans la configuration actuelle (le seed crée t
   3. Aligner `updateInvoice` et `changeInvoiceStatus` sur la même logique
      préfixe — supprime l'écart méta-§46.9 et facilite le testing.
 - **Owner suggéré** : e2e infra (option 1) ou backend (options 2/3).
+
+---
+
+## R16 — Charge DB cumulative : 530+ invoices résiduelles font flaker la suite full
+
+- **Découvert** : phase 4 — full suite factures (`npx playwright test e2e/factures/`). Run en isolation des nouveaux tests `invariants-business.spec.js` : 9/9 verts. Run de la suite complète : 76 passed / 12 failed dont 8 nouveaux échecs (situations-conversion, pieges-critiques) qui passaient en phase 3.
+- **Catégorie** : LIMITATION_TEST (cumul direct de R10/R11 — invoices créées par les tests + jamais nettoyées par le teardown).
+- **Symptômes des échecs** :
+  - Erreurs récurrentes `TypeError: Cannot read properties of undefined (reading 'createInvoice'/'createQuote')` dans les tests qui appellent `r.data.X` sans guard. Ça arrive quand la mutation GraphQL renvoie `{ errors: [...] }` ou timeout.
+  - `mongosh ... db.invoices.countDocuments(...)` reporte **530 invoices** dans le workspace de test (vs 354 mesurés en phase 2). Croissance ~50/run.
+  - Les queries qui scannent toute la collection (`latestInvoiceIssueDate`, `getInvoices` page 1, `nextInvoiceNumber` en autoNumbering) deviennent lentes → timeout 30s helpers, donc les mutations qui en dépendent (`validateInvoiceIssueDate` dans `createInvoice` non-DRAFT) sont vues comme "failed" au niveau test.
+- **Tests touchés en phase 4** :
+  - 5 situations-conversion (Tests 1-5) : tous échouent au create du devis ou de la facture liée
+  - 3 pieges-critiques (Tests 7, 9, 10) : échec sur create DRAFT/PENDING ou sur la lecture
+  - 4 due-date-recalc (R13, déjà documenté pré-existant)
+- **Hypothèse de fix (test infra)** :
+  1. Étendre `global-teardown.ts` pour `db.invoices.deleteMany({ workspaceId: TEST_ORG, _id: { $nin: [seeded ids] } })`. Ne supprime que les invoices dynamiquement créées dans le workspace test, pas les seedées. **Solution prudente, recommandée**.
+  2. Ajouter un `beforeAll` dans chaque fichier qui crée des invoices, appelant la même purge ciblée (effort dispersé).
+  3. Faire un teardown global qui délimite par `_id` créé après `Date.now() - SESSION_START`.
+- **Impact compliance/audit** : aucun (test env dédié `invoice-app-test`, jamais en prod).
+- **Workaround temporaire** : exécuter `mongosh ... deleteMany(...)` manuellement entre les runs (cf phase 1 où on était à 354).
+- **Owner suggéré** : e2e infra (option 1).
