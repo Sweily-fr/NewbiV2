@@ -64,8 +64,12 @@ export default function SignUpPage() {
   };
 
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session, isPending: sessionPending } = useSession();
   const userEmail = session?.user?.email;
+
+  // Détecte si le signup vient de l'app mobile (via ?source=mobile)
+  const isMobileSource = searchParams.get("source") === "mobile";
 
   // View is derived from session state — no localStorage dependency
   // "null" means "not yet determined" (session still loading)
@@ -369,6 +373,7 @@ export default function SignUpPage() {
             planName: selectedPlan,
             isAnnual,
             ...companyData,
+            ...(isMobileSource && { source: "mobile" }),
           },
         }),
       });
@@ -984,7 +989,11 @@ export default function SignUpPage() {
                 <p className="text-[13px] text-muted-foreground">
                   Vous avez déjà un compte ?{" "}
                   <Link
-                    href="/auth/login"
+                    href={
+                      isMobileSource
+                        ? "/auth/login?source=mobile"
+                        : "/auth/login"
+                    }
                     className="text-foreground font-medium hover:underline"
                   >
                     Se connecter
