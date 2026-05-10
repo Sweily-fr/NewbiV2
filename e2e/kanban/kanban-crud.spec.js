@@ -170,18 +170,18 @@ test.describe("Kanban — drag-and-drop (keyboard path)", () => {
       "Terminées",
     ]);
 
-    // Find the first sortable handle. @dnd-kit attaches role="button" with
-    // aria-roledescription="sortable". Falling back to the first button-like
-    // element inside the column header keeps the test resilient.
+    // R2 fix: stable handle selector. KanbanColumn renders a header with
+    // data-testid="kanban-column-handle" that receives @dnd-kit's
+    // attributes+listeners via dragHandleProps. Falling back to the
+    // aria-roledescription emitted by @dnd-kit if the testid is missing.
     const firstHandle = page
-      .locator('[aria-roledescription*="sortable"], [data-dnd-kit-sortable]')
+      .locator(
+        '[data-testid="kanban-column-handle"], [aria-roledescription*="sortable"]',
+      )
       .first();
 
-    // If we can't locate a handle, skip — surfaces a real selector regression
-    // without flagging unrelated infra issues.
-    if ((await firstHandle.count()) === 0) {
-      test.skip(true, "No @dnd-kit sortable handle found — UI selector drift");
-    }
+    // Wait for it to be in the DOM (the kanban board hydrates after navigation).
+    await expect(firstHandle).toBeVisible({ timeout: 15000 });
 
     await firstHandle.focus();
     await page.keyboard.press("Space"); // pick up

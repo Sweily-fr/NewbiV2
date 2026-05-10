@@ -103,21 +103,20 @@ test.describe("Bons de commande", () => {
   }) => {
     await waitForPurchaseOrdersPage(page);
 
+    // R3 fix: prefer data-testid over text. The PermissionButton renders
+    // "Vérification..." while resolving permissions, which would cause a
+    // text-based locator to miss the button during its loading window.
     const createBtn = page
-      .locator('button:has-text("Nouveau bon de commande")')
+      .locator('[data-testid="new-purchase-order-button"]')
+      .or(page.locator('button:has-text("Nouveau bon de commande")'))
       .or(page.locator('button:has-text("Nouveau BC")'))
-      .or(page.locator('a:has-text("Nouveau bon de commande")'))
       .first();
 
-    // Si le bouton est désactivé (read-only / subscription), skip
-    const isDisabled = await createBtn.isDisabled().catch(() => false);
-    if (isDisabled) {
-      test.skip(true, "Mode lecture seule — création de BC désactivée");
-    }
-
-    if (!(await createBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
-      test.skip(true, "Bouton de création de BC non disponible");
-    }
+    // Wait until permission check finishes (button stops being disabled or
+    // loading text disappears). Generous timeout because the org member
+    // fetch via Better Auth can take a few seconds in CI.
+    await expect(createBtn).toBeVisible({ timeout: 20000 });
+    await expect(createBtn).toBeEnabled({ timeout: 20000 });
 
     await createBtn.click();
 
