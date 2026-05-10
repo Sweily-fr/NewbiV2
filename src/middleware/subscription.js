@@ -23,7 +23,7 @@ const EXCLUDED_ROUTES = [
   "/pricing",
   "/checkout",
   "/billing",
-  "/onboarding",
+  "/onboarding/success",
   "/auth/signup",
 ];
 
