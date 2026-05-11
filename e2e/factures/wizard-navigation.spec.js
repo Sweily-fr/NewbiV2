@@ -17,9 +17,7 @@
  */
 import { test } from "../fixtures/auth.fixture";
 import { expect } from "@playwright/test";
-import { TEST_CLIENTS } from "../seed/test-data";
-
-const TEST_CLIENT = TEST_CLIENTS[0]; // Entreprise Alpha SAS
+import { selectSeededClient } from "./helpers/ui-helpers";
 
 async function gotoEditor(page) {
   await page.goto("/dashboard/outils/factures/new", {
@@ -29,20 +27,6 @@ async function gotoEditor(page) {
   await expect(page.locator("text=Sélection d'un client").first()).toBeVisible({
     timeout: 30000,
   });
-}
-
-async function selectSeededClient(page) {
-  // Pattern aligné sur validation-erreurs.spec.js + crud-ui.spec.js : ouvrir
-  // le combobox, cliquer sur l'option correspondant au client seedé.
-  const combobox = page.locator('button[role="combobox"]').first();
-  await combobox.click();
-  const option = page
-    .locator(
-      `[data-radix-popper-content-wrapper] button:has-text("${TEST_CLIENT.name}")`,
-    )
-    .first();
-  await expect(option).toBeVisible({ timeout: 10000 });
-  await option.click();
 }
 
 async function getNextButton(page) {
