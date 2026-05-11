@@ -13,14 +13,12 @@
  */
 import { test } from "../fixtures/auth.fixture";
 import { expect } from "@playwright/test";
-import { TEST_CLIENTS } from "../seed/test-data";
 import {
   createInvoiceMutation,
   latestInvoiceIssueDate,
 } from "./helpers/invoice-mutations";
 import { buildInvoiceInput, buildItem } from "./helpers/invoice-fixtures";
-
-const TEST_CLIENT = TEST_CLIENTS[0];
+import { selectSeededClient } from "./helpers/ui-helpers";
 
 // ---- Helpers UI (cohérents avec create-invoice-p0.spec.js) ----
 
@@ -32,20 +30,6 @@ async function gotoEditor(page) {
   await expect(page.locator("text=Sélection d'un client").first()).toBeVisible({
     timeout: 30000,
   });
-}
-
-async function selectSeededClient(page) {
-  const combobox = page.locator('button[role="combobox"]').first();
-  await combobox.click();
-  const option = page
-    .locator(
-      `[data-radix-popper-content-wrapper] button:has-text("${TEST_CLIENT.name}")`,
-    )
-    .first();
-  await expect(option).toBeVisible({ timeout: 10000 });
-  await option.click();
-  // setTimeout(100ms) interne pour synchroniser companyInfo
-  await page.waitForTimeout(500);
 }
 
 async function goToStep2(page) {

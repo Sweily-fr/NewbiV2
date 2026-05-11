@@ -225,3 +225,158 @@ Tests qui ne s'exécutent JAMAIS dans la configuration actuelle (le seed crée t
   2. Ajouter une mutation backend "admin only" `setInvoiceFields` permettant de bypasser la validation pour les besoins de test, OU
   3. Faire un global-teardown qui purge les tests-créés invoices entre runs (rétablit la situation où invoicePaid est en page 1).
 - **Owner suggéré** : e2e infra (option 3 la plus simple) ou backend (option 2 si on veut un canary fiable).
+
+---
+
+## R11 — Tests "default = today" instables : invoices futures non nettoyées par le teardown
+
+- **Découvert** : prompt phase 1 Densification factures clients — `e2e/factures/issue-date-default.spec.js` Tests 1.1 et 1.2.
+- **Catégorie** : LIMITATION_TEST (cascade du teardown ciblé)
+- **Contexte** : R10 documente déjà l'impossibilité de matérialiser une PENDING avec dueDate dans le passé. R11 documente un effet de bord du même teardown ciblé : les invoices créées dynamiquement par les tests (Tests 1.3/1.4 ici, mais aussi tous les CRUD UI/mutation tests) restent en DB entre runs car `global-teardown.ts:35-38` ne supprime que les invoices avec `_id` seedé. Conséquence : `latestInvoiceIssueDate` est durablement > today après le 1er run qui crée une PENDING postdatée.
+- **Symptôme** : Tests 1.1 et 1.2 (qui asseyent l'invariant "default = today quand latest ≤ today") skippent silencieusement à partir du 2e run. Ils ne sont vraiment exécutés qu'après un teardown manuel `db.invoices.deleteMany({ workspaceId: ... })` ou un fresh dev environment.
+- **Mitigation appliquée (2026-05-07)** : les tests utilisent `test.skip(true, ...)` quand `latestInvoiceIssueDate > today`, plutôt que de faussement échouer. Le run reste vert mais la couverture est partielle.
+- **Hypothèse de fix** :
+  1. Étendre `global-teardown.ts` pour supprimer toutes les invoices de `IDS.organizationId` (pas juste celles seedées). Risque : casser les autres specs qui s'appuient sur la persistence inter-tests dans le même run (peu probable).
+  2. Faire un `beforeAll` dans `issue-date-default.spec.js` qui delete les invoices futures du workspace.
+  3. Combiner avec R10 — un setInvoiceFields admin-only permettrait de matérialiser ET nettoyer.
+- **Owner suggéré** : e2e infra (option 1 ou 2). Pas de fix produit nécessaire.
+
+---
+
+## R12 — Impossible de créer une PENDING avec issueDate < today via mutation publique
+
+- **Découvert** : prompt phase 1 Densification factures clients — `e2e/factures/issue-date-default.spec.js` Test 1.2.
+- **Catégorie** : LIMITATION_TEST (équivalent à R10 mais sur issueDate au lieu de dueDate)
+- **Contexte** : Le scénario du prompt pour Test 1.2 ("Crée une PENDING avec issueDate = aujourd'hui − 5 jours via mutation") n'est pas réalisable. Le resolver `validateInvoiceIssueDate` (cf invoice.js:1161-1163, et cf §45) exige `issueDate ≥ latestInvoiceIssueDate` pour tout statut ≠ DRAFT — par construction, on ne peut jamais antidater une PENDING au-delà de la PENDING la plus récente déjà en base.
+- **Symptôme** : Test 1.2 ne peut pas matérialiser activement le scénario. Il a été restructuré pour fixer l'invariant FAIBLE "tant que latest ≤ today, default reste today (pas de drift en arrière)" — couvre la même règle §17 mais via un sous-cas pilotable.
+- **Hypothèse de fix** : aucune côté produit (le rejet est correct par compliance FR). Côté test infra : option 2 de R10 (mutation admin-only de bypass) lèverait aussi cette limitation. Sinon, accepter que Test 1.2 soit un canary réduit.
+- **Owner suggéré** : e2e infra (si bypass jugé pertinent). Pas de fix produit.
+
+---
+
+## R13 — Date d'échéance ne se recalcule pas quand l'utilisateur change la date d'émission
+
+- **Découvert** : prompt phase 1 Densification factures clients — `e2e/factures/due-date-recalc.spec.js` Tests 2.1, 2.2, 2.3, 2.5.
+- **Catégorie** : FRONTEND_BUG (gap fonctionnel — comportement spécifié par le produit, pas implémenté)
+- **Symptôme** : sur `/dashboard/outils/factures/new`, quand l'utilisateur change la date d'émission via le Calendar (issueDate), la date d'échéance (dueDate) ne se recalcule pas automatiquement = `nouvelle issueDate + délai sélectionné`. Elle reste à sa valeur précédente (souvent `ancienne issueDate + 30j`).
+- **Comportement attendu (rule produit)** : `dueDate = issueDate + N` où N est le délai courant (Select PAYMENT_TERMS_SUGGESTIONS). Doit re-fire à chaque changement d'`issueDate` ET à chaque changement de `N`. Couvre §17 (validation submit) et §45 (cohérence date).
+- **État du code** :
+  - Changer le Select délai → `onValueChange` recalcule explicitement dueDate (cf `InvoiceInfoSection.jsx:753-763`). Implémenté ✓ (Test 2.6 PASS).
+  - Changer issueDate via Calendar → `onSelect` met à jour issueDate seulement (cf `InvoiceInfoSection.jsx:661-667`). Aucun useEffect ne watche `issueDate` pour resynchroniser dueDate. Non implémenté ✗ (Tests 2.1-2.5 FAIL).
+- **Cas particulier confirmé** :
+  - Test 2.5 (délai "Paiement à réception", N=0) : après sélection, dueDate = issueDate (correct, Select onValueChange). Mais après changement d'issueDate, dueDate reste figé sur l'ancienne valeur (ne suit pas).
+- **Impact estimé** :
+  - **UX** : l'utilisateur peut soumettre une facture avec dueDate < issueDate (`validateDueDate` bloque ce cas via RHF), OU avec un délai incohérent (35 jours au lieu de 30) sans s'en rendre compte. Conséquence : litiges paiement / pénalités de retard mal calculées.
+  - **Validation existante** : la fonction `validateDueDate` (`InvoiceInfoSection.jsx:552-560`) interdit dueDate < issueDate, donc le pire cas (négatif) est bloqué. Mais un délai _supérieur_ au délai configuré passe sans avertissement.
+- **Hypothèse de fix** : ajouter un `useEffect` dans `InvoiceInfoSection.jsx` qui watch `data.issueDate` ET stocke le délai courant en local state, puis re-set dueDate. Pseudo :
+
+  ```js
+  const [paymentDelay, setPaymentDelay] = React.useState(30);
+  // ...
+  React.useEffect(() => {
+    if (!data.issueDate) return;
+    const newDue = new Date(data.issueDate);
+    newDue.setDate(newDue.getDate() + paymentDelay);
+    setValue("dueDate", formatLocalDate(newDue), { shouldDirty: true });
+  }, [data.issueDate, paymentDelay]);
+  ```
+
+  Et faire en sorte que le `Select onValueChange` mette à jour `paymentDelay` (au lieu de calculer dueDate inline). Le seul effet `[issueDate, paymentDelay]` recalcule alors dueDate dans les deux cas.
+
+- **Owner suggéré** : front (composant `InvoiceInfoSection.jsx`). Pas de changement backend ni de schéma.
+
+---
+
+## R14 — Numérotation : pré-check resolver ignore `issueYear` (incohérent avec l'index unique)
+
+- **Découvert** : prompt phase 2 Densification factures clients — `e2e/factures/numbering-sequential.spec.js` Test 6 (premier draft).
+- **Catégorie** : BACKEND_BUG (non-bloquant, mais incohérence interne)
+- **Symptôme** : l'index unique Mongoose sur `Invoice` (`prefix_number_workspaceId_year_unique`, cf `Invoice.js:537-549`) inclut explicitement `issueYear`. Cela autorise techniquement deux factures avec même `(prefix, number)` sur des années différentes — c'est exactement la sémantique de §4 R3 ("au 1er janvier le compteur repart à 0001").
+- **Mais** le resolver `createInvoice` (cf `invoice.js:1131-1142`) pré-vérifie via une query qui **n'inclut pas** `issueYear` :
+
+  ```js
+  const existingInvoice = await Invoice.findOne({
+    prefix,
+    number: input.number,
+    status: { $ne: "DRAFT" },
+    workspaceId: workspaceId,
+  });
+  if (existingInvoice) {
+    throw new AppError(`Le numéro de facture ${prefix}${input.number} existe déjà`, ...);
+  }
+  ```
+
+  Donc une 2e facture avec même `(prefix, number)` mais `issueYear` différent est rejetée par le resolver, alors que l'index l'autoriserait.
+
+- **Impact estimé** :
+  - Faible en pratique : la convention métier R3 prévoit que le préfixe change à chaque année (F-2026- → F-2027-), donc le couple `(prefix, number)` est déjà unique par construction.
+  - L'incohérence apparaît si un utilisateur garde le même préfixe d'une année à l'autre (ex. préfixe sans année), dans ce cas les numéros ne peuvent jamais se réinitialiser malgré l'index permissif.
+  - Le pré-check est cohérent avec la compliance FR (séquentialité stricte sur tout l'historique d'un préfixe), donc la "bonne" interprétation est probablement : retirer `issueYear` de l'index plutôt que l'ajouter au resolver.
+- **Hypothèse de fix** : aligner index et resolver. Soit (a) ajouter `issueYear` à la query du resolver pour matcher l'index, soit (b) retirer `issueYear` de l'index pour matcher le resolver. (b) est plus prudent compliance-wise.
+- **Cible test** : `numbering-sequential.spec.js` Test 6 documente le comportement actuel (resolver-based) en testant via deux préfixes annuels distincts au lieu d'essayer la collision sur même préfixe + années différentes.
+- **Owner suggéré** : backend (model + resolver à aligner).
+
+---
+
+## R15 — `changeInvoiceStatus` exige un MongoDB replica set, infaisable sur le test env standalone
+
+- **Découvert** : prompt phase 3 (Pièges §46) — `e2e/factures/pieges-critiques.spec.js` Test 7 (§46.9 préfixe DRAFT → PENDING).
+- **Catégorie** : LIMITATION_TEST + FRONTEND_BUG méta (deux paths divergents sur la même transition)
+- **Symptôme** : la mutation `changeInvoiceStatus(id, "PENDING")` lève côté backend :
+
+  ```
+  "Erreur lors de la vérification des permissions: Transaction numbers
+   are only allowed on a replica set member or mongos"
+  ```
+
+  Cause racine : le resolver utilise `mongoose.startSession()` +
+  `session.withTransaction(...)` (cf `invoice.js:2280-2334`) pour
+  encapsuler le rename atomique du brouillon. MongoDB transactions
+  exigent un replica set ; le test e2e tourne sur un standalone
+  (`mongodb://localhost:27017/invoice-app-test`).
+
+- **Conséquence** :
+  - Le path dynamique de `changeInvoiceStatus` ne peut pas être testé
+    sur le test env actuel.
+  - `pieges-critiques.spec.js` Test 7 (§46.9) a été restructuré pour
+    fixer uniquement l'invariant STATIQUE "préfixe DRAFT préservé à la
+    lecture". L'invariant dynamique "préfixe recalculé à la finalisation"
+    reste non testé.
+- **Écart code méta** : `updateInvoice` (cf `invoice.js:1900-1970`) gère
+  AUSSI la transition DRAFT → PENDING mais sans transaction et avec
+  une logique préfixe DIFFÉRENTE (préserve `invoiceData.prefix` au
+  lieu de l'écraser avec `lastInvoice.prefix`). Donc le préfixe final
+  d'une facture finalisée dépend de la mutation utilisée — incohérence
+  applicative à clarifier.
+- **Hypothèses de fix** :
+  1. Configurer le test env Mongo en mode replica set (init via
+     `rs.initiate()` ou `mongod --replSet rs0` dans le compose). Solution
+     officielle pour tester les transactions.
+  2. Wrapper le resolver avec un fallback non-transactionnel quand
+     `session.withTransaction` n'est pas disponible (perte de l'atomicité
+     mais permet le test).
+  3. Aligner `updateInvoice` et `changeInvoiceStatus` sur la même logique
+     préfixe — supprime l'écart méta-§46.9 et facilite le testing.
+- **Owner suggéré** : e2e infra (option 1) ou backend (options 2/3).
+
+---
+
+## R16 — Charge DB cumulative : 530+ invoices résiduelles font flaker la suite full
+
+- **Découvert** : phase 4 — full suite factures (`npx playwright test e2e/factures/`). Run en isolation des nouveaux tests `invariants-business.spec.js` : 9/9 verts. Run de la suite complète : 76 passed / 12 failed dont 8 nouveaux échecs (situations-conversion, pieges-critiques) qui passaient en phase 3.
+- **Catégorie** : LIMITATION_TEST (cumul direct de R10/R11 — invoices créées par les tests + jamais nettoyées par le teardown).
+- **Symptômes des échecs** :
+  - Erreurs récurrentes `TypeError: Cannot read properties of undefined (reading 'createInvoice'/'createQuote')` dans les tests qui appellent `r.data.X` sans guard. Ça arrive quand la mutation GraphQL renvoie `{ errors: [...] }` ou timeout.
+  - `mongosh ... db.invoices.countDocuments(...)` reporte **530 invoices** dans le workspace de test (vs 354 mesurés en phase 2). Croissance ~50/run.
+  - Les queries qui scannent toute la collection (`latestInvoiceIssueDate`, `getInvoices` page 1, `nextInvoiceNumber` en autoNumbering) deviennent lentes → timeout 30s helpers, donc les mutations qui en dépendent (`validateInvoiceIssueDate` dans `createInvoice` non-DRAFT) sont vues comme "failed" au niveau test.
+- **Tests touchés en phase 4** :
+  - 5 situations-conversion (Tests 1-5) : tous échouent au create du devis ou de la facture liée
+  - 3 pieges-critiques (Tests 7, 9, 10) : échec sur create DRAFT/PENDING ou sur la lecture
+  - 4 due-date-recalc (R13, déjà documenté pré-existant)
+- **Hypothèse de fix (test infra)** :
+  1. Étendre `global-teardown.ts` pour `db.invoices.deleteMany({ workspaceId: TEST_ORG, _id: { $nin: [seeded ids] } })`. Ne supprime que les invoices dynamiquement créées dans le workspace test, pas les seedées. **Solution prudente, recommandée**.
+  2. Ajouter un `beforeAll` dans chaque fichier qui crée des invoices, appelant la même purge ciblée (effort dispersé).
+  3. Faire un teardown global qui délimite par `_id` créé après `Date.now() - SESSION_START`.
+- **Impact compliance/audit** : aucun (test env dédié `invoice-app-test`, jamais en prod).
+- **Workaround temporaire** : exécuter `mongosh ... deleteMany(...)` manuellement entre les runs (cf phase 1 où on était à 354).
+- **Owner suggéré** : e2e infra (option 1).

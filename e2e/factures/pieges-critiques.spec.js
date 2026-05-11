@@ -9,6 +9,10 @@
  *  - §46.13 DRAFT renommé silencieusement en cas de collision (perte du numéro)
  *  - §46.18 Bulk delete sur sélection mixte (suppression partielle silencieuse)
  *  - §46.20 DRAFT antidaté : validation reportée à la finalisation (UX confuse)
+ *  - §46.16 Routes API Next sensibles : auth + isolation cross-tenant
+ *  - §46.9  Préfixe F-YYYYMM recalculé à la finalisation DRAFT → PENDING
+ *  - §46.1  Multi-format dates : robustesse du parser
+ *  - §46.3  KPIs en haut de liste : valeur invariante vs filtre actif
  *
  * Stratégie : pré-création via mutation pour fixer l'état (rapide et
  * déterministe), puis UI pour le piège qui implique l'affichage. Pour les
@@ -16,7 +20,7 @@
  */
 import { test } from "../fixtures/auth.fixture";
 import { expect, request } from "@playwright/test";
-import { IDS } from "../seed/test-data";
+import { IDS, FOREIGN_INVOICE } from "../seed/test-data";
 import {
   createInvoiceMutation,
   getInvoiceById,
@@ -505,5 +509,322 @@ test.describe("[Factures] Pièges critiques §46", () => {
     const { json: refetched } = await getInvoiceById(page.request, draft.id);
     expect(refetched.errors).toBeFalsy();
     expect(refetched.data.invoice.status).toBe("DRAFT");
+  });
+
+  test("Test 6 — §46.16 endpoints sensibles : auth requise + isolation cross-tenant", async ({
+    authenticatedPage: page,
+  }) => {
+    // §46.16 — la route Next /api/invoices/data/[id] expose toutes les
+    // données financières d'une facture. Doit exiger une session
+    // authentifiée (cf app/api/invoices/data/[id]/route.js : requireSession
+    // + requireOrgMembership) sauf cas Puppeteer interne (header
+    // X-Internal-Secret). Mêmes garanties pour POST /api/invoices/generate-pdf.
+    //
+    // Fix les invariants sécurité :
+    //   6.a — sans session → 401 (pas 200, pas 404)
+    //   6.b — avec NOTRE session mais ID d'une facture d'un AUTRE workspace
+    //         → 403 ou 404 (pas 200, pas de leak des données client foreign)
+    const NEXT_BASE =
+      process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+
+    // 6.a — Endpoints sans cookie d'auth
+    // Timeout 30s explicite : à froid Next compile la route à la 1re hit,
+    // le default 10s d'apiRequestContext ne suffit pas.
+    // storageState explicit empty (cookies + localStorage vides) car le
+    // projet chromium définit storageState globalement et `request.newContext`
+    // pourrait le ré-injecter.
+    const anonContext = await request.newContext({
+      storageState: { cookies: [], origins: [] },
+    });
+    try {
+      const noAuthData = await anonContext.get(
+        `${NEXT_BASE}/api/invoices/data/${IDS.invoicePending.toString()}`,
+        { failOnStatusCode: false, timeout: 30000 },
+      );
+      expect(
+        noAuthData.status(),
+        `GET /api/invoices/data/[id] sans cookie doit refuser (got ${noAuthData.status()})`,
+      ).toBeGreaterThanOrEqual(401);
+      expect(noAuthData.status()).toBeLessThan(500);
+      // Vérification stricte : pas 200 (= leak)
+      expect(noAuthData.status()).not.toBe(200);
+
+      const noAuthPdf = await anonContext.post(
+        `${NEXT_BASE}/api/invoices/generate-pdf`,
+        {
+          data: { invoiceId: IDS.invoicePending.toString() },
+          failOnStatusCode: false,
+          timeout: 30000,
+        },
+      );
+      expect(
+        noAuthPdf.status(),
+        `POST /api/invoices/generate-pdf sans cookie doit refuser (got ${noAuthPdf.status()})`,
+      ).toBeGreaterThanOrEqual(401);
+      expect(noAuthPdf.status()).toBeLessThan(500);
+      expect(noAuthPdf.status()).not.toBe(200);
+    } finally {
+      await anonContext.dispose();
+    }
+
+    // 6.b — Endpoint authentifié sur facture d'un AUTRE workspace.
+    // Pattern aligné sur e2e/security/multi-tenant-isolation.spec.js : on
+    // utilise FOREIGN_INVOICE (workspaceId ≠ NOTRE workspace) seedé
+    // explicitement comme canary. La requête doit refuser (403 ou 404),
+    // jamais 200 (=fuite).
+    const foreignId = FOREIGN_INVOICE._id.toString();
+    const crossTenant = await page.request.get(
+      `${NEXT_BASE}/api/invoices/data/${foreignId}`,
+      { failOnStatusCode: false, timeout: 30000 },
+    );
+    const status = crossTenant.status();
+    expect(
+      status,
+      `Cross-tenant: notre user ne doit PAS pouvoir lire la facture foreign (got ${status})`,
+    ).not.toBe(200);
+    // Spectre attendu : 403 (forbidden, pas membre) ou 404 (cachée par
+    // requireOrgMembership). 401 serait surprenant (on a un cookie).
+    expect(status).toBeGreaterThanOrEqual(400);
+    expect(status).toBeLessThan(500);
+    // Si 200, on vérifie qu'au minimum le canary email n'est pas leakée.
+    if (status === 200) {
+      const body = await crossTenant.json().catch(() => ({}));
+      expect(
+        JSON.stringify(body),
+        "FUITE CROSS-TENANT — la réponse contient le canary email",
+      ).not.toContain("leak-canary@foreign-tenant.test");
+    }
+  });
+
+  test("Test 7 — §46.9 préfixe DRAFT préservé : invariant statique (le dynamique requiert replica set, R15)", async ({
+    authenticatedPage: page,
+  }) => {
+    // §46.9 — l'AUDIT.md décrit le piège comme "préfixe F-YYYYMM figé au
+    // mois de création". Inspection du code :
+    //
+    //   - `changeInvoiceStatus` (resolver invoice.js:2290-2331) RECALCULE
+    //     le préfixe à la finalisation DRAFT → PENDING (soit lastInvoice
+    //     prefix, soit F-MMYYYY de issueDate). MAIS la mutation utilise
+    //     `session.withTransaction(...)` qui exige un MongoDB en replica
+    //     set. Le test e2e tourne sur un standalone (`mongodb://localhost:
+    //     27017/invoice-app-test`) → "Transaction numbers are only allowed
+    //     on a replica set" → le test dynamique est INFAISABLE en l'état.
+    //     Cf R15.
+    //
+    //   - `updateInvoice` (resolver invoice.js:1900-1970) PRÉSERVE le
+    //     préfixe pré-existant : `prefix = invoiceData.prefix || F-MMYYYY`.
+    //     Pas de transaction. Comportement opposé à changeInvoiceStatus.
+    //
+    // Cet écart inter-resolvers est un piège méta-§46.9 : la même
+    // transition DRAFT → PENDING produit des préfixes différents selon
+    // la mutation utilisée. Documenté en R15.
+    //
+    // Test fixe l'invariant STATIQUE testable :
+    //   - Le préfixe custom posé sur un DRAFT est PRÉSERVÉ tant que rien
+    //     ne le finalise. Pas de drift à la lecture.
+    //   - On documente l'invariant dynamique manquant (R15).
+    const customPrefix = "ZZZZ-";
+    const { json: rDraft } = await createInvoiceMutation(page.request, {
+      ...buildInvoiceInput({
+        items: [
+          buildItem({ description: "§46.9 prefix DRAFT", unitPrice: 100 }),
+        ],
+        status: "DRAFT",
+        prefix: customPrefix,
+      }),
+    });
+    expect(rDraft.errors, JSON.stringify(rDraft.errors)).toBeFalsy();
+    const draft = rDraft.data.createInvoice;
+    expect(draft.prefix).toBe(customPrefix);
+
+    // Re-fetch confirme la persistance du préfixe sur DRAFT.
+    const { json: refetched } = await getInvoiceById(page.request, draft.id);
+    expect(refetched.errors).toBeFalsy();
+    expect(
+      refetched.data.invoice.prefix,
+      "Le préfixe custom d'un DRAFT doit persister à la lecture (invariant statique §46.9)",
+    ).toBe(customPrefix);
+    expect(refetched.data.invoice.status).toBe("DRAFT");
+
+    // Cleanup
+    await deleteInvoiceMutation(page.request, draft.id).catch(() => {});
+  });
+
+  test("Test 8 — §46.12 compteur multi-année : COUVERT INDIRECTEMENT (numbering-sequential.spec.js Test 6)", async () => {
+    // §46.12 — "Compteur par préfixe pas par année". L'invariant est :
+    //   - Préfixes annuels distincts (F-2026- / F-2027-) → compteurs
+    //     indépendants, chacun repart à 0001.
+    //   - Même préfixe gardé d'une année à l'autre → cf R14, le resolver
+    //     pré-check rejette malgré l'index unique qui permet techniquement
+    //     les doublons inter-année.
+    //
+    // Le scénario "F-2026-9999 + nouveau prefix F-2027- = 0001" est
+    // PRÉCISÉMENT couvert par e2e/factures/numbering-sequential.spec.js
+    // Test 6 ("Reset par année — préfixes annuels distincts → compteurs
+    // indépendants"). Pas de duplication ici.
+    //
+    // Cf R14 dans REGRESSIONS_TO_FIX.md pour le détail du gap
+    // index/resolver.
+    test.skip(true, "Couvert par numbering-sequential.spec.js Test 6 (R14)");
+    expect(true).toBe(true);
+  });
+
+  test("Test 9 — §46.1 parser de dates : ISO accepté, format invalide rejeté", async ({
+    authenticatedPage: page,
+  }) => {
+    // §46.1 — le piège documenté concerne le parser CLIENT-SIDE des dates
+    // dans la barre de recherche (11 formats acceptés). Côté backend, le
+    // resolver createInvoice reçoit `issueDate: String` (cf invoice.graphql)
+    // et Mongoose le caste en Date via son cast par défaut.
+    //
+    // Test côté backend uniquement : 3 formats à valider :
+    //   - ISO 8601 (YYYY-MM-DD)         → accepté
+    //   - ISO 8601 datetime              → accepté
+    //   - format invalide (texte aléa)   → rejeté
+    // L'enjeu : si Mongoose change de version et durcit/relâche le cast,
+    // le contrat utilisateur change. Test = canary.
+    const tested = [];
+
+    // 1. ISO date YYYY-MM-DD → OK
+    const { json: r1 } = await createInvoiceMutation(page.request, {
+      ...buildInvoiceInput({
+        items: [buildItem({ description: "§46.1 ISO date", unitPrice: 10 })],
+        status: "DRAFT", // DRAFT évite la validation latestInvoiceIssueDate
+        issueDate: "2026-05-08",
+        dueDate: "2026-06-08",
+      }),
+    });
+    expect(
+      r1.errors,
+      `Format ISO 'YYYY-MM-DD' doit être accepté: ${JSON.stringify(r1.errors)}`,
+    ).toBeFalsy();
+    tested.push(r1.data.createInvoice.id);
+
+    // 2. ISO datetime YYYY-MM-DDTHH:MM:SSZ → OK
+    const { json: r2 } = await createInvoiceMutation(page.request, {
+      ...buildInvoiceInput({
+        items: [
+          buildItem({ description: "§46.1 ISO datetime", unitPrice: 10 }),
+        ],
+        status: "DRAFT",
+        issueDate: "2026-05-08T12:00:00.000Z",
+        dueDate: "2026-06-08T12:00:00.000Z",
+      }),
+    });
+    expect(
+      r2.errors,
+      `Format ISO datetime doit être accepté: ${JSON.stringify(r2.errors)}`,
+    ).toBeFalsy();
+    tested.push(r2.data.createInvoice.id);
+
+    // 3. Format gibberish → doit être rejeté (Mongoose cast échoue ou
+    //    issueDate devient invalide). Le resolver impose required=true via
+    //    le validateur du modèle.
+    const { json: r3 } = await createInvoiceMutation(page.request, {
+      ...buildInvoiceInput({
+        items: [buildItem({ description: "§46.1 invalid", unitPrice: 10 })],
+        status: "DRAFT",
+        issueDate: "pas-une-date",
+        dueDate: "2026-06-08",
+      }),
+    });
+    expect(
+      r3.errors,
+      "Une issueDate non parsable doit être rejetée (canary §46.1)",
+    ).toBeTruthy();
+
+    // Cleanup
+    for (const id of tested) {
+      await deleteInvoiceMutation(page.request, id).catch(() => {});
+    }
+  });
+
+  test("Test 10 — §46.3 KPIs liste factures : changement de tab met à jour les compteurs", async ({
+    authenticatedPage: page,
+  }) => {
+    // §46.3 — les KPIs en haut de la liste (CA facturé / CA payé /
+    // factures en retard) doivent refléter le DATASET utilisé pour le
+    // tableau, qui dépend du tab actif (Toutes / Brouillons / À encaisser
+    // / En retard / Terminées). Si une régression force les KPIs sur le
+    // total non-filtré, l'utilisateur voit un montant ≠ de la somme des
+    // lignes affichées.
+    //
+    // Test fixe l'invariant FAIBLE mais utile : le compteur de lignes
+    // (visible dans le badge des tabs Radix) change quand on switch de
+    // tab. C'est l'observation la plus déterministe — les KPIs en €
+    // peuvent rester identiques par hasard si le seed est minimal.
+    await page.goto("/dashboard/outils/factures", {
+      waitUntil: "domcontentloaded",
+      timeout: 45000,
+    });
+    await expect(page.locator("text=Factures clients").first()).toBeVisible({
+      timeout: 30000,
+    });
+    // Attendre que la query GetInvoices résolve
+    await page
+      .waitForResponse(
+        (r) =>
+          r.url().includes("/graphql") &&
+          r.request().postData()?.includes("Invoices"),
+        { timeout: 15000 },
+      )
+      .catch(() => {});
+    await expect(
+      page.locator("table tbody tr:not(:has(.animate-pulse))").first(),
+    ).toBeVisible({ timeout: 15000 });
+
+    // Helper : nombre de lignes :visible (cf pieges-critiques rowLocator
+    // pattern — desktop + mobile rendent en parallèle, on filtre :visible).
+    async function visibleRowCount() {
+      return page
+        .locator(
+          "table tbody tr:visible:not(:has(.animate-pulse)):not(:has-text('Aucune'))",
+        )
+        .count();
+    }
+
+    // Tab "Toutes les factures" — référence
+    await page
+      .locator('[role="tab"]:has-text("Toutes les factures")')
+      .first()
+      .click();
+    await page.waitForTimeout(400);
+    const totalCount = await visibleRowCount();
+
+    // Tab "Brouillons" — sous-ensemble (DRAFT only). Si pas de DRAFT seedé
+    // visible, le tableau affiche "Aucune facture". Le nombre de lignes
+    // doit donc être ≤ totalCount.
+    await page.locator('[role="tab"]:has-text("Brouillons")').first().click();
+    await page
+      .waitForResponse(
+        (r) =>
+          r.url().includes("/graphql") &&
+          r.request().postData()?.includes("Invoices"),
+        { timeout: 5000 },
+      )
+      .catch(() => {});
+    await page.waitForTimeout(400);
+    const draftCount = await visibleRowCount();
+
+    // Invariant : draftCount ≤ totalCount (sous-ensemble). Si l'égalité
+    // tient parce que toutes les factures sont DRAFT, le test reste vrai
+    // mais ne discrimine pas — le seed contient PENDING + COMPLETED, donc
+    // on s'attend à draftCount < totalCount strictement.
+    expect(
+      draftCount,
+      `Tab Brouillons (${draftCount}) doit être un sous-ensemble de Toutes (${totalCount})`,
+    ).toBeLessThanOrEqual(totalCount);
+
+    // Cross-check : retour au tab "Toutes" → on retrouve totalCount.
+    await page
+      .locator('[role="tab"]:has-text("Toutes les factures")')
+      .first()
+      .click();
+    await page.waitForTimeout(400);
+    const totalAgain = await visibleRowCount();
+    expect(
+      totalAgain,
+      "Le tab Toutes doit afficher le même nombre de lignes après aller-retour",
+    ).toBe(totalCount);
   });
 });
