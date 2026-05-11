@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
 import {
   Calendar as CalendarIcon,
   Info,
@@ -520,6 +520,40 @@ export default function InvoiceInfoSection({
     }
   }, [data.dueDate, setValue]);
 
+  // R13 — Délai de paiement actuel (par défaut 30j, aligné sur le
+  // defaultValue du SelectTrigger ligne 765). Stocké en state local pour
+  // que la dueDate se resynchronise quand issueDate change.
+  const [paymentTermDays, setPaymentTermDays] = React.useState(30);
+
+  // R13 — Resync dueDate quand issueDate OU délai changent. Skip le
+  // 1er run (mount) via un ref : en mode `edit`, data.dueDate vient déjà
+  // de la DB et ne doit pas être écrasé tant que l'utilisateur n'a rien
+  // touché. En mode `create`, l'useEffect de défaut (ci-dessus) a déjà
+  // posé dueDate=today+30 avant que celui-ci se ré-arme.
+  //
+  // Note — useWatch souscription dédiée au lieu de `data.issueDate` issu
+  // de `watch()` : `watch()` ne re-déclenche pas toujours les useEffect
+  // sous-jacents quand l'input registered est de type "hidden" et que
+  // l'event change vient d'un dispatch DOM externe (test e2e). useWatch
+  // garantit une subscription ciblée + re-render.
+  const watchedIssueDate = useWatch({ name: "issueDate" });
+  const dueDateRecalcReadyRef = React.useRef(false);
+  React.useEffect(() => {
+    if (!watchedIssueDate) return;
+    if (!dueDateRecalcReadyRef.current) {
+      dueDateRecalcReadyRef.current = true;
+      return;
+    }
+    const issueDateObj = new Date(watchedIssueDate);
+    if (isNaN(issueDateObj.getTime())) return;
+    const newDue = new Date(issueDateObj);
+    newDue.setDate(newDue.getDate() + paymentTermDays);
+    setValue("dueDate", formatLocalDate(newDue), {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  }, [watchedIssueDate, paymentTermDays, setValue]);
+
   // Set default prefix from last invoice only once on mount (only for new invoices)
   // Fallback to generateInvoicePrefix() (F-MMAAAA) if no last invoice prefix
   React.useEffect(() => {
@@ -622,6 +656,16 @@ export default function InvoiceInfoSection({
               <input
                 type="hidden"
                 {...register("issueDate", { required: false })}
+                onInput={(e) => {
+                  // R13 — register() onChange ne pas toujours pris en charge
+                  // sur input[type=hidden] quand value est posé par un
+                  // dispatch DOM externe (cf React valueTracker pour hidden
+                  // inputs). onInput est plus fiable. Force la sync RHF.
+                  setValue("issueDate", e.currentTarget.value, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                }}
               />
               <Popover>
                 <PopoverTrigger asChild>
@@ -753,6 +797,11 @@ export default function InvoiceInfoSection({
                 <Select
                   onValueChange={(value) => {
                     const days = parseInt(value);
+                    // R13 — Le state pilote l'useEffect qui resync dueDate
+                    // (incl. quand issueDate change ensuite). On garde aussi
+                    // le setValue immédiat ici pour ne pas attendre le tick
+                    // React (UX : feedback visuel instantané).
+                    setPaymentTermDays(days);
                     const issueDate = new Date(data.issueDate || new Date());
                     const dueDate = new Date(issueDate);
                     dueDate.setDate(dueDate.getDate() + days);
