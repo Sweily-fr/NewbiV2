@@ -97,5 +97,20 @@
       "quest-ce-que-pdp-plateforme-dematerialisation",
       "quest-ce-que-ppf-portail-public-facturation"
     ]
+  },
+  {
+    "date": "2026-05-11",
+    "articles": [
+      "facture-photographe-droits-auteur",
+      "facture-graphiste-designer-freelance",
+      "ocr-justificatifs-comptables",
+      "connexion-bancaire-rapprochement-automatique",
+      "gestion-notes-frais-deplacement",
+      "quest-ce-que-bilan-comptable",
+      "logiciel-comptabilite-expert-comptable",
+      "comment-partager-documents-expert-comptable",
+      "quest-ce-que-fec-fichier-ecritures-comptables",
+      "top-outils-scan-tickets-caisse-notes-frais"
+    ]
   }
 ]
