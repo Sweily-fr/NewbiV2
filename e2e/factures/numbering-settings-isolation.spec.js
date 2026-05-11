@@ -140,32 +140,47 @@ test.describe("[Factures] Numérotation — isolation global ⇄ local (§4 R4)"
     ).toBe(oldPrefix);
   });
 
-  test("Test 3 — Org.invoicePrefix modifié : la prochaine facture sans prefix explicite utilise le default modèle (et pas le global)", async ({
+  test("Test 3 — Org.invoicePrefix modifié : le backend l'ignore lors d'un createInvoice sans input.prefix (R4)", async ({
     authenticatedPage: page,
   }) => {
-    // §4 R4 — important pour la sémantique : l'override global Better
-    // Auth (Org.invoicePrefix) ne traverse PAS la couche Invoice tant
-    // qu'aucun resolver/lecture explicite ne le rapatrie. Le resolver
+    // §4 R4 — l'override global Better Auth (Org.invoicePrefix) ne
+    // traverse PAS la couche Invoice côté backend. Le resolver
     // createInvoice (cf invoice.js:1116-1117) lit
     // `userObj?.settings?.invoiceNumberPrefix` (champ qui n'existe PAS
-    // sur le User model), pas Org.invoicePrefix. Conséquence : changer
-    // Org.invoicePrefix n'a AUCUN effet automatique côté backend lors de
-    // la création d'une facture sans `input.prefix`. Le prefix tombe sur
-    // le default Mongoose `F-YYYYMM`.
+    // sur le User model), PAS Org.invoicePrefix. Quand `input.prefix`
+    // est absent, le resolver hérite du préfixe de la dernière facture
+    // du workspace (cf invoice.js:1056-1072).
     //
-    // Test fixe l'invariant CODE actuel. Si le produit veut que Org
-    // pilote le default backend (R4 sens "global → default"), c'est
-    // une feature à ajouter — voir R14 si rouge.
-    const customOrgPrefix = uniquePrefix("L4T3");
+    // Test déterministe : on pose une facture anchor avec un prefix
+    // distinct de Org.invoicePrefix. Puis on change Org.invoicePrefix.
+    // Puis on crée une 2e facture sans input.prefix. Le backend doit
+    // hériter de l'anchor (NON du customOrgPrefix), ce qui prouve que
+    // Org est bien ignoré.
+    const anchorPrefix = uniquePrefix("L4T3a");
+    const { json: rAnchor } = await createInvoiceMutation(page.request, {
+      ...buildInvoiceInput({
+        items: [buildItem({ description: "R4 T3 anchor", unitPrice: 100 })],
+        status: "PENDING",
+        prefix: anchorPrefix,
+      }),
+    });
+    expect(rAnchor.errors, JSON.stringify(rAnchor.errors)).toBeFalsy();
+    createdIds.push(rAnchor.data.createInvoice.id);
+    expect(rAnchor.data.createInvoice.prefix).toBe(anchorPrefix);
+
+    // Org.invoicePrefix : valeur différente de l'anchor
+    const customOrgPrefix = uniquePrefix("L4T3b");
+    expect(customOrgPrefix).not.toBe(anchorPrefix);
     await updateOrganizationSettings(page.request, {
       invoicePrefix: customOrgPrefix,
     });
 
-    // Créer une facture sans `input.prefix` → backend ignore Org et
-    // utilise le default Mongoose F-YYYYMM
+    // Facture sans input.prefix → resolver ignore Org, hérite de l'anchor
     const { json: rInv } = await createInvoiceMutation(page.request, {
       ...buildInvoiceInput({
-        items: [buildItem({ description: "R4 T3 default", unitPrice: 100 })],
+        items: [
+          buildItem({ description: "R4 T3 inherits anchor", unitPrice: 100 }),
+        ],
         status: "PENDING",
         // prefix omis volontairement
       }),
@@ -174,11 +189,17 @@ test.describe("[Factures] Numérotation — isolation global ⇄ local (§4 R4)"
     const inv = rInv.data.createInvoice;
     createdIds.push(inv.id);
 
-    // Le prefix tombe sur le default modèle F-YYYYMM, pas sur l'org prefix.
-    // (Le frontend lit Org.invoicePrefix pour PRÉ-REMPLIR l'input — mais
-    // ici on bypass le frontend.)
-    expect(inv.prefix).toMatch(/^F-\d{6}$/);
-    expect(inv.prefix).not.toBe(customOrgPrefix);
+    // L'invariant clé : prefix !== customOrgPrefix (le backend n'a pas
+    // utilisé le setting Org). Bonus : prefix === anchorPrefix (héritage
+    // du workspace, cf invoice.js:1063-1064).
+    expect(
+      inv.prefix,
+      "Le backend ne doit PAS utiliser Org.invoicePrefix (le frontend le fait pour pré-remplir l'input, mais ici on bypass le frontend)",
+    ).not.toBe(customOrgPrefix);
+    expect(
+      inv.prefix,
+      "Le resolver hérite du préfixe de la dernière facture du workspace (invoice.js:1063-1064)",
+    ).toBe(anchorPrefix);
   });
 
   test("Test 4 — Org.invoiceAutoNumbering modifié : pas d'effet rétroactif sur les factures existantes (R4)", async ({

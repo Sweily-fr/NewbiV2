@@ -93,16 +93,35 @@ test.describe("[Factures] Numérotation — format préfixe (§4 R1, R2)", () =>
     expect(inv.prefix).toBe(prefix);
   });
 
-  test("Test 3 — Préfixe vide (chaîne vide) : tombe sur le default F-YYYYMM (R1)", async ({
+  test("Test 3 — Préfixe absent : hérité de la dernière facture du workspace (resolver:1056-1072)", async ({
     authenticatedPage: page,
   }) => {
-    // §4 R1 + Mongoose default (Invoice.js:27-32) : si prefix === "" est
-    // coercé/falsy, le default function génère "F-YYYYMM" automatiquement.
-    // On ne passe pas prefix dans l'input pour tomber sur le default.
+    // §4 R1 — quand `input.prefix` n'est pas fourni, le resolver
+    // createInvoice (cf invoice.js:1056-1072) hérite du préfixe de la
+    // DERNIÈRE facture créée dans le workspace (et ne tombe sur le default
+    // Mongoose `F-YYYYMM` que si aucune facture n'existe — cas rare au
+    // milieu d'une suite de tests).
+    //
+    // On rend le test déterministe : on crée d'abord une facture anchor
+    // avec un préfixe unique connu, puis on crée une seconde sans préfixe
+    // et on asserte qu'elle a hérité de l'anchor.
+    const anchorPrefix = uniquePrefix("AN");
+    const { json: rAnchor } = await createInvoiceMutation(page.request, {
+      ...buildInvoiceInput({
+        items: [buildItem({ description: "R1 anchor", unitPrice: 100 })],
+        status: "PENDING",
+        prefix: anchorPrefix,
+      }),
+    });
+    expect(rAnchor.errors, JSON.stringify(rAnchor.errors)).toBeFalsy();
+    createdIds.push(rAnchor.data.createInvoice.id);
+    expect(rAnchor.data.createInvoice.prefix).toBe(anchorPrefix);
+
+    // Facture suivante sans prefix : doit hériter d'anchorPrefix.
     const { json } = await createInvoiceMutation(page.request, {
       ...buildInvoiceInput({
         items: [
-          buildItem({ description: "R1 default prefix", unitPrice: 100 }),
+          buildItem({ description: "R1 inherits prefix", unitPrice: 100 }),
         ],
         status: "PENDING",
         // prefix omis volontairement
@@ -111,8 +130,10 @@ test.describe("[Factures] Numérotation — format préfixe (§4 R1, R2)", () =>
     expect(json.errors, JSON.stringify(json.errors)).toBeFalsy();
     const inv = json.data.createInvoice;
     createdIds.push(inv.id);
-    // Default = F-YYYYMM (Invoice.js:30) — 7 chars
-    expect(inv.prefix).toMatch(/^F-\d{6}$/);
+    expect(
+      inv.prefix,
+      "Le resolver hérite du prefix de la dernière facture du workspace (invoice.js:1063-1064), pas le default Mongoose F-YYYYMM",
+    ).toBe(anchorPrefix);
   });
 
   test("Test 4 — Mêmes numéros sur préfixes différents : les 2 sont créées (R2)", async ({
