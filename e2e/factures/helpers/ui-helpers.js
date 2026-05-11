@@ -38,41 +38,40 @@ export async function selectSeededClient(
   page,
   clientName = DEFAULT_CLIENT_NAME,
 ) {
-  // 1. S'assurer que la query GetClients a résolu — sinon le combobox
-  //    ouvre un état vide et l'option n'existe pas.
-  //    Best-effort : si la query a déjà répondu avant qu'on s'abonne
-  //    (cache Apollo hit), on continue sans bloquer.
+  // 1. Cliquer sur le combobox trigger.
+  const trigger = page.locator('button[role="combobox"]').first();
+  await expect(trigger).toBeVisible({ timeout: 10000 });
+  await trigger.click();
+
+  // 2. Attendre que Radix ouvre le popover (data-state="open" sur le trigger)
+  //    ET que la query GetClients ait pu résoudre — `useClients` est
+  //    monté à l'ouverture du combobox (cf client-selector.jsx:165), donc
+  //    la query commence après le click. Skip-friendly si Apollo cache
+  //    a déjà servi.
+  await expect(trigger).toHaveAttribute("data-state", "open", {
+    timeout: 5000,
+  });
   await page
     .waitForResponse(
       (r) =>
         r.url().includes("/graphql") &&
         r.request().postData()?.includes("GetClients") &&
         r.ok(),
-      { timeout: 5000 },
+      { timeout: 3000 },
     )
     .catch(() => {});
 
-  // 2. Cliquer sur le combobox trigger
-  const trigger = page.locator('button[role="combobox"]').first();
-  await expect(trigger).toBeVisible({ timeout: 10000 });
-  await trigger.click();
-
-  // 3. Attendre que Radix ouvre le popover (data-state="open" sur le trigger)
-  await expect(trigger).toHaveAttribute("data-state", "open", {
-    timeout: 5000,
-  });
-
-  // 4. Cliquer sur l'option. Le rendu (cf client-selector.jsx:746-769) est :
-  //    `<button type="button" key={client.id}>{client.name}</button>`
-  //    pas de role/data-testid. On cible par texte exact + filter pour
-  //    exclure le bouton trigger lui-même (qui contient aussi le nom
-  //    du client une fois sélectionné — non pertinent ici car on
-  //    sélectionne pour la 1re fois, mais sécurité).
+  // 3. Cliquer sur l'option. On garde `data-radix-popper-content-wrapper`
+  //    (attribut public Radix en v1.x — cf
+  //    node_modules/@radix-ui/react-popper/dist/index.mjs:147) car il
+  //    scope correctement la recherche au portal. Timeout élargi à 20s
+  //    pour absorber la latence en suite full sur un workspace chargé.
   const option = page
-    .locator("button", { hasText: clientName })
-    .filter({ hasNot: page.locator('[role="combobox"]') })
+    .locator(
+      `[data-radix-popper-content-wrapper] button:has-text("${clientName}")`,
+    )
     .first();
-  await expect(option).toBeVisible({ timeout: 10000 });
+  await expect(option).toBeVisible({ timeout: 20000 });
   await option.click();
 
   // 5. Attendre que le combobox se referme (Radix passe à closed).
