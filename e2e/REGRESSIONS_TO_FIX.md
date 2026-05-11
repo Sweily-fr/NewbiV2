@@ -1,6 +1,8 @@
 # Régressions à corriger (hors scope "réparation sélecteurs")
 
-## R1 — GetInvoices : erreur de chargement page liste factures
+## R1 — GetInvoices : erreur de chargement page liste factures ✅ RÉSOLU 2026-05-04
+
+**Fix appliqué (Mission B)** : `Invoice.number: String!` → `Invoice.number: String` dans `newbi-api/src/schemas/invoice.graphql:7`. Le seed e2e (`e2e/seed/test-data.ts`) repasse à `number: null` pour le DRAFT, ce qui reflète l'état prod réel et valide le fix. Test de régression ajouté dans `newbi-api/__tests__/resolvers/invoice.resolver.test.js` ("does not crash when a DRAFT invoice has a null number"). Quote/PO/CreditNote conservés `String!` car leurs modèles Mongoose ont `required: true`.
 
 - **Découvert** : commit 60fb2ded, test `e2e/invoices/create-invoice.spec.js:261` (Actions liste — clic ligne, menu, paramètres, relances)
 - **Catégorie** : BACKEND_BUG
@@ -52,7 +54,9 @@
 
 ---
 
-## R2 — Kanban : poignée @dnd-kit introuvable (selector drift)
+## R2 — Kanban : poignée @dnd-kit introuvable (selector drift) ✅ RÉSOLU 2026-05-04
+
+**Fix appliqué (Mission B)** : ajout de `data-testid="kanban-column-handle"` (+ `data-column-id`) sur le header draggable dans `app/dashboard/outils/kanban/[id]/components/KanbanColumn.jsx`. Le test `e2e/kanban/kanban-crud.spec.js` cible désormais ce sélecteur stable et n'utilise plus de skip silencieux ; il attend que le handle soit visible avec timeout 15s avant de simuler le drag clavier.
 
 - **Découvert** : skip conditionnel `e2e/kanban/kanban-crud.spec.js:176` (`No @dnd-kit sortable handle found — UI selector drift`). Confirmé par `e2e/TODO.md` ligne 154 : "kanban-crud (sera remplacé par nouveau P0 subscription temps réel)".
 - **Catégorie** : SELECTOR (régression UI cachée par un skip défensif)
@@ -64,7 +68,9 @@
 
 ---
 
-## R3 — Bons de commande : bouton "Nouveau bon de commande" introuvable
+## R3 — Bons de commande : bouton "Nouveau bon de commande" introuvable ✅ RÉSOLU 2026-05-04
+
+**Fix appliqué (Mission B)** : ajout de `data-testid="new-purchase-order-button"` sur le `<PermissionButton>` dans `app/dashboard/outils/bons-commande/page.jsx`. Le test e2e cible le testid au lieu du texte ("Vérification..." est rendu pendant le check de permissions). Timeouts élargis à 20s pour `toBeVisible`/`toBeEnabled` pour absorber le délai du `getFullOrganization` Better Auth en CI. La query `nextPurchaseOrderNumber` côté résolveur est déjà couverte par `__tests__/resolvers/purchase-order.resolver.test.js:202-243` et reste verte.
 
 - **Découvert** : skip conditionnel `e2e/purchase-orders/purchase-order-crud.spec.js:119` (`Bouton de création de BC non disponible`). Cohérent avec `e2e/TODO.md` ligne 248-277 : "GetNextPurchaseOrderNumber ne répond pas".
 - **Catégorie** : BACKEND_BUG (cascade frontend) — le bouton ne se monte pas car la query GetNextPurchaseOrderNumber reste pending indéfiniment, bloquant le formulaire en step 1 (number == "" → bouton "Suivant" disabled). Le bouton "Nouveau bon de commande" sur la page liste pourrait avoir un symptôme distinct à vérifier.

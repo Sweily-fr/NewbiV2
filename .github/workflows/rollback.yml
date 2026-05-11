@@ -1,0 +1,138 @@
+name: Rollback (prod) — newbiv2
+
+# Mission H — manual rollback for the Vercel production deployment.
+#
+# How to use:
+#   1. GitHub → Actions → "Rollback (prod) — newbiv2" → Run workflow.
+#   2. Either provide a specific `deployment_id` (Vercel dashboard → URL),
+#      or leave empty and the workflow promotes the last READY deploy that
+#      precedes the current production target.
+#   3. Vercel API repromotes the deployment as the production alias.
+#   4. Discord receives a 🚨 rollback notification.
+#
+# Why manual: see commentary in deploy-verify.yml. Auto-rollback on smoke
+# failure can hide real bugs, so a human acknowledges + triggers.
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployment_id:
+        description: "Vercel deployment ID to repromote (leave empty for auto-pick previous READY)"
+        required: false
+        default: ""
+      reason:
+        description: "Why are you rolling back?"
+        required: true
+        default: "Smoke tests failed"
+
+permissions:
+  contents: read
+
+jobs:
+  rollback:
+    name: Repromote previous Vercel deployment
+    runs-on: ubuntu-latest
+    outputs:
+      target_id: ${{ steps.promote.outputs.target_id }}
+      target_url: ${{ steps.promote.outputs.target_url }}
+    steps:
+      - name: Resolve target deployment
+        id: resolve
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          INPUT_ID: ${{ github.event.inputs.deployment_id }}
+        run: |
+          set -e
+          if [ -n "$INPUT_ID" ]; then
+            echo "target_id=$INPUT_ID" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Pick the deployment at index 1 (current is index 0) — the
+          # immediately preceding READY production deployment.
+          resp=$(curl -sS \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v6/deployments?projectId=$VERCEL_PROJECT_ID&teamId=$VERCEL_ORG_ID&target=production&limit=2&state=READY")
+          id=$(echo "$resp" | jq -r '.deployments[1].uid // empty')
+          if [ -z "$id" ]; then
+            echo "::error::No previous READY production deployment found"
+            exit 1
+          fi
+          echo "target_id=$id" >> "$GITHUB_OUTPUT"
+
+      - name: Promote
+        id: promote
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          TARGET_ID: ${{ steps.resolve.outputs.target_id }}
+        run: |
+          set -e
+          # POST /v9/projects/:projectId/promote/:deploymentId
+          curl -sS -f -X POST \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v10/projects/$VERCEL_PROJECT_ID/promote/$TARGET_ID?teamId=$VERCEL_ORG_ID" > /dev/null
+          # Fetch the URL for the Discord embed.
+          info=$(curl -sS \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v13/deployments/$TARGET_ID?teamId=$VERCEL_ORG_ID")
+          url=$(echo "$info" | jq -r '.url // empty')
+          echo "target_id=$TARGET_ID" >> "$GITHUB_OUTPUT"
+          echo "target_url=https://$url" >> "$GITHUB_OUTPUT"
+          echo "✅ Promoted $TARGET_ID — https://$url"
+
+  notify:
+    name: Notify Discord
+    runs-on: ubuntu-latest
+    needs: rollback
+    if: always()
+    steps:
+      - name: Post to Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          ROLLBACK_RESULT: ${{ needs.rollback.result }}
+          TARGET_ID: ${{ needs.rollback.outputs.target_id }}
+          TARGET_URL: ${{ needs.rollback.outputs.target_url }}
+          REASON: ${{ github.event.inputs.reason }}
+          ACTOR: ${{ github.actor }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK" ]; then
+            echo "DISCORD_WEBHOOK_URL not set — skipping notification"
+            exit 0
+          fi
+          if [ "$ROLLBACK_RESULT" = "success" ]; then
+            COLOR=10040866  # dark red
+            TITLE="⛔ Rollback PROD effectué — newbiv2"
+            DESC="Le déploiement \`${TARGET_ID}\` est maintenant en production. <@everyone>"
+          else
+            COLOR=15548997
+            TITLE="🚨 Échec rollback — newbiv2"
+            DESC="Le rollback Vercel a échoué — intervention manuelle requise. <@here>"
+          fi
+          PAYLOAD=$(jq -n \
+            --arg title "$TITLE" \
+            --arg desc "$DESC" \
+            --arg url "$TARGET_URL" \
+            --arg reason "$REASON" \
+            --arg actor "$ACTOR" \
+            --arg run "$RUN_URL" \
+            --argjson color "$COLOR" \
+            '{
+              embeds: [{
+                title: $title,
+                description: $desc,
+                color: $color,
+                fields: [
+                  { name: "Raison", value: $reason, inline: false },
+                  { name: "Deploy actif", value: $url, inline: false },
+                  { name: "Déclenché par", value: $actor, inline: true },
+                  { name: "Run", value: $run, inline: false }
+                ],
+                timestamp: (now | todate)
+              }]
+            }')
+          curl -sS -X POST -H "Content-Type: application/json" \
+            -d "$PAYLOAD" "$DISCORD_WEBHOOK"

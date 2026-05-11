@@ -23,7 +23,7 @@ export function ThemeProvider({
   const isDarkAllowed =
     pathname?.startsWith("/dashboard") ||
     pathname?.startsWith("/create-workspace") ||
-    pathname?.startsWith("/onboarding");
+    pathname?.startsWith("/onboarding/success");
 
   const [theme, setTheme] = useState(defaultTheme);
   const [colorblindMode, setColorblindModeState] = useState(false);

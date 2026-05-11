@@ -82,7 +82,24 @@ export default async function globalTeardown() {
     ];
     const quoteIds = TEST_QUOTES.map((q) => q._id);
 
-    await db.collection("user").deleteOne({ _id: IDS.user });
+    // The Better Auth user is created by signup with a server-generated _id,
+    // not IDS.user — look it up by email so account/session cascade-delete by
+    // the real id. Without this, user/account/session leak across runs and
+    // the next signup hits "user exists" → next login hits 401.
+    const userDoc = await db
+      .collection("user")
+      .findOne({ email: TEST_USER.email });
+    if (userDoc) {
+      const realId = userDoc._id;
+      const realIdStr = realId.toString();
+      await db.collection("account").deleteMany({
+        $or: [{ userId: realIdStr }, { userId: realId }],
+      });
+      await db.collection("session").deleteMany({
+        $or: [{ userId: realIdStr }, { userId: realId }],
+      });
+      await db.collection("user").deleteOne({ _id: realId });
+    }
     await db.collection("organization").deleteOne({ _id: IDS.organizationId });
     await db.collection("member").deleteOne({ _id: IDS.memberId });
     await db.collection("clients").deleteMany({ _id: { $in: clientIds } });
@@ -91,8 +108,6 @@ export default async function globalTeardown() {
     await db
       .collection("expenses")
       .deleteOne({ _id: TEST_SUPPLIER_EXPENSE._id });
-    await db.collection("session").deleteMany({ userId: IDS.user.toString() });
-    await db.collection("account").deleteMany({ userId: IDS.user.toString() });
     await db
       .collection("verification")
       .deleteMany({ identifier: TEST_USER.email });
