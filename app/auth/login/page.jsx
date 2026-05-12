@@ -1,12 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { Button } from "@/src/components/ui/button";
 import LoginForm from "./loginForm";
 import { signIn, clearSessionStorage } from "../../../src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import SEOHead from "@/src/components/seo/seo-head";
 import { JsonLd } from "@/src/components/seo/seo-metadata";
 import { useAuthSEO } from "@/src/hooks/use-seo";
@@ -53,6 +54,17 @@ const signInWithProvider = async (provider) => {
 };
 
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginPageContent />
+    </Suspense>
+  );
+}
+
+function LoginPageContent() {
+  const searchParams = useSearchParams();
+  const isMobileSource = searchParams.get("source") === "mobile";
+
   const seoData = {
     ...useAuthSEO("login"),
     robots: "noindex,nofollow",
@@ -169,7 +181,11 @@ export default function LoginPage() {
                 <p className="text-[13px] text-muted-foreground">
                   Pas encore de compte ?{" "}
                   <Link
-                    href="/auth/signup"
+                    href={
+                      isMobileSource
+                        ? "/auth/signup?source=mobile"
+                        : "/auth/signup"
+                    }
                     className="text-foreground font-medium hover:underline"
                   >
                     S'inscrire

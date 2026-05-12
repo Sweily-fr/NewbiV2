@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { SubmitButton } from "@/src/components/ui/submit-button";
 import { Input, InputPassword, InputEmail } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
 import { authClient } from "../../../src/lib/auth-client";
 import {
@@ -181,6 +181,8 @@ const LoginForm = () => {
   } = useForm();
 
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isMobileSource = searchParams.get("source") === "mobile";
   const [show2FA, setShow2FA] = React.useState(false);
   const [twoFactorData, setTwoFactorData] = React.useState(null);
   const [showEmailVerification, setShowEmailVerification] =
@@ -313,6 +315,35 @@ const LoginForm = () => {
         // Étape 4 : Redirection rapide
         // La vérification d'abonnement est faite côté serveur par dashboard/layout.jsx
         // → pas besoin de subscription.list() ici, ça économise ~150-300ms
+
+        // Flow mobile : générer OTT + redirect vers l'app native
+        if (isMobileSource) {
+          const hasCompletedOnboarding =
+            session?.user?.hasSeenOnboarding === true;
+
+          if (hasCompletedOnboarding) {
+            try {
+              const ottRes = await fetch("/api/auth/one-time-token/generate", {
+                credentials: "include",
+              });
+              if (!ottRes.ok) throw new Error("OTT generation failed");
+              const { token } = await ottRes.json();
+              window.location.href = `newbi://auth-success?ott=${encodeURIComponent(token)}`;
+              return;
+            } catch (err) {
+              console.error("[LOGIN] OTT generation error:", err);
+              toast.error(
+                "Impossible de transférer la session vers l'app. Reconnectez-vous depuis l'app mobile.",
+              );
+              // Fallback : redirect normal ci-dessous
+            }
+          } else {
+            // Compte incomplet : finir le signup sur web avant de revenir mobile
+            router.push("/auth/signup?source=mobile");
+            return;
+          }
+        }
+
         if (callbackUrl) {
           router.push(callbackUrl);
         } else {

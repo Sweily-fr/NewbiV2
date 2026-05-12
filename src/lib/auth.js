@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
-import { jwt } from "better-auth/plugins";
+import { jwt, oneTimeToken } from "better-auth/plugins";
 import { mongoDb } from "./mongodb";
 import {
   adminPlugin,
@@ -30,20 +30,41 @@ export const auth = betterAuth({
   // ⚠️ CRITICAL: Secret requis pour signer les tokens en production
   secret: process.env.BETTER_AUTH_SECRET,
 
-  // trustedOrigins — Principle 13: managed by environment
-  // Base origins are always valid (production, mobile, dev local).
-  // Preview/staging/ngrok origins are injected via ADDITIONAL_TRUSTED_ORIGINS env var.
-  trustedOrigins: [
-    "https://newbi.fr",
-    "https://www.newbi.fr",
-    "https://newbi-v2.vercel.app",
-    "http://localhost:3000",
-    // newbi:// scheme removed — no mobile app in production (MOYEN-31).
-    // Re-add via ADDITIONAL_TRUSTED_ORIGINS if a mobile app is deployed.
-    ...(process.env.ADDITIONAL_TRUSTED_ORIGINS?.split(",")
-      .map((o) => o.trim())
-      .filter(Boolean) ?? []),
-  ],
+  // trustedOrigins — function form to support dynamic origins (mobile, dev IPs).
+  trustedOrigins: (request) => {
+    const origins = [
+      "https://newbi.fr",
+      "https://www.newbi.fr",
+      "https://newbi-v2.vercel.app",
+      "http://localhost:3000",
+      "newbi://",
+      "exp://",
+      ...(process.env.ADDITIONAL_TRUSTED_ORIGINS?.split(",")
+        .map((o) => o.trim())
+        .filter(Boolean) ?? []),
+    ];
+
+    // Le plugin @better-auth/expo envoie "expo-origin" au lieu de "Origin".
+    const expoOrigin = request?.headers?.get("expo-origin");
+    if (expoOrigin) {
+      origins.push(expoOrigin);
+    }
+
+    // En dev uniquement : autoriser les IPs locales privées (RFC1918)
+    // pour le test du flow mobile (web view chargée depuis l'IP du Mac).
+    if (process.env.NODE_ENV === "development") {
+      const requestOrigin = request?.headers?.get("origin");
+      if (requestOrigin) {
+        const localIpPattern =
+          /^https?:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})(:\d+)?$/;
+        if (localIpPattern.test(requestOrigin)) {
+          origins.push(requestOrigin);
+        }
+      }
+    }
+
+    return origins;
+  },
 
   // Configuration de la session
   session: {
@@ -180,6 +201,10 @@ export const auth = betterAuth({
 
   plugins: [
     jwt(),
+    oneTimeToken({
+      expiresIn: 3, // 3 minutes
+      storeToken: "hashed", // Ne pas stocker le token en clair en DB
+    }),
     adminPlugin,
     phoneNumberPlugin,
     twoFactorPlugin,

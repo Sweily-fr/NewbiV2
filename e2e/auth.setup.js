@@ -51,7 +51,11 @@ setup("authenticate", async ({ page, context, baseURL }) => {
   //    handle the "manage devices" multi-session screen if present.
   //    Use `commit` (fastest, skips render) — we only need a navigation to
   //    store state, not wait for the full dashboard to render.
-  await page.goto("/dashboard", { waitUntil: "commit", timeout: 30000 });
+  //    Timeout aligné sur le warmup loop (90s) car sur une DB chargée le
+  //    layout dashboard fait des queries Apollo (factures + clients +
+  //    company info) qui peuvent dépasser 30s à froid (cf 354 invoices
+  //    cumulées en workspace de test, ralentissant getInvoices).
+  await page.goto("/dashboard", { waitUntil: "commit", timeout: 90000 });
   // Small grace period for cookies + localStorage to be fully hydrated
   await page.waitForTimeout(1000);
 

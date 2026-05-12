@@ -103,6 +103,18 @@ const LATEST_ISSUE_DATE_QUERY = `
   }
 `;
 
+const NEXT_INVOICE_NUMBER_QUERY = `
+  query NextInvoiceNumber($workspaceId: ID!, $prefix: String, $isDraft: Boolean, $autoNumbering: Boolean) {
+    nextInvoiceNumber(workspaceId: $workspaceId, prefix: $prefix, isDraft: $isDraft, autoNumbering: $autoNumbering)
+  }
+`;
+
+const CHECK_INVOICE_NUMBER_EXISTS_QUERY = `
+  query CheckInvoiceNumberExists($workspaceId: ID!, $number: String!, $prefix: String!, $excludeId: ID) {
+    checkInvoiceNumberExists(workspaceId: $workspaceId, number: $number, prefix: $prefix, excludeId: $excludeId)
+  }
+`;
+
 const CREATE_LINKED_INVOICE_MUTATION = `
   mutation CreateLinkedInvoice($quoteId: ID!, $workspaceId: ID!, $amount: Float!, $isDeposit: Boolean!) {
     createLinkedInvoice(quoteId: $quoteId, workspaceId: $workspaceId, amount: $amount, isDeposit: $isDeposit) {
@@ -190,11 +202,70 @@ const CREDIT_NOTES_BY_INVOICE_QUERY = `
   }
 `;
 
-async function gql(request, body, { workspaceId = WORKSPACE_ID } = {}) {
+/**
+ * Read the active organization (Better Auth REST). Returns the current
+ * settings including additionalFields like invoicePrefix /
+ * invoiceAutoNumbering / invoiceStartNumber (cf src/lib/auth-plugins.js
+ * additionalFields). Used by numbering-settings-isolation tests to assert
+ * that global state is untouched by per-invoice operations.
+ */
+export async function getOrganizationSettings(request, opts = {}) {
+  const baseURL =
+    opts.baseURL || process.env.BETTER_AUTH_URL || "http://localhost:3000";
+  const res = await request.get(
+    `${baseURL}/api/auth/organization/get-full-organization`,
+    { failOnStatusCode: false, timeout: opts.timeout || 30000 },
+  );
+  const status = res.status();
+  const json = await res.json().catch(() => ({}));
+  return { status, json };
+}
+
+/**
+ * Update Organization additional fields via Better Auth REST. Pass
+ * `{ invoicePrefix, invoiceAutoNumbering, invoiceStartNumber }` (or any
+ * subset). Cookie auth is provided by Playwright's storageState.
+ *
+ * IMPORTANT — Better Auth rejette toute mutation sans header `Origin`
+ * (CSRF protection : status 403, code MISSING_OR_NULL_ORIGIN). Le client
+ * frontend l'ajoute automatiquement via fetch() côté navigateur, mais
+ * playwright APIRequestContext ne le pose pas par défaut.
+ */
+export async function updateOrganizationSettings(
+  request,
+  data,
+  { organizationId = WORKSPACE_ID, baseURL } = {},
+) {
+  const origin =
+    baseURL || process.env.BETTER_AUTH_URL || "http://localhost:3000";
+  const res = await request.post(`${origin}/api/auth/organization/update`, {
+    headers: {
+      "Content-Type": "application/json",
+      Origin: origin,
+    },
+    data: { organizationId, data },
+    failOnStatusCode: false,
+    timeout: 30000,
+  });
+  const status = res.status();
+  const json = await res.json().catch(() => ({}));
+  return { status, json };
+}
+
+async function gql(
+  request,
+  body,
+  { workspaceId = WORKSPACE_ID, timeout = 30000 } = {},
+) {
+  // Default playwright apiRequestContext timeout est 10s — trop court pour
+  // certaines mutations sur un workspace contenant beaucoup de factures
+  // (ex: latestInvoiceIssueDate qui scan toute la collection). On passe à
+  // 30s par défaut.
   const response = await request.post(GRAPHQL_URL, {
     headers: { "x-workspace-id": workspaceId },
     data: body,
     failOnStatusCode: false,
+    timeout,
   });
   const status = response.status();
   const json = await response.json().catch(() => ({}));
@@ -297,6 +368,65 @@ export async function latestInvoiceIssueDate(request, opts = {}) {
       operationName: "LatestInvoiceIssueDate",
       query: LATEST_ISSUE_DATE_QUERY,
       variables: { workspaceId: opts.workspaceId || WORKSPACE_ID },
+    },
+    opts,
+  );
+}
+
+/**
+ * Query the next sequential invoice number for a given prefix.
+ *
+ * Backend (cf newbi-api/src/resolvers/invoice.js:565-602) :
+ *   - When `autoNumbering = true`, scans ALL invoices in the workspace and
+ *     returns max(numeric number) + 1, ignoring `prefix`.
+ *   - When `autoNumbering = false` (default) and `prefix` is provided,
+ *     scopes the max scan to that prefix only.
+ *   - When `isDraft = true`, returns a "DRAFT-NNNN"-style placeholder via
+ *     generateInvoiceNumber().
+ * Result is always padded to 4 digits ("0001", "0042", ...).
+ */
+export async function nextInvoiceNumber(
+  request,
+  { prefix, isDraft, autoNumbering } = {},
+  opts = {},
+) {
+  return gql(
+    request,
+    {
+      operationName: "NextInvoiceNumber",
+      query: NEXT_INVOICE_NUMBER_QUERY,
+      variables: {
+        workspaceId: opts.workspaceId || WORKSPACE_ID,
+        prefix,
+        isDraft,
+        autoNumbering,
+      },
+    },
+    opts,
+  );
+}
+
+/**
+ * Returns true if a (prefix, number) tuple already exists for this
+ * workspace (excluding optional `excludeId`). Used by the editor to guard
+ * against manual-number collisions before submit.
+ */
+export async function checkInvoiceNumberExists(
+  request,
+  { prefix, number, excludeId } = {},
+  opts = {},
+) {
+  return gql(
+    request,
+    {
+      operationName: "CheckInvoiceNumberExists",
+      query: CHECK_INVOICE_NUMBER_EXISTS_QUERY,
+      variables: {
+        workspaceId: opts.workspaceId || WORKSPACE_ID,
+        prefix,
+        number,
+        excludeId,
+      },
     },
     opts,
   );

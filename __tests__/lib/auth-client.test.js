@@ -102,7 +102,9 @@ describe("authClient init", () => {
 
     expect(createAuthClientMock).toHaveBeenCalledTimes(1);
     const cfg = createAuthClientMock.mock.calls[0][0];
-    expect(cfg.baseURL).toBe("https://newbi.fr");
+    // baseURL intentionally omitted — Better Auth uses relative "/api/auth" fallback
+    // which works on localhost, IP, and production without configuration
+    expect(cfg.baseURL).toBeUndefined();
     expect(cfg.sessionOptions.refetchOnWindowFocus).toBe(false);
 
     const pluginNames = cfg.plugins.map((p) => p.name);
@@ -118,12 +120,12 @@ describe("authClient init", () => {
     );
   });
 
-  it("falls back to localhost when env URL is unset", async () => {
+  it("does not set baseURL (uses Better Auth relative fallback)", async () => {
     delete process.env.NEXT_PUBLIC_BETTER_AUTH_URL;
     vi.resetModules();
     await import("@/src/lib/auth-client");
     const cfg = createAuthClientMock.mock.calls[0][0];
-    expect(cfg.baseURL).toBe("http://localhost:3000");
+    expect(cfg.baseURL).toBeUndefined();
   });
 
   it("re-exports auth helpers from authClient", async () => {
