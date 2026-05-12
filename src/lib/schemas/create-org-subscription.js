@@ -50,6 +50,9 @@ const organizationDataSchema = z
     employeeCount: z.string().max(20).optional().default(""),
     activitySector: z.string().max(100).optional().default(""),
     activityCategory: z.string().max(100).optional().default(""),
+
+    // Source de la requête (mobile app → web signup flow)
+    source: z.enum(["mobile"]).optional(),
   })
   .strict();
 

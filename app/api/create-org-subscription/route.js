@@ -110,8 +110,20 @@ async function handler(request) {
     // 4. Déterminer si c'est une nouvelle organisation ou un upgrade d'abonnement existant
     const isNewOrganization = organizationData.type !== "existing";
     const isOnboarding = organizationData.type === "onboarding";
+    const isMobileSource = organizationData.source === "mobile";
+
+    // Dériver le baseUrl depuis l'Origin de la requête pour que Stripe
+    // redirige vers le bon host (localhost, IP locale, ou domaine prod).
+    // Fallback sur NEXT_PUBLIC_BETTER_AUTH_URL pour les cas sans Origin.
+    const requestOrigin = request.headers.get("origin");
     const baseUrl =
-      process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000";
+      requestOrigin ||
+      process.env.NEXT_PUBLIC_BETTER_AUTH_URL ||
+      "http://localhost:3000";
+
+    // Bypass ngrok interstitiel si l'URL passe par ngrok (dev mobile uniquement)
+    const isNgrok = baseUrl.includes("ngrok");
+    const ngrok = isNgrok ? "&ngrok-skip-browser-warning=true" : "";
 
     // URL de succès différente selon le cas
     let successUrl;
@@ -119,14 +131,16 @@ async function handler(request) {
 
     if (isOnboarding) {
       // Flux onboarding : redirection vers page de succès dédiée
-      successUrl = `${baseUrl}/onboarding/success?session_id={CHECKOUT_SESSION_ID}`;
-      cancelUrl = `${baseUrl}/auth/signup`;
+      successUrl = `${baseUrl}/onboarding/success?session_id={CHECKOUT_SESSION_ID}${isMobileSource ? "&source=mobile" : ""}${ngrok}`;
+      cancelUrl = isMobileSource
+        ? `${baseUrl}/auth/signup?source=mobile${ngrok}`
+        : `${baseUrl}/auth/signup${isNgrok ? "?ngrok-skip-browser-warning=true" : ""}`;
     } else if (isNewOrganization) {
-      successUrl = `${baseUrl}/dashboard?org_created=true&payment_success=true`;
-      cancelUrl = `${baseUrl}/create-workspace/payment-error`;
+      successUrl = `${baseUrl}/dashboard?org_created=true&payment_success=true${ngrok}`;
+      cancelUrl = `${baseUrl}/create-workspace/payment-error${isNgrok ? "?ngrok-skip-browser-warning=true" : ""}`;
     } else {
-      successUrl = `${baseUrl}/dashboard?subscription_success=true`;
-      cancelUrl = `${baseUrl}/dashboard`;
+      successUrl = `${baseUrl}/dashboard?subscription_success=true${ngrok}`;
+      cancelUrl = `${baseUrl}/dashboard${isNgrok ? "?ngrok-skip-browser-warning=true" : ""}`;
     }
 
     // 5. Stocker les données volumineuses dans MongoDB (évite la limite Stripe de 500 chars/clé)

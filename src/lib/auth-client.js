@@ -17,7 +17,10 @@ import {
 } from "./permissions";
 
 export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000",
+  // Pas de baseURL explicite : Better Auth utilise "/api/auth" (relatif)
+  // → résolu par le browser avec window.location.origin.
+  // Fonctionne sur localhost, IP locale (mobile dev), et en prod.
+
   // Désactiver le refetch automatique de session au retour de focus (visibilitychange).
   // Sans ça, chaque Cmd+Tab re-fetch la session → cascade de re-renders
   // sur tous les composants utilisant useSession/useWorkspace (dont le PDF preview).

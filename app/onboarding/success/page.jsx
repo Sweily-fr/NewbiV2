@@ -26,7 +26,9 @@ function SuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
+  const isMobileSource = searchParams.get("source") === "mobile";
   const [ready, setReady] = useState(false);
+  const [redirectingToApp, setRedirectingToApp] = useState(false);
   const [error, setError] = useState(null);
   const [step, setStep] = useState("welcome");
   const [isAnimating, setIsAnimating] = useState(false);
@@ -149,6 +151,33 @@ function SuccessContent() {
                 });
               }
             } catch {}
+
+            // Flow mobile : générer un OTT et rediriger vers l'app
+            if (isMobileSource) {
+              try {
+                const ottRes = await fetch(
+                  "/api/auth/one-time-token/generate",
+                  {
+                    credentials: "include",
+                  },
+                );
+                if (!ottRes.ok) throw new Error("OTT generation failed");
+                const { token } = await ottRes.json();
+
+                setRedirectingToApp(true);
+                await new Promise((r) => setTimeout(r, 500));
+
+                window.location.href = `newbi://auth-success?ott=${encodeURIComponent(token)}`;
+                return;
+              } catch (err) {
+                console.error("[SUCCESS] OTT generation error:", err);
+                setError(
+                  "Impossible de transférer la session vers l'app. Retournez à l'app mobile et reconnectez-vous.",
+                );
+                return;
+              }
+            }
+
             setReady(true);
             return;
           }
@@ -163,7 +192,7 @@ function SuccessContent() {
     };
 
     completeOnboarding();
-  }, [sessionId]);
+  }, [sessionId, isMobileSource]);
 
   const handleGoToDashboard = async () => {
     // Apply selected theme
@@ -194,6 +223,18 @@ function SuccessContent() {
         >
           Réessayer
         </Button>
+      </main>
+    );
+  }
+
+  if (redirectingToApp) {
+    return (
+      <main className="flex min-h-[100dvh] flex-col items-center justify-center px-6 bg-background">
+        <Loader2 className="size-6 animate-spin text-muted-foreground mb-4" />
+        <p className="text-lg font-medium">Redirection vers l'application...</p>
+        <p className="text-[13px] text-muted-foreground mt-2">
+          Si rien ne se passe, retournez à l'app Newbi
+        </p>
       </main>
     );
   }
