@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { Button } from "@/src/components/ui/button";
 import LoginForm from "./loginForm";
 import { signIn, clearSessionStorage } from "../../../src/lib/auth-client";
@@ -54,6 +54,14 @@ const signInWithProvider = async (provider) => {
 };
 
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginPageContent />
+    </Suspense>
+  );
+}
+
+function LoginPageContent() {
   const searchParams = useSearchParams();
   const isMobileSource = searchParams.get("source") === "mobile";
 
