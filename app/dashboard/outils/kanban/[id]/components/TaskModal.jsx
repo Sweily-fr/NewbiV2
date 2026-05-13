@@ -541,10 +541,12 @@ export function TaskModal({
     }
   }, [taskForm.description]);
 
-  // Récupérer les infos des membres assignés
-  const { members: membersInfo } = useAssignedMembersInfo(
-    taskForm.assignedMembers || [],
-  );
+  // Récupérer les infos des membres assignés (et du créateur de la tâche)
+  const membersAndCreatorIds = [
+    ...(taskForm.assignedMembers || []),
+    ...(taskForm.userId ? [taskForm.userId] : []),
+  ];
+  const { members: membersInfo } = useAssignedMembersInfo(membersAndCreatorIds);
 
   // Générer une couleur pour un tag basée sur son nom
   const getTagColor = (tagName) => {
@@ -598,17 +600,27 @@ export function TaskModal({
 
   // Trouver le créateur de la tâche
   const getCreatorInfo = () => {
-    if (!taskForm.userId || !board?.members) {
+    if (!taskForm.userId) {
       return { name: "Inconnu", image: null };
     }
 
-    const creator = board.members.find(
+    // D'abord chercher dans les membres du board
+    const creatorFromBoard = board?.members?.find(
       (m) => String(m.id) === String(taskForm.userId),
     );
+    if (creatorFromBoard) {
+      return { name: creatorFromBoard.name, image: creatorFromBoard.image };
+    }
 
-    return creator
-      ? { name: creator.name, image: creator.image }
-      : { name: "Inconnu", image: null };
+    // Sinon utiliser les infos chargées via useAssignedMembersInfo
+    const creatorFromQuery = membersInfo?.find(
+      (m) => String(m.id) === String(taskForm.userId),
+    );
+    if (creatorFromQuery) {
+      return { name: creatorFromQuery.name, image: creatorFromQuery.image };
+    }
+
+    return { name: "Inconnu", image: null };
   };
 
   return (

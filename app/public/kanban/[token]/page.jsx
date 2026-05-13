@@ -99,9 +99,6 @@ import {
   Upload,
   ImagePlus,
   ZoomIn,
-  ZoomOut,
-  Minus,
-  Plus,
 } from "lucide-react";
 import {
   format,
@@ -1077,13 +1074,9 @@ function PublicKanbanColumn({
   onEditTask,
   isCollapsed,
   onToggleCollapse,
-  zoomLevel = 1,
 }) {
-  // Calculer le maxHeight en fonction du zoom
-  // Quand on dézoom (scale < 1), le conteneur est réduit visuellement
-  // Donc on doit augmenter le maxHeight pour compenser et utiliser tout l'espace
   const baseOffset = 280;
-  const maxHeight = `calc((100vh - ${baseOffset}px) / ${zoomLevel})`;
+  const maxHeight = `calc(100vh - ${baseOffset}px)`;
 
   return (
     <>
@@ -3562,7 +3555,6 @@ export default function PublicKanbanPage({ params }) {
   const [collapsedColumns, setCollapsedColumns] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   const [isInitializing, setIsInitializing] = useState(true);
-  const [zoomLevel, setZoomLevel] = useState(1);
 
   const [validateToken, { loading: validatingToken }] = useLazyQuery(
     VALIDATE_PUBLIC_TOKEN,
@@ -4178,7 +4170,7 @@ export default function PublicKanbanPage({ params }) {
               </div>
             </div>
 
-            {/* Ligne 3: Barre de recherche + Zoom (visible en mode board) */}
+            {/* Ligne 3: Barre de recherche (visible en mode board) */}
             {viewMode === "board" && (
               <div className="px-4 sm:px-6 py-3 bg-background flex items-center justify-between gap-4">
                 <div className="relative flex-1 max-w-xs">
@@ -4200,31 +4192,6 @@ export default function PublicKanbanPage({ params }) {
                     </Button>
                   )}
                 </div>
-
-                {/* Contrôles de zoom */}
-                <div className="flex items-center gap-1 border rounded-md p-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => setZoomLevel(Math.max(0.5, zoomLevel - 0.1))}
-                    disabled={zoomLevel <= 0.5}
-                  >
-                    <Minus className="h-3.5 w-3.5" />
-                  </Button>
-                  <span className="text-xs font-medium w-12 text-center">
-                    {Math.round(zoomLevel * 100)}%
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => setZoomLevel(Math.min(1.5, zoomLevel + 0.1))}
-                    disabled={zoomLevel >= 1.5}
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
               </div>
             )}
           </div>
@@ -4232,11 +4199,8 @@ export default function PublicKanbanPage({ params }) {
           {/* Content */}
           <div className="px-4 mt-4">
             {viewMode === "board" ? (
-              <div className="overflow-x-auto overflow-y-auto pb-4">
-                <div
-                  className="w-max min-w-full origin-top-left transition-transform duration-200 flex gap-4 items-start"
-                  style={{ transform: `scale(${zoomLevel})` }}
-                >
+              <div className="overflow-x-auto overflow-y-hidden pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                <div className="w-max min-w-full flex gap-4 items-start">
                   {columns.map((column) => (
                     <PublicKanbanColumn
                       key={column.id}
@@ -4245,7 +4209,6 @@ export default function PublicKanbanPage({ params }) {
                       onEditTask={setSelectedTask}
                       isCollapsed={collapsedColumns[column.id]}
                       onToggleCollapse={toggleColumnCollapse}
-                      zoomLevel={zoomLevel}
                     />
                   ))}
                 </div>

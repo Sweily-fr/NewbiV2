@@ -89,6 +89,7 @@ function InlineNewTask({
   createTask,
   workspaceId,
   onCancel,
+  onEditTask,
 }) {
   const [title, setTitle] = useState("");
   const [assignedMembers, setAssignedMembers] = useState([]);
@@ -117,11 +118,11 @@ function InlineNewTask({
       document.removeEventListener("pointerdown", handleClickOutside, true);
   }, [onCancel]);
 
-  const handleSave = async () => {
+  const handleSave = async (openAfter = false) => {
     if (!title.trim() || saving) return;
     setSaving(true);
     try {
-      await createTask({
+      const result = await createTask({
         variables: {
           input: {
             title: title.trim(),
@@ -138,6 +139,9 @@ function InlineNewTask({
         },
       });
       onCancel();
+      if (openAfter && onEditTask && result?.data?.createTask) {
+        onEditTask(result.data.createTask);
+      }
     } catch (e) {
       setSaving(false);
     }
@@ -146,7 +150,7 @@ function InlineNewTask({
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      handleSave();
+      handleSave(e.metaKey || e.ctrlKey);
     }
     if (e.key === "Escape") onCancel();
   };
@@ -609,6 +613,7 @@ export function KanbanColumnSimple({
                 createTask={createTask}
                 workspaceId={workspaceId}
                 onCancel={() => setShowInlineAdd(false)}
+                onEditTask={onEditTask}
               />
             )}
             {isLoading ? (

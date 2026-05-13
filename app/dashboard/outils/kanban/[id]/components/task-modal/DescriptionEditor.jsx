@@ -169,6 +169,14 @@ export const DescriptionEditor = forwardRef(function DescriptionEditor(
       if (item.command === "createLink") {
         const url = prompt("URL du lien :");
         if (url) document.execCommand("createLink", false, url);
+      } else if (item.command === "formatBlock") {
+        // Toggle: si le bloc courant est déjà au format demandé, revenir à un paragraphe normal
+        const currentBlock = (
+          document.queryCommandValue("formatBlock") || ""
+        ).toLowerCase();
+        const targetBlock = item.value?.toLowerCase();
+        const nextValue = currentBlock === targetBlock ? "p" : item.value;
+        document.execCommand("formatBlock", false, nextValue);
       } else if (item.value) {
         document.execCommand(item.command, false, item.value);
       } else {

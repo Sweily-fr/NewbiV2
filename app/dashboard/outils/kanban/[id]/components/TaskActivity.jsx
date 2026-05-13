@@ -1538,6 +1538,7 @@ const TaskActivityComponent = ({
             placeholder="Ajouter un commentaire..."
             disabled={isUploadingImage || addingComment}
             loading={addingComment || isUploadingImage}
+            allowEmpty={pendingImages.length > 0}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}

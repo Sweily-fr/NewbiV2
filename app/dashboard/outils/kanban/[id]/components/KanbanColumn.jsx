@@ -122,9 +122,9 @@ export function KanbanColumn({
                 <DropdownMenuItem
                   onClick={onDeleteColumn}
                   disabled={isReadOnly}
-                  className="text-destructive"
+                  variant="destructive"
                 >
-                  <Trash2 className="mr-2 h-4 w-4 text-destructive" />
+                  <Trash2 className="mr-2 h-4 w-4" />
                   Supprimer
                 </DropdownMenuItem>
                 {isReadOnly && (
