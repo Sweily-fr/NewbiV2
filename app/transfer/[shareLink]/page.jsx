@@ -655,6 +655,8 @@ export default function TransferPage() {
       return !!zipBlobUrls[file.path];
     }
     if (!transfer?.fileTransfer?.allowPreview) return false;
+    // Vidéos: tout type MIME video/*
+    if (file.mimeType?.startsWith("video/")) return true;
     const previewableTypes = [
       "image/jpeg",
       "image/png",
@@ -674,6 +676,13 @@ export default function TransferPage() {
       "pdf",
       "heic",
       "heif",
+      "mp4",
+      "webm",
+      "ogg",
+      "ogv",
+      "mov",
+      "m4v",
+      "mkv",
     ];
     return (
       previewableTypes.includes(file.mimeType) || previewableExts.includes(ext)
@@ -824,8 +833,28 @@ export default function TransferPage() {
                   ) : (
                     <>
                       {(() => {
+                        const PREVIEWABLE_EXTS = [
+                          "jpg",
+                          "jpeg",
+                          "png",
+                          "gif",
+                          "webp",
+                          "heic",
+                          "heif",
+                          "bmp",
+                          "svg",
+                          "tiff",
+                          "pdf",
+                          "mp4",
+                          "webm",
+                          "ogg",
+                          "ogv",
+                          "mov",
+                          "m4v",
+                          "mkv",
+                        ];
                         // Pour un ZIP, on cherche la première entrée prévisualisable
-                        // (image/pdf) plutôt que la première entrée brute.
+                        // (image/pdf/video) plutôt que la première entrée brute.
                         let thumbFile = displayFiles?.[0];
                         let thumbIndex = 0;
                         if (zipContainer) {
@@ -834,19 +863,7 @@ export default function TransferPage() {
                               ?.split(".")
                               ?.pop()
                               ?.toLowerCase();
-                            return [
-                              "jpg",
-                              "jpeg",
-                              "png",
-                              "gif",
-                              "webp",
-                              "heic",
-                              "heif",
-                              "bmp",
-                              "svg",
-                              "tiff",
-                              "pdf",
-                            ].includes(ext);
+                            return PREVIEWABLE_EXTS.includes(ext);
                           });
                           if (idx >= 0) {
                             thumbFile = displayFiles[idx];
@@ -883,6 +900,17 @@ export default function TransferPage() {
                         const isPdf =
                           thumbFile?.mimeType === "application/pdf" ||
                           ext === "pdf";
+                        const isVid =
+                          thumbFile?.mimeType?.startsWith("video/") ||
+                          [
+                            "mp4",
+                            "webm",
+                            "ogg",
+                            "ogv",
+                            "mov",
+                            "m4v",
+                            "mkv",
+                          ].includes(ext);
 
                         if (zipContainer && zipLoading) {
                           return (
@@ -898,6 +926,18 @@ export default function TransferPage() {
                               src={previewSrc}
                               alt={thumbFile?.originalName}
                               className="w-full h-full object-cover"
+                              onError={() => setThumbnailError(true)}
+                            />
+                          );
+                        }
+                        if (isVid && previewSrc && !thumbnailError) {
+                          return (
+                            <video
+                              src={previewSrc}
+                              className="w-full h-full object-cover pointer-events-none"
+                              muted
+                              playsInline
+                              preload="metadata"
                               onError={() => setThumbnailError(true)}
                             />
                           );
@@ -941,13 +981,20 @@ export default function TransferPage() {
                                 "svg",
                                 "tiff",
                                 "pdf",
+                                "mp4",
+                                "webm",
+                                "ogg",
+                                "ogv",
+                                "mov",
+                                "m4v",
+                                "mkv",
                               ].includes(ext);
                             });
                             if (found >= 0) idx = found;
                           }
                           openPreview(displayFiles?.[idx], idx);
                         }}
-                        className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/20 transition-colors group"
+                        className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/20 transition-colors group cursor-pointer"
                       >
                         <div className="w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center">
                           <Eye className="w-5 h-5 text-gray-700" />

@@ -33,7 +33,18 @@ function formatFileSize(bytes) {
 function isImage(file) {
   if (file?.mimeType?.startsWith("image/")) return true;
   const ext = getFileExtension(file?.originalName);
-  return ["jpg", "jpeg", "png", "gif", "webp", "svg", "heic", "heif", "bmp", "tiff"].includes(ext);
+  return [
+    "jpg",
+    "jpeg",
+    "png",
+    "gif",
+    "webp",
+    "svg",
+    "heic",
+    "heif",
+    "bmp",
+    "tiff",
+  ].includes(ext);
 }
 
 // Déterminer si c'est un PDF
@@ -41,6 +52,13 @@ function isPdf(file) {
   if (file?.mimeType === "application/pdf") return true;
   const ext = getFileExtension(file?.originalName);
   return ext === "pdf";
+}
+
+// Déterminer si c'est une vidéo
+function isVideo(file) {
+  if (file?.mimeType?.startsWith("video/")) return true;
+  const ext = getFileExtension(file?.originalName);
+  return ["mp4", "webm", "ogg", "ogv", "mov", "m4v", "mkv"].includes(ext);
 }
 
 export function FilePreviewDrawer({
@@ -215,6 +233,25 @@ export function FilePreviewDrawer({
                       </button>
                     )}
                   </div>
+                ) : isVideo(file) ? (
+                  <div className="relative">
+                    <video
+                      src={file.previewUrl}
+                      controls
+                      className="w-full max-h-[500px] rounded-lg bg-black"
+                      preload="metadata"
+                    >
+                      Votre navigateur ne supporte pas la lecture vidéo.
+                    </video>
+                    {!isDownloadBlocked && (
+                      <button
+                        onClick={() => onDownload?.(file)}
+                        className="absolute bottom-4 right-4 w-10 h-10 bg-black/80 hover:bg-black rounded-full flex items-center justify-center transition-colors"
+                      >
+                        <Download className="w-5 h-5 text-white" />
+                      </button>
+                    )}
+                  </div>
                 ) : isPdf(file) ? (
                   <iframe
                     src={file.previewUrl}
@@ -246,7 +283,9 @@ export function FilePreviewDrawer({
                           src={file.previewUrl}
                           alt={file.originalName}
                           className="w-full h-full object-cover"
-                          onError={(e) => { e.target.style.display = "none"; }}
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                          }}
                         />
                       </div>
                     ) : (
