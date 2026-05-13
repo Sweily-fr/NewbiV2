@@ -612,7 +612,24 @@ export function TransferDetailDrawer({
                   <div className="flex-1 pr-4">
                     <div className="flex items-center gap-1 mb-0.5">
                       <p className="text-xs text-gray-500">Contrôle d'accès</p>
-                      <HelpCircle className="h-3 w-3 text-gray-400" />
+                      <TooltipProvider delayDuration={0}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              aria-label="En savoir plus sur le contrôle d'accès"
+                              className="inline-flex items-center justify-center text-gray-400 hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 rounded-full"
+                            >
+                              <HelpCircle className="h-3 w-3" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent className="px-2 py-1 text-xs max-w-[220px]">
+                            Indique qui peut accéder au transfert. « Public »
+                            signifie que toute personne disposant du lien peut
+                            le consulter.
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                     <p className="text-sm font-medium text-gray-900">Public</p>
                   </div>
