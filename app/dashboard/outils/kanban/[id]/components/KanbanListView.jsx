@@ -105,7 +105,7 @@ function DescriptionHoverPopover({ description }) {
 /**
  * Composant pour sélectionner les membres assignés avec un bouton de mise à jour
  */
-function MembersPopover({
+const MembersPopover = React.memo(function MembersPopover({
   task,
   membersInfo,
   members,
@@ -268,7 +268,7 @@ function MembersPopover({
       </PopoverContent>
     </Popover>
   );
-}
+});
 
 /**
  * Zone de drop pour les colonnes vides
@@ -1035,6 +1035,7 @@ function InlineAddTask({
   createTask,
   workspaceId,
   onCancel,
+  onEditTask,
 }) {
   const [title, setTitle] = useState("");
   const [assignedMembers, setAssignedMembers] = useState([]);
@@ -1064,11 +1065,11 @@ function InlineAddTask({
       document.removeEventListener("pointerdown", handleClickOutside, true);
   }, [onCancel]);
 
-  const handleSave = async () => {
+  const handleSave = async (openAfter = false) => {
     if (!title.trim() || saving) return;
     setSaving(true);
     try {
-      await createTask({
+      const result = await createTask({
         variables: {
           input: {
             title: title.trim(),
@@ -1086,6 +1087,9 @@ function InlineAddTask({
         },
       });
       onCancel();
+      if (openAfter && onEditTask && result?.data?.createTask) {
+        onEditTask(result.data.createTask);
+      }
     } catch {
       setSaving(false);
     }
@@ -1125,7 +1129,7 @@ function InlineAddTask({
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
-                handleSave();
+                handleSave(e.metaKey || e.ctrlKey);
               }
               if (e.key === "Escape") onCancel();
             }}
@@ -1575,28 +1579,32 @@ function InlineEditTitle({
   }
 
   return (
-    <div className="flex-1 w-0 flex items-center gap-1 min-w-0">
-      <p className="text-sm truncate font-normal text-foreground/90 group-hover:text-[#5A50FF] transition-colors max-w-[200px]">
+    <div className="flex-1 w-0 flex items-center gap-1 min-w-0 overflow-hidden">
+      <p className="text-sm truncate font-normal text-foreground/90 group-hover:text-[#5A50FF] transition-colors max-w-[200px] flex-shrink-0">
         {task.title}
       </p>
       {task.description && (
         <DescriptionHoverPopover description={task.description} />
       )}
       {/* Tags inline */}
-      {task.tags?.length > 0 &&
-        task.tags.map((tag) => (
-          <span
-            key={tag.name}
-            className="inline-flex items-center px-1.5 py-0 rounded text-[10px] font-medium flex-shrink-0"
-            style={{
-              backgroundColor: tag.bg,
-              color: tag.text,
-              border: `1px solid ${tag.border}`,
-            }}
-          >
-            {tag.name}
-          </span>
-        ))}
+      {task.tags?.length > 0 && (
+        <div className="flex items-center gap-1 min-w-0 overflow-hidden">
+          {task.tags.map((tag) => (
+            <span
+              key={tag.name}
+              className="inline-flex items-center px-1.5 py-0 rounded text-[10px] font-medium min-w-0 max-w-[120px] truncate"
+              style={{
+                backgroundColor: tag.bg,
+                color: tag.text,
+                border: `1px solid ${tag.border}`,
+              }}
+              title={tag.name}
+            >
+              {tag.name}
+            </span>
+          ))}
+        </div>
+      )}
       <Button
         variant="outline"
         size="sm"
@@ -1620,7 +1628,7 @@ function InlineEditTitle({
  * Ligne de tâche avec data attributes pour le custom DnD.
  * L'original reste en place, le hook useListDnD gère le clone + indicator.
  */
-function TaskRow({
+const TaskRow = React.memo(function TaskRow({
   task,
   column,
   onEditTask,
@@ -1655,7 +1663,7 @@ function TaskRow({
       {children}
     </div>
   );
-}
+});
 
 /**
  * Composant pour afficher le Kanban en vue Liste (comme ClickUp)
@@ -2008,6 +2016,7 @@ export function KanbanListView({
                     createTask={createTask}
                     workspaceId={workspaceId}
                     onCancel={() => setInlineAddColumnId(null)}
+                    onEditTask={onEditTask}
                   />
                 )}
               </>
@@ -2577,6 +2586,7 @@ export function KanbanListView({
                     createTask={createTask}
                     workspaceId={workspaceId}
                     onCancel={() => setInlineAddColumnId(null)}
+                    onEditTask={onEditTask}
                   />
                 ) : (
                   <div

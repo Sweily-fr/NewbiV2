@@ -668,8 +668,9 @@ function KanbanBoardPageContent({ params }) {
 
   // Hook pour le filtrage par membre (AVANT useKanbanDnDSimple pour éviter l'erreur de hoisting)
   const {
-    selectedMemberId,
-    setSelectedMemberId,
+    selectedMemberIds,
+    toggleMemberId,
+    clearSelectedMembers,
     members,
     loading: membersLoading,
     filterTasksByMember,
@@ -685,7 +686,7 @@ function KanbanBoardPageContent({ params }) {
     setLocalColumns,
     reorderColumnsMutation,
     markReorderAction,
-    selectedMemberId, // Passer le filtre pour recalculer les positions correctement
+    selectedMemberIds, // Passer le filtre pour recalculer les positions correctement
   );
 
   // Wrapper handleDragEnd — shared by both board (custom DnD) and list (@hello-pangea/dnd)
@@ -1425,22 +1426,22 @@ function KanbanBoardPageContent({ params }) {
             >
               <DropdownMenuTrigger asChild>
                 <Button
-                  variant={selectedMemberId ? "primary" : "outline"}
+                  variant={selectedMemberIds.length > 0 ? "primary" : "outline"}
                   size="icon"
                   className="relative"
                   title="Filtres"
                 >
                   <Filter size={14} aria-hidden="true" />
-                  {selectedMemberId && (
+                  {selectedMemberIds.length > 0 && (
                     <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#5A50FF] text-[9px] font-bold text-white">
-                      1
+                      {selectedMemberIds.length}
                     </span>
                   )}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-[240px]">
                 <DropdownMenuItem
-                  onClick={() => setSelectedMemberId(null)}
+                  onClick={() => clearSelectedMembers()}
                   className="cursor-pointer"
                 >
                   Effacer le filtre
@@ -1450,9 +1451,9 @@ function KanbanBoardPageContent({ params }) {
                   <DropdownMenuSubTrigger className="whitespace-nowrap">
                     <Users className="h-4 w-4 mr-2" />
                     Par utilisateurs
-                    {selectedMemberId && (
+                    {selectedMemberIds.length > 0 && (
                       <Badge variant="secondary" className="ml-auto">
-                        1
+                        {selectedMemberIds.length}
                       </Badge>
                     )}
                   </DropdownMenuSubTrigger>
@@ -1466,13 +1467,10 @@ function KanbanBoardPageContent({ params }) {
                         {members.map((member) => (
                           <DropdownMenuItem
                             key={member.id}
-                            onClick={() =>
-                              setSelectedMemberId(
-                                selectedMemberId === member.id
-                                  ? null
-                                  : member.id,
-                              )
-                            }
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              toggleMemberId(member.id);
+                            }}
                             className="flex items-center px-2 py-1.5 cursor-pointer text-sm"
                           >
                             {member.image ? (
@@ -1493,12 +1491,12 @@ function KanbanBoardPageContent({ params }) {
                             </span>
                             <div
                               className={`w-4 h-4 rounded border flex items-center justify-center ${
-                                selectedMemberId === member.id
+                                selectedMemberIds.includes(member.id)
                                   ? "bg-primary border-primary"
                                   : "border-muted-foreground/50"
                               }`}
                             >
-                              {selectedMemberId === member.id && (
+                              {selectedMemberIds.includes(member.id) && (
                                 <span className="text-white text-xs">✓</span>
                               )}
                             </div>

@@ -395,6 +395,11 @@ const TaskCard = memo(
 
     const startEditingTitle = (e) => {
       e.stopPropagation();
+      if (isEditingTitle) {
+        setIsEditingTitle(false);
+        setEditValue(task.title);
+        return;
+      }
       setEditValue(task.title);
       setIsEditingTitle(true);
       setTimeout(() => titleInputRef.current?.focus(), 0);
@@ -544,7 +549,6 @@ const TaskCard = memo(
                 <DropdownMenuContent align="end" className="w-40">
                   <DropdownMenuItem
                     onSelect={(e) => {
-                      e.preventDefault();
                       e.stopPropagation();
                       onEdit(task);
                     }}
