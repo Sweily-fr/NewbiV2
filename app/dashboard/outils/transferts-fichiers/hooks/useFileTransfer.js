@@ -4,6 +4,7 @@ import {
   UPLOAD_FILE_CHUNK,
   CREATE_FILE_TRANSFER_WITH_IDS,
   DELETE_FILE_TRANSFER,
+  RENAME_FILE_TRANSFER,
   GENERATE_FILE_TRANSFER_PAYMENT_LINK,
   GET_MY_TRANSFERS,
 } from "../graphql/mutations";
@@ -36,6 +37,7 @@ export const useFileTransfer = () => {
     CREATE_FILE_TRANSFER_WITH_IDS,
   );
   const [deleteFileTransferMutation] = useMutation(DELETE_FILE_TRANSFER);
+  const [renameFileTransferMutation] = useMutation(RENAME_FILE_TRANSFER);
   const [generatePaymentLinkMutation] = useMutation(
     GENERATE_FILE_TRANSFER_PAYMENT_LINK,
   );
@@ -330,6 +332,29 @@ export const useFileTransfer = () => {
     [deleteFileTransferMutation, refetchTransfers],
   );
 
+  // Fonction pour renommer un transfert (titre personnalisé)
+  const renameTransfer = useCallback(
+    async (transferId, title) => {
+      try {
+        const { data } = await renameFileTransferMutation({
+          variables: { id: transferId, title },
+        });
+
+        if (data?.renameFileTransfer?.id) {
+          toast.success("Transfert renommé");
+          return data.renameFileTransfer;
+        }
+        toast.error("Erreur lors du renommage du transfert");
+        return null;
+      } catch (error) {
+        console.error("Erreur lors du renommage:", error);
+        toast.error(error.message || "Erreur lors du renommage du transfert");
+        throw error;
+      }
+    },
+    [renameFileTransferMutation],
+  );
+
   // Fonction pour générer un lien de paiement
   const generatePaymentLink = useCallback(
     async (shareLink, accessKey) => {
@@ -399,6 +424,7 @@ export const useFileTransfer = () => {
     // Fonctions principales
     createTransfer,
     deleteTransfer,
+    renameTransfer,
     generatePaymentLink,
     copyShareLink,
     refetchTransfers,

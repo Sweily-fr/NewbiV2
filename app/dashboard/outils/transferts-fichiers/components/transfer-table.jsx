@@ -62,6 +62,14 @@ import {
   AlertDialogTrigger,
 } from "@/src/components/ui/alert-dialog";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -125,7 +133,7 @@ export default function TransferTable({
   isMobile = false,
 }) {
   const inputRef = useRef(null);
-  const { deleteTransfer, formatFileSize } = useFileTransfer();
+  const { deleteTransfer, renameTransfer, formatFileSize } = useFileTransfer();
   const { session } = useUser();
 
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
@@ -206,11 +214,16 @@ export default function TransferTable({
           const transfer = row.original;
           const firstFile = transfer.files?.[0];
           const fileName =
-            firstFile?.originalName || firstFile?.fileName || "Fichier";
+            transfer.title ||
+            firstFile?.originalName ||
+            firstFile?.fileName ||
+            "Fichier";
           const totalSize =
             transfer.files?.reduce((acc, file) => acc + (file.size || 0), 0) ||
             0;
-          const ext = getFileExtension(fileName);
+          const ext = getFileExtension(
+            firstFile?.originalName || firstFile?.fileName || "",
+          );
           const fileCount = transfer.files?.length || 0;
 
           return (
@@ -415,6 +428,9 @@ export default function TransferTable({
     .rows.map((row) => row.original);
   const [isDeleting, setIsDeleting] = useState(false);
   const [transferToDelete, setTransferToDelete] = useState(null);
+  const [transferToRename, setTransferToRename] = useState(null);
+  const [renameInput, setRenameInput] = useState("");
+  const [isRenaming, setIsRenaming] = useState(false);
   const [selectedTransfer, setSelectedTransfer] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -453,6 +469,44 @@ export default function TransferTable({
 
   const handleDeleteTransfer = async (transferId) => {
     setTransferToDelete(transferId);
+  };
+
+  const handleRenameTransfer = (transfer) => {
+    if (!transfer) return;
+    const currentTitle =
+      transfer.title ||
+      transfer.files?.[0]?.originalName ||
+      transfer.files?.[0]?.fileName ||
+      "";
+    setRenameInput(currentTitle);
+    setTransferToRename(transfer);
+  };
+
+  const confirmRenameTransfer = async () => {
+    if (!transferToRename) return;
+    const trimmed = renameInput.trim();
+    if (!trimmed) {
+      toast.error("Le titre ne peut pas être vide");
+      return;
+    }
+    setIsRenaming(true);
+    try {
+      await renameTransfer(transferToRename.id, trimmed);
+      // Mettre à jour localement le selectedTransfer pour refléter le nouveau
+      // titre dans le drawer immédiatement, sans attendre le refetch.
+      if (selectedTransfer?.id === transferToRename.id) {
+        setSelectedTransfer((prev) =>
+          prev ? { ...prev, title: trimmed } : prev,
+        );
+      }
+      onRefresh?.();
+      setTransferToRename(null);
+      setRenameInput("");
+    } catch {
+      // toast déjà géré par le hook
+    } finally {
+      setIsRenaming(false);
+    }
   };
 
   const confirmDeleteTransfer = async () => {
@@ -496,7 +550,10 @@ export default function TransferTable({
     }
   };
 
-  if (loading) {
+  // Afficher le skeleton uniquement au premier chargement (pas de données
+  // encore en cache). Sinon, garder le tableau affiché pendant les refetch
+  // pour éviter le saut visuel lors d'une suppression/renommage.
+  if (loading && (!transfers || transfers.length === 0)) {
     return <TransferTableSkeleton />;
   }
 
@@ -943,12 +1000,66 @@ export default function TransferTable({
         transfer={selectedTransfer}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
-        onDelete={(transfer) => {
+        onDelete={(transferId) => {
           setDrawerOpen(false);
-          handleDeleteTransfer(transfer.id);
+          handleDeleteTransfer(transferId);
+        }}
+        onRename={(transfer) => {
+          handleRenameTransfer(transfer);
         }}
         onRefresh={onRefresh}
       />
+
+      {/* Dialog de renommage */}
+      <Dialog
+        open={!!transferToRename}
+        onOpenChange={(open) => {
+          if (!open) {
+            setTransferToRename(null);
+            setRenameInput("");
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Renommer le transfert</DialogTitle>
+            <DialogDescription>
+              Donnez un titre personnalisé à ce transfert. Cela ne modifie pas
+              le nom des fichiers.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <Input
+              autoFocus
+              value={renameInput}
+              onChange={(e) => setRenameInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  confirmRenameTransfer();
+                }
+              }}
+              placeholder="Nom du transfert"
+              maxLength={255}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setTransferToRename(null);
+                setRenameInput("");
+              }}
+              disabled={isRenaming}
+            >
+              Annuler
+            </Button>
+            <Button onClick={confirmRenameTransfer} disabled={isRenaming}>
+              {isRenaming ? "Renommage..." : "Renommer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
