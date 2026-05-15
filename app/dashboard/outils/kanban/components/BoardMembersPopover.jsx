@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useMutation, useQuery } from "@apollo/client";
-import { Check, Plus, Users } from "lucide-react";
+import { Check, Plus, Users, RotateCcw } from "lucide-react";
 import { UserAvatar } from "@/src/components/ui/user-avatar";
 import {
   Popover,
@@ -18,18 +18,15 @@ import {
 } from "@/src/graphql/kanbanQueries";
 
 /**
- * Popover pour gérer les membres d'un board (vue liste Kanban).
+ * Popover pour gérer l'accès au board (vue liste Kanban).
  *
- * Règle d'accès :
- * - board.members vide → tout le workspace voit le board (par défaut)
- * - board.members rempli → seuls les userIds listés + le propriétaire voient
+ * Règle :
+ * - board.boardMembers vide  → tout le workspace a accès (défaut)
+ * - board.boardMembers rempli → seuls le propriétaire + les ids listés ont accès
  *
- * UX :
- * - Tous les membres workspace sont affichés et cochés par défaut.
- * - Décocher quelqu'un fait basculer en mode "liste explicite" : on enregistre
- *   tous les autres (non-propriétaire) dans board.members.
- * - Si l'utilisateur recoche tout le monde, on remet board.members à [] pour
- *   repasser sur le défaut "tout le monde".
+ * Le composant est défensif : la liste des membres workspace est pré-chargée
+ * dès le montage, on ne dépend pas du contenu de board.members (qui peut être
+ * filtré ou stale dans la cache).
  */
 export function BoardMembersPopover({
   board,
@@ -39,17 +36,16 @@ export function BoardMembersPopover({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
+  // Pré-charger la liste des membres workspace dès que possible — pas seulement
+  // à l'ouverture du popover — pour que les checkboxes soient correctes
+  // instantanément quand l'utilisateur l'ouvre.
   const { data, loading: loadingMembers } = useQuery(GET_ORGANIZATION_MEMBERS, {
     variables: { workspaceId },
-    skip: !open || !workspaceId,
+    skip: !workspaceId,
     fetchPolicy: "cache-first",
   });
 
   const [updateBoard, { loading: saving }] = useMutation(UPDATE_BOARD, {
-    // Refetcher la liste des boards pour s'assurer que la colonne Membres
-    // (et les filtres d'accès) reflètent immédiatement la mise à jour, même
-    // si la subscription BOARD_UPDATED arrive après ou avec un payload
-    // partiel.
     refetchQueries: [{ query: GET_BOARDS, variables: { workspaceId } }],
     awaitRefetchQueries: false,
     onError: (error) => {
@@ -59,9 +55,20 @@ export function BoardMembersPopover({
 
   const orgMembers = data?.organizationMembers || [];
   const ownerId = board?.userId ? String(board.userId) : null;
-  const rawAssigned = (board?.boardMembers || []).map((id) => String(id));
+
+  // Liste explicite enregistrée côté serveur. Filtrer les valeurs falsy pour
+  // éviter qu'un null isolé fasse passer la board en "mode restreint".
+  const rawAssigned = (board?.boardMembers || [])
+    .map((id) => (id ? String(id) : null))
+    .filter(Boolean);
   const hasRestriction = rawAssigned.length > 0;
   const assignedIds = new Set(rawAssigned);
+
+  // IDs des membres workspace hors propriétaire (utilisé pour basculer entre
+  // les modes "tous" / "spécifiques")
+  const allNonOwnerIds = orgMembers
+    .map((m) => String(m.id))
+    .filter((id) => id !== ownerId);
 
   const filtered = orgMembers.filter((m) => {
     if (!search.trim()) return true;
@@ -72,25 +79,13 @@ export function BoardMembersPopover({
     );
   });
 
-  // Un membre est considéré comme ayant accès si :
-  // - aucune restriction (par défaut tout le monde), ou
-  // - il est dans la liste explicite, ou
-  // - il est le propriétaire (toujours inclus)
   const memberHasAccess = (memberId) => {
-    if (ownerId && memberId === ownerId) return true;
-    if (!hasRestriction) return true;
+    if (ownerId && memberId === ownerId) return true; // propriétaire toujours inclus
+    if (!hasRestriction) return true; // mode par défaut = tout le monde
     return assignedIds.has(memberId);
   };
 
-  // IDs des membres workspace hors propriétaire
-  const allNonOwnerIds = orgMembers
-    .map((m) => String(m.id))
-    .filter((id) => id !== ownerId);
-
   const saveMembers = async (nextIds) => {
-    // Liste optimiste des membres affichés après la mise à jour : si plus
-    // aucune restriction → tous les membres du workspace, sinon le
-    // propriétaire + les ids explicitement listés.
     const allowedSet = new Set(
       nextIds.length === 0
         ? orgMembers.map((m) => String(m.id))
@@ -150,8 +145,8 @@ export function BoardMembersPopover({
 
     let nextSelected;
     if (!hasRestriction) {
-      // On part du défaut "tout le monde". Décocher quelqu'un fait passer en
-      // mode liste explicite avec tous les autres (sauf le propriétaire).
+      // On part de "tout le monde". Décocher → mode liste explicite avec
+      // tous les autres (sauf le propriétaire).
       nextSelected = new Set(allNonOwnerIds);
       nextSelected.delete(memberId);
     } else {
@@ -160,8 +155,8 @@ export function BoardMembersPopover({
       else nextSelected.add(memberId);
     }
 
-    // Si la sélection couvre désormais tous les non-propriétaires, on remet
-    // à [] pour repasser sur le défaut "tout le monde".
+    // Si la sélection couvre tous les non-propriétaires, on remet à [] pour
+    // repasser sur le défaut "tout le monde".
     const coversEveryone =
       allNonOwnerIds.length > 0 &&
       allNonOwnerIds.every((id) => nextSelected.has(id));
@@ -169,8 +164,20 @@ export function BoardMembersPopover({
     await saveMembers(coversEveryone ? [] : Array.from(nextSelected));
   };
 
-  // Avatars affichés dans le trigger (= membres ayant accès)
-  const displayedMembers = board?.members || [];
+  const handleResetToAll = () => {
+    if (!hasRestriction || saving) return;
+    saveMembers([]);
+  };
+
+  // Avatars affichés dans le trigger.
+  // Préfère board.members (filtré côté serveur) ; si vide ou non chargé,
+  // fallback sur orgMembers pour ne jamais montrer un trigger "vide".
+  const triggerMembers =
+    board?.members && board.members.length > 0
+      ? board.members
+      : !hasRestriction
+        ? orgMembers
+        : [];
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -179,15 +186,15 @@ export function BoardMembersPopover({
           type="button"
           onClick={(e) => e.stopPropagation()}
           className={`flex items-center cursor-pointer rounded-md hover:bg-muted/50 transition-colors px-1 py-0.5 ${triggerClassName}`}
-          title="Gérer les membres"
+          title="Gérer l'accès"
         >
-          {displayedMembers.length === 0 ? (
+          {triggerMembers.length === 0 ? (
             <span className="inline-flex items-center justify-center h-6 w-6 rounded-full border border-dashed border-muted-foreground/40 text-muted-foreground hover:text-foreground hover:border-foreground/60">
               <Plus className="h-3 w-3" />
             </span>
           ) : (
             <div className="flex items-center -space-x-1.5">
-              {displayedMembers.slice(0, 3).map((m) => (
+              {triggerMembers.slice(0, 3).map((m) => (
                 <UserAvatar
                   key={m.userId || m.id}
                   src={m.image}
@@ -196,9 +203,9 @@ export function BoardMembersPopover({
                   className="h-6 w-6 ring-2 ring-background"
                 />
               ))}
-              {displayedMembers.length > 3 && (
+              {triggerMembers.length > 3 && (
                 <span className="h-6 w-6 rounded-full bg-muted text-[10px] font-normal flex items-center justify-center text-muted-foreground ring-2 ring-background">
-                  +{displayedMembers.length - 3}
+                  +{triggerMembers.length - 3}
                 </span>
               )}
             </div>
@@ -211,14 +218,25 @@ export function BoardMembersPopover({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-3 pt-3 pb-2 border-b border-border/50">
-          <div className="flex items-center gap-2 mb-1">
-            <Users className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium">Accès au tableau</span>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Accès au tableau</span>
+            </div>
+            <span
+              className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                hasRestriction
+                  ? "bg-amber-50 text-amber-700 border border-amber-200"
+                  : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+              }`}
+            >
+              {hasRestriction ? "Restreint" : "Tout le workspace"}
+            </span>
           </div>
           <p className="text-[11px] text-muted-foreground mb-2">
             {hasRestriction
-              ? "Accès restreint aux membres cochés."
-              : "Visible par défaut pour tout le workspace."}
+              ? "Seuls les membres cochés voient ce tableau."
+              : "Tous les membres du workspace voient ce tableau par défaut."}
           </p>
           <Input
             placeholder="Rechercher un membre..."
@@ -226,9 +244,20 @@ export function BoardMembersPopover({
             onChange={(e) => setSearch(e.target.value)}
             className="h-8 text-xs"
           />
+          {hasRestriction && (
+            <button
+              type="button"
+              onClick={handleResetToAll}
+              disabled={saving}
+              className="mt-2 w-full flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors py-1 rounded-md hover:bg-muted/40 disabled:opacity-40"
+            >
+              <RotateCcw className="h-3 w-3" />
+              Repasser sur "tout le workspace"
+            </button>
+          )}
         </div>
         <div className="max-h-[280px] overflow-y-auto p-1">
-          {loadingMembers ? (
+          {loadingMembers && orgMembers.length === 0 ? (
             <div className="px-3 py-6 text-center text-xs text-muted-foreground">
               Chargement...
             </div>
@@ -275,7 +304,7 @@ export function BoardMembersPopover({
                     className={`flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center ${
                       hasAccess
                         ? "bg-primary border-primary text-white"
-                        : "border-muted-foreground/40"
+                        : "border-muted-foreground/40 bg-background"
                     }`}
                   >
                     {hasAccess && <Check className="h-3 w-3" />}
