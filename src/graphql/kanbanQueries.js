@@ -83,6 +83,7 @@ export const GET_BOARD = gql`
       title
       description
       clientId
+      userId
       client {
         id
         name
@@ -264,6 +265,8 @@ export const CREATE_BOARD = gql`
       title
       description
       clientId
+      userId
+      boardMembers
       client {
         id
         name
@@ -271,9 +274,28 @@ export const CREATE_BOARD = gql`
         lastName
         type
       }
+      columns {
+        id
+        title
+        color
+        order
+      }
+      members {
+        id
+        userId
+        name
+        email
+        image
+      }
+      taskCount
+      totalTimeSpent
+      templateName
       totalBillableAmount
       category
+      emoji
       color
+      status
+      isFavorite
       createdAt
       updatedAt
     }
