@@ -36,6 +36,8 @@ import {
   CornerDownLeft,
   Palette,
   Pencil,
+  MoreHorizontal,
+  Edit,
 } from "lucide-react";
 import {
   Avatar,
@@ -87,6 +89,7 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/src/components/ui/dropdown-menu";
 import { cn } from "@/src/lib/utils";
 import {
@@ -120,8 +123,32 @@ function KanbanPageContent() {
   const [isDeleteMultipleOpen, setIsDeleteMultipleOpen] = React.useState(false);
   const [isDeletingMultiple, setIsDeletingMultiple] = React.useState(false);
   const [clientFilter, setClientFilter] = React.useState(null);
-  const [viewMode, setViewMode] = React.useState("table"); // "table" | "grid"
+  const [viewMode, setViewModeState] = React.useState("table"); // "table" | "grid"
   const [categoryFilter, setCategoryFilter] = React.useState(null);
+
+  // Restaure le mode d'affichage (table/grid) depuis localStorage avant le premier rendu visible
+  React.useLayoutEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const saved = window.localStorage.getItem("kanban-boards-view-mode");
+      if (saved === "table" || saved === "grid") {
+        setViewModeState(saved);
+      }
+    } catch (e) {
+      // localStorage indisponible (mode privé) — on garde la valeur par défaut
+    }
+  }, []);
+
+  const setViewMode = React.useCallback((mode) => {
+    setViewModeState(mode);
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem("kanban-boards-view-mode", mode);
+      } catch (e) {
+        // localStorage indisponible — on n'écrit pas mais on garde l'état en mémoire
+      }
+    }
+  }, []);
 
   const { clients } = useClients({ limit: 200 });
   const { workspaceId } = useWorkspace();
@@ -840,17 +867,59 @@ function KanbanPageContent() {
                         {board.title}
                       </h3>
                     </div>
-                    <button
-                      className="text-muted-foreground/30 hover:text-yellow-400 transition-colors cursor-pointer flex-shrink-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggleFavorite(board.id);
-                      }}
-                    >
-                      <Star
-                        className={`h-3.5 w-3.5 ${isFav ? "text-yellow-400 fill-yellow-400" : ""}`}
-                      />
-                    </button>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <button
+                        className="text-muted-foreground/30 hover:text-yellow-400 transition-colors cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleFavorite(board.id);
+                        }}
+                      >
+                        <Star
+                          className={`h-3.5 w-3.5 ${isFav ? "text-yellow-400 fill-yellow-400" : ""}`}
+                        />
+                      </button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreHorizontal className="h-3.5 w-3.5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          className="w-44"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditClick(board, e);
+                            }}
+                            className="gap-2 cursor-pointer"
+                          >
+                            <Edit className="h-3.5 w-3.5" />
+                            Modifier
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setBoardToDelete(board);
+                            }}
+                            variant="destructive"
+                            className="gap-2 cursor-pointer text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 [&_svg]:text-destructive"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Supprimer
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
 
                   {/* Description */}
