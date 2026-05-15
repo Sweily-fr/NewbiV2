@@ -1298,6 +1298,7 @@ function KanbanBoardPageContent({ params }) {
 
               const toggleMember = (memberId) => {
                 if (ownerId && memberId === ownerId) return;
+                if (allNonOwnerIds.length === 0) return;
                 let next;
                 if (!hasRestriction) {
                   next = new Set(allNonOwnerIds);
@@ -1307,14 +1308,28 @@ function KanbanBoardPageContent({ params }) {
                   if (next.has(memberId)) next.delete(memberId);
                   else next.add(memberId);
                 }
-                const coversEveryone =
-                  allNonOwnerIds.length > 0 &&
-                  allNonOwnerIds.every((id) => next.has(id));
-                updateBoardField(
-                  "boardMembers",
-                  coversEveryone ? [] : Array.from(next),
+                const coversEveryone = allNonOwnerIds.every((id) =>
+                  next.has(id),
                 );
+                let toSave;
+                if (coversEveryone) {
+                  toSave = [];
+                } else if (next.size === 0 && ownerId) {
+                  // Garder au moins le créateur pour rester en mode restreint
+                  toSave = [ownerId];
+                } else {
+                  toSave = Array.from(next);
+                }
+                updateBoardField("boardMembers", toSave);
               };
+
+              // Créateur affiché à part — exclu de la liste togglable
+              const creatorMember = ownerId
+                ? allMembers.find((m) => String(m.userId || m.id) === ownerId)
+                : null;
+              const togglableMembers = allMembers.filter(
+                (m) => String(m.userId || m.id) !== ownerId,
+              );
 
               return (
                 <Popover>
@@ -1372,50 +1387,60 @@ function KanbanBoardPageContent({ params }) {
                         </button>
                       )}
                     </div>
+                    {creatorMember && (
+                      <div className="px-3 py-2 bg-muted/30 border-b border-border/50 flex items-center gap-2">
+                        <UserAvatar
+                          src={creatorMember.image}
+                          name={creatorMember.name || creatorMember.email}
+                          size="xs"
+                          className="h-5 w-5 flex-shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-medium truncate">
+                            {creatorMember.name || creatorMember.email}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground">
+                            Créateur du tableau
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     <div className="p-1.5 space-y-0.5 max-h-[280px] overflow-y-auto">
-                      {allMembers.map((member) => {
-                        const memberId = String(member.userId || member.id);
-                        const isOwner = ownerId === memberId;
-                        const hasAccess = memberHasAccess(memberId);
-                        return (
-                          <button
-                            key={memberId}
-                            onClick={() => toggleMember(memberId)}
-                            disabled={isOwner}
-                            className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors text-left ${
-                              isOwner ? "cursor-default" : "cursor-pointer"
-                            }`}
-                            title={
-                              isOwner
-                                ? "Créateur du tableau (toujours inclus)"
-                                : undefined
-                            }
-                          >
-                            <div
-                              className={`rounded-full flex-shrink-0 ${
-                                hasAccess
-                                  ? "ring-[1.5px] ring-[#5A50FF] ring-offset-1 ring-offset-background"
-                                  : ""
-                              }`}
+                      {togglableMembers.length === 0 ? (
+                        <div className="px-3 py-6 text-center text-[11px] text-muted-foreground">
+                          Aucun autre membre dans le workspace
+                        </div>
+                      ) : (
+                        togglableMembers.map((member) => {
+                          const memberId = String(member.userId || member.id);
+                          const hasAccess = memberHasAccess(memberId);
+                          return (
+                            <button
+                              key={memberId}
+                              onClick={() => toggleMember(memberId)}
+                              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors text-left cursor-pointer"
                             >
-                              <UserAvatar
-                                src={member.image}
-                                name={member.name || member.email}
-                                size="xs"
-                                className="h-5 w-5"
-                              />
-                            </div>
-                            <span className="flex-1 text-left text-xs font-medium truncate">
-                              {member.name || member.email}
-                              {isOwner && (
-                                <span className="ml-1 text-[10px] text-muted-foreground font-normal">
-                                  (créateur)
-                                </span>
-                              )}
-                            </span>
-                          </button>
-                        );
-                      })}
+                              <div
+                                className={`rounded-full flex-shrink-0 ${
+                                  hasAccess
+                                    ? "ring-[1.5px] ring-[#5A50FF] ring-offset-1 ring-offset-background"
+                                    : ""
+                                }`}
+                              >
+                                <UserAvatar
+                                  src={member.image}
+                                  name={member.name || member.email}
+                                  size="xs"
+                                  className="h-5 w-5"
+                                />
+                              </div>
+                              <span className="flex-1 text-left text-xs font-medium truncate">
+                                {member.name || member.email}
+                              </span>
+                            </button>
+                          );
+                        })
+                      )}
                     </div>
                   </PopoverContent>
                 </Popover>
