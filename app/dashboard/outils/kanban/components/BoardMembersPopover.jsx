@@ -18,9 +18,17 @@ import {
 
 /**
  * Popover pour gérer les membres d'un board (vue liste Kanban).
- * - Clic sur la stack d'avatars (ou le bouton +) ouvre le popover
- * - Coche/décoche les membres workspace à inclure
- * - Le propriétaire du board est toujours inclus (non décochable)
+ *
+ * Règle d'accès :
+ * - board.members vide → tout le workspace voit le board (par défaut)
+ * - board.members rempli → seuls les userIds listés + le propriétaire voient
+ *
+ * UX :
+ * - Tous les membres workspace sont affichés et cochés par défaut.
+ * - Décocher quelqu'un fait basculer en mode "liste explicite" : on enregistre
+ *   tous les autres (non-propriétaire) dans board.members.
+ * - Si l'utilisateur recoche tout le monde, on remet board.members à [] pour
+ *   repasser sur le défaut "tout le monde".
  */
 export function BoardMembersPopover({
   board,
@@ -44,9 +52,9 @@ export function BoardMembersPopover({
 
   const orgMembers = data?.organizationMembers || [];
   const ownerId = board?.userId ? String(board.userId) : null;
-  const assignedIds = new Set(
-    (board?.boardMembers || []).map((id) => String(id)),
-  );
+  const rawAssigned = (board?.boardMembers || []).map((id) => String(id));
+  const hasRestriction = rawAssigned.length > 0;
+  const assignedIds = new Set(rawAssigned);
 
   const filtered = orgMembers.filter((m) => {
     if (!search.trim()) return true;
@@ -57,18 +65,28 @@ export function BoardMembersPopover({
     );
   });
 
-  const toggleMember = async (memberId) => {
-    if (saving) return;
-    if (ownerId && memberId === ownerId) return; // owner toujours inclus
-    const next = new Set(assignedIds);
-    if (next.has(memberId)) next.delete(memberId);
-    else next.add(memberId);
+  // Un membre est considéré comme ayant accès si :
+  // - aucune restriction (par défaut tout le monde), ou
+  // - il est dans la liste explicite, ou
+  // - il est le propriétaire (toujours inclus)
+  const memberHasAccess = (memberId) => {
+    if (ownerId && memberId === ownerId) return true;
+    if (!hasRestriction) return true;
+    return assignedIds.has(memberId);
+  };
+
+  // IDs des membres workspace hors propriétaire
+  const allNonOwnerIds = orgMembers
+    .map((m) => String(m.id))
+    .filter((id) => id !== ownerId);
+
+  const saveMembers = async (nextIds) => {
     try {
       await updateBoard({
         variables: {
           input: {
             id: board.id,
-            boardMembers: Array.from(next),
+            boardMembers: nextIds,
           },
           workspaceId,
         },
@@ -78,7 +96,32 @@ export function BoardMembersPopover({
     }
   };
 
-  // Liste des membres affichés (assignés + propriétaire)
+  const toggleMember = async (memberId) => {
+    if (saving) return;
+    if (ownerId && memberId === ownerId) return; // owner toujours inclus
+
+    let nextSelected;
+    if (!hasRestriction) {
+      // On part du défaut "tout le monde". Décocher quelqu'un fait passer en
+      // mode liste explicite avec tous les autres (sauf le propriétaire).
+      nextSelected = new Set(allNonOwnerIds);
+      nextSelected.delete(memberId);
+    } else {
+      nextSelected = new Set(assignedIds);
+      if (nextSelected.has(memberId)) nextSelected.delete(memberId);
+      else nextSelected.add(memberId);
+    }
+
+    // Si la sélection couvre désormais tous les non-propriétaires, on remet
+    // à [] pour repasser sur le défaut "tout le monde".
+    const coversEveryone =
+      allNonOwnerIds.length > 0 &&
+      allNonOwnerIds.every((id) => nextSelected.has(id));
+
+    await saveMembers(coversEveryone ? [] : Array.from(nextSelected));
+  };
+
+  // Avatars affichés dans le trigger (= membres ayant accès)
   const displayedMembers = board?.members || [];
 
   return (
@@ -120,10 +163,15 @@ export function BoardMembersPopover({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-3 pt-3 pb-2 border-b border-border/50">
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-1">
             <Users className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium">Membres du tableau</span>
+            <span className="text-sm font-medium">Accès au tableau</span>
           </div>
+          <p className="text-[11px] text-muted-foreground mb-2">
+            {hasRestriction
+              ? "Accès restreint aux membres cochés."
+              : "Visible par défaut pour tout le workspace."}
+          </p>
           <Input
             placeholder="Rechercher un membre..."
             value={search}
@@ -144,7 +192,7 @@ export function BoardMembersPopover({
             filtered.map((member) => {
               const memberId = String(member.id);
               const isOwner = ownerId === memberId;
-              const isAssigned = isOwner || assignedIds.has(memberId);
+              const hasAccess = memberHasAccess(memberId);
               return (
                 <button
                   key={memberId}
@@ -177,12 +225,12 @@ export function BoardMembersPopover({
                   </div>
                   <span
                     className={`flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center ${
-                      isAssigned
+                      hasAccess
                         ? "bg-primary border-primary text-white"
                         : "border-muted-foreground/40"
                     }`}
                   >
-                    {isAssigned && <Check className="h-3 w-3" />}
+                    {hasAccess && <Check className="h-3 w-3" />}
                   </span>
                 </button>
               );
