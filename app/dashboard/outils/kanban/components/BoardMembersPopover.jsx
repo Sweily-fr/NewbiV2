@@ -279,7 +279,11 @@ export function BoardMembersPopover({
                   className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors text-left ${
                     isOwner ? "opacity-100 cursor-default" : "cursor-pointer"
                   }`}
-                  title={isOwner ? "Propriétaire (toujours inclus)" : undefined}
+                  title={
+                    isOwner
+                      ? "Créateur du tableau (toujours inclus)"
+                      : undefined
+                  }
                 >
                   <UserAvatar
                     src={member.image}
@@ -292,7 +296,7 @@ export function BoardMembersPopover({
                       {member.name || member.email}
                       {isOwner && (
                         <span className="ml-1 text-[10px] text-muted-foreground font-normal">
-                          (propriétaire)
+                          (créateur)
                         </span>
                       )}
                     </div>

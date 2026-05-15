@@ -1387,7 +1387,7 @@ function KanbanBoardPageContent({ params }) {
                             }`}
                             title={
                               isOwner
-                                ? "Propriétaire (toujours inclus)"
+                                ? "Créateur du tableau (toujours inclus)"
                                 : undefined
                             }
                           >
@@ -1409,7 +1409,7 @@ function KanbanBoardPageContent({ params }) {
                               {member.name || member.email}
                               {isOwner && (
                                 <span className="ml-1 text-[10px] text-muted-foreground font-normal">
-                                  (propriétaire)
+                                  (créateur)
                                 </span>
                               )}
                             </span>
