@@ -393,16 +393,14 @@ const TaskCard = memo(
       setShowDeleteDialog(false);
     };
 
-    // Ref pour distinguer un clic sur le bouton (annulation) d'un blur normal
+    // Ref pour distinguer un Escape (annulation) d'un blur normal (sauvegarde)
     const cancelOnBlurRef = useRef(false);
 
     const startEditingTitle = (e) => {
       e.stopPropagation();
       if (isEditingTitle) {
-        // Sortir du mode édition sans sauvegarder (pas de save sur Cancel)
-        cancelOnBlurRef.current = true;
-        setEditValue(task.title);
-        setIsEditingTitle(false);
+        // Le bouton X enregistre le nouveau titre (comme Entrée)
+        saveTitleRef.current?.();
         return;
       }
       setEditValue(task.title);
@@ -436,6 +434,10 @@ const TaskCard = memo(
       workspaceId,
       lockInteraction,
     ]);
+
+    // Ref toujours à jour vers saveTitle pour pouvoir l'appeler depuis startEditingTitle
+    const saveTitleRef = useRef(saveTitle);
+    saveTitleRef.current = saveTitle;
 
     const handleTagPopoverChange = useCallback(
       (open) => {
@@ -513,14 +515,14 @@ const TaskCard = memo(
 
           {/* Contenu avec padding */}
           <div className="px-3 py-2 sm:px-4 sm:py-2.5 flex flex-col flex-1">
-            {/* Bloc d'actions flottant au hover */}
+            {/* Bloc d'actions flottant : top-right au hover, bottom-right pendant l'édition */}
             <div
-              className={`absolute top-1.5 right-1.5 transition-opacity z-10 flex items-center gap-0.5 rounded-md shadow-xs border border-border p-0.5 ${
+              className={`absolute right-1.5 transition-all z-10 flex items-center gap-0.5 rounded-md shadow-xs border border-border bg-white dark:bg-card p-0.5 ${
                 isEditingTitle
-                  ? "bg-white/40 dark:bg-card/40 backdrop-blur-sm opacity-100"
+                  ? "bottom-1.5 opacity-100"
                   : tagPopoverOpen
-                    ? "bg-white dark:bg-card opacity-100"
-                    : "bg-white dark:bg-card opacity-0 group-hover/card:opacity-100"
+                    ? "top-1.5 opacity-100"
+                    : "top-1.5 opacity-0 group-hover/card:opacity-100"
               }`}
               onClick={(e) => e.stopPropagation()}
             >
@@ -535,7 +537,7 @@ const TaskCard = memo(
                   e.preventDefault();
                 }}
                 onClick={isReadOnly ? undefined : startEditingTitle}
-                title={isEditingTitle ? "Annuler" : "Modifier le titre"}
+                title={isEditingTitle ? "Enregistrer" : "Modifier le titre"}
               >
                 {isEditingTitle ? (
                   <X className="h-3.5 w-3.5" />
