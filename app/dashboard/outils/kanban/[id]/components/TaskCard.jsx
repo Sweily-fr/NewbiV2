@@ -515,7 +515,13 @@ const TaskCard = memo(
           <div className="px-3 py-2 sm:px-4 sm:py-2.5 flex flex-col flex-1">
             {/* Bloc d'actions flottant au hover */}
             <div
-              className={`absolute top-1.5 right-1.5 transition-opacity z-10 flex items-center gap-0.5 bg-white dark:bg-card rounded-md shadow-xs border border-border p-0.5 ${tagPopoverOpen || isEditingTitle ? "opacity-100" : "opacity-0 group-hover/card:opacity-100"}`}
+              className={`absolute top-1.5 right-1.5 transition-opacity z-10 flex items-center gap-0.5 rounded-md shadow-xs border border-border p-0.5 ${
+                isEditingTitle
+                  ? "bg-white/40 dark:bg-card/40 backdrop-blur-sm opacity-100"
+                  : tagPopoverOpen
+                    ? "bg-white dark:bg-card opacity-100"
+                    : "bg-white dark:bg-card opacity-0 group-hover/card:opacity-100"
+              }`}
               onClick={(e) => e.stopPropagation()}
             >
               <Button
@@ -588,9 +594,10 @@ const TaskCard = memo(
                       e.nativeEvent.stopImmediatePropagation();
                     }}
                     disabled={isReadOnly}
-                    className="text-red-600 cursor-pointer"
+                    variant="destructive"
+                    className="cursor-pointer text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 [&_svg]:text-destructive"
                   >
-                    <Trash2 className="mr-2 h-3 w-3 text-red-600" />
+                    <Trash2 className="mr-2 h-3 w-3" />
                     Supprimer
                   </DropdownMenuItem>
                   {isReadOnly && (

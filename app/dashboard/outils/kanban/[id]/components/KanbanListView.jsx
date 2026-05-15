@@ -1586,24 +1586,46 @@ function InlineEditTitle({
       {task.description && (
         <DescriptionHoverPopover description={task.description} />
       )}
-      {/* Tags inline */}
+      {/* Tags inline — premier tag visible + badge "+N" pour les autres */}
       {task.tags?.length > 0 && (
-        <div className="flex items-center gap-1 min-w-0 overflow-hidden">
-          {task.tags.map((tag) => (
-            <span
-              key={tag.name}
-              className="inline-flex items-center px-1.5 py-0 rounded text-[10px] font-medium min-w-0 max-w-[120px] truncate"
-              style={{
-                backgroundColor: tag.bg,
-                color: tag.text,
-                border: `1px solid ${tag.border}`,
-              }}
-              title={tag.name}
-            >
-              {tag.name}
-            </span>
-          ))}
-        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-1 min-w-0 overflow-hidden flex-shrink-0">
+              <span
+                className="inline-flex items-center px-1.5 py-0 rounded text-[10px] font-medium max-w-[100px] truncate"
+                style={{
+                  backgroundColor: task.tags[0].bg,
+                  color: task.tags[0].text,
+                  border: `1px solid ${task.tags[0].border}`,
+                }}
+              >
+                {task.tags[0].name}
+              </span>
+              {task.tags.length > 1 && (
+                <span className="inline-flex items-center justify-center px-1.5 py-0 rounded text-[10px] font-medium bg-muted text-muted-foreground border border-border min-w-[20px]">
+                  +{task.tags.length - 1}
+                </span>
+              )}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-[300px]">
+            <div className="flex flex-wrap gap-1">
+              {task.tags.map((tag) => (
+                <span
+                  key={tag.name}
+                  className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium"
+                  style={{
+                    backgroundColor: tag.bg,
+                    color: tag.text,
+                    border: `1px solid ${tag.border}`,
+                  }}
+                >
+                  {tag.name}
+                </span>
+              ))}
+            </div>
+          </TooltipContent>
+        </Tooltip>
       )}
       <Button
         variant="outline"
