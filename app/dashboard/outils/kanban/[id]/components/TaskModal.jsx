@@ -423,8 +423,9 @@ export function TaskModal({
   flushPendingSaveRef.current = flushAutoSave;
 
   // Auto-save quand taskForm change.
-  // - Champ texte focus : debounce 400ms (sauvegarde quand l'utilisateur arrête de taper)
-  // - Autres champs : sauvegarde immédiate
+  // - Champ texte focus : on attend le blur (cf. handleTextInputBlur → flushAutoSave)
+  //   pour ne pas spammer une activité "a modifié la description" à chaque frappe.
+  // - Autres champs : sauvegarde immédiate.
   useEffect(() => {
     if (!isOpen || !isEditing || !taskForm?.title?.trim()) return;
 
@@ -433,13 +434,14 @@ export function TaskModal({
 
     if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
 
+    // Si l'utilisateur est encore en train de taper dans un champ texte,
+    // on diffère la sauvegarde au blur (handleTextInputBlur). Cela évite
+    // de générer plusieurs entrées d'activité pour une seule édition.
     if (textInputFocusedRef.current) {
-      autoSaveRef.current = setTimeout(() => {
-        triggerAutoSave();
-      }, 400);
-    } else {
-      triggerAutoSave();
+      return;
     }
+
+    triggerAutoSave();
 
     return () => {
       if (autoSaveRef.current) clearTimeout(autoSaveRef.current);

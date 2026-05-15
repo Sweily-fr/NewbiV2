@@ -1260,6 +1260,7 @@ function PublicTaskActivity({
     try {
       // Upload des images en premier si présentes
       let uploadedImageUrls = [];
+      let uploadErrorMessage = null;
       if (pendingImages.length > 0) {
         setUploadingImages(true);
         for (const imageData of pendingImages) {
@@ -1276,18 +1277,30 @@ function PublicTaskActivity({
               uploadedImageUrls.push(
                 result.data.uploadExternalCommentImage.image,
               );
+            } else if (result.data?.uploadExternalCommentImage?.message) {
+              uploadErrorMessage =
+                result.data.uploadExternalCommentImage.message;
             }
           } catch (uploadError) {
             console.error("Erreur upload image:", uploadError);
+            uploadErrorMessage =
+              uploadError?.message || "Erreur lors de l'upload de l'image";
           }
         }
         setUploadingImages(false);
       }
 
       // Construire le contenu du commentaire
-      let commentContent = newComment.trim();
+      const commentContent = newComment.trim();
+      const hasUploadedImages = uploadedImageUrls.length > 0;
 
-      if (!commentContent && uploadedImageUrls.length === 0) {
+      // Si on attendait des images mais aucune n'a été uploadée, remonter l'erreur réelle
+      if (pendingImages.length > 0 && !hasUploadedImages) {
+        toast.error(uploadErrorMessage || "Échec de l'upload des images");
+        return;
+      }
+
+      if (!commentContent && !hasUploadedImages) {
         toast.error("Veuillez ajouter du texte ou des images");
         return;
       }
@@ -1298,16 +1311,15 @@ function PublicTaskActivity({
           taskId: task.id,
           content: commentContent || null,
           visitorEmail,
-          images:
-            uploadedImageUrls.length > 0
-              ? uploadedImageUrls.map((img) => ({
-                  id: img.id,
-                  key: img.key,
-                  url: img.url,
-                  fileName: img.fileName,
-                  contentType: img.contentType,
-                }))
-              : undefined,
+          images: hasUploadedImages
+            ? uploadedImageUrls.map((img) => ({
+                id: img.id,
+                key: img.key,
+                url: img.url,
+                fileName: img.fileName,
+                contentType: img.contentType,
+              }))
+            : undefined,
         },
       });
       if (result.data?.addExternalComment?.success) {
@@ -1319,7 +1331,8 @@ function PublicTaskActivity({
         toast.error(result.data?.addExternalComment?.message || "Erreur");
       }
     } catch (error) {
-      toast.error("Erreur lors de l'ajout du commentaire");
+      console.error("Erreur ajout commentaire externe:", error);
+      toast.error(error?.message || "Erreur lors de l'ajout du commentaire");
     } finally {
       setAddingComment(false);
       setUploadingImages(false);

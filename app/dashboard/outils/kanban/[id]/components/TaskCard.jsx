@@ -393,11 +393,16 @@ const TaskCard = memo(
       setShowDeleteDialog(false);
     };
 
+    // Ref pour distinguer un clic sur le bouton (annulation) d'un blur normal
+    const cancelOnBlurRef = useRef(false);
+
     const startEditingTitle = (e) => {
       e.stopPropagation();
       if (isEditingTitle) {
-        setIsEditingTitle(false);
+        // Sortir du mode édition sans sauvegarder (pas de save sur Cancel)
+        cancelOnBlurRef.current = true;
         setEditValue(task.title);
+        setIsEditingTitle(false);
         return;
       }
       setEditValue(task.title);
@@ -518,6 +523,11 @@ const TaskCard = memo(
                 size="sm"
                 className="h-6 w-6 p-0"
                 disabled={isReadOnly}
+                onMouseDown={(e) => {
+                  if (isReadOnly) return;
+                  // Empêcher le blur de l'input avant notre handler
+                  e.preventDefault();
+                }}
                 onClick={isReadOnly ? undefined : startEditingTitle}
                 title={isEditingTitle ? "Annuler" : "Modifier le titre"}
               >
@@ -610,11 +620,18 @@ const TaskCard = memo(
                       saveTitle();
                     }
                     if (e.key === "Escape") {
+                      cancelOnBlurRef.current = true;
                       setEditValue(task.title);
                       setIsEditingTitle(false);
                     }
                   }}
-                  onBlur={saveTitle}
+                  onBlur={() => {
+                    if (cancelOnBlurRef.current) {
+                      cancelOnBlurRef.current = false;
+                      return;
+                    }
+                    saveTitle();
+                  }}
                   className="w-full text-sm font-medium text-[#5A50FF] bg-transparent border-none outline-none caret-[#5A50FF] p-0 m-0"
                 />
               </div>
