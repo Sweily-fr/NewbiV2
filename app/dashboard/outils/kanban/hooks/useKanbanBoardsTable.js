@@ -24,7 +24,7 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/src/components/ui/tooltip";
-import { UserAvatar } from "@/src/components/ui/user-avatar";
+import { BoardMembersPopover } from "../components/BoardMembersPopover";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -103,6 +103,7 @@ export function useKanbanBoardsTable({
   categoryFilter = null,
   onToggleFavorite,
   onChangeStatus,
+  workspaceId,
 }) {
   const [globalFilter, setGlobalFilter] = useState("");
 
@@ -266,29 +267,9 @@ export function useKanbanBoardsTable({
       {
         id: "members",
         header: () => <span className="font-normal">Membres</span>,
-        cell: ({ row }) => {
-          const members = row.original.members || [];
-          if (members.length === 0)
-            return <span className="text-muted-foreground">-</span>;
-          return (
-            <div className="flex items-center -space-x-1.5">
-              {members.slice(0, 3).map((member) => (
-                <UserAvatar
-                  key={member.userId || member.id}
-                  src={member.image}
-                  name={member.name || member.email}
-                  size="xs"
-                  className="h-6 w-6 ring-2 ring-background"
-                />
-              ))}
-              {members.length > 3 && (
-                <span className="h-6 w-6 rounded-full bg-muted text-[10px] font-normal flex items-center justify-center text-muted-foreground ring-2 ring-background">
-                  +{members.length - 3}
-                </span>
-              )}
-            </div>
-          );
-        },
+        cell: ({ row }) => (
+          <BoardMembersPopover board={row.original} workspaceId={workspaceId} />
+        ),
         size: 110,
         enableSorting: false,
       },
@@ -408,6 +389,7 @@ export function useKanbanBoardsTable({
       hasBillableAmount,
       onToggleFavorite,
       onChangeStatus,
+      workspaceId,
     ],
   );
 
