@@ -83,6 +83,7 @@ export const GET_BOARD = gql`
       title
       description
       clientId
+      userId
       client {
         id
         name
