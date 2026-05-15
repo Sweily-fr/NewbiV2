@@ -123,7 +123,13 @@ export function useKanbanBoardsTable({
     if (categoryFilter) {
       result = result.filter((board) => board.category === categoryFilter);
     }
-    return result;
+    // Favoris en premier, puis tri par date de dernière modification (récent d'abord)
+    return [...result].sort((a, b) => {
+      const aFav = a.isFavorite ? 1 : 0;
+      const bFav = b.isFavorite ? 1 : 0;
+      if (aFav !== bFav) return bFav - aFav;
+      return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
+    });
   }, [data, clientFilter, categoryFilter]);
 
   // Extraire les clients uniques pour le filtre
@@ -446,12 +452,6 @@ export function useKanbanBoardsTable({
       pagination: {
         pageSize: 20,
       },
-      sorting: [
-        {
-          id: "updatedAt",
-          desc: true,
-        },
-      ],
     },
   });
 
