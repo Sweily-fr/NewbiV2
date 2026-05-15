@@ -1296,7 +1296,7 @@ function PublicTaskActivity({
         variables: {
           token,
           taskId: task.id,
-          content: commentContent || "",
+          content: commentContent || null,
           visitorEmail,
           images:
             uploadedImageUrls.length > 0

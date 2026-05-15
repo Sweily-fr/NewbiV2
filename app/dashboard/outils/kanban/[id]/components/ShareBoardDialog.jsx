@@ -400,16 +400,16 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
           <TooltipContent side="bottom">Partager</TooltipContent>
         </Tooltip>
 
-        <DialogContent className="sm:max-w-[600px] p-1 gap-0 top-[40%] border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
-          <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
-            <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
+        <DialogContent className="sm:max-w-[600px] p-1 gap-0 border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl max-h-[85vh] flex flex-col">
+          <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1] flex flex-col min-h-0">
+            <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40 flex-shrink-0">
               <DialogTitle className="text-sm font-medium flex items-center gap-2">
                 <Share2 className="size-4" />
                 Partager "{boardTitle}"
               </DialogTitle>
             </DialogHeader>
 
-            <div className="space-y-3 px-5 pt-3 pb-4">
+            <div className="space-y-3 px-5 pt-3 pb-4 overflow-y-auto min-h-0 flex-1">
               {/* Info */}
               <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg border border-border/50">
                 <p className="text-xs text-muted-foreground">
@@ -522,390 +522,383 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
               ) : shares.length > 0 ? (
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Liens existants</Label>
-                  <ScrollArea className="max-h-[350px]">
-                    <div className="space-y-2 pb-4">
-                      {shares.map((share) => (
-                        <div
-                          key={share.id}
-                          className={`border rounded-lg p-3 space-y-2 ${
-                            !share.isActive ? "bg-muted/50" : ""
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Link2 className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-medium text-sm">
-                                {share.name || "Lien de partage"}
-                              </span>
-                              {!share.isActive && (
-                                <Badge variant="secondary" className="text-xs">
-                                  Désactivé
-                                </Badge>
+                  <div className="space-y-2 pb-4">
+                    {shares.map((share) => (
+                      <div
+                        key={share.id}
+                        className={`border rounded-lg p-3 space-y-2 ${
+                          !share.isActive ? "bg-muted/50" : ""
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Link2 className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium text-sm">
+                              {share.name || "Lien de partage"}
+                            </span>
+                            {!share.isActive && (
+                              <Badge variant="secondary" className="text-xs">
+                                Désactivé
+                              </Badge>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() =>
+                                handleCopyLink(share.shareUrl, share.id)
+                              }
+                              disabled={!share.isActive}
+                            >
+                              {copiedId === share.id ? (
+                                <Check className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
                               )}
-                            </div>
+                            </Button>
 
-                            <div className="flex items-center gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() =>
-                                  handleCopyLink(share.shareUrl, share.id)
-                                }
-                                disabled={!share.isActive}
-                              >
-                                {copiedId === share.id ? (
-                                  <Check className="h-4 w-4 text-green-500" />
-                                ) : (
-                                  <Copy className="h-4 w-4" />
-                                )}
-                              </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() =>
+                                window.open(share.shareUrl, "_blank")
+                              }
+                              disabled={!share.isActive}
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </Button>
 
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() =>
-                                  window.open(share.shareUrl, "_blank")
-                                }
-                                disabled={!share.isActive}
-                              >
-                                <ExternalLink className="h-4 w-4" />
-                              </Button>
-
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8"
-                                  >
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent
-                                  className="w-48 p-2"
-                                  align="end"
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
                                 >
-                                  {share.isActive ? (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="w-full justify-start gap-2"
-                                      onClick={() => handleToggleActive(share)}
-                                    >
-                                      <EyeOff className="h-4 w-4" />
-                                      Désactiver
-                                    </Button>
-                                  ) : (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="w-full justify-start gap-2"
-                                      onClick={() => handleToggleActive(share)}
-                                    >
-                                      <Eye className="h-4 w-4" />
-                                      Réactiver
-                                    </Button>
-                                  )}
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-48 p-2" align="end">
+                                {share.isActive ? (
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="w-full justify-start gap-2 text-destructive hover:text-destructive"
-                                    onClick={() => setDeleteShareId(share.id)}
+                                    className="w-full justify-start gap-2"
+                                    onClick={() => handleToggleActive(share)}
                                   >
-                                    <Trash2 className="h-4 w-4" />
-                                    Supprimer
+                                    <EyeOff className="h-4 w-4" />
+                                    Désactiver
                                   </Button>
-                                </PopoverContent>
-                              </Popover>
-                            </div>
+                                ) : (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="w-full justify-start gap-2"
+                                    onClick={() => handleToggleActive(share)}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                    Réactiver
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="w-full justify-start gap-2 text-destructive hover:text-destructive"
+                                  onClick={() => setDeleteShareId(share.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  Supprimer
+                                </Button>
+                              </PopoverContent>
+                            </Popover>
                           </div>
+                        </div>
 
-                          {/* Statistiques */}
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Eye className="h-3 w-3" />
-                              {share.stats?.totalViews || 0} vues
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Users className="h-3 w-3" />
-                              {share.stats?.uniqueVisitors || 0} visiteurs
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <MessageSquare className="h-3 w-3" />
-                              {share.stats?.totalComments || 0} commentaires
-                            </span>
+                        {/* Statistiques */}
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Eye className="h-3 w-3" />
+                            {share.stats?.totalViews || 0} vues
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Users className="h-3 w-3" />
+                            {share.stats?.uniqueVisitors || 0} visiteurs
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MessageSquare className="h-3 w-3" />
+                            {share.stats?.totalComments || 0} commentaires
+                          </span>
+                        </div>
+
+                        {/* Permission commentaires */}
+                        <Badge variant="outline" className="text-xs">
+                          <MessageSquare className="h-3 w-3 mr-1" />
+                          Commentaires activés
+                        </Badge>
+
+                        {/* Section visiteurs */}
+                        {share.visitors && share.visitors.length > 0 && (
+                          <div className="mt-2 pt-2 border-t">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-between p-0 h-auto hover:bg-transparent"
+                              onClick={() => toggleVisitors(share.id)}
+                            >
+                              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Users className="h-3 w-3" />
+                                {share.visitors.length} visiteur
+                                {share.visitors.length > 1 ? "s" : ""} avec
+                                accès
+                              </span>
+                              {expandedVisitors[share.id] ? (
+                                <ChevronUp className="h-3 w-3 text-muted-foreground" />
+                              ) : (
+                                <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                              )}
+                            </Button>
+
+                            {expandedVisitors[share.id] && (
+                              <div className="mt-2 space-y-2">
+                                {share.visitors.map((visitor) => (
+                                  <div
+                                    key={visitor.id || visitor.email}
+                                    className="flex items-center justify-between p-2 bg-muted/30 rounded-md"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <Avatar className="h-8 w-8">
+                                        <AvatarImage src={visitor.image} />
+                                        <AvatarFallback className="text-xs">
+                                          {(visitor.name ||
+                                            visitor.email ||
+                                            "?")[0].toUpperCase()}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className="flex flex-col">
+                                        <span className="text-sm font-medium">
+                                          {visitor.name ||
+                                            visitor.firstName ||
+                                            visitor.email?.split("@")[0]}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                          <Mail className="h-3 w-3" />
+                                          {visitor.email}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <div className="text-right text-xs text-muted-foreground">
+                                        <div className="flex items-center gap-1">
+                                          <Eye className="h-3 w-3" />
+                                          {visitor.visitCount || 1} visite
+                                          {(visitor.visitCount || 1) > 1
+                                            ? "s"
+                                            : ""}
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                          <Calendar className="h-3 w-3" />
+                                          {formatDate(visitor.lastVisitAt)}
+                                        </div>
+                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                        onClick={() =>
+                                          setRevokeVisitorInfo({
+                                            shareId: share.id,
+                                            email: visitor.email,
+                                            name: visitor.name || visitor.email,
+                                          })
+                                        }
+                                      >
+                                        <UserX className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
+                        )}
 
-                          {/* Permission commentaires */}
-                          <Badge variant="outline" className="text-xs">
-                            <MessageSquare className="h-3 w-3 mr-1" />
-                            Commentaires activés
-                          </Badge>
+                        {/* Section demandes d'accès en attente */}
+                        {share.accessRequests?.filter(
+                          (r) => r.status === "pending",
+                        ).length > 0 && (
+                          <div className="mt-2 pt-2 border-t">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-between p-0 h-auto hover:bg-transparent"
+                              onClick={() => toggleRequests(share.id)}
+                            >
+                              <span className="flex items-center gap-1 text-xs text-orange-600 dark:text-orange-400">
+                                <Clock className="h-3 w-3" />
+                                {
+                                  share.accessRequests.filter(
+                                    (r) => r.status === "pending",
+                                  ).length
+                                }{" "}
+                                demande
+                                {share.accessRequests.filter(
+                                  (r) => r.status === "pending",
+                                ).length > 1
+                                  ? "s"
+                                  : ""}{" "}
+                                en attente
+                              </span>
+                              {expandedRequests[share.id] ? (
+                                <ChevronUp className="h-3 w-3 text-muted-foreground" />
+                              ) : (
+                                <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                              )}
+                            </Button>
 
-                          {/* Section visiteurs */}
-                          {share.visitors && share.visitors.length > 0 && (
+                            {expandedRequests[share.id] && (
+                              <div className="mt-2 space-y-2">
+                                {share.accessRequests
+                                  .filter((r) => r.status === "pending")
+                                  .map((request) => (
+                                    <div
+                                      key={request.id}
+                                      className="p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-md"
+                                    >
+                                      <div className="flex items-start justify-between">
+                                        <div className="flex-1">
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-sm font-medium">
+                                              {request.name ||
+                                                request.email?.split("@")[0]}
+                                            </span>
+                                            <Badge
+                                              variant="outline"
+                                              className="text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-orange-300"
+                                            >
+                                              En attente
+                                            </Badge>
+                                          </div>
+                                          <span className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                                            <Mail className="h-3 w-3" />
+                                            {request.email}
+                                          </span>
+                                          {request.message && (
+                                            <p className="text-xs text-muted-foreground mt-2 italic">
+                                              "{request.message}"
+                                            </p>
+                                          )}
+                                          <span className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                                            <Clock className="h-3 w-3" />
+                                            Demandé le{" "}
+                                            {formatDate(request.requestedAt)}
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/30"
+                                            onClick={() =>
+                                              handleApproveRequest(
+                                                share.id,
+                                                request.id,
+                                              )
+                                            }
+                                            disabled={approving}
+                                          >
+                                            <CheckCircle className="h-4 w-4" />
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                            onClick={() =>
+                                              handleRejectRequest(
+                                                share.id,
+                                                request.id,
+                                              )
+                                            }
+                                            disabled={rejecting}
+                                          >
+                                            <XCircle className="h-4 w-4" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Section emails bannis */}
+                        {share.bannedEmails &&
+                          share.bannedEmails.length > 0 && (
                             <div className="mt-2 pt-2 border-t">
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 className="w-full justify-between p-0 h-auto hover:bg-transparent"
-                                onClick={() => toggleVisitors(share.id)}
+                                onClick={() => toggleBanned(share.id)}
                               >
-                                <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                                  <Users className="h-3 w-3" />
-                                  {share.visitors.length} visiteur
-                                  {share.visitors.length > 1 ? "s" : ""} avec
-                                  accès
+                                <span className="flex items-center gap-1 text-xs text-destructive">
+                                  <Ban className="h-3 w-3" />
+                                  {share.bannedEmails.length} accès révoqué
+                                  {share.bannedEmails.length > 1 ? "s" : ""}
                                 </span>
-                                {expandedVisitors[share.id] ? (
+                                {expandedBanned[share.id] ? (
                                   <ChevronUp className="h-3 w-3 text-muted-foreground" />
                                 ) : (
                                   <ChevronDown className="h-3 w-3 text-muted-foreground" />
                                 )}
                               </Button>
 
-                              {expandedVisitors[share.id] && (
+                              {expandedBanned[share.id] && (
                                 <div className="mt-2 space-y-2">
-                                  {share.visitors.map((visitor) => (
+                                  {share.bannedEmails.map((banned, index) => (
                                     <div
-                                      key={visitor.id || visitor.email}
-                                      className="flex items-center justify-between p-2 bg-muted/30 rounded-md"
+                                      key={banned.email || index}
+                                      className="flex items-center justify-between p-2 bg-destructive/5 border border-destructive/20 rounded-md"
                                     >
-                                      <div className="flex items-center gap-2">
-                                        <Avatar className="h-8 w-8">
-                                          <AvatarImage src={visitor.image} />
-                                          <AvatarFallback className="text-xs">
-                                            {(visitor.name ||
-                                              visitor.email ||
-                                              "?")[0].toUpperCase()}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                        <div className="flex flex-col">
-                                          <span className="text-sm font-medium">
-                                            {visitor.name ||
-                                              visitor.firstName ||
-                                              visitor.email?.split("@")[0]}
+                                      <div className="flex flex-col">
+                                        <span className="text-sm font-medium text-destructive">
+                                          {banned.email}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                          <Calendar className="h-3 w-3" />
+                                          Banni le {formatDate(banned.bannedAt)}
+                                        </span>
+                                        {banned.reason && (
+                                          <span className="text-xs text-muted-foreground italic mt-0.5">
+                                            {banned.reason}
                                           </span>
-                                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                            <Mail className="h-3 w-3" />
-                                            {visitor.email}
-                                          </span>
-                                        </div>
+                                        )}
                                       </div>
-                                      <div className="flex items-center gap-2">
-                                        <div className="text-right text-xs text-muted-foreground">
-                                          <div className="flex items-center gap-1">
-                                            <Eye className="h-3 w-3" />
-                                            {visitor.visitCount || 1} visite
-                                            {(visitor.visitCount || 1) > 1
-                                              ? "s"
-                                              : ""}
-                                          </div>
-                                          <div className="flex items-center gap-1">
-                                            <Calendar className="h-3 w-3" />
-                                            {formatDate(visitor.lastVisitAt)}
-                                          </div>
-                                        </div>
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                          onClick={() =>
-                                            setRevokeVisitorInfo({
-                                              shareId: share.id,
-                                              email: visitor.email,
-                                              name:
-                                                visitor.name || visitor.email,
-                                            })
-                                          }
-                                        >
-                                          <UserX className="h-4 w-4" />
-                                        </Button>
-                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 text-xs text-green-600 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/30"
+                                        onClick={() =>
+                                          handleUnban(share.id, banned.email)
+                                        }
+                                        disabled={unbanning}
+                                      >
+                                        <UserCheck className="h-3 w-3 mr-1" />
+                                        Débannir
+                                      </Button>
                                     </div>
                                   ))}
                                 </div>
                               )}
                             </div>
                           )}
-
-                          {/* Section demandes d'accès en attente */}
-                          {share.accessRequests?.filter(
-                            (r) => r.status === "pending",
-                          ).length > 0 && (
-                            <div className="mt-2 pt-2 border-t">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="w-full justify-between p-0 h-auto hover:bg-transparent"
-                                onClick={() => toggleRequests(share.id)}
-                              >
-                                <span className="flex items-center gap-1 text-xs text-orange-600 dark:text-orange-400">
-                                  <Clock className="h-3 w-3" />
-                                  {
-                                    share.accessRequests.filter(
-                                      (r) => r.status === "pending",
-                                    ).length
-                                  }{" "}
-                                  demande
-                                  {share.accessRequests.filter(
-                                    (r) => r.status === "pending",
-                                  ).length > 1
-                                    ? "s"
-                                    : ""}{" "}
-                                  en attente
-                                </span>
-                                {expandedRequests[share.id] ? (
-                                  <ChevronUp className="h-3 w-3 text-muted-foreground" />
-                                ) : (
-                                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
-                                )}
-                              </Button>
-
-                              {expandedRequests[share.id] && (
-                                <div className="mt-2 space-y-2">
-                                  {share.accessRequests
-                                    .filter((r) => r.status === "pending")
-                                    .map((request) => (
-                                      <div
-                                        key={request.id}
-                                        className="p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-md"
-                                      >
-                                        <div className="flex items-start justify-between">
-                                          <div className="flex-1">
-                                            <div className="flex items-center gap-2">
-                                              <span className="text-sm font-medium">
-                                                {request.name ||
-                                                  request.email?.split("@")[0]}
-                                              </span>
-                                              <Badge
-                                                variant="outline"
-                                                className="text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-orange-300"
-                                              >
-                                                En attente
-                                              </Badge>
-                                            </div>
-                                            <span className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                                              <Mail className="h-3 w-3" />
-                                              {request.email}
-                                            </span>
-                                            {request.message && (
-                                              <p className="text-xs text-muted-foreground mt-2 italic">
-                                                "{request.message}"
-                                              </p>
-                                            )}
-                                            <span className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                                              <Clock className="h-3 w-3" />
-                                              Demandé le{" "}
-                                              {formatDate(request.requestedAt)}
-                                            </span>
-                                          </div>
-                                          <div className="flex items-center gap-1">
-                                            <Button
-                                              variant="ghost"
-                                              size="icon"
-                                              className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/30"
-                                              onClick={() =>
-                                                handleApproveRequest(
-                                                  share.id,
-                                                  request.id,
-                                                )
-                                              }
-                                              disabled={approving}
-                                            >
-                                              <CheckCircle className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                              variant="ghost"
-                                              size="icon"
-                                              className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                              onClick={() =>
-                                                handleRejectRequest(
-                                                  share.id,
-                                                  request.id,
-                                                )
-                                              }
-                                              disabled={rejecting}
-                                            >
-                                              <XCircle className="h-4 w-4" />
-                                            </Button>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    ))}
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Section emails bannis */}
-                          {share.bannedEmails &&
-                            share.bannedEmails.length > 0 && (
-                              <div className="mt-2 pt-2 border-t">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="w-full justify-between p-0 h-auto hover:bg-transparent"
-                                  onClick={() => toggleBanned(share.id)}
-                                >
-                                  <span className="flex items-center gap-1 text-xs text-destructive">
-                                    <Ban className="h-3 w-3" />
-                                    {share.bannedEmails.length} accès révoqué
-                                    {share.bannedEmails.length > 1 ? "s" : ""}
-                                  </span>
-                                  {expandedBanned[share.id] ? (
-                                    <ChevronUp className="h-3 w-3 text-muted-foreground" />
-                                  ) : (
-                                    <ChevronDown className="h-3 w-3 text-muted-foreground" />
-                                  )}
-                                </Button>
-
-                                {expandedBanned[share.id] && (
-                                  <div className="mt-2 space-y-2">
-                                    {share.bannedEmails.map((banned, index) => (
-                                      <div
-                                        key={banned.email || index}
-                                        className="flex items-center justify-between p-2 bg-destructive/5 border border-destructive/20 rounded-md"
-                                      >
-                                        <div className="flex flex-col">
-                                          <span className="text-sm font-medium text-destructive">
-                                            {banned.email}
-                                          </span>
-                                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                            <Calendar className="h-3 w-3" />
-                                            Banni le{" "}
-                                            {formatDate(banned.bannedAt)}
-                                          </span>
-                                          {banned.reason && (
-                                            <span className="text-xs text-muted-foreground italic mt-0.5">
-                                              {banned.reason}
-                                            </span>
-                                          )}
-                                        </div>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className="h-7 text-xs text-green-600 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/30"
-                                          onClick={() =>
-                                            handleUnban(share.id, banned.email)
-                                          }
-                                          disabled={unbanning}
-                                        >
-                                          <UserCheck className="h-3 w-3 mr-1" />
-                                          Débannir
-                                        </Button>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 !showCreateForm && (

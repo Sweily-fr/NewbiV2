@@ -1356,7 +1356,7 @@ export const ADD_EXTERNAL_COMMENT = gql`
   mutation AddExternalComment(
     $token: String!
     $taskId: ID!
-    $content: String!
+    $content: String
     $visitorEmail: String!
     $images: [CommentImageInput!]
   ) {
