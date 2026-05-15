@@ -1295,7 +1295,7 @@ function KanbanPageContent() {
         onOpenChange={(open) => !open && setBoardToDelete(null)}
       >
         <AlertDialogContent className="sm:max-w-[425px]">
-          <AlertDialogHeader className="border-b pb-4">
+          <AlertDialogHeader>
             <AlertDialogTitle className="text-foreground">
               Supprimer la liste
             </AlertDialogTitle>
@@ -1305,7 +1305,7 @@ function KanbanPageContent() {
               associées.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="mt-4">
+          <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
