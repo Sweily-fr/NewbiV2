@@ -55,10 +55,15 @@ export const useKanbanBoards = () => {
   }, [sessionLoading, session]);
 
   // GraphQL queries and mutations
+  // cache-and-network : on remontage (retour depuis /[id]), on relit le cache
+  // immédiatement puis on rafraîchit en arrière-plan pour que `taskCount`
+  // reflète les tâches ajoutées/supprimées à l'intérieur d'un tableau.
   const { data, loading: queryLoading } = useQuery(GET_BOARDS, {
     variables: { workspaceId },
     skip: !workspaceId,
     errorPolicy: "all",
+    fetchPolicy: "cache-and-network",
+    nextFetchPolicy: "cache-first",
   });
 
   // Subscription pour les mises à jour temps réel
