@@ -1277,63 +1277,150 @@ function KanbanBoardPageContent({ params }) {
               </PopoverContent>
             </Popover>
 
-            {/* Assigner des membres */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  className="h-6 px-1.5 rounded-md hover:bg-muted cursor-pointer transition-colors flex items-center gap-1"
-                  title="Membres du projet"
-                >
-                  <UserRoundPlus
-                    className={`h-3.5 w-3.5 transition-colors ${boardMemberIds.length > 0 ? "text-foreground/70" : "text-muted-foreground/50"}`}
-                  />
-                  {boardMemberIds.length > 0 && (
-                    <span className="text-[11px] text-foreground/60 font-medium">
-                      {boardMemberIds.length}
-                    </span>
-                  )}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-60 p-0" side="bottom" align="start">
-                <div className="px-2 pt-2 pb-0.5">
-                  <span className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider">
-                    Membres du projet
-                  </span>
-                </div>
-                <div className="p-1.5 pt-0.5 space-y-0.5 max-h-[280px] overflow-y-auto">
-                  {board?.members?.map((member) => {
-                    const memberId = member.userId || member.id;
-                    const isAssigned = boardMemberIds.includes(memberId);
-                    return (
-                      <button
-                        key={memberId}
-                        onClick={() => {
-                          const newMembers = isAssigned
-                            ? boardMemberIds.filter((mid) => mid !== memberId)
-                            : [...boardMemberIds, memberId];
-                          updateBoardField("boardMembers", newMembers);
-                        }}
-                        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer"
-                      >
-                        <div
-                          className={`rounded-full flex-shrink-0 ${isAssigned ? "ring-[1.5px] ring-[#5A50FF] ring-offset-1 ring-offset-background" : ""}`}
-                        >
-                          <UserAvatar
-                            src={member.image}
-                            name={member.name || member.email}
-                            size="xs"
-                            className="h-5 w-5"
-                          />
-                        </div>
-                        <span className="flex-1 text-left text-xs font-medium truncate">
-                          {member.name || member.email}
+            {/* Accès au tableau (membres autorisés) */}
+            {(() => {
+              const ownerId = board?.userId ? String(board.userId) : null;
+              const rawAssigned = (boardMemberIds || [])
+                .map((id) => (id ? String(id) : null))
+                .filter(Boolean);
+              const hasRestriction = rawAssigned.length > 0;
+              const assignedSet = new Set(rawAssigned);
+              const allMembers = board?.members || [];
+              const allNonOwnerIds = allMembers
+                .map((m) => String(m.userId || m.id))
+                .filter((id) => id !== ownerId);
+
+              const memberHasAccess = (id) => {
+                if (ownerId && id === ownerId) return true;
+                if (!hasRestriction) return true;
+                return assignedSet.has(id);
+              };
+
+              const toggleMember = (memberId) => {
+                if (ownerId && memberId === ownerId) return;
+                let next;
+                if (!hasRestriction) {
+                  next = new Set(allNonOwnerIds);
+                  next.delete(memberId);
+                } else {
+                  next = new Set(rawAssigned);
+                  if (next.has(memberId)) next.delete(memberId);
+                  else next.add(memberId);
+                }
+                const coversEveryone =
+                  allNonOwnerIds.length > 0 &&
+                  allNonOwnerIds.every((id) => next.has(id));
+                updateBoardField(
+                  "boardMembers",
+                  coversEveryone ? [] : Array.from(next),
+                );
+              };
+
+              return (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      className="h-6 px-1.5 rounded-md hover:bg-muted cursor-pointer transition-colors flex items-center gap-1"
+                      title="Accès au tableau"
+                    >
+                      <UserRoundPlus
+                        className={`h-3.5 w-3.5 transition-colors ${
+                          hasRestriction
+                            ? "text-foreground/70"
+                            : "text-muted-foreground/50"
+                        }`}
+                      />
+                      {hasRestriction && (
+                        <span className="text-[11px] text-foreground/60 font-medium">
+                          {rawAssigned.length + (ownerId ? 1 : 0)}
                         </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </PopoverContent>
-            </Popover>
+                      )}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-64 p-0"
+                    side="bottom"
+                    align="start"
+                  >
+                    <div className="px-3 pt-3 pb-2 border-b border-border/50">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="text-xs font-medium">
+                          Accès au tableau
+                        </span>
+                        <span
+                          className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                            hasRestriction
+                              ? "bg-amber-50 text-amber-700 border border-amber-200"
+                              : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          }`}
+                        >
+                          {hasRestriction ? "Restreint" : "Tout le workspace"}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        {hasRestriction
+                          ? "Seuls les membres cochés voient ce tableau."
+                          : "Tous les membres du workspace voient ce tableau."}
+                      </p>
+                      {hasRestriction && (
+                        <button
+                          type="button"
+                          onClick={() => updateBoardField("boardMembers", [])}
+                          className="mt-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          Repasser sur "tout le workspace"
+                        </button>
+                      )}
+                    </div>
+                    <div className="p-1.5 space-y-0.5 max-h-[280px] overflow-y-auto">
+                      {allMembers.map((member) => {
+                        const memberId = String(member.userId || member.id);
+                        const isOwner = ownerId === memberId;
+                        const hasAccess = memberHasAccess(memberId);
+                        return (
+                          <button
+                            key={memberId}
+                            onClick={() => toggleMember(memberId)}
+                            disabled={isOwner}
+                            className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors text-left ${
+                              isOwner ? "cursor-default" : "cursor-pointer"
+                            }`}
+                            title={
+                              isOwner
+                                ? "Propriétaire (toujours inclus)"
+                                : undefined
+                            }
+                          >
+                            <div
+                              className={`rounded-full flex-shrink-0 ${
+                                hasAccess
+                                  ? "ring-[1.5px] ring-[#5A50FF] ring-offset-1 ring-offset-background"
+                                  : ""
+                              }`}
+                            >
+                              <UserAvatar
+                                src={member.image}
+                                name={member.name || member.email}
+                                size="xs"
+                                className="h-5 w-5"
+                              />
+                            </div>
+                            <span className="flex-1 text-left text-xs font-medium truncate">
+                              {member.name || member.email}
+                              {isOwner && (
+                                <span className="ml-1 text-[10px] text-muted-foreground font-normal">
+                                  (propriétaire)
+                                </span>
+                              )}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              );
+            })()}
           </div>
 
           {/* Séparateur */}
