@@ -510,7 +510,7 @@ const TaskCard = memo(
           <div className="px-3 py-2 sm:px-4 sm:py-2.5 flex flex-col flex-1">
             {/* Bloc d'actions flottant au hover */}
             <div
-              className={`absolute top-1.5 right-1.5 transition-opacity z-10 flex items-center gap-0.5 bg-white dark:bg-card rounded-md shadow-xs border border-border p-0.5 ${tagPopoverOpen ? "opacity-100" : "opacity-0 group-hover/card:opacity-100"}`}
+              className={`absolute top-1.5 right-1.5 transition-opacity z-10 flex items-center gap-0.5 bg-white dark:bg-card rounded-md shadow-xs border border-border p-0.5 ${tagPopoverOpen || isEditingTitle ? "opacity-100" : "opacity-0 group-hover/card:opacity-100"}`}
               onClick={(e) => e.stopPropagation()}
             >
               <Button
@@ -519,8 +519,13 @@ const TaskCard = memo(
                 className="h-6 w-6 p-0"
                 disabled={isReadOnly}
                 onClick={isReadOnly ? undefined : startEditingTitle}
+                title={isEditingTitle ? "Annuler" : "Modifier le titre"}
               >
-                <Pencil className="h-3.5 w-3.5" />
+                {isEditingTitle ? (
+                  <X className="h-3.5 w-3.5" />
+                ) : (
+                  <Pencil className="h-3.5 w-3.5" />
+                )}
               </Button>
               {updateTask && !isReadOnly && (
                 <CardTagPopover
