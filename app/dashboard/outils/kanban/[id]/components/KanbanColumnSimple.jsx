@@ -571,7 +571,7 @@ function KanbanColumnSimpleInner({
                   <DropdownMenuItem
                     onClick={() => onDeleteColumn(column)}
                     variant="destructive"
-                    className="gap-2"
+                    className="gap-2 text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 [&_svg]:text-destructive"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     Supprimer
