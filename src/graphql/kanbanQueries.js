@@ -30,6 +30,8 @@ export const GET_BOARDS = gql`
       title
       description
       clientId
+      userId
+      boardMembers
       client {
         id
         name
@@ -301,6 +303,13 @@ export const UPDATE_BOARD = gql`
       priority
       dueDate
       boardMembers
+      members {
+        id
+        userId
+        name
+        email
+        image
+      }
       totalBillableAmount
       category
       color

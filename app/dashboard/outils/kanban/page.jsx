@@ -194,6 +194,7 @@ function KanbanPageContent() {
     categoryFilter,
     onToggleFavorite: handleToggleFavorite,
     onChangeStatus: handleChangeStatus,
+    workspaceId,
   });
 
   // Stats
