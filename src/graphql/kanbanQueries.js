@@ -744,6 +744,8 @@ export const BOARD_FRAGMENT = gql`
     title
     description
     clientId
+    userId
+    boardMembers
     client {
       id
       name

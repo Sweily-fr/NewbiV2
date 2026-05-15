@@ -12,6 +12,7 @@ import {
 import { Input } from "@/src/components/ui/input";
 import { toast } from "@/src/components/ui/sonner";
 import {
+  GET_BOARDS,
   GET_ORGANIZATION_MEMBERS,
   UPDATE_BOARD,
 } from "@/src/graphql/kanbanQueries";
@@ -45,6 +46,12 @@ export function BoardMembersPopover({
   });
 
   const [updateBoard, { loading: saving }] = useMutation(UPDATE_BOARD, {
+    // Refetcher la liste des boards pour s'assurer que la colonne Membres
+    // (et les filtres d'accès) reflètent immédiatement la mise à jour, même
+    // si la subscription BOARD_UPDATED arrive après ou avec un payload
+    // partiel.
+    refetchQueries: [{ query: GET_BOARDS, variables: { workspaceId } }],
+    awaitRefetchQueries: false,
     onError: (error) => {
       toast.error(`Erreur: ${error.message}`);
     },
@@ -81,6 +88,25 @@ export function BoardMembersPopover({
     .filter((id) => id !== ownerId);
 
   const saveMembers = async (nextIds) => {
+    // Liste optimiste des membres affichés après la mise à jour : si plus
+    // aucune restriction → tous les membres du workspace, sinon le
+    // propriétaire + les ids explicitement listés.
+    const allowedSet = new Set(
+      nextIds.length === 0
+        ? orgMembers.map((m) => String(m.id))
+        : [ownerId, ...nextIds].filter(Boolean),
+    );
+    const optimisticMembersList = orgMembers
+      .filter((m) => allowedSet.has(String(m.id)))
+      .map((m) => ({
+        __typename: "OrganizationMember",
+        id: String(m.id),
+        userId: String(m.id),
+        name: m.name || m.email || "",
+        email: m.email || "",
+        image: m.image || null,
+      }));
+
     try {
       await updateBoard({
         variables: {
@@ -89,6 +115,28 @@ export function BoardMembersPopover({
             boardMembers: nextIds,
           },
           workspaceId,
+        },
+        optimisticResponse: {
+          updateBoard: {
+            __typename: "Board",
+            id: board.id,
+            title: board.title,
+            description: board.description ?? null,
+            clientId: board.clientId ?? null,
+            client: board.client ?? null,
+            columns: board.columns ?? [],
+            priority: board.priority ?? null,
+            dueDate: board.dueDate ?? null,
+            boardMembers: nextIds,
+            members: optimisticMembersList,
+            totalBillableAmount: board.totalBillableAmount ?? null,
+            category: board.category ?? null,
+            color: board.color ?? null,
+            emoji: board.emoji ?? null,
+            status: board.status ?? null,
+            createdAt: board.createdAt,
+            updatedAt: new Date().toISOString(),
+          },
         },
       });
     } catch (err) {
