@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useMutation, useQuery } from "@apollo/client";
-import { Check, Plus, Users, RotateCcw } from "lucide-react";
+import { Check, Plus, Users, RotateCcw, Lock } from "lucide-react";
 import { UserAvatar } from "@/src/components/ui/user-avatar";
 import {
   Popover,
@@ -11,6 +11,7 @@ import {
 } from "@/src/components/ui/popover";
 import { Input } from "@/src/components/ui/input";
 import { toast } from "@/src/components/ui/sonner";
+import { useSession } from "@/src/lib/auth-client";
 import {
   GET_BOARDS,
   GET_ORGANIZATION_MEMBERS,
@@ -35,6 +36,8 @@ export function BoardMembersPopover({
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const { data: session } = useSession();
+  const currentUserId = session?.user?.id ? String(session.user.id) : null;
 
   // Pré-charger la liste des membres workspace dès que possible — pas seulement
   // à l'ouverture du popover — pour que les checkboxes soient correctes
@@ -55,6 +58,8 @@ export function BoardMembersPopover({
 
   const orgMembers = data?.organizationMembers || [];
   const ownerId = board?.userId ? String(board.userId) : null;
+  // Seul le créateur peut modifier la liste d'accès
+  const canEdit = !!ownerId && !!currentUserId && ownerId === currentUserId;
 
   // Liste explicite enregistrée côté serveur. Filtrer les valeurs falsy pour
   // éviter qu'un null isolé fasse passer la board en "mode restreint".
@@ -149,6 +154,7 @@ export function BoardMembersPopover({
   };
 
   const toggleMember = async (memberId) => {
+    if (!canEdit) return; // seul le créateur peut modifier
     if (saving) return;
     if (ownerId && memberId === ownerId) return; // créateur toujours inclus
     // Si la liste des membres workspace n'est pas encore chargée, on ne peut
@@ -188,6 +194,7 @@ export function BoardMembersPopover({
   };
 
   const handleResetToAll = () => {
+    if (!canEdit) return;
     if (!hasRestriction || saving) return;
     saveMembers([]);
   };
@@ -261,13 +268,19 @@ export function BoardMembersPopover({
               ? "Seuls les membres cochés voient ce tableau."
               : "Tous les membres du workspace voient ce tableau par défaut."}
           </p>
+          {!canEdit && (
+            <div className="mb-2 flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/40 text-[11px] text-muted-foreground">
+              <Lock className="h-3 w-3" />
+              Lecture seule — seul le créateur peut modifier
+            </div>
+          )}
           <Input
             placeholder="Rechercher un membre..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-8 text-xs"
           />
-          {hasRestriction && (
+          {hasRestriction && canEdit && (
             <button
               type="button"
               onClick={handleResetToAll}
@@ -316,14 +329,20 @@ export function BoardMembersPopover({
                   key={memberId}
                   type="button"
                   onClick={() => toggleMember(memberId)}
-                  disabled={isOwner || saving}
-                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors text-left ${
-                    isOwner ? "opacity-100 cursor-default" : "cursor-pointer"
+                  disabled={isOwner || saving || !canEdit}
+                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors text-left ${
+                    !canEdit
+                      ? "cursor-default"
+                      : isOwner
+                        ? "opacity-100 cursor-default"
+                        : "cursor-pointer hover:bg-accent/50"
                   }`}
                   title={
-                    isOwner
-                      ? "Créateur du tableau (toujours inclus)"
-                      : undefined
+                    !canEdit
+                      ? "Seul le créateur du tableau peut modifier l'accès"
+                      : isOwner
+                        ? "Créateur du tableau (toujours inclus)"
+                        : undefined
                   }
                 >
                   <UserAvatar

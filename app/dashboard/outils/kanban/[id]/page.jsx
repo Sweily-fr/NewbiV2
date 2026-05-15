@@ -237,6 +237,8 @@ import {
 // DragDropContext removed — list view now uses custom useListDnD hook
 
 import { useMutation, useQuery } from "@apollo/client";
+import { useSession } from "@/src/lib/auth-client";
+import { Lock } from "lucide-react";
 
 /**
  * Popover "Accès au tableau" sur la page board.
@@ -245,9 +247,14 @@ import { useMutation, useQuery } from "@apollo/client";
  * - Le créateur est sorti de la liste togglable et affiché à part.
  * - Décocher le dernier membre en mode restreint garde [ownerId] pour ne pas
  *   retomber sur "tout le workspace".
+ * - Seul le créateur peut modifier (les autres voient en lecture seule).
  */
 function BoardAccessPopover({ board, workspaceId, onChange }) {
   const ownerId = board?.userId ? String(board.userId) : null;
+  const { data: session } = useSession();
+  const currentUserId = session?.user?.id ? String(session.user.id) : null;
+  const canEdit = !!ownerId && !!currentUserId && ownerId === currentUserId;
+
   const rawAssigned = (board?.boardMembers || [])
     .map((id) => (id ? String(id) : null))
     .filter(Boolean);
@@ -271,6 +278,7 @@ function BoardAccessPopover({ board, workspaceId, onChange }) {
   };
 
   const toggleMember = (memberId) => {
+    if (!canEdit) return;
     if (ownerId && memberId === ownerId) return;
     if (allNonOwnerIds.length === 0) return;
     let next;
@@ -337,7 +345,13 @@ function BoardAccessPopover({ board, workspaceId, onChange }) {
               ? "Seuls les membres cochés voient ce tableau."
               : "Tous les membres du workspace voient ce tableau."}
           </p>
-          {hasRestriction && (
+          {!canEdit && (
+            <div className="mt-1.5 flex items-center gap-1.5 px-1.5 py-1 rounded-md bg-muted/40 text-[11px] text-muted-foreground">
+              <Lock className="h-3 w-3" />
+              Lecture seule — seul le créateur peut modifier
+            </div>
+          )}
+          {hasRestriction && canEdit && (
             <button
               type="button"
               onClick={() => onChange([])}
@@ -378,7 +392,17 @@ function BoardAccessPopover({ board, workspaceId, onChange }) {
                 <button
                   key={memberId}
                   onClick={() => toggleMember(memberId)}
-                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors text-left cursor-pointer"
+                  disabled={!canEdit}
+                  title={
+                    !canEdit
+                      ? "Seul le créateur du tableau peut modifier l'accès"
+                      : undefined
+                  }
+                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors text-left ${
+                    canEdit
+                      ? "hover:bg-accent cursor-pointer"
+                      : "cursor-default"
+                  }`}
                 >
                   <div
                     className={`rounded-full flex-shrink-0 ${
