@@ -58,6 +58,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { MemberSelector } from "./MemberSelector";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { toast } from "sonner";
 
 function _formatDate(dateString) {
   if (!dateString) return "";
@@ -379,6 +380,9 @@ function BulkActionBar({
   updateTask,
   moveTask,
   onDeleteTask,
+  createTask,
+  getTasksByColumn,
+  boardId,
   workspaceId,
   listRef,
 }) {
@@ -454,6 +458,69 @@ function BulkActionBar({
         },
       });
     });
+  };
+
+  const findTaskById = (taskId) => {
+    if (!getTasksByColumn) return null;
+    for (const column of columns) {
+      const tasks = getTasksByColumn(column.id) || [];
+      const found = tasks.find((t) => t.id === taskId);
+      if (found) return found;
+    }
+    return null;
+  };
+
+  const bulkDuplicate = async () => {
+    if (!createTask || !boardId) return;
+    const tasksToDuplicate = selectedIds
+      .map((id) => findTaskById(id))
+      .filter(Boolean);
+    if (tasksToDuplicate.length === 0) return;
+
+    try {
+      await Promise.all(
+        tasksToDuplicate.map((task) =>
+          createTask({
+            variables: {
+              input: {
+                title: `${task.title} (copie)`,
+                description: task.description || "",
+                priority: task.priority || "",
+                startDate: task.startDate || null,
+                dueDate: task.dueDate || null,
+                columnId: task.columnId,
+                boardId,
+                position: 0,
+                tags: (task.tags || []).map((tag) => ({
+                  name: tag.name,
+                  className: tag.className || "",
+                  bg: tag.bg || "",
+                  text: tag.text || "",
+                  border: tag.border || "",
+                })),
+                checklist: (task.checklist || []).map((item) => ({
+                  text: item.text,
+                  completed: false,
+                })),
+                assignedMembers: Array.isArray(task.assignedMembers)
+                  ? task.assignedMembers.filter(Boolean)
+                  : [],
+              },
+              workspaceId,
+            },
+          }),
+        ),
+      );
+      toast.success(
+        tasksToDuplicate.length === 1
+          ? "Tâche dupliquée"
+          : `${tasksToDuplicate.length} tâches dupliquées`,
+      );
+      setSelectedTaskIds(new Set());
+    } catch (error) {
+      console.error("Erreur lors de la duplication des tâches:", error);
+      toast.error("Erreur lors de la duplication");
+    }
   };
 
   return (
@@ -677,9 +744,7 @@ function BulkActionBar({
 
           {/* Dupliquer */}
           <button
-            onClick={() => {
-              // Dupliquer = créer des copies des tâches sélectionnées (placeholder)
-            }}
+            onClick={bulkDuplicate}
             className="flex items-center justify-center p-1.5 rounded-md hover:bg-white/10 transition-colors cursor-pointer"
             style={{ color: "#BEBEBE" }}
             title="Dupliquer"
@@ -2648,6 +2713,9 @@ export function KanbanListView({
         updateTask={updateTask}
         moveTask={moveTask}
         onDeleteTask={onDeleteTask}
+        createTask={createTask}
+        getTasksByColumn={getFilteredTasksByColumn}
+        boardId={boardId}
         workspaceId={workspaceId}
         listRef={listRef}
       />
