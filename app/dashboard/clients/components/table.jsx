@@ -35,6 +35,7 @@ import {
   EllipsisIcon,
   FilterIcon,
   ListFilterIcon,
+  ListMinus,
   ListPlus,
   PlusIcon,
   Search,
@@ -116,6 +117,7 @@ import {
 import {
   useClientListsByClient,
   useAddClientToLists,
+  useRemoveClientFromList,
 } from "@/src/hooks/useClientLists";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
 import { toast } from "@/src/components/ui/sonner";
@@ -340,6 +342,9 @@ const columns = (
       const onSelectList = table.options.meta?.onSelectList;
       const workspaceId = table.options.meta?.workspaceId;
       const allLists = table.options.meta?.allLists;
+      const currentList = table.options.meta?.currentList;
+      const onClientRemovedFromList =
+        table.options.meta?.onClientRemovedFromList;
       return (
         <RowActions
           row={row}
@@ -347,6 +352,8 @@ const columns = (
           onSelectList={onSelectList}
           workspaceId={workspaceId}
           allLists={allLists}
+          currentList={currentList}
+          onClientRemovedFromList={onClientRemovedFromList}
         />
       );
     },
@@ -372,6 +379,8 @@ export default function TableClients({
   externalColumnVisibility,
   onColumnVisibilityChange,
   allLists = [],
+  currentList = null,
+  onClientRemovedFromList,
 }) {
   const id = useId();
   const router = useRouter();
@@ -580,6 +589,8 @@ export default function TableClients({
       onSelectList,
       workspaceId,
       allLists,
+      currentList,
+      onClientRemovedFromList,
     },
   });
 
@@ -1177,16 +1188,26 @@ export default function TableClients({
   );
 }
 
-function RowActions({ row, onEdit, onSelectList, workspaceId, allLists }) {
+function RowActions({
+  row,
+  onEdit,
+  onSelectList,
+  workspaceId,
+  allLists,
+  currentList,
+  onClientRemovedFromList,
+}) {
   const client = row.original;
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showBlockDialog, setShowBlockDialog] = useState(false);
   const [showDeleteTooltip, setShowDeleteTooltip] = useState(null);
   const [addingToList, setAddingToList] = useState(false);
+  const [removingFromList, setRemovingFromList] = useState(false);
   const { deleteClient } = useDeleteClient();
   const { blockClient } = useBlockClient();
   const { addToLists } = useAddClientToLists();
+  const { removeClient: removeClientFromList } = useRemoveClientFromList();
   const { lists } = useClientListsByClient(workspaceId || "", client.id);
 
   const handleAddToList = useCallback(
@@ -1203,6 +1224,27 @@ function RowActions({ row, onEdit, onSelectList, workspaceId, allLists }) {
     },
     [addToLists, workspaceId, client.id],
   );
+
+  const handleRemoveFromCurrentList = useCallback(async () => {
+    if (!currentList?.id) return;
+    setRemovingFromList(true);
+    try {
+      await removeClientFromList(workspaceId, currentList.id, client.id);
+      toast.success(`Contact retiré de "${currentList.name}"`);
+      onClientRemovedFromList?.(client.id);
+    } catch (error) {
+      toast.error("Impossible de retirer le contact de la liste");
+    } finally {
+      setRemovingFromList(false);
+    }
+  }, [
+    removeClientFromList,
+    workspaceId,
+    currentList?.id,
+    currentList?.name,
+    client.id,
+    onClientRemovedFromList,
+  ]);
 
   const handleBlock = useCallback(async () => {
     try {
@@ -1356,6 +1398,18 @@ function RowActions({ row, onEdit, onSelectList, workspaceId, allLists }) {
                 })()}
               </DropdownMenuSubContent>
             </DropdownMenuSub>
+
+            {/* Retirer de la liste courante */}
+            {currentList?.id && (
+              <DropdownMenuItem
+                onClick={handleRemoveFromCurrentList}
+                disabled={removingFromList}
+                className="gap-2"
+              >
+                <ListMinus className="w-3.5 h-3.5" />
+                <span>Retirer de la liste</span>
+              </DropdownMenuItem>
+            )}
 
             {/* Assigner */}
             <DropdownMenuItem onClick={handleAssign}>
