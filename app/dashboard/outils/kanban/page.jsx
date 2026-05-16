@@ -633,7 +633,7 @@ function KanbanPageContent() {
         <div className="flex items-center gap-2">
           <div className="relative">
             <Input
-              placeholder="Rechercher une liste..."
+              placeholder="Rechercher une liste ou un client..."
               value={globalFilter ?? ""}
               onChange={(event) => setGlobalFilter(event.target.value)}
               className="w-full sm:w-[300px] ps-9"
