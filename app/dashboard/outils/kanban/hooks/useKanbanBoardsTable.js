@@ -87,8 +87,14 @@ const multiColumnFilterFn = (row, columnId, filterValue) => {
   const board = row.original;
   const title = board.title || "";
   const description = board.description || "";
+  const client = board.client;
+  const clientName = client
+    ? client.type === "INDIVIDUAL"
+      ? `${client.firstName || ""} ${client.lastName || ""}`.trim()
+      : client.name || ""
+    : "";
   const searchTerm = (filterValue ?? "").toLowerCase().trim();
-  const searchableContent = [title, description]
+  const searchableContent = [title, description, clientName]
     .filter(Boolean)
     .map((s) => s.toString().toLowerCase().trim());
   return searchableContent.some((content) => content.includes(searchTerm));
