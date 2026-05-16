@@ -139,7 +139,7 @@ export const {
   signIn,
   signOut,
   updateUser,
-  forgetPassword,
+  requestPasswordReset,
   resetPassword,
   useSession,
   admin,
@@ -147,6 +147,9 @@ export const {
   twoFactor,
   multiSession,
 } = authClient;
+
+// Alias rétrocompatible : better-auth >=1.5 a renommé forgetPassword → requestPasswordReset
+export const forgetPassword = requestPasswordReset;
 
 /**
  * Nettoie tous les caches localStorage liés à la session utilisateur.

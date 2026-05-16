@@ -25,11 +25,24 @@ export default function ResetPasswordPage() {
   } = useForm();
 
   const onSubmit = async (formData) => {
-    const token = new URLSearchParams(window.location.search).get("token");
-    if (!token) {
-      toast.error("Token invalide");
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    const errorParam = params.get("error");
+
+    if (errorParam === "INVALID_TOKEN" || errorParam === "invalid_token") {
+      toast.error(
+        "Le lien de réinitialisation est invalide ou a expiré. Veuillez en redemander un.",
+      );
       return;
     }
+
+    if (!token) {
+      toast.error(
+        "Token manquant. Cliquez sur le lien complet reçu par email.",
+      );
+      return;
+    }
+
     await resetPassword(
       {
         newPassword: formData.password,
@@ -37,15 +50,36 @@ export default function ResetPasswordPage() {
       },
       {
         onSuccess: () => {
-          router.push("/auth/login");
           toast.success(
-            "Mot de passe reinitialise ! vous pouvez vous connecter"
+            "Mot de passe réinitialisé ! Vous pouvez vous connecter.",
           );
+          router.push("/auth/login");
         },
-        onError: (error) => {
-          toast.error("Erreur lors de la reinitialisation du mot de passe");
+        onError: (ctx) => {
+          console.error("❌ [RESET PASSWORD] Erreur:", ctx);
+          const code = ctx?.error?.code || ctx?.code;
+          const rawMsg = ctx?.error?.message || ctx?.message;
+
+          let msg =
+            rawMsg || "Erreur lors de la réinitialisation du mot de passe";
+          if (
+            code === "INVALID_TOKEN" ||
+            /invalid.*token|token.*invalid/i.test(rawMsg || "")
+          ) {
+            msg =
+              "Le lien de réinitialisation est invalide ou a expiré. Veuillez en redemander un.";
+          } else if (
+            code === "TOKEN_EXPIRED" ||
+            /expired/i.test(rawMsg || "")
+          ) {
+            msg =
+              "Le lien de réinitialisation a expiré. Veuillez en redemander un.";
+          } else if (/password.*short|too.*short|min/i.test(rawMsg || "")) {
+            msg = "Le mot de passe doit contenir au moins 8 caractères.";
+          }
+          toast.error(msg);
         },
-      }
+      },
     );
   };
   return (
@@ -71,7 +105,8 @@ export default function ResetPasswordPage() {
                       required: "Le mot de passe est requis",
                       minLength: {
                         value: 8,
-                        message: "Le mot de passe doit contenir au moins 8 caractères",
+                        message:
+                          "Le mot de passe doit contenir au moins 8 caractères",
                       },
                     }}
                     render={({ field }) => (
@@ -162,7 +197,8 @@ export default function ResetPasswordPage() {
                   required: "Le mot de passe est requis",
                   minLength: {
                     value: 8,
-                    message: "Le mot de passe doit contenir au moins 8 caractères",
+                    message:
+                      "Le mot de passe doit contenir au moins 8 caractères",
                   },
                 }}
                 render={({ field }) => (
