@@ -6,7 +6,7 @@ import { SubmitButton } from "@/src/components/ui/submit-button";
 import { InputEmail } from "@/src/components/ui/input";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
-import { forgetPassword } from "../../../src/lib/auth-client";
+import { requestPasswordReset } from "../../../src/lib/auth-client";
 
 const ForgetPasswordForm = () => {
   const {
@@ -18,15 +18,20 @@ const ForgetPasswordForm = () => {
   const router = useRouter();
 
   const onSubmit = async (formData) => {
-    await forgetPassword(
+    await requestPasswordReset(
       { email: formData.email, redirectTo: "/auth/reset-password" },
       {
         onSuccess: () => {
           toast.success("Un email vous a été envoyé");
           router.push(`/auth/verify?email=${formData.email}`);
         },
-        onError: () => {
-          toast.error("Erreur lors de la réinitialisation du mot de passe");
+        onError: (ctx) => {
+          console.error("❌ [FORGET PASSWORD] Erreur:", ctx);
+          const msg =
+            ctx?.error?.message ||
+            ctx?.message ||
+            "Erreur lors de l'envoi de l'email de réinitialisation";
+          toast.error(msg);
         },
       },
     );
