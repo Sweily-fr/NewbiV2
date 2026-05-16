@@ -5,10 +5,30 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { Input } from "@/src/components/ui/input";
-import { Plus, Search, CircleXIcon } from "lucide-react";
+import {
+  Plus,
+  Search,
+  CircleXIcon,
+  Trash2,
+  Loader2,
+  LoaderCircle,
+} from "lucide-react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
-import { useClientLists } from "@/src/hooks/useClientLists";
-import { Loader2 } from "lucide-react";
+import {
+  useClientLists,
+  useDeleteClientList,
+} from "@/src/hooks/useClientLists";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/src/components/ui/alert-dialog";
 import ClientListsView from "../components/client-lists-view";
 import CreateListDialog from "../components/create-list-dialog";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
@@ -29,10 +49,19 @@ function ListesContent() {
     loading: listsLoading,
     refetch: refetchLists,
   } = useClientLists(workspaceId);
+  const { deleteList } = useDeleteClientList();
   const [createListDialogOpen, setCreateListDialogOpen] = useState(false);
   const [globalFilter, setGlobalFilter] = useState("");
   const [viewingList, setViewingList] = useState(false);
+  const [rowSelection, setRowSelection] = useState({});
+  const [isDeleteMultipleOpen, setIsDeleteMultipleOpen] = useState(false);
+  const [isDeletingMultiple, setIsDeletingMultiple] = useState(false);
   const inputRef = useRef(null);
+
+  const selectedListIds = useMemo(
+    () => Object.keys(rowSelection).filter((id) => rowSelection[id]),
+    [rowSelection],
+  );
 
   // Trouver la liste initiale à partir du query param
   const initialSelectedList = useMemo(() => {
@@ -74,7 +103,7 @@ function ListesContent() {
             </Button>
           </div>
 
-          <div className="flex items-center gap-3 px-4 sm:px-6 py-4 flex-shrink-0">
+          <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 flex-shrink-0">
             <div className="relative max-w-md">
               <Input
                 ref={inputRef}
@@ -106,6 +135,59 @@ function ListesContent() {
                 </button>
               )}
             </div>
+
+            {selectedListIds.length > 0 && (
+              <AlertDialog
+                open={isDeleteMultipleOpen}
+                onOpenChange={setIsDeleteMultipleOpen}
+              >
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Supprimer ({selectedListIds.length})
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Supprimer les listes</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Êtes-vous sûr de vouloir supprimer{" "}
+                      {selectedListIds.length} liste(s) ? Cette action est
+                      irréversible.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={async () => {
+                        setIsDeletingMultiple(true);
+                        try {
+                          for (const id of selectedListIds) {
+                            await deleteList(workspaceId, id);
+                          }
+                          setRowSelection({});
+                          refetchLists?.();
+                        } finally {
+                          setIsDeletingMultiple(false);
+                          setIsDeleteMultipleOpen(false);
+                        }
+                      }}
+                      className="bg-destructive text-white hover:bg-destructive/90"
+                      disabled={isDeletingMultiple}
+                    >
+                      {isDeletingMultiple ? (
+                        <>
+                          <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                          Suppression...
+                        </>
+                      ) : (
+                        "Supprimer définitivement"
+                      )}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
         </>
       )}
@@ -119,6 +201,8 @@ function ListesContent() {
         globalFilter={globalFilter}
         onCreateList={() => setCreateListDialogOpen(true)}
         onViewingListChange={setViewingList}
+        rowSelection={rowSelection}
+        onRowSelectionChange={setRowSelection}
       />
 
       <CreateListDialog
