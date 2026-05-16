@@ -24,7 +24,8 @@ export function usePermissions() {
   // ✅ FIX: useUser exporte "isPending" (pas isLoading)
   const { session, isPending: isSessionLoading } = useUser();
   // ✅ FIX: useWorkspace exporte "loading" et "organization" (pas isLoading et activeOrganization)
-  const { organization: activeOrganization, loading: isOrgLoading } = useWorkspace();
+  const { organization: activeOrganization, loading: isOrgLoading } =
+    useWorkspace();
   const [orgWithMembers, setOrgWithMembers] = useState(null);
   const [isLoadingMembers, setIsLoadingMembers] = useState(true);
   const hasLoadedRef = useRef(false);
@@ -82,99 +83,105 @@ export function usePermissions() {
    * @param {string|string[]} actions - Action(s) à vérifier (ex: "create" ou ["create", "edit"])
    * @returns {Promise<boolean>}
    */
-  const hasPermission = useCallback(async (resource, actions) => {
-    // Attendre que l'organisation avec les membres soit chargée
-    if (!session?.user || !orgWithMembers) {
-      return false;
-    }
+  const hasPermission = useCallback(
+    async (resource, actions) => {
+      // Attendre que l'organisation avec les membres soit chargée
+      if (!session?.user || !orgWithMembers) {
+        return false;
+      }
 
-    // Récupérer le membre de l'organisation active
-    const member = orgWithMembers.members?.find(
-      (m) => m.userId === session.user.id
-    );
+      // Récupérer le membre de l'organisation active
+      const member = orgWithMembers.members?.find(
+        (m) => m.userId === session.user.id,
+      );
 
-    if (!member) {
-      return false;
-    }
+      if (!member) {
+        return false;
+      }
 
-    // Normaliser le rôle en minuscules pour éviter les problèmes de casse
-    const normalizedRole = member.role?.toLowerCase();
+      // Normaliser le rôle en minuscules pour éviter les problèmes de casse
+      const normalizedRole = member.role?.toLowerCase();
 
-    // Owner et Admin ont tous les droits
-    if (normalizedRole === "owner" || normalizedRole === "admin") {
-      return true;
-    }
+      // Owner et Admin ont tous les droits
+      if (normalizedRole === "owner" || normalizedRole === "admin") {
+        return true;
+      }
 
-    // Vérifier les permissions côté client selon le rôle
-    const actionsArray = Array.isArray(actions) ? actions : [actions];
-    
-    // Définition des permissions par rôle (synchronisé avec /src/lib/permissions.js)
-    const rolePermissions = {
-      member: {
-        quotes: ["view", "create", "send", "export"],
-        invoices: ["view", "create", "send", "export", "import"],
-        creditNotes: ["view", "create", "export"],
-        expenses: ["view", "create", "ocr", "export"],
-        payments: ["view", "create", "export"],
-        clients: ["view", "create", "export"],
-        products: ["view", "create", "export"],
-        suppliers: ["view", "create"],
-        fileTransfers: ["view", "create", "download"],
-        sharedDocuments: ["view", "create", "edit", "download"],
-        kanban: ["view", "create", "edit", "assign"],
-        signatures: ["view", "create", "edit", "set-default"],
-        calendar: ["view", "create", "edit"],
-        reports: ["view", "export"],
-        analytics: ["view", "export"],
-        team: ["view"],
-      },
-      accountant: {
-        quotes: ["view", "export"],
-        invoices: ["view", "export", "mark-paid", "import"],
-        creditNotes: ["view", "export"],
-        expenses: ["view", "approve", "export"],
-        payments: ["view", "export"],
-        clients: ["view", "export"],
-        products: ["view", "export"],
-        suppliers: ["view"],
-        sharedDocuments: ["view", "create", "edit", "delete", "download"],
-        reports: ["view", "export"],
-        analytics: ["view", "export"],
-        team: ["view"],
-        auditLog: ["view"],
-      },
-      viewer: {
-        quotes: ["view"],
-        invoices: ["view"],
-        creditNotes: ["view"],
-        expenses: ["view"],
-        payments: ["view"],
-        clients: ["view"],
-        products: ["view"],
-        suppliers: ["view"],
-        fileTransfers: ["view", "download"],
-        kanban: ["view"],
-        signatures: ["view"],
-        calendar: ["view"],
-        reports: ["view"],
-        analytics: ["view"],
-        team: ["view"],
-      },
-    };
+      // Vérifier les permissions côté client selon le rôle
+      const actionsArray = Array.isArray(actions) ? actions : [actions];
 
-    // Vérifier si le rôle a les permissions pour cette ressource
-    const rolePerms = rolePermissions[normalizedRole];
-    if (!rolePerms || !rolePerms[resource]) {
-      return false;
-    }
+      // Définition des permissions par rôle (synchronisé avec /src/lib/permissions.js)
+      const rolePermissions = {
+        member: {
+          quotes: ["view", "create", "send", "export"],
+          purchaseOrders: ["view", "create", "send", "export"],
+          invoices: ["view", "create", "send", "export", "import"],
+          creditNotes: ["view", "create", "export"],
+          expenses: ["view", "create", "ocr", "export"],
+          payments: ["view", "create", "export"],
+          clients: ["view", "create", "export"],
+          products: ["view", "create", "export"],
+          suppliers: ["view", "create"],
+          fileTransfers: ["view", "create", "download"],
+          sharedDocuments: ["view", "create", "edit", "download"],
+          kanban: ["view", "create", "edit", "assign"],
+          signatures: ["view", "create", "edit", "set-default"],
+          calendar: ["view", "create", "edit"],
+          reports: ["view", "export"],
+          analytics: ["view", "export"],
+          team: ["view"],
+        },
+        accountant: {
+          quotes: ["view", "export"],
+          purchaseOrders: ["view", "export"],
+          invoices: ["view", "export", "mark-paid", "import"],
+          creditNotes: ["view", "export"],
+          expenses: ["view", "approve", "export"],
+          payments: ["view", "export"],
+          clients: ["view", "export"],
+          products: ["view", "export"],
+          suppliers: ["view"],
+          sharedDocuments: ["view", "create", "edit", "delete", "download"],
+          reports: ["view", "export"],
+          analytics: ["view", "export"],
+          team: ["view"],
+          auditLog: ["view"],
+        },
+        viewer: {
+          quotes: ["view"],
+          purchaseOrders: ["view"],
+          invoices: ["view"],
+          creditNotes: ["view"],
+          expenses: ["view"],
+          payments: ["view"],
+          clients: ["view"],
+          products: ["view"],
+          suppliers: ["view"],
+          fileTransfers: ["view", "download"],
+          kanban: ["view"],
+          signatures: ["view"],
+          calendar: ["view"],
+          reports: ["view"],
+          analytics: ["view"],
+          team: ["view"],
+        },
+      };
 
-    // Vérifier si toutes les actions demandées sont autorisées
-    const hasAllActions = actionsArray.every(action => 
-      rolePerms[resource].includes(action)
-    );
+      // Vérifier si le rôle a les permissions pour cette ressource
+      const rolePerms = rolePermissions[normalizedRole];
+      if (!rolePerms || !rolePerms[resource]) {
+        return false;
+      }
 
-    return hasAllActions;
-  }, [session?.user, orgWithMembers]);
+      // Vérifier si toutes les actions demandées sont autorisées
+      const hasAllActions = actionsArray.every((action) =>
+        rolePerms[resource].includes(action),
+      );
+
+      return hasAllActions;
+    },
+    [session?.user, orgWithMembers],
+  );
 
   /**
    * Vérifier une permission de manière synchrone (côté client uniquement)
@@ -212,13 +219,34 @@ export function usePermissions() {
   /**
    * Raccourcis pour les actions courantes
    */
-  const canView = useCallback((resource) => hasPermission(resource, "view"), [hasPermission]);
-  const canCreate = useCallback((resource) => hasPermission(resource, "create"), [hasPermission]);
-  const canEdit = useCallback((resource) => hasPermission(resource, "edit"), [hasPermission]);
-  const canDelete = useCallback((resource) => hasPermission(resource, "delete"), [hasPermission]);
-  const canApprove = useCallback((resource) => hasPermission(resource, "approve"), [hasPermission]);
-  const canExport = useCallback((resource) => hasPermission(resource, "export"), [hasPermission]);
-  const canManage = useCallback((resource) => hasPermission(resource, "manage"), [hasPermission]);
+  const canView = useCallback(
+    (resource) => hasPermission(resource, "view"),
+    [hasPermission],
+  );
+  const canCreate = useCallback(
+    (resource) => hasPermission(resource, "create"),
+    [hasPermission],
+  );
+  const canEdit = useCallback(
+    (resource) => hasPermission(resource, "edit"),
+    [hasPermission],
+  );
+  const canDelete = useCallback(
+    (resource) => hasPermission(resource, "delete"),
+    [hasPermission],
+  );
+  const canApprove = useCallback(
+    (resource) => hasPermission(resource, "approve"),
+    [hasPermission],
+  );
+  const canExport = useCallback(
+    (resource) => hasPermission(resource, "export"),
+    [hasPermission],
+  );
+  const canManage = useCallback(
+    (resource) => hasPermission(resource, "manage"),
+    [hasPermission],
+  );
 
   /**
    * Obtenir le rôle de l'utilisateur dans l'organisation active
@@ -228,7 +256,7 @@ export function usePermissions() {
     if (!session?.user || !orgWithMembers) return null;
 
     const member = orgWithMembers.members?.find(
-      (m) => m.userId === session.user.id
+      (m) => m.userId === session.user.id,
     );
 
     // Normaliser le rôle en minuscules
@@ -311,6 +339,7 @@ export function usePermissions() {
    * @param {boolean} isOwn - Si c'est la propre ressource de l'utilisateur
    * @returns {Promise<boolean>}
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const canDeleteResource = async (resource, isOwn = false) => {
     const role = getUserRole();
 
