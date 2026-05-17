@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { toast } from "@/src/utils/debouncedToast";
-import { useMutation, useLazyQuery, gql } from "@apollo/client";
+import {
+  useMutation,
+  useLazyQuery,
+  useApolloClient,
+  gql,
+} from "@apollo/client";
 import {
   CREATE_TASK,
   UPDATE_TASK,
@@ -46,6 +51,7 @@ const UPLOAD_TASK_IMAGE = gql`
 
 export const useKanbanTasks = (boardId, board) => {
   const { workspaceId } = useWorkspace();
+  const apolloClient = useApolloClient();
   const initialTaskForm = {
     title: "",
     description: "",
@@ -728,6 +734,25 @@ export const useKanbanTasks = (boardId, board) => {
     const taskId = task?.id || task?._id;
     const isCreating = !taskId || taskId === null;
 
+    // Lire les détails (comments, activity, timeTracking.entries) depuis le
+    // cache Apollo SYNCHRONIQUEMENT — si la tâche a été prefetched (hover /
+    // mousedown / précédente ouverture), on a déjà tout en mémoire et on
+    // peut seed le form pour que le modal s'ouvre AVEC les commentaires
+    // visibles dès la première frame (au lieu d'attendre un cycle de
+    // render pour que onCompleted/useEffect remplisse).
+    let cachedDetails = null;
+    if (!isCreating && taskId) {
+      try {
+        cachedDetails = apolloClient.readQuery({
+          query: GET_TASK_DETAILS,
+          variables: { id: taskId, workspaceId },
+        });
+      } catch {
+        // cache miss, on remplira via fetchTaskDetails
+      }
+    }
+    const cachedTask = cachedDetails?.task;
+
     // Ne pas inclure le champ id si c'est une création
     const formData = {
       ...initialTaskForm,
@@ -749,10 +774,11 @@ export const useKanbanTasks = (boardId, board) => {
       assignedMembers: Array.isArray(task?.assignedMembers)
         ? task.assignedMembers
         : [],
-      comments: [], // Chargés à la demande via GET_TASK_DETAILS
-      activity: [], // Chargés à la demande via GET_TASK_DETAILS
+      // Seed depuis le cache si dispo, sinon vide (rempli par fetchTaskDetails)
+      comments: Array.isArray(cachedTask?.comments) ? cachedTask.comments : [],
+      activity: Array.isArray(cachedTask?.activity) ? cachedTask.activity : [],
       images: Array.isArray(task?.images) ? task.images : [],
-      timeTracking: task?.timeTracking || null,
+      timeTracking: cachedTask?.timeTracking || task?.timeTracking || null,
       userId: task?.userId,
       createdAt: task?.createdAt,
       updatedAt: task?.updatedAt,

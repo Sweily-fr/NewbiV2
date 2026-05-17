@@ -38,7 +38,11 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
     },
     errorPolicy: "all",
     skip: !workspaceId || isRedirecting,
+    // 1er mount : cache + refresh réseau en background.
+    // Re-mount / navigation : cache only (les subscriptions gardent le cache
+    // frais en temps réel, pas besoin de re-fetch tout le board).
     fetchPolicy: "cache-and-network",
+    nextFetchPolicy: "cache-first",
     notifyOnNetworkStatusChange: false,
     context: {
       skipErrorToast: isRedirecting,
