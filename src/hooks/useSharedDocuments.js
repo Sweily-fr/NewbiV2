@@ -1064,12 +1064,8 @@ export function useDownloadFile() {
 
     setLoading(true);
     try {
-      const apiUrl = (
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
-      ).replace(/\/$/, "");
-
       const response = await fetch(
-        `${apiUrl}/api/shared-documents/download-file/${doc.id}?workspaceId=${workspaceId}`,
+        `/api/shared-documents/download-file/${doc.id}?workspaceId=${workspaceId}`,
         {
           credentials: "include",
         },
