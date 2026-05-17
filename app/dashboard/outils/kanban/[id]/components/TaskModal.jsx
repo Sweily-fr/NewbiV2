@@ -4,6 +4,8 @@ import React, {
   useMemo,
   useEffect,
   useRef,
+  Suspense,
+  lazy,
 } from "react";
 import { flushSync } from "react-dom";
 import {
@@ -55,7 +57,11 @@ import { UserAvatar } from "@/src/components/ui/user-avatar";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Checklist } from "@/src/components/Checklist";
-import { TaskActivity } from "./TaskActivity";
+// TaskActivity est lourd (1600+ lignes) — chargé en lazy pour ne pas bloquer
+// l'ouverture du modal. Un skeleton est affiché en attendant le chunk.
+const TaskActivity = lazy(() =>
+  import("./TaskActivity").then((m) => ({ default: m.TaskActivity })),
+);
 import { TimerControls } from "./TimerControls";
 import { LocalTimerControls } from "./LocalTimerControls";
 import { TaskImageUpload } from "./TaskImageUpload";
@@ -68,6 +74,44 @@ import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { PendingCommentsView } from "./task-modal/PendingCommentsView";
 import { DescriptionEditor } from "./task-modal/DescriptionEditor";
 import { TaskModalHeader } from "./task-modal/TaskModalHeader";
+import { computeAutoSaveSignature } from "../hooks/taskFormSignature";
+
+function TaskActivityFallback() {
+  return (
+    <div className="flex flex-col gap-3 p-4">
+      <div className="h-8 w-32 bg-muted/60 rounded animate-pulse" />
+      <div className="h-16 w-full bg-muted/40 rounded animate-pulse" />
+      <div className="h-16 w-3/4 bg-muted/40 rounded animate-pulse" />
+    </div>
+  );
+}
+
+/* legacy-removed
+  if (!form) return "";
+  const tagsKey = Array.isArray(form.tags)
+    ? form.tags.map((t) => t?.name || "").join("|")
+    : "";
+  const checklistKey = Array.isArray(form.checklist)
+    ? form.checklist
+        .map((i) => `${i?.id || ""}:${i?.text || ""}:${i?.completed ? 1 : 0}`)
+        .join("|")
+    : "";
+  const membersKey = Array.isArray(form.assignedMembers)
+    ? form.assignedMembers.join("|")
+    : "";
+  return [
+    form.title || "",
+    form.description || "",
+    form.status || "",
+    form.priority || "",
+    form.startDate || "",
+    form.dueDate || "",
+    form.columnId || "",
+    tagsKey,
+    checklistKey,
+    membersKey,
+  ].join("");
+}
 
 /**
  * Modal pour créer ou modifier une tâche
@@ -81,6 +125,10 @@ export function TaskModal({
   taskForm,
   setTaskForm,
   board,
+  prevTask: prevTaskProp = null,
+  nextTask: nextTaskProp = null,
+  currentIndex: currentIndexProp = -1,
+  totalTasks: totalTasksProp = 0,
   workspaceId,
   addTag,
   removeTag,
@@ -102,24 +150,12 @@ export function TaskModal({
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
 
-  // Navigation prev/next entre tâches
-  const { prevTask, nextTask, currentIndex, totalTasks } = useMemo(() => {
-    if (!board?.tasks || !taskForm?.id)
-      return {
-        prevTask: null,
-        nextTask: null,
-        currentIndex: -1,
-        totalTasks: 0,
-      };
-    const tasks = board.tasks;
-    const idx = tasks.findIndex((t) => t.id === taskForm.id);
-    return {
-      prevTask: idx > 0 ? tasks[idx - 1] : null,
-      nextTask: idx < tasks.length - 1 ? tasks[idx + 1] : null,
-      currentIndex: idx,
-      totalTasks: tasks.length,
-    };
-  }, [board?.tasks, taskForm?.id]);
+  // Navigation prev/next entre tâches — calculée par le parent pour éviter
+  // que TaskModal dépende de board.tasks (qui change à chaque subscription).
+  const prevTask = prevTaskProp;
+  const nextTask = nextTaskProp;
+  const currentIndex = currentIndexProp;
+  const totalTasks = totalTasksProp;
 
   // flushPendingSaveRef : filled later (after autoSaveRef/triggerAutoSaveRef are declared)
   // pour pouvoir flusher depuis goToPrev/goToNext qui sont mémorisés tôt.
@@ -369,17 +405,17 @@ export function TaskModal({
     assignedMembersRef.current = taskForm?.assignedMembers || [];
   }, [taskForm?.assignedMembers]);
 
-  // Capturer l'état initial à l'ouverture
+  // Capturer l'état initial à l'ouverture (signature légère)
   useEffect(() => {
     if (isOpen && isEditing) {
-      initialFormRef.current = JSON.stringify(taskForm);
+      initialFormRef.current = computeAutoSaveSignature(taskForm);
     }
   }, [isOpen, isEditing]);
 
   // Fonction de sauvegarde réutilisable
   const triggerAutoSave = useCallback(() => {
     if (!isOpen || !isEditing || !taskForm?.title?.trim()) return;
-    const current = JSON.stringify(taskForm);
+    const current = computeAutoSaveSignature(taskForm);
     if (current === initialFormRef.current) return;
     // Marquer que c'est une mutation locale pour éviter que le hook
     // ne re-synchronise le form avec les données du board
@@ -429,7 +465,7 @@ export function TaskModal({
   useEffect(() => {
     if (!isOpen || !isEditing || !taskForm?.title?.trim()) return;
 
-    const current = JSON.stringify(taskForm);
+    const current = computeAutoSaveSignature(taskForm);
     if (current === initialFormRef.current) return;
 
     if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
@@ -1488,16 +1524,18 @@ export function TaskModal({
               </div>
               <div className="flex-1 min-h-0 overflow-hidden px-2 bg-muted/40">
                 {isEditing && (taskForm.id || taskForm._id) ? (
-                  <TaskActivity
-                    task={taskActivityData}
-                    workspaceId={workspaceId}
-                    currentUser={board?.members?.find(
-                      (m) => m.userId === taskActivityData.userId,
-                    )}
-                    boardMembers={board?.members || []}
-                    columns={board?.columns || []}
-                    onTaskUpdate={setTaskForm}
-                  />
+                  <Suspense fallback={<TaskActivityFallback />}>
+                    <TaskActivity
+                      task={taskActivityData}
+                      workspaceId={workspaceId}
+                      currentUser={board?.members?.find(
+                        (m) => m.userId === taskActivityData.userId,
+                      )}
+                      boardMembers={board?.members || []}
+                      columns={board?.columns || []}
+                      onTaskUpdate={setTaskForm}
+                    />
+                  </Suspense>
                 ) : (
                   <PendingCommentsView
                     pendingComments={taskForm.pendingComments || []}
@@ -2291,16 +2329,18 @@ export function TaskModal({
             >
               <div className="flex-1 min-h-0 overflow-hidden">
                 {isEditing && (taskForm.id || taskForm._id) ? (
-                  <TaskActivity
-                    task={taskActivityData}
-                    workspaceId={workspaceId}
-                    currentUser={board?.members?.find(
-                      (m) => m.userId === taskActivityData.userId,
-                    )}
-                    boardMembers={board?.members || []}
-                    columns={board?.columns || []}
-                    onTaskUpdate={setTaskForm}
-                  />
+                  <Suspense fallback={<TaskActivityFallback />}>
+                    <TaskActivity
+                      task={taskActivityData}
+                      workspaceId={workspaceId}
+                      currentUser={board?.members?.find(
+                        (m) => m.userId === taskActivityData.userId,
+                      )}
+                      boardMembers={board?.members || []}
+                      columns={board?.columns || []}
+                      onTaskUpdate={setTaskForm}
+                    />
+                  </Suspense>
                 ) : (
                   <PendingCommentsView
                     pendingComments={taskForm.pendingComments || []}
