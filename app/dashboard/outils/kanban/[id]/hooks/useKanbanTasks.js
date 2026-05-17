@@ -12,6 +12,7 @@ import {
   START_TIMER,
 } from "@/src/graphql/kanbanQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { computeAutoSaveSignature } from "./taskFormSignature";
 
 const UPLOAD_TASK_IMAGE = gql`
   mutation UploadTaskImage(
@@ -79,7 +80,9 @@ export const useKanbanTasks = (boardId, board) => {
   const [fetchTaskDetails, { loading: taskDetailsLoading }] = useLazyQuery(
     GET_TASK_DETAILS,
     {
-      fetchPolicy: "network-only",
+      fetchPolicy: "cache-and-network",
+      nextFetchPolicy: "cache-first",
+      notifyOnNetworkStatusChange: false,
       onCompleted: (data) => {
         if (data?.task) {
           setTaskForm((prev) => {
@@ -101,7 +104,7 @@ export const useKanbanTasks = (boardId, board) => {
             };
             // Mettre à jour initialFormRef pour éviter que l'auto-save ne se déclenche
             // à cause des comments/activity rechargés
-            initialFormRef.current = JSON.stringify(updated);
+            initialFormRef.current = computeAutoSaveSignature(updated);
             return updated;
           });
         }
@@ -172,7 +175,7 @@ export const useKanbanTasks = (boardId, board) => {
           updatedAt: editingTaskFromBoard.updatedAt ?? prev.updatedAt,
         };
         // Mettre à jour initialFormRef pour éviter que l'auto-save ne se déclenche
-        initialFormRef.current = JSON.stringify(synced);
+        initialFormRef.current = computeAutoSaveSignature(synced);
         return synced;
       });
     }

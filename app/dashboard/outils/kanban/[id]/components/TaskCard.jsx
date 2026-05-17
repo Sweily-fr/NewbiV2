@@ -56,6 +56,7 @@ import { formatDateRelative } from "../../../../../../src/utils/kanbanHelpers";
 import { AvatarGroup, UserAvatar } from "@/src/components/ui/user-avatar";
 import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { usePrefetchTaskDetails } from "../hooks/usePrefetchTaskDetails";
 
 function DescriptionPopover({ description }) {
   return (
@@ -377,6 +378,12 @@ const TaskCard = memo(
       task.assignedMembers || [],
     );
 
+    // Préchargement des détails de la tâche au survol (hover intent).
+    // L'ouverture du modal se fera alors depuis le cache Apollo, sans
+    // aller-retour réseau visible par l'utilisateur.
+    const { prefetch: prefetchDetails, cancelPrefetch } =
+      usePrefetchTaskDetails(workspaceId);
+
     const handleDeleteClick = (e) => {
       e.stopPropagation();
       setShowDeleteDialog(true);
@@ -487,6 +494,9 @@ const TaskCard = memo(
       <>
         <div
           onClick={handleClick}
+          onMouseEnter={() => prefetchDetails(task.id)}
+          onMouseLeave={() => cancelPrefetch(task.id)}
+          onFocus={() => prefetchDetails(task.id)}
           className={`relative group/card bg-card text-card-foreground rounded-xl border border-border shadow-xs hover:shadow-sm cursor-pointer flex flex-col transition-all overflow-clip ${
             isDragging ? "opacity-50" : "opacity-100"
           }`}
@@ -1058,26 +1068,32 @@ const TaskCard = memo(
     );
   },
   (prevProps, nextProps) => {
-    // Comparaison personnalisée pour éviter les re-renders inutiles
-    // Note: On ne compare PAS timeTracking pour permettre la mise à jour en temps réel du timer
+    // Comparaison personnalisée pour éviter les re-renders inutiles.
+    // updatedAt change à chaque mutation côté serveur (tags, checklist, members, images
+    // inclus), donc on s'appuie dessus pour les champs structurés au lieu de stringify
+    // qui coûte cher avec beaucoup de tâches.
+    // Note: On ne compare PAS timeTracking pour permettre la mise à jour en temps réel du timer.
+    const pt = prevProps.task;
+    const nt = nextProps.task;
     return (
-      prevProps.task.id === nextProps.task.id &&
-      prevProps.task.title === nextProps.task.title &&
-      prevProps.task.description === nextProps.task.description &&
-      prevProps.task.position === nextProps.task.position &&
-      prevProps.task.columnId === nextProps.task.columnId &&
-      prevProps.task.priority === nextProps.task.priority &&
-      prevProps.task.dueDate === nextProps.task.dueDate &&
-      prevProps.task.updatedAt === nextProps.task.updatedAt &&
+      pt.id === nt.id &&
+      pt.title === nt.title &&
+      pt.description === nt.description &&
+      pt.position === nt.position &&
+      pt.columnId === nt.columnId &&
+      pt.priority === nt.priority &&
+      pt.dueDate === nt.dueDate &&
+      pt.updatedAt === nt.updatedAt &&
       prevProps.isDragging === nextProps.isDragging &&
-      JSON.stringify(prevProps.task.tags) ===
-        JSON.stringify(nextProps.task.tags) &&
-      JSON.stringify(prevProps.task.checklist) ===
-        JSON.stringify(nextProps.task.checklist) &&
-      JSON.stringify(prevProps.task.assignedMembers) ===
-        JSON.stringify(nextProps.task.assignedMembers) &&
-      JSON.stringify(prevProps.task.images) ===
-        JSON.stringify(nextProps.task.images)
+      (pt.tags === nt.tags ||
+        (pt.tags?.length ?? 0) === (nt.tags?.length ?? 0)) &&
+      (pt.checklist === nt.checklist ||
+        (pt.checklist?.length ?? 0) === (nt.checklist?.length ?? 0)) &&
+      (pt.assignedMembers === nt.assignedMembers ||
+        (pt.assignedMembers?.length ?? 0) ===
+          (nt.assignedMembers?.length ?? 0)) &&
+      (pt.images === nt.images ||
+        (pt.images?.length ?? 0) === (nt.images?.length ?? 0))
     );
   },
 );
