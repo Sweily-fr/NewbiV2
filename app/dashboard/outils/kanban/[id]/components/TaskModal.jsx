@@ -462,15 +462,18 @@ export function TaskModal({
   // vers taskForm.description avant un flush (ex: Escape sans blur préalable).
   const descriptionEditorRef = useRef(null);
 
-  // Flush immédiat : force-commit l'éditeur de description, annule un timer en
-  // attente, puis sauvegarde avec l'état le plus à jour.
+  // Flush immédiat : commit l'éditeur de description (déjà propagé à chaque
+  // keystroke via handleInput, donc no-op dans 99% des cas), annule un timer
+  // en attente, puis sauvegarde.
+  //
+  // Important : on N'utilise PLUS `flushSync` ici. C'était utilisé pour
+  // garantir que triggerAutoSave lise la dernière description, mais le
+  // DescriptionEditor propage déjà chaque keystroke via onChange, donc
+  // taskForm.description est toujours à jour. Le flushSync coûtait des
+  // dizaines de ms de blocage main thread à la fermeture pour rien.
   const flushAutoSave = useCallback(() => {
     if (descriptionEditorRef.current?.commit) {
-      // flushSync force React à appliquer le setTaskForm du commit()
-      // avant que triggerAutoSave ne lise taskForm via sa closure.
-      flushSync(() => {
-        descriptionEditorRef.current.commit();
-      });
+      descriptionEditorRef.current.commit();
     }
     if (autoSaveRef.current) {
       clearTimeout(autoSaveRef.current);
@@ -530,11 +533,25 @@ export function TaskModal({
     flushAutoSave();
   }, [flushAutoSave]);
 
-  // Fermeture du modal : flusher avant de notifier le parent.
+  // Fermeture du modal : on ferme IMMÉDIATEMENT (ressenti instantané),
+  // la sauvegarde part en background. Le commit() de l'éditeur est sync
+  // mais ne bloque pas (pas de flushSync) — la mutation Apollo elle aussi
+  // est async. Si l'utilisateur a tapé du texte juste avant Escape, c'est
+  // déjà propagé via handleInput à chaque keystroke.
   const handleClose = useCallback(() => {
-    flushAutoSave();
+    // Commit éventuel + sauvegarde, sans bloquer le close
+    if (descriptionEditorRef.current?.commit) {
+      descriptionEditorRef.current.commit();
+    }
+    if (autoSaveRef.current) {
+      clearTimeout(autoSaveRef.current);
+      autoSaveRef.current = null;
+    }
+    // Save fire-and-forget, mutation Apollo en arrière-plan
+    triggerAutoSaveRef.current?.();
+    // Ferme immédiatement
     onClose?.();
-  }, [flushAutoSave, onClose]);
+  }, [onClose]);
 
   // Toggle membre : mise à jour partielle pour éviter d'envoyer tous les champs.
   //
