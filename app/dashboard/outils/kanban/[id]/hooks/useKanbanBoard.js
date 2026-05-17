@@ -9,6 +9,20 @@ import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/utils/debouncedToast";
 import { useRef } from "react";
 
+// Logs de debug gated par localStorage('kanban-debug' === '1'). En prod, ces
+// 25+ console.log par event WebSocket alourdissent le 'message handler'
+// (serialization + I/O DevTools). Désactivés par défaut.
+const __klog =
+  typeof window === "undefined"
+    ? () => {}
+    : (...args) => {
+        try {
+          if (window.localStorage?.getItem("kanban-debug") === "1") {
+            __klog(...args);
+          }
+        } catch {}
+      };
+
 export const useKanbanBoard = (id, isRedirecting = false) => {
   const { workspaceId } = useWorkspace();
   const { data: session, isPending: sessionLoading } = useSession();
@@ -42,7 +56,7 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
     variables: { boardId: id, workspaceId },
     skip: !workspaceId || !id || !isSessionReady || isRedirecting,
     onData: ({ data: subscriptionData }) => {
-      console.log(
+      __klog(
         "📡 [Subscription] Données reçues:",
         subscriptionData?.data?.taskUpdated?.type,
         "visitor:",
@@ -54,7 +68,7 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
 
         // Traiter immédiatement les mises à jour de profil visiteur
         if (type === "VISITOR_PROFILE_UPDATED" && visitor) {
-          console.log(
+          __klog(
             "👤 [Subscription] Mise à jour profil visiteur détectée:",
             visitor.email,
             visitor.name,
@@ -63,7 +77,7 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
           // Les commentaires sont déjà mis à jour en base de données par le backend
           refetch()
             .then(() => {
-              console.log(
+              __klog(
                 "✅ [Subscription] Board rechargé avec le nouveau profil visiteur:",
                 visitor.name,
               );
@@ -85,7 +99,7 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
               variables: { id, workspaceId },
             });
 
-            console.log(
+            __klog(
               "📝 [Subscription] Création tâche - Cache data:",
               cacheData?.board?.tasks?.length,
               "tâches",
@@ -97,7 +111,7 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
                 (t) => t.id === task.id,
               );
               if (taskExists) {
-                console.log(
+                __klog(
                   "ℹ️ [Subscription] Tâche déjà dans le cache, skip:",
                   task.title,
                 );
@@ -114,7 +128,7 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
                   return t;
                 });
                 const newTasks = [task, ...updatedTasks];
-                console.log(
+                __klog(
                   "✅ [Subscription] Ajout tâche au cache:",
                   task.title,
                   "- Total:",
@@ -201,7 +215,7 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
                   return (a.position || 0) - (b.position || 0);
                 });
 
-              console.log(
+              __klog(
                 "✅ [Subscription] Tâche déplacée - Mise à jour cache:",
                 task.title,
                 "→ position",
@@ -254,7 +268,7 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
                   ? new Date(task.updatedAt).getTime()
                   : 0;
                 if (incomingTime < cachedTime) {
-                  console.log(
+                  __klog(
                     "⏭️ [Subscription] Ignoré mise à jour périmée pour:",
                     task.title,
                     `(cache: ${t.updatedAt}, incoming: ${task.updatedAt})`,
@@ -276,17 +290,17 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
               });
 
               if (type === "TIMER_STARTED") {
-                console.log(
+                __klog(
                   "✅ [Subscription] Timer démarré dans le cache:",
                   task.title,
                 );
               } else if (type === "TIMER_STOPPED") {
-                console.log(
+                __klog(
                   "✅ [Subscription] Timer arrêté dans le cache:",
                   task.title,
                 );
               } else {
-                console.log(
+                __klog(
                   "✅ [Subscription] Tâche mise à jour dans le cache:",
                   task.title,
                 );
@@ -333,7 +347,7 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
       if (subscriptionData?.data?.columnUpdated) {
         const { type, column, columnId } = subscriptionData.data.columnUpdated;
 
-        console.log(
+        __klog(
           "🔄 [Kanban] Mise à jour temps réel colonne:",
           type,
           column || columnId,
@@ -350,10 +364,7 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
 
           // CREATED - Ajouter la nouvelle colonne
           if (type === "CREATED" && column) {
-            console.log(
-              "✅ [Kanban] Colonne créée - Ajout au cache:",
-              column.title,
-            );
+            __klog("✅ [Kanban] Colonne créée - Ajout au cache:", column.title);
 
             // Vérifier si la colonne n'existe pas déjà
             const columnExists = cacheData.board.columns.some(
@@ -377,7 +388,7 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
 
           // UPDATED - Mettre à jour la colonne existante
           else if (type === "UPDATED" && column) {
-            console.log(
+            __klog(
               "✅ [Kanban] Colonne mise à jour - Mise à jour cache:",
               column.title,
             );
@@ -398,7 +409,7 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
 
           // DELETED - Supprimer la colonne
           else if (type === "DELETED" && columnId) {
-            console.log(
+            __klog(
               "✅ [Kanban] Colonne supprimée - Suppression du cache:",
               columnId,
             );
@@ -422,9 +433,7 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
             type === "REORDERED" &&
             subscriptionData.data.columnUpdated.columns
           ) {
-            console.log(
-              "🔄 [Kanban] Colonnes réorganisées - Mise à jour du cache",
-            );
+            __klog("🔄 [Kanban] Colonnes réorganisées - Mise à jour du cache");
 
             const newColumnIds = subscriptionData.data.columnUpdated.columns;
 
@@ -435,7 +444,7 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
               )
               .filter(Boolean); // Filtrer les colonnes non trouvées
 
-            console.log(
+            __klog(
               "✅ [Kanban] Nouvel ordre des colonnes:",
               reorderedColumns.map((c) => c.title),
             );
