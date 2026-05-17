@@ -77,45 +77,49 @@ export const useKanbanTasks = (boardId, board) => {
   const initialFormRef = useRef(null);
 
   // Lazy query pour charger les détails d'une tâche (comments, activity, timeTracking.entries)
-  // Chargé uniquement quand on ouvre le modal de détail
-  const [fetchTaskDetails, { loading: taskDetailsLoading }] = useLazyQuery(
-    GET_TASK_DETAILS,
-    {
-      fetchPolicy: "cache-and-network",
-      nextFetchPolicy: "cache-first",
-      notifyOnNetworkStatusChange: false,
-      onCompleted: (data) => {
-        perfMark("fetchTaskDetails onCompleted", {
-          comments: data?.task?.comments?.length ?? 0,
-          activity: data?.task?.activity?.length ?? 0,
-        });
-        if (data?.task) {
-          setTaskForm((prev) => {
-            const updated = {
-              ...prev,
-              comments: Array.isArray(data.task.comments)
-                ? data.task.comments
-                : [],
-              activity: Array.isArray(data.task.activity)
-                ? data.task.activity
-                : [],
-              // Merger les entries du timeTracking si elles existent
-              timeTracking: prev.timeTracking
-                ? {
-                    ...prev.timeTracking,
-                    entries: data.task.timeTracking?.entries || [],
-                  }
-                : data.task.timeTracking,
-            };
-            // Mettre à jour initialFormRef pour éviter que l'auto-save ne se déclenche
-            // à cause des comments/activity rechargés
-            initialFormRef.current = computeAutoSaveSignature(updated);
-            return updated;
-          });
-        }
-      },
-    },
-  );
+  // Chargé uniquement quand on ouvre le modal de détail.
+  // Apollo 3.14 : on n'utilise plus onCompleted (déprécié, cause des doubles renders)
+  // mais un useEffect réagissant à `data` (pattern recommandé).
+  const [
+    fetchTaskDetails,
+    { data: taskDetailsData, loading: taskDetailsLoading },
+  ] = useLazyQuery(GET_TASK_DETAILS, {
+    fetchPolicy: "cache-and-network",
+    nextFetchPolicy: "cache-first",
+    notifyOnNetworkStatusChange: false,
+  });
+
+  // Ref pour ignorer le premier render avec data déjà en cache, sinon on
+  // réinjecterait des comments/activity sur un form fraîchement initialisé.
+  const lastTaskDetailsIdRef = useRef(null);
+
+  useEffect(() => {
+    const task = taskDetailsData?.task;
+    if (!task?.id) return;
+    if (lastTaskDetailsIdRef.current === task.id && !task.updatedAt) return;
+    perfMark("fetchTaskDetails data received", {
+      comments: task.comments?.length ?? 0,
+      activity: task.activity?.length ?? 0,
+    });
+    lastTaskDetailsIdRef.current = task.id;
+    setTaskForm((prev) => {
+      // Ne pas écraser si on a changé de tâche entre-temps
+      if (prev?.id && prev.id !== task.id) return prev;
+      const updated = {
+        ...prev,
+        comments: Array.isArray(task.comments) ? task.comments : [],
+        activity: Array.isArray(task.activity) ? task.activity : [],
+        timeTracking: prev.timeTracking
+          ? {
+              ...prev.timeTracking,
+              entries: task.timeTracking?.entries || [],
+            }
+          : task.timeTracking,
+      };
+      initialFormRef.current = computeAutoSaveSignature(updated);
+      return updated;
+    });
+  }, [taskDetailsData]);
 
   // Extraire uniquement la tâche en cours d'édition du board (évite de dépendre de board?.tasks entier)
   const editingTaskFromBoard = useMemo(() => {

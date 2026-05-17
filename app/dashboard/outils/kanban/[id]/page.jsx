@@ -1022,12 +1022,16 @@ function KanbanBoardPageContent({ params }) {
         handledTaskIdRef.current = taskId;
       }
       openEditTaskModal(task);
+      // Différer window.history.replaceState pour ne pas bloquer le clic.
+      // L'URL n'a pas besoin d'être à jour synchrone — le modal s'affiche d'abord.
       if (taskId && typeof window !== "undefined") {
-        window.history.replaceState(
-          null,
-          "",
-          `/dashboard/outils/kanban/${id}?task=${taskId}`,
-        );
+        setTimeout(() => {
+          window.history.replaceState(
+            null,
+            "",
+            `/dashboard/outils/kanban/${id}?task=${taskId}`,
+          );
+        }, 0);
       }
     },
     [openEditTaskModal, id],
@@ -1899,54 +1903,50 @@ function KanbanBoardPageContent({ params }) {
           setColumnForm={setColumnForm}
         />
 
-        {isAddTaskOpen && (
-          <TaskModal
-            isOpen={isAddTaskOpen}
-            onClose={closeAddTaskModal}
-            onSubmit={handleCreateTask}
-            isLoading={createTaskLoading}
-            isEditing={false}
-            taskForm={taskForm}
-            setTaskForm={setTaskForm}
-            board={boardForModal}
-            workspaceId={workspaceId}
-            addTag={addTag}
-            removeTag={removeTag}
-            addChecklistItem={addChecklistItem}
-            toggleChecklistItem={toggleChecklistItem}
-            removeChecklistItem={removeChecklistItem}
-            addPendingComment={addPendingComment}
-            removePendingComment={removePendingComment}
-            updatePendingComment={updatePendingComment}
-          />
-        )}
+        <TaskModal
+          isOpen={isAddTaskOpen}
+          onClose={closeAddTaskModal}
+          onSubmit={handleCreateTask}
+          isLoading={createTaskLoading}
+          isEditing={false}
+          taskForm={taskForm}
+          setTaskForm={setTaskForm}
+          board={boardForModal}
+          workspaceId={workspaceId}
+          addTag={addTag}
+          removeTag={removeTag}
+          addChecklistItem={addChecklistItem}
+          toggleChecklistItem={toggleChecklistItem}
+          removeChecklistItem={removeChecklistItem}
+          addPendingComment={addPendingComment}
+          removePendingComment={removePendingComment}
+          updatePendingComment={updatePendingComment}
+        />
 
-        {isEditTaskOpen && (
-          <TaskModal
-            isOpen={isEditTaskOpen}
-            onClose={handleCloseEditTaskModal}
-            onSubmit={handleUpdateTask}
-            isLoading={updateTaskLoading}
-            isEditing={true}
-            taskForm={taskForm}
-            setTaskForm={setTaskForm}
-            board={boardForModal}
-            prevTask={taskNavigation.prevTask}
-            nextTask={taskNavigation.nextTask}
-            currentIndex={taskNavigation.currentIndex}
-            totalTasks={taskNavigation.totalTasks}
-            workspaceId={workspaceId}
-            addTag={addTag}
-            removeTag={removeTag}
-            addChecklistItem={addChecklistItem}
-            toggleChecklistItem={toggleChecklistItem}
-            removeChecklistItem={removeChecklistItem}
-            openEditTaskModal={handleOpenEditTaskModal}
-            updateTask={updateTask}
-            initialFormRef={initialFormRef}
-            localMutationRef={localMutationRef}
-          />
-        )}
+        <TaskModal
+          isOpen={isEditTaskOpen}
+          onClose={handleCloseEditTaskModal}
+          onSubmit={handleUpdateTask}
+          isLoading={updateTaskLoading}
+          isEditing={true}
+          taskForm={taskForm}
+          setTaskForm={setTaskForm}
+          board={boardForModal}
+          prevTask={taskNavigation.prevTask}
+          nextTask={taskNavigation.nextTask}
+          currentIndex={taskNavigation.currentIndex}
+          totalTasks={taskNavigation.totalTasks}
+          workspaceId={workspaceId}
+          addTag={addTag}
+          removeTag={removeTag}
+          addChecklistItem={addChecklistItem}
+          toggleChecklistItem={toggleChecklistItem}
+          removeChecklistItem={removeChecklistItem}
+          openEditTaskModal={handleOpenEditTaskModal}
+          updateTask={updateTask}
+          initialFormRef={initialFormRef}
+          localMutationRef={localMutationRef}
+        />
 
         <AlertDialog
           open={isDeleteColumnDialogOpen}
