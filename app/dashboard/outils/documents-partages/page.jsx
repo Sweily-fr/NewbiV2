@@ -380,6 +380,10 @@ export default function DocumentsPartagesPage() {
 
   // Transfert depuis documents partagés
   const [showTransferModal, setShowTransferModal] = useState(false);
+  // Quand un transfert est lancé depuis le menu "..." d'un document précis,
+  // on stocke l'objet doc ici pour le passer directement à la modal sans
+  // dépendre de l'état `selectedDocuments` ni de la liste `documents`.
+  const [transferOverrideDocs, setTransferOverrideDocs] = useState(null);
   const [showTransferSuccessDialog, setShowTransferSuccessDialog] =
     useState(false);
   const [transferLink, setTransferLink] = useState("");
@@ -1162,6 +1166,7 @@ export default function DocumentsPartagesPage() {
     const fullLink = `${window.location.origin}/transfer/${shareLink}?key=${accessKey}`;
     setTransferLink(fullLink);
     setShowTransferModal(false);
+    setTransferOverrideDocs(null);
     setShowTransferSuccessDialog(true);
   }, []);
 
@@ -3357,6 +3362,7 @@ export default function DocumentsPartagesPage() {
                                   variant="ghost"
                                   size="sm"
                                   className="h-8 w-8 p-0 sm:opacity-0 sm:group-hover:opacity-100"
+                                  onClick={(e) => e.stopPropagation()}
                                 >
                                   <MoreHorizontal className="h-4 w-4" />
                                 </Button>
@@ -3377,6 +3383,7 @@ export default function DocumentsPartagesPage() {
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => {
+                                    setTransferOverrideDocs([doc]);
                                     setSelectedDocuments([doc.id]);
                                     setSelectedFolders([]);
                                     setShowTransferModal(true);
@@ -3505,6 +3512,7 @@ export default function DocumentsPartagesPage() {
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={() => {
+                                      setTransferOverrideDocs([doc]);
                                       setSelectedDocuments([doc.id]);
                                       setSelectedFolders([]);
                                       setShowTransferModal(true);
@@ -4891,12 +4899,16 @@ export default function DocumentsPartagesPage() {
       {/* Modal de transfert depuis documents partagés */}
       <TransferFromDocsModal
         open={showTransferModal}
-        onOpenChange={setShowTransferModal}
+        onOpenChange={(open) => {
+          setShowTransferModal(open);
+          if (!open) setTransferOverrideDocs(null);
+        }}
         selectedDocumentIds={selectedDocuments}
         selectedFolderIds={selectedFolders}
         documents={documents}
         folders={folders}
         allDocuments={allDocuments}
+        preselectedDocs={transferOverrideDocs}
         workspaceId={workspaceId}
         onTransferCreated={handleTransferCreated}
       />

@@ -25,6 +25,11 @@ import {
 } from "@/src/components/ui/select";
 import { toast } from "@/src/components/ui/sonner";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
+import {
   Send,
   Clock,
   Lock,
@@ -54,6 +59,10 @@ export default function TransferFromDocsModal({
   documents = [],
   folders = [],
   allDocuments = [],
+  // Quand l'appelant connaît déjà précisément les docs à transférer
+  // (ex. menu "..." d'un document précis), il peut nous les passer
+  // directement plutôt que de nous laisser les retrouver dans `documents`.
+  preselectedDocs = null,
   workspaceId,
   onTransferCreated,
 }) {
@@ -68,7 +77,7 @@ export default function TransferFromDocsModal({
   const [showPassword, setShowPassword] = useState(false);
 
   const [createTransfer, { loading }] = useMutation(
-    CREATE_FILE_TRANSFER_FROM_SHARED_DOCS
+    CREATE_FILE_TRANSFER_FROM_SHARED_DOCS,
   );
 
   const handleOptionChange = (field, value) => {
@@ -77,30 +86,30 @@ export default function TransferFromDocsModal({
 
   // Calculer le résumé de la sélection
   const selectionSummary = useMemo(() => {
-    const selectedDocs = documents.filter((d) =>
-      selectedDocumentIds.includes(d.id || d._id)
-    );
+    const selectedDocs =
+      preselectedDocs && preselectedDocs.length > 0
+        ? preselectedDocs
+        : documents.filter((d) => selectedDocumentIds.includes(d.id || d._id));
     const selectedFldrs = folders.filter((f) =>
-      selectedFolderIds.includes(f.id || f._id)
+      selectedFolderIds.includes(f.id || f._id),
     );
 
     // Estimer la taille des documents sélectionnés directement
     let totalSize = selectedDocs.reduce(
       (acc, d) => acc + (d.fileSize || d.size || 0),
-      0
+      0,
     );
 
     // Pour les dossiers, estimer à partir de allDocuments
     let docsInFolders = 0;
     if (selectedFolderIds.length > 0 && allDocuments.length > 0) {
       const docsInSelectedFolders = allDocuments.filter(
-        (d) =>
-          d.folderId && selectedFolderIds.includes(d.folderId)
+        (d) => d.folderId && selectedFolderIds.includes(d.folderId),
       );
       docsInFolders = docsInSelectedFolders.length;
       totalSize += docsInSelectedFolders.reduce(
         (acc, d) => acc + (d.fileSize || d.size || 0),
-        0
+        0,
       );
     }
 
@@ -112,7 +121,14 @@ export default function TransferFromDocsModal({
       docsInFolders,
       totalSize,
     };
-  }, [selectedDocumentIds, selectedFolderIds, documents, folders, allDocuments]);
+  }, [
+    selectedDocumentIds,
+    selectedFolderIds,
+    documents,
+    folders,
+    allDocuments,
+    preselectedDocs,
+  ]);
 
   const getExpiryDays = (expiration) => {
     switch (expiration) {
@@ -131,10 +147,13 @@ export default function TransferFromDocsModal({
 
   const handleCreate = async () => {
     try {
+      const effectiveDocIds =
+        preselectedDocs && preselectedDocs.length > 0
+          ? preselectedDocs.map((d) => d.id || d._id)
+          : selectedDocumentIds;
       const { data } = await createTransfer({
         variables: {
-          documentIds:
-            selectedDocumentIds.length > 0 ? selectedDocumentIds : undefined,
+          documentIds: effectiveDocIds.length > 0 ? effectiveDocIds : undefined,
           folderIds:
             selectedFolderIds.length > 0 ? selectedFolderIds : undefined,
           workspaceId,
@@ -144,9 +163,7 @@ export default function TransferFromDocsModal({
             message: options.message || undefined,
             notifyOnDownload: options.notifyOnDownload,
             passwordProtected: options.passwordProtected,
-            password: options.passwordProtected
-              ? options.password
-              : undefined,
+            password: options.passwordProtected ? options.password : undefined,
           },
         },
       });
@@ -171,15 +188,13 @@ export default function TransferFromDocsModal({
       onTransferCreated?.(result.shareLink, result.accessKey);
     } catch (error) {
       console.error("Erreur création transfert:", error);
-      toast.error(
-        error.message || "Erreur lors de la création du transfert"
-      );
+      toast.error(error.message || "Erreur lors de la création du transfert");
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto overflow-x-hidden !flex flex-col gap-4">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Send className="size-5" />
@@ -191,39 +206,58 @@ export default function TransferFromDocsModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5 py-2">
+        <div className="space-y-5 py-2 min-w-0">
           {/* Résumé de la sélection */}
-          <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+          <div className="bg-muted/50 rounded-lg p-3 space-y-2 min-w-0">
             <p className="text-sm font-medium">Sélection</p>
             {selectionSummary.folders.length > 0 && (
               <div className="space-y-1">
                 {selectionSummary.folders.map((f) => (
                   <div
                     key={f.id || f._id}
-                    className="flex items-center gap-2 text-sm text-muted-foreground"
+                    className="flex items-center gap-2 text-sm text-muted-foreground min-w-0"
                   >
                     <FolderClosed className="size-3.5 shrink-0" />
-                    <span className="truncate">{f.name}</span>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="truncate min-w-0 cursor-default">
+                          {f.name}
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs whitespace-normal break-all">
+                        {f.name}
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 ))}
               </div>
             )}
             {selectionSummary.docs.length > 0 && (
               <div className="space-y-1">
-                {selectionSummary.docs.slice(0, 5).map((d) => (
-                  <div
-                    key={d.id || d._id}
-                    className="flex items-center gap-2 text-sm text-muted-foreground"
-                  >
-                    <FileText className="size-3.5 shrink-0" />
-                    <span className="truncate">
-                      {d.name || d.originalName}
-                    </span>
-                    <span className="ml-auto text-xs shrink-0">
-                      {formatFileSize(d.fileSize || d.size)}
-                    </span>
-                  </div>
-                ))}
+                {selectionSummary.docs.slice(0, 5).map((d) => {
+                  const fileName = d.name || d.originalName;
+                  return (
+                    <div
+                      key={d.id || d._id}
+                      className="flex items-center gap-2 text-sm text-muted-foreground min-w-0"
+                    >
+                      <FileText className="size-3.5 shrink-0" />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="truncate min-w-0 flex-1 cursor-default">
+                            {fileName}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs whitespace-normal break-all">
+                          {fileName}
+                        </TooltipContent>
+                      </Tooltip>
+                      <span className="text-xs shrink-0">
+                        {formatFileSize(d.fileSize || d.size)}
+                      </span>
+                    </div>
+                  );
+                })}
                 {selectionSummary.docs.length > 5 && (
                   <p className="text-xs text-muted-foreground">
                     + {selectionSummary.docs.length - 5} autre
@@ -254,15 +288,11 @@ export default function TransferFromDocsModal({
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Clock className="size-4 text-muted-foreground" />
-              <Label className="text-sm font-normal">
-                Durée de validité
-              </Label>
+              <Label className="text-sm font-normal">Durée de validité</Label>
             </div>
             <Select
               value={options.expiration}
-              onValueChange={(value) =>
-                handleOptionChange("expiration", value)
-              }
+              onValueChange={(value) => handleOptionChange("expiration", value)}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="7 jours" />
@@ -306,9 +336,7 @@ export default function TransferFromDocsModal({
             <Textarea
               placeholder="Ajouter un message (optionnel)"
               value={options.message}
-              onChange={(e) =>
-                handleOptionChange("message", e.target.value)
-              }
+              onChange={(e) => handleOptionChange("message", e.target.value)}
               className="resize-none h-20"
             />
           </div>
@@ -342,9 +370,7 @@ export default function TransferFromDocsModal({
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
                   <Lock className="size-4 text-muted-foreground" />
-                  <Label className="text-sm font-normal">
-                    Mot de passe
-                  </Label>
+                  <Label className="text-sm font-normal">Mot de passe</Label>
                 </div>
                 <p className="text-xs text-muted-foreground pl-6">
                   Protection supplémentaire
