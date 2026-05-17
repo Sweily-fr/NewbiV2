@@ -30,6 +30,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/src/components/ui/dialog";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
@@ -702,8 +703,14 @@ export function TaskModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent
         onOpenAutoFocus={(e) => e.preventDefault()}
+        noAnimation
         className="!max-w-[calc(100vw-2rem)] !w-[calc(100vw-2rem)] h-[calc(100vh-2rem)] p-0 bg-card text-card-foreground overflow-hidden flex flex-col"
       >
+        <DialogDescription className="sr-only">
+          {isEditing
+            ? "Détails et édition de la tâche"
+            : "Création d'une nouvelle tâche"}
+        </DialogDescription>
         {/* Version Desktop : 2 colonnes */}
         {isLgDesktop && (
           <div className="flex flex-col h-full">
