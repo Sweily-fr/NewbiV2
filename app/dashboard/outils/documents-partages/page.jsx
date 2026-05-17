@@ -2640,14 +2640,16 @@ export default function DocumentsPartagesPage() {
                             <div className="space-y-2">
                               <Label className="text-xs">Type de fichier</Label>
                               <Select
-                                value={filterFileType}
-                                onValueChange={setFilterFileType}
+                                value={filterFileType || "all"}
+                                onValueChange={(v) =>
+                                  setFilterFileType(v === "all" ? "" : v)
+                                }
                               >
                                 <SelectTrigger className="h-8 text-sm">
                                   <SelectValue placeholder="Tous les types" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="">
+                                  <SelectItem value="all">
                                     Tous les types
                                   </SelectItem>
                                   <SelectItem value="image">Images</SelectItem>
@@ -2668,14 +2670,16 @@ export default function DocumentsPartagesPage() {
                             <div className="space-y-2">
                               <Label className="text-xs">Statut</Label>
                               <Select
-                                value={filterStatus}
-                                onValueChange={setFilterStatus}
+                                value={filterStatus || "all"}
+                                onValueChange={(v) =>
+                                  setFilterStatus(v === "all" ? "" : v)
+                                }
                               >
                                 <SelectTrigger className="h-8 text-sm">
                                   <SelectValue placeholder="Tous les statuts" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="">
+                                  <SelectItem value="all">
                                     Tous les statuts
                                   </SelectItem>
                                   <SelectItem value="pending">
