@@ -498,8 +498,9 @@ const TaskCard = memo(
         <div
           onClick={handleClick}
           onMouseEnter={() => prefetchDetails(task.id)}
-          onMouseLeave={() => cancelPrefetch(task.id)}
+          onMouseDown={() => prefetchDetails(task.id)}
           onFocus={() => prefetchDetails(task.id)}
+          onTouchStart={() => prefetchDetails(task.id)}
           className={`relative group/card bg-card text-card-foreground rounded-xl border border-border shadow-xs hover:shadow-sm cursor-pointer flex flex-col transition-all overflow-clip ${
             isDragging ? "opacity-50" : "opacity-100"
           }`}
