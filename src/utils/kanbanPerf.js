@@ -10,24 +10,22 @@
  * Ou via URL : ?perf=1
  */
 
-let enabled = null;
 let lastMark = null;
 let sessionStart = null;
 
+// Vérifie à CHAQUE appel pour éviter le cas où un premier perfMark s'exécute
+// avant que l'utilisateur ait positionné localStorage (sinon le résultat
+// resterait false jusqu'au prochain rechargement complet).
 function isEnabled() {
-  if (enabled !== null) return enabled;
-  if (typeof window === "undefined") {
-    enabled = false;
+  if (typeof window === "undefined") return false;
+  try {
+    return (
+      window.localStorage?.getItem("kanban-perf") === "1" ||
+      window.location?.search?.includes("perf=1")
+    );
+  } catch {
     return false;
   }
-  try {
-    enabled =
-      window.localStorage?.getItem("kanban-perf") === "1" ||
-      window.location?.search?.includes("perf=1");
-  } catch {
-    enabled = false;
-  }
-  return enabled;
 }
 
 export function perfMark(label, data) {
