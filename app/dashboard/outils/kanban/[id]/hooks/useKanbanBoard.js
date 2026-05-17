@@ -7,18 +7,17 @@ import {
 } from "@/src/graphql/kanbanQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/utils/debouncedToast";
-import { useRef } from "react";
+import { useRef, useCallback } from "react";
 
-// Logs de debug gated par localStorage('kanban-debug' === '1'). En prod, ces
-// 25+ console.log par event WebSocket alourdissent le 'message handler'
-// (serialization + I/O DevTools). Désactivés par défaut.
+// Logs de debug gated par localStorage('kanban-debug' === '1'). Désactivés
+// par défaut pour ne pas alourdir le 'message handler' en prod.
 const __klog =
   typeof window === "undefined"
     ? () => {}
     : (...args) => {
         try {
           if (window.localStorage?.getItem("kanban-debug") === "1") {
-            __klog(...args);
+            console.log(...args);
           }
         } catch {}
       };
@@ -39,210 +38,103 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
     },
     errorPolicy: "all",
     skip: !workspaceId || isRedirecting,
-    // IMPORTANT: Utiliser cache-and-network pour avoir les données en cache
-    // tout en récupérant les dernières données du serveur
     fetchPolicy: "cache-and-network",
-    // IMPORTANT: Ne pas notifier sur les changements de statut réseau du polling
-    // Cela évite le clignotement quand le polling récupère les données
     notifyOnNetworkStatusChange: false,
     context: {
-      // Ne pas afficher de toast d'erreur si on est en train de rediriger
       skipErrorToast: isRedirecting,
     },
   });
 
-  // Subscription pour les mises à jour temps réel des tâches
-  useSubscription(TASK_UPDATED_SUBSCRIPTION, {
-    variables: { boardId: id, workspaceId },
-    skip: !workspaceId || !id || !isSessionReady || isRedirecting,
-    onData: ({ data: subscriptionData }) => {
-      __klog(
-        "📡 [Subscription] Données reçues:",
-        subscriptionData?.data?.taskUpdated?.type,
-        "visitor:",
-        subscriptionData?.data?.taskUpdated?.visitor,
-      );
-      if (subscriptionData?.data?.taskUpdated) {
-        const { type, task, taskId, visitor } =
-          subscriptionData.data.taskUpdated;
+  // ─────────────────────────────────────────────────────────────────────
+  // Batching des events de subscription
+  //
+  // Problème avant batching : chaque event WebSocket déclenchait un
+  // cache.writeQuery individuel, qui re-render tous les abonnés Apollo
+  // → 5 events en 100ms = 5 re-renders complets du board = 500ms+ de
+  // main thread bloqué (cf 'message handler took 704ms' observé en prod).
+  //
+  // Solution : on bufferise les events et on flushe en UN SEUL writeQuery
+  // par frame (requestAnimationFrame). Multi-event en rafale → 1 render.
+  // ─────────────────────────────────────────────────────────────────────
+  const pendingTaskEventsRef = useRef([]);
+  const pendingColumnEventsRef = useRef([]);
+  const pendingColumnReorderRef = useRef(null);
+  const flushScheduledRef = useRef(false);
 
-        // Traiter immédiatement les mises à jour de profil visiteur
-        if (type === "VISITOR_PROFILE_UPDATED" && visitor) {
-          __klog(
-            "👤 [Subscription] Mise à jour profil visiteur détectée:",
-            visitor.email,
-            visitor.name,
-          );
-          // Refetch pour récupérer les données mises à jour depuis le serveur
-          // Les commentaires sont déjà mis à jour en base de données par le backend
-          refetch()
-            .then(() => {
-              __klog(
-                "✅ [Subscription] Board rechargé avec le nouveau profil visiteur:",
-                visitor.name,
-              );
-            })
-            .catch((error) => {
-              console.error(
-                "❌ [Subscription] Erreur refetch après mise à jour profil visiteur:",
-                error,
-              );
-            });
-          return; // Sortir après traitement
-        }
+  const flushPendingEvents = useCallback(() => {
+    flushScheduledRef.current = false;
+    const taskEvents = pendingTaskEventsRef.current;
+    const columnEvents = pendingColumnEventsRef.current;
+    const columnReorder = pendingColumnReorderRef.current;
+    pendingTaskEventsRef.current = [];
+    pendingColumnEventsRef.current = [];
+    pendingColumnReorderRef.current = null;
 
-        // Pour les créations, mettre à jour le cache Apollo manuellement
+    if (
+      taskEvents.length === 0 &&
+      columnEvents.length === 0 &&
+      !columnReorder
+    ) {
+      return;
+    }
+
+    try {
+      const cacheData = apolloClient.cache.readQuery({
+        query: GET_BOARD,
+        variables: { id, workspaceId },
+      });
+      if (!cacheData?.board) return;
+
+      let tasks = cacheData.board.tasks || [];
+      let columns = cacheData.board.columns || [];
+      let mutated = false;
+
+      // ── Apply task events in order ──
+      for (const ev of taskEvents) {
+        const { type, task, taskId } = ev;
+
         if (type === "CREATED" && task) {
-          try {
-            const cacheData = apolloClient.cache.readQuery({
-              query: GET_BOARD,
-              variables: { id, workspaceId },
-            });
-
-            __klog(
-              "📝 [Subscription] Création tâche - Cache data:",
-              cacheData?.board?.tasks?.length,
-              "tâches",
-            );
-
-            if (cacheData?.board) {
-              // Vérifier que la tâche n'existe pas déjà (ajoutée par la mutation update)
-              const taskExists = (cacheData.board.tasks || []).some(
-                (t) => t.id === task.id,
-              );
-              if (taskExists) {
-                __klog(
-                  "ℹ️ [Subscription] Tâche déjà dans le cache, skip:",
-                  task.title,
-                );
-              } else {
-                // Incrémenter la position des tâches existantes dans la même colonne
-                const updatedTasks = (cacheData.board.tasks || []).map((t) => {
-                  if (
-                    t.columnId === task.columnId &&
-                    t.position !== undefined &&
-                    t.position >= (task.position ?? 0)
-                  ) {
-                    return { ...t, position: t.position + 1 };
-                  }
-                  return t;
-                });
-                const newTasks = [task, ...updatedTasks];
-                __klog(
-                  "✅ [Subscription] Ajout tâche au cache:",
-                  task.title,
-                  "- Total:",
-                  newTasks.length,
-                );
-
-                apolloClient.cache.writeQuery({
-                  query: GET_BOARD,
-                  variables: { id, workspaceId },
-                  data: {
-                    board: {
-                      ...cacheData.board,
-                      tasks: newTasks,
-                    },
-                  },
-                });
+          if (!tasks.some((t) => t.id === task.id)) {
+            // Décale la position des tâches existantes dans la même colonne
+            tasks = tasks.map((t) => {
+              if (
+                t.columnId === task.columnId &&
+                t.position !== undefined &&
+                t.position >= (task.position ?? 0)
+              ) {
+                return { ...t, position: t.position + 1 };
               }
-            } else {
-              console.warn(
-                "⚠️ [Subscription] Cache board non trouvé pour id:",
-                id,
-                "workspaceId:",
-                workspaceId,
-              );
-            }
-          } catch (error) {
-            console.error("❌ [Subscription] Erreur mise à jour cache:", error);
-          }
-        }
-
-        // Pour les suppressions, mettre à jour le cache Apollo manuellement
-        if (type === "DELETED" && taskId) {
-          try {
-            const cacheData = apolloClient.cache.readQuery({
-              query: GET_BOARD,
-              variables: { id, workspaceId },
+              return t;
             });
-
-            if (cacheData?.board) {
-              apolloClient.cache.writeQuery({
-                query: GET_BOARD,
-                variables: { id, workspaceId },
-                data: {
-                  board: {
-                    ...cacheData.board,
-                    tasks: (cacheData.board.tasks || []).filter(
-                      (t) => t.id !== taskId,
-                    ),
-                  },
-                },
-              });
-            }
-          } catch {
-            // Erreur silencieuse - continuer
+            tasks = [task, ...tasks];
+            mutated = true;
           }
-        }
-
-        // Pour les déplacements, mettre à jour le cache Apollo directement
-        if (type === "MOVED" && task) {
-          try {
-            const cacheData = apolloClient.cache.readQuery({
-              query: GET_BOARD,
-              variables: { id, workspaceId },
+        } else if (type === "DELETED" && taskId) {
+          const before = tasks.length;
+          tasks = tasks.filter((t) => t.id !== taskId);
+          if (tasks.length !== before) mutated = true;
+        } else if (type === "MOVED" && task) {
+          let didChange = false;
+          tasks = tasks.map((t) => {
+            if (t.id !== task.id) return t;
+            const cachedTime = t.updatedAt
+              ? new Date(t.updatedAt).getTime()
+              : 0;
+            const incomingTime = task.updatedAt
+              ? new Date(task.updatedAt).getTime()
+              : 0;
+            if (incomingTime < cachedTime) return t;
+            didChange = true;
+            return { ...t, ...task };
+          });
+          if (didChange) {
+            tasks = [...tasks].sort((a, b) => {
+              if (a.columnId !== b.columnId) return 0;
+              return (a.position || 0) - (b.position || 0);
             });
-
-            if (cacheData?.board) {
-              // Mettre à jour la tâche dans le cache avec ses nouvelles position et colonne
-              const updatedTasks = cacheData.board.tasks
-                .map((t) => {
-                  if (t.id !== task.id) return t;
-                  // Ne pas écraser une version plus récente
-                  const cachedTime = t.updatedAt
-                    ? new Date(t.updatedAt).getTime()
-                    : 0;
-                  const incomingTime = task.updatedAt
-                    ? new Date(task.updatedAt).getTime()
-                    : 0;
-                  if (incomingTime < cachedTime) return t;
-                  return { ...t, ...task };
-                })
-                .sort((a, b) => {
-                  // Trier par colonne puis position
-                  if (a.columnId !== b.columnId) return 0;
-                  return (a.position || 0) - (b.position || 0);
-                });
-
-              __klog(
-                "✅ [Subscription] Tâche déplacée - Mise à jour cache:",
-                task.title,
-                "→ position",
-                task.position,
-              );
-
-              apolloClient.cache.writeQuery({
-                query: GET_BOARD,
-                variables: { id, workspaceId },
-                data: {
-                  board: {
-                    ...cacheData.board,
-                    tasks: updatedTasks,
-                  },
-                },
-              });
-            }
-          } catch (error) {
-            console.error(
-              "❌ [Subscription] Erreur mise à jour cache MOVED:",
-              error,
-            );
+            mutated = true;
           }
-        }
-
-        // Pour les mises à jour (UPDATED, COMMENT_ADDED, COMMENT_UPDATED, TIMER_STARTED, TIMER_STOPPED), mettre à jour le cache Apollo
-        if (
+        } else if (
           (type === "UPDATED" ||
             type === "COMMENT_ADDED" ||
             type === "COMMENT_UPDATED" ||
@@ -251,90 +143,118 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
             type === "MANUAL_TIME_ADDED") &&
           task
         ) {
-          try {
-            const cacheData = apolloClient.cache.readQuery({
-              query: GET_BOARD,
-              variables: { id, workspaceId },
-            });
-
-            if (cacheData?.board) {
-              const updatedTasks = (cacheData.board.tasks || []).map((t) => {
-                if (t.id !== task.id) return t;
-                // Ne pas écraser une version plus récente avec une version plus ancienne
-                const cachedTime = t.updatedAt
-                  ? new Date(t.updatedAt).getTime()
-                  : 0;
-                const incomingTime = task.updatedAt
-                  ? new Date(task.updatedAt).getTime()
-                  : 0;
-                if (incomingTime < cachedTime) {
-                  __klog(
-                    "⏭️ [Subscription] Ignoré mise à jour périmée pour:",
-                    task.title,
-                    `(cache: ${t.updatedAt}, incoming: ${task.updatedAt})`,
-                  );
-                  return t;
-                }
-                return task;
-              });
-
-              apolloClient.cache.writeQuery({
-                query: GET_BOARD,
-                variables: { id, workspaceId },
-                data: {
-                  board: {
-                    ...cacheData.board,
-                    tasks: updatedTasks,
-                  },
-                },
-              });
-
-              if (type === "TIMER_STARTED") {
-                __klog(
-                  "✅ [Subscription] Timer démarré dans le cache:",
-                  task.title,
-                );
-              } else if (type === "TIMER_STOPPED") {
-                __klog(
-                  "✅ [Subscription] Timer arrêté dans le cache:",
-                  task.title,
-                );
-              } else {
-                __klog(
-                  "✅ [Subscription] Tâche mise à jour dans le cache:",
-                  task.title,
-                );
-              }
-            }
-          } catch (error) {
-            console.error(
-              "❌ [Subscription] Erreur mise à jour cache (UPDATED/TIMER):",
-              error,
-            );
-          }
-        }
-
-        // Notifications utilisateur (debouncing automatique)
-        if (type === "CREATED" && task) {
-          toast.success(`Nouvelle tâche: ${task.title}`, {
-            description: "Mise à jour automatique",
+          let didChange = false;
+          tasks = tasks.map((t) => {
+            if (t.id !== task.id) return t;
+            const cachedTime = t.updatedAt
+              ? new Date(t.updatedAt).getTime()
+              : 0;
+            const incomingTime = task.updatedAt
+              ? new Date(task.updatedAt).getTime()
+              : 0;
+            if (incomingTime < cachedTime) return t;
+            didChange = true;
+            return task;
           });
-        } else if (type === "DELETED" && taskId) {
-          toast.info("Tâche supprimée", {
-            description: "Mise à jour automatique",
-          });
-        } else if (type === "MOVED" && task) {
-          // Pas de toast pour les déplacements - trop de bruit
-          // L'utilisateur voit déjà le changement en temps réel
+          if (didChange) mutated = true;
         }
       }
-    },
-    onError: (error) => {
-      // Ne pas afficher d'erreur si c'est un problème d'authentification (changement d'organisation)
-      if (error.message?.includes("connecté")) {
-        // Silencieux - c'est normal pendant un changement d'organisation
+
+      // ── Apply column events in order ──
+      for (const ev of columnEvents) {
+        const { type, column, columnId } = ev;
+        if (type === "CREATED" && column) {
+          if (!columns.some((c) => c.id === column.id)) {
+            columns = [...columns, column].sort(
+              (a, b) => (a.order ?? 0) - (b.order ?? 0),
+            );
+            mutated = true;
+          }
+        } else if (type === "UPDATED" && column) {
+          columns = columns.map((c) =>
+            c.id === column.id ? { ...c, ...column } : c,
+          );
+          mutated = true;
+        } else if (type === "DELETED" && columnId) {
+          columns = columns.filter((c) => c.id !== columnId);
+          mutated = true;
+        }
+      }
+
+      // ── REORDERED en dernier (override l'ordre actuel) ──
+      if (columnReorder) {
+        const reordered = columnReorder
+          .map((cid) => columns.find((col) => col.id === cid))
+          .filter(Boolean);
+        if (reordered.length === columns.length) {
+          columns = reordered;
+          mutated = true;
+        }
+      }
+
+      if (!mutated) return;
+
+      apolloClient.cache.writeQuery({
+        query: GET_BOARD,
+        variables: { id, workspaceId },
+        data: {
+          board: {
+            ...cacheData.board,
+            tasks,
+            columns,
+          },
+        },
+      });
+    } catch (error) {
+      console.error("[Kanban] Erreur flush batch subscription:", error);
+    }
+  }, [apolloClient, id, workspaceId]);
+
+  const scheduleFlush = useCallback(() => {
+    if (flushScheduledRef.current) return;
+    flushScheduledRef.current = true;
+    if (typeof requestAnimationFrame !== "undefined") {
+      requestAnimationFrame(flushPendingEvents);
+    } else {
+      setTimeout(flushPendingEvents, 16);
+    }
+  }, [flushPendingEvents]);
+
+  // Subscription pour les mises à jour temps réel des tâches
+  useSubscription(TASK_UPDATED_SUBSCRIPTION, {
+    variables: { boardId: id, workspaceId },
+    skip: !workspaceId || !id || !isSessionReady || isRedirecting,
+    onData: ({ data: subscriptionData }) => {
+      const event = subscriptionData?.data?.taskUpdated;
+      if (!event) return;
+      const { type, task, taskId, visitor } = event;
+      __klog("📡 [Subscription] Données reçues:", type);
+
+      // VISITOR_PROFILE_UPDATED : refetch immédiat (rare, cas spécial)
+      if (type === "VISITOR_PROFILE_UPDATED" && visitor) {
+        refetch().catch((err) => {
+          console.error("[Kanban] Erreur refetch profil visiteur:", err);
+        });
         return;
       }
+
+      // Toasts immédiats (debouncés en interne)
+      if (type === "CREATED" && task) {
+        toast.success(`Nouvelle tâche: ${task.title}`, {
+          description: "Mise à jour automatique",
+        });
+      } else if (type === "DELETED" && taskId) {
+        toast.info("Tâche supprimée", {
+          description: "Mise à jour automatique",
+        });
+      }
+
+      // Bufferise l'event pour application batch
+      pendingTaskEventsRef.current.push(event);
+      scheduleFlush();
+    },
+    onError: (error) => {
+      if (error.message?.includes("connecté")) return;
       console.error("❌ [Kanban] Erreur subscription tâches:", error);
     },
   });
@@ -344,159 +264,40 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
     variables: { boardId: id, workspaceId },
     skip: !workspaceId || !id || !isSessionReady || isRedirecting,
     onData: ({ data: subscriptionData }) => {
-      if (subscriptionData?.data?.columnUpdated) {
-        const { type, column, columnId } = subscriptionData.data.columnUpdated;
+      const event = subscriptionData?.data?.columnUpdated;
+      if (!event) return;
+      const { type, column, columnId, columns } = event;
+      __klog("🔄 [Kanban] Mise à jour colonne:", type);
 
-        __klog(
-          "🔄 [Kanban] Mise à jour temps réel colonne:",
-          type,
-          column || columnId,
-        );
-
-        // Gestion des événements colonnes
-        try {
-          const cacheData = apolloClient.cache.readQuery({
-            query: GET_BOARD,
-            variables: { id, workspaceId },
-          });
-
-          if (!cacheData?.board) return;
-
-          // CREATED - Ajouter la nouvelle colonne
-          if (type === "CREATED" && column) {
-            __klog("✅ [Kanban] Colonne créée - Ajout au cache:", column.title);
-
-            // Vérifier si la colonne n'existe pas déjà
-            const columnExists = cacheData.board.columns.some(
-              (c) => c.id === column.id,
-            );
-            if (!columnExists) {
-              apolloClient.cache.writeQuery({
-                query: GET_BOARD,
-                variables: { id, workspaceId },
-                data: {
-                  board: {
-                    ...cacheData.board,
-                    columns: [...cacheData.board.columns, column].sort(
-                      (a, b) => a.order - b.order,
-                    ),
-                  },
-                },
-              });
-            }
-          }
-
-          // UPDATED - Mettre à jour la colonne existante
-          else if (type === "UPDATED" && column) {
-            __klog(
-              "✅ [Kanban] Colonne mise à jour - Mise à jour cache:",
-              column.title,
-            );
-
-            apolloClient.cache.writeQuery({
-              query: GET_BOARD,
-              variables: { id, workspaceId },
-              data: {
-                board: {
-                  ...cacheData.board,
-                  columns: cacheData.board.columns.map((c) =>
-                    c.id === column.id ? { ...c, ...column } : c,
-                  ),
-                },
-              },
-            });
-          }
-
-          // DELETED - Supprimer la colonne
-          else if (type === "DELETED" && columnId) {
-            __klog(
-              "✅ [Kanban] Colonne supprimée - Suppression du cache:",
-              columnId,
-            );
-
-            apolloClient.cache.writeQuery({
-              query: GET_BOARD,
-              variables: { id, workspaceId },
-              data: {
-                board: {
-                  ...cacheData.board,
-                  columns: cacheData.board.columns.filter(
-                    (c) => c.id !== columnId,
-                  ),
-                },
-              },
-            });
-          }
-
-          // REORDERED - Réorganiser les colonnes
-          else if (
-            type === "REORDERED" &&
-            subscriptionData.data.columnUpdated.columns
-          ) {
-            __klog("🔄 [Kanban] Colonnes réorganisées - Mise à jour du cache");
-
-            const newColumnIds = subscriptionData.data.columnUpdated.columns;
-
-            // Réorganiser les colonnes selon le nouvel ordre
-            const reorderedColumns = newColumnIds
-              .map((columnId) =>
-                cacheData.board.columns.find((col) => col.id === columnId),
-              )
-              .filter(Boolean); // Filtrer les colonnes non trouvées
-
-            __klog(
-              "✅ [Kanban] Nouvel ordre des colonnes:",
-              reorderedColumns.map((c) => c.title),
-            );
-
-            apolloClient.cache.writeQuery({
-              query: GET_BOARD,
-              variables: { id, workspaceId },
-              data: {
-                board: {
-                  ...cacheData.board,
-                  columns: reorderedColumns,
-                },
-              },
-            });
-          }
-        } catch (error) {
-          console.error(
-            "❌ [Kanban] Erreur mise à jour cache colonnes:",
-            error,
-          );
-        }
-
-        // Ne pas faire de refetch complet - juste mettre à jour le cache Apollo
-        // Cela évite de recharger toutes les colonnes et de remettre "à l'instant" partout
-        // La subscription elle-même met à jour le cache avec les données reçues
-
-        // Notifications utilisateur (debouncing automatique)
-        if (type === "CREATED" && column) {
-          toast.success(`Nouvelle colonne: ${column.title}`, {
-            description: "Mise à jour automatique",
-          });
-        } else if (type === "UPDATED" && column) {
-          toast.info(`Colonne modifiée: ${column.title}`, {
-            description: "Mise à jour automatique",
-          });
-        } else if (type === "DELETED" && columnId) {
-          toast.info("Colonne supprimée", {
-            description: "Mise à jour automatique",
-          });
-        } else if (type === "REORDERED") {
-          toast.info("Colonnes réorganisées", {
-            description: "Mise à jour automatique",
-          });
-        }
+      // Toasts immédiats
+      if (type === "CREATED" && column) {
+        toast.success(`Nouvelle colonne: ${column.title}`, {
+          description: "Mise à jour automatique",
+        });
+      } else if (type === "UPDATED" && column) {
+        toast.info(`Colonne modifiée: ${column.title}`, {
+          description: "Mise à jour automatique",
+        });
+      } else if (type === "DELETED" && columnId) {
+        toast.info("Colonne supprimée", {
+          description: "Mise à jour automatique",
+        });
+      } else if (type === "REORDERED") {
+        toast.info("Colonnes réorganisées", {
+          description: "Mise à jour automatique",
+        });
       }
+
+      if (type === "REORDERED" && columns) {
+        // Override l'ordre uniquement avec le dernier REORDERED reçu
+        pendingColumnReorderRef.current = columns;
+      } else {
+        pendingColumnEventsRef.current.push(event);
+      }
+      scheduleFlush();
     },
     onError: (error) => {
-      // Ne pas afficher d'erreur si c'est un problème d'authentification (changement d'organisation)
-      if (error.message?.includes("connecté")) {
-        // Silencieux - c'est normal pendant un changement d'organisation
-        return;
-      }
+      if (error.message?.includes("connecté")) return;
       console.error("❌ [Kanban] Erreur subscription colonnes:", error);
     },
   });
@@ -504,7 +305,6 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
   const board = data?.board;
   const columns = board?.columns || [];
 
-  // Get tasks by column
   const getTasksByColumn = (columnId) => {
     if (!board?.tasks) return [];
     return board.tasks
