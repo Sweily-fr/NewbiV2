@@ -57,6 +57,7 @@ import { AvatarGroup, UserAvatar } from "@/src/components/ui/user-avatar";
 import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { usePrefetchTaskDetails } from "../hooks/usePrefetchTaskDetails";
+import { perfMark, perfReset } from "@/src/utils/kanbanPerf";
 
 function DescriptionPopover({ description }) {
   return (
@@ -469,6 +470,8 @@ const TaskCard = memo(
       const clickedElement = e.target.closest(interactiveElements.join(","));
 
       if (!clickedElement) {
+        perfReset();
+        perfMark("TaskCard.click → onEdit", { taskId: task.id });
         onEdit(task);
       }
     };

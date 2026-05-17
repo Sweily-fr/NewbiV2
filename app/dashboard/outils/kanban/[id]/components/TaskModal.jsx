@@ -69,6 +69,7 @@ import { useTaskImageUpload } from "../hooks/useTaskImageUpload";
 import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
 import { cn } from "@/src/lib/utils";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { perfMark } from "@/src/utils/kanbanPerf";
 
 // Sub-components extracted for maintainability
 import { PendingCommentsView } from "./task-modal/PendingCommentsView";
@@ -156,6 +157,27 @@ export function TaskModal({
   const nextTask = nextTaskProp;
   const currentIndex = currentIndexProp;
   const totalTasks = totalTasksProp;
+
+  // Mesure : premier render du TaskModal avec isOpen=true
+  const firstOpenRef = useRef(false);
+  if (isOpen && !firstOpenRef.current) {
+    firstOpenRef.current = true;
+    perfMark("TaskModal render isOpen=true");
+  }
+  if (!isOpen && firstOpenRef.current) {
+    firstOpenRef.current = false;
+  }
+
+  // Mesure : après le premier paint (commit + browser paint)
+  useEffect(() => {
+    if (!isOpen) return;
+    perfMark("TaskModal useEffect (after commit)");
+    let rafId;
+    rafId = requestAnimationFrame(() => {
+      perfMark("TaskModal first paint (after rAF)");
+    });
+    return () => cancelAnimationFrame(rafId);
+  }, [isOpen]);
 
   // flushPendingSaveRef : filled later (after autoSaveRef/triggerAutoSaveRef are declared)
   // pour pouvoir flusher depuis goToPrev/goToNext qui sont mémorisés tôt.

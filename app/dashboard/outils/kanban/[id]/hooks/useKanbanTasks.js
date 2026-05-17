@@ -13,6 +13,7 @@ import {
 } from "@/src/graphql/kanbanQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { computeAutoSaveSignature } from "./taskFormSignature";
+import { perfMark } from "@/src/utils/kanbanPerf";
 
 const UPLOAD_TASK_IMAGE = gql`
   mutation UploadTaskImage(
@@ -84,6 +85,10 @@ export const useKanbanTasks = (boardId, board) => {
       nextFetchPolicy: "cache-first",
       notifyOnNetworkStatusChange: false,
       onCompleted: (data) => {
+        perfMark("fetchTaskDetails onCompleted", {
+          comments: data?.task?.comments?.length ?? 0,
+          activity: data?.task?.activity?.length ?? 0,
+        });
         if (data?.task) {
           setTaskForm((prev) => {
             const updated = {
@@ -707,6 +712,7 @@ export const useKanbanTasks = (boardId, board) => {
 
   const openEditTaskModal = (task) => {
     if (!task) return;
+    perfMark("useKanbanTasks.openEditTaskModal start");
 
     // Reset le ref de suivi pour éviter un refetch immédiat
     lastUpdateRef.current = null;
@@ -755,9 +761,11 @@ export const useKanbanTasks = (boardId, board) => {
     }
 
     setTaskForm(formData);
+    perfMark("useKanbanTasks.openEditTaskModal end (state setters queued)");
 
     // Charger les détails (comments, activity, timeTracking.entries) en arrière-plan
     if (!isCreating && taskId) {
+      perfMark("fetchTaskDetails call");
       fetchTaskDetails({
         variables: { id: taskId, workspaceId },
       });
