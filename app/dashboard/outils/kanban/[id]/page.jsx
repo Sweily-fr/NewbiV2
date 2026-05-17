@@ -845,6 +845,25 @@ function KanbanBoardPageContent({ params }) {
     };
   }, [board?.tasks, editingTaskId]);
 
+  // Préchargement du chunk TaskActivity (lazy-loadé dans TaskModal). En idle
+  // après le mount de la page, on charge le JS pour que la première ouverture
+  // d'une tâche n'attende pas le fallback Suspense. Idempotent : webpack
+  // mémoise le module.
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const idle = window.requestIdleCallback || ((cb) => setTimeout(cb, 200));
+    const handle = idle(() => {
+      import("./components/TaskActivity").catch(() => {});
+    });
+    return () => {
+      if (typeof handle === "number" && window.cancelIdleCallback) {
+        window.cancelIdleCallback(handle);
+      } else if (typeof handle === "number") {
+        clearTimeout(handle);
+      }
+    };
+  }, []);
+
   // Tous les userIds qui apparaissent dans le board (membres + assignés + créateurs).
   // Préchargés en une requête via BoardMembersLookupProvider pour éviter qu'une
   // useQuery par TaskCard ne s'abonne au cache.
