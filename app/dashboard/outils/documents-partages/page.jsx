@@ -2053,8 +2053,9 @@ export default function DocumentsPartagesPage() {
                             <>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
-                                className="text-destructive focus:text-destructive"
-                                onClick={() => {
+                                variant="destructive"
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   if (treeContextMenu.item.isFolder) {
                                     const clickedId = treeContextMenu.itemId;
                                     // If the right-clicked folder is part of
@@ -3404,11 +3405,12 @@ export default function DocumentsPartagesPage() {
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
-                                  onClick={() => {
+                                  variant="destructive"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
                                     setSelectedDocuments([doc.id]);
                                     setShowDeleteModal(true);
                                   }}
-                                  className="text-destructive focus:text-destructive"
                                 >
                                   <Trash2 className="h-4 w-4 mr-2" />
                                   Supprimer
@@ -3509,11 +3511,12 @@ export default function DocumentsPartagesPage() {
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem
-                                    onClick={() => {
+                                    variant="destructive"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
                                       setSelectedDocuments([doc.id]);
                                       setShowDeleteModal(true);
                                     }}
-                                    className="text-destructive"
                                   >
                                     <Trash2 className="h-4 w-4 mr-2" />
                                     Supprimer
