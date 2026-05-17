@@ -4212,15 +4212,15 @@ export default function DocumentsPartagesPage() {
           }}
         >
           <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
+            <DialogHeader className="min-w-0 pr-6">
+              <DialogTitle className="flex items-center gap-2 min-w-0">
                 {selectedDocumentDetails &&
                   getFileIcon(
                     selectedDocumentDetails.mimeType,
                     selectedDocumentDetails.fileExtension,
                     "size-5",
                   )}
-                <span className="truncate">
+                <span className="truncate min-w-0 flex-1">
                   {selectedDocumentDetails?.name}
                 </span>
               </DialogTitle>
@@ -4230,7 +4230,7 @@ export default function DocumentsPartagesPage() {
             </DialogHeader>
 
             {selectedDocumentDetails && (
-              <div className="space-y-4 py-2">
+              <div className="space-y-4 py-2 min-w-0">
                 {/* File Info */}
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="flex items-center gap-2 text-muted-foreground">
@@ -4294,19 +4294,19 @@ export default function DocumentsPartagesPage() {
                       </span>
                     )}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 min-w-0">
                     <Input
                       placeholder="Ajouter un tag..."
                       value={newTag}
                       onChange={(e) => setNewTag(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleAddTag()}
-                      className="h-8 text-sm"
+                      className="h-8 text-sm flex-1 min-w-0"
                     />
                     <Button
                       size="sm"
                       onClick={handleAddTag}
                       disabled={!newTag.trim() || updateDocLoading}
-                      className="h-8"
+                      className="h-8 shrink-0"
                     >
                       {updateDocLoading ? (
                         <LoaderCircle className="h-3 w-3 animate-spin" />
@@ -4368,7 +4368,7 @@ export default function DocumentsPartagesPage() {
               </div>
             )}
 
-            <DialogFooter className="gap-2 sm:gap-0">
+            <DialogFooter className="gap-2 sm:gap-0 min-w-0">
               <Button
                 variant="outline"
                 size="sm"
