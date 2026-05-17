@@ -4455,26 +4455,34 @@ export default function DocumentsPartagesPage() {
                 {`Transférer (${totalSelectionCount})`}
               </DropdownMenuItem>
               {selectedDocuments.length > 0 && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    setContentContextMenu(null);
+                    setShowMoveModal(true);
+                  }}
+                >
+                  <FolderInput className="size-4 mr-2" />
+                  Déplacer
+                </DropdownMenuItem>
+              )}
+              {(selectedDocuments.length > 0 || selectedFolders.length > 0) && (
                 <>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setContentContextMenu(null);
-                      setShowMoveModal(true);
-                    }}
-                  >
-                    <FolderInput className="size-4 mr-2" />
-                    Déplacer
-                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
                     onClick={() => {
                       setContentContextMenu(null);
-                      setShowDeleteModal(true);
+                      if (selectedFolders.length > 0) {
+                        setMultiDeletePending(true);
+                        setFolderToDelete(null);
+                        setShowDeleteFolderModal(true);
+                      } else {
+                        setShowDeleteModal(true);
+                      }
                     }}
                   >
                     <Trash2 className="size-4 mr-2" />
-                    Supprimer
+                    {`Supprimer (${totalSelectionCount})`}
                   </DropdownMenuItem>
                 </>
               )}
