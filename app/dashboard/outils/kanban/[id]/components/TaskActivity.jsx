@@ -637,7 +637,9 @@ const TaskActivityComponent = ({
       // Peut contenir plusieurs parties séparées par " et "
       const clParts = desc.split(/\s+et\s+a\s+/i);
       const items = [];
-      // Split conditionnel : si ";;" présent → nouveau format, sinon fallback sur "," (rétro-compatibilité)
+      // Toujours splitter sur ";;" pour ne pas casser le texte utilisateur
+      // qui peut contenir des virgules (ex: "salut,test"). Si ";;" absent
+      // (ancien format ou item unique), on retourne le texte tel quel.
       const splitChecklistItems = (str) => {
         if (str.includes(";;")) {
           return str
@@ -645,10 +647,8 @@ const TaskActivityComponent = ({
             .map((s) => s.trim())
             .filter(Boolean);
         }
-        return str
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean);
+        const trimmed = str.trim();
+        return trimmed ? [trimmed] : [];
       };
 
       const parseChecklistPart = (part) => {
@@ -1538,6 +1538,7 @@ const TaskActivityComponent = ({
             placeholder="Ajouter un commentaire..."
             disabled={isUploadingImage || addingComment}
             loading={addingComment || isUploadingImage}
+            allowEmpty={pendingImages.length > 0}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}

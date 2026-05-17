@@ -99,9 +99,6 @@ import {
   Upload,
   ImagePlus,
   ZoomIn,
-  ZoomOut,
-  Minus,
-  Plus,
 } from "lucide-react";
 import {
   format,
@@ -1077,13 +1074,9 @@ function PublicKanbanColumn({
   onEditTask,
   isCollapsed,
   onToggleCollapse,
-  zoomLevel = 1,
 }) {
-  // Calculer le maxHeight en fonction du zoom
-  // Quand on dézoom (scale < 1), le conteneur est réduit visuellement
-  // Donc on doit augmenter le maxHeight pour compenser et utiliser tout l'espace
   const baseOffset = 280;
-  const maxHeight = `calc((100vh - ${baseOffset}px) / ${zoomLevel})`;
+  const maxHeight = `calc(100vh - ${baseOffset}px)`;
 
   return (
     <>
@@ -1267,6 +1260,7 @@ function PublicTaskActivity({
     try {
       // Upload des images en premier si présentes
       let uploadedImageUrls = [];
+      let uploadErrorMessage = null;
       if (pendingImages.length > 0) {
         setUploadingImages(true);
         for (const imageData of pendingImages) {
@@ -1283,18 +1277,30 @@ function PublicTaskActivity({
               uploadedImageUrls.push(
                 result.data.uploadExternalCommentImage.image,
               );
+            } else if (result.data?.uploadExternalCommentImage?.message) {
+              uploadErrorMessage =
+                result.data.uploadExternalCommentImage.message;
             }
           } catch (uploadError) {
             console.error("Erreur upload image:", uploadError);
+            uploadErrorMessage =
+              uploadError?.message || "Erreur lors de l'upload de l'image";
           }
         }
         setUploadingImages(false);
       }
 
       // Construire le contenu du commentaire
-      let commentContent = newComment.trim();
+      const commentContent = newComment.trim();
+      const hasUploadedImages = uploadedImageUrls.length > 0;
 
-      if (!commentContent && uploadedImageUrls.length === 0) {
+      // Si on attendait des images mais aucune n'a été uploadée, remonter l'erreur réelle
+      if (pendingImages.length > 0 && !hasUploadedImages) {
+        toast.error(uploadErrorMessage || "Échec de l'upload des images");
+        return;
+      }
+
+      if (!commentContent && !hasUploadedImages) {
         toast.error("Veuillez ajouter du texte ou des images");
         return;
       }
@@ -1303,18 +1309,17 @@ function PublicTaskActivity({
         variables: {
           token,
           taskId: task.id,
-          content: commentContent || "",
+          content: commentContent || null,
           visitorEmail,
-          images:
-            uploadedImageUrls.length > 0
-              ? uploadedImageUrls.map((img) => ({
-                  id: img.id,
-                  key: img.key,
-                  url: img.url,
-                  fileName: img.fileName,
-                  contentType: img.contentType,
-                }))
-              : undefined,
+          images: hasUploadedImages
+            ? uploadedImageUrls.map((img) => ({
+                id: img.id,
+                key: img.key,
+                url: img.url,
+                fileName: img.fileName,
+                contentType: img.contentType,
+              }))
+            : undefined,
         },
       });
       if (result.data?.addExternalComment?.success) {
@@ -1326,7 +1331,8 @@ function PublicTaskActivity({
         toast.error(result.data?.addExternalComment?.message || "Erreur");
       }
     } catch (error) {
-      toast.error("Erreur lors de l'ajout du commentaire");
+      console.error("Erreur ajout commentaire externe:", error);
+      toast.error(error?.message || "Erreur lors de l'ajout du commentaire");
     } finally {
       setAddingComment(false);
       setUploadingImages(false);
@@ -3562,7 +3568,6 @@ export default function PublicKanbanPage({ params }) {
   const [collapsedColumns, setCollapsedColumns] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   const [isInitializing, setIsInitializing] = useState(true);
-  const [zoomLevel, setZoomLevel] = useState(1);
 
   const [validateToken, { loading: validatingToken }] = useLazyQuery(
     VALIDATE_PUBLIC_TOKEN,
@@ -4178,7 +4183,7 @@ export default function PublicKanbanPage({ params }) {
               </div>
             </div>
 
-            {/* Ligne 3: Barre de recherche + Zoom (visible en mode board) */}
+            {/* Ligne 3: Barre de recherche (visible en mode board) */}
             {viewMode === "board" && (
               <div className="px-4 sm:px-6 py-3 bg-background flex items-center justify-between gap-4">
                 <div className="relative flex-1 max-w-xs">
@@ -4200,31 +4205,6 @@ export default function PublicKanbanPage({ params }) {
                     </Button>
                   )}
                 </div>
-
-                {/* Contrôles de zoom */}
-                <div className="flex items-center gap-1 border rounded-md p-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => setZoomLevel(Math.max(0.5, zoomLevel - 0.1))}
-                    disabled={zoomLevel <= 0.5}
-                  >
-                    <Minus className="h-3.5 w-3.5" />
-                  </Button>
-                  <span className="text-xs font-medium w-12 text-center">
-                    {Math.round(zoomLevel * 100)}%
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => setZoomLevel(Math.min(1.5, zoomLevel + 0.1))}
-                    disabled={zoomLevel >= 1.5}
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
               </div>
             )}
           </div>
@@ -4232,11 +4212,8 @@ export default function PublicKanbanPage({ params }) {
           {/* Content */}
           <div className="px-4 mt-4">
             {viewMode === "board" ? (
-              <div className="overflow-x-auto overflow-y-auto pb-4">
-                <div
-                  className="w-max min-w-full origin-top-left transition-transform duration-200 flex gap-4 items-start"
-                  style={{ transform: `scale(${zoomLevel})` }}
-                >
+              <div className="overflow-x-auto overflow-y-hidden pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                <div className="w-max min-w-full flex gap-4 items-start">
                   {columns.map((column) => (
                     <PublicKanbanColumn
                       key={column.id}
@@ -4245,7 +4222,6 @@ export default function PublicKanbanPage({ params }) {
                       onEditTask={setSelectedTask}
                       isCollapsed={collapsedColumns[column.id]}
                       onToggleCollapse={toggleColumnCollapse}
-                      zoomLevel={zoomLevel}
                     />
                   ))}
                 </div>

@@ -171,7 +171,7 @@ function LoginPageContent() {
                   </Link>{" "}
                   et notre{" "}
                   <Link
-                    href="/politique-confidentialite"
+                    href="/politique-de-confidentialite"
                     className="text-foreground hover:underline"
                   >
                     Politique de confidentialité

@@ -24,6 +24,7 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/src/components/ui/tooltip";
+import { BoardMembersPopover } from "../components/BoardMembersPopover";
 import { UserAvatar } from "@/src/components/ui/user-avatar";
 import {
   DropdownMenu,
@@ -86,8 +87,14 @@ const multiColumnFilterFn = (row, columnId, filterValue) => {
   const board = row.original;
   const title = board.title || "";
   const description = board.description || "";
+  const client = board.client;
+  const clientName = client
+    ? client.type === "INDIVIDUAL"
+      ? `${client.firstName || ""} ${client.lastName || ""}`.trim()
+      : client.name || ""
+    : "";
   const searchTerm = (filterValue ?? "").toLowerCase().trim();
-  const searchableContent = [title, description]
+  const searchableContent = [title, description, clientName]
     .filter(Boolean)
     .map((s) => s.toString().toLowerCase().trim());
   return searchableContent.some((content) => content.includes(searchTerm));
@@ -103,6 +110,7 @@ export function useKanbanBoardsTable({
   categoryFilter = null,
   onToggleFavorite,
   onChangeStatus,
+  workspaceId,
 }) {
   const [globalFilter, setGlobalFilter] = useState("");
 
@@ -121,7 +129,13 @@ export function useKanbanBoardsTable({
     if (categoryFilter) {
       result = result.filter((board) => board.category === categoryFilter);
     }
-    return result;
+    // Favoris en premier, puis tri par date de dernière modification (récent d'abord)
+    return [...result].sort((a, b) => {
+      const aFav = a.isFavorite ? 1 : 0;
+      const bFav = b.isFavorite ? 1 : 0;
+      if (aFav !== bFav) return bFav - aFav;
+      return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
+    });
   }, [data, clientFilter, categoryFilter]);
 
   // Extraire les clients uniques pour le filtre
@@ -264,31 +278,40 @@ export function useKanbanBoardsTable({
         size: 90,
       },
       {
-        id: "members",
-        header: () => <span className="font-normal">Membres</span>,
+        id: "creator",
+        header: () => <span className="font-normal">Créateur</span>,
         cell: ({ row }) => {
-          const members = row.original.members || [];
-          if (members.length === 0)
-            return <span className="text-muted-foreground">-</span>;
+          const board = row.original;
+          const creatorId = board?.userId ? String(board.userId) : null;
+          const creator = creatorId
+            ? (board?.members || []).find(
+                (m) => String(m.userId || m.id) === creatorId,
+              )
+            : null;
+          if (!creator) return <span className="text-muted-foreground">-</span>;
           return (
-            <div className="flex items-center -space-x-1.5">
-              {members.slice(0, 3).map((member) => (
-                <UserAvatar
-                  key={member.userId || member.id}
-                  src={member.image}
-                  name={member.name || member.email}
-                  size="xs"
-                  className="h-6 w-6 ring-2 ring-background"
-                />
-              ))}
-              {members.length > 3 && (
-                <span className="h-6 w-6 rounded-full bg-muted text-[10px] font-normal flex items-center justify-center text-muted-foreground ring-2 ring-background">
-                  +{members.length - 3}
-                </span>
-              )}
+            <div className="flex items-center gap-2 min-w-0">
+              <UserAvatar
+                src={creator.image}
+                name={creator.name || creator.email}
+                size="xs"
+                className="h-6 w-6 flex-shrink-0"
+              />
+              <span className="truncate text-xs">
+                {creator.name || creator.email}
+              </span>
             </div>
           );
         },
+        size: 160,
+        enableSorting: false,
+      },
+      {
+        id: "members",
+        header: () => <span className="font-normal">Membres</span>,
+        cell: ({ row }) => (
+          <BoardMembersPopover board={row.original} workspaceId={workspaceId} />
+        ),
         size: 110,
         enableSorting: false,
       },
@@ -386,7 +409,8 @@ export function useKanbanBoardsTable({
                       e.stopPropagation();
                       onDelete?.(board);
                     }}
-                    className="gap-2 cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                    variant="destructive"
+                    className="gap-2 cursor-pointer text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 [&_svg]:text-destructive"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     Supprimer
@@ -408,6 +432,7 @@ export function useKanbanBoardsTable({
       hasBillableAmount,
       onToggleFavorite,
       onChangeStatus,
+      workspaceId,
     ],
   );
 
@@ -433,12 +458,6 @@ export function useKanbanBoardsTable({
       pagination: {
         pageSize: 20,
       },
-      sorting: [
-        {
-          id: "updatedAt",
-          desc: true,
-        },
-      ],
     },
   });
 

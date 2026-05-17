@@ -89,6 +89,7 @@ function InlineNewTask({
   createTask,
   workspaceId,
   onCancel,
+  onEditTask,
 }) {
   const [title, setTitle] = useState("");
   const [assignedMembers, setAssignedMembers] = useState([]);
@@ -117,11 +118,11 @@ function InlineNewTask({
       document.removeEventListener("pointerdown", handleClickOutside, true);
   }, [onCancel]);
 
-  const handleSave = async () => {
+  const handleSave = async (openAfter = false) => {
     if (!title.trim() || saving) return;
     setSaving(true);
     try {
-      await createTask({
+      const result = await createTask({
         variables: {
           input: {
             title: title.trim(),
@@ -138,6 +139,9 @@ function InlineNewTask({
         },
       });
       onCancel();
+      if (openAfter && onEditTask && result?.data?.createTask) {
+        onEditTask(result.data.createTask);
+      }
     } catch (e) {
       setSaving(false);
     }
@@ -146,7 +150,7 @@ function InlineNewTask({
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      handleSave();
+      handleSave(e.metaKey || e.ctrlKey);
     }
     if (e.key === "Escape") onCancel();
   };
@@ -360,7 +364,7 @@ function InlineNewTask({
 /**
  * Composant pour une colonne Kanban (custom DnD via data-attributes)
  */
-export function KanbanColumnSimple({
+function KanbanColumnSimpleInner({
   column,
   tasks,
   onAddTask,
@@ -566,7 +570,8 @@ export function KanbanColumnSimple({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => onDeleteColumn(column)}
-                    className="gap-2 text-red-600 focus:text-red-600 focus:bg-red-50"
+                    variant="destructive"
+                    className="gap-2 text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 [&_svg]:text-destructive"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     Supprimer
@@ -609,6 +614,7 @@ export function KanbanColumnSimple({
                 createTask={createTask}
                 workspaceId={workspaceId}
                 onCancel={() => setShowInlineAdd(false)}
+                onEditTask={onEditTask}
               />
             )}
             {isLoading ? (
@@ -664,3 +670,53 @@ export function KanbanColumnSimple({
     </>
   );
 }
+
+// Comparateur sur mesure : ne re-render que si les props impactant le DOM changent
+function tasksShallowEqual(a, b) {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    const ta = a[i];
+    const tb = b[i];
+    if (ta === tb) continue;
+    if (!ta || !tb) return false;
+    if (
+      ta.id !== tb.id ||
+      ta.updatedAt !== tb.updatedAt ||
+      ta.position !== tb.position ||
+      ta.title !== tb.title ||
+      ta.columnId !== tb.columnId ||
+      ta.priority !== tb.priority ||
+      ta.dueDate !== tb.dueDate
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export const KanbanColumnSimple = React.memo(
+  KanbanColumnSimpleInner,
+  (prev, next) => {
+    return (
+      prev.column === next.column &&
+      prev.isCollapsed === next.isCollapsed &&
+      prev.isLoading === next.isLoading &&
+      prev.columnIndex === next.columnIndex &&
+      prev.boardId === next.boardId &&
+      prev.workspaceId === next.workspaceId &&
+      prev.members === next.members &&
+      prev.allBoardTags === next.allBoardTags &&
+      prev.onAddTask === next.onAddTask &&
+      prev.onEditTask === next.onEditTask &&
+      prev.onDeleteTask === next.onDeleteTask &&
+      prev.onEditColumn === next.onEditColumn &&
+      prev.onDeleteColumn === next.onDeleteColumn &&
+      prev.onToggleCollapse === next.onToggleCollapse &&
+      prev.createTask === next.createTask &&
+      prev.updateTask === next.updateTask &&
+      tasksShallowEqual(prev.tasks, next.tasks)
+    );
+  },
+);

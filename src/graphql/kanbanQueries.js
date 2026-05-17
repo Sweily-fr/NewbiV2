@@ -30,6 +30,8 @@ export const GET_BOARDS = gql`
       title
       description
       clientId
+      userId
+      boardMembers
       client {
         id
         name
@@ -81,6 +83,7 @@ export const GET_BOARD = gql`
       title
       description
       clientId
+      userId
       client {
         id
         name
@@ -262,6 +265,8 @@ export const CREATE_BOARD = gql`
       title
       description
       clientId
+      userId
+      boardMembers
       client {
         id
         name
@@ -269,9 +274,28 @@ export const CREATE_BOARD = gql`
         lastName
         type
       }
+      columns {
+        id
+        title
+        color
+        order
+      }
+      members {
+        id
+        userId
+        name
+        email
+        image
+      }
+      taskCount
+      totalTimeSpent
+      templateName
       totalBillableAmount
       category
+      emoji
       color
+      status
+      isFavorite
       createdAt
       updatedAt
     }
@@ -301,6 +325,13 @@ export const UPDATE_BOARD = gql`
       priority
       dueDate
       boardMembers
+      members {
+        id
+        userId
+        name
+        email
+        image
+      }
       totalBillableAmount
       category
       color
@@ -735,6 +766,8 @@ export const BOARD_FRAGMENT = gql`
     title
     description
     clientId
+    userId
+    boardMembers
     client {
       id
       name
@@ -1356,7 +1389,7 @@ export const ADD_EXTERNAL_COMMENT = gql`
   mutation AddExternalComment(
     $token: String!
     $taskId: ID!
-    $content: String!
+    $content: String
     $visitorEmail: String!
     $images: [CommentImageInput!]
   ) {

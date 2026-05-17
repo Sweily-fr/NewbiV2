@@ -423,8 +423,9 @@ export function TaskModal({
   flushPendingSaveRef.current = flushAutoSave;
 
   // Auto-save quand taskForm change.
-  // - Champ texte focus : debounce 400ms (sauvegarde quand l'utilisateur arrête de taper)
-  // - Autres champs : sauvegarde immédiate
+  // - Champ texte focus : on attend le blur (cf. handleTextInputBlur → flushAutoSave)
+  //   pour ne pas spammer une activité "a modifié la description" à chaque frappe.
+  // - Autres champs : sauvegarde immédiate.
   useEffect(() => {
     if (!isOpen || !isEditing || !taskForm?.title?.trim()) return;
 
@@ -433,13 +434,14 @@ export function TaskModal({
 
     if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
 
+    // Si l'utilisateur est encore en train de taper dans un champ texte,
+    // on diffère la sauvegarde au blur (handleTextInputBlur). Cela évite
+    // de générer plusieurs entrées d'activité pour une seule édition.
     if (textInputFocusedRef.current) {
-      autoSaveRef.current = setTimeout(() => {
-        triggerAutoSave();
-      }, 400);
-    } else {
-      triggerAutoSave();
+      return;
     }
+
+    triggerAutoSave();
 
     return () => {
       if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
@@ -541,10 +543,12 @@ export function TaskModal({
     }
   }, [taskForm.description]);
 
-  // Récupérer les infos des membres assignés
-  const { members: membersInfo } = useAssignedMembersInfo(
-    taskForm.assignedMembers || [],
-  );
+  // Récupérer les infos des membres assignés (et du créateur de la tâche)
+  const membersAndCreatorIds = [
+    ...(taskForm.assignedMembers || []),
+    ...(taskForm.userId ? [taskForm.userId] : []),
+  ];
+  const { members: membersInfo } = useAssignedMembersInfo(membersAndCreatorIds);
 
   // Générer une couleur pour un tag basée sur son nom
   const getTagColor = (tagName) => {
@@ -598,17 +602,27 @@ export function TaskModal({
 
   // Trouver le créateur de la tâche
   const getCreatorInfo = () => {
-    if (!taskForm.userId || !board?.members) {
+    if (!taskForm.userId) {
       return { name: "Inconnu", image: null };
     }
 
-    const creator = board.members.find(
+    // D'abord chercher dans les membres du board
+    const creatorFromBoard = board?.members?.find(
       (m) => String(m.id) === String(taskForm.userId),
     );
+    if (creatorFromBoard) {
+      return { name: creatorFromBoard.name, image: creatorFromBoard.image };
+    }
 
-    return creator
-      ? { name: creator.name, image: creator.image }
-      : { name: "Inconnu", image: null };
+    // Sinon utiliser les infos chargées via useAssignedMembersInfo
+    const creatorFromQuery = membersInfo?.find(
+      (m) => String(m.id) === String(taskForm.userId),
+    );
+    if (creatorFromQuery) {
+      return { name: creatorFromQuery.name, image: creatorFromQuery.image };
+    }
+
+    return { name: "Inconnu", image: null };
   };
 
   return (

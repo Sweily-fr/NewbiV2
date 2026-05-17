@@ -31,6 +31,12 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
+import { QrCode } from "@ark-ui/react/qr-code";
+import {
   Download,
   Eye,
   Lock,
@@ -49,6 +55,8 @@ import {
   HelpCircle,
   Pencil,
   Trash2,
+  QrCode as QrCodeIcon,
+  Video,
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -100,9 +108,16 @@ function isPdfFile(file) {
   return getFileExtension(file?.originalName) === "pdf";
 }
 
+// Vérifier si c'est une vidéo
+function isVideoFile(file) {
+  if (file?.mimeType?.startsWith("video/")) return true;
+  const ext = getFileExtension(file?.originalName);
+  return ["mp4", "webm", "ogg", "ogv", "mov", "m4v", "mkv"].includes(ext);
+}
+
 // Vérifier si le fichier est prévisualisable (type supporté)
 function isPreviewable(file) {
-  return isImageFile(file) || isPdfFile(file);
+  return isImageFile(file) || isPdfFile(file) || isVideoFile(file);
 }
 
 // Formater la taille du fichier
@@ -192,7 +207,11 @@ export function TransferDetailDrawer({
     : transferFiles;
 
   const firstFile = transferFiles[0];
-  const fileName = firstFile?.originalName || firstFile?.fileName || "Fichier";
+  const fileName =
+    transfer.title ||
+    firstFile?.originalName ||
+    firstFile?.fileName ||
+    "Fichier";
   const totalSize =
     transferFiles.reduce((acc, file) => acc + (file.size || 0), 0) || 0;
   const fileCount = zipContainer ? displayFiles.length : transferFiles.length;
@@ -209,8 +228,8 @@ export function TransferDetailDrawer({
     ? []
     : displayFiles.filter((f) =>
         zipContainer
-          ? f.isZipEntry && (isImageFile(f) || isPdfFile(f))
-          : isImageFile(f) || isPdfFile(f),
+          ? f.isZipEntry && (isImageFile(f) || isPdfFile(f) || isVideoFile(f))
+          : isImageFile(f) || isPdfFile(f) || isVideoFile(f),
       );
 
   // Résoudre l'URL de preview pour un fichier (ZIP entry = blob URL, sinon
@@ -368,7 +387,7 @@ export function TransferDetailDrawer({
                         disabled={!canGoPrev}
                         className={`p-1.5 rounded-lg transition-colors ${
                           canGoPrev
-                            ? "text-gray-500 hover:bg-gray-100"
+                            ? "text-gray-500 hover:bg-gray-100 cursor-pointer"
                             : "text-gray-200 cursor-not-allowed"
                         }`}
                       >
@@ -382,7 +401,7 @@ export function TransferDetailDrawer({
                         disabled={!canGoNext}
                         className={`p-1.5 rounded-lg transition-colors ${
                           canGoNext
-                            ? "text-gray-500 hover:bg-gray-100"
+                            ? "text-gray-500 hover:bg-gray-100 cursor-pointer"
                             : "text-gray-200 cursor-not-allowed"
                         }`}
                       >
@@ -393,14 +412,14 @@ export function TransferDetailDrawer({
                   {/* Download */}
                   <button
                     onClick={() => downloadFile(lightboxFile)}
-                    className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                   >
                     <Download className="w-4 h-4" />
                   </button>
                   {/* Fermer */}
                   <button
                     onClick={() => setLightboxOpen(false)}
-                    className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -420,6 +439,16 @@ export function TransferDetailDrawer({
                     containerClassName="flex items-center justify-center w-full"
                     loaderSize="h-8 w-8"
                   />
+                ) : isVideoFile(lightboxFile) ? (
+                  <video
+                    src={resolvePreviewUrl(lightboxFile)}
+                    controls
+                    autoPlay
+                    className="max-w-full max-h-[75vh] rounded-lg bg-black"
+                    aria-label={lightboxFile.originalName}
+                  >
+                    Votre navigateur ne supporte pas la lecture vidéo.
+                  </video>
                 ) : isPdfFile(lightboxFile) ? (
                   <object
                     data={resolvePreviewUrl(lightboxFile)}
@@ -478,7 +507,7 @@ export function TransferDetailDrawer({
             {/* Header - Fermer */}
             <div className="px-6 pt-5 pb-4">
               <DrawerClose asChild>
-                <button className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700">
+                <button className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 cursor-pointer">
                   <X className="h-4 w-4" />
                   <span>Fermer</span>
                 </button>
@@ -494,7 +523,7 @@ export function TransferDetailDrawer({
                 </h1>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="p-1 text-gray-400 hover:text-gray-600 flex-shrink-0">
+                    <button className="p-1 text-gray-400 hover:text-gray-600 flex-shrink-0 cursor-pointer">
                       <MoreVertical className="h-5 w-5" />
                     </button>
                   </DropdownMenuTrigger>
@@ -531,55 +560,82 @@ export function TransferDetailDrawer({
               </p>
 
               {/* Lien de partage */}
-              <div className="relative mb-8 w-1/2">
-                <Input
-                  className="pe-9 text-xs h-9 bg-gray-50 border-gray-200 rounded-lg"
-                  defaultValue={shareUrl}
-                  readOnly
-                  ref={inputRef}
-                  type="text"
-                />
-                <TooltipProvider delayDuration={0}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        aria-label={copied ? "Copié" : "Copier le lien"}
-                        className="absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-lg text-muted-foreground/80 outline-none transition-[color,box-shadow] hover:text-foreground focus:z-10 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed"
-                        disabled={copied}
-                        onClick={handleCopy}
-                        type="button"
-                      >
-                        <div
-                          className={cn(
-                            "transition-all",
-                            copied
-                              ? "scale-100 opacity-100"
-                              : "scale-0 opacity-0",
-                          )}
+              <div className="flex items-center gap-2 mb-8 w-1/2">
+                <div className="relative flex-1">
+                  <Input
+                    className="pe-9 text-xs h-9 bg-gray-50 border-gray-200 rounded-lg"
+                    defaultValue={shareUrl}
+                    readOnly
+                    ref={inputRef}
+                    type="text"
+                  />
+                  <TooltipProvider delayDuration={0}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          aria-label={copied ? "Copié" : "Copier le lien"}
+                          className="absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-lg text-muted-foreground/80 outline-none transition-[color,box-shadow] hover:text-foreground focus:z-10 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed cursor-pointer"
+                          disabled={copied}
+                          onClick={handleCopy}
+                          type="button"
                         >
-                          <Check
-                            aria-hidden="true"
-                            className="stroke-emerald-500"
-                            size={16}
-                          />
-                        </div>
-                        <div
-                          className={cn(
-                            "absolute transition-all",
-                            copied
-                              ? "scale-0 opacity-0"
-                              : "scale-100 opacity-100",
-                          )}
-                        >
-                          <Copy aria-hidden="true" size={16} />
-                        </div>
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent className="px-2 py-1 text-xs">
-                      Copier le lien
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                          <div
+                            className={cn(
+                              "transition-all",
+                              copied
+                                ? "scale-100 opacity-100"
+                                : "scale-0 opacity-0",
+                            )}
+                          >
+                            <Check
+                              aria-hidden="true"
+                              className="stroke-emerald-500"
+                              size={16}
+                            />
+                          </div>
+                          <div
+                            className={cn(
+                              "absolute transition-all",
+                              copied
+                                ? "scale-0 opacity-0"
+                                : "scale-100 opacity-100",
+                            )}
+                          >
+                            <Copy aria-hidden="true" size={16} />
+                          </div>
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent className="px-2 py-1 text-xs">
+                        Copier le lien
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Afficher le QR code"
+                      title="Afficher le QR code"
+                      className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-muted-foreground/80 hover:text-foreground hover:border-gray-300 transition-colors cursor-pointer"
+                    >
+                      <QrCodeIcon size={16} aria-hidden="true" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    align="start"
+                    className="w-auto p-4 flex flex-col items-center gap-3"
+                  >
+                    <QrCode.Root value={shareUrl} encoding={{ ecc: "M" }}>
+                      <QrCode.Frame className="w-40 h-40 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-2">
+                        <QrCode.Pattern className="fill-gray-900 dark:fill-white" />
+                      </QrCode.Frame>
+                    </QrCode.Root>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 text-center max-w-[160px]">
+                      Pointez votre caméra sur le QR code
+                    </p>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               {/* Grid principale */}
@@ -612,7 +668,24 @@ export function TransferDetailDrawer({
                   <div className="flex-1 pr-4">
                     <div className="flex items-center gap-1 mb-0.5">
                       <p className="text-xs text-gray-500">Contrôle d'accès</p>
-                      <HelpCircle className="h-3 w-3 text-gray-400" />
+                      <TooltipProvider delayDuration={0}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              aria-label="En savoir plus sur le contrôle d'accès"
+                              className="inline-flex items-center justify-center text-gray-400 hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 rounded-full"
+                            >
+                              <HelpCircle className="h-3 w-3" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent className="px-2 py-1 text-xs max-w-[220px]">
+                            Indique qui peut accéder au transfert. « Public »
+                            signifie que toute personne disposant du lien peut
+                            le consulter.
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                     <p className="text-sm font-medium text-gray-900">Public</p>
                   </div>
@@ -699,7 +772,8 @@ export function TransferDetailDrawer({
                       {displayFiles.map((file, index) => {
                         const isImg = isImageFile(file);
                         const isPdf = isPdfFile(file);
-                        const canPreview = isImg || isPdf;
+                        const isVid = isVideoFile(file);
+                        const canPreview = isImg || isPdf || isVid;
                         const previewUrl = resolvePreviewUrl(file);
 
                         return (
@@ -722,6 +796,21 @@ export function TransferDetailDrawer({
                                 className="w-full h-full object-cover"
                                 containerClassName="w-full h-full"
                               />
+                            ) : isVid && previewUrl ? (
+                              <div className="w-full h-full flex items-center justify-center bg-black/90 relative">
+                                <video
+                                  src={previewUrl}
+                                  className="w-full h-full object-cover"
+                                  preload="metadata"
+                                  muted
+                                  playsInline
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                  <div className="w-10 h-10 rounded-full bg-white/85 flex items-center justify-center">
+                                    <Video className="w-4 h-4 text-gray-800" />
+                                  </div>
+                                </div>
+                              </div>
                             ) : (
                               // PDF et autres types: afficher l'icône (les iframes
                               // en vignette sont lourds et cassent silencieusement
@@ -778,7 +867,7 @@ export function TransferDetailDrawer({
                       </div>
                       <button
                         onClick={() => downloadFile(file)}
-                        className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0 ml-4"
+                        className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0 ml-4 cursor-pointer"
                       >
                         <Download className="h-4 w-4" />
                       </button>

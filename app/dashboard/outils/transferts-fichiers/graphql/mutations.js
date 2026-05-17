@@ -298,6 +298,7 @@ export const GET_MY_TRANSFERS = gql`
       items {
         id
         workspaceId
+        title
         files {
           id
           fileId
@@ -415,6 +416,16 @@ export const CREATE_FILE_TRANSFER_FROM_SHARED_DOCS = gql`
 export const DELETE_FILE_TRANSFER = gql`
   mutation DeleteFileTransfer($id: ID!) {
     deleteFileTransfer(id: $id)
+  }
+`;
+
+// Pour renommer un transfert (titre personnalisé)
+export const RENAME_FILE_TRANSFER = gql`
+  mutation RenameFileTransfer($id: ID!, $title: String!) {
+    renameFileTransfer(id: $id, title: $title) {
+      id
+      title
+    }
   }
 `;
 

@@ -38,6 +38,9 @@ const canPreview = (file, allowPreview) => {
     "application/json",
   ];
 
+  // Vidéos: tout type MIME video/*
+  if (file.mimeType?.startsWith("video/")) return true;
+
   // Vérifier par type MIME
   if (previewableMimeTypes.includes(file.mimeType)) return true;
 
@@ -59,6 +62,13 @@ const canPreview = (file, allowPreview) => {
     "css",
     "js",
     "json",
+    "mp4",
+    "webm",
+    "ogg",
+    "ogv",
+    "mov",
+    "m4v",
+    "mkv",
   ];
 
   return previewableExtensions.includes(ext);

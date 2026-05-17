@@ -124,6 +124,8 @@ export default function ClientsTable({
   onSelectedClientsChange,
   columnVisibility,
   onColumnVisibilityChange,
+  currentList = null,
+  onClientRemovedFromList,
 }) {
   const router = useRouter();
   const [internalSelectedClients, setInternalSelectedClients] = useState(
@@ -290,6 +292,8 @@ export default function ClientsTable({
         externalColumnVisibility={columnVisibility}
         onColumnVisibilityChange={onColumnVisibilityChange}
         allLists={lists}
+        currentList={currentList}
+        onClientRemovedFromList={onClientRemovedFromList}
       />
 
       <ClientsModal

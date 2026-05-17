@@ -393,8 +393,16 @@ const TaskCard = memo(
       setShowDeleteDialog(false);
     };
 
+    // Ref pour distinguer un Escape (annulation) d'un blur normal (sauvegarde)
+    const cancelOnBlurRef = useRef(false);
+
     const startEditingTitle = (e) => {
       e.stopPropagation();
+      if (isEditingTitle) {
+        // Le bouton X enregistre le nouveau titre (comme Entrée)
+        saveTitleRef.current?.();
+        return;
+      }
       setEditValue(task.title);
       setIsEditingTitle(true);
       setTimeout(() => titleInputRef.current?.focus(), 0);
@@ -426,6 +434,10 @@ const TaskCard = memo(
       workspaceId,
       lockInteraction,
     ]);
+
+    // Ref toujours à jour vers saveTitle pour pouvoir l'appeler depuis startEditingTitle
+    const saveTitleRef = useRef(saveTitle);
+    saveTitleRef.current = saveTitle;
 
     const handleTagPopoverChange = useCallback(
       (open) => {
@@ -503,9 +515,15 @@ const TaskCard = memo(
 
           {/* Contenu avec padding */}
           <div className="px-3 py-2 sm:px-4 sm:py-2.5 flex flex-col flex-1">
-            {/* Bloc d'actions flottant au hover */}
+            {/* Bloc d'actions flottant : top-right au hover, bottom-right pendant l'édition */}
             <div
-              className={`absolute top-1.5 right-1.5 transition-opacity z-10 flex items-center gap-0.5 bg-white dark:bg-card rounded-md shadow-xs border border-border p-0.5 ${tagPopoverOpen ? "opacity-100" : "opacity-0 group-hover/card:opacity-100"}`}
+              className={`absolute right-1.5 transition-all z-10 flex items-center gap-0.5 rounded-md shadow-xs border border-border bg-white dark:bg-card p-0.5 ${
+                isEditingTitle
+                  ? "bottom-1.5 opacity-100"
+                  : tagPopoverOpen
+                    ? "top-1.5 opacity-100"
+                    : "top-1.5 opacity-0 group-hover/card:opacity-100"
+              }`}
               onClick={(e) => e.stopPropagation()}
             >
               <Button
@@ -513,9 +531,19 @@ const TaskCard = memo(
                 size="sm"
                 className="h-6 w-6 p-0"
                 disabled={isReadOnly}
+                onMouseDown={(e) => {
+                  if (isReadOnly) return;
+                  // Empêcher le blur de l'input avant notre handler
+                  e.preventDefault();
+                }}
                 onClick={isReadOnly ? undefined : startEditingTitle}
+                title={isEditingTitle ? "Enregistrer" : "Modifier le titre"}
               >
-                <Pencil className="h-3.5 w-3.5" />
+                {isEditingTitle ? (
+                  <X className="h-3.5 w-3.5" />
+                ) : (
+                  <Pencil className="h-3.5 w-3.5" />
+                )}
               </Button>
               {updateTask && !isReadOnly && (
                 <CardTagPopover
@@ -544,7 +572,6 @@ const TaskCard = memo(
                 <DropdownMenuContent align="end" className="w-40">
                   <DropdownMenuItem
                     onSelect={(e) => {
-                      e.preventDefault();
                       e.stopPropagation();
                       onEdit(task);
                     }}
@@ -569,9 +596,10 @@ const TaskCard = memo(
                       e.nativeEvent.stopImmediatePropagation();
                     }}
                     disabled={isReadOnly}
-                    className="text-red-600 cursor-pointer"
+                    variant="destructive"
+                    className="cursor-pointer text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 [&_svg]:text-destructive"
                   >
-                    <Trash2 className="mr-2 h-3 w-3 text-red-600" />
+                    <Trash2 className="mr-2 h-3 w-3" />
                     Supprimer
                   </DropdownMenuItem>
                   {isReadOnly && (
@@ -601,11 +629,18 @@ const TaskCard = memo(
                       saveTitle();
                     }
                     if (e.key === "Escape") {
+                      cancelOnBlurRef.current = true;
                       setEditValue(task.title);
                       setIsEditingTitle(false);
                     }
                   }}
-                  onBlur={saveTitle}
+                  onBlur={() => {
+                    if (cancelOnBlurRef.current) {
+                      cancelOnBlurRef.current = false;
+                      return;
+                    }
+                    saveTitle();
+                  }}
                   className="w-full text-sm font-medium text-[#5A50FF] bg-transparent border-none outline-none caret-[#5A50FF] p-0 m-0"
                 />
               </div>

@@ -151,6 +151,7 @@ export const MentionCommentInput = forwardRef(function MentionCommentInput(
     editMode = false,
     onCancel,
     submitLabel,
+    allowEmpty = false,
   },
   ref,
 ) {
@@ -280,7 +281,7 @@ export const MentionCommentInput = forwardRef(function MentionCommentInput(
   const handleSubmit = useCallback(() => {
     if (!editorRef.current || disabled) return;
     const text = editorRef.current.textContent?.trim() || "";
-    if (text.length === 0) return;
+    if (text.length === 0 && !allowEmpty) return;
 
     const html = editorRef.current.innerHTML;
 
@@ -300,7 +301,7 @@ export const MentionCommentInput = forwardRef(function MentionCommentInput(
       setIsEmpty(true);
     }
     setMentionState(null);
-  }, [disabled, onSubmit, editMode]);
+  }, [disabled, onSubmit, editMode, allowEmpty]);
 
   // Expose submit to parent via ref
   useImperativeHandle(
@@ -385,7 +386,7 @@ export const MentionCommentInput = forwardRef(function MentionCommentInput(
                   Annuler
                 </button>
                 <button
-                  disabled={isEmpty || disabled || loading}
+                  disabled={(isEmpty && !allowEmpty) || disabled || loading}
                   onMouseDown={(e) => {
                     e.preventDefault();
                     handleSubmit();
@@ -402,7 +403,7 @@ export const MentionCommentInput = forwardRef(function MentionCommentInput(
               </>
             ) : (
               <button
-                disabled={isEmpty || disabled || loading}
+                disabled={(isEmpty && !allowEmpty) || disabled || loading}
                 onMouseDown={(e) => {
                   e.preventDefault();
                   handleSubmit();

@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "@/src/components/ui/sonner";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Checkbox } from "@/src/components/ui/checkbox";
@@ -42,17 +41,6 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/src/components/ui/alert-dialog";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -82,6 +70,8 @@ export default function ClientListsView({
   globalFilter = "",
   onCreateList,
   onViewingListChange,
+  rowSelection: externalRowSelection,
+  onRowSelectionChange: externalOnRowSelectionChange,
 }) {
   const router = useRouter();
   const [selectedList, setSelectedList] = useState(initialSelectedList || null);
@@ -111,10 +101,11 @@ export default function ClientListsView({
     }
   };
 
-  // État pour les lignes sélectionnées
-  const [rowSelection, setRowSelection] = useState({});
-  const [isDeleteMultipleOpen, setIsDeleteMultipleOpen] = useState(false);
-  const [isDeletingMultiple, setIsDeletingMultiple] = useState(false);
+  // État pour les lignes sélectionnées (contrôlé par le parent si fourni)
+  const [internalRowSelection, setInternalRowSelection] = useState({});
+  const rowSelection = externalRowSelection ?? internalRowSelection;
+  const setRowSelection =
+    externalOnRowSelectionChange ?? setInternalRowSelection;
 
   // Colonnes du tableau - Style identique au Kanban
   const columns = useMemo(
@@ -244,6 +235,7 @@ export default function ClientListsView({
   const table = useReactTable({
     data: lists,
     columns,
+    getRowId: (row) => row.id,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -263,11 +255,6 @@ export default function ClientListsView({
     },
   });
 
-  // Récupérer les lignes sélectionnées
-  const selectedRowsData = table
-    .getSelectedRowModel()
-    .rows.map((row) => row.original);
-
   if (selectedList) {
     return (
       <ListClientsView
@@ -281,60 +268,6 @@ export default function ClientListsView({
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden">
-      {/* Bulk actions */}
-      {selectedRowsData.length > 0 && (
-        <div className="flex items-center justify-end px-4 sm:px-6 py-2 flex-shrink-0">
-          <AlertDialog
-            open={isDeleteMultipleOpen}
-            onOpenChange={setIsDeleteMultipleOpen}
-          >
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive">
-                <Trash2 className="mr-2 h-4 w-4" />
-                Supprimer ({selectedRowsData.length})
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Supprimer les listes</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Êtes-vous sûr de vouloir supprimer {selectedRowsData.length}{" "}
-                  liste(s) ? Cette action est irréversible.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={async () => {
-                    setIsDeletingMultiple(true);
-                    try {
-                      for (const list of selectedRowsData) {
-                        await handleDeleteList(list.id);
-                      }
-                      table.resetRowSelection();
-                    } finally {
-                      setIsDeletingMultiple(false);
-                      setIsDeleteMultipleOpen(false);
-                    }
-                  }}
-                  className="bg-destructive text-white hover:bg-destructive/90"
-                  disabled={isDeletingMultiple}
-                >
-                  {isDeletingMultiple ? (
-                    <>
-                      <Trash2 className="mr-2 h-4 w-4 animate-spin" />
-                      Suppression...
-                    </>
-                  ) : (
-                    "Supprimer définitivement"
-                  )}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      )}
-
       {/* Table */}
       {lists?.length === 0 && !globalFilter ? (
         <div className="flex-1 flex items-center justify-center">

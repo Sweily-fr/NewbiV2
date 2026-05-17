@@ -12,6 +12,7 @@ import {
   Search,
   LayoutGrid,
   Command,
+  Star,
 } from "lucide-react";
 import { Input } from "@/src/components/ui/input";
 
@@ -91,10 +92,13 @@ export function NavMain({
   // Filtrer et trier les tableaux Kanban (tous les dossiers, filtrés par recherche)
   const filteredKanbanBoards = useMemo(() => {
     const boards = kanbanData?.boards || [];
-    // Trier par date de création (plus récent en premier)
-    const sortedBoards = [...boards].sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
-    );
+    // Favoris en premier, puis tri par date de création (plus récent en premier)
+    const sortedBoards = [...boards].sort((a, b) => {
+      const aFav = a.isFavorite ? 1 : 0;
+      const bFav = b.isFavorite ? 1 : 0;
+      if (aFav !== bFav) return bFav - aFav;
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
     // Filtrer par terme de recherche si présent, sinon afficher tous
     const filtered = debouncedKanbanSearch
       ? sortedBoards.filter((board) =>
@@ -616,6 +620,9 @@ export function NavMain({
                           href={`/dashboard/outils/kanban/${board.id}`}
                           onClick={handleLinkClick}
                         >
+                          {board.isFavorite && (
+                            <Star className="h-3 w-3 text-yellow-400 fill-yellow-400 flex-shrink-0" />
+                          )}
                           <span className="flex-1 text-xs truncate">
                             {board.title}
                           </span>
@@ -733,6 +740,9 @@ export function NavMain({
                           isBoardActive && "bg-accent font-medium",
                         )}
                       >
+                        {board.isFavorite && (
+                          <Star className="h-3 w-3 text-yellow-400 fill-yellow-400 flex-shrink-0" />
+                        )}
                         <span className="text-xs truncate flex-1">
                           {board.title}
                         </span>

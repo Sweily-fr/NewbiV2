@@ -38,6 +38,13 @@ export function PreviewModal({ file, onClose }) {
     return ext === "pdf";
   };
 
+  // Déterminer si c'est une vidéo
+  const isVideo = () => {
+    if (file.mimeType?.startsWith("video/")) return true;
+    const ext = file.originalName?.split(".").pop()?.toLowerCase();
+    return ["mp4", "webm", "ogg", "ogv", "mov", "m4v", "mkv"].includes(ext);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
       <div className="relative bg-white rounded-xl max-w-4xl w-[90vw] max-h-[90vh] overflow-hidden">
@@ -91,6 +98,16 @@ export function PreviewModal({ file, onClose }) {
                 />
               )}
             </div>
+          ) : isVideo() ? (
+            <video
+              src={file.previewUrl}
+              controls
+              autoPlay
+              className="w-full max-h-[70vh] rounded-lg bg-black"
+              preload="metadata"
+            >
+              Votre navigateur ne supporte pas la lecture vidéo.
+            </video>
           ) : isPdf() ? (
             <iframe
               src={file.previewUrl}

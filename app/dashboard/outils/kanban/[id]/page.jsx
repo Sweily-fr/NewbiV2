@@ -230,12 +230,206 @@ import {
   MOVE_TASK,
   UPDATE_BOARD,
   TOGGLE_BOARD_FAVORITE,
+  GET_ORGANIZATION_MEMBERS,
 } from "@/src/graphql/kanbanQueries";
 
 // @hello-pangea/dnd
 // DragDropContext removed — list view now uses custom useListDnD hook
 
-import { useMutation } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client";
+import { useSession } from "@/src/lib/auth-client";
+import { Lock } from "lucide-react";
+
+/**
+ * Popover "Accès au tableau" sur la page board.
+ * - Tous les membres du workspace sont chargés (et non seulement board.members
+ *   filtré) pour pouvoir ajouter quelqu'un même quand le board est restreint.
+ * - Le créateur est sorti de la liste togglable et affiché à part.
+ * - Décocher le dernier membre en mode restreint garde [ownerId] pour ne pas
+ *   retomber sur "tout le workspace".
+ * - Seul le créateur peut modifier (les autres voient en lecture seule).
+ */
+function BoardAccessPopover({ board, workspaceId, onChange }) {
+  const ownerId = board?.userId ? String(board.userId) : null;
+  const { data: session } = useSession();
+  const currentUserId = session?.user?.id ? String(session.user.id) : null;
+  const canEdit = !!ownerId && !!currentUserId && ownerId === currentUserId;
+
+  const rawAssigned = (board?.boardMembers || [])
+    .map((id) => (id ? String(id) : null))
+    .filter(Boolean);
+  const hasRestriction = rawAssigned.length > 0;
+  const assignedSet = new Set(rawAssigned);
+
+  const { data } = useQuery(GET_ORGANIZATION_MEMBERS, {
+    variables: { workspaceId },
+    skip: !workspaceId,
+    fetchPolicy: "cache-first",
+  });
+  const orgMembers = data?.organizationMembers || [];
+  const allNonOwnerIds = orgMembers
+    .map((m) => String(m.id))
+    .filter((id) => id !== ownerId);
+
+  const memberHasAccess = (id) => {
+    if (ownerId && id === ownerId) return true;
+    if (!hasRestriction) return true;
+    return assignedSet.has(id);
+  };
+
+  const toggleMember = (memberId) => {
+    if (!canEdit) return;
+    if (ownerId && memberId === ownerId) return;
+    if (allNonOwnerIds.length === 0) return;
+    let next;
+    if (!hasRestriction) {
+      next = new Set(allNonOwnerIds);
+      next.delete(memberId);
+    } else {
+      next = new Set(rawAssigned);
+      if (next.has(memberId)) next.delete(memberId);
+      else next.add(memberId);
+    }
+    const coversEveryone = allNonOwnerIds.every((id) => next.has(id));
+    let toSave;
+    if (coversEveryone) {
+      toSave = [];
+    } else if (next.size === 0 && ownerId) {
+      toSave = [ownerId];
+    } else {
+      toSave = Array.from(next);
+    }
+    onChange(toSave);
+  };
+
+  const creator = ownerId
+    ? orgMembers.find((m) => String(m.id) === ownerId)
+    : null;
+  const togglableMembers = orgMembers.filter((m) => String(m.id) !== ownerId);
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          className="h-6 px-1.5 rounded-md hover:bg-muted cursor-pointer transition-colors flex items-center gap-1"
+          title="Accès au tableau"
+        >
+          <UserRoundPlus
+            className={`h-3.5 w-3.5 transition-colors ${
+              hasRestriction ? "text-foreground/70" : "text-muted-foreground/50"
+            }`}
+          />
+          {hasRestriction && (
+            <span className="text-[11px] text-foreground/60 font-medium">
+              {rawAssigned.length + (ownerId ? 1 : 0)}
+            </span>
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-64 p-0" side="bottom" align="start">
+        <div className="px-3 pt-3 pb-2 border-b border-border/50">
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <span className="text-xs font-medium">Accès au tableau</span>
+            <span
+              className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                hasRestriction
+                  ? "bg-amber-50 text-amber-700 border border-amber-200"
+                  : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+              }`}
+            >
+              {hasRestriction ? "Restreint" : "Tout le workspace"}
+            </span>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            {hasRestriction
+              ? "Seuls les membres cochés voient ce tableau."
+              : "Tous les membres du workspace voient ce tableau."}
+          </p>
+          {!canEdit && (
+            <div className="mt-1.5 flex items-center gap-1.5 px-1.5 py-1 rounded-md bg-muted/40 text-[11px] text-muted-foreground">
+              <Lock className="h-3 w-3" />
+              Lecture seule — seul le créateur peut modifier
+            </div>
+          )}
+          {hasRestriction && canEdit && (
+            <button
+              type="button"
+              onClick={() => onChange([])}
+              className="mt-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Repasser sur "tout le workspace"
+            </button>
+          )}
+        </div>
+        {creator && (
+          <div className="px-3 py-2 bg-muted/30 border-b border-border/50 flex items-center gap-2">
+            <UserAvatar
+              src={creator.image}
+              name={creator.name || creator.email}
+              size="xs"
+              className="h-5 w-5 flex-shrink-0"
+            />
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-medium truncate">
+                {creator.name || creator.email}
+              </div>
+              <div className="text-[10px] text-muted-foreground">
+                Créateur du tableau
+              </div>
+            </div>
+          </div>
+        )}
+        <div className="p-1.5 space-y-0.5 max-h-[280px] overflow-y-auto">
+          {togglableMembers.length === 0 ? (
+            <div className="px-3 py-6 text-center text-[11px] text-muted-foreground">
+              Aucun autre membre dans le workspace
+            </div>
+          ) : (
+            togglableMembers.map((member) => {
+              const memberId = String(member.id);
+              const hasAccess = memberHasAccess(memberId);
+              return (
+                <button
+                  key={memberId}
+                  onClick={() => toggleMember(memberId)}
+                  disabled={!canEdit}
+                  title={
+                    !canEdit
+                      ? "Seul le créateur du tableau peut modifier l'accès"
+                      : undefined
+                  }
+                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors text-left ${
+                    canEdit
+                      ? "hover:bg-accent cursor-pointer"
+                      : "cursor-default"
+                  }`}
+                >
+                  <div
+                    className={`rounded-full flex-shrink-0 ${
+                      hasAccess
+                        ? "ring-[1.5px] ring-[#5A50FF] ring-offset-1 ring-offset-background"
+                        : ""
+                    }`}
+                  >
+                    <UserAvatar
+                      src={member.image}
+                      name={member.name || member.email}
+                      size="xs"
+                      className="h-5 w-5"
+                    />
+                  </div>
+                  <span className="flex-1 text-left text-xs font-medium truncate">
+                    {member.name || member.email}
+                  </span>
+                </button>
+              );
+            })
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 function InlineBoardTitle({ title, onSave }) {
   const [isEditing, setIsEditing] = React.useState(false);
@@ -668,8 +862,9 @@ function KanbanBoardPageContent({ params }) {
 
   // Hook pour le filtrage par membre (AVANT useKanbanDnDSimple pour éviter l'erreur de hoisting)
   const {
-    selectedMemberId,
-    setSelectedMemberId,
+    selectedMemberIds,
+    toggleMemberId,
+    clearSelectedMembers,
     members,
     loading: membersLoading,
     filterTasksByMember,
@@ -685,7 +880,7 @@ function KanbanBoardPageContent({ params }) {
     setLocalColumns,
     reorderColumnsMutation,
     markReorderAction,
-    selectedMemberId, // Passer le filtre pour recalculer les positions correctement
+    selectedMemberIds, // Passer le filtre pour recalculer les positions correctement
   );
 
   // Wrapper handleDragEnd — shared by both board (custom DnD) and list (@hello-pangea/dnd)
@@ -1276,63 +1471,14 @@ function KanbanBoardPageContent({ params }) {
               </PopoverContent>
             </Popover>
 
-            {/* Assigner des membres */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  className="h-6 px-1.5 rounded-md hover:bg-muted cursor-pointer transition-colors flex items-center gap-1"
-                  title="Membres du projet"
-                >
-                  <UserRoundPlus
-                    className={`h-3.5 w-3.5 transition-colors ${boardMemberIds.length > 0 ? "text-foreground/70" : "text-muted-foreground/50"}`}
-                  />
-                  {boardMemberIds.length > 0 && (
-                    <span className="text-[11px] text-foreground/60 font-medium">
-                      {boardMemberIds.length}
-                    </span>
-                  )}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-60 p-0" side="bottom" align="start">
-                <div className="px-2 pt-2 pb-0.5">
-                  <span className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider">
-                    Membres du projet
-                  </span>
-                </div>
-                <div className="p-1.5 pt-0.5 space-y-0.5 max-h-[280px] overflow-y-auto">
-                  {board?.members?.map((member) => {
-                    const memberId = member.userId || member.id;
-                    const isAssigned = boardMemberIds.includes(memberId);
-                    return (
-                      <button
-                        key={memberId}
-                        onClick={() => {
-                          const newMembers = isAssigned
-                            ? boardMemberIds.filter((mid) => mid !== memberId)
-                            : [...boardMemberIds, memberId];
-                          updateBoardField("boardMembers", newMembers);
-                        }}
-                        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer"
-                      >
-                        <div
-                          className={`rounded-full flex-shrink-0 ${isAssigned ? "ring-[1.5px] ring-[#5A50FF] ring-offset-1 ring-offset-background" : ""}`}
-                        >
-                          <UserAvatar
-                            src={member.image}
-                            name={member.name || member.email}
-                            size="xs"
-                            className="h-5 w-5"
-                          />
-                        </div>
-                        <span className="flex-1 text-left text-xs font-medium truncate">
-                          {member.name || member.email}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </PopoverContent>
-            </Popover>
+            {/* Accès au tableau (membres autorisés) */}
+            <BoardAccessPopover
+              board={board}
+              workspaceId={workspaceId}
+              onChange={(nextMembers) =>
+                updateBoardField("boardMembers", nextMembers)
+              }
+            />
           </div>
 
           {/* Séparateur */}
@@ -1425,22 +1571,22 @@ function KanbanBoardPageContent({ params }) {
             >
               <DropdownMenuTrigger asChild>
                 <Button
-                  variant={selectedMemberId ? "primary" : "outline"}
+                  variant={selectedMemberIds.length > 0 ? "primary" : "outline"}
                   size="icon"
                   className="relative"
                   title="Filtres"
                 >
                   <Filter size={14} aria-hidden="true" />
-                  {selectedMemberId && (
+                  {selectedMemberIds.length > 0 && (
                     <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#5A50FF] text-[9px] font-bold text-white">
-                      1
+                      {selectedMemberIds.length}
                     </span>
                   )}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-[240px]">
                 <DropdownMenuItem
-                  onClick={() => setSelectedMemberId(null)}
+                  onClick={() => clearSelectedMembers()}
                   className="cursor-pointer"
                 >
                   Effacer le filtre
@@ -1450,9 +1596,9 @@ function KanbanBoardPageContent({ params }) {
                   <DropdownMenuSubTrigger className="whitespace-nowrap">
                     <Users className="h-4 w-4 mr-2" />
                     Par utilisateurs
-                    {selectedMemberId && (
+                    {selectedMemberIds.length > 0 && (
                       <Badge variant="secondary" className="ml-auto">
-                        1
+                        {selectedMemberIds.length}
                       </Badge>
                     )}
                   </DropdownMenuSubTrigger>
@@ -1466,13 +1612,10 @@ function KanbanBoardPageContent({ params }) {
                         {members.map((member) => (
                           <DropdownMenuItem
                             key={member.id}
-                            onClick={() =>
-                              setSelectedMemberId(
-                                selectedMemberId === member.id
-                                  ? null
-                                  : member.id,
-                              )
-                            }
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              toggleMemberId(member.id);
+                            }}
                             className="flex items-center px-2 py-1.5 cursor-pointer text-sm"
                           >
                             {member.image ? (
@@ -1493,12 +1636,12 @@ function KanbanBoardPageContent({ params }) {
                             </span>
                             <div
                               className={`w-4 h-4 rounded border flex items-center justify-center ${
-                                selectedMemberId === member.id
+                                selectedMemberIds.includes(member.id)
                                   ? "bg-primary border-primary"
                                   : "border-muted-foreground/50"
                               }`}
                             >
-                              {selectedMemberId === member.id && (
+                              {selectedMemberIds.includes(member.id) && (
                                 <span className="text-white text-xs">✓</span>
                               )}
                             </div>
