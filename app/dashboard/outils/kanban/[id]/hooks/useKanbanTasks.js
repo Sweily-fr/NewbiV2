@@ -717,16 +717,25 @@ export const useKanbanTasks = (boardId, board) => {
     setIsAddTaskOpen(true);
   }, []);
 
+  // Fermeture du modal : on flippe isOpen IMMÉDIATEMENT (déclenche le unmount
+  // Radix en parallèle) puis on défère le reset du form au tick suivant.
+  // Avant : 3 state setters batched → React render avec form vide AVANT le
+  // unmount, ce qui rajoute du travail dans le frame qui ferme.
+  // Après : 1 setter urgent (close) + cleanup différé → fermeture instantanée.
   const closeAddTaskModal = useCallback(() => {
     setIsAddTaskOpen(false);
-    setTaskForm(initialTaskForm);
-    setEditingTask(null);
+    setTimeout(() => {
+      setEditingTask(null);
+      setTaskForm(INITIAL_TASK_FORM);
+    }, 0);
   }, []);
 
   const closeEditTaskModal = useCallback(() => {
     setIsEditTaskOpen(false);
-    setEditingTask(null);
-    setTaskForm(initialTaskForm);
+    setTimeout(() => {
+      setEditingTask(null);
+      setTaskForm(INITIAL_TASK_FORM);
+    }, 0);
   }, []);
 
   const openEditTaskModal = useCallback(
