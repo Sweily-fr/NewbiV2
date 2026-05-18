@@ -1,4 +1,11 @@
-import { useState, useMemo, useRef, useCallback, memo } from "react";
+import {
+  useState,
+  useMemo,
+  useRef,
+  useCallback,
+  useContext,
+  memo,
+} from "react";
 import {
   Calendar,
   MoreHorizontal,
@@ -54,7 +61,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { formatDateRelative } from "../../../../../../src/utils/kanbanHelpers";
 import { AvatarGroup, UserAvatar } from "@/src/components/ui/user-avatar";
-import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
+import { BoardMembersLookupContext } from "@/src/hooks/useAssignedMembersInfo";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { usePrefetchTaskDetails } from "../hooks/usePrefetchTaskDetails";
 import { perfMark, perfReset } from "@/src/utils/kanbanPerf";
@@ -104,7 +111,7 @@ const TAG_COLORS = [
   { bg: "#F3F4F6", text: "#374151", border: "#E5E7EB" },
 ];
 
-function CardTagPopover({
+const CardTagPopover = memo(function CardTagPopover({
   task,
   updateTask,
   workspaceId,
@@ -125,23 +132,31 @@ function CardTagPopover({
     });
   }, [allBoardTags]);
 
-  const filteredTags = existingTags.filter(
-    (t) =>
-      t.name.toLowerCase().includes(search.toLowerCase()) &&
-      !taskTags.some((tt) => tt.name.toLowerCase() === t.name.toLowerCase()),
-  );
+  // filteredTags + canCreate dépendent de search → memoize ensemble
+  const { filteredTags, canCreate } = useMemo(() => {
+    const lowerSearch = search.toLowerCase();
+    const trimmedLower = search.trim().toLowerCase();
+    const taskTagsLower = taskTags.map((t) => t.name.toLowerCase());
+    const taskTagsSet = new Set(taskTagsLower);
 
-  const canCreate =
-    search.trim() &&
-    !existingTags.some(
-      (t) => t.name.toLowerCase() === search.trim().toLowerCase(),
-    ) &&
-    !taskTags.some((t) => t.name.toLowerCase() === search.trim().toLowerCase());
+    const filtered = existingTags.filter(
+      (t) =>
+        t.name.toLowerCase().includes(lowerSearch) &&
+        !taskTagsSet.has(t.name.toLowerCase()),
+    );
 
-  const getNextColor = () => {
+    const can =
+      !!trimmedLower &&
+      !existingTags.some((t) => t.name.toLowerCase() === trimmedLower) &&
+      !taskTagsSet.has(trimmedLower);
+
+    return { filteredTags: filtered, canCreate: can };
+  }, [existingTags, search, taskTags]);
+
+  const getNextColor = useCallback(() => {
     const usedBgs = new Set(existingTags.map((t) => t.bg));
     return TAG_COLORS.find((c) => !usedBgs.has(c.bg)) || TAG_COLORS[0];
-  };
+  }, [existingTags]);
 
   const addTagToTask = (tag) => {
     const newTags = [
@@ -320,7 +335,7 @@ function CardTagPopover({
       </PopoverContent>
     </Popover>
   );
-}
+});
 
 /**
  * Composant TaskCard optimisé avec React.memo
@@ -374,10 +389,21 @@ const TaskCard = memo(
     const titleInputRef = useRef(null);
     const interactionLockRef = useRef(false);
 
-    // Récupérer les infos des membres assignés
-    const { members: assignedMembersInfo } = useAssignedMembersInfo(
-      task.assignedMembers || [],
-    );
+    // Récupérer les infos des membres assignés DIRECTEMENT depuis le context
+    // (pas via useAssignedMembersInfo qui appelle useQuery — même skipé, 300
+    // useQuery par TaskCard s'abonnent au cache Apollo et causent des
+    // notifications en cascade à chaque event temps réel).
+    const membersLookup = useContext(BoardMembersLookupContext);
+    const assignedMembersInfo = useMemo(() => {
+      if (!membersLookup) return [];
+      const out = [];
+      for (const id of task.assignedMembers || []) {
+        if (!id) continue;
+        const u = membersLookup.get(String(id));
+        if (u) out.push(u);
+      }
+      return out;
+    }, [membersLookup, task.assignedMembers]);
 
     // Préchargement des détails de la tâche au survol (hover intent).
     // L'ouverture du modal se fera alors depuis le cache Apollo, sans
