@@ -691,6 +691,22 @@ function KanbanBoardPageContent({ params }) {
     isReady: isViewModeReady,
   } = useViewMode(id);
 
+  // Track des vues qui ont été activées au moins une fois.
+  // Permet de garder une vue montée après son 1er passage et de juste
+  // toggler la visibilité via CSS (display:none/block) au lieu de
+  // re-mount/unmount tout l'arbre — qui est cher avec 300 tâches.
+  const everActivatedViewsRef = React.useRef({
+    board: false,
+    list: false,
+    gantt: false,
+  });
+  if (isBoard) everActivatedViewsRef.current.board = true;
+  if (isList) everActivatedViewsRef.current.list = true;
+  if (isGantt) everActivatedViewsRef.current.gantt = true;
+  const everBoard = everActivatedViewsRef.current.board;
+  const everList = everActivatedViewsRef.current.list;
+  const everGantt = everActivatedViewsRef.current.gantt;
+
   // Hooks
   const {
     board,
@@ -1063,8 +1079,11 @@ function KanbanBoardPageContent({ params }) {
       handledTaskIdRef.current = taskIdFromUrl;
     }
     closeEditTaskModal();
+    // Déférer replaceState pour ne pas ajouter de travail au frame qui ferme
     if (typeof window !== "undefined") {
-      window.history.replaceState(null, "", `/dashboard/outils/kanban/${id}`);
+      setTimeout(() => {
+        window.history.replaceState(null, "", `/dashboard/outils/kanban/${id}`);
+      }, 0);
     }
   }, [closeEditTaskModal, id, taskIdFromUrl]);
 
@@ -1825,9 +1844,12 @@ function KanbanBoardPageContent({ params }) {
           </div>
         )}
 
-        {/* Gantt sans padding */}
-        {isGantt && (
-          <div className="w-full">
+        {/* Gantt — gardé monté après 1er passage, juste caché si inactif */}
+        {everGantt && (
+          <div
+            className="w-full"
+            style={{ display: isGantt ? undefined : "none" }}
+          >
             <KanbanGanttView
               columns={localColumns}
               getTasksByColumn={getLocalTasksByColumn}
@@ -1843,9 +1865,11 @@ function KanbanBoardPageContent({ params }) {
 
         {/* Board Content - Zone scrollable pour les colonnes */}
         <div className="flex-1 overflow-hidden">
-          {isList && (
+          {/* List — gardée montée après 1er passage */}
+          {everList && (
             <div
               className="h-full overflow-auto"
+              style={{ display: isList ? undefined : "none" }}
               ref={(node) => {
                 listScrollRef.current = node;
               }}
@@ -1872,10 +1896,12 @@ function KanbanBoardPageContent({ params }) {
             </div>
           )}
 
-          {isBoard && (
+          {/* Board — gardé monté après 1er passage */}
+          {everBoard && (
             <div
               ref={scrollRef}
               className="h-full overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+              style={{ display: isBoard ? undefined : "none" }}
             >
               <div
                 className="h-full w-max min-w-full origin-top-left flex flex-nowrap items-start px-4 sm:px-6"
