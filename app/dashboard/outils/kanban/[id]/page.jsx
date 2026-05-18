@@ -1415,7 +1415,7 @@ function KanbanBoardPageContent({ params }) {
   return (
     <BoardMembersLookupProvider userIds={allBoardUserIds}>
       <div
-        key={`kanban-board-${id}-${isBoard ? "board" : "list"}`}
+        key={`kanban-board-${id}`}
         className="h-[calc(100vh-64px)] flex flex-col overflow-hidden"
         style={{ pointerEvents: isBoard ? "auto" : "auto" }}
       >
