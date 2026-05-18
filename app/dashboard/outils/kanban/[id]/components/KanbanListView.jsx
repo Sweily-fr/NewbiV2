@@ -60,7 +60,7 @@ import { MemberSelector } from "./MemberSelector";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { toast } from "sonner";
 
-function _formatDate(dateString) {
+function formatDate(dateString) {
   if (!dateString) return "";
   const date = new Date(dateString);
   const day = String(date.getDate()).padStart(2, "0");
@@ -1752,6 +1752,378 @@ const TaskRow = React.memo(function TaskRow({
   );
 });
 
+// Badge de priorité — au module level pour être accessible depuis
+// TaskListRowContent (qui est lui-même au module level).
+function getPriorityBadge(priority) {
+  if (!priority || priority.toLowerCase() === "none") return null;
+
+  const isHigh = priority.toLowerCase() === "high";
+  const isMedium = priority.toLowerCase() === "medium";
+
+  const label = isHigh ? "Urgent" : isMedium ? "Moyen" : "Faible";
+  const flagColor = isHigh
+    ? "text-red-500 fill-red-500"
+    : isMedium
+      ? "text-yellow-500 fill-yellow-500"
+      : "text-green-500 fill-green-500";
+
+  return (
+    <Badge
+      variant="outline"
+      className="inline-flex items-center gap-1 py-1 px-2.5 text-xs font-medium rounded-md text-muted-foreground"
+    >
+      <Flag className={`h-4 w-4 ${flagColor}`} />
+      <span className="text-muted-foreground">{label}</span>
+    </Badge>
+  );
+}
+
+/**
+ * Contenu d'une row mémorisée (mémo le bloc de 350 lignes de JSX qui était
+ * inline dans le map des tasks). C'est LE truc qui fait perdre la fluidité
+ * à la vue liste avec 300 tâches : la JSX inline est recréée à chaque render
+ * parent, ce qui force React à walker 300 × ~350 JSX nodes même quand rien
+ * n'a changé pour la row.
+ *
+ * Avec memo + props stables (handlers useCallback, isSelected boolean), seuls
+ * les rows réellement modifiés re-renderent.
+ */
+const TaskListRowContent = React.memo(function TaskListRowContent({
+  task,
+  column,
+  columns,
+  isSelected,
+  onToggleSelect,
+  members,
+  membersInfo,
+  updateTask,
+  moveTask,
+  workspaceId,
+  allBoardTags,
+  popoverOpenRef,
+  onEditTask,
+  onDeleteTask,
+}) {
+  return (
+    <>
+      {/* Nom avec drag handle et checkbox */}
+      <div className="min-w-0">
+        <div className="flex items-center gap-3">
+          <GripVertical className="h-4 w-4 text-muted-foreground/40 flex-shrink-0 cursor-grab opacity-0 group-hover:opacity-100 transition-opacity" />
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={(checked) => {
+              if (checked === "indeterminate") return;
+              onToggleSelect(task.id, !!checked);
+            }}
+            className={`flex-shrink-0 h-4 w-4 border-muted-foreground/30 mr-4 transition-opacity ${isSelected ? "opacity-100 border-[#5A50FF] bg-[#5A50FF] text-white data-[state=checked]:bg-[#5A50FF] data-[state=checked]:border-[#5A50FF]" : "opacity-0 group-hover:opacity-100"}`}
+            onClick={(e) => e.stopPropagation()}
+          />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="flex-shrink-0 w-2.5 h-2.5 rounded-full cursor-pointer hover:opacity-80 transition-opacity"
+                style={{
+                  backgroundColor: column.color || "#94a3b8",
+                  border: `1.5px solid ${column.color || "#94a3b8"}60`,
+                  outline: `1.5px solid ${column.color || "#94a3b8"}30`,
+                  outlineOffset: "1.5px",
+                }}
+                onClick={(e) => e.stopPropagation()}
+                title="Changer le status"
+              />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-40">
+              {columns.map((col) => (
+                <DropdownMenuItem
+                  key={col.id}
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    try {
+                      await moveTask({
+                        variables: {
+                          id: task.id,
+                          columnId: col.id,
+                          position: 0,
+                          workspaceId,
+                        },
+                      });
+                    } catch (error) {
+                      console.error(
+                        "Erreur lors du déplacement de la tâche:",
+                        error,
+                      );
+                    }
+                  }}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <div
+                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: col.color || "#94a3b8" }}
+                  />
+                  <span>{col.title}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <InlineEditTitle
+            task={task}
+            updateTask={updateTask}
+            workspaceId={workspaceId}
+            popoverOpenRef={popoverOpenRef}
+            allBoardTags={allBoardTags}
+          />
+        </div>
+      </div>
+
+      {/* Assignée */}
+      <div className="flex items-center gap-0.5 min-w-0">
+        {task.assignedMembers && task.assignedMembers.length > 0 ? (
+          <MembersPopover
+            task={task}
+            membersInfo={membersInfo}
+            members={members}
+            updateTask={updateTask}
+            workspaceId={workspaceId}
+            isTrigger={true}
+            popoverOpenRef={popoverOpenRef}
+          />
+        ) : (
+          <MembersPopover
+            task={task}
+            membersInfo={membersInfo}
+            members={members}
+            updateTask={updateTask}
+            workspaceId={workspaceId}
+            isTrigger={false}
+            popoverOpenRef={popoverOpenRef}
+          />
+        )}
+      </div>
+
+      {/* Status */}
+      <div className="flex items-center gap-1 min-w-0">
+        <StatusPopoverWrapper
+          columns={columns}
+          column={column}
+          task={task}
+          moveTask={moveTask}
+          workspaceId={workspaceId}
+          popoverOpenRef={popoverOpenRef}
+        />
+      </div>
+
+      {/* Date d'échéance */}
+      <div className="flex items-center gap-1.5 text-xs min-w-0">
+        {task.dueDate ? (
+          <div className="relative group/date inline-flex items-center">
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-muted/60 hover:ring-1 hover:ring-border transition-all cursor-pointer bg-transparent border-0 p-0"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <span className="truncate font-normal text-foreground/70">
+                    {formatDate(task.dueDate)}
+                  </span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" side="top" align="start">
+                <div className="flex flex-col">
+                  <div className="border-b p-2">
+                    <CalendarComponent
+                      mode="single"
+                      selected={
+                        task.dueDate ? new Date(task.dueDate) : undefined
+                      }
+                      onSelect={async (date) => {
+                        if (date) {
+                          try {
+                            const existingDate = new Date(task.dueDate);
+                            date.setHours(
+                              existingDate.getHours(),
+                              existingDate.getMinutes(),
+                              0,
+                              0,
+                            );
+                            await updateTask({
+                              variables: {
+                                input: {
+                                  id: task.id,
+                                  dueDate: date.toISOString(),
+                                },
+                                workspaceId,
+                              },
+                            });
+                          } catch (error) {
+                            console.error(
+                              "Erreur lors de la mise à jour de la date:",
+                              error,
+                            );
+                          }
+                        }
+                      }}
+                      initialFocus
+                      locale={fr}
+                      fromDate={new Date()}
+                      className="border-0 p-2 text-xs [--cell-size:--spacing(8)]"
+                    />
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+            <button
+              onClick={async (e) => {
+                e.stopPropagation();
+                try {
+                  await updateTask({
+                    variables: {
+                      input: { id: task.id, dueDate: null },
+                      workspaceId,
+                    },
+                  });
+                } catch (error) {
+                  console.error(
+                    "Erreur lors de la suppression de la date:",
+                    error,
+                  );
+                }
+              }}
+              className="absolute -top-1.5 -right-2 w-3.5 h-3.5 bg-muted-foreground border border-white rounded-full flex items-center justify-center opacity-0 group-hover/date:opacity-100 transition-opacity cursor-pointer"
+              title="Supprimer la date"
+            >
+              <X className="w-2 h-2 text-white stroke-[3]" />
+            </button>
+          </div>
+        ) : (
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                className="cursor-pointer text-muted-foreground/70 hover:text-foreground transition-colors"
+                onClick={(e) => e.stopPropagation()}
+                title="Ajouter une date d'échéance"
+              >
+                <Calendar className="h-4 w-4" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" side="top" align="start">
+              <div className="flex flex-col">
+                <div className="border-b p-2">
+                  <CalendarComponent
+                    mode="single"
+                    selected={undefined}
+                    onSelect={async (date) => {
+                      if (date) {
+                        try {
+                          date.setHours(18, 0, 0, 0);
+                          await updateTask({
+                            variables: {
+                              input: {
+                                id: task.id,
+                                dueDate: date.toISOString(),
+                              },
+                              workspaceId,
+                            },
+                          });
+                        } catch (error) {
+                          console.error(
+                            "Erreur lors de la mise à jour de la date:",
+                            error,
+                          );
+                        }
+                      }
+                    }}
+                    initialFocus
+                    locale={fr}
+                    fromDate={new Date()}
+                    className="border-0 p-2 text-xs [--cell-size:--spacing(8)]"
+                  />
+                </div>
+                <div className="p-4 flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <Clock className="h-4 w-4 text-gray-500" />
+                    </div>
+                    <Input
+                      type="time"
+                      defaultValue="18:00"
+                      className="pl-10 appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-datetime-edit-ampm-field]:hidden"
+                      step="300"
+                    />
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
+      </div>
+
+      {/* Priorité */}
+      <div className="flex items-center gap-1 min-w-0">
+        <PriorityPopoverWrapper
+          task={task}
+          updateTask={updateTask}
+          workspaceId={workspaceId}
+          popoverOpenRef={popoverOpenRef}
+          trigger={
+            <button
+              className="bg-transparent border-0 p-0 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {task.priority ? (
+                getPriorityBadge(task.priority)
+              ) : (
+                <Badge
+                  variant="outline"
+                  className="inline-flex items-center gap-1 py-1 px-2.5 text-xs font-medium rounded-md text-muted-foreground"
+                >
+                  <Flag className="h-4 w-4 text-[#8D8D8D] fill-gray-400" />
+                  <span className="text-muted-foreground">-</span>
+                </Badge>
+              )}
+            </button>
+          }
+        />
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center justify-center gap-1">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-muted/50"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditTask(task);
+              }}
+            >
+              Modifier
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteTask(task.id);
+              }}
+              className="text-red-600 focus:text-red-600 focus:bg-red-50"
+            >
+              Supprimer
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </>
+  );
+});
+
 /**
  * Composant pour afficher le Kanban en vue Liste (comme ClickUp)
  */
@@ -1841,6 +2213,21 @@ export function KanbanListView({
   // Récupérer les infos complètes de tous les membres
   const { members: membersInfo } = useAssignedMembersInfo(allMemberIds);
 
+  // Handler stable pour toggle de sélection — passé à TaskListRowContent
+  // pour qu'on n'ait pas besoin de passer le Set selectedTaskIds (qui change
+  // de réf à chaque sélection) au composant memoized.
+  const handleToggleSelect = useCallback(
+    (taskId, checked) => {
+      setSelectedTaskIds((prev) => {
+        const next = new Set(prev);
+        if (checked) next.add(taskId);
+        else next.delete(taskId);
+        return next;
+      });
+    },
+    [setSelectedTaskIds],
+  );
+
   // Fonction pour récupérer un membre par son ID
   const getMemberById = (memberId) => {
     return members.find((m) => m.userId === memberId || m.id === memberId);
@@ -1892,32 +2279,10 @@ export function KanbanListView({
     return tasks.length === 0;
   };
 
-  const formatDate = _formatDate;
+  // formatDate hoisté au module level
 
-  const getPriorityBadge = (priority) => {
-    if (!priority || priority.toLowerCase() === "none") return null;
-
-    const isHigh = priority.toLowerCase() === "high";
-    const isMedium = priority.toLowerCase() === "medium";
-    const isLow = priority.toLowerCase() === "low";
-
-    const label = isHigh ? "Urgent" : isMedium ? "Moyen" : "Faible";
-    const flagColor = isHigh
-      ? "text-red-500 fill-red-500"
-      : isMedium
-        ? "text-yellow-500 fill-yellow-500"
-        : "text-green-500 fill-green-500";
-
-    return (
-      <Badge
-        variant="outline"
-        className="inline-flex items-center gap-1 py-1 px-2.5 text-xs font-medium rounded-md text-muted-foreground"
-      >
-        <Flag className={`h-4 w-4 ${flagColor}`} />
-        <span className="text-muted-foreground">{label}</span>
-      </Badge>
-    );
-  };
+  // (getPriorityBadge déplacé au module level pour être accessible depuis
+  // TaskListRowContent qui est au même niveau)
 
   const getPriorityLabel = (priority) => {
     switch (priority?.toLowerCase()) {
@@ -2301,361 +2666,382 @@ export function KanbanListView({
                             }
                             popoverOpenRef={popoverOpenRef}
                           >
-                            {/* Nom avec drag handle et checkbox */}
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-3">
-                                {/* Drag handle visible au hover */}
-                                <GripVertical className="h-4 w-4 text-muted-foreground/40 flex-shrink-0 cursor-grab opacity-0 group-hover:opacity-100 transition-opacity" />
-                                {/* Checkbox visible au hover ou si cochée */}
-                                <Checkbox
-                                  checked={selectedTaskIds.has(task.id)}
-                                  onCheckedChange={(checked) => {
-                                    const newSelected = new Set(
-                                      selectedTaskIds,
-                                    );
-                                    if (checked === true) {
-                                      newSelected.add(task.id);
-                                    } else if (checked === false) {
-                                      newSelected.delete(task.id);
-                                    }
-                                    setSelectedTaskIds(newSelected);
-                                  }}
-                                  className={`flex-shrink-0 h-4 w-4 border-muted-foreground/30 mr-4 transition-opacity ${selectedTaskIds.has(task.id) ? "opacity-100 border-[#5A50FF] bg-[#5A50FF] text-white data-[state=checked]:bg-[#5A50FF] data-[state=checked]:border-[#5A50FF]" : "opacity-0 group-hover:opacity-100"}`}
-                                  onClick={(e) => e.stopPropagation()}
-                                />
-                                {/* Rond de couleur du status */}
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <button
-                                      className="flex-shrink-0 w-2.5 h-2.5 rounded-full cursor-pointer hover:opacity-80 transition-opacity"
-                                      style={{
-                                        backgroundColor:
-                                          column.color || "#94a3b8",
-                                        border: `1.5px solid ${column.color || "#94a3b8"}60`,
-                                        outline: `1.5px solid ${column.color || "#94a3b8"}30`,
-                                        outlineOffset: "1.5px",
+                            <TaskListRowContent
+                              task={task}
+                              column={column}
+                              columns={columns}
+                              isSelected={selectedTaskIds.has(task.id)}
+                              onToggleSelect={handleToggleSelect}
+                              members={members}
+                              membersInfo={membersInfo}
+                              updateTask={updateTask}
+                              moveTask={moveTask}
+                              workspaceId={workspaceId}
+                              allBoardTags={allBoardTags}
+                              popoverOpenRef={popoverOpenRef}
+                              onEditTask={onEditTask}
+                              onDeleteTask={onDeleteTask}
+                            />
+                            {/* LEGACY-INLINE-START — bloc remplacé par TaskListRowContent ci-dessus, gardé temporairement pour preuve mais désactivé via condition false */}
+                            {false && (
+                              <>
+                                {/* Nom avec drag handle et checkbox */}
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-3">
+                                    {/* Drag handle visible au hover */}
+                                    <GripVertical className="h-4 w-4 text-muted-foreground/40 flex-shrink-0 cursor-grab opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    {/* Checkbox visible au hover ou si cochée */}
+                                    <Checkbox
+                                      checked={selectedTaskIds.has(task.id)}
+                                      onCheckedChange={(checked) => {
+                                        const newSelected = new Set(
+                                          selectedTaskIds,
+                                        );
+                                        if (checked === true) {
+                                          newSelected.add(task.id);
+                                        } else if (checked === false) {
+                                          newSelected.delete(task.id);
+                                        }
+                                        setSelectedTaskIds(newSelected);
                                       }}
+                                      className={`flex-shrink-0 h-4 w-4 border-muted-foreground/30 mr-4 transition-opacity ${selectedTaskIds.has(task.id) ? "opacity-100 border-[#5A50FF] bg-[#5A50FF] text-white data-[state=checked]:bg-[#5A50FF] data-[state=checked]:border-[#5A50FF]" : "opacity-0 group-hover:opacity-100"}`}
                                       onClick={(e) => e.stopPropagation()}
-                                      title="Changer le status"
                                     />
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent
-                                    align="start"
-                                    className="w-40"
-                                  >
-                                    {columns.map((col) => (
-                                      <DropdownMenuItem
-                                        key={col.id}
-                                        onClick={async (e) => {
-                                          e.stopPropagation();
-                                          // Déplacer la tâche vers la colonne col.id
-                                          try {
-                                            await moveTask({
-                                              variables: {
-                                                id: task.id,
-                                                columnId: col.id,
-                                                position: 0,
-                                                workspaceId,
-                                              },
-                                            });
-                                          } catch (error) {
-                                            console.error(
-                                              "Erreur lors du déplacement de la tâche:",
-                                              error,
-                                            );
-                                          }
-                                        }}
-                                        className="flex items-center gap-2 cursor-pointer"
-                                      >
-                                        <div
-                                          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                    {/* Rond de couleur du status */}
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <button
+                                          className="flex-shrink-0 w-2.5 h-2.5 rounded-full cursor-pointer hover:opacity-80 transition-opacity"
                                           style={{
                                             backgroundColor:
-                                              col.color || "#94a3b8",
+                                              column.color || "#94a3b8",
+                                            border: `1.5px solid ${column.color || "#94a3b8"}60`,
+                                            outline: `1.5px solid ${column.color || "#94a3b8"}30`,
+                                            outlineOffset: "1.5px",
                                           }}
+                                          onClick={(e) => e.stopPropagation()}
+                                          title="Changer le status"
                                         />
-                                        <span>{col.title}</span>
-                                      </DropdownMenuItem>
-                                    ))}
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                                <InlineEditTitle
-                                  task={task}
-                                  updateTask={updateTask}
-                                  workspaceId={workspaceId}
-                                  popoverOpenRef={popoverOpenRef}
-                                  allBoardTags={allBoardTags}
-                                />
-                              </div>
-                            </div>
-
-                            {/* Assignée */}
-                            <div className="flex items-center gap-0.5 min-w-0">
-                              {task.assignedMembers &&
-                              task.assignedMembers.length > 0 ? (
-                                <MembersPopover
-                                  task={task}
-                                  membersInfo={membersInfo}
-                                  members={members}
-                                  updateTask={updateTask}
-                                  workspaceId={workspaceId}
-                                  isTrigger={true}
-                                  popoverOpenRef={popoverOpenRef}
-                                />
-                              ) : (
-                                <MembersPopover
-                                  task={task}
-                                  membersInfo={membersInfo}
-                                  members={members}
-                                  updateTask={updateTask}
-                                  workspaceId={workspaceId}
-                                  isTrigger={false}
-                                  popoverOpenRef={popoverOpenRef}
-                                />
-                              )}
-                            </div>
-
-                            {/* Status */}
-                            <div className="flex items-center gap-1 min-w-0">
-                              <StatusPopoverWrapper
-                                columns={columns}
-                                column={column}
-                                task={task}
-                                moveTask={moveTask}
-                                workspaceId={workspaceId}
-                                popoverOpenRef={popoverOpenRef}
-                              />
-                            </div>
-
-                            {/* Date d'échéance */}
-                            <div className="flex items-center gap-1.5 text-xs min-w-0">
-                              {task.dueDate ? (
-                                <div className="relative group/date inline-flex items-center">
-                                  <Popover>
-                                    <PopoverTrigger asChild>
-                                      <button
-                                        className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-muted/60 hover:ring-1 hover:ring-border transition-all cursor-pointer bg-transparent border-0 p-0"
-                                        onClick={(e) => e.stopPropagation()}
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent
+                                        align="start"
+                                        className="w-40"
                                       >
-                                        <span className="truncate font-normal text-foreground/70">
-                                          {formatDate(task.dueDate)}
-                                        </span>
-                                      </button>
-                                    </PopoverTrigger>
-                                    <PopoverContent
-                                      className="w-auto p-0"
-                                      side="top"
-                                      align="start"
-                                    >
-                                      <div className="flex flex-col">
-                                        <div className="border-b p-2">
-                                          <CalendarComponent
-                                            mode="single"
-                                            selected={
-                                              task.dueDate
-                                                ? new Date(task.dueDate)
-                                                : undefined
-                                            }
-                                            onSelect={async (date) => {
-                                              if (date) {
-                                                try {
-                                                  const existingDate = new Date(
-                                                    task.dueDate,
-                                                  );
-                                                  date.setHours(
-                                                    existingDate.getHours(),
-                                                    existingDate.getMinutes(),
-                                                    0,
-                                                    0,
-                                                  );
-                                                  await updateTask({
-                                                    variables: {
-                                                      input: {
-                                                        id: task.id,
-                                                        dueDate:
-                                                          date.toISOString(),
-                                                      },
-                                                      workspaceId,
-                                                    },
-                                                  });
-                                                } catch (error) {
-                                                  console.error(
-                                                    "Erreur lors de la mise à jour de la date:",
-                                                    error,
-                                                  );
-                                                }
-                                              }
-                                            }}
-                                            initialFocus
-                                            locale={fr}
-                                            fromDate={new Date()}
-                                            className="border-0 p-2 text-xs [--cell-size:--spacing(8)]"
-                                          />
-                                        </div>
-                                      </div>
-                                    </PopoverContent>
-                                  </Popover>
-                                  <button
-                                    onClick={async (e) => {
-                                      e.stopPropagation();
-                                      try {
-                                        await updateTask({
-                                          variables: {
-                                            input: {
-                                              id: task.id,
-                                              dueDate: null,
-                                            },
-                                            workspaceId,
-                                          },
-                                        });
-                                      } catch (error) {
-                                        console.error(
-                                          "Erreur lors de la suppression de la date:",
-                                          error,
-                                        );
-                                      }
-                                    }}
-                                    className="absolute -top-1.5 -right-2 w-3.5 h-3.5 bg-muted-foreground border border-white rounded-full flex items-center justify-center opacity-0 group-hover/date:opacity-100 transition-opacity cursor-pointer"
-                                    title="Supprimer la date"
-                                  >
-                                    <X className="w-2 h-2 text-white stroke-[3]" />
-                                  </button>
-                                </div>
-                              ) : (
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <button
-                                      className="cursor-pointer text-muted-foreground/70 hover:text-foreground transition-colors"
-                                      onClick={(e) => e.stopPropagation()}
-                                      title="Ajouter une date d'échéance"
-                                    >
-                                      <Calendar className="h-4 w-4" />
-                                    </button>
-                                  </PopoverTrigger>
-                                  <PopoverContent
-                                    className="w-auto p-0"
-                                    side="top"
-                                    align="start"
-                                  >
-                                    <div className="flex flex-col">
-                                      <div className="border-b p-2">
-                                        <CalendarComponent
-                                          mode="single"
-                                          selected={undefined}
-                                          onSelect={async (date) => {
-                                            if (date) {
+                                        {columns.map((col) => (
+                                          <DropdownMenuItem
+                                            key={col.id}
+                                            onClick={async (e) => {
+                                              e.stopPropagation();
+                                              // Déplacer la tâche vers la colonne col.id
                                               try {
-                                                date.setHours(18, 0, 0, 0);
-                                                await updateTask({
+                                                await moveTask({
                                                   variables: {
-                                                    input: {
-                                                      id: task.id,
-                                                      dueDate:
-                                                        date.toISOString(),
-                                                    },
+                                                    id: task.id,
+                                                    columnId: col.id,
+                                                    position: 0,
                                                     workspaceId,
                                                   },
                                                 });
                                               } catch (error) {
                                                 console.error(
-                                                  "Erreur lors de la mise à jour de la date:",
+                                                  "Erreur lors du déplacement de la tâche:",
                                                   error,
                                                 );
                                               }
-                                            }
-                                          }}
-                                          initialFocus
-                                          locale={fr}
-                                          fromDate={new Date()}
-                                          className="border-0 p-2 text-xs [--cell-size:--spacing(8)]"
-                                        />
-                                      </div>
-                                      <div className="p-4 flex items-center gap-2">
-                                        <div className="relative flex-1">
-                                          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                            <Clock className="h-4 w-4 text-gray-500" />
+                                            }}
+                                            className="flex items-center gap-2 cursor-pointer"
+                                          >
+                                            <div
+                                              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                              style={{
+                                                backgroundColor:
+                                                  col.color || "#94a3b8",
+                                              }}
+                                            />
+                                            <span>{col.title}</span>
+                                          </DropdownMenuItem>
+                                        ))}
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                    <InlineEditTitle
+                                      task={task}
+                                      updateTask={updateTask}
+                                      workspaceId={workspaceId}
+                                      popoverOpenRef={popoverOpenRef}
+                                      allBoardTags={allBoardTags}
+                                    />
+                                  </div>
+                                </div>
+
+                                {/* Assignée */}
+                                <div className="flex items-center gap-0.5 min-w-0">
+                                  {task.assignedMembers &&
+                                  task.assignedMembers.length > 0 ? (
+                                    <MembersPopover
+                                      task={task}
+                                      membersInfo={membersInfo}
+                                      members={members}
+                                      updateTask={updateTask}
+                                      workspaceId={workspaceId}
+                                      isTrigger={true}
+                                      popoverOpenRef={popoverOpenRef}
+                                    />
+                                  ) : (
+                                    <MembersPopover
+                                      task={task}
+                                      membersInfo={membersInfo}
+                                      members={members}
+                                      updateTask={updateTask}
+                                      workspaceId={workspaceId}
+                                      isTrigger={false}
+                                      popoverOpenRef={popoverOpenRef}
+                                    />
+                                  )}
+                                </div>
+
+                                {/* Status */}
+                                <div className="flex items-center gap-1 min-w-0">
+                                  <StatusPopoverWrapper
+                                    columns={columns}
+                                    column={column}
+                                    task={task}
+                                    moveTask={moveTask}
+                                    workspaceId={workspaceId}
+                                    popoverOpenRef={popoverOpenRef}
+                                  />
+                                </div>
+
+                                {/* Date d'échéance */}
+                                <div className="flex items-center gap-1.5 text-xs min-w-0">
+                                  {task.dueDate ? (
+                                    <div className="relative group/date inline-flex items-center">
+                                      <Popover>
+                                        <PopoverTrigger asChild>
+                                          <button
+                                            className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-muted/60 hover:ring-1 hover:ring-border transition-all cursor-pointer bg-transparent border-0 p-0"
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
+                                            <span className="truncate font-normal text-foreground/70">
+                                              {formatDate(task.dueDate)}
+                                            </span>
+                                          </button>
+                                        </PopoverTrigger>
+                                        <PopoverContent
+                                          className="w-auto p-0"
+                                          side="top"
+                                          align="start"
+                                        >
+                                          <div className="flex flex-col">
+                                            <div className="border-b p-2">
+                                              <CalendarComponent
+                                                mode="single"
+                                                selected={
+                                                  task.dueDate
+                                                    ? new Date(task.dueDate)
+                                                    : undefined
+                                                }
+                                                onSelect={async (date) => {
+                                                  if (date) {
+                                                    try {
+                                                      const existingDate =
+                                                        new Date(task.dueDate);
+                                                      date.setHours(
+                                                        existingDate.getHours(),
+                                                        existingDate.getMinutes(),
+                                                        0,
+                                                        0,
+                                                      );
+                                                      await updateTask({
+                                                        variables: {
+                                                          input: {
+                                                            id: task.id,
+                                                            dueDate:
+                                                              date.toISOString(),
+                                                          },
+                                                          workspaceId,
+                                                        },
+                                                      });
+                                                    } catch (error) {
+                                                      console.error(
+                                                        "Erreur lors de la mise à jour de la date:",
+                                                        error,
+                                                      );
+                                                    }
+                                                  }
+                                                }}
+                                                initialFocus
+                                                locale={fr}
+                                                fromDate={new Date()}
+                                                className="border-0 p-2 text-xs [--cell-size:--spacing(8)]"
+                                              />
+                                            </div>
                                           </div>
-                                          <Input
-                                            type="time"
-                                            defaultValue="18:00"
-                                            className="pl-10 appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-datetime-edit-ampm-field]:hidden"
-                                            step="300"
-                                          />
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </PopoverContent>
-                                </Popover>
-                              )}
-                            </div>
-
-                            {/* Priorité */}
-                            <div className="flex items-center gap-1 min-w-0">
-                              <PriorityPopoverWrapper
-                                task={task}
-                                updateTask={updateTask}
-                                workspaceId={workspaceId}
-                                popoverOpenRef={popoverOpenRef}
-                                trigger={
-                                  <button
-                                    className="bg-transparent border-0 p-0 cursor-pointer hover:opacity-80 transition-opacity"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    {task.priority ? (
-                                      getPriorityBadge(task.priority)
-                                    ) : (
-                                      <Badge
-                                        variant="outline"
-                                        className="inline-flex items-center gap-1 py-1 px-2.5 text-xs font-medium rounded-md text-muted-foreground"
+                                        </PopoverContent>
+                                      </Popover>
+                                      <button
+                                        onClick={async (e) => {
+                                          e.stopPropagation();
+                                          try {
+                                            await updateTask({
+                                              variables: {
+                                                input: {
+                                                  id: task.id,
+                                                  dueDate: null,
+                                                },
+                                                workspaceId,
+                                              },
+                                            });
+                                          } catch (error) {
+                                            console.error(
+                                              "Erreur lors de la suppression de la date:",
+                                              error,
+                                            );
+                                          }
+                                        }}
+                                        className="absolute -top-1.5 -right-2 w-3.5 h-3.5 bg-muted-foreground border border-white rounded-full flex items-center justify-center opacity-0 group-hover/date:opacity-100 transition-opacity cursor-pointer"
+                                        title="Supprimer la date"
                                       >
-                                        <Flag className="h-4 w-4 text-[#8D8D8D] fill-gray-400" />
-                                        <span className="text-muted-foreground">
-                                          -
-                                        </span>
-                                      </Badge>
-                                    )}
-                                  </button>
-                                }
-                              />
-                            </div>
+                                        <X className="w-2 h-2 text-white stroke-[3]" />
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <Popover>
+                                      <PopoverTrigger asChild>
+                                        <button
+                                          className="cursor-pointer text-muted-foreground/70 hover:text-foreground transition-colors"
+                                          onClick={(e) => e.stopPropagation()}
+                                          title="Ajouter une date d'échéance"
+                                        >
+                                          <Calendar className="h-4 w-4" />
+                                        </button>
+                                      </PopoverTrigger>
+                                      <PopoverContent
+                                        className="w-auto p-0"
+                                        side="top"
+                                        align="start"
+                                      >
+                                        <div className="flex flex-col">
+                                          <div className="border-b p-2">
+                                            <CalendarComponent
+                                              mode="single"
+                                              selected={undefined}
+                                              onSelect={async (date) => {
+                                                if (date) {
+                                                  try {
+                                                    date.setHours(18, 0, 0, 0);
+                                                    await updateTask({
+                                                      variables: {
+                                                        input: {
+                                                          id: task.id,
+                                                          dueDate:
+                                                            date.toISOString(),
+                                                        },
+                                                        workspaceId,
+                                                      },
+                                                    });
+                                                  } catch (error) {
+                                                    console.error(
+                                                      "Erreur lors de la mise à jour de la date:",
+                                                      error,
+                                                    );
+                                                  }
+                                                }
+                                              }}
+                                              initialFocus
+                                              locale={fr}
+                                              fromDate={new Date()}
+                                              className="border-0 p-2 text-xs [--cell-size:--spacing(8)]"
+                                            />
+                                          </div>
+                                          <div className="p-4 flex items-center gap-2">
+                                            <div className="relative flex-1">
+                                              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                                <Clock className="h-4 w-4 text-gray-500" />
+                                              </div>
+                                              <Input
+                                                type="time"
+                                                defaultValue="18:00"
+                                                className="pl-10 appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-datetime-edit-ampm-field]:hidden"
+                                                step="300"
+                                              />
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </PopoverContent>
+                                    </Popover>
+                                  )}
+                                </div>
 
-                            {/* Actions */}
-                            <div className="flex items-center justify-center gap-1">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-muted/50"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                  align="end"
-                                  className="w-40"
-                                >
-                                  <DropdownMenuItem
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onEditTask(task);
-                                    }}
-                                  >
-                                    Modifier
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onDeleteTask(task.id);
-                                    }}
-                                    className="text-red-600 focus:text-red-600 focus:bg-red-50"
-                                  >
-                                    Supprimer
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
+                                {/* Priorité */}
+                                <div className="flex items-center gap-1 min-w-0">
+                                  <PriorityPopoverWrapper
+                                    task={task}
+                                    updateTask={updateTask}
+                                    workspaceId={workspaceId}
+                                    popoverOpenRef={popoverOpenRef}
+                                    trigger={
+                                      <button
+                                        className="bg-transparent border-0 p-0 cursor-pointer hover:opacity-80 transition-opacity"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        {task.priority ? (
+                                          getPriorityBadge(task.priority)
+                                        ) : (
+                                          <Badge
+                                            variant="outline"
+                                            className="inline-flex items-center gap-1 py-1 px-2.5 text-xs font-medium rounded-md text-muted-foreground"
+                                          >
+                                            <Flag className="h-4 w-4 text-[#8D8D8D] fill-gray-400" />
+                                            <span className="text-muted-foreground">
+                                              -
+                                            </span>
+                                          </Badge>
+                                        )}
+                                      </button>
+                                    }
+                                  />
+                                </div>
+
+                                {/* Actions */}
+                                <div className="flex items-center justify-center gap-1">
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-muted/50"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent
+                                      align="end"
+                                      className="w-40"
+                                    >
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          onEditTask(task);
+                                        }}
+                                      >
+                                        Modifier
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          onDeleteTask(task.id);
+                                        }}
+                                        className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                                      >
+                                        Supprimer
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                              </>
+                            )}
+                            {/* LEGACY-INLINE-END */}
                           </TaskRow>
                         ))
                       )}
