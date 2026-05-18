@@ -721,6 +721,7 @@ export function TaskModal({
       <DialogContent
         onOpenAutoFocus={(e) => e.preventDefault()}
         noAnimation
+        keepMounted
         className="!max-w-[calc(100vw-2rem)] !w-[calc(100vw-2rem)] h-[calc(100vh-2rem)] p-0 bg-card text-card-foreground overflow-hidden flex flex-col"
       >
         <DialogDescription className="sr-only">
