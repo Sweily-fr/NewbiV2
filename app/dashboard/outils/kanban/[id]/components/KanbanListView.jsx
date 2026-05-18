@@ -60,7 +60,7 @@ import { MemberSelector } from "./MemberSelector";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { toast } from "sonner";
 
-function _formatDate(dateString) {
+function formatDate(dateString) {
   if (!dateString) return "";
   const date = new Date(dateString);
   const day = String(date.getDate()).padStart(2, "0");
@@ -1752,6 +1752,32 @@ const TaskRow = React.memo(function TaskRow({
   );
 });
 
+// Badge de priorité — au module level pour être accessible depuis
+// TaskListRowContent (qui est lui-même au module level).
+function getPriorityBadge(priority) {
+  if (!priority || priority.toLowerCase() === "none") return null;
+
+  const isHigh = priority.toLowerCase() === "high";
+  const isMedium = priority.toLowerCase() === "medium";
+
+  const label = isHigh ? "Urgent" : isMedium ? "Moyen" : "Faible";
+  const flagColor = isHigh
+    ? "text-red-500 fill-red-500"
+    : isMedium
+      ? "text-yellow-500 fill-yellow-500"
+      : "text-green-500 fill-green-500";
+
+  return (
+    <Badge
+      variant="outline"
+      className="inline-flex items-center gap-1 py-1 px-2.5 text-xs font-medium rounded-md text-muted-foreground"
+    >
+      <Flag className={`h-4 w-4 ${flagColor}`} />
+      <span className="text-muted-foreground">{label}</span>
+    </Badge>
+  );
+}
+
 /**
  * Contenu d'une row mémorisée (mémo le bloc de 350 lignes de JSX qui était
  * inline dans le map des tasks). C'est LE truc qui fait perdre la fluidité
@@ -2253,32 +2279,10 @@ export function KanbanListView({
     return tasks.length === 0;
   };
 
-  const formatDate = _formatDate;
+  // formatDate hoisté au module level
 
-  const getPriorityBadge = (priority) => {
-    if (!priority || priority.toLowerCase() === "none") return null;
-
-    const isHigh = priority.toLowerCase() === "high";
-    const isMedium = priority.toLowerCase() === "medium";
-    const isLow = priority.toLowerCase() === "low";
-
-    const label = isHigh ? "Urgent" : isMedium ? "Moyen" : "Faible";
-    const flagColor = isHigh
-      ? "text-red-500 fill-red-500"
-      : isMedium
-        ? "text-yellow-500 fill-yellow-500"
-        : "text-green-500 fill-green-500";
-
-    return (
-      <Badge
-        variant="outline"
-        className="inline-flex items-center gap-1 py-1 px-2.5 text-xs font-medium rounded-md text-muted-foreground"
-      >
-        <Flag className={`h-4 w-4 ${flagColor}`} />
-        <span className="text-muted-foreground">{label}</span>
-      </Badge>
-    );
-  };
+  // (getPriorityBadge déplacé au module level pour être accessible depuis
+  // TaskListRowContent qui est au même niveau)
 
   const getPriorityLabel = (priority) => {
     switch (priority?.toLowerCase()) {
