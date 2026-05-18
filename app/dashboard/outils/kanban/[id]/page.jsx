@@ -1063,8 +1063,11 @@ function KanbanBoardPageContent({ params }) {
       handledTaskIdRef.current = taskIdFromUrl;
     }
     closeEditTaskModal();
+    // Déférer replaceState pour ne pas ajouter de travail au frame qui ferme
     if (typeof window !== "undefined") {
-      window.history.replaceState(null, "", `/dashboard/outils/kanban/${id}`);
+      setTimeout(() => {
+        window.history.replaceState(null, "", `/dashboard/outils/kanban/${id}`);
+      }, 0);
     }
   }, [closeEditTaskModal, id, taskIdFromUrl]);
 
