@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { toast } from "@/src/utils/debouncedToast";
 import {
   useMutation,
@@ -49,26 +49,30 @@ const UPLOAD_TASK_IMAGE = gql`
   }
 `;
 
+// Au niveau module pour ne PAS être recréé à chaque render du hook
+// (sinon les useCallback qui en dépendent voient une nouvelle référence)
+const INITIAL_TASK_FORM = Object.freeze({
+  title: "",
+  description: "",
+  status: "TODO",
+  priority: "",
+  startDate: "",
+  dueDate: "",
+  tags: [],
+  checklist: [],
+  assignedMembers: [],
+  images: [],
+  newTag: "",
+  newChecklistItem: "",
+  pendingComments: [],
+  pendingFiles: [],
+  timeTracking: null,
+});
+
 export const useKanbanTasks = (boardId, board) => {
   const { workspaceId } = useWorkspace();
   const apolloClient = useApolloClient();
-  const initialTaskForm = {
-    title: "",
-    description: "",
-    status: "TODO",
-    priority: "",
-    startDate: "",
-    dueDate: "",
-    tags: [],
-    checklist: [],
-    assignedMembers: [],
-    images: [], // Images de la tâche
-    newTag: "",
-    newChecklistItem: "",
-    pendingComments: [], // Commentaires en attente de création
-    pendingFiles: [], // Fichiers en attente d'upload (mode création)
-    timeTracking: null, // Données du timer
-  };
+  const initialTaskForm = INITIAL_TASK_FORM;
 
   const [taskForm, setTaskForm] = useState(initialTaskForm);
   const [editingTask, setEditingTask] = useState(null);
@@ -686,121 +690,133 @@ export const useKanbanTasks = (boardId, board) => {
     }
   };
 
-  const handleDeleteTask = async (taskId) => {
-    try {
-      await deleteTask({ variables: { id: taskId, workspaceId } });
-    } catch {
-      // Erreur silencieuse
-    }
-  };
+  const handleDeleteTask = useCallback(
+    async (taskId) => {
+      try {
+        await deleteTask({ variables: { id: taskId, workspaceId } });
+      } catch {
+        // Erreur silencieuse
+      }
+    },
+    [deleteTask, workspaceId],
+  );
 
-  // Task modal handlers
-  const openAddTaskModal = (columnId, options = {}) => {
+  // Task modal handlers — wrappés useCallback pour stabilité référentielle
+  // (sinon les memo de KanbanColumnSimple bail à chaque render, ce qui
+  // force le walk des 300 TaskCard pour rien).
+  const openAddTaskModal = useCallback((columnId, options = {}) => {
     setSelectedColumnId(columnId);
     setTaskForm({
       ...initialTaskForm,
       status: "TODO",
       priority: "",
-      columnId: columnId, // Initialiser columnId avec la colonne sélectionnée
+      columnId: columnId,
       startDate: options.startDate || "",
       dueDate: options.dueDate || "",
     });
     setIsAddTaskOpen(true);
-  };
+  }, []);
 
-  const closeAddTaskModal = () => {
+  const closeAddTaskModal = useCallback(() => {
     setIsAddTaskOpen(false);
     setTaskForm(initialTaskForm);
     setEditingTask(null);
-  };
+  }, []);
 
-  const closeEditTaskModal = () => {
+  const closeEditTaskModal = useCallback(() => {
     setIsEditTaskOpen(false);
     setEditingTask(null);
     setTaskForm(initialTaskForm);
-  };
+  }, []);
 
-  const openEditTaskModal = (task) => {
-    if (!task) return;
-    perfMark("useKanbanTasks.openEditTaskModal start");
+  const openEditTaskModal = useCallback(
+    (task) => {
+      if (!task) return;
+      perfMark("useKanbanTasks.openEditTaskModal start");
 
-    // Reset le ref de suivi pour éviter un refetch immédiat
-    lastUpdateRef.current = null;
+      // Reset le ref de suivi pour éviter un refetch immédiat
+      lastUpdateRef.current = null;
 
-    setEditingTask(task);
-    setIsEditTaskOpen(true);
+      setEditingTask(task);
+      setIsEditTaskOpen(true);
 
-    // Déterminer si c'est une création ou une édition
-    const taskId = task?.id || task?._id;
-    const isCreating = !taskId || taskId === null;
+      // Déterminer si c'est une création ou une édition
+      const taskId = task?.id || task?._id;
+      const isCreating = !taskId || taskId === null;
 
-    // Lire les détails (comments, activity, timeTracking.entries) depuis le
-    // cache Apollo SYNCHRONIQUEMENT — si la tâche a été prefetched (hover /
-    // mousedown / précédente ouverture), on a déjà tout en mémoire et on
-    // peut seed le form pour que le modal s'ouvre AVEC les commentaires
-    // visibles dès la première frame (au lieu d'attendre un cycle de
-    // render pour que onCompleted/useEffect remplisse).
-    let cachedDetails = null;
-    if (!isCreating && taskId) {
-      try {
-        cachedDetails = apolloClient.readQuery({
-          query: GET_TASK_DETAILS,
+      // Lire les détails (comments, activity, timeTracking.entries) depuis le
+      // cache Apollo SYNCHRONIQUEMENT — si la tâche a été prefetched (hover /
+      // mousedown / précédente ouverture), on a déjà tout en mémoire et on
+      // peut seed le form pour que le modal s'ouvre AVEC les commentaires
+      // visibles dès la première frame (au lieu d'attendre un cycle de
+      // render pour que onCompleted/useEffect remplisse).
+      let cachedDetails = null;
+      if (!isCreating && taskId) {
+        try {
+          cachedDetails = apolloClient.readQuery({
+            query: GET_TASK_DETAILS,
+            variables: { id: taskId, workspaceId },
+          });
+        } catch {
+          // cache miss, on remplira via fetchTaskDetails
+        }
+      }
+      const cachedTask = cachedDetails?.task;
+
+      // Ne pas inclure le champ id si c'est une création
+      const formData = {
+        ...initialTaskForm,
+        title: task?.title || "",
+        description: task?.description || "",
+        status: task?.status || "TODO",
+        priority: task?.priority ? task.priority.toLowerCase() : "",
+        startDate: task?.startDate || "",
+        dueDate: task?.dueDate || "",
+        columnId: task?.columnId || task?.column?.id || "",
+        tags: Array.isArray(task?.tags) ? task.tags : [],
+        checklist: Array.isArray(task?.checklist)
+          ? task.checklist.map((item, index) => ({
+              id: item?.id || `checklist-item-${index}-${Date.now()}`,
+              text: item?.text || "",
+              completed: Boolean(item?.completed),
+            }))
+          : [],
+        assignedMembers: Array.isArray(task?.assignedMembers)
+          ? task.assignedMembers
+          : [],
+        // Seed depuis le cache si dispo, sinon vide (rempli par fetchTaskDetails)
+        comments: Array.isArray(cachedTask?.comments)
+          ? cachedTask.comments
+          : [],
+        activity: Array.isArray(cachedTask?.activity)
+          ? cachedTask.activity
+          : [],
+        images: Array.isArray(task?.images) ? task.images : [],
+        timeTracking: cachedTask?.timeTracking || task?.timeTracking || null,
+        userId: task?.userId,
+        createdAt: task?.createdAt,
+        updatedAt: task?.updatedAt,
+        pendingComments: [],
+      };
+
+      // Ajouter l'id seulement si c'est une édition
+      if (!isCreating) {
+        formData.id = taskId;
+      }
+
+      setTaskForm(formData);
+      perfMark("useKanbanTasks.openEditTaskModal end (state setters queued)");
+
+      // Charger les détails (comments, activity, timeTracking.entries) en arrière-plan
+      if (!isCreating && taskId) {
+        perfMark("fetchTaskDetails call");
+        fetchTaskDetails({
           variables: { id: taskId, workspaceId },
         });
-      } catch {
-        // cache miss, on remplira via fetchTaskDetails
       }
-    }
-    const cachedTask = cachedDetails?.task;
-
-    // Ne pas inclure le champ id si c'est une création
-    const formData = {
-      ...initialTaskForm,
-      title: task?.title || "",
-      description: task?.description || "",
-      status: task?.status || "TODO",
-      priority: task?.priority ? task.priority.toLowerCase() : "",
-      startDate: task?.startDate || "",
-      dueDate: task?.dueDate || "",
-      columnId: task?.columnId || task?.column?.id || "",
-      tags: Array.isArray(task?.tags) ? task.tags : [],
-      checklist: Array.isArray(task?.checklist)
-        ? task.checklist.map((item, index) => ({
-            id: item?.id || `checklist-item-${index}-${Date.now()}`,
-            text: item?.text || "",
-            completed: Boolean(item?.completed),
-          }))
-        : [],
-      assignedMembers: Array.isArray(task?.assignedMembers)
-        ? task.assignedMembers
-        : [],
-      // Seed depuis le cache si dispo, sinon vide (rempli par fetchTaskDetails)
-      comments: Array.isArray(cachedTask?.comments) ? cachedTask.comments : [],
-      activity: Array.isArray(cachedTask?.activity) ? cachedTask.activity : [],
-      images: Array.isArray(task?.images) ? task.images : [],
-      timeTracking: cachedTask?.timeTracking || task?.timeTracking || null,
-      userId: task?.userId,
-      createdAt: task?.createdAt,
-      updatedAt: task?.updatedAt,
-      pendingComments: [],
-    };
-
-    // Ajouter l'id seulement si c'est une édition
-    if (!isCreating) {
-      formData.id = taskId;
-    }
-
-    setTaskForm(formData);
-    perfMark("useKanbanTasks.openEditTaskModal end (state setters queued)");
-
-    // Charger les détails (comments, activity, timeTracking.entries) en arrière-plan
-    if (!isCreating && taskId) {
-      perfMark("fetchTaskDetails call");
-      fetchTaskDetails({
-        variables: { id: taskId, workspaceId },
-      });
-    }
-  };
+    },
+    [apolloClient, workspaceId, fetchTaskDetails],
+  );
 
   // Gestion des commentaires en attente (pour la création de tâche)
   const addPendingComment = (content) => {
