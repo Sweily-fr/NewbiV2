@@ -26,7 +26,9 @@ export default function ColorblindModeComponent() {
         Mode daltonien
       </legend>
       <p className="text-xs text-muted-foreground">
-        Applique uniquement aux graphiques de la plateforme.
+        Remplace toutes les couleurs rouge et verte de la plateforme
+        (graphiques, tags, alertes, montants, statuts…). Positif = bleu, négatif
+        = noir.
       </p>
       <RadioGroup
         className="flex gap-3"

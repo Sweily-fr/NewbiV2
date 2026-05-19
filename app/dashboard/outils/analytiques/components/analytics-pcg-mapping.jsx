@@ -438,9 +438,9 @@ export function AnalyticsPCGMapping() {
                     style={{
                       color:
                         group.totalNet > 0
-                          ? "#0E7A3E"
+                          ? "var(--color-income)"
                           : group.totalNet < 0
-                            ? "#DC2626"
+                            ? "var(--color-expense)"
                             : undefined,
                     }}
                   >
@@ -486,7 +486,9 @@ export function AnalyticsPCGMapping() {
                               <span
                                 className="text-[12px] font-medium tabular-nums w-24 text-right shrink-0"
                                 style={{
-                                  color: isIncome ? "#0E7A3E" : "#DC2626",
+                                  color: isIncome
+                                    ? "var(--color-income)"
+                                    : "var(--color-expense)",
                                 }}
                               >
                                 {isIncome ? "+" : ""}

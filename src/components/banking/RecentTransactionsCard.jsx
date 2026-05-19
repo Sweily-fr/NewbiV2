@@ -159,7 +159,11 @@ export default function RecentTransactionsCard({
                   {/* Montant */}
                   <span
                     className="text-sm font-medium"
-                    style={{ color: isIncome ? "#0e7a3e" : "inherit" }}
+                    style={{
+                      color: isIncome
+                        ? "var(--color-income)"
+                        : "var(--color-expense)",
+                    }}
                   >
                     {isIncome ? "+" : ""}
                     {formatCurrency(transaction.amount)}
