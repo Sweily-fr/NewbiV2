@@ -71,8 +71,10 @@ import {
   DropdownMenuItem,
   DropdownMenuContent,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
+import { Checkbox } from "@/src/components/ui/checkbox";
 import { cn } from "@/src/lib/utils";
 import {
   TagIcon,
@@ -1165,54 +1167,69 @@ export default function TransactionTable({
             )}
           </div>
 
-          {/* Gérer les colonnes Button */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline">
-                <Setting4Icon className="w-3.5 h-3.5" aria-hidden="true" />
-                Gérer les colonnes
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="flex flex-col gap-1">
-              <DropdownMenuLabel>Afficher les colonnes</DropdownMenuLabel>
-              {tableWithFilteredData
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => {
-                  const label =
-                    column.columnDef.meta?.label ||
-                    column.columnDef.header ||
-                    column.id;
-                  const columnIcons = {
-                    category: TagIcon,
-                    paymentMethod: WalletIcon,
-                    source: Wallet1Icon,
-                    hasReceipt: Link2Icon,
-                    pcgAccount: GraphIcon,
-                    amount: DollarSquareIcon,
-                  };
-                  const IconComp = columnIcons[column.id];
-                  return (
-                    <DropdownMenuItem
-                      key={column.id}
-                      className={cn(
-                        "capitalize cursor-pointer gap-2",
-                        column.getIsVisible() && "bg-accent",
-                      )}
-                      onClick={() =>
-                        column.toggleVisibility(!column.getIsVisible())
-                      }
-                      onSelect={(event) => event.preventDefault()}
-                    >
-                      {IconComp && (
-                        <IconComp className="!size-3 text-sidebar-foreground" />
-                      )}
-                      {label}
-                    </DropdownMenuItem>
-                  );
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Colonnes visibles Button */}
+          {(() => {
+            const hideableColumns = tableWithFilteredData
+              .getAllColumns()
+              .filter(
+                (column) =>
+                  typeof column.accessorFn !== "undefined" &&
+                  column.getCanHide(),
+              );
+            const allColumnsVisible =
+              hideableColumns.length > 0 &&
+              hideableColumns.every((column) => column.getIsVisible());
+            return (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="filter" className="cursor-pointer">
+                    <Setting4Icon className="w-3.5 h-3.5" aria-hidden="true" />
+                    Colonnes visibles
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  className="w-[250px] max-h-[400px] overflow-y-auto"
+                >
+                  <div
+                    className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
+                    onClick={() =>
+                      tableWithFilteredData.toggleAllColumnsVisible(
+                        !allColumnsVisible,
+                      )
+                    }
+                  >
+                    <Checkbox
+                      checked={allColumnsVisible}
+                      className="mr-2 pointer-events-none"
+                    />
+                    <span>Tout sélectionner</span>
+                  </div>
+                  <DropdownMenuSeparator />
+                  {hideableColumns.map((column) => {
+                    const label =
+                      column.columnDef.meta?.label ||
+                      (typeof column.columnDef.header === "string"
+                        ? column.columnDef.header
+                        : column.id);
+                    return (
+                      <div
+                        key={column.id}
+                        className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
+                        onClick={() => column.toggleVisibility()}
+                      >
+                        <Checkbox
+                          checked={column.getIsVisible()}
+                          className="mr-2 pointer-events-none"
+                        />
+                        <span>{label}</span>
+                      </div>
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            );
+          })()}
 
           {/* Filtres avancés Button */}
           <Popover open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
