@@ -581,26 +581,22 @@ export default function TransactionTable({
       return;
     }
 
-    // Filtrer les transactions manuelles (supprimables)
-    const manualRows = selectedRows.filter(
-      (row) =>
-        row.original.source === "MANUAL" || row.original.provider === "manual",
+    // Filtrer les factures (non supprimables depuis cette interface)
+    const deletableRows = selectedRows.filter(
+      (row) => row.original.source !== "invoice",
     );
-    const bankRows = selectedRows.filter(
-      (row) =>
-        row.original.source === "BANK" && row.original.provider !== "manual",
+    const invoiceRows = selectedRows.filter(
+      (row) => row.original.source === "invoice",
     );
 
-    if (bankRows.length > 0) {
+    if (invoiceRows.length > 0) {
       toast.warning(
-        `${bankRows.length} transaction(s) bancaire(s) ignorée(s) (non supprimables)`,
+        `${invoiceRows.length} facture(s) ignorée(s) (non supprimables depuis cette interface)`,
       );
     }
 
-    if (manualRows.length === 0) {
-      toast.error(
-        "Aucune transaction manuelle sélectionnée pour la suppression",
-      );
+    if (deletableRows.length === 0) {
+      toast.error("Aucune transaction sélectionnée pour la suppression");
       return;
     }
 
@@ -609,7 +605,7 @@ export default function TransactionTable({
       let deletedCount = 0;
       let failedCount = 0;
 
-      for (const row of manualRows) {
+      for (const row of deletableRows) {
         const result = await deleteTransaction(row.original.id);
         if (result.success) {
           deletedCount++;
@@ -669,12 +665,6 @@ export default function TransactionTable({
       toast.error(
         "Les factures ne peuvent pas être supprimées depuis cette interface",
       );
-      return;
-    }
-
-    // Seules les transactions manuelles peuvent être supprimées
-    if (transaction.source !== "MANUAL" && transaction.provider !== "manual") {
-      toast.error("Seules les transactions manuelles peuvent être supprimées");
       return;
     }
 
