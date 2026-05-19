@@ -214,21 +214,10 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
     return options;
   }, []);
 
-  const eventValidationPatterns = {
-    title: {
-      pattern: /^[a-zA-ZÀ-ÿ0-9\s\-&'.,()!?]{1,200}$/,
-      message:
-        "Le titre doit contenir entre 1 et 200 caractères (lettres, chiffres, espaces et ponctuation de base autorisés)",
-    },
-    description: {
-      pattern: /^[a-zA-ZÀ-ÿ0-9\s\-&'.,()!?\n\r]{0,1000}$/,
-      message: "La description ne peut pas dépasser 1000 caractères",
-    },
-    location: {
-      pattern: /^[a-zA-ZÀ-ÿ0-9\s\-&'.,()]{0,200}$/,
-      message:
-        "Le lieu ne peut pas dépasser 200 caractères (lettres, chiffres, espaces et ponctuation de base autorisés)",
-    },
+  const eventFieldLimits = {
+    title: { max: 200, label: "Le titre" },
+    description: { max: 1000, label: "La description" },
+    location: { max: 200, label: "Le lieu" },
   };
 
   const validateField = (fieldName, value) => {
@@ -242,9 +231,9 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
       return "Caractères non autorisés détectés";
     }
 
-    const pattern = eventValidationPatterns[fieldName];
-    if (pattern && !pattern.pattern.test(value)) {
-      return pattern.message;
+    const limit = eventFieldLimits[fieldName];
+    if (limit && value.length > limit.max) {
+      return `${limit.label} ne peut pas dépasser ${limit.max} caractères`;
     }
 
     return null;
@@ -751,10 +740,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                             className="shrink-0 h-7 text-xs"
                           >
                             {isPushing ? (
-                              <Loader2
-                                size={14}
-                                className="animate-spin"
-                              />
+                              <Loader2 size={14} className="animate-spin" />
                             ) : (
                               "Envoyer"
                             )}
