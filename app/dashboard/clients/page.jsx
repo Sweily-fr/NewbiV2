@@ -36,7 +36,6 @@ import {
   CircleAlertIcon,
   Upload,
   Settings2,
-  ChevronDown,
 } from "lucide-react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useClientLists } from "@/src/hooks/useClientLists";
@@ -201,66 +200,32 @@ function ClientsContent() {
           </div>
           <div className="flex gap-2">
             <AutomationsPopover />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="self-start gap-1.5"
-                  disabled={isReadOnly}
-                  title={readOnlyTooltip}
-                >
-                  <Upload size={14} strokeWidth={2} aria-hidden="true" />
-                  Importer
-                  <ChevronDown
-                    size={12}
-                    strokeWidth={2}
-                    className="text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64">
-                <DropdownMenuItem
-                  onClick={() => {
-                    setImportDialogView("import");
-                    setImportDialogOpen(true);
-                  }}
-                  className="cursor-pointer gap-2"
-                >
-                  <Upload
-                    size={14}
-                    strokeWidth={2}
-                    className="text-muted-foreground"
-                  />
-                  <div>
-                    <div className="text-sm">Importer un fichier</div>
-                    <div className="text-xs text-muted-foreground">
-                      CSV, Excel — import en masse
-                    </div>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => {
-                    setImportDialogView("fields");
-                    setImportDialogOpen(true);
-                  }}
-                  className="cursor-pointer gap-2"
-                >
-                  <Settings2
-                    size={14}
-                    strokeWidth={2}
-                    className="text-muted-foreground"
-                  />
-                  <div>
-                    <div className="text-sm">Gérer les champs perso</div>
-                    <div className="text-xs text-muted-foreground">
-                      Configurez vos champs avant d'importer
-                    </div>
-                  </div>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setImportDialogView("fields");
+                setImportDialogOpen(true);
+              }}
+              className="self-start gap-1.5 cursor-pointer"
+              disabled={isReadOnly}
+              title={readOnlyTooltip}
+            >
+              <Settings2 size={14} strokeWidth={2} aria-hidden="true" />
+              Champs
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setImportDialogView("import");
+                setImportDialogOpen(true);
+              }}
+              className="self-start gap-1.5 cursor-pointer"
+              disabled={isReadOnly}
+              title={readOnlyTooltip}
+            >
+              <Upload size={14} strokeWidth={2} aria-hidden="true" />
+              Importer
+            </Button>
             <PermissionButton
               requiresActiveSubscription
               resource="clients"
@@ -517,40 +482,32 @@ function ClientsContent() {
               <h1 className="text-2xl font-medium mb-1">Contacts</h1>
             </div>
             <div className="flex gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="cursor-pointer"
-                  >
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setImportDialogView("import");
-                      setImportDialogOpen(true);
-                    }}
-                    className="cursor-pointer gap-2"
-                  >
-                    <Upload size={14} strokeWidth={2} />
-                    Importer un fichier
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setImportDialogView("fields");
-                      setImportDialogOpen(true);
-                    }}
-                    className="cursor-pointer gap-2"
-                  >
-                    <Settings2 size={14} strokeWidth={2} />
-                    Gérer les champs perso
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  setImportDialogView("fields");
+                  setImportDialogOpen(true);
+                }}
+                className="cursor-pointer"
+                disabled={isReadOnly}
+                title={readOnlyTooltip}
+              >
+                <Settings2 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  setImportDialogView("import");
+                  setImportDialogOpen(true);
+                }}
+                className="cursor-pointer"
+                disabled={isReadOnly}
+                title={readOnlyTooltip}
+              >
+                <Upload className="h-4 w-4" />
+              </Button>
               <PermissionButton
                 requiresActiveSubscription
                 resource="clients"
