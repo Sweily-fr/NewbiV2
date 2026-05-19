@@ -18,7 +18,6 @@ import {
   Search,
   Check,
   Pencil,
-  CircleDot,
   Trash2,
   CopyPlus,
   ArrowRightLeft,
@@ -398,10 +397,9 @@ function BulkActionBar({
         listRef?.current?.parentElement;
       if (!inset || !bulkBarRef.current) return;
       const rect = inset.getBoundingClientRect();
-      const barWidth = Math.min(rect.width - 48, rect.width * 0.75);
       bulkBarRef.current.style.left = `${rect.left + rect.width / 2}px`;
       bulkBarRef.current.style.transform = "translateX(-50%)";
-      bulkBarRef.current.style.width = `${barWidth}px`;
+      bulkBarRef.current.style.maxWidth = `${rect.width - 48}px`;
     };
     update();
     const observer = new ResizeObserver(update);
@@ -557,45 +555,7 @@ function BulkActionBar({
         </div>
 
         {/* Actions — poussées à droite */}
-        <div className="flex-1 flex items-center justify-end gap-1">
-          {/* Status */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium hover:bg-white/10 transition-colors cursor-pointer whitespace-nowrap"
-                style={{ color: "#BEBEBE" }}
-              >
-                <CircleDot className="h-3.5 w-3.5" />
-                Status
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-52 p-0" side="top" align="start">
-              <div className="px-2 pt-2 pb-0.5">
-                <span className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider">
-                  Déplacer vers
-                </span>
-              </div>
-              <div className="p-1.5 pt-0.5 space-y-0.5">
-                {columns.map((col) => (
-                  <button
-                    key={col.id}
-                    onClick={() => {
-                      bulkMove(col.id);
-                      setSelectedTaskIds(new Set());
-                    }}
-                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer"
-                  >
-                    <div
-                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: col.color || "#94a3b8" }}
-                    />
-                    <span className="text-xs">{col.title}</span>
-                  </button>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-
+        <div className="flex-1 flex items-center justify-end gap-1 ml-3">
           {/* Assignees */}
           <Popover>
             <PopoverTrigger asChild>
@@ -2311,6 +2271,17 @@ export function KanbanListView({
           (tasks.length === 0 &&
             !expandedEmptyColumns.has(column.id) &&
             inlineAddColumnId !== column.id);
+        const allColumnsCollapsed =
+          columns.length > 0 &&
+          columns.every((c) => {
+            const colTasks = getFilteredTasksByColumn(c.id);
+            return (
+              collapsedColumns.has(c.id) ||
+              (colTasks.length === 0 &&
+                !expandedEmptyColumns.has(c.id) &&
+                inlineAddColumnId !== c.id)
+            );
+          });
 
         return (
           <div key={column.id} className="space-y-0">
@@ -2395,7 +2366,7 @@ export function KanbanListView({
                               className="gap-2"
                             >
                               <ChevronRight className="h-3.5 w-3.5" />
-                              {collapsedColumns.has(column.id)
+                              {isCollapsed
                                 ? "Déplier le groupe"
                                 : "Replier le groupe"}
                             </DropdownMenuItem>
@@ -2418,16 +2389,25 @@ export function KanbanListView({
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation();
-                                const allCollapsed = new Set(
-                                  columns.map((c) => c.id),
-                                );
-                                setCollapsedColumns(allCollapsed);
-                                setExpandedEmptyColumns(new Set());
+                                if (allColumnsCollapsed) {
+                                  setCollapsedColumns(new Set());
+                                  setExpandedEmptyColumns(
+                                    new Set(columns.map((c) => c.id)),
+                                  );
+                                } else {
+                                  const allCollapsed = new Set(
+                                    columns.map((c) => c.id),
+                                  );
+                                  setCollapsedColumns(allCollapsed);
+                                  setExpandedEmptyColumns(new Set());
+                                }
                               }}
                               className="gap-2"
                             >
                               <ChevronsDownUp className="h-3.5 w-3.5" />
-                              Replier tous les groupes
+                              {allColumnsCollapsed
+                                ? "Déplier tous les groupes"
+                                : "Replier tous les groupes"}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
@@ -2437,7 +2417,7 @@ export function KanbanListView({
                               }}
                               className="gap-2 text-red-600 focus:text-red-600 focus:bg-red-50"
                             >
-                              <Trash2 className="h-3.5 w-3.5" />
+                              <Trash2 className="h-3.5 w-3.5 text-red-600" />
                               Supprimer
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -2554,7 +2534,7 @@ export function KanbanListView({
                               className="gap-2"
                             >
                               <ChevronRight className="h-3.5 w-3.5" />
-                              {collapsedColumns.has(column.id)
+                              {isCollapsed
                                 ? "Déplier le groupe"
                                 : "Replier le groupe"}
                             </DropdownMenuItem>
@@ -2577,16 +2557,25 @@ export function KanbanListView({
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation();
-                                const allCollapsed = new Set(
-                                  columns.map((c) => c.id),
-                                );
-                                setCollapsedColumns(allCollapsed);
-                                setExpandedEmptyColumns(new Set());
+                                if (allColumnsCollapsed) {
+                                  setCollapsedColumns(new Set());
+                                  setExpandedEmptyColumns(
+                                    new Set(columns.map((c) => c.id)),
+                                  );
+                                } else {
+                                  const allCollapsed = new Set(
+                                    columns.map((c) => c.id),
+                                  );
+                                  setCollapsedColumns(allCollapsed);
+                                  setExpandedEmptyColumns(new Set());
+                                }
                               }}
                               className="gap-2"
                             >
                               <ChevronsDownUp className="h-3.5 w-3.5" />
-                              Replier tous les groupes
+                              {allColumnsCollapsed
+                                ? "Déplier tous les groupes"
+                                : "Replier tous les groupes"}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
@@ -2596,7 +2585,7 @@ export function KanbanListView({
                               }}
                               className="gap-2 text-red-600 focus:text-red-600 focus:bg-red-50"
                             >
-                              <Trash2 className="h-3.5 w-3.5" />
+                              <Trash2 className="h-3.5 w-3.5 text-red-600" />
                               Supprimer
                             </DropdownMenuItem>
                           </DropdownMenuContent>
