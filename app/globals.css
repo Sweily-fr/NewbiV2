@@ -443,3 +443,396 @@
   animation: folder-highlight 1s ease-in-out 4;
   border-radius: 0.375rem;
 }
+
+/* =========================================================================
+   Mode daltonien — remap global de toutes les couleurs rouge/vert
+   Le toggle ajoute la classe `colorblind-mode` sur <html>.
+   Palette : vert -> bleu marque (#5b50ff), rouge -> noir/gris.
+   ========================================================================= */
+
+:root {
+  --cb-success-50: #ecfdf5;
+  --cb-success-100: #d1fae5;
+  --cb-success-200: #a7f3d0;
+  --cb-success-300: #6ee7b7;
+  --cb-success-400: #34d399;
+  --cb-success-500: #10b981;
+  --cb-success-600: #059669;
+  --cb-success-700: #047857;
+  --cb-success-800: #065f46;
+  --cb-success-900: #064e3b;
+  --cb-success-950: #022c22;
+
+  --cb-danger-50: #fef2f2;
+  --cb-danger-100: #fee2e2;
+  --cb-danger-200: #fecaca;
+  --cb-danger-300: #fca5a5;
+  --cb-danger-400: #f87171;
+  --cb-danger-500: #ef4444;
+  --cb-danger-600: #dc2626;
+  --cb-danger-700: #b91c1c;
+  --cb-danger-800: #991b1b;
+  --cb-danger-900: #7f1d1d;
+  --cb-danger-950: #450a0a;
+
+  --color-status-success: #10b981;
+  --color-status-success-strong: #0e7a3e;
+  --color-status-danger: #ef4444;
+  --color-status-danger-strong: #dc2626;
+  --color-income: #0e7a3e;
+  --color-expense: #dc2626;
+}
+
+.colorblind-mode {
+  --cb-success-50: #eef0ff;
+  --cb-success-100: #e8e6ff;
+  --cb-success-200: #d4d1ff;
+  --cb-success-300: #b3acff;
+  --cb-success-400: #8e84ff;
+  --cb-success-500: #5b50ff;
+  --cb-success-600: #5b50ff;
+  --cb-success-700: #5b50ff;
+  --cb-success-800: #4940d6;
+  --cb-success-900: #3a32a8;
+  --cb-success-950: #211e63;
+
+  --cb-danger-50: #f4f4f5;
+  --cb-danger-100: #e4e4e7;
+  --cb-danger-200: #d4d4d8;
+  --cb-danger-300: #a1a1aa;
+  --cb-danger-400: #52525b;
+  --cb-danger-500: #27272a;
+  --cb-danger-600: #18181b;
+  --cb-danger-700: #09090b;
+  --cb-danger-800: #000000;
+  --cb-danger-900: #000000;
+  --cb-danger-950: #000000;
+
+  --color-status-success: #5b50ff;
+  --color-status-success-strong: #5b50ff;
+  --color-status-danger: #27272a;
+  --color-status-danger-strong: #000000;
+  --color-income: #5b50ff;
+  --color-expense: #000000;
+}
+
+/* --- Couleur de texte ---------------------------------------------------- */
+.colorblind-mode .text-green-50  { color: var(--cb-success-50)  !important; }
+.colorblind-mode .text-green-100 { color: var(--cb-success-100) !important; }
+.colorblind-mode .text-green-200 { color: var(--cb-success-200) !important; }
+.colorblind-mode .text-green-300 { color: var(--cb-success-300) !important; }
+.colorblind-mode .text-green-400 { color: var(--cb-success-400) !important; }
+.colorblind-mode .text-green-500 { color: var(--cb-success-500) !important; }
+.colorblind-mode .text-green-600 { color: var(--cb-success-600) !important; }
+.colorblind-mode .text-green-700 { color: var(--cb-success-700) !important; }
+.colorblind-mode .text-green-800 { color: var(--cb-success-800) !important; }
+.colorblind-mode .text-green-900 { color: var(--cb-success-900) !important; }
+.colorblind-mode .text-green-950 { color: var(--cb-success-950) !important; }
+
+.colorblind-mode .text-emerald-50  { color: var(--cb-success-50)  !important; }
+.colorblind-mode .text-emerald-100 { color: var(--cb-success-100) !important; }
+.colorblind-mode .text-emerald-200 { color: var(--cb-success-200) !important; }
+.colorblind-mode .text-emerald-300 { color: var(--cb-success-300) !important; }
+.colorblind-mode .text-emerald-400 { color: var(--cb-success-400) !important; }
+.colorblind-mode .text-emerald-500 { color: var(--cb-success-500) !important; }
+.colorblind-mode .text-emerald-600 { color: var(--cb-success-600) !important; }
+.colorblind-mode .text-emerald-700 { color: var(--cb-success-700) !important; }
+.colorblind-mode .text-emerald-800 { color: var(--cb-success-800) !important; }
+.colorblind-mode .text-emerald-900 { color: var(--cb-success-900) !important; }
+
+.colorblind-mode .text-red-50  { color: var(--cb-danger-50)  !important; }
+.colorblind-mode .text-red-100 { color: var(--cb-danger-100) !important; }
+.colorblind-mode .text-red-200 { color: var(--cb-danger-200) !important; }
+.colorblind-mode .text-red-300 { color: var(--cb-danger-300) !important; }
+.colorblind-mode .text-red-400 { color: var(--cb-danger-400) !important; }
+.colorblind-mode .text-red-500 { color: var(--cb-danger-500) !important; }
+.colorblind-mode .text-red-600 { color: var(--cb-danger-600) !important; }
+.colorblind-mode .text-red-700 { color: var(--cb-danger-700) !important; }
+.colorblind-mode .text-red-800 { color: var(--cb-danger-800) !important; }
+.colorblind-mode .text-red-900 { color: var(--cb-danger-900) !important; }
+.colorblind-mode .text-red-950 { color: var(--cb-danger-950) !important; }
+
+.colorblind-mode .text-rose-50  { color: var(--cb-danger-50)  !important; }
+.colorblind-mode .text-rose-100 { color: var(--cb-danger-100) !important; }
+.colorblind-mode .text-rose-200 { color: var(--cb-danger-200) !important; }
+.colorblind-mode .text-rose-300 { color: var(--cb-danger-300) !important; }
+.colorblind-mode .text-rose-400 { color: var(--cb-danger-400) !important; }
+.colorblind-mode .text-rose-500 { color: var(--cb-danger-500) !important; }
+.colorblind-mode .text-rose-600 { color: var(--cb-danger-600) !important; }
+.colorblind-mode .text-rose-700 { color: var(--cb-danger-700) !important; }
+.colorblind-mode .text-rose-800 { color: var(--cb-danger-800) !important; }
+.colorblind-mode .text-rose-900 { color: var(--cb-danger-900) !important; }
+
+/* --- Fond ---------------------------------------------------------------- */
+.colorblind-mode .bg-green-50  { background-color: var(--cb-success-50)  !important; }
+.colorblind-mode .bg-green-100 { background-color: var(--cb-success-100) !important; }
+.colorblind-mode .bg-green-200 { background-color: var(--cb-success-200) !important; }
+.colorblind-mode .bg-green-300 { background-color: var(--cb-success-300) !important; }
+.colorblind-mode .bg-green-400 { background-color: var(--cb-success-400) !important; }
+.colorblind-mode .bg-green-500 { background-color: var(--cb-success-500) !important; }
+.colorblind-mode .bg-green-600 { background-color: var(--cb-success-600) !important; }
+.colorblind-mode .bg-green-700 { background-color: var(--cb-success-700) !important; }
+.colorblind-mode .bg-green-800 { background-color: var(--cb-success-800) !important; }
+.colorblind-mode .bg-green-900 { background-color: var(--cb-success-900) !important; }
+.colorblind-mode .bg-green-950 { background-color: var(--cb-success-950) !important; }
+
+.colorblind-mode .bg-emerald-50  { background-color: var(--cb-success-50)  !important; }
+.colorblind-mode .bg-emerald-100 { background-color: var(--cb-success-100) !important; }
+.colorblind-mode .bg-emerald-200 { background-color: var(--cb-success-200) !important; }
+.colorblind-mode .bg-emerald-300 { background-color: var(--cb-success-300) !important; }
+.colorblind-mode .bg-emerald-400 { background-color: var(--cb-success-400) !important; }
+.colorblind-mode .bg-emerald-500 { background-color: var(--cb-success-500) !important; }
+.colorblind-mode .bg-emerald-600 { background-color: var(--cb-success-600) !important; }
+.colorblind-mode .bg-emerald-700 { background-color: var(--cb-success-700) !important; }
+.colorblind-mode .bg-emerald-800 { background-color: var(--cb-success-800) !important; }
+.colorblind-mode .bg-emerald-900 { background-color: var(--cb-success-900) !important; }
+
+.colorblind-mode .bg-red-50  { background-color: var(--cb-danger-50)  !important; }
+.colorblind-mode .bg-red-100 { background-color: var(--cb-danger-100) !important; }
+.colorblind-mode .bg-red-200 { background-color: var(--cb-danger-200) !important; }
+.colorblind-mode .bg-red-300 { background-color: var(--cb-danger-300) !important; }
+.colorblind-mode .bg-red-400 { background-color: var(--cb-danger-400) !important; }
+.colorblind-mode .bg-red-500 { background-color: var(--cb-danger-500) !important; }
+.colorblind-mode .bg-red-600 { background-color: var(--cb-danger-600) !important; }
+.colorblind-mode .bg-red-700 { background-color: var(--cb-danger-700) !important; }
+.colorblind-mode .bg-red-800 { background-color: var(--cb-danger-800) !important; }
+.colorblind-mode .bg-red-900 { background-color: var(--cb-danger-900) !important; }
+.colorblind-mode .bg-red-950 { background-color: var(--cb-danger-950) !important; }
+
+.colorblind-mode .bg-rose-50  { background-color: var(--cb-danger-50)  !important; }
+.colorblind-mode .bg-rose-100 { background-color: var(--cb-danger-100) !important; }
+.colorblind-mode .bg-rose-200 { background-color: var(--cb-danger-200) !important; }
+.colorblind-mode .bg-rose-300 { background-color: var(--cb-danger-300) !important; }
+.colorblind-mode .bg-rose-400 { background-color: var(--cb-danger-400) !important; }
+.colorblind-mode .bg-rose-500 { background-color: var(--cb-danger-500) !important; }
+.colorblind-mode .bg-rose-600 { background-color: var(--cb-danger-600) !important; }
+.colorblind-mode .bg-rose-700 { background-color: var(--cb-danger-700) !important; }
+.colorblind-mode .bg-rose-800 { background-color: var(--cb-danger-800) !important; }
+.colorblind-mode .bg-rose-900 { background-color: var(--cb-danger-900) !important; }
+
+/* --- Bordures ------------------------------------------------------------ */
+.colorblind-mode [class*="border-green-50"],
+.colorblind-mode [class*="border-green-100"],
+.colorblind-mode [class*="border-green-200"],
+.colorblind-mode [class*="border-green-300"],
+.colorblind-mode [class*="border-green-400"],
+.colorblind-mode [class*="border-green-500"],
+.colorblind-mode [class*="border-green-600"],
+.colorblind-mode [class*="border-green-700"],
+.colorblind-mode [class*="border-green-800"],
+.colorblind-mode [class*="border-green-900"],
+.colorblind-mode [class*="border-emerald-"] {
+  border-color: var(--cb-success-500) !important;
+}
+
+.colorblind-mode [class*="border-red-50"],
+.colorblind-mode [class*="border-red-100"],
+.colorblind-mode [class*="border-red-200"],
+.colorblind-mode [class*="border-red-300"],
+.colorblind-mode [class*="border-red-400"],
+.colorblind-mode [class*="border-red-500"],
+.colorblind-mode [class*="border-red-600"],
+.colorblind-mode [class*="border-red-700"],
+.colorblind-mode [class*="border-red-800"],
+.colorblind-mode [class*="border-red-900"],
+.colorblind-mode [class*="border-rose-"] {
+  border-color: var(--cb-danger-500) !important;
+}
+
+/* --- Ring (focus/outline) ------------------------------------------------ */
+.colorblind-mode [class*="ring-green-"],
+.colorblind-mode [class*="ring-emerald-"] {
+  --tw-ring-color: var(--cb-success-500) !important;
+}
+.colorblind-mode [class*="ring-red-"],
+.colorblind-mode [class*="ring-rose-"] {
+  --tw-ring-color: var(--cb-danger-500) !important;
+}
+
+/* --- SVG fill / stroke --------------------------------------------------- */
+.colorblind-mode .fill-green-500,
+.colorblind-mode .fill-green-600,
+.colorblind-mode .fill-emerald-500,
+.colorblind-mode .fill-emerald-600 { fill: var(--cb-success-500) !important; }
+.colorblind-mode .fill-red-500,
+.colorblind-mode .fill-red-600,
+.colorblind-mode .fill-rose-500,
+.colorblind-mode .fill-rose-600 { fill: var(--cb-danger-500) !important; }
+
+.colorblind-mode .stroke-green-500,
+.colorblind-mode .stroke-green-600,
+.colorblind-mode .stroke-emerald-500,
+.colorblind-mode .stroke-emerald-600 { stroke: var(--cb-success-500) !important; }
+.colorblind-mode .stroke-red-500,
+.colorblind-mode .stroke-red-600,
+.colorblind-mode .stroke-rose-500,
+.colorblind-mode .stroke-rose-600 { stroke: var(--cb-danger-500) !important; }
+
+/* --- Tokens shadcn (destructive) ---------------------------------------- */
+.colorblind-mode {
+  --destructive: var(--cb-danger-600);
+  --destructive-foreground: #ffffff;
+}
+
+/* --- Toaster Sonner ------------------------------------------------------ */
+.colorblind-mode [data-sonner-toast][data-type="success"] {
+  --normal-bg: var(--cb-success-50);
+  --normal-border: var(--cb-success-200);
+  --normal-text: var(--cb-success-700);
+}
+.colorblind-mode [data-sonner-toast][data-type="error"] {
+  --normal-bg: var(--cb-danger-100);
+  --normal-border: var(--cb-danger-300);
+  --normal-text: var(--cb-danger-700);
+}
+
+/* --- Inline style hex overrides ----------------------------------------
+   Intercepte les valeurs hex codées en dur dans des attributs style=""
+   (impossible à atteindre via les classes Tailwind). Couvre tous les
+   verts/rouges récurrents de la plateforme. Positif (vert) -> bleu,
+   négatif (rouge) -> noir. */
+
+/* Verts -> bleu marque */
+.colorblind-mode [style*="#0E7A3E"],
+.colorblind-mode [style*="#0e7a3e"] {
+  color: #5b50ff !important;
+  background-color: revert-layer;
+}
+.colorblind-mode [style*="background-color: #0E7A3E"],
+.colorblind-mode [style*="background-color:#0E7A3E"],
+.colorblind-mode [style*="background-color: #0e7a3e"],
+.colorblind-mode [style*="background-color:#0e7a3e"],
+.colorblind-mode [style*="background: #0E7A3E"],
+.colorblind-mode [style*="background:#0E7A3E"],
+.colorblind-mode [style*="background: #0e7a3e"],
+.colorblind-mode [style*="background:#0e7a3e"] {
+  background-color: #5b50ff !important;
+}
+
+.colorblind-mode [style*="#10b981"],
+.colorblind-mode [style*="#10B981"] {
+  color: #5b50ff !important;
+}
+.colorblind-mode [style*="background-color: #10b981"],
+.colorblind-mode [style*="background-color:#10b981"],
+.colorblind-mode [style*="background-color: #10B981"],
+.colorblind-mode [style*="background-color:#10B981"],
+.colorblind-mode [style*="background: #10b981"],
+.colorblind-mode [style*="background:#10b981"],
+.colorblind-mode [style*="background: #10B981"],
+.colorblind-mode [style*="background:#10B981"] {
+  background-color: #5b50ff !important;
+}
+
+.colorblind-mode [style*="#059669"],
+.colorblind-mode [style*="#22c55e"],
+.colorblind-mode [style*="#16a34a"],
+.colorblind-mode [style*="#15803d"],
+.colorblind-mode [style*="#166534"] {
+  color: #5b50ff !important;
+}
+
+.colorblind-mode [style*="stroke=\"#10b981\""],
+.colorblind-mode [style*="stroke=\"#10B981\""],
+.colorblind-mode [style*="fill=\"#10b981\""],
+.colorblind-mode [style*="fill=\"#10B981\""] {
+  color: #5b50ff !important;
+}
+
+/* Rouges -> noir / gris foncé */
+.colorblind-mode [style*="#DC2626"],
+.colorblind-mode [style*="#dc2626"] {
+  color: #000000 !important;
+}
+.colorblind-mode [style*="background-color: #DC2626"],
+.colorblind-mode [style*="background-color:#DC2626"],
+.colorblind-mode [style*="background-color: #dc2626"],
+.colorblind-mode [style*="background-color:#dc2626"],
+.colorblind-mode [style*="background: #DC2626"],
+.colorblind-mode [style*="background:#DC2626"],
+.colorblind-mode [style*="background: #dc2626"],
+.colorblind-mode [style*="background:#dc2626"] {
+  background-color: #000000 !important;
+}
+
+.colorblind-mode [style*="#ef4444"],
+.colorblind-mode [style*="#EF4444"] {
+  color: #27272a !important;
+}
+.colorblind-mode [style*="background-color: #ef4444"],
+.colorblind-mode [style*="background-color:#ef4444"],
+.colorblind-mode [style*="background-color: #EF4444"],
+.colorblind-mode [style*="background-color:#EF4444"],
+.colorblind-mode [style*="background: #ef4444"],
+.colorblind-mode [style*="background:#ef4444"] {
+  background-color: #27272a !important;
+}
+
+.colorblind-mode [style*="#b91c1c"],
+.colorblind-mode [style*="#991b1b"],
+.colorblind-mode [style*="#7f1d1d"],
+.colorblind-mode [style*="#f87171"],
+.colorblind-mode [style*="#fca5a5"] {
+  color: #18181b !important;
+}
+
+/* Bordures rgba(220,38,38,*) / rgba(239,68,68,*) -> noir transparent */
+.colorblind-mode [style*="rgba(220, 38, 38"],
+.colorblind-mode [style*="rgba(220,38,38"],
+.colorblind-mode [style*="rgba(239, 68, 68"],
+.colorblind-mode [style*="rgba(239,68,68"] {
+  border-color: rgba(0, 0, 0, 0.2) !important;
+}
+.colorblind-mode [style*="borderColor: \"#ef444433\""],
+.colorblind-mode [style*="border-color: #ef444433"],
+.colorblind-mode [style*="border-color:#ef444433"] {
+  border-color: #00000033 !important;
+}
+
+/* Halos translucides utilisés en kanban (ex: "#10b98120", "#ef444420") */
+.colorblind-mode [style*="#10b98120"],
+.colorblind-mode [style*="#10B98120"] {
+  background-color: rgba(91, 80, 255, 0.13) !important;
+}
+.colorblind-mode [style*="#ef444420"],
+.colorblind-mode [style*="#EF444420"] {
+  background-color: rgba(39, 39, 42, 0.13) !important;
+}
+
+/* SVG stroke/fill via attributs (recharts, SVG inlines) */
+.colorblind-mode svg [stroke="#10b981"],
+.colorblind-mode svg [stroke="#10B981"],
+.colorblind-mode svg [fill="#10b981"],
+.colorblind-mode svg [fill="#10B981"] {
+  stroke: #5b50ff !important;
+  fill: #5b50ff !important;
+}
+.colorblind-mode svg [stroke="#0e7a3e"],
+.colorblind-mode svg [stroke="#0E7A3E"],
+.colorblind-mode svg [fill="#0e7a3e"],
+.colorblind-mode svg [fill="#0E7A3E"] {
+  stroke: #5b50ff !important;
+  fill: #5b50ff !important;
+}
+.colorblind-mode svg [stroke="#ef4444"],
+.colorblind-mode svg [stroke="#EF4444"],
+.colorblind-mode svg [fill="#ef4444"],
+.colorblind-mode svg [fill="#EF4444"] {
+  stroke: #27272a !important;
+  fill: #27272a !important;
+}
+.colorblind-mode svg [stroke="#dc2626"],
+.colorblind-mode svg [stroke="#DC2626"],
+.colorblind-mode svg [fill="#dc2626"],
+.colorblind-mode svg [fill="#DC2626"] {
+  stroke: #000000 !important;
+  fill: #000000 !important;
+}
+
+/* --- Pastilles d'aperçu du toggle Mode daltonien ------------------------
+   Couleurs FIXES, jamais remappées (montrent à quoi correspond chaque mode). */
+.cb-swatch-green { background-color: #10b981 !important; }
+.cb-swatch-red   { background-color: #ef4444 !important; }
+.cb-swatch-blue  { background-color: #5b50ff !important; }
+.cb-swatch-black { background-color: #111827 !important; }
+.dark .cb-swatch-black { background-color: #d1d5db !important; }

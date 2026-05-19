@@ -217,7 +217,7 @@ export function InlineEdit({
                 left: "0",
                 marginTop: "4px",
                 fontSize: "11px",
-                color: "#ef4444",
+                color: "var(--color-status-danger)",
                 whiteSpace: "nowrap",
               }}
             >

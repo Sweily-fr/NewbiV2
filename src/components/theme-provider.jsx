@@ -40,6 +40,16 @@ export function ThemeProvider({
     }
   }, [storageKey]);
 
+  // Apply/remove `colorblind-mode` class on <html> so global CSS can react
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (colorblindMode) {
+      root.classList.add("colorblind-mode");
+    } else {
+      root.classList.remove("colorblind-mode");
+    }
+  }, [colorblindMode]);
+
   useEffect(() => {
     const root = window.document.documentElement;
 
