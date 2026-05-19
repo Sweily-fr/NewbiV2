@@ -602,6 +602,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
           <div className="flex flex-col gap-1 mb-6">
             <div className="flex items-center gap-3">
               <Button
+                type="button"
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 cursor-pointer"
@@ -802,6 +803,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button
+                                  type="button"
                                   variant="ghost"
                                   size="icon"
                                   className="h-8 w-8 cursor-pointer"
