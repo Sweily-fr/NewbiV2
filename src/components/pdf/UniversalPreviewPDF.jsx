@@ -800,50 +800,95 @@ const UniversalPreviewPDF = ({
                 {data.companyInfo?.name || "Sweily"}
               </div>
               <div className="font-normal" style={{ fontSize: "10px" }}>
-                {/* Adresse de l'entreprise */}
-                {data.companyInfo?.address ? (
-                  <div className="whitespace-pre-line dark:text-[#0A0A0A]">
-                    {formatAddress(data.companyInfo.address)}
-                  </div>
+                {isPurchaseOrder ? (
+                  <>
+                    {/* Adresse (rue, code postal + ville, pays) */}
+                    {data.companyInfo?.address ? (
+                      <div className="whitespace-pre-line dark:text-[#0A0A0A]">
+                        {formatAddress(data.companyInfo.address)}
+                      </div>
+                    ) : (
+                      <div className="whitespace-pre-line dark:text-[#0A0A0A]">
+                        229 Rue Saint-Honoré\n75001 Paris, FR
+                      </div>
+                    )}
+
+                    {/* SIREN */}
+                    {data.companyInfo?.siren && (
+                      <div className="dark:text-[#0A0A0A]">
+                        SIREN: {data.companyInfo.siren}
+                      </div>
+                    )}
+
+                    {/* N° TVA */}
+                    {data.companyInfo?.vatNumber && (
+                      <div className="dark:text-[#0A0A0A]">
+                        N° TVA: {data.companyInfo.vatNumber}
+                      </div>
+                    )}
+
+                    {/* Téléphone */}
+                    {data.companyInfo?.phone && (
+                      <div className="dark:text-[#0A0A0A]">
+                        {data.companyInfo.phone}
+                      </div>
+                    )}
+
+                    {/* Email */}
+                    {data.companyInfo?.email && (
+                      <div className="dark:text-[#0A0A0A]">
+                        {data.companyInfo.email}
+                      </div>
+                    )}
+                  </>
                 ) : (
-                  <div className="whitespace-pre-line dark:text-[#0A0A0A]">
-                    229 Rue Saint-Honoré\n75001 Paris, FR
-                  </div>
-                )}
+                  <>
+                    {/* Adresse de l'entreprise */}
+                    {data.companyInfo?.address ? (
+                      <div className="whitespace-pre-line dark:text-[#0A0A0A]">
+                        {formatAddress(data.companyInfo.address)}
+                      </div>
+                    ) : (
+                      <div className="whitespace-pre-line dark:text-[#0A0A0A]">
+                        229 Rue Saint-Honoré\n75001 Paris, FR
+                      </div>
+                    )}
 
-                {/* Email */}
-                {data.companyInfo?.email && (
-                  <div className="dark:text-[#0A0A0A]">
-                    {data.companyInfo.email}
-                  </div>
-                )}
+                    {/* Email */}
+                    {data.companyInfo?.email && (
+                      <div className="dark:text-[#0A0A0A]">
+                        {data.companyInfo.email}
+                      </div>
+                    )}
 
-                {/* SIREN - sous l'email */}
-                {data.companyInfo?.siren && (
-                  <div className="dark:text-[#0A0A0A]">
-                    SIREN: {data.companyInfo.siren}
-                  </div>
-                )}
+                    {/* SIREN - sous l'email */}
+                    {data.companyInfo?.siren && (
+                      <div className="dark:text-[#0A0A0A]">
+                        SIREN: {data.companyInfo.siren}
+                      </div>
+                    )}
 
-                {/* Téléphone */}
-                {data.companyInfo?.phone && (
-                  <div className="dark:text-[#0A0A0A]">
-                    {data.companyInfo.phone}
-                  </div>
-                )}
+                    {/* Téléphone */}
+                    {data.companyInfo?.phone && (
+                      <div className="dark:text-[#0A0A0A]">
+                        {data.companyInfo.phone}
+                      </div>
+                    )}
 
-                {/* Site web */}
-                {data.companyInfo?.website && (
-                  <div className="dark:text-[#0A0A0A]">
-                    {data.companyInfo.website}
-                  </div>
-                )}
+                    {/* Site web */}
+                    {data.companyInfo?.website && (
+                      <div className="dark:text-[#0A0A0A]">
+                        {data.companyInfo.website}
+                      </div>
+                    )}
 
-                {/* N° TVA */}
-                {data.companyInfo?.vatNumber && (
-                  <div className="dark:text-[#0A0A0A]">
-                    N° TVA: {data.companyInfo.vatNumber}
-                  </div>
+                    {/* N° TVA */}
+                    {data.companyInfo?.vatNumber && (
+                      <div className="dark:text-[#0A0A0A]">
+                        N° TVA: {data.companyInfo.vatNumber}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -875,33 +920,68 @@ const UniversalPreviewPDF = ({
                     "Client"}
                 </div>
                 <div className="font-normal" style={{ fontSize: "10px" }}>
-                  {data.client?.address && (
-                    <div className="whitespace-pre-line dark:text-[#0A0A0A]">
-                      {formatAddress(data.client.address) || ""}
-                    </div>
-                  )}
-                  {data.client?.email && (
-                    <div className="dark:text-[#0A0A0A]">
-                      {data.client.email}
-                    </div>
-                  )}
-                  {data.client?.siret && (
-                    <div className="dark:text-[#0A0A0A]">
-                      {data.client.siret.replace(/\D/g, "").length === 9
-                        ? "SIREN"
-                        : "SIRET"}
-                      : {data.client.siret}
-                    </div>
-                  )}
-                  {data.client?.phone && (
-                    <div className="dark:text-[#0A0A0A]">
-                      {data.client.phone}
-                    </div>
-                  )}
-                  {data.client?.vatNumber && (
-                    <div className="dark:text-[#0A0A0A]">
-                      N° TVA: {data.client.vatNumber}
-                    </div>
+                  {isPurchaseOrder ? (
+                    <>
+                      {data.client?.address && (
+                        <div className="whitespace-pre-line dark:text-[#0A0A0A]">
+                          {formatAddress(data.client.address) || ""}
+                        </div>
+                      )}
+                      {data.client?.siret && (
+                        <div className="dark:text-[#0A0A0A]">
+                          {data.client.siret.replace(/\D/g, "").length === 9
+                            ? "SIREN"
+                            : "SIRET"}
+                          : {data.client.siret}
+                        </div>
+                      )}
+                      {data.client?.vatNumber && (
+                        <div className="dark:text-[#0A0A0A]">
+                          N° TVA: {data.client.vatNumber}
+                        </div>
+                      )}
+                      {data.client?.phone && (
+                        <div className="dark:text-[#0A0A0A]">
+                          {data.client.phone}
+                        </div>
+                      )}
+                      {data.client?.email && (
+                        <div className="dark:text-[#0A0A0A]">
+                          {data.client.email}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {data.client?.address && (
+                        <div className="whitespace-pre-line dark:text-[#0A0A0A]">
+                          {formatAddress(data.client.address) || ""}
+                        </div>
+                      )}
+                      {data.client?.email && (
+                        <div className="dark:text-[#0A0A0A]">
+                          {data.client.email}
+                        </div>
+                      )}
+                      {data.client?.siret && (
+                        <div className="dark:text-[#0A0A0A]">
+                          {data.client.siret.replace(/\D/g, "").length === 9
+                            ? "SIREN"
+                            : "SIRET"}
+                          : {data.client.siret}
+                        </div>
+                      )}
+                      {data.client?.phone && (
+                        <div className="dark:text-[#0A0A0A]">
+                          {data.client.phone}
+                        </div>
+                      )}
+                      {data.client?.vatNumber && (
+                        <div className="dark:text-[#0A0A0A]">
+                          N° TVA: {data.client.vatNumber}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
