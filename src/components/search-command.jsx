@@ -16,6 +16,8 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
+  DialogDescription,
 } from "@/src/components/ui/dialog";
 import {
   LayoutDashboard,
@@ -46,10 +48,16 @@ import {
   History,
 } from "lucide-react";
 import { GET_CLIENTS } from "@/src/graphql/clientQueries";
-import { GET_INVOICES, INVOICE_STATUS_LABELS } from "@/src/graphql/invoiceQueries";
+import {
+  GET_INVOICES,
+  INVOICE_STATUS_LABELS,
+} from "@/src/graphql/invoiceQueries";
 import { GET_QUOTES, QUOTE_STATUS_LABELS } from "@/src/graphql/quoteQueries";
 import { GET_PRODUCTS } from "@/src/graphql/queries/products";
-import { GET_PURCHASE_ORDERS, PURCHASE_ORDER_STATUS_LABELS } from "@/src/graphql/purchaseOrderQueries";
+import {
+  GET_PURCHASE_ORDERS,
+  PURCHASE_ORDER_STATUS_LABELS,
+} from "@/src/graphql/purchaseOrderQueries";
 import { GET_CREDIT_NOTES } from "@/src/graphql/creditNoteQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 
@@ -75,7 +83,11 @@ const formatRelativeDate = (date) => {
   if (diffDays < 7) return `Il y a ${diffDays}j`;
   if (diffDays < 30) return `Il y a ${Math.floor(diffDays / 7)} sem.`;
   if (diffDays < 365) return `Il y a ${Math.floor(diffDays / 30)} mois`;
-  return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return d.toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 };
 
 // --- Recents (localStorage) ---
@@ -95,7 +107,10 @@ const addRecent = (item) => {
   try {
     const recents = getRecents().filter((r) => r.id !== item.id);
     recents.unshift(item);
-    localStorage.setItem(RECENTS_KEY, JSON.stringify(recents.slice(0, MAX_RECENTS)));
+    localStorage.setItem(
+      RECENTS_KEY,
+      JSON.stringify(recents.slice(0, MAX_RECENTS)),
+    );
   } catch {}
 };
 
@@ -117,11 +132,14 @@ const InvoiceStatusIcon = ({ status }) => {
   let icon;
   switch (status) {
     case "COMPLETED":
-      icon = <CheckCircle2 className={`${cls} text-green-600`} />; break;
+      icon = <CheckCircle2 className={`${cls} text-green-600`} />;
+      break;
     case "PENDING":
-      icon = <Clock className={`${cls} text-orange-600`} />; break;
+      icon = <Clock className={`${cls} text-orange-600`} />;
+      break;
     case "CANCELED":
-      icon = <XCircle className={`${cls} text-red-600`} />; break;
+      icon = <XCircle className={`${cls} text-red-600`} />;
+      break;
     default:
       icon = <Receipt className={`${cls} text-gray-600`} />;
   }
@@ -133,11 +151,14 @@ const QuoteStatusIcon = ({ status }) => {
   let icon;
   switch (status) {
     case "COMPLETED":
-      icon = <CheckCircle2 className={`${cls} text-green-600`} />; break;
+      icon = <CheckCircle2 className={`${cls} text-green-600`} />;
+      break;
     case "PENDING":
-      icon = <Clock className={`${cls} text-blue-600`} />; break;
+      icon = <Clock className={`${cls} text-blue-600`} />;
+      break;
     case "CANCELED":
-      icon = <XCircle className={`${cls} text-red-600`} />; break;
+      icon = <XCircle className={`${cls} text-red-600`} />;
+      break;
     default:
       icon = <FileText className={`${cls} text-gray-600`} />;
   }
@@ -149,12 +170,15 @@ const PurchaseOrderStatusIcon = ({ status }) => {
   let icon;
   switch (status) {
     case "DELIVERED":
-      icon = <CheckCircle2 className={`${cls} text-green-600`} />; break;
+      icon = <CheckCircle2 className={`${cls} text-green-600`} />;
+      break;
     case "CONFIRMED":
     case "IN_PROGRESS":
-      icon = <Clock className={`${cls} text-blue-600`} />; break;
+      icon = <Clock className={`${cls} text-blue-600`} />;
+      break;
     case "CANCELED":
-      icon = <XCircle className={`${cls} text-red-600`} />; break;
+      icon = <XCircle className={`${cls} text-red-600`} />;
+      break;
     default:
       icon = <ShoppingCart className={`${cls} text-gray-600`} />;
   }
@@ -166,11 +190,14 @@ const CreditNoteStatusIcon = ({ status }) => {
   let icon;
   switch (status) {
     case "COMPLETED":
-      icon = <CheckCircle2 className={`${cls} text-green-600`} />; break;
+      icon = <CheckCircle2 className={`${cls} text-green-600`} />;
+      break;
     case "PENDING":
-      icon = <Clock className={`${cls} text-orange-600`} />; break;
+      icon = <Clock className={`${cls} text-orange-600`} />;
+      break;
     case "CANCELED":
-      icon = <XCircle className={`${cls} text-red-600`} />; break;
+      icon = <XCircle className={`${cls} text-red-600`} />;
+      break;
     default:
       icon = <RotateCcw className={`${cls} text-gray-600`} />;
   }
@@ -195,7 +222,9 @@ const ClientAvatar = ({ name }) => {
 
 // Kbd component
 const Kbd = ({ children, className = "" }) => (
-  <kbd className={`inline-flex items-center justify-center h-5 min-w-5 px-1 rounded border border-border/60 bg-muted/60 text-[10px] font-medium text-muted-foreground ${className}`}>
+  <kbd
+    className={`inline-flex items-center justify-center h-5 min-w-5 px-1 rounded border border-border/60 bg-muted/60 text-[10px] font-medium text-muted-foreground ${className}`}
+  >
     {children}
   </kbd>
 );
@@ -205,7 +234,8 @@ const Kbd = ({ children, className = "" }) => (
 export function SearchCommand() {
   const [open, setOpen] = React.useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = React.useState(false);
-  const [settingsInitialTab, setSettingsInitialTab] = React.useState("preferences");
+  const [settingsInitialTab, setSettingsInitialTab] =
+    React.useState("preferences");
   const [searchQuery, setSearchQuery] = React.useState("");
   const [recents, setRecents] = React.useState([]);
   const router = useRouter();
@@ -224,11 +254,15 @@ export function SearchCommand() {
   const [searchProducts, { data: productsData, loading: productsLoading }] =
     useLazyQuery(GET_PRODUCTS, { fetchPolicy: "cache-and-network" });
 
-  const [searchPurchaseOrders, { data: purchaseOrdersData, loading: purchaseOrdersLoading }] =
-    useLazyQuery(GET_PURCHASE_ORDERS, { fetchPolicy: "cache-and-network" });
+  const [
+    searchPurchaseOrders,
+    { data: purchaseOrdersData, loading: purchaseOrdersLoading },
+  ] = useLazyQuery(GET_PURCHASE_ORDERS, { fetchPolicy: "cache-and-network" });
 
-  const [searchCreditNotes, { data: creditNotesData, loading: creditNotesLoading }] =
-    useLazyQuery(GET_CREDIT_NOTES, { fetchPolicy: "cache-and-network" });
+  const [
+    searchCreditNotes,
+    { data: creditNotesData, loading: creditNotesLoading },
+  ] = useLazyQuery(GET_CREDIT_NOTES, { fetchPolicy: "cache-and-network" });
 
   const openSettings = React.useCallback((tab = "preferences") => {
     setSettingsInitialTab(tab);
@@ -247,7 +281,9 @@ export function SearchCommand() {
     if (!workspaceId || !searchQuery || searchQuery.length < 2) return;
 
     const timer = setTimeout(() => {
-      const vars = { variables: { workspaceId, search: searchQuery, limit: 4 } };
+      const vars = {
+        variables: { workspaceId, search: searchQuery, limit: 4 },
+      };
       searchClients(vars);
       searchInvoices(vars);
       searchQuotes(vars);
@@ -257,7 +293,16 @@ export function SearchCommand() {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, workspaceId, searchClients, searchInvoices, searchQuotes, searchProducts, searchPurchaseOrders, searchCreditNotes]);
+  }, [
+    searchQuery,
+    workspaceId,
+    searchClients,
+    searchInvoices,
+    searchQuotes,
+    searchProducts,
+    searchPurchaseOrders,
+    searchCreditNotes,
+  ]);
 
   // Global events + keyboard shortcut
   React.useEffect(() => {
@@ -290,21 +335,39 @@ export function SearchCommand() {
   const invoices = invoicesData?.invoices?.invoices || [];
   const quotes = quotesData?.quotes?.quotes || [];
   const products = productsData?.products?.products || [];
-  const purchaseOrders = purchaseOrdersData?.purchaseOrders?.purchaseOrders || [];
+  const purchaseOrders =
+    purchaseOrdersData?.purchaseOrders?.purchaseOrders || [];
   const creditNotes = creditNotesData?.creditNotes?.creditNotes || [];
 
-  const isLoading = clientsLoading || invoicesLoading || quotesLoading || productsLoading || purchaseOrdersLoading || creditNotesLoading;
-  const hasResults = clients.length > 0 || invoices.length > 0 || quotes.length > 0 || products.length > 0 || purchaseOrders.length > 0 || creditNotes.length > 0;
+  const isLoading =
+    clientsLoading ||
+    invoicesLoading ||
+    quotesLoading ||
+    productsLoading ||
+    purchaseOrdersLoading ||
+    creditNotesLoading;
+  const hasResults =
+    clients.length > 0 ||
+    invoices.length > 0 ||
+    quotes.length > 0 ||
+    products.length > 0 ||
+    purchaseOrders.length > 0 ||
+    creditNotes.length > 0;
   const isSearching = searchQuery.length >= 2;
 
   // Status label for credit notes (no export from queries)
   const creditNoteStatusLabel = (status) => {
     switch (status) {
-      case "COMPLETED": return "Finalisé";
-      case "PENDING": return "En attente";
-      case "CANCELED": return "Annulé";
-      case "DRAFT": return "Brouillon";
-      default: return status;
+      case "COMPLETED":
+        return "Finalisé";
+      case "PENDING":
+        return "En attente";
+      case "CANCELED":
+        return "Annulé";
+      case "DRAFT":
+        return "Brouillon";
+      default:
+        return status;
     }
   };
 
@@ -312,6 +375,11 @@ export function SearchCommand() {
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-[640px] p-1 gap-0 top-[40%] border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
+          <DialogTitle className="sr-only">Rechercher</DialogTitle>
+          <DialogDescription className="sr-only">
+            Recherchez des clients, factures, devis ou naviguez dans
+            l'application.
+          </DialogDescription>
           <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1] flex flex-col">
             <Command className="**:data-[slot=command-input-wrapper]:h-12 [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group]]:px-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-2.5 [&_[cmdk-item]]:rounded-lg">
               <CommandInput
@@ -330,7 +398,9 @@ export function SearchCommand() {
                 {isLoading && (
                   <div className="flex items-center justify-center py-6">
                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                    <span className="ml-2 text-xs text-muted-foreground">Recherche...</span>
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      Recherche...
+                    </span>
                   </div>
                 )}
 
@@ -346,17 +416,28 @@ export function SearchCommand() {
                               key={client.id}
                               onSelect={() =>
                                 runCommand(
-                                  () => router.push(`/dashboard/clients?id=${client.id}`),
-                                  { id: `client-${client.id}`, label: client.name, type: "client", url: `/dashboard/clients?id=${client.id}` }
+                                  () =>
+                                    router.push(
+                                      `/dashboard/clients?id=${client.id}`,
+                                    ),
+                                  {
+                                    id: `client-${client.id}`,
+                                    label: client.name,
+                                    type: "client",
+                                    url: `/dashboard/clients?id=${client.id}`,
+                                  },
                                 )
                               }
                             >
                               <ClientAvatar name={client.name} />
                               <div className="flex flex-col flex-1 min-w-0">
-                                <span className="font-medium truncate">{client.name}</span>
+                                <span className="font-medium truncate">
+                                  {client.name}
+                                </span>
                                 <span className="text-xs text-muted-foreground truncate">
                                   {client.email}
-                                  {client.address?.city && ` • ${client.address.city}`}
+                                  {client.address?.city &&
+                                    ` • ${client.address.city}`}
                                 </span>
                               </div>
                             </CommandItem>
@@ -375,21 +456,34 @@ export function SearchCommand() {
                               key={invoice.id}
                               onSelect={() =>
                                 runCommand(
-                                  () => router.push(`/dashboard/outils/factures?id=${invoice.id}`),
-                                  { id: `inv-${invoice.id}`, label: `${invoice.prefix}${invoice.number}`, type: "facture", url: `/dashboard/outils/factures?id=${invoice.id}` }
+                                  () =>
+                                    router.push(
+                                      `/dashboard/outils/factures?id=${invoice.id}`,
+                                    ),
+                                  {
+                                    id: `inv-${invoice.id}`,
+                                    label: `${invoice.prefix}${invoice.number}`,
+                                    type: "facture",
+                                    url: `/dashboard/outils/factures?id=${invoice.id}`,
+                                  },
                                 )
                               }
                             >
                               <InvoiceStatusIcon status={invoice.status} />
                               <div className="flex flex-col flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
-                                  <span className="font-medium">{invoice.prefix}{invoice.number}</span>
+                                  <span className="font-medium">
+                                    {invoice.prefix}
+                                    {invoice.number}
+                                  </span>
                                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
                                     {INVOICE_STATUS_LABELS[invoice.status]}
                                   </span>
                                 </div>
                                 <span className="text-xs text-muted-foreground truncate">
-                                  {invoice.client?.name} • {formatCurrency(invoice.finalTotalTTC)} • {formatRelativeDate(invoice.issueDate)}
+                                  {invoice.client?.name} •{" "}
+                                  {formatCurrency(invoice.finalTotalTTC)} •{" "}
+                                  {formatRelativeDate(invoice.issueDate)}
                                 </span>
                               </div>
                             </CommandItem>
@@ -408,21 +502,34 @@ export function SearchCommand() {
                               key={quote.id}
                               onSelect={() =>
                                 runCommand(
-                                  () => router.push(`/dashboard/outils/devis?id=${quote.id}`),
-                                  { id: `quote-${quote.id}`, label: `${quote.prefix}${quote.number}`, type: "devis", url: `/dashboard/outils/devis?id=${quote.id}` }
+                                  () =>
+                                    router.push(
+                                      `/dashboard/outils/devis?id=${quote.id}`,
+                                    ),
+                                  {
+                                    id: `quote-${quote.id}`,
+                                    label: `${quote.prefix}${quote.number}`,
+                                    type: "devis",
+                                    url: `/dashboard/outils/devis?id=${quote.id}`,
+                                  },
                                 )
                               }
                             >
                               <QuoteStatusIcon status={quote.status} />
                               <div className="flex flex-col flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
-                                  <span className="font-medium">{quote.prefix}{quote.number}</span>
+                                  <span className="font-medium">
+                                    {quote.prefix}
+                                    {quote.number}
+                                  </span>
                                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
                                     {QUOTE_STATUS_LABELS[quote.status]}
                                   </span>
                                 </div>
                                 <span className="text-xs text-muted-foreground truncate">
-                                  {quote.client?.name} • {formatCurrency(quote.finalTotalTTC)} • {formatRelativeDate(quote.issueDate)}
+                                  {quote.client?.name} •{" "}
+                                  {formatCurrency(quote.finalTotalTTC)} •{" "}
+                                  {formatRelativeDate(quote.issueDate)}
                                 </span>
                               </div>
                             </CommandItem>
@@ -441,21 +548,34 @@ export function SearchCommand() {
                               key={po.id}
                               onSelect={() =>
                                 runCommand(
-                                  () => router.push(`/dashboard/outils/bons-commande?id=${po.id}`),
-                                  { id: `po-${po.id}`, label: `${po.prefix}${po.number}`, type: "bon", url: `/dashboard/outils/bons-commande?id=${po.id}` }
+                                  () =>
+                                    router.push(
+                                      `/dashboard/outils/bons-commande?id=${po.id}`,
+                                    ),
+                                  {
+                                    id: `po-${po.id}`,
+                                    label: `${po.prefix}${po.number}`,
+                                    type: "bon",
+                                    url: `/dashboard/outils/bons-commande?id=${po.id}`,
+                                  },
                                 )
                               }
                             >
                               <PurchaseOrderStatusIcon status={po.status} />
                               <div className="flex flex-col flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
-                                  <span className="font-medium">{po.prefix}{po.number}</span>
+                                  <span className="font-medium">
+                                    {po.prefix}
+                                    {po.number}
+                                  </span>
                                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
                                     {PURCHASE_ORDER_STATUS_LABELS[po.status]}
                                   </span>
                                 </div>
                                 <span className="text-xs text-muted-foreground truncate">
-                                  {po.client?.name} • {formatCurrency(po.finalTotalTTC)} • {formatRelativeDate(po.issueDate)}
+                                  {po.client?.name} •{" "}
+                                  {formatCurrency(po.finalTotalTTC)} •{" "}
+                                  {formatRelativeDate(po.issueDate)}
                                 </span>
                               </div>
                             </CommandItem>
@@ -474,21 +594,34 @@ export function SearchCommand() {
                               key={cn.id}
                               onSelect={() =>
                                 runCommand(
-                                  () => router.push(`/dashboard/outils/factures?avoir=${cn.id}`),
-                                  { id: `cn-${cn.id}`, label: `${cn.prefix}${cn.number}`, type: "avoir", url: `/dashboard/outils/factures?avoir=${cn.id}` }
+                                  () =>
+                                    router.push(
+                                      `/dashboard/outils/factures?avoir=${cn.id}`,
+                                    ),
+                                  {
+                                    id: `cn-${cn.id}`,
+                                    label: `${cn.prefix}${cn.number}`,
+                                    type: "avoir",
+                                    url: `/dashboard/outils/factures?avoir=${cn.id}`,
+                                  },
                                 )
                               }
                             >
                               <CreditNoteStatusIcon status={cn.status} />
                               <div className="flex flex-col flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
-                                  <span className="font-medium">{cn.prefix}{cn.number}</span>
+                                  <span className="font-medium">
+                                    {cn.prefix}
+                                    {cn.number}
+                                  </span>
                                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
                                     {creditNoteStatusLabel(cn.status)}
                                   </span>
                                 </div>
                                 <span className="text-xs text-muted-foreground truncate">
-                                  {cn.client?.name} • {formatCurrency(cn.finalTotalTTC)} • {formatRelativeDate(cn.issueDate)}
+                                  {cn.client?.name} •{" "}
+                                  {formatCurrency(cn.finalTotalTTC)} •{" "}
+                                  {formatRelativeDate(cn.issueDate)}
                                 </span>
                               </div>
                             </CommandItem>
@@ -507,16 +640,30 @@ export function SearchCommand() {
                               key={product.id}
                               onSelect={() =>
                                 runCommand(
-                                  () => router.push(`/dashboard/catalogues?id=${product.id}`),
-                                  { id: `prod-${product.id}`, label: product.name, type: "produit", url: `/dashboard/catalogues?id=${product.id}` }
+                                  () =>
+                                    router.push(
+                                      `/dashboard/catalogues?id=${product.id}`,
+                                    ),
+                                  {
+                                    id: `prod-${product.id}`,
+                                    label: product.name,
+                                    type: "produit",
+                                    url: `/dashboard/catalogues?id=${product.id}`,
+                                  },
                                 )
                               }
                             >
-                              <IconWrapper><Package className="size-3.5" /></IconWrapper>
+                              <IconWrapper>
+                                <Package className="size-3.5" />
+                              </IconWrapper>
                               <div className="flex flex-col flex-1 min-w-0">
-                                <span className="font-medium truncate">{product.name}</span>
+                                <span className="font-medium truncate">
+                                  {product.name}
+                                </span>
                                 <span className="text-xs text-muted-foreground truncate">
-                                  {product.reference && `${product.reference} • `}{formatCurrency(product.unitPrice)}
+                                  {product.reference &&
+                                    `${product.reference} • `}
+                                  {formatCurrency(product.unitPrice)}
                                   {product.category && ` • ${product.category}`}
                                 </span>
                               </div>
@@ -536,11 +683,17 @@ export function SearchCommand() {
                       {recents.map((item) => (
                         <CommandItem
                           key={item.id}
-                          onSelect={() => runCommand(() => router.push(item.url), item)}
+                          onSelect={() =>
+                            runCommand(() => router.push(item.url), item)
+                          }
                         >
-                          <IconWrapper><History className="size-3.5 text-muted-foreground" /></IconWrapper>
+                          <IconWrapper>
+                            <History className="size-3.5 text-muted-foreground" />
+                          </IconWrapper>
                           <span className="flex-1 truncate">{item.label}</span>
-                          <span className="text-[10px] text-muted-foreground capitalize">{item.type}</span>
+                          <span className="text-[10px] text-muted-foreground capitalize">
+                            {item.type}
+                          </span>
                         </CommandItem>
                       ))}
                     </CommandGroup>
@@ -553,27 +706,53 @@ export function SearchCommand() {
                   <>
                     <CommandGroup heading="Actions rapides">
                       <CommandItem
-                        onSelect={() => runCommand(() => router.push("/dashboard/outils/factures?new=true"))}
+                        onSelect={() =>
+                          runCommand(() =>
+                            router.push("/dashboard/outils/factures?new=true"),
+                          )
+                        }
                       >
-                        <IconWrapper><Plus className="size-3.5 text-[#5b4eff]" /></IconWrapper>
+                        <IconWrapper>
+                          <Plus className="size-3.5 text-[#5b4eff]" />
+                        </IconWrapper>
                         <span>Nouvelle facture</span>
                       </CommandItem>
                       <CommandItem
-                        onSelect={() => runCommand(() => router.push("/dashboard/outils/devis?new=true"))}
+                        onSelect={() =>
+                          runCommand(() =>
+                            router.push("/dashboard/outils/devis?new=true"),
+                          )
+                        }
                       >
-                        <IconWrapper><Plus className="size-3.5 text-[#5b4eff]" /></IconWrapper>
+                        <IconWrapper>
+                          <Plus className="size-3.5 text-[#5b4eff]" />
+                        </IconWrapper>
                         <span>Nouveau devis</span>
                       </CommandItem>
                       <CommandItem
-                        onSelect={() => runCommand(() => router.push("/dashboard/outils/bons-commande?new=true"))}
+                        onSelect={() =>
+                          runCommand(() =>
+                            router.push(
+                              "/dashboard/outils/bons-commande?new=true",
+                            ),
+                          )
+                        }
                       >
-                        <IconWrapper><Plus className="size-3.5 text-[#5b4eff]" /></IconWrapper>
+                        <IconWrapper>
+                          <Plus className="size-3.5 text-[#5b4eff]" />
+                        </IconWrapper>
                         <span>Nouveau bon de commande</span>
                       </CommandItem>
                       <CommandItem
-                        onSelect={() => runCommand(() => router.push("/dashboard/clients?new=true"))}
+                        onSelect={() =>
+                          runCommand(() =>
+                            router.push("/dashboard/clients?new=true"),
+                          )
+                        }
                       >
-                        <IconWrapper><Plus className="size-3.5 text-[#5b4eff]" /></IconWrapper>
+                        <IconWrapper>
+                          <Plus className="size-3.5 text-[#5b4eff]" />
+                        </IconWrapper>
                         <span>Nouveau client</span>
                       </CommandItem>
                     </CommandGroup>
@@ -583,96 +762,226 @@ export function SearchCommand() {
 
                 {/* --- Navigation --- */}
                 <CommandGroup heading="Navigation">
-                      <CommandItem onSelect={() => runCommand(() => router.push("/dashboard"))}>
-                        <IconWrapper><LayoutDashboard className="size-3.5" /></IconWrapper>
-                        <span>Tableau de bord</span>
-                      </CommandItem>
-                      <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/clients"))}>
-                        <IconWrapper><Users className="size-3.5" /></IconWrapper>
-                        <span>Clients</span>
-                      </CommandItem>
-                      <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/catalogues"))}>
-                        <IconWrapper><Package className="size-3.5" /></IconWrapper>
-                        <span>Catalogues</span>
-                      </CommandItem>
-                      <CommandItem onSelect={() => runCommand(() => openSettings("espaces"))}>
-                        <IconWrapper><UserCog className="size-3.5" /></IconWrapper>
-                        <span>Collaborateurs</span>
-                      </CommandItem>
-                      <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/calendar"))}>
-                        <IconWrapper><Calendar className="size-3.5" /></IconWrapper>
-                        <span>Calendrier</span>
-                      </CommandItem>
-                      <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/analytics"))}>
-                        <IconWrapper><BarChart3 className="size-3.5" /></IconWrapper>
-                        <span>Analytics</span>
-                      </CommandItem>
-                      <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/automatisation"))}>
-                        <IconWrapper><Workflow className="size-3.5" /></IconWrapper>
-                        <span>Automatisation</span>
-                      </CommandItem>
-                      <CommandItem onSelect={() => runCommand(() => openSettings("preferences"))}>
-                        <IconWrapper><User className="size-3.5" /></IconWrapper>
-                        <span>Mon compte</span>
-                      </CommandItem>
-                    </CommandGroup>
-                    <CommandSeparator />
-                    <CommandGroup heading="Outils">
-                      <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/outils/factures"))}>
-                        <IconWrapper><Receipt className="size-3.5" /></IconWrapper>
-                        <span>Factures</span>
-                      </CommandItem>
-                      <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/outils/devis"))}>
-                        <IconWrapper><FileText className="size-3.5" /></IconWrapper>
-                        <span>Devis</span>
-                      </CommandItem>
-                      <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/outils/bons-commande"))}>
-                        <IconWrapper><ShoppingCart className="size-3.5" /></IconWrapper>
-                        <span>Bons de commande</span>
-                      </CommandItem>
-                      <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/outils/transactions"))}>
-                        <IconWrapper><CreditCard className="size-3.5" /></IconWrapper>
-                        <span>Transactions</span>
-                      </CommandItem>
-                      <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/outils/kanban"))}>
-                        <IconWrapper><Kanban className="size-3.5" /></IconWrapper>
-                        <span>Kanban</span>
-                      </CommandItem>
-                      <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/outils/signatures-mail"))}>
-                        <IconWrapper><Mail className="size-3.5" /></IconWrapper>
-                        <span>Signatures de mail</span>
-                      </CommandItem>
-                      <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/outils/documents-partages"))}>
-                        <IconWrapper><Share2 className="size-3.5" /></IconWrapper>
-                        <span>Documents partagés</span>
-                      </CommandItem>
-                      <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/outils/transferts-fichiers"))}>
-                        <IconWrapper><Upload className="size-3.5" /></IconWrapper>
-                        <span>Transferts de fichiers</span>
-                      </CommandItem>
-                    </CommandGroup>
-                    <CommandSeparator />
-                    <CommandGroup heading="Paramètres">
-                      <CommandItem onSelect={() => runCommand(() => openSettings("preferences"))}>
-                        <IconWrapper><Settings className="size-3.5" /></IconWrapper>
-                        <span>Paramètres généraux</span>
-                      </CommandItem>
-                      <CommandItem onSelect={() => runCommand(() => openSettings("generale"))}>
-                        <IconWrapper><User className="size-3.5" /></IconWrapper>
-                        <span>Informations entreprise</span>
-                      </CommandItem>
-                      <CommandItem onSelect={() => runCommand(() => openSettings("coordonnees-bancaires"))}>
-                        <IconWrapper><CreditCard className="size-3.5" /></IconWrapper>
-                        <span>Coordonnées bancaires</span>
-                      </CommandItem>
-                      <CommandItem onSelect={() => runCommand(() => openSettings("informations-legales"))}>
-                        <IconWrapper><FileText className="size-3.5" /></IconWrapper>
-                        <span>Informations légales</span>
-                      </CommandItem>
-                      <CommandItem onSelect={() => runCommand(() => openSettings("subscription"))}>
-                        <IconWrapper><CreditCard className="size-3.5" /></IconWrapper>
-                        <span>Gérer mon abonnement</span>
-                      </CommandItem>
+                  <CommandItem
+                    onSelect={() => runCommand(() => router.push("/dashboard"))}
+                  >
+                    <IconWrapper>
+                      <LayoutDashboard className="size-3.5" />
+                    </IconWrapper>
+                    <span>Tableau de bord</span>
+                  </CommandItem>
+                  <CommandItem
+                    onSelect={() =>
+                      runCommand(() => router.push("/dashboard/clients"))
+                    }
+                  >
+                    <IconWrapper>
+                      <Users className="size-3.5" />
+                    </IconWrapper>
+                    <span>Clients</span>
+                  </CommandItem>
+                  <CommandItem
+                    onSelect={() =>
+                      runCommand(() => router.push("/dashboard/catalogues"))
+                    }
+                  >
+                    <IconWrapper>
+                      <Package className="size-3.5" />
+                    </IconWrapper>
+                    <span>Catalogues</span>
+                  </CommandItem>
+                  <CommandItem
+                    onSelect={() => runCommand(() => openSettings("espaces"))}
+                  >
+                    <IconWrapper>
+                      <UserCog className="size-3.5" />
+                    </IconWrapper>
+                    <span>Collaborateurs</span>
+                  </CommandItem>
+                  <CommandItem
+                    onSelect={() =>
+                      runCommand(() => router.push("/dashboard/calendar"))
+                    }
+                  >
+                    <IconWrapper>
+                      <Calendar className="size-3.5" />
+                    </IconWrapper>
+                    <span>Calendrier</span>
+                  </CommandItem>
+                  <CommandItem
+                    onSelect={() =>
+                      runCommand(() =>
+                        router.push("/dashboard/outils/analytiques"),
+                      )
+                    }
+                  >
+                    <IconWrapper>
+                      <BarChart3 className="size-3.5" />
+                    </IconWrapper>
+                    <span>Analytics</span>
+                  </CommandItem>
+                  <CommandItem
+                    onSelect={() =>
+                      runCommand(() => openSettings("applications"))
+                    }
+                  >
+                    <IconWrapper>
+                      <Workflow className="size-3.5" />
+                    </IconWrapper>
+                    <span>Automatisation</span>
+                  </CommandItem>
+                  <CommandItem
+                    onSelect={() => runCommand(() => openSettings("user-info"))}
+                  >
+                    <IconWrapper>
+                      <User className="size-3.5" />
+                    </IconWrapper>
+                    <span>Mon compte</span>
+                  </CommandItem>
+                </CommandGroup>
+                <CommandSeparator />
+                <CommandGroup heading="Outils">
+                  <CommandItem
+                    onSelect={() =>
+                      runCommand(() =>
+                        router.push("/dashboard/outils/factures"),
+                      )
+                    }
+                  >
+                    <IconWrapper>
+                      <Receipt className="size-3.5" />
+                    </IconWrapper>
+                    <span>Factures</span>
+                  </CommandItem>
+                  <CommandItem
+                    onSelect={() =>
+                      runCommand(() => router.push("/dashboard/outils/devis"))
+                    }
+                  >
+                    <IconWrapper>
+                      <FileText className="size-3.5" />
+                    </IconWrapper>
+                    <span>Devis</span>
+                  </CommandItem>
+                  <CommandItem
+                    onSelect={() =>
+                      runCommand(() =>
+                        router.push("/dashboard/outils/bons-commande"),
+                      )
+                    }
+                  >
+                    <IconWrapper>
+                      <ShoppingCart className="size-3.5" />
+                    </IconWrapper>
+                    <span>Bons de commande</span>
+                  </CommandItem>
+                  <CommandItem
+                    onSelect={() =>
+                      runCommand(() =>
+                        router.push("/dashboard/outils/transactions"),
+                      )
+                    }
+                  >
+                    <IconWrapper>
+                      <CreditCard className="size-3.5" />
+                    </IconWrapper>
+                    <span>Transactions</span>
+                  </CommandItem>
+                  <CommandItem
+                    onSelect={() =>
+                      runCommand(() => router.push("/dashboard/outils/kanban"))
+                    }
+                  >
+                    <IconWrapper>
+                      <Kanban className="size-3.5" />
+                    </IconWrapper>
+                    <span>Kanban</span>
+                  </CommandItem>
+                  <CommandItem
+                    onSelect={() =>
+                      runCommand(() =>
+                        router.push("/dashboard/outils/signatures-mail"),
+                      )
+                    }
+                  >
+                    <IconWrapper>
+                      <Mail className="size-3.5" />
+                    </IconWrapper>
+                    <span>Signatures de mail</span>
+                  </CommandItem>
+                  <CommandItem
+                    onSelect={() =>
+                      runCommand(() =>
+                        router.push("/dashboard/outils/documents-partages"),
+                      )
+                    }
+                  >
+                    <IconWrapper>
+                      <Share2 className="size-3.5" />
+                    </IconWrapper>
+                    <span>Documents partagés</span>
+                  </CommandItem>
+                  <CommandItem
+                    onSelect={() =>
+                      runCommand(() =>
+                        router.push("/dashboard/outils/transferts-fichiers"),
+                      )
+                    }
+                  >
+                    <IconWrapper>
+                      <Upload className="size-3.5" />
+                    </IconWrapper>
+                    <span>Transferts de fichiers</span>
+                  </CommandItem>
+                </CommandGroup>
+                <CommandSeparator />
+                <CommandGroup heading="Paramètres">
+                  <CommandItem
+                    onSelect={() => runCommand(() => openSettings("generale"))}
+                  >
+                    <IconWrapper>
+                      <Settings className="size-3.5" />
+                    </IconWrapper>
+                    <span>Paramètres généraux</span>
+                  </CommandItem>
+                  <CommandItem
+                    onSelect={() => runCommand(() => openSettings("generale"))}
+                  >
+                    <IconWrapper>
+                      <User className="size-3.5" />
+                    </IconWrapper>
+                    <span>Informations entreprise</span>
+                  </CommandItem>
+                  <CommandItem
+                    onSelect={() =>
+                      runCommand(() => openSettings("coordonnees-bancaires"))
+                    }
+                  >
+                    <IconWrapper>
+                      <CreditCard className="size-3.5" />
+                    </IconWrapper>
+                    <span>Coordonnées bancaires</span>
+                  </CommandItem>
+                  <CommandItem
+                    onSelect={() =>
+                      runCommand(() => openSettings("informations-legales"))
+                    }
+                  >
+                    <IconWrapper>
+                      <FileText className="size-3.5" />
+                    </IconWrapper>
+                    <span>Informations légales</span>
+                  </CommandItem>
+                  <CommandItem
+                    onSelect={() =>
+                      runCommand(() => openSettings("subscription"))
+                    }
+                  >
+                    <IconWrapper>
+                      <CreditCard className="size-3.5" />
+                    </IconWrapper>
+                    <span>Gérer mon abonnement</span>
+                  </CommandItem>
                 </CommandGroup>
               </CommandList>
             </Command>
