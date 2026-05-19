@@ -103,7 +103,9 @@ export function CoordonneesBancairesSection({
     <div className="space-y-8">
       {/* Titre */}
       <div>
-        <h2 className="text-lg font-medium mb-1 hidden md:block">Coordonnées bancaires</h2>
+        <h2 className="text-lg font-medium mb-1 hidden md:block">
+          Coordonnées bancaires
+        </h2>
         <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
         {!canManageOrgSettings && (
           <div className="mt-4">
@@ -126,14 +128,28 @@ export function CoordonneesBancairesSection({
                 htmlFor="iban"
                 className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
               >
-                IBAN {hasAnyBankField && <span className="text-red-500 ml-1">*</span>}
+                IBAN{" "}
+                {hasAnyBankField && (
+                  <span className="text-red-500 ml-1">*</span>
+                )}
               </Label>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  <button
+                    type="button"
+                    aria-label="Aide IBAN"
+                    className="inline-flex items-center justify-center text-muted-foreground cursor-help"
+                  >
+                    <Info className="h-4 w-4" />
+                  </button>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
-                  <p>Format international (ex: FR76 1234 5678 9012 3456 7890 123)</p>
+                <TooltipContent
+                  side="top"
+                  className="max-w-[280px] sm:max-w-xs"
+                >
+                  <p>
+                    Format international (ex: FR76 1234 5678 9012 3456 7890 123)
+                  </p>
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -188,14 +204,28 @@ export function CoordonneesBancairesSection({
                 htmlFor="bic"
                 className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
               >
-                BIC/SWIFT {hasAnyBankField && <span className="text-red-500 ml-1">*</span>}
+                BIC/SWIFT{" "}
+                {hasAnyBankField && (
+                  <span className="text-red-500 ml-1">*</span>
+                )}
               </Label>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  <button
+                    type="button"
+                    aria-label="Aide BIC/SWIFT"
+                    className="inline-flex items-center justify-center text-muted-foreground cursor-help"
+                  >
+                    <Info className="h-4 w-4" />
+                  </button>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
-                  <p>Code d'identification de votre banque (8 ou 11 caractères)</p>
+                <TooltipContent
+                  side="top"
+                  className="max-w-[280px] sm:max-w-xs"
+                >
+                  <p>
+                    Code d'identification de votre banque (8 ou 11 caractères)
+                  </p>
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -238,13 +268,25 @@ export function CoordonneesBancairesSection({
                 htmlFor="bankName"
                 className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
               >
-                Nom de la banque {hasAnyBankField && <span className="text-red-500 ml-1">*</span>}
+                Nom de la banque{" "}
+                {hasAnyBankField && (
+                  <span className="text-red-500 ml-1">*</span>
+                )}
               </Label>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  <button
+                    type="button"
+                    aria-label="Aide Nom de la banque"
+                    className="inline-flex items-center justify-center text-muted-foreground cursor-help"
+                  >
+                    <Info className="h-4 w-4" />
+                  </button>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
+                <TooltipContent
+                  side="top"
+                  className="max-w-[280px] sm:max-w-xs"
+                >
                   <p>Nom de votre établissement bancaire</p>
                 </TooltipContent>
               </Tooltip>
@@ -290,9 +332,11 @@ export function CoordonneesBancairesSection({
                 Sécurité des données bancaires
               </span>
               <br />
-              <span className="text-xs">Vos informations bancaires sont chiffrées et stockées de manière
-              sécurisée. Elles ne seront utilisées que pour les virements et
-              facturations.</span>
+              <span className="text-xs">
+                Vos informations bancaires sont chiffrées et stockées de manière
+                sécurisée. Elles ne seront utilisées que pour les virements et
+                facturations.
+              </span>
             </p>
           </Callout>
         </div>
