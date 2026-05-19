@@ -323,7 +323,7 @@ export function useQuoteTable({
               </div>
               <div className="text-xs text-muted-foreground truncate max-w-[100px] md:max-w-none">
                 {(quote.prefix
-                  ? `${quote.prefix}${quote.number}`
+                  ? `${quote.prefix.replace(/-$/, "")}-${quote.number}`
                   : quote.number) || <span className="italic">Brouillon</span>}
               </div>
             </div>
