@@ -266,7 +266,7 @@ export function usePurchaseOrderTable({
               </div>
               <div className="text-xs text-muted-foreground truncate max-w-[100px] md:max-w-none">
                 {(purchaseOrder.prefix
-                  ? `${purchaseOrder.prefix}${purchaseOrder.number}`
+                  ? `${purchaseOrder.prefix.replace(/-$/, "")}-${purchaseOrder.number}`
                   : purchaseOrder.number) || (
                   <span className="italic">Brouillon</span>
                 )}
