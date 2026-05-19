@@ -2130,6 +2130,13 @@ export function KanbanListView({
     observer.observe(container, {
       attributes: true,
       subtree: true,
+      // childList est indispensable : sans lui, si un trigger Radix est
+      // démonté en même temps que son data-state change (cas du repli
+      // d'une colonne ou d'un re-render qui remplace la zone du popover —
+      // ex. dueDate null → set), l'observer ne se déclenche jamais sur la
+      // suppression et isAnyPopoverOpen reste figé à true. L'overlay
+      // fixed inset-0 z-[99] reste alors à l'écran et bloque clics + scroll.
+      childList: true,
       attributeFilter: ["data-state"],
     });
     return () => observer.disconnect();
