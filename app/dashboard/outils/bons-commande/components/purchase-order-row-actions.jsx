@@ -188,10 +188,11 @@ export default function PurchaseOrderRowActions({
   const isDelivered = purchaseOrder.status === PURCHASE_ORDER_STATUS.DELIVERED;
 
   const hasStatusActions = isDraft || isConfirmed || isInProgress;
+  const hasLinkedInvoices =
+    !!purchaseOrder.linkedInvoices && purchaseOrder.linkedInvoices.length > 0;
   const canConvertToInvoice =
-    (isConfirmed || isInProgress || isDelivered) &&
-    (!purchaseOrder.linkedInvoices ||
-      purchaseOrder.linkedInvoices.length === 0);
+    (isConfirmed || isInProgress || isDelivered) && !hasLinkedInvoices;
+  const canCancel = !hasLinkedInvoices;
 
   return (
     <>
@@ -293,13 +294,15 @@ export default function PurchaseOrderRowActions({
                     <RotateCcw className="mr-2 h-4 w-4" />
                     Repasser en brouillon
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={handleCancel}
-                    disabled={isLoading || isReadOnly}
-                  >
-                    <XCircle className="mr-2 h-4 w-4" />
-                    Annuler
-                  </DropdownMenuItem>
+                  {canCancel && (
+                    <DropdownMenuItem
+                      onClick={handleCancel}
+                      disabled={isLoading || isReadOnly}
+                    >
+                      <XCircle className="mr-2 h-4 w-4" />
+                      Annuler
+                    </DropdownMenuItem>
+                  )}
                 </>
               )}
 
@@ -312,13 +315,15 @@ export default function PurchaseOrderRowActions({
                     <Truck className="mr-2 h-4 w-4" />
                     Marquer comme livré
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={handleCancel}
-                    disabled={isLoading || isReadOnly}
-                  >
-                    <XCircle className="mr-2 h-4 w-4" />
-                    Annuler
-                  </DropdownMenuItem>
+                  {canCancel && (
+                    <DropdownMenuItem
+                      onClick={handleCancel}
+                      disabled={isLoading || isReadOnly}
+                    >
+                      <XCircle className="mr-2 h-4 w-4" />
+                      Annuler
+                    </DropdownMenuItem>
+                  )}
                 </>
               )}
 
