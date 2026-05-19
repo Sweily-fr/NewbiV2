@@ -1229,7 +1229,7 @@ export default function TransactionTable({
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent align="start" className="w-[500px] p-0">
+            <PopoverContent align="start" className="w-[620px] p-0">
               <div className="p-4 border-b">
                 <div className="flex items-center justify-between">
                   <h4 className="font-medium">Filtres</h4>
@@ -1266,7 +1266,7 @@ export default function TransactionTable({
                           updateFilter(filter.id, "field", value)
                         }
                       >
-                        <SelectTrigger className="w-[140px]">
+                        <SelectTrigger className="w-[200px]">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="z-[9999]">
