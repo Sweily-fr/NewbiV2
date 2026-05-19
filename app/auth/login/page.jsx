@@ -86,18 +86,9 @@ function LoginPageContent() {
       <SEOHead {...seoData} />
       <JsonLd jsonLd={seoData.jsonLd} />
       <main
-        className="relative flex min-h-[100dvh] flex-col items-center justify-center px-6"
+        className="relative flex min-h-[100dvh] flex-col items-center justify-center px-6 py-12"
         style={{ backgroundColor: "rgb(251, 251, 252)" }}
       >
-        {/* Logo */}
-        <div className="absolute top-0 left-0 right-0 flex justify-center pt-20 md:pt-46">
-          <img
-            src="/newbi-icon.png"
-            alt="Newbi"
-            className="h-10 w-10 rounded-xl"
-          />
-        </div>
-
         {/* Animated content */}
         <div
           className="flex flex-col items-center w-full transition-all duration-200 ease-in-out"
@@ -106,6 +97,13 @@ function LoginPageContent() {
             transform: isAnimating ? "scale(0.97)" : "scale(1)",
           }}
         >
+          {/* Logo */}
+          <img
+            src="/newbi-icon.png"
+            alt="Newbi"
+            className="h-10 w-10 rounded-xl mb-6"
+          />
+
           {/* Title */}
           <h1 className="text-xl font-medium mb-8" style={{ color: "#2f2f31" }}>
             {showEmailForm
