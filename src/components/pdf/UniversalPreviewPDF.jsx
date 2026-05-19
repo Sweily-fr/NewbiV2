@@ -887,7 +887,10 @@ const UniversalPreviewPDF = ({
                   )}
                   {data.client?.siret && (
                     <div className="dark:text-[#0A0A0A]">
-                      SIRET: {data.client.siret}
+                      {data.client.siret.replace(/\D/g, "").length === 9
+                        ? "SIREN"
+                        : "SIRET"}
+                      : {data.client.siret}
                     </div>
                   )}
                   {data.client?.phone && (
