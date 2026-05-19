@@ -27,22 +27,6 @@ import PurchaseOrderRowActions from "../components/purchase-order-row-actions";
 import { EmailTrackingStatus } from "@/src/components/email-tracking-status";
 import { toast } from "@/src/components/ui/sonner";
 
-// Custom filter functions
-const multiColumnFilterFn = (row, columnId, filterValue) => {
-  const searchableContent = [
-    row.original.number,
-    row.original.client?.name,
-    row.original.client?.email,
-    PURCHASE_ORDER_STATUS_LABELS[row.original.status],
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-
-  const searchTerm = (filterValue ?? "").toLowerCase();
-  return searchableContent.includes(searchTerm);
-};
-
 const statusFilterFn = (row, columnId, filterValue) => {
   if (!filterValue?.length) return true;
   const status = row.getValue(columnId);
@@ -275,7 +259,6 @@ export function usePurchaseOrderTable({
           );
         },
         size: 200,
-        filterFn: multiColumnFilterFn,
       },
       {
         accessorKey: "purchaseOrderNumber",
