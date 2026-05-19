@@ -52,7 +52,10 @@ import {
   CommandSeparator,
 } from "@/src/components/ui/command";
 import { cn } from "@/src/lib/utils";
-import { generateInvoicePrefix } from "@/src/utils/invoiceUtils";
+import {
+  generateInvoicePrefix,
+  refreshPrefixDate,
+} from "@/src/utils/invoiceUtils";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
 import {
   useLastInvoicePrefix,
@@ -565,7 +568,9 @@ export default function InvoiceInfoSection({
       !data.prefix &&
       isNewInvoice
     ) {
-      const defaultPrefix = lastInvoicePrefix || generateInvoicePrefix();
+      const defaultPrefix = lastInvoicePrefix
+        ? refreshPrefixDate(lastInvoicePrefix)
+        : generateInvoicePrefix();
       setValue("prefix", defaultPrefix, {
         shouldValidate: false,
         shouldDirty: false,

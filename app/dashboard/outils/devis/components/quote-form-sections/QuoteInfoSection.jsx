@@ -62,6 +62,7 @@ import {
 import { useLastPurchaseOrderPrefix } from "@/src/graphql/purchaseOrderQueries";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
+import { refreshPrefixDate } from "@/src/utils/invoiceUtils";
 
 // Fonction utilitaire pour formater les montants
 const formatCurrency = (amount) => {
@@ -189,7 +190,7 @@ export default function QuoteInfoSection({
       lastPrefix &&
       isNewDocument
     ) {
-      setValue("prefix", lastPrefix, {
+      setValue("prefix", refreshPrefixDate(lastPrefix), {
         shouldValidate: false,
         shouldDirty: false,
       });
