@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useId } from "react";
+import { useState, useEffect, useCallback, useId, useRef } from "react";
 import { useFormContext } from "react-hook-form";
 import {
   AlertCircle,
@@ -292,6 +292,7 @@ export default function EnhancedCreditNoteForm({
 }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const scrollContainerRef = useRef(null);
 
   const {
     register,
@@ -329,6 +330,12 @@ export default function EnhancedCreditNoteForm({
     }
   };
 
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: "auto" });
+    }
+  }, [currentStep]);
+
   const handleCreateCreditNote = () => {
     setValue("status", "CREATED", { shouldDirty: true });
     if (onSubmit) {
@@ -353,7 +360,10 @@ export default function EnhancedCreditNoteForm({
   return (
     <div className="flex flex-col h-full w-full">
       {/* Form Content */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto overflow-x-hidden min-h-0"
+      >
         <div className="space-y-6 px-2">
           {/* Étape 1: Informations de l'avoir */}
           {currentStep === 1 && (
