@@ -248,6 +248,16 @@ export default function InvoiceSettingsView({
         termsAndConditions: data.termsAndConditions,
         showBankDetails: data.showBankDetails,
         clientPositionRight: data.clientPositionRight,
+        // Infos entreprise (flat + companyInfo nested pour la preview)
+        companyName: data.companyName,
+        companyEmail: data.companyEmail,
+        companyPhone: data.companyPhone,
+        website: data.website,
+        addressStreet: data.addressStreet,
+        addressCity: data.addressCity,
+        addressZipCode: data.addressZipCode,
+        addressCountry: data.addressCountry,
+        companyInfo: data.companyInfo,
       };
     }
   }, []);
@@ -266,7 +276,16 @@ export default function InvoiceSettingsView({
       data.footerNotes !== initialValuesRef.current.footerNotes ||
       data.termsAndConditions !== initialValuesRef.current.termsAndConditions ||
       data.showBankDetails !== initialValuesRef.current.showBankDetails ||
-      data.clientPositionRight !== initialValuesRef.current.clientPositionRight;
+      data.clientPositionRight !==
+        initialValuesRef.current.clientPositionRight ||
+      data.companyName !== initialValuesRef.current.companyName ||
+      data.companyEmail !== initialValuesRef.current.companyEmail ||
+      data.companyPhone !== initialValuesRef.current.companyPhone ||
+      data.website !== initialValuesRef.current.website ||
+      data.addressStreet !== initialValuesRef.current.addressStreet ||
+      data.addressCity !== initialValuesRef.current.addressCity ||
+      data.addressZipCode !== initialValuesRef.current.addressZipCode ||
+      data.addressCountry !== initialValuesRef.current.addressCountry;
 
     setHasUnsavedChanges(hasChanges);
   }, [data]);
@@ -308,6 +327,21 @@ export default function InvoiceSettingsView({
         "clientPositionRight",
         initialValuesRef.current.clientPositionRight || false,
       );
+      // Infos entreprise — restaurer les champs plats et l'objet companyInfo
+      setValue("companyName", initialValuesRef.current.companyName ?? "");
+      setValue("companyEmail", initialValuesRef.current.companyEmail ?? "");
+      setValue("companyPhone", initialValuesRef.current.companyPhone ?? "");
+      setValue("website", initialValuesRef.current.website ?? "");
+      setValue("addressStreet", initialValuesRef.current.addressStreet ?? "");
+      setValue("addressCity", initialValuesRef.current.addressCity ?? "");
+      setValue("addressZipCode", initialValuesRef.current.addressZipCode ?? "");
+      setValue(
+        "addressCountry",
+        initialValuesRef.current.addressCountry ?? "France",
+      );
+      if (initialValuesRef.current.companyInfo) {
+        setValue("companyInfo", initialValuesRef.current.companyInfo);
+      }
     }
     setShowConfirmDialog(false);
     onCancel();
@@ -324,6 +358,15 @@ export default function InvoiceSettingsView({
       termsAndConditions: data.termsAndConditions,
       showBankDetails: data.showBankDetails,
       clientPositionRight: data.clientPositionRight,
+      companyName: data.companyName,
+      companyEmail: data.companyEmail,
+      companyPhone: data.companyPhone,
+      website: data.website,
+      addressStreet: data.addressStreet,
+      addressCity: data.addressCity,
+      addressZipCode: data.addressZipCode,
+      addressCountry: data.addressCountry,
+      companyInfo: data.companyInfo,
     };
     setHasUnsavedChanges(false);
     onSave();

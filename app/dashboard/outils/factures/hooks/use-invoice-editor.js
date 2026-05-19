@@ -1224,6 +1224,67 @@ export function useInvoiceEditor({
     }
   }, [isFormInitialized, formData.companyInfo, setValue]);
 
+  // Sync inverse : propager les champs plats édités dans la vue paramètres
+  // vers companyInfo.* pour que la preview (qui lit companyInfo) se mette à jour
+  // en direct et que les changements soient inclus dans la sauvegarde du document.
+  useEffect(() => {
+    if (!isFormInitialized) return;
+    const current = getValues("companyInfo") || {};
+    const currentAddress = current.address || {};
+    const nextName = formData.companyName ?? current.name ?? "";
+    const nextEmail = formData.companyEmail ?? current.email ?? "";
+    const nextPhone = formData.companyPhone ?? current.phone ?? "";
+    const nextWebsite = formData.website ?? current.website ?? "";
+    const nextStreet = formData.addressStreet ?? currentAddress.street ?? "";
+    const nextCity = formData.addressCity ?? currentAddress.city ?? "";
+    const nextPostalCode =
+      formData.addressZipCode ?? currentAddress.postalCode ?? "";
+    const nextCountry =
+      formData.addressCountry ?? currentAddress.country ?? "France";
+
+    if (
+      nextName !== (current.name || "") ||
+      nextEmail !== (current.email || "") ||
+      nextPhone !== (current.phone || "") ||
+      nextWebsite !== (current.website || "") ||
+      nextStreet !== (currentAddress.street || "") ||
+      nextCity !== (currentAddress.city || "") ||
+      nextPostalCode !== (currentAddress.postalCode || "") ||
+      nextCountry !== (currentAddress.country || "France")
+    ) {
+      setValue(
+        "companyInfo",
+        {
+          ...current,
+          name: nextName,
+          email: nextEmail,
+          phone: nextPhone,
+          website: nextWebsite,
+          address: {
+            ...currentAddress,
+            street: nextStreet,
+            city: nextCity,
+            postalCode: nextPostalCode,
+            country: nextCountry,
+          },
+        },
+        { shouldDirty: true },
+      );
+    }
+  }, [
+    isFormInitialized,
+    formData.companyName,
+    formData.companyEmail,
+    formData.companyPhone,
+    formData.website,
+    formData.addressStreet,
+    formData.addressCity,
+    formData.addressZipCode,
+    formData.addressCountry,
+    getValues,
+    setValue,
+  ]);
+
   // Pré-remplir la date d'émission avec max(aujourd'hui, date de la dernière facture)
   // pour éviter l'erreur de validation backend "date antérieure à la dernière facture"
   // Ajuste aussi la date d'échéance pour rester cohérente (>= issueDate)
