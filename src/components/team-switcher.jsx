@@ -450,7 +450,7 @@ export function TeamSwitcher() {
                 className="gap-2 p-2 rounded-sm cursor-pointer"
               >
                 <LayersPlus className="size-4 text-sidebar-foreground" />
-                <span className="text-[13px] font-normal">Nouveau espace</span>
+                <span className="text-[13px] font-normal">Nouvel espace</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-border" />
               <DropdownMenuItem

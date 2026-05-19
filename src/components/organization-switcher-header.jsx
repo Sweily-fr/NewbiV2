@@ -399,7 +399,7 @@ export function OrganizationSwitcherHeader() {
             className="flex items-center gap-2 px-2 py-2 cursor-pointer rounded-sm"
           >
             <LayersPlus className="size-4 text-muted-foreground" />
-            <span className="text-[13px] font-normal">Nouveau espace</span>
+            <span className="text-[13px] font-normal">Nouvel espace</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
