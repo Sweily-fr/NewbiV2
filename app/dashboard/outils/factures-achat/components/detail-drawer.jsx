@@ -336,8 +336,10 @@ export function PurchaseInvoiceDetailDrawer({
 
   const handleDelete = async () => {
     if (!invoice?.id) return;
-    await deleteInvoice(invoice.id);
-    onDeleted?.();
+    const result = await deleteInvoice(invoice.id);
+    if (result?.success) {
+      onDeleted?.();
+    }
   };
 
   const handleMarkAsPaid = async () => {
