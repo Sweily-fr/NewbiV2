@@ -42,6 +42,7 @@ import {
   ShieldOff,
   TrashIcon,
   UserCheck,
+  Users,
 } from "lucide-react";
 
 import { useRouter } from "next/navigation";
@@ -107,6 +108,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/src/components/ui/table";
+import {
+  Empty,
+  EmptyMedia,
+  EmptyHeader,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
+} from "@/src/components/ui/empty";
 import { Skeleton } from "@/src/components/ui/skeleton";
 // Le composant est exporté par défaut, pas en named export
 import {
@@ -844,8 +853,31 @@ export default function TableClients({
                 </tr>
               ) : (
                 <tr>
-                  <td colSpan={8} className="h-24 text-center p-2">
-                    Aucun contact trouvé.
+                  <td colSpan={8} className="p-0">
+                    <div className="flex items-start justify-center pt-20">
+                      <Empty>
+                        <EmptyMedia variant="icon">
+                          <Users />
+                        </EmptyMedia>
+                        <EmptyHeader>
+                          <EmptyTitle>Aucun contact</EmptyTitle>
+                          <EmptyDescription>
+                            Créez votre premier contact pour commencer à gérer
+                            votre base de données clients.
+                          </EmptyDescription>
+                        </EmptyHeader>
+                        <EmptyContent>
+                          <Button
+                            variant="primary"
+                            onClick={handleAddUser}
+                            className="font-normal"
+                          >
+                            <PlusIcon size={14} className="mr-1" />
+                            Nouveau contact
+                          </Button>
+                        </EmptyContent>
+                      </Empty>
+                    </div>
                   </td>
                 </tr>
               )}
