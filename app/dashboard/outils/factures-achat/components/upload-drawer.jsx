@@ -29,6 +29,15 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { VatRateSelect } from "@/src/components/vat-rate-select";
+import { Calendar } from "@/src/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { cn } from "@/src/lib/utils";
 import {
   Upload,
   FileText,
@@ -118,6 +127,7 @@ export function PurchaseInvoiceUploadDrawer({
     invoiceNumber: "",
     issueDate: "",
     dueDate: "",
+    paymentDate: "",
     amountHT: "",
     amountTVA: "",
     vatRate: "20",
@@ -217,6 +227,7 @@ export function PurchaseInvoiceUploadDrawer({
           "",
       ),
       dueDate: toDateInput(td.due_date || f.due_date || ""),
+      paymentDate: toDateInput(td.payment_date || f.payment_date || ""),
       amountHT:
         td.amount_ht?.toString() ||
         totals.total_ht?.toString() ||
@@ -249,34 +260,34 @@ export function PurchaseInvoiceUploadDrawer({
   const handleProcessOCR = async () => {
     if (files.length === 0) return;
     setProcessing(true);
-    const results = [];
 
-    for (const file of files) {
-      try {
-        const { data } = await processOcr({
-          variables: { file, workspaceId },
-        });
-        const result = data?.processDocumentOcr;
-        if (result?.success) {
-          let financialData = {};
-          try {
-            financialData = JSON.parse(result.financialAnalysis || "{}");
-          } catch {
-            // ignore
-          }
-          results.push({
-            file,
-            ocrData: result,
-            financial: financialData,
-            metadata: result.metadata,
+    const results = await Promise.all(
+      files.map(async (file) => {
+        try {
+          const { data } = await processOcr({
+            variables: { file, workspaceId },
           });
-        } else {
-          results.push({ file, error: result?.message || "Erreur OCR" });
+          const result = data?.processDocumentOcr;
+          if (result?.success) {
+            let financialData = {};
+            try {
+              financialData = JSON.parse(result.financialAnalysis || "{}");
+            } catch {
+              // ignore
+            }
+            return {
+              file,
+              ocrData: result,
+              financial: financialData,
+              metadata: result.metadata,
+            };
+          }
+          return { file, error: result?.message || "Erreur OCR" };
+        } catch (error) {
+          return { file, error: error.message };
         }
-      } catch (error) {
-        results.push({ file, error: error.message });
-      }
-    }
+      }),
+    );
 
     setOcrResults(results);
 
@@ -328,6 +339,7 @@ export function PurchaseInvoiceUploadDrawer({
           normalizeDate(editableData.issueDate) ||
           new Date().toLocaleDateString("sv-SE"),
         dueDate: normalizeDate(editableData.dueDate) || undefined,
+        paymentDate: normalizeDate(editableData.paymentDate) || undefined,
         amountHT: parseFloat(editableData.amountHT) || 0,
         amountTVA: parseFloat(editableData.amountTVA) || 0,
         vatRate: parseFloat(editableData.vatRate) || 20,
@@ -399,6 +411,12 @@ export function PurchaseInvoiceUploadDrawer({
 
     setEditableData((prev) => {
       const next = { ...prev, [field]: value };
+
+      if (field === "issueDate" && value) {
+        if (next.dueDate && next.dueDate < value) next.dueDate = "";
+        if (next.paymentDate && next.paymentDate < value) next.paymentDate = "";
+      }
+
       const rate = parseFloat(next.vatRate) || 0;
 
       if (field === "amountHT") {
@@ -628,14 +646,57 @@ export function PurchaseInvoiceUploadDrawer({
                           Date d&apos;émission
                         </span>
                       </div>
-                      <Input
-                        type="date"
-                        value={editableData.issueDate}
-                        onChange={(e) =>
-                          handleEditChange("issueDate", e.target.value)
-                        }
-                        className="w-44 h-8 text-sm"
-                      />
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-44 h-8 justify-start text-left font-normal text-sm",
+                              !editableData.issueDate &&
+                                "text-muted-foreground",
+                            )}
+                            type="button"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {editableData.issueDate ? (
+                              (() => {
+                                try {
+                                  const date = new Date(
+                                    editableData.issueDate + "T00:00:00",
+                                  );
+                                  if (isNaN(date.getTime()))
+                                    return <span>Date invalide</span>;
+                                  return format(date, "PPP", { locale: fr });
+                                } catch {
+                                  return <span>Date invalide</span>;
+                                }
+                              })()
+                            ) : (
+                              <span>Choisir une date</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="end">
+                          <Calendar
+                            mode="single"
+                            selected={
+                              editableData.issueDate
+                                ? new Date(editableData.issueDate + "T00:00:00")
+                                : undefined
+                            }
+                            onSelect={(date) => {
+                              if (date) {
+                                handleEditChange(
+                                  "issueDate",
+                                  format(date, "yyyy-MM-dd"),
+                                );
+                              }
+                            }}
+                            initialFocus
+                            locale={fr}
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -644,14 +705,149 @@ export function PurchaseInvoiceUploadDrawer({
                           Date d&apos;échéance
                         </span>
                       </div>
-                      <Input
-                        type="date"
-                        value={editableData.dueDate}
-                        onChange={(e) =>
-                          handleEditChange("dueDate", e.target.value)
-                        }
-                        className="w-44 h-8 text-sm"
-                      />
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-44 h-8 justify-start text-left font-normal text-sm",
+                              !editableData.dueDate && "text-muted-foreground",
+                            )}
+                            type="button"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {editableData.dueDate ? (
+                              (() => {
+                                try {
+                                  const date = new Date(
+                                    editableData.dueDate + "T00:00:00",
+                                  );
+                                  if (isNaN(date.getTime()))
+                                    return <span>Date invalide</span>;
+                                  return format(date, "PPP", { locale: fr });
+                                } catch {
+                                  return <span>Date invalide</span>;
+                                }
+                              })()
+                            ) : (
+                              <span>Choisir une date</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="end">
+                          <Calendar
+                            mode="single"
+                            selected={
+                              editableData.dueDate
+                                ? new Date(editableData.dueDate + "T00:00:00")
+                                : undefined
+                            }
+                            disabled={
+                              editableData.issueDate
+                                ? {
+                                    before: new Date(
+                                      editableData.issueDate + "T00:00:00",
+                                    ),
+                                  }
+                                : undefined
+                            }
+                            onSelect={(date) => {
+                              if (date) {
+                                handleEditChange(
+                                  "dueDate",
+                                  format(date, "yyyy-MM-dd"),
+                                );
+                              }
+                            }}
+                            initialFocus
+                            locale={fr}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-normal text-muted-foreground">
+                          Date de paiement
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-44 h-8 justify-start text-left font-normal text-sm",
+                                !editableData.paymentDate &&
+                                  "text-muted-foreground",
+                              )}
+                              type="button"
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {editableData.paymentDate ? (
+                                (() => {
+                                  try {
+                                    const date = new Date(
+                                      editableData.paymentDate + "T00:00:00",
+                                    );
+                                    if (isNaN(date.getTime()))
+                                      return <span>Date invalide</span>;
+                                    return format(date, "PPP", { locale: fr });
+                                  } catch {
+                                    return <span>Date invalide</span>;
+                                  }
+                                })()
+                              ) : (
+                                <span>Choisir une date</span>
+                              )}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="end">
+                            <Calendar
+                              mode="single"
+                              selected={
+                                editableData.paymentDate
+                                  ? new Date(
+                                      editableData.paymentDate + "T00:00:00",
+                                    )
+                                  : undefined
+                              }
+                              disabled={
+                                editableData.issueDate
+                                  ? {
+                                      before: new Date(
+                                        editableData.issueDate + "T00:00:00",
+                                      ),
+                                    }
+                                  : undefined
+                              }
+                              onSelect={(date) => {
+                                if (date) {
+                                  handleEditChange(
+                                    "paymentDate",
+                                    format(date, "yyyy-MM-dd"),
+                                  );
+                                }
+                              }}
+                              initialFocus
+                              locale={fr}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        {editableData.paymentDate && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleEditChange("paymentDate", "")}
+                            type="button"
+                            title="Effacer la date"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
