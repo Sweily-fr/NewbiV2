@@ -230,10 +230,21 @@ function SuccessContent() {
         await authClient.organization.setActive({
           organizationId: targetOrgId,
         });
+        // Force a session refresh so the cookie/server-side session reflects
+        // activeOrganizationId BEFORE we navigate. Without this, dashboard's
+        // server-component layout can read a stale activeOrganizationId and
+        // bounce the user back to /auth/signup.
+        await authClient.getSession({
+          fetchOptions: { cache: "no-store" },
+        });
       }
-    } catch {}
+    } catch (err) {
+      console.error("[ONBOARDING/SUCCESS] setActive failed:", err);
+    }
 
-    router.push("/dashboard?welcome=true");
+    // Use a hard navigation rather than client-side router.push, so the
+    // dashboard server component re-runs with fresh cookies (no client cache).
+    window.location.assign("/dashboard?welcome=true");
   };
 
   if (error) {

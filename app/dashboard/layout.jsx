@@ -15,7 +15,10 @@ async function hasValidSubscription(orgId) {
     $or: [{ referenceId: orgId }, { organizationId: orgId }],
   });
 
-  if (!subscription) return false;
+  if (!subscription) {
+    console.log(`[Dashboard Layout] No subscription doc for orgId=${orgId}`);
+    return false;
+  }
 
   const isActive =
     subscription.status === "active" || subscription.status === "trialing";
@@ -24,6 +27,9 @@ async function hasValidSubscription(orgId) {
     subscription.periodEnd &&
     new Date(subscription.periodEnd) > new Date();
 
+  console.log(
+    `[Dashboard Layout] Sub for orgId=${orgId}: status=${subscription.status}, periodEnd=${subscription.periodEnd}, valid=${isActive || isCanceledButValid}`,
+  );
   return isActive || isCanceledButValid;
 }
 
@@ -206,7 +212,10 @@ export default async function DashboardLayout({ children }) {
     redirect("/auth/login");
   }
 
-  console.log(`[Dashboard Layout] Session trouvée pour: ${session.user.email}`);
+  console.log(
+    `[Dashboard Layout] Session trouvée pour: ${session.user.email} ` +
+      `(userId=${session.user.id}, activeOrgId=${session.session?.activeOrganizationId || "<none>"})`,
+  );
 
   // Vérifier l'abonnement
   const { hasSubscription, reason, organizationId } = await checkSubscription(
@@ -215,7 +224,7 @@ export default async function DashboardLayout({ children }) {
   );
 
   console.log(
-    `[Dashboard Layout] hasSubscription: ${hasSubscription}, reason: ${reason}`,
+    `[Dashboard Layout] hasSubscription: ${hasSubscription}, reason: ${reason}, resolvedOrgId: ${organizationId}`,
   );
 
   // Si pas d'abonnement valide, vérifier s'il y a un paiement Stripe récent (webhook en cours)
