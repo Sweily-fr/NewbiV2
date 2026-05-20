@@ -83,6 +83,10 @@ function SignUpPageContent() {
   // "null" means "not yet determined" (session still loading)
   const [view, setView] = useState(null);
   const [sessionHydrated, setSessionHydrated] = useState(false);
+  // True when the user already completed onboarding but lost their subscription.
+  // In this mode, skip PATCH /api/onboarding/step calls (the API rejects them
+  // with 400 once onboardingStep === "completed").
+  const [isResubscribing, setIsResubscribing] = useState(false);
 
   // Determine the initial view once the session resolves
   useEffect(() => {
@@ -101,6 +105,7 @@ function SignUpPageContent() {
         // dashboard/layout.jsx redirected them here (no valid subscription).
         // Redirecting back to /dashboard would loop — show the plan step
         // so they can re-subscribe.
+        setIsResubscribing(true);
         setView("plan");
       } else {
         // Authenticated with incomplete onboarding → resume at the right step
@@ -352,6 +357,13 @@ function SignUpPageContent() {
     };
     setCompanyData(newCompanyData);
 
+    // Re-subscribing users have onboardingStep="completed" already;
+    // the API rejects further step PATCHes, so skip persistence here.
+    if (isResubscribing) {
+      switchView("plan");
+      return;
+    }
+
     const ok = await updateOnboardingStep("plan", {
       ...newCompanyData,
       billingCountry,
@@ -362,6 +374,12 @@ function SignUpPageContent() {
   const handleSelectPlan = async (planKey) => {
     if (isSavingStep) return;
     setSelectedPlan(planKey);
+
+    // Re-subscribing users: skip the step PATCH (API would 400 on completed → recap).
+    if (isResubscribing) {
+      switchView("recap");
+      return;
+    }
 
     const ok = await updateOnboardingStep("recap", {
       selectedPlan: planKey,
@@ -1034,6 +1052,10 @@ function SignUpPageContent() {
                 disabled={i >= currentDotIndex}
                 onClick={async () => {
                   if (i < currentDotIndex && !isSavingStep) {
+                    if (isResubscribing) {
+                      switchView(step);
+                      return;
+                    }
                     const ok = await updateOnboardingStep(step);
                     if (ok) switchView(step);
                   }
