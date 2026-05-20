@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import {
   FileSpreadsheet,
   FileText,
-  FileCheck,
   Building,
   Building2,
   Lock,
@@ -150,11 +149,14 @@ export default function QuoteExportButton({
         <DropdownMenuContent align="end" className="w-[220px]">
           <DropdownMenuLabel>Formats standards</DropdownMenuLabel>
           <DropdownMenuItem onClick={() => handleFormatSelect("csv")}>
-            <FileText className="mr-2 h-4 w-4" />
+            <FileText className="mr-2 h-4 w-4" style={{ color: "#22C55E" }} />
             CSV
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleFormatSelect("excel")}>
-            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            <FileSpreadsheet
+              className="mr-2 h-4 w-4"
+              style={{ color: "#16A34A" }}
+            />
             Excel
           </DropdownMenuItem>
 
@@ -162,14 +164,14 @@ export default function QuoteExportButton({
           <DropdownMenuLabel>Formats comptables</DropdownMenuLabel>
           {allowedExports.includes("fec") ? (
             <DropdownMenuItem onClick={() => handleFormatSelect("fec")}>
-              <FileCheck className="mr-2 h-4 w-4" />
+              <FileText className="mr-2 h-4 w-4 text-blue-500" />
               FEC (Format légal)
             </DropdownMenuItem>
           ) : (
             <Tooltip>
               <TooltipTrigger asChild>
                 <DropdownMenuItem disabled className="opacity-50">
-                  <FileCheck className="mr-2 h-4 w-4" />
+                  <FileText className="mr-2 h-4 w-4 text-blue-500" />
                   FEC (Format légal)
                   <Lock className="ml-auto h-3.5 w-3.5 text-muted-foreground" />
                 </DropdownMenuItem>
