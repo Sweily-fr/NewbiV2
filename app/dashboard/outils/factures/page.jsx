@@ -140,12 +140,10 @@ function InvoicesContent() {
       if (item._type === "imported") {
         // Factures importées (PDF direct, pas d'OCR sur cette page)
         // Le statut VALIDATED indique que la facture a déjà été payée,
-        // elle ne peut donc jamais être "en retard".
+        // elle ne peut donc jamais être "en retard" — et doit compter dans CA payé.
         const amount = item.totalHT ?? 0;
         if (item.status === "VALIDATED" || item.status === "COMPLETED") {
           totalBilled += amount;
-        }
-        if (item.status === "COMPLETED") {
           totalPaid += amount;
         }
         return;
