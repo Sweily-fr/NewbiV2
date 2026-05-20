@@ -8,8 +8,10 @@ export const ERROR_MESSAGES = {
   // Erreurs d'authentification
   AUTH: {
     INVALID_CREDENTIALS: "Email ou mot de passe incorrect",
-    ACCOUNT_DISABLED: "Votre compte a été temporairement désactivé. Contactez le support.",
-    EMAIL_NOT_VERIFIED: "Veuillez vérifier votre adresse email avant de vous connecter",
+    ACCOUNT_DISABLED:
+      "Votre compte a été temporairement désactivé. Contactez le support.",
+    EMAIL_NOT_VERIFIED:
+      "Veuillez vérifier votre adresse email avant de vous connecter",
     SESSION_EXPIRED: "Votre session a expiré. Veuillez vous reconnecter.",
     UNAUTHORIZED: "Vous n'êtes pas autorisé à effectuer cette action",
     TOKEN_EXPIRED: "Votre session a expiré. Veuillez vous reconnecter.",
@@ -18,10 +20,13 @@ export const ERROR_MESSAGES = {
 
   // Erreurs de réseau
   NETWORK: {
-    CONNECTION_FAILED: "Impossible de se connecter au serveur. Vérifiez votre connexion internet.",
-    SERVER_UNAVAILABLE: "Le serveur est temporairement indisponible. Veuillez réessayer dans quelques instants.",
+    CONNECTION_FAILED:
+      "Impossible de se connecter au serveur. Vérifiez votre connexion internet.",
+    SERVER_UNAVAILABLE:
+      "Le serveur est temporairement indisponible. Veuillez réessayer dans quelques instants.",
     TIMEOUT: "La requête a pris trop de temps. Veuillez réessayer.",
-    NO_INTERNET: "Aucune connexion internet détectée. Vérifiez votre connexion.",
+    NO_INTERNET:
+      "Aucune connexion internet détectée. Vérifiez votre connexion.",
   },
 
   // Erreurs de validation
@@ -41,16 +46,19 @@ export const ERROR_MESSAGES = {
   CLIENT: {
     NOT_FOUND: "Client introuvable",
     ALREADY_EXISTS: "Un client avec cet email existe déjà",
-    CREATION_FAILED: "Impossible de créer le client. Vérifiez les informations saisies.",
+    CREATION_FAILED:
+      "Impossible de créer le client. Vérifiez les informations saisies.",
     UPDATE_FAILED: "Impossible de modifier le client. Veuillez réessayer.",
-    DELETE_FAILED: "Impossible de supprimer le client. Il est peut-être utilisé dans des documents.",
+    DELETE_FAILED:
+      "Impossible de supprimer le client. Il est peut-être utilisé dans des documents.",
     INVALID_DATA: "Les données du client ne sont pas valides",
   },
 
   // Erreurs métier - Factures
   INVOICE: {
     NOT_FOUND: "Facture introuvable",
-    CREATION_FAILED: "Impossible de créer la facture. Vérifiez les informations saisies.",
+    CREATION_FAILED:
+      "Impossible de créer la facture. Vérifiez les informations saisies.",
     UPDATE_FAILED: "Impossible de modifier la facture. Veuillez réessayer.",
     DELETE_FAILED: "Impossible de supprimer la facture",
     SEND_FAILED: "Impossible d'envoyer la facture par email",
@@ -64,7 +72,8 @@ export const ERROR_MESSAGES = {
   // Erreurs métier - Devis
   QUOTE: {
     NOT_FOUND: "Devis introuvable",
-    CREATION_FAILED: "Impossible de créer le devis. Vérifiez les informations saisies.",
+    CREATION_FAILED:
+      "Impossible de créer le devis. Vérifiez les informations saisies.",
     UPDATE_FAILED: "Impossible de modifier le devis. Veuillez réessayer.",
     DELETE_FAILED: "Impossible de supprimer le devis",
     SEND_FAILED: "Impossible d'envoyer le devis par email",
@@ -78,19 +87,24 @@ export const ERROR_MESSAGES = {
   // Erreurs métier - Avoirs
   CREDIT_NOTE: {
     NOT_FOUND: "Avoir introuvable",
-    CREATION_FAILED: "Impossible de créer l'avoir. Vérifiez les informations saisies.",
+    CREATION_FAILED:
+      "Impossible de créer l'avoir. Vérifiez les informations saisies.",
     UPDATE_FAILED: "Impossible de modifier l'avoir. Veuillez réessayer.",
     DELETE_FAILED: "Impossible de supprimer l'avoir",
-    AMOUNT_EXCEEDS_INVOICE: "Le montant de l'avoir ne peut pas dépasser le montant de la facture",
+    AMOUNT_EXCEEDS_INVOICE:
+      "Le montant de l'avoir ne peut pas dépasser le montant de la facture",
     LIMIT_REACHED: "La limite d'avoirs pour cette facture est atteinte",
     INVALID_ITEMS: "Veuillez ajouter au moins un article à l'avoir",
   },
 
   // Erreurs métier - Entreprise
   COMPANY: {
-    INFO_INCOMPLETE: "Veuillez compléter les informations de votre entreprise dans les paramètres",
-    LEGAL_INFO_MISSING: "Les informations légales de votre entreprise sont incomplètes (SIRET, TVA)",
-    UPDATE_FAILED: "Impossible de mettre à jour les informations de l'entreprise",
+    INFO_INCOMPLETE:
+      "Veuillez compléter les informations de votre entreprise dans les paramètres",
+    LEGAL_INFO_MISSING:
+      "Les informations légales de votre entreprise sont incomplètes (SIRET, TVA)",
+    UPDATE_FAILED:
+      "Impossible de mettre à jour les informations de l'entreprise",
     INVALID_SIRET: "Le numéro SIRET n'est pas valide",
     INVALID_VAT: "Le numéro de TVA n'est pas valide",
   },
@@ -99,7 +113,8 @@ export const ERROR_MESSAGES = {
   FILE: {
     UPLOAD_FAILED: "Échec de l'envoi du fichier. Veuillez réessayer.",
     INVALID_FORMAT: "Format de fichier non supporté",
-    TOO_LARGE: "Le fichier est trop volumineux. Taille maximum autorisée : 10 Mo",
+    TOO_LARGE:
+      "Le fichier est trop volumineux. Taille maximum autorisée : 10 Mo",
     DOWNLOAD_FAILED: "Impossible de télécharger le fichier",
     NOT_FOUND: "Fichier introuvable",
     PROCESSING_FAILED: "Erreur lors du traitement du fichier",
@@ -108,10 +123,13 @@ export const ERROR_MESSAGES = {
   // Erreurs de paiement
   PAYMENT: {
     FAILED: "Le paiement a échoué. Veuillez réessayer.",
-    CARD_DECLINED: "Votre carte a été refusée. Vérifiez vos informations bancaires.",
+    CARD_DECLINED:
+      "Votre carte a été refusée. Vérifiez vos informations bancaires.",
     INSUFFICIENT_FUNDS: "Fonds insuffisants sur votre compte",
-    SUBSCRIPTION_FAILED: "Impossible de traiter l'abonnement. Contactez le support.",
-    INVOICE_CREATION_FAILED: "Erreur lors de la création de la facture de paiement",
+    SUBSCRIPTION_FAILED:
+      "Impossible de traiter l'abonnement. Contactez le support.",
+    INVOICE_CREATION_FAILED:
+      "Erreur lors de la création de la facture de paiement",
   },
 
   // Erreurs génériques
@@ -128,24 +146,25 @@ export const ERROR_MESSAGES = {
 // Patterns d'erreurs techniques à détecter
 const ERROR_PATTERNS = {
   // Erreurs GraphQL
-  GRAPHQL_VALIDATION: /GraphQL error:|Variable .* of required type|Field .* doesn't exist/i,
+  GRAPHQL_VALIDATION:
+    /GraphQL error:|Variable .* of required type|Field .* doesn't exist/i,
   GRAPHQL_NETWORK: /Network error|Failed to fetch/i,
-  
+
   // Erreurs MongoDB
   MONGO_DUPLICATE: /duplicate key error|E11000/i,
   MONGO_VALIDATION: /ValidationError|Path .* is required/i,
   MONGO_CAST: /CastError|Cast to .* failed/i,
-  
+
   // Erreurs d'authentification
   AUTH_INVALID: /invalid credentials|wrong password|authentication failed/i,
   AUTH_EXPIRED: /token expired|session expired|jwt expired/i,
   AUTH_UNAUTHORIZED: /unauthorized|access denied|forbidden/i,
-  
+
   // Erreurs de validation
   VALIDATION_REQUIRED: /required|obligatoire|manquant/i,
   VALIDATION_FORMAT: /invalid format|format invalide|malformed/i,
   VALIDATION_LENGTH: /too short|too long|length/i,
-  
+
   // Erreurs réseau
   NETWORK_TIMEOUT: /timeout|timed out/i,
   NETWORK_CONNECTION: /connection refused|connection failed|network error/i,
@@ -158,54 +177,62 @@ const ERROR_PATTERNS = {
  * @param {string} context - Le contexte de l'erreur (ex: 'client', 'invoice', 'auth')
  * @returns {string} Message d'erreur utilisateur
  */
-export function getErrorMessage(error, context = 'generic') {
+export function getErrorMessage(error, context = "generic") {
   if (!error) return ERROR_MESSAGES.GENERIC.UNKNOWN_ERROR;
-  
-  const errorMessage = typeof error === 'string' ? error : error.message || '';
-  const errorCode = typeof error === 'object' ? error.code : null;
-  
+
+  const errorMessage = typeof error === "string" ? error : error.message || "";
+  const errorCode = typeof error === "object" ? error.code : null;
+
   // Vérifier d'abord les codes d'erreur spécifiques
   if (errorCode) {
     switch (errorCode) {
-      case 'UNAUTHENTICATED':
-      case 'UNAUTHORIZED':
+      case "UNAUTHENTICATED":
+      case "UNAUTHORIZED":
         return ERROR_MESSAGES.AUTH.UNAUTHORIZED;
-      case 'COMPANY_INFO_INCOMPLETE':
+      case "COMPANY_INFO_INCOMPLETE":
         return ERROR_MESSAGES.COMPANY.INFO_INCOMPLETE;
-      case 'VALIDATION_ERROR':
+      case "VALIDATION_ERROR":
         return ERROR_MESSAGES.VALIDATION.INVALID_DATA;
-      case 'DUPLICATE_KEY':
+      case "DUPLICATE_KEY":
         return getContextualDuplicateMessage(context);
-      case 'NOT_FOUND':
+      case "NOT_FOUND":
         return getContextualNotFoundMessage(context);
+      case "RESOURCE_IN_USE":
+        // Le backend renvoie déjà un message explicite
+        // (ex: "Ce client ne peut pas être supprimé car il est utilisé dans des factures")
+        return errorMessage || ERROR_MESSAGES.GENERIC.OPERATION_FAILED;
     }
   }
-  
+
   // Analyser le message d'erreur avec les patterns
   const lowerMessage = errorMessage.toLowerCase();
-  
+
   // Erreurs spécifiques de confusion entre createInvoice et createQuote
-  if (errorMessage.includes("Cannot read properties of undefined (reading 'createInvoice')")) {
-    if (context === 'quote') {
+  if (
+    errorMessage.includes(
+      "Cannot read properties of undefined (reading 'createInvoice')",
+    )
+  ) {
+    if (context === "quote") {
       return "Impossible de créer le devis. Veuillez vérifier les informations saisies et réessayer.";
     }
-    if (context === 'invoice') {
+    if (context === "invoice") {
       return "Impossible de créer la facture. Veuillez vérifier les informations saisies et réessayer.";
     }
     return "Erreur lors de la création du document. Veuillez réessayer.";
   }
-  
+
   // Erreurs génériques de propriétés undefined
   if (errorMessage.includes("Cannot read properties of undefined")) {
-    if (context === 'invoice') {
+    if (context === "invoice") {
       return "Impossible de traiter la facture. Veuillez vérifier les informations saisies et réessayer.";
     }
-    if (context === 'quote') {
+    if (context === "quote") {
       return "Impossible de traiter le devis. Veuillez vérifier les informations saisies et réessayer.";
     }
     return "Une erreur s'est produite lors du traitement. Veuillez réessayer.";
   }
-  
+
   // Erreurs d'authentification
   if (ERROR_PATTERNS.AUTH_INVALID.test(errorMessage)) {
     return ERROR_MESSAGES.AUTH.INVALID_CREDENTIALS;
@@ -216,7 +243,7 @@ export function getErrorMessage(error, context = 'generic') {
   if (ERROR_PATTERNS.AUTH_UNAUTHORIZED.test(errorMessage)) {
     return ERROR_MESSAGES.AUTH.UNAUTHORIZED;
   }
-  
+
   // Erreurs réseau
   if (ERROR_PATTERNS.NETWORK_CONNECTION.test(errorMessage)) {
     return ERROR_MESSAGES.NETWORK.CONNECTION_FAILED;
@@ -227,40 +254,55 @@ export function getErrorMessage(error, context = 'generic') {
   if (ERROR_PATTERNS.NETWORK_UNAVAILABLE.test(errorMessage)) {
     return ERROR_MESSAGES.NETWORK.SERVER_UNAVAILABLE;
   }
-  
+
   // Erreurs de validation spécifiques
-  if (lowerMessage.includes('email') && lowerMessage.includes('invalid')) {
+  if (lowerMessage.includes("email") && lowerMessage.includes("invalid")) {
     return ERROR_MESSAGES.VALIDATION.INVALID_EMAIL;
   }
-  if (lowerMessage.includes('siret')) {
+  if (lowerMessage.includes("siret")) {
     return ERROR_MESSAGES.VALIDATION.INVALID_SIRET;
   }
-  if (lowerMessage.includes('tva') || lowerMessage.includes('vat')) {
+  if (lowerMessage.includes("tva") || lowerMessage.includes("vat")) {
     return ERROR_MESSAGES.VALIDATION.INVALID_VAT;
   }
-  
+
   // Erreurs de validation Mongoose remontées proprement
-  if (errorCode === 'VALIDATION_ERROR' || ERROR_PATTERNS.MONGO_VALIDATION.test(errorMessage)) {
+  if (
+    errorCode === "VALIDATION_ERROR" ||
+    ERROR_PATTERNS.MONGO_VALIDATION.test(errorMessage)
+  ) {
     // Retourner un message générique user-friendly selon le contexte
     return getContextualValidationMessage(context);
   }
 
   // Erreurs contextuelles
-  if (lowerMessage.includes('existe déjà') || lowerMessage.includes('already exists')) {
+  if (
+    lowerMessage.includes("existe déjà") ||
+    lowerMessage.includes("already exists")
+  ) {
     return getContextualDuplicateMessage(context);
   }
-  if (lowerMessage.includes('introuvable') || lowerMessage.includes('not found')) {
+  if (
+    lowerMessage.includes("introuvable") ||
+    lowerMessage.includes("not found")
+  ) {
     return getContextualNotFoundMessage(context);
   }
-  
+
   // Erreurs de fichiers
-  if (lowerMessage.includes('upload') || lowerMessage.includes('téléchargement')) {
-    if (lowerMessage.includes('too large') || lowerMessage.includes('trop volumineux')) {
+  if (
+    lowerMessage.includes("upload") ||
+    lowerMessage.includes("téléchargement")
+  ) {
+    if (
+      lowerMessage.includes("too large") ||
+      lowerMessage.includes("trop volumineux")
+    ) {
       return ERROR_MESSAGES.FILE.TOO_LARGE;
     }
     return ERROR_MESSAGES.FILE.UPLOAD_FAILED;
   }
-  
+
   // Messages contextuels par défaut
   return getContextualDefaultMessage(context);
 }
@@ -270,15 +312,15 @@ export function getErrorMessage(error, context = 'generic') {
  */
 function getContextualValidationMessage(context) {
   switch (context) {
-    case 'invoice':
+    case "invoice":
       return "Veuillez vérifier les informations de la facture et réessayer.";
-    case 'quote':
+    case "quote":
       return "Veuillez vérifier les informations du devis et réessayer.";
-    case 'creditNote':
+    case "creditNote":
       return "Veuillez vérifier les informations de l'avoir et réessayer.";
-    case 'purchaseOrder':
+    case "purchaseOrder":
       return "Veuillez vérifier les informations du bon de commande et réessayer.";
-    case 'client':
+    case "client":
       return ERROR_MESSAGES.CLIENT.INVALID_DATA;
     default:
       return ERROR_MESSAGES.GENERIC.INVALID_REQUEST;
@@ -290,11 +332,11 @@ function getContextualValidationMessage(context) {
  */
 function getContextualDuplicateMessage(context) {
   switch (context) {
-    case 'client':
+    case "client":
       return ERROR_MESSAGES.CLIENT.ALREADY_EXISTS;
-    case 'invoice':
+    case "invoice":
       return ERROR_MESSAGES.INVOICE.DUPLICATE_NUMBER;
-    case 'quote':
+    case "quote":
       return ERROR_MESSAGES.QUOTE.DUPLICATE_NUMBER;
     default:
       return "Cette information existe déjà";
@@ -306,13 +348,13 @@ function getContextualDuplicateMessage(context) {
  */
 function getContextualNotFoundMessage(context) {
   switch (context) {
-    case 'client':
+    case "client":
       return ERROR_MESSAGES.CLIENT.NOT_FOUND;
-    case 'invoice':
+    case "invoice":
       return ERROR_MESSAGES.INVOICE.NOT_FOUND;
-    case 'quote':
+    case "quote":
       return ERROR_MESSAGES.QUOTE.NOT_FOUND;
-    case 'creditNote':
+    case "creditNote":
       return ERROR_MESSAGES.CREDIT_NOTE.NOT_FOUND;
     default:
       return ERROR_MESSAGES.GENERIC.RESOURCE_NOT_FOUND;
@@ -324,19 +366,19 @@ function getContextualNotFoundMessage(context) {
  */
 function getContextualDefaultMessage(context) {
   switch (context) {
-    case 'client':
+    case "client":
       return ERROR_MESSAGES.CLIENT.CREATION_FAILED;
-    case 'invoice':
+    case "invoice":
       return ERROR_MESSAGES.INVOICE.CREATION_FAILED;
-    case 'quote':
+    case "quote":
       return ERROR_MESSAGES.QUOTE.CREATION_FAILED;
-    case 'creditNote':
+    case "creditNote":
       return ERROR_MESSAGES.CREDIT_NOTE.CREATION_FAILED;
-    case 'auth':
+    case "auth":
       return ERROR_MESSAGES.AUTH.INVALID_CREDENTIALS;
-    case 'payment':
+    case "payment":
       return ERROR_MESSAGES.PAYMENT.FAILED;
-    case 'file':
+    case "file":
       return ERROR_MESSAGES.FILE.UPLOAD_FAILED;
     default:
       return ERROR_MESSAGES.GENERIC.UNKNOWN_ERROR;
@@ -349,7 +391,7 @@ function getContextualDefaultMessage(context) {
  * @param {string} context - Le contexte
  * @param {Function} toastFunction - Fonction toast à utiliser
  */
-export function showErrorToast(error, context = 'generic', toastFunction) {
+export function showErrorToast(error, context = "generic", toastFunction) {
   const message = getErrorMessage(error, context);
   if (toastFunction) {
     toastFunction(message);
@@ -363,22 +405,24 @@ export function showErrorToast(error, context = 'generic', toastFunction) {
 export function isCriticalError(error) {
   if (!error) return false;
 
-  const errorMessage = typeof error === 'string' ? error : error.message || '';
-  const errorCode = typeof error === 'object' ? error.code : null;
+  const errorMessage = typeof error === "string" ? error : error.message || "";
+  const errorCode = typeof error === "object" ? error.code : null;
 
   // ✅ FIX: Seuls les codes d'expiration de session/token sont critiques
   // UNAUTHENTICATED = pas de session valide (token absent ou expiré)
   // TOKEN_EXPIRED / SESSION_EXPIRED = session explicitement expirée
   // ❌ RETIRÉ: AUTH_UNAUTHORIZED qui matchait "unauthorized|access denied|forbidden"
   // car ces erreurs de PERMISSION (RBAC) ne sont PAS des expirations de session
-  const criticalCodes = ['UNAUTHENTICATED', 'TOKEN_EXPIRED', 'SESSION_EXPIRED'];
+  const criticalCodes = ["UNAUTHENTICATED", "TOKEN_EXPIRED", "SESSION_EXPIRED"];
   const criticalPatterns = [
     ERROR_PATTERNS.AUTH_EXPIRED, // "token expired|session expired|jwt expired"
     // AUTH_UNAUTHORIZED retiré : les erreurs de permission ne doivent pas déconnecter
   ];
 
-  return criticalCodes.includes(errorCode) ||
-         criticalPatterns.some(pattern => pattern.test(errorMessage));
+  return (
+    criticalCodes.includes(errorCode) ||
+    criticalPatterns.some((pattern) => pattern.test(errorMessage))
+  );
 }
 
 /**
@@ -386,18 +430,20 @@ export function isCriticalError(error) {
  */
 export function requiresUserAction(error) {
   if (!error) return false;
-  
-  const errorMessage = typeof error === 'string' ? error : error.message || '';
-  const errorCode = typeof error === 'object' ? error.code : null;
-  
+
+  const errorMessage = typeof error === "string" ? error : error.message || "";
+  const errorCode = typeof error === "object" ? error.code : null;
+
   // Erreurs qui nécessitent une action utilisateur
-  const actionRequiredCodes = ['COMPANY_INFO_INCOMPLETE', 'EMAIL_NOT_VERIFIED'];
+  const actionRequiredCodes = ["COMPANY_INFO_INCOMPLETE", "EMAIL_NOT_VERIFIED"];
   const actionRequiredPatterns = [
     /compléter.*informations/i,
     /vérifier.*email/i,
-    /configuration.*requise/i
+    /configuration.*requise/i,
   ];
-  
-  return actionRequiredCodes.includes(errorCode) || 
-         actionRequiredPatterns.some(pattern => pattern.test(errorMessage));
+
+  return (
+    actionRequiredCodes.includes(errorCode) ||
+    actionRequiredPatterns.some((pattern) => pattern.test(errorMessage))
+  );
 }

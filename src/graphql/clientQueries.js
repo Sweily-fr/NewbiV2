@@ -587,6 +587,16 @@ export const useDeleteClient = (providedWorkspaceId) => {
     },
     onError: (error) => {
       console.error("Erreur lors de la suppression du client:", error);
+      const code = error?.graphQLErrors?.[0]?.extensions?.code;
+      const details = error?.graphQLErrors?.[0]?.extensions?.details;
+      if (code === "RESOURCE_IN_USE") {
+        toast.error("Impossible de supprimer le client", {
+          description: details?.usedIn
+            ? `Il est utilisé dans des ${details.usedIn} existants. Supprimez-les d'abord ou modifiez le client qui leur est associé.`
+            : error.message,
+        });
+        return;
+      }
       toast.error(error.message || "Erreur lors de la suppression du client");
     },
   });
