@@ -97,12 +97,15 @@ function SignUpPageContent() {
     } else {
       const step = getOnboardingStep(session.user);
       if (step === "completed") {
-        // Onboarding done — shouldn't be on this page, redirect to dashboard
-        router.replace("/dashboard");
-        return;
+        // Onboarding done. If the user is on this page, it's because
+        // dashboard/layout.jsx redirected them here (no valid subscription).
+        // Redirecting back to /dashboard would loop — show the plan step
+        // so they can re-subscribe.
+        setView("plan");
+      } else {
+        // Authenticated with incomplete onboarding → resume at the right step
+        setView(step);
       }
-      // Authenticated with incomplete onboarding → resume at the right step
-      setView(step);
     }
     setSessionHydrated(true);
   }, [sessionPending, session, sessionHydrated, router]);
