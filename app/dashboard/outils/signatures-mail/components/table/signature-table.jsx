@@ -254,7 +254,9 @@ export default function SignatureTable() {
               }}
             >
               <SelectTrigger className="h-7 w-[70px] text-xs">
-                <SelectValue placeholder={table.getState().pagination.pageSize} />
+                <SelectValue
+                  placeholder={table.getState().pagination.pageSize}
+                />
               </SelectTrigger>
               <SelectContent side="top">
                 {[10, 20, 30, 40, 50].map((pageSize) => (
@@ -467,7 +469,7 @@ function useSignatureTable({ data, onRefetch, actions }) {
         id: "actions",
         header: () => <div className="text-right font-normal">Actions</div>,
         cell: ({ row }) => (
-          <div data-actions-cell>
+          <div data-actions-cell className="flex justify-end">
             <SignatureRowActions
               signature={row.original}
               onEdit={actions.handleEdit}
