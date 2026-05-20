@@ -26,6 +26,7 @@ import { formatDate, isDateExpired } from "../utils/date-utils";
 import PurchaseOrderRowActions from "../components/purchase-order-row-actions";
 import { EmailTrackingStatus } from "@/src/components/email-tracking-status";
 import { toast } from "@/src/components/ui/sonner";
+import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
 
 const statusFilterFn = (row, columnId, filterValue) => {
   if (!filterValue?.length) return true;
@@ -180,6 +181,10 @@ export function usePurchaseOrderTable({
   const [statusFilter, setStatusFilter] = useState([]);
   const [clientFilter, setClientFilter] = useState([]);
   const [dateFilter, setDateFilter] = useState(null);
+  const [columnVisibility, setColumnVisibility] = usePersistentColumnVisibility(
+    "newbi:column-visibility:purchase-orders",
+    { finalTotalHT: false, finalTotalVAT: false },
+  );
 
   // Hook pour la suppression de bons de commande
   const { deletePurchaseOrder, loading: isDeleting } = useDeletePurchaseOrder();
@@ -590,9 +595,11 @@ export function usePurchaseOrderTable({
     enableMultiRemove: true,
 
     onGlobalFilterChange: setGlobalFilter,
+    onColumnVisibilityChange: setColumnVisibility,
     globalFilterFn: memoizedMultiColumnFilter,
     state: {
       globalFilter,
+      columnVisibility,
       columnFilters: [
         ...(statusFilter.length > 0
           ? [{ id: "status", value: statusFilter }]
@@ -611,10 +618,6 @@ export function usePurchaseOrderTable({
     initialState: {
       pagination: {
         pageSize: 10,
-      },
-      columnVisibility: {
-        finalTotalHT: false,
-        finalTotalVAT: false,
       },
     },
   });

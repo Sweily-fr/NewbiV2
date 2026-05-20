@@ -40,6 +40,7 @@ import { useActiveOrganization } from "@/src/lib/organization-client";
 import { useSession } from "@/src/lib/auth-client";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { usePromoteTemporaryFile } from "@/src/hooks/usePromoteTemporaryFile";
+import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
 
 import { columns } from "./columns/transactionColumns";
 import { multiColumnFilterFn } from "./filters/multiColumnFilterFn";
@@ -566,9 +567,12 @@ export default function TransactionTable({
     },
   ]);
 
-  const [columnVisibility, setColumnVisibility] = useState({
-    paymentMethod: false, // Cacher la colonne "Moyen de paiement" par défaut
-  });
+  const [columnVisibility, setColumnVisibility] = usePersistentColumnVisibility(
+    "newbi:column-visibility:transactions",
+    {
+      paymentMethod: false,
+    },
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => {}, 300);
