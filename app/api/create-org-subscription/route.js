@@ -194,6 +194,11 @@ async function handler(request) {
         planName: planName,
         isAnnual: isAnnual ? "true" : "false",
         organizationId: session.session?.activeOrganizationId || "",
+        // Better Auth Stripe plugin reads `referenceId` from metadata to
+        // attach the sub to the right org. Without this, the plugin throws
+        // "Cannot read properties of undefined (reading 'id')" and the
+        // webhook fails before our onEvent handler runs.
+        referenceId: session.session?.activeOrganizationId || "",
         // Données entreprise
         employeeCount: organizationData.employeeCount || "",
         companyName: organizationData.companyName || "",
@@ -222,6 +227,9 @@ async function handler(request) {
           planName: planName,
           isAnnual: isAnnual ? "true" : "false",
           organizationId: session.session?.activeOrganizationId || "",
+          // Same reason as above — Better Auth needs `referenceId` on the
+          // subscription's own metadata as well (not just the checkout session).
+          referenceId: session.session?.activeOrganizationId || "",
           employeeCount: organizationData.employeeCount || "",
           hasTrial: "true",
           trialDays: "30",
