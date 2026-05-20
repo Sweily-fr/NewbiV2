@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
+import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -314,7 +315,10 @@ export default function TableProduct({
   }, [cfKey]);
 
   const [columnFilters, setColumnFilters] = useState([]);
-  const [columnVisibility, setColumnVisibility] = useState({});
+  const [columnVisibility, setColumnVisibility] = usePersistentColumnVisibility(
+    "newbi:column-visibility:catalogue-products",
+    {},
+  );
 
   // When custom fields load/change, hide new ones by default (don't overwrite user choices)
   useEffect(() => {

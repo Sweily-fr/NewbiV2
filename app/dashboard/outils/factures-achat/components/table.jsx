@@ -12,6 +12,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { toast } from "@/src/components/ui/sonner";
+import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
 import {
   useDeletePurchaseInvoice,
   useBulkDelete,
@@ -166,6 +167,7 @@ export default function PurchaseInvoiceTable({
   invoices = [],
   loading,
   refetch,
+  refetchStats,
   onRowClick,
   importedInvoices = [],
   importedLoading,
@@ -178,11 +180,14 @@ export default function PurchaseInvoiceTable({
   const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState([{ id: "issueDate", desc: true }]);
   const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState({
-    invoiceNumber: false,
-    amountHT: false,
-    amountTVA: false,
-  });
+  const [columnVisibility, setColumnVisibility] = usePersistentColumnVisibility(
+    "newbi:column-visibility:purchase-invoices",
+    {
+      invoiceNumber: false,
+      amountHT: false,
+      amountTVA: false,
+    },
+  );
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 25 });
   const [activeTab, setActiveTab] = useState("all");
   const [statusFilters, setStatusFilters] = useState([]);
@@ -283,8 +288,21 @@ export default function PurchaseInvoiceTable({
     );
   }, [invoices, activeTab, statusFilters, categoryFilters]);
 
+  const handleDeleteInvoice = async (id) => {
+    const result = await deleteInvoice(id);
+    if (result?.success) {
+      refetch?.();
+      refetchStats?.();
+    }
+  };
+
   const columns = useMemo(
-    () => getColumns({ onViewInvoice: onRowClick }),
+    () =>
+      getColumns({
+        onViewInvoice: onRowClick,
+        onDeleteInvoice: handleDeleteInvoice,
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [onRowClick],
   );
 
@@ -327,6 +345,7 @@ export default function PurchaseInvoiceTable({
     await bulkDelete(ids);
     setRowSelection({});
     refetch?.();
+    refetchStats?.();
   };
 
   const handleBulkStatus = async (status) => {
@@ -334,6 +353,7 @@ export default function PurchaseInvoiceTable({
     await bulkUpdateStatus(ids, status);
     setRowSelection({});
     refetch?.();
+    refetchStats?.();
   };
 
   const handleBulkCategorize = async (category) => {

@@ -42,6 +42,7 @@ import { useClientLists } from "@/src/hooks/useClientLists";
 import { useAddClientToLists } from "@/src/hooks/useClientLists";
 import { useDeleteClient, useBlockClient } from "@/src/hooks/useClients";
 import { useClientCustomFields } from "@/src/hooks/useClientCustomFields";
+import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
 import { toast } from "@/src/components/ui/sonner";
 import ClientsTable from "./components/clients-table";
 import ClientsModal from "./components/clients-modal";
@@ -74,13 +75,16 @@ function ClientsContent() {
   const [editClientId, setEditClientId] = useState(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importDialogView, setImportDialogView] = useState("import");
-  const [columnVisibility, setColumnVisibility] = useState({
-    phone: false,
-    firstName: false,
-    lastName: false,
-    vatNumber: false,
-    isInternational: false,
-  });
+  const [columnVisibility, setColumnVisibility] = usePersistentColumnVisibility(
+    "newbi:column-visibility:clients",
+    {
+      phone: false,
+      firstName: false,
+      lastName: false,
+      vatNumber: false,
+      isInternational: false,
+    },
+  );
   const inputRef = useRef(null);
 
   const { workspaceId } = useWorkspace();

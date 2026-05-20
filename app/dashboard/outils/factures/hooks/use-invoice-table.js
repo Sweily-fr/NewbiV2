@@ -37,6 +37,7 @@ import {
 import InvoiceRowActions from "../components/invoice-row-actions";
 import { EmailTrackingStatus } from "@/src/components/email-tracking-status";
 import { toast } from "@/src/components/ui/sonner";
+import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
 
 // Custom filter functions
 const statusFilterFn = (row, columnId, filterValue) => {
@@ -229,6 +230,10 @@ export function useInvoiceTable({
   const [clientFilter, setClientFilter] = useState([]);
   const [dateFilter, setDateFilter] = useState(null);
   const [typeFilter, setTypeFilter] = useState("");
+  const [columnVisibility, setColumnVisibility] = usePersistentColumnVisibility(
+    "newbi:column-visibility:invoices",
+    { finalTotalHT: false, finalTotalVAT: false },
+  );
 
   // Hook pour la suppression de factures
   const { deleteInvoice, loading: isDeleting } = useDeleteInvoice();
@@ -913,9 +918,11 @@ export function useInvoiceTable({
 
     // Filtering
     onGlobalFilterChange: setGlobalFilter,
+    onColumnVisibilityChange: setColumnVisibility,
     globalFilterFn: memoizedMultiColumnFilter,
     state: {
       globalFilter,
+      columnVisibility,
       columnFilters: [
         ...(statusFilter.length > 0
           ? [{ id: "status", value: statusFilter }]
@@ -937,10 +944,6 @@ export function useInvoiceTable({
     initialState: {
       pagination: {
         pageSize: 50,
-      },
-      columnVisibility: {
-        finalTotalHT: false,
-        finalTotalVAT: false,
       },
     },
   });
