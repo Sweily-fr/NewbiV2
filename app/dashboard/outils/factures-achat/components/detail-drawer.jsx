@@ -177,6 +177,7 @@ export function PurchaseInvoiceDetailDrawer({
     notes: "",
     internalReference: "",
     paymentMethod: "",
+    paymentDate: "",
   });
   // Tracks which amount field was last edited ("ht" or "ttc") so vatRate
   // changes recalculate from the correct source field.
@@ -213,6 +214,7 @@ export function PurchaseInvoiceDetailDrawer({
         notes: invoice.notes || "",
         internalReference: invoice.internalReference || "",
         paymentMethod: invoice.paymentMethod || "",
+        paymentDate: parseDate(invoice.paymentDate),
       });
       setIsEditMode(false);
       setAmountSource("ht");
@@ -232,6 +234,7 @@ export function PurchaseInvoiceDetailDrawer({
         notes: "",
         internalReference: "",
         paymentMethod: "",
+        paymentDate: "",
       });
       setIsEditMode(true);
       setAmountSource("ht");
@@ -244,6 +247,28 @@ export function PurchaseInvoiceDetailDrawer({
 
     setForm((prev) => {
       const next = { ...prev, [field]: value };
+
+      if (field === "issueDate" && value) {
+        const issue = new Date(value + "T00:00:00");
+        if (next.dueDate && new Date(next.dueDate + "T00:00:00") < issue) {
+          next.dueDate = "";
+        }
+        if (
+          next.paymentDate &&
+          new Date(next.paymentDate + "T00:00:00") < issue
+        ) {
+          next.paymentDate = "";
+        }
+      }
+
+      // Quand on passe le statut à "Payée", on aligne la date de paiement sur
+      // aujourd'hui — sinon une ancienne date résiduelle (OCR, statut PAID puis
+      // dépayé puis re-PAID) garde la facture hors du compteur "Payé ce mois".
+      // L'utilisateur reste libre de modifier la date après coup.
+      if (field === "status" && value === "PAID" && prev.status !== "PAID") {
+        next.paymentDate = formatLocalDate();
+      }
+
       const rate = parseFloat(next.vatRate) || 0;
 
       if (field === "amountHT") {
@@ -293,9 +318,15 @@ export function PurchaseInvoiceDetailDrawer({
     };
     try {
       if (isCreate) {
-        await createInvoice(data);
+        await createInvoice({
+          ...data,
+          paymentDate: form.paymentDate || undefined,
+        });
       } else {
-        await updateInvoice(invoice.id, data);
+        await updateInvoice(invoice.id, {
+          ...data,
+          paymentDate: form.paymentDate || null,
+        });
       }
       onSaved?.();
     } catch {
@@ -311,9 +342,12 @@ export function PurchaseInvoiceDetailDrawer({
 
   const handleMarkAsPaid = async () => {
     if (!invoice?.id) return;
+    const paymentDateIso = form.paymentDate
+      ? new Date(form.paymentDate + "T00:00:00").toISOString()
+      : new Date().toISOString();
     await markAsPaid(
       invoice.id,
-      new Date().toISOString(),
+      paymentDateIso,
       form.paymentMethod || undefined,
     );
     onSaved?.();
@@ -571,6 +605,15 @@ export function PurchaseInvoiceDetailDrawer({
                               ? new Date(form.dueDate + "T00:00:00")
                               : undefined
                           }
+                          disabled={
+                            form.issueDate
+                              ? {
+                                  before: new Date(
+                                    form.issueDate + "T00:00:00",
+                                  ),
+                                }
+                              : undefined
+                          }
                           onSelect={(date) => {
                             if (date) {
                               handleChange(
@@ -604,19 +647,17 @@ export function PurchaseInvoiceDetailDrawer({
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {invoice?.invoiceNumber && (
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Hash className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-normal text-muted-foreground">
-                          N° Facture
-                        </span>
-                      </div>
-                      <span className="text-sm font-normal">
-                        {invoice.invoiceNumber}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Hash className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-normal text-muted-foreground">
+                        N° Facture
                       </span>
                     </div>
-                  )}
+                    <span className="text-sm font-normal">
+                      {invoice?.invoiceNumber || "—"}
+                    </span>
+                  </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <CalendarIcon className="h-4 w-4 text-muted-foreground" />
@@ -628,74 +669,28 @@ export function PurchaseInvoiceDetailDrawer({
                       {formatDate(invoice?.issueDate)}
                     </span>
                   </div>
-                  {invoice?.dueDate && (
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-normal text-muted-foreground">
-                          Date d&apos;échéance
-                        </span>
-                      </div>
-                      <span className="text-sm font-normal">
-                        {formatDate(invoice.dueDate)}
-                      </span>
-                    </div>
-                  )}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Receipt className="h-4 w-4 text-muted-foreground" />
+                      <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-normal text-muted-foreground">
-                        Statut
-                      </span>
-                    </div>
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium ${STATUS_BADGE[invoice?.status] || STATUS_BADGE.TO_PROCESS}`}
-                    >
-                      {invoice?.status === "PAID" && (
-                        <CheckCircle2 className="w-3 h-3" />
-                      )}
-                      {invoice?.status === "OVERDUE" && (
-                        <AlertCircle className="w-3 h-3" />
-                      )}
-                      {statusLabels[invoice?.status] || "À traiter"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Tag className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-normal text-muted-foreground">
-                        Catégorie
+                        Date d&apos;échéance
                       </span>
                     </div>
                     <span className="text-sm font-normal">
-                      {categoryLabels[invoice?.category] || "Autre"}
+                      {formatDate(invoice?.dueDate)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4 text-muted-foreground" />
+                      <FileText className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-normal text-muted-foreground">
-                        Paiement
+                        Référence
                       </span>
                     </div>
                     <span className="text-sm font-normal">
-                      {paymentMethodLabels[invoice?.paymentMethod] ||
-                        "Non spécifié"}
+                      {invoice?.internalReference || "—"}
                     </span>
                   </div>
-                  {invoice?.internalReference && (
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-normal text-muted-foreground">
-                          Référence
-                        </span>
-                      </div>
-                      <span className="text-sm font-normal">
-                        {invoice.internalReference}
-                      </span>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
@@ -781,6 +776,71 @@ export function PurchaseInvoiceDetailDrawer({
               </>
             )}
 
+            {/* Catégorisation (view mode) */}
+            {!isEditMode && !isCreate && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                    Catégorisation
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Tag className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-normal text-muted-foreground">
+                        Catégorie
+                      </span>
+                    </div>
+                    <span className="text-sm font-normal">
+                      {categoryLabels[invoice?.category] || "Autre"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Receipt className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-normal text-muted-foreground">
+                        Statut
+                      </span>
+                    </div>
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium ${STATUS_BADGE[invoice?.status] || STATUS_BADGE.TO_PROCESS}`}
+                    >
+                      {invoice?.status === "PAID" && (
+                        <CheckCircle2 className="w-3 h-3" />
+                      )}
+                      {invoice?.status === "OVERDUE" && (
+                        <AlertCircle className="w-3 h-3" />
+                      )}
+                      {statusLabels[invoice?.status] || "À traiter"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-normal text-muted-foreground">
+                        Mode de paiement
+                      </span>
+                    </div>
+                    <span className="text-sm font-normal">
+                      {paymentMethodLabels[invoice?.paymentMethod] ||
+                        "Non spécifié"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-normal text-muted-foreground">
+                        Date de paiement
+                      </span>
+                    </div>
+                    <span className="text-sm font-normal">
+                      {formatDate(invoice?.paymentDate)}
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
+
             {/* Catégorisation (edit mode) */}
             {isEditMode && (
               <>
@@ -849,6 +909,87 @@ export function PurchaseInvoiceDetailDrawer({
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-normal text-muted-foreground">
+                          Date de paiement
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-40 h-8 justify-start text-left font-normal text-sm",
+                                !form.paymentDate && "text-muted-foreground",
+                              )}
+                              type="button"
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {form.paymentDate ? (
+                                (() => {
+                                  try {
+                                    const date = new Date(
+                                      form.paymentDate + "T00:00:00",
+                                    );
+                                    if (isNaN(date.getTime()))
+                                      return <span>Date invalide</span>;
+                                    return format(date, "PPP", { locale: fr });
+                                  } catch {
+                                    return <span>Date invalide</span>;
+                                  }
+                                })()
+                              ) : (
+                                <span>Choisir une date</span>
+                              )}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="end">
+                            <Calendar
+                              mode="single"
+                              selected={
+                                form.paymentDate
+                                  ? new Date(form.paymentDate + "T00:00:00")
+                                  : undefined
+                              }
+                              disabled={
+                                form.issueDate
+                                  ? {
+                                      before: new Date(
+                                        form.issueDate + "T00:00:00",
+                                      ),
+                                    }
+                                  : undefined
+                              }
+                              onSelect={(date) => {
+                                if (date) {
+                                  handleChange(
+                                    "paymentDate",
+                                    format(date, "yyyy-MM-dd"),
+                                  );
+                                }
+                              }}
+                              initialFocus
+                              locale={fr}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        {form.paymentDate && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleChange("paymentDate", "")}
+                            type="button"
+                            title="Effacer la date"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1029,7 +1170,7 @@ export function PurchaseInvoiceDetailDrawer({
                 </div>
               </>
             ) : (
-              invoice?.notes && (
+              !isCreate && (
                 <>
                   <Separator />
                   <div className="space-y-2">
@@ -1037,28 +1178,11 @@ export function PurchaseInvoiceDetailDrawer({
                       Notes
                     </p>
                     <p className="text-sm font-normal text-foreground">
-                      {invoice.notes}
+                      {invoice?.notes || "—"}
                     </p>
                   </div>
                 </>
               )
-            )}
-
-            {/* Paiement date */}
-            {invoice?.paymentDate && (
-              <>
-                <Separator />
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-normal text-muted-foreground">
-                      Payée le
-                    </span>
-                    <span className="text-xs font-normal">
-                      {formatDate(invoice.paymentDate)}
-                    </span>
-                  </div>
-                </div>
-              </>
             )}
 
             {/* Timestamps */}
