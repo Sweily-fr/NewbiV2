@@ -15,6 +15,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   List,
+  Plus,
 } from "lucide-react";
 import {
   Empty,
@@ -270,13 +271,13 @@ export default function ClientListsView({
     <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden">
       {/* Table */}
       {lists?.length === 0 && !globalFilter ? (
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-start justify-center pt-20">
           <Empty>
             <EmptyMedia variant="icon">
               <List />
             </EmptyMedia>
-            <EmptyHeader className="max-w-md">
-              <EmptyTitle>Commencez votre organisation</EmptyTitle>
+            <EmptyHeader>
+              <EmptyTitle>Aucune liste</EmptyTitle>
               <EmptyDescription>
                 Créez votre première liste pour organiser vos contacts par
                 catégories ou segments.
@@ -284,11 +285,12 @@ export default function ClientListsView({
             </EmptyHeader>
             <EmptyContent>
               <Button
-                variant="outline"
+                variant="primary"
                 onClick={onCreateList}
                 className="font-normal"
               >
-                Créer votre première liste
+                <Plus size={14} className="mr-1" />
+                Créer une liste
               </Button>
             </EmptyContent>
           </Empty>
