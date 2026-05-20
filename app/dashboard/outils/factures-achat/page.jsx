@@ -93,7 +93,11 @@ function StatsCard({ label, tooltip, amount, count, alert }) {
 function PurchaseInvoicesContent() {
   const searchParams = useSearchParams();
   const { invoices, loading, refetch } = usePurchaseInvoices({ limit: 200 });
-  const { stats, loading: statsLoading } = usePurchaseInvoiceStats();
+  const {
+    stats,
+    loading: statsLoading,
+    refetch: refetchStats,
+  } = usePurchaseInvoiceStats();
   const { connection: gmailConnection } = useGmailConnection();
   const { isReadOnly, isOwner } = useSubscriptionAccess();
   const readOnlyTooltip = isReadOnly
@@ -300,6 +304,7 @@ function PurchaseInvoicesContent() {
             invoices={invoices}
             loading={loading}
             refetch={refetch}
+            refetchStats={refetchStats}
             onRowClick={handleRowClick}
             importedInvoices={importedInvoices}
             importedLoading={importedLoading}
@@ -380,6 +385,7 @@ function PurchaseInvoicesContent() {
             invoices={invoices}
             loading={loading}
             refetch={refetch}
+            refetchStats={refetchStats}
             onRowClick={handleRowClick}
             importedInvoices={importedInvoices}
             importedLoading={importedLoading}
@@ -412,6 +418,7 @@ function PurchaseInvoicesContent() {
           setIsDetailDrawerOpen(false);
           setSelectedInvoice(null);
           refetch?.();
+          refetchStats?.();
         }}
       />
       <PurchaseInvoiceUploadDrawer

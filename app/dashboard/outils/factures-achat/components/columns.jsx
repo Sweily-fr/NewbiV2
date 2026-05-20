@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   Paperclip,
   MoreHorizontal,
   Eye,
+  Trash2,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
@@ -13,8 +15,19 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
 import { Button } from "@/src/components/ui/button";
 import { getCategoryConfig } from "@/lib/category-icons-config";
 import { findMerchant } from "@/lib/merchants-config";
@@ -101,7 +114,67 @@ function SortableHeader({ column, children }) {
   );
 }
 
-export const getColumns = ({ onViewInvoice } = {}) => [
+function RowActions({ invoice, onViewInvoice, onDeleteInvoice }) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  return (
+    <div data-no-row-click>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-7 w-7">
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => onViewInvoice?.(invoice)}>
+            <Eye className="h-4 w-4 mr-2" />
+            Voir
+          </DropdownMenuItem>
+          {invoice.files?.[0]?.url && (
+            <DropdownMenuItem
+              onClick={() => window.open(invoice.files[0].url, "_blank")}
+            >
+              <Paperclip className="h-4 w-4 mr-2" />
+              Voir le justificatif
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            variant="destructive"
+            onSelect={(e) => {
+              e.preventDefault();
+              setConfirmOpen(true);
+            }}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Supprimer
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer cette facture d&apos;achat ?
+              Cette action ne peut pas être annulée.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => onDeleteInvoice?.(invoice.id)}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+export const getColumns = ({ onViewInvoice, onDeleteInvoice } = {}) => [
   {
     id: "select",
     size: 28,
@@ -322,34 +395,13 @@ export const getColumns = ({ onViewInvoice } = {}) => [
   {
     id: "actions",
     size: 50,
-    cell: ({ row }) => {
-      const invoice = row.original;
-      return (
-        <div data-no-row-click>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onViewInvoice?.(invoice)}>
-                <Eye className="h-4 w-4 mr-2" />
-                Voir
-              </DropdownMenuItem>
-              {invoice.files?.[0]?.url && (
-                <DropdownMenuItem
-                  onClick={() => window.open(invoice.files[0].url, "_blank")}
-                >
-                  <Paperclip className="h-4 w-4 mr-2" />
-                  Voir le justificatif
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      );
-    },
+    cell: ({ row }) => (
+      <RowActions
+        invoice={row.original}
+        onViewInvoice={onViewInvoice}
+        onDeleteInvoice={onDeleteInvoice}
+      />
+    ),
     enableSorting: false,
     enableHiding: false,
   },

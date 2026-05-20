@@ -145,11 +145,20 @@ export const useDeletePurchaseInvoice = () => {
   const { workspaceId } = useRequiredWorkspace();
 
   const [deleteMutation, { loading }] = useMutation(DELETE_PURCHASE_INVOICE, {
+    // Evict the deleted invoice from the normalized cache so it disappears
+    // from any active list query, regardless of pagination/limit variables.
+    update: (cache, result, { variables }) => {
+      if (!result.data?.deletePurchaseInvoice?.success) return;
+      const cacheId = cache.identify({
+        __typename: "PurchaseInvoice",
+        id: variables.id,
+      });
+      if (cacheId) {
+        cache.evict({ id: cacheId });
+        cache.gc();
+      }
+    },
     refetchQueries: [
-      {
-        query: GET_PURCHASE_INVOICES,
-        variables: { workspaceId, page: 1, limit: 50 },
-      },
       { query: GET_PURCHASE_INVOICE_STATS, variables: { workspaceId } },
     ],
     awaitRefetchQueries: false,
@@ -162,9 +171,18 @@ export const useDeletePurchaseInvoice = () => {
         toast.success("Facture supprimée");
         return { success: true };
       }
-      throw new Error(result.data?.deletePurchaseInvoice?.message);
+      throw new Error(
+        result.data?.deletePurchaseInvoice?.message ||
+          "Suppression refusée par le serveur",
+      );
     } catch (error) {
-      toast.error(error.message || "Erreur lors de la suppression");
+      console.error("[deletePurchaseInvoice] error:", error);
+      const message =
+        error?.graphQLErrors?.[0]?.message ||
+        error?.networkError?.message ||
+        error?.message ||
+        "Erreur lors de la suppression";
+      toast.error(message);
       return { success: false, error };
     }
   };
