@@ -317,7 +317,11 @@ export const stripePlugin = stripe({
           if (event.type === "customer.subscription.created") {
             // Événement direct de création d'abonnement
             subscription = event.data.object;
-            referenceId = subscription.metadata?.referenceId;
+            // Fallback to organizationId for checkouts created before we
+            // started setting `referenceId` in metadata (defensive).
+            referenceId =
+              subscription.metadata?.referenceId ||
+              subscription.metadata?.organizationId;
             userId = subscription.metadata?.userId;
           } else {
             // Événement de checkout complété
