@@ -75,7 +75,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuPortal,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -1338,29 +1337,6 @@ function RowActions({
     }
   }, [showDeleteDialog, handleDelete]);
 
-  // Gestion des raccourcis pour le dropdown menu
-  useEffect(() => {
-    const handleGlobalKeyDown = (event) => {
-      // Raccourcis globaux uniquement si aucun dialog n'est ouvert
-      if (showDeleteDialog) return;
-
-      if ((event.metaKey || event.ctrlKey) && event.key === "e") {
-        handleEdit();
-        event.preventDefault();
-      }
-
-      if ((event.metaKey || event.ctrlKey) && event.key === "Backspace") {
-        if (!client.hasDocuments) {
-          setShowDeleteDialog(true);
-        }
-        event.preventDefault();
-      }
-    };
-
-    document.addEventListener("keydown", handleGlobalKeyDown);
-    return () => document.removeEventListener("keydown", handleGlobalKeyDown);
-  }, [handleEdit, showDeleteDialog, client.hasDocuments]);
-
   return (
     <>
       <DropdownMenu>
@@ -1380,11 +1356,9 @@ function RowActions({
           <DropdownMenuGroup>
             <DropdownMenuItem onClick={handleEdit}>
               <span>Modifier</span>
-              <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleCopyEmail}>
               <span>Copier email</span>
-              <DropdownMenuShortcut>⌘C</DropdownMenuShortcut>
             </DropdownMenuItem>
           </DropdownMenuGroup>
 
@@ -1523,7 +1497,6 @@ function RowActions({
             variant="destructive"
           >
             <span>Supprimer</span>
-            <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
