@@ -88,10 +88,10 @@ export default function SignatureRowActions({
             <EditIcon className="mr-2 h-4 w-4" />
             Modifier
           </DropdownMenuItem>
-          {/* <DropdownMenuItem onClick={handleDuplicate}>
+          <DropdownMenuItem onClick={handleDuplicate} disabled={isReadOnly}>
             <CopyIcon className="mr-2 h-4 w-4" />
             Dupliquer
-          </DropdownMenuItem> */}
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={(e) => {
