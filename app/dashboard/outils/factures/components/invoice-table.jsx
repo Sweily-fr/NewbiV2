@@ -257,12 +257,27 @@ export default function InvoiceTable({
     typeFilter,
   });
   const dataLength = combinedInvoices.length;
+  // Stable content signature of fields the parent's KPIs depend on (status,
+  // amount, dueDate). String-valued so the effect only re-fires when something
+  // the KPIs actually read has changed — even when the array ref is new
+  // (e.g. after Apollo cache update on markAsPaid).
+  const statsSignature = useMemo(() => {
+    return combinedInvoices
+      .map((inv) => {
+        const amount =
+          inv._type === "imported"
+            ? inv.totalHT
+            : (inv.finalTotalHT ?? inv.totalHT);
+        return `${inv.id}:${inv.status}:${amount}:${inv.dueDate ?? ""}`;
+      })
+      .join("|");
+  }, [combinedInvoices]);
   useEffect(() => {
     if (onFilteredDataChange) {
       const rows = table.getFilteredRowModel().rows;
       onFilteredDataChange(rows.map((row) => row.original));
     }
-  }, [table, onFilteredDataChange, filterKey, dataLength]);
+  }, [table, onFilteredDataChange, filterKey, dataLength, statsSignature]);
 
   // Gérer le changement de tab
   const handleTabChange = (value) => {
