@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/src/components/ui/button";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { Plus } from "lucide-react";
@@ -20,6 +20,7 @@ function CataloguesContent() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [customFieldsOpen, setCustomFieldsOpen] = useState(false);
+  const [rowSelection, setRowSelection] = useState({});
   const { isReadOnly, isOwner } = useSubscriptionAccess();
   const readOnlyTooltip = isReadOnly
     ? isOwner
@@ -29,6 +30,12 @@ function CataloguesContent() {
 
   // Récupérer les produits pour l'export
   const { products: allProducts, refetch } = useProducts(1, 100, "");
+
+  // Produits actuellement sélectionnés dans le tableau (utilisé pour l'export sélectif)
+  const selectedProducts = useMemo(
+    () => (allProducts || []).filter((p) => rowSelection[p.id]),
+    [allProducts, rowSelection],
+  );
 
   // Fonction pour ouvrir le dialogue depuis le bouton
   const handleOpenProductDialog = () => {
@@ -63,7 +70,11 @@ function CataloguesContent() {
               <Upload className="w-3.5 h-3.5" />
               Importer
             </Button>
-            <ProductExportButton products={allProducts} iconOnly={false} />
+            <ProductExportButton
+              products={allProducts}
+              selectedRows={selectedProducts}
+              iconOnly={false}
+            />
             <Button
               variant="primary"
               onClick={() => !isReadOnly && handleOpenProductDialog()}
@@ -82,6 +93,8 @@ function CataloguesContent() {
           <TableProduct
             handleAddProduct={handleOpenProductDialog}
             hideHeaderButtons={true}
+            rowSelection={rowSelection}
+            onRowSelectionChange={setRowSelection}
           />
         </div>
       </div>
@@ -102,7 +115,11 @@ function CataloguesContent() {
 
         {/* Table - Pleine largeur */}
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-          <TableProduct handleAddProduct={handleOpenProductDialog} />
+          <TableProduct
+            handleAddProduct={handleOpenProductDialog}
+            rowSelection={rowSelection}
+            onRowSelectionChange={setRowSelection}
+          />
         </div>
 
         {/* Bouton flottant mobile */}

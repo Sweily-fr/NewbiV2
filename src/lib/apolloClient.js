@@ -7,6 +7,7 @@ import {
 } from "@apollo/client";
 import { onError } from "@apollo/client/link/error";
 import { setContext } from "@apollo/client/link/context";
+import { RetryLink } from "@apollo/client/link/retry";
 import { WebSocketLink } from "@apollo/client/link/ws";
 import { getMainDefinition } from "@apollo/client/utilities";
 import createUploadLink from "apollo-upload-client/createUploadLink.mjs";
@@ -466,6 +467,34 @@ const errorLink = onError(
   },
 );
 
+// ==================== RETRY LINK ====================
+// Retry automatique sur erreurs réseau transitoires (ex: "Failed to fetch",
+// connexion brièvement perdue entre Vercel et le backend VPS).
+// N'agit que sur les erreurs réseau — les erreurs GraphQL (validation, auth,
+// permissions, etc.) ne sont jamais retried car ce n'est pas transitoire.
+const retryLink = new RetryLink({
+  delay: {
+    initial: 300,
+    max: 3000,
+    jitter: true,
+  },
+  attempts: {
+    max: 3,
+    retryIf: (error) => {
+      if (!error) return false;
+      // Pas de retry sur les erreurs 4xx (client) — ce n'est pas transitoire
+      if (
+        typeof error.statusCode === "number" &&
+        error.statusCode >= 400 &&
+        error.statusCode < 500
+      ) {
+        return false;
+      }
+      return true;
+    },
+  },
+});
+
 // ==================== CACHE ====================
 const cache = new InMemoryCache({
   typePolicies: {
@@ -510,9 +539,9 @@ const splitLink =
           );
         },
         wsLink,
-        from([authLink, errorLink, uploadLink]),
+        from([authLink, errorLink, retryLink, uploadLink]),
       )
-    : from([authLink, errorLink, uploadLink]);
+    : from([authLink, errorLink, retryLink, uploadLink]);
 
 // Instance unique — partagée par tout le frontend
 export const apolloClient = new ApolloClient({
