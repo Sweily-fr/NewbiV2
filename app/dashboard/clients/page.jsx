@@ -4,6 +4,8 @@ import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
+import { Label } from "@/src/components/ui/label";
+import { Textarea } from "@/src/components/ui/textarea";
 import { PermissionButton } from "@/src/components/rbac";
 import {
   DropdownMenu,
@@ -73,6 +75,8 @@ function ClientsContent() {
   const [selectedTypes, setSelectedTypes] = useState([]);
   const [selectedClients, setSelectedClients] = useState(new Set());
   const [editClientId, setEditClientId] = useState(null);
+  const [blockDialogOpen, setBlockDialogOpen] = useState(false);
+  const [blockReason, setBlockReason] = useState("");
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importDialogView, setImportDialogView] = useState("import");
   const [columnVisibility, setColumnVisibility] = usePersistentColumnVisibility(
@@ -172,15 +176,20 @@ function ClientsContent() {
 
   const handleBlock = useCallback(async () => {
     if (selectedClients.size === 0) return;
+    const reason = blockReason.trim() || undefined;
     try {
       await Promise.all(
-        Array.from(selectedClients).map((clientId) => blockClient(clientId)),
+        Array.from(selectedClients).map((clientId) =>
+          blockClient(clientId, reason),
+        ),
       );
       setSelectedClients(new Set());
+      setBlockDialogOpen(false);
+      setBlockReason("");
     } catch {
       // Error handled by hook
     }
-  }, [selectedClients, blockClient]);
+  }, [selectedClients, blockClient, blockReason]);
 
   const handleAssign = useCallback(() => {
     toast.info("Fonctionnalité bientôt disponible");
@@ -358,53 +367,17 @@ function ClientsContent() {
                       <DropdownMenuSeparator />
                     </>
                   )}
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <DropdownMenuItem
-                        className="cursor-pointer gap-2 text-sm"
-                        onSelect={(e) => e.preventDefault()}
-                      >
-                        <ShieldOff className="w-3.5 h-3.5" />
-                        Bloquer{" "}
-                        {selectedClients.size > 1
-                          ? "les contacts"
-                          : "le contact"}
-                      </DropdownMenuItem>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
-                        <div
-                          className="flex size-9 shrink-0 items-center justify-center rounded-full border"
-                          aria-hidden="true"
-                        >
-                          <ShieldOff className="opacity-80" size={16} />
-                        </div>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            Bloquer{" "}
-                            {selectedClients.size > 1
-                              ? "les contacts"
-                              : "le contact"}{" "}
-                            ?
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            {selectedClients.size > 1
-                              ? `${selectedClients.size} contacts seront bloqués. Ils seront exclus de la création de documents et des communications.`
-                              : "Ce contact sera bloqué. Il sera exclu de la création de documents et des communications."}
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                      </div>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Annuler</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleBlock}
-                          className="bg-red-600 hover:bg-red-700"
-                        >
-                          Bloquer
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  <DropdownMenuItem
+                    className="cursor-pointer gap-2 text-sm"
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      setBlockDialogOpen(true);
+                    }}
+                  >
+                    <ShieldOff className="w-3.5 h-3.5" />
+                    Bloquer{" "}
+                    {selectedClients.size > 1 ? "les contacts" : "le contact"}
+                  </DropdownMenuItem>
                   <DropdownMenuItem
                     className="cursor-pointer gap-2 text-sm"
                     onClick={handleAssign}
@@ -548,6 +521,68 @@ function ClientsContent() {
         onOpenChange={setImportDialogOpen}
         initialView={importDialogView}
       />
+
+      {/* Bulk block dialog (with reason) */}
+      <AlertDialog
+        open={blockDialogOpen}
+        onOpenChange={(open) => {
+          setBlockDialogOpen(open);
+          if (!open) setBlockReason("");
+        }}
+      >
+        <AlertDialogContent>
+          <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
+            <div
+              className="flex size-9 shrink-0 items-center justify-center rounded-full border"
+              aria-hidden="true"
+            >
+              <ShieldOff className="opacity-80" size={16} />
+            </div>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Bloquer{" "}
+                {selectedClients.size > 1 ? "les contacts" : "le contact"} ?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {selectedClients.size > 1
+                  ? `${selectedClients.size} contacts seront bloqués. Ils seront exclus de la création de documents et des communications.`
+                  : "Ce contact sera bloqué. Il sera exclu de la création de documents et des communications."}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+          </div>
+          <div className="px-1">
+            <Label
+              htmlFor="bulk-block-reason"
+              className="text-sm font-medium mb-1.5 block"
+            >
+              Raison du blocage (optionnel)
+            </Label>
+            <Textarea
+              id="bulk-block-reason"
+              value={blockReason}
+              onChange={(e) => setBlockReason(e.target.value)}
+              placeholder="Ex: Impayés récurrents, communication difficile..."
+              className="resize-none"
+              rows={3}
+            />
+            {selectedClients.size > 1 && (
+              <p className="text-xs text-muted-foreground mt-1.5">
+                La même raison sera appliquée aux {selectedClients.size}{" "}
+                contacts sélectionnés.
+              </p>
+            )}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBlock}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Bloquer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
