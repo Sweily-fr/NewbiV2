@@ -61,8 +61,14 @@ export default function FacturationSection({
   const [seatsInfo, setSeatsInfo] = useState(null);
   const [billingPortalLoading, setBillingPortalLoading] = useState(false);
 
-  const { invoices, loading: invoicesLoading, error: invoicesError, refetch: refetchInvoices, viewInvoice, downloadInvoice } =
-    useStripeInvoices();
+  const {
+    invoices,
+    loading: invoicesLoading,
+    error: invoicesError,
+    refetch: refetchInvoices,
+    viewInvoice,
+    downloadInvoice,
+  } = useStripeInvoices();
   const { subscription, isActive, loading: subLoading } = useSubscription();
   const { workspaceId } = useWorkspace();
   const { quota: ocrQuota, loading: ocrLoading } = useUserOcrQuota(workspaceId);
@@ -176,11 +182,31 @@ export default function FacturationSection({
   // Status badges for invoices
   const getStatusBadge = (status) => {
     const configs = {
-      paid: { label: "Payée", className: "bg-green-50 text-green-600 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800" },
-      open: { label: "En attente", className: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/30 dark:text-orange-400 dark:border-orange-800" },
-      void: { label: "Annulée", className: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800" },
-      draft: { label: "Brouillon", className: "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700" },
-      uncollectible: { label: "Irrécupérable", className: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800" },
+      paid: {
+        label: "Payée",
+        className:
+          "bg-green-50 text-green-600 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800",
+      },
+      open: {
+        label: "En attente",
+        className:
+          "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/30 dark:text-orange-400 dark:border-orange-800",
+      },
+      void: {
+        label: "Annulée",
+        className:
+          "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800",
+      },
+      draft: {
+        label: "Brouillon",
+        className:
+          "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700",
+      },
+      uncollectible: {
+        label: "Irrécupérable",
+        className:
+          "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800",
+      },
     };
     const config = configs[status] || { label: status, className: "" };
     return (
@@ -213,6 +239,7 @@ export default function FacturationSection({
             Vous devez avoir un abonnement pour accéder à la facturation.
           </p>
           <Button
+            type="button"
             onClick={() => onTabChange?.("subscription")}
             className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"
           >
@@ -271,6 +298,7 @@ export default function FacturationSection({
               </div>
             </div>
             <Button
+              type="button"
               onClick={handleOpenBillingPortal}
               disabled={billingPortalLoading || !canManageSubscription}
               className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer shrink-0"
@@ -301,20 +329,163 @@ export default function FacturationSection({
             <div className="flex items-center gap-3">
               <div className="relative shrink-0 w-10 h-10 rounded-lg border border-gray-200 dark:border-[#2c2c2c] overflow-hidden">
                 {/* Grid background */}
-                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute inset-0"><g clipPath="url(#clip0_plan_bg)"><rect width="40" height="40" fill="#FFFFFF" className="dark:fill-[#141414]"></rect><path d="M40 15.9494L0 15.9494" stroke="rgba(0, 0, 0, 0.05)" strokeWidth="0.5" strokeMiterlimit="10" strokeDasharray="1 1"></path><path d="M40 24.0506H0" stroke="rgba(0, 0, 0, 0.05)" strokeWidth="0.5" strokeMiterlimit="10" strokeDasharray="1 1"></path><path d="M12.9114 -4.17233e-07L12.9114 40" stroke="rgba(0, 0, 0, 0.05)" strokeWidth="0.5" strokeMiterlimit="10" strokeDasharray="1 1"></path><path d="M27.0886 0L27.0886 40" stroke="rgba(0, 0, 0, 0.05)" strokeWidth="0.5" strokeMiterlimit="10" strokeDasharray="1 1"></path><path d="M34.1423 -0.000732422V39.9993" stroke="rgba(0, 0, 0, 0.05)" strokeWidth="0.5" strokeMiterlimit="10"></path><path d="M5.85938 -0.000732422V39.9993" stroke="rgba(0, 0, 0, 0.05)" strokeWidth="0.5" strokeMiterlimit="10"></path><path d="M0.000976562 5.8577H40.001" stroke="rgba(0, 0, 0, 0.05)" strokeWidth="0.5" strokeMiterlimit="10"></path><path d="M0.000976562 34.4206H40.001" stroke="rgba(0, 0, 0, 0.05)" strokeWidth="0.5" strokeMiterlimit="10"></path></g><defs><clipPath id="clip0_plan_bg"><rect width="40" height="40" fill="#FFFFFF"></rect></clipPath></defs></svg>
+                <svg
+                  width="40"
+                  height="40"
+                  viewBox="0 0 40 40"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="absolute inset-0"
+                >
+                  <g clipPath="url(#clip0_plan_bg)">
+                    <rect
+                      width="40"
+                      height="40"
+                      fill="#FFFFFF"
+                      className="dark:fill-[#141414]"
+                    ></rect>
+                    <path
+                      d="M40 15.9494L0 15.9494"
+                      stroke="rgba(0, 0, 0, 0.05)"
+                      strokeWidth="0.5"
+                      strokeMiterlimit="10"
+                      strokeDasharray="1 1"
+                    ></path>
+                    <path
+                      d="M40 24.0506H0"
+                      stroke="rgba(0, 0, 0, 0.05)"
+                      strokeWidth="0.5"
+                      strokeMiterlimit="10"
+                      strokeDasharray="1 1"
+                    ></path>
+                    <path
+                      d="M12.9114 -4.17233e-07L12.9114 40"
+                      stroke="rgba(0, 0, 0, 0.05)"
+                      strokeWidth="0.5"
+                      strokeMiterlimit="10"
+                      strokeDasharray="1 1"
+                    ></path>
+                    <path
+                      d="M27.0886 0L27.0886 40"
+                      stroke="rgba(0, 0, 0, 0.05)"
+                      strokeWidth="0.5"
+                      strokeMiterlimit="10"
+                      strokeDasharray="1 1"
+                    ></path>
+                    <path
+                      d="M34.1423 -0.000732422V39.9993"
+                      stroke="rgba(0, 0, 0, 0.05)"
+                      strokeWidth="0.5"
+                      strokeMiterlimit="10"
+                    ></path>
+                    <path
+                      d="M5.85938 -0.000732422V39.9993"
+                      stroke="rgba(0, 0, 0, 0.05)"
+                      strokeWidth="0.5"
+                      strokeMiterlimit="10"
+                    ></path>
+                    <path
+                      d="M0.000976562 5.8577H40.001"
+                      stroke="rgba(0, 0, 0, 0.05)"
+                      strokeWidth="0.5"
+                      strokeMiterlimit="10"
+                    ></path>
+                    <path
+                      d="M0.000976562 34.4206H40.001"
+                      stroke="rgba(0, 0, 0, 0.05)"
+                      strokeWidth="0.5"
+                      strokeMiterlimit="10"
+                    ></path>
+                  </g>
+                  <defs>
+                    <clipPath id="clip0_plan_bg">
+                      <rect width="40" height="40" fill="#FFFFFF"></rect>
+                    </clipPath>
+                  </defs>
+                </svg>
                 {/* Cube icon */}
-                <svg width="30" height="25" viewBox="0 0 30 25" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"><path d="M7.99852 4.00541L14.0745 0.533435C14.3858 0.355535 14.768 0.355535 15.0793 0.533435L21.1553 4.00541C21.4708 4.1857 21.6655 4.52124 21.6655 4.88464V11.8106C21.6655 12.174 21.4708 12.5095 21.1553 12.6898L15.0793 16.1618C14.768 16.3397 14.3858 16.3397 14.0745 16.1618L7.99852 12.6898C7.683 12.5095 7.48828 12.174 7.48828 11.8106V4.88464C7.48828 4.52124 7.683 4.1857 7.99852 4.00541Z" fill="#FFFFFF" stroke="#CDCFD1" strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round"></path><path d="M14.577 8.34722L7.70996 4.42317M14.577 8.34722L21.4765 4.40466M14.577 8.34722V16.1953" stroke="#CDCFD1" strokeWidth="0.506329" strokeLinecap="round" strokeLinejoin="round"></path><path d="M15.0874 8.0557L21.1633 4.58373C21.4747 4.40583 21.8569 4.40583 22.1682 4.58373L28.2441 8.0557C28.5596 8.236 28.7544 8.57153 28.7544 8.93493V15.8609C28.7544 16.2243 28.5596 16.5598 28.2441 16.7401L22.1682 20.2121C21.8569 20.39 21.4747 20.39 21.1633 20.2121L15.0874 16.7401C14.7719 16.5598 14.5771 16.2243 14.5771 15.8609V8.93493C14.5771 8.57153 14.7719 8.236 15.0874 8.0557Z" fill="#EEEDFF" stroke="#5A50FF" strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round"></path><path opacity="0.4" d="M21.6659 12.3976L14.7988 8.47358M21.6659 12.3976L28.5654 8.45508M21.6659 12.3976V20.2457" stroke="#5A50FF" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round"></path><path d="M0.910142 8.0557L6.98609 4.58373C7.29742 4.40583 7.67961 4.40583 7.99093 4.58373L14.0669 8.0557C14.3824 8.236 14.5771 8.57153 14.5771 8.93493V15.8609C14.5771 16.2243 14.3824 16.5598 14.0669 16.7401L7.99093 20.2121C7.67961 20.39 7.29741 20.39 6.98609 20.2121L0.910141 16.7401C0.594622 16.5598 0.399902 16.2243 0.399902 15.8609V8.93493C0.399902 8.57153 0.594623 8.236 0.910142 8.0557Z" fill="#EEEDFF" stroke="#5A50FF" strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round"></path><path opacity="0.4" d="M7.48867 12.3976L0.621582 8.47358M7.48867 12.3976L14.3881 8.45508M7.48867 12.3976V20.2457" stroke="#5A50FF" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round"></path><path d="M7.99852 12.1061L14.0745 8.63414C14.3858 8.45624 14.768 8.45624 15.0793 8.63414L21.1553 12.1061C21.4708 12.2864 21.6655 12.6219 21.6655 12.9853V19.9113C21.6655 20.2747 21.4708 20.6102 21.1553 20.7905L15.0793 24.2625C14.768 24.4404 14.3858 24.4404 14.0745 24.2625L7.99852 20.7905C7.683 20.6102 7.48828 20.2747 7.48828 19.9113V12.9853C7.48828 12.6219 7.683 12.2864 7.99852 12.1061Z" fill="#EEEDFF" stroke="#5A50FF" strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round"></path><path opacity="0.4" d="M14.5766 16.4482L7.70947 12.5241M14.5766 16.4482L21.476 12.5056M14.5766 16.4482V24.2963" stroke="#5A50FF" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                <svg
+                  width="30"
+                  height="25"
+                  viewBox="0 0 30 25"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                >
+                  <path
+                    d="M7.99852 4.00541L14.0745 0.533435C14.3858 0.355535 14.768 0.355535 15.0793 0.533435L21.1553 4.00541C21.4708 4.1857 21.6655 4.52124 21.6655 4.88464V11.8106C21.6655 12.174 21.4708 12.5095 21.1553 12.6898L15.0793 16.1618C14.768 16.3397 14.3858 16.3397 14.0745 16.1618L7.99852 12.6898C7.683 12.5095 7.48828 12.174 7.48828 11.8106V4.88464C7.48828 4.52124 7.683 4.1857 7.99852 4.00541Z"
+                    fill="#FFFFFF"
+                    stroke="#CDCFD1"
+                    strokeWidth="0.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  ></path>
+                  <path
+                    d="M14.577 8.34722L7.70996 4.42317M14.577 8.34722L21.4765 4.40466M14.577 8.34722V16.1953"
+                    stroke="#CDCFD1"
+                    strokeWidth="0.506329"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  ></path>
+                  <path
+                    d="M15.0874 8.0557L21.1633 4.58373C21.4747 4.40583 21.8569 4.40583 22.1682 4.58373L28.2441 8.0557C28.5596 8.236 28.7544 8.57153 28.7544 8.93493V15.8609C28.7544 16.2243 28.5596 16.5598 28.2441 16.7401L22.1682 20.2121C21.8569 20.39 21.4747 20.39 21.1633 20.2121L15.0874 16.7401C14.7719 16.5598 14.5771 16.2243 14.5771 15.8609V8.93493C14.5771 8.57153 14.7719 8.236 15.0874 8.0557Z"
+                    fill="#EEEDFF"
+                    stroke="#5A50FF"
+                    strokeWidth="0.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  ></path>
+                  <path
+                    opacity="0.4"
+                    d="M21.6659 12.3976L14.7988 8.47358M21.6659 12.3976L28.5654 8.45508M21.6659 12.3976V20.2457"
+                    stroke="#5A50FF"
+                    strokeWidth="0.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  ></path>
+                  <path
+                    d="M0.910142 8.0557L6.98609 4.58373C7.29742 4.40583 7.67961 4.40583 7.99093 4.58373L14.0669 8.0557C14.3824 8.236 14.5771 8.57153 14.5771 8.93493V15.8609C14.5771 16.2243 14.3824 16.5598 14.0669 16.7401L7.99093 20.2121C7.67961 20.39 7.29741 20.39 6.98609 20.2121L0.910141 16.7401C0.594622 16.5598 0.399902 16.2243 0.399902 15.8609V8.93493C0.399902 8.57153 0.594623 8.236 0.910142 8.0557Z"
+                    fill="#EEEDFF"
+                    stroke="#5A50FF"
+                    strokeWidth="0.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  ></path>
+                  <path
+                    opacity="0.4"
+                    d="M7.48867 12.3976L0.621582 8.47358M7.48867 12.3976L14.3881 8.45508M7.48867 12.3976V20.2457"
+                    stroke="#5A50FF"
+                    strokeWidth="0.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  ></path>
+                  <path
+                    d="M7.99852 12.1061L14.0745 8.63414C14.3858 8.45624 14.768 8.45624 15.0793 8.63414L21.1553 12.1061C21.4708 12.2864 21.6655 12.6219 21.6655 12.9853V19.9113C21.6655 20.2747 21.4708 20.6102 21.1553 20.7905L15.0793 24.2625C14.768 24.4404 14.3858 24.4404 14.0745 24.2625L7.99852 20.7905C7.683 20.6102 7.48828 20.2747 7.48828 19.9113V12.9853C7.48828 12.6219 7.683 12.2864 7.99852 12.1061Z"
+                    fill="#EEEDFF"
+                    stroke="#5A50FF"
+                    strokeWidth="0.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  ></path>
+                  <path
+                    opacity="0.4"
+                    d="M14.5766 16.4482L7.70947 12.5241M14.5766 16.4482L21.476 12.5056M14.5766 16.4482V24.2963"
+                    stroke="#5A50FF"
+                    strokeWidth="0.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  ></path>
+                </svg>
               </div>
               <div>
-                <p className="text-sm font-medium">
-                  Plan {planConfig.name}
-                </p>
+                <p className="text-sm font-medium">Plan {planConfig.name}</p>
                 <p className="text-xs text-muted-foreground">
                   {formatPrice(planConfig.monthlyPrice)} €/mois
                 </p>
               </div>
             </div>
             <Button
+              type="button"
               variant="outline"
               size="sm"
               onClick={() => onTabChange?.("subscription")}
@@ -340,13 +511,19 @@ export default function FacturationSection({
                 <span className="text-sm font-medium">Sièges</span>
               </div>
               <span className="text-sm text-muted-foreground">
-                {seatsInfo ? `${seatsInfo.currentMembers}/${seatsInfo.includedSeats}` : "–"}
+                {seatsInfo
+                  ? `${seatsInfo.currentMembers}/${seatsInfo.includedSeats}`
+                  : "–"}
               </span>
             </div>
             <Progress
               value={
                 seatsInfo
-                  ? Math.min(100, (seatsInfo.currentMembers / seatsInfo.includedSeats) * 100)
+                  ? Math.min(
+                      100,
+                      (seatsInfo.currentMembers / seatsInfo.includedSeats) *
+                        100,
+                    )
                   : 0
               }
               className="h-1 bg-[#5b50fe]/10 [&>[data-slot=progress-indicator]]:bg-[#5b50fe]"
@@ -387,7 +564,10 @@ export default function FacturationSection({
             <Progress
               value={
                 ocrQuota
-                  ? Math.min(100, (ocrQuota.usedQuota / ocrQuota.monthlyQuota) * 100)
+                  ? Math.min(
+                      100,
+                      (ocrQuota.usedQuota / ocrQuota.monthlyQuota) * 100,
+                    )
                   : 0
               }
               className="h-1 bg-green-100 dark:bg-green-950/30 [&>[data-slot=progress-indicator]]:bg-green-500"
@@ -426,6 +606,7 @@ export default function FacturationSection({
                 </p>
               </div>
               <Button
+                type="button"
                 variant="outline"
                 size="icon"
                 className="h-8 w-8 cursor-pointer"
@@ -478,6 +659,7 @@ export default function FacturationSection({
                 </p>
               </div>
               <Button
+                type="button"
                 variant="outline"
                 size="icon"
                 className="h-8 w-8 cursor-pointer"
@@ -497,6 +679,7 @@ export default function FacturationSection({
                 Vos moyens de paiement sont gérés directement par Stripe.
               </p>
               <Button
+                type="button"
                 variant="link"
                 size="sm"
                 className="text-[#5b50fe] cursor-pointer mt-1 h-auto p-0 text-xs"
@@ -515,6 +698,7 @@ export default function FacturationSection({
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium">Historique des factures</h3>
           <Button
+            type="button"
             variant="ghost"
             size="sm"
             onClick={refetchInvoices}
@@ -560,6 +744,7 @@ export default function FacturationSection({
               {invoicesError}
             </p>
             <Button
+              type="button"
               variant="outline"
               size="sm"
               onClick={refetchInvoices}
@@ -612,6 +797,7 @@ export default function FacturationSection({
                 </span>
                 <div>{getStatusBadge(facture.status)}</div>
                 <Button
+                  type="button"
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 cursor-pointer"
@@ -668,6 +854,7 @@ export default function FacturationSection({
                 </p>
               </div>
               <Button
+                type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => setShowCancelDialog(true)}
@@ -694,7 +881,13 @@ export default function FacturationSection({
         )}
 
       {/* Cancel Dialog */}
-      <AlertDialog open={showCancelDialog} onOpenChange={(open) => { setShowCancelDialog(open); if (!open) setCancelConfirmText(""); }}>
+      <AlertDialog
+        open={showCancelDialog}
+        onOpenChange={(open) => {
+          setShowCancelDialog(open);
+          if (!open) setCancelConfirmText("");
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
@@ -703,15 +896,13 @@ export default function FacturationSection({
             </AlertDialogTitle>
             <AlertDialogDescription>
               Êtes-vous sûr de vouloir résilier votre abonnement ? Vous
-              conserverez l'accès jusqu'au{" "}
-              {formatDate(subscription?.periodEnd)}.
+              conserverez l'accès jusqu'au {formatDate(subscription?.periodEnd)}
+              .
             </AlertDialogDescription>
           </AlertDialogHeader>
 
           <div className="bg-muted rounded-lg p-4 my-2">
-            <p className="text-sm font-medium mb-2">
-              Vous perdrez l'accès à :
-            </p>
+            <p className="text-sm font-medium mb-2">Vous perdrez l'accès à :</p>
             <ul className="text-sm text-muted-foreground space-y-1.5">
               <li className="flex items-center gap-2">
                 <span className="text-red-500 text-xs">✕</span>
@@ -734,7 +925,8 @@ export default function FacturationSection({
 
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">
-              Tapez <span className="font-semibold text-foreground">allow</span> pour confirmer la résiliation.
+              Tapez <span className="font-semibold text-foreground">allow</span>{" "}
+              pour confirmer la résiliation.
             </p>
             <input
               type="text"
@@ -751,7 +943,9 @@ export default function FacturationSection({
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleCancellation}
-              disabled={isCancelling || cancelConfirmText.toLowerCase() !== "allow"}
+              disabled={
+                isCancelling || cancelConfirmText.toLowerCase() !== "allow"
+              }
               className="bg-red-600 hover:bg-red-700 cursor-pointer disabled:opacity-50"
             >
               {isCancelling && (
