@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect, useRef } from "react";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
-import { format } from "date-fns";
+import { format, differenceInCalendarDays } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
   flexRender,
@@ -299,9 +299,7 @@ export default function TransferTable({
           const expirationDate = new Date(transfer.expiryDate);
           const now = new Date();
           const isExpired = expirationDate < now;
-          const daysLeft = Math.ceil(
-            (expirationDate - now) / (1000 * 60 * 60 * 24),
-          );
+          const daysLeft = differenceInCalendarDays(expirationDate, now);
 
           return (
             <div>
