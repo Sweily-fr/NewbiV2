@@ -292,7 +292,12 @@ function buildCustomFieldColumn(field) {
 export default function TableProduct({
   handleAddProduct,
   hideHeaderButtons = false,
+  rowSelection: externalRowSelection,
+  onRowSelectionChange,
 }) {
+  const [internalRowSelection, setInternalRowSelection] = useState({});
+  const rowSelection = externalRowSelection ?? internalRowSelection;
+  const setRowSelection = onRowSelectionChange ?? setInternalRowSelection;
   const id = useId();
   const { workspaceId } = useWorkspace();
   const { fields: customFields } = useProductCustomFields(workspaceId);
@@ -429,6 +434,7 @@ export default function TableProduct({
   const table = useReactTable({
     data: filteredProducts,
     columns,
+    getRowId: (row) => row.id,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     onSortingChange: setSorting,
@@ -440,6 +446,7 @@ export default function TableProduct({
     },
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
@@ -448,6 +455,7 @@ export default function TableProduct({
       pagination,
       columnFilters,
       columnVisibility,
+      rowSelection,
     },
     meta: {
       handleEditProduct,
