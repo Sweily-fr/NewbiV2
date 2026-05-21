@@ -105,8 +105,10 @@ import { SendDocumentModal } from "./send-document-modal";
 import { SaveInvoiceTemplateDialog } from "./SaveInvoiceTemplateDialog";
 import { ImportInvoiceModal } from "./import-invoice-modal";
 import { ImportedInvoiceSidebar } from "./imported-invoice-sidebar";
+import CreditNotesTable from "./credit-notes-table";
 import { useImportedInvoices } from "@/src/graphql/importedInvoiceQueries";
 import { useEmailTrackingSubscription } from "@/src/graphql/documentEmailQueries";
+import { useCreditNotes } from "@/src/graphql/creditNoteQueries";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 
@@ -152,6 +154,10 @@ export default function InvoiceTable({
     loading: importedLoading,
     refetch: refetchImported,
   } = useImportedInvoices(workspaceId);
+
+  // Hook pour les avoirs (count pour le badge du tab)
+  const { creditNotes } = useCreditNotes();
+  const creditNotesCount = creditNotes?.length || 0;
 
   // Récupérer les paramètres de relance automatique
   const { data: reminderSettingsData } = useInvoiceReminderSettings();
@@ -295,8 +301,12 @@ export default function InvoiceTable({
       setStatusFilter([]);
     } else if (value === "completed") {
       setStatusFilter(["COMPLETED"]);
+    } else if (value === "credit-notes") {
+      setStatusFilter([]);
     }
   };
+
+  const isCreditNotesView = activeTab === "credit-notes";
 
   // Pré-filtrage depuis l'URL (ex: ?status=overdue depuis le dashboard)
   const searchParams = useSearchParams();
@@ -305,7 +315,16 @@ export default function InvoiceTable({
     const status = searchParams.get("status");
     if (!status || initialStatusRef.current === status) return;
     initialStatusRef.current = status;
-    if (["all", "draft", "pending", "overdue", "completed"].includes(status)) {
+    if (
+      [
+        "all",
+        "draft",
+        "pending",
+        "overdue",
+        "completed",
+        "credit-notes",
+      ].includes(status)
+    ) {
       handleTabChange(status);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -319,6 +338,7 @@ export default function InvoiceTable({
       pending: 0,
       overdue: 0,
       completed: 0,
+      "credit-notes": creditNotesCount,
     };
     const now = new Date();
     now.setHours(0, 0, 0, 0);
@@ -339,8 +359,9 @@ export default function InvoiceTable({
         }
       } else if (inv.status === "COMPLETED") counts.completed++;
     });
+    counts["credit-notes"] = creditNotesCount;
     return counts;
-  }, [combinedInvoices]);
+  }, [combinedInvoices, creditNotesCount]);
 
   // --- Mobile responsive state ---
   const [isMobileScrolled, setIsMobileScrolled] = useState(false);
@@ -357,6 +378,7 @@ export default function InvoiceTable({
     { id: "pending", label: "À encaisser" },
     { id: "overdue", label: "En retard" },
     { id: "completed", label: "Terminées" },
+    { id: "credit-notes", label: "Avoirs" },
   ];
 
   // All rows for mobile infinite scroll (bypasses pagination)
@@ -598,12 +620,26 @@ export default function InvoiceTable({
                   {invoiceCounts.completed}
                 </span>
               </TabsTrigger>
+              <TabsTrigger
+                value="credit-notes"
+                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              >
+                <span>Avoirs</span>
+                <span className="text-xs text-muted-foreground">
+                  {invoiceCounts["credit-notes"]}
+                </span>
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
 
         {/* Table header - sticky */}
-        <div className="border-b border-border">
+        <div
+          className={cn(
+            "border-b border-border",
+            isCreditNotesView && "hidden",
+          )}
+        >
           <table className="w-full table-fixed">
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -633,7 +669,12 @@ export default function InvoiceTable({
       {/* Fin sticky zone */}
 
       {/* Table body - Desktop */}
-      <div className="hidden md:flex md:flex-col flex-1">
+      <div
+        className={cn(
+          "hidden md:flex md:flex-col flex-1",
+          isCreditNotesView && "md:hidden",
+        )}
+      >
         <table className="w-full table-fixed">
           <tbody>
             {loading ? (
@@ -879,7 +920,10 @@ export default function InvoiceTable({
       <div
         ref={mobileScrollRef}
         onScroll={handleMobileScroll}
-        className="md:hidden overflow-y-auto overflow-x-auto flex-1 min-h-0 pb-20"
+        className={cn(
+          "md:hidden overflow-y-auto overflow-x-auto flex-1 min-h-0 pb-20",
+          isCreditNotesView && "hidden",
+        )}
       >
         <div
           className={`transition-opacity duration-150 ${isMobileTransitioning ? "opacity-0" : "opacity-100"}`}
@@ -1033,8 +1077,24 @@ export default function InvoiceTable({
         </div>
       </div>
 
+      {/* Vue Avoirs - rendue après les onglets mobiles & desktop pour respecter l'ordre visuel */}
+      {isCreditNotesView && (
+        <CreditNotesTable
+          globalFilter={globalFilter}
+          onPreviewInvoice={(invoiceId) => {
+            const inv = (invoices || []).find((i) => i.id === invoiceId);
+            if (inv) setInvoiceToOpen(inv);
+          }}
+        />
+      )}
+
       {/* Pagination - Fixe en bas sur desktop */}
-      <div className="hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-border bg-background sticky bottom-0 z-10">
+      <div
+        className={cn(
+          "hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-border bg-background sticky bottom-0 z-10",
+          isCreditNotesView && "md:hidden",
+        )}
+      >
         <div className="flex-1 text-xs font-normal text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} sur{" "}
           {table.getFilteredRowModel().rows.length} ligne(s) sélectionnée(s).
