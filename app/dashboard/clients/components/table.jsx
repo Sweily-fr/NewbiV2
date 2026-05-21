@@ -82,6 +82,7 @@ import {
 } from "@/src/components/ui/dropdown-menu";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
+import { Textarea } from "@/src/components/ui/textarea";
 import {
   Pagination,
   PaginationContent,
@@ -811,11 +812,14 @@ export default function TableClients({
                     data-state={row.getIsSelected() && "selected"}
                     className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
                     onClick={(e) => {
-                      // Ne pas naviguer si on clique sur la checkbox ou le menu d'actions
+                      // Ne pas naviguer si on clique sur la checkbox, le menu d'actions
+                      // ou à l'intérieur d'un dialog (portail Radix qui bubble en React)
                       if (
                         e.target.closest('[role="checkbox"]') ||
                         e.target.closest("button") ||
-                        e.target.closest('[role="menuitem"]')
+                        e.target.closest('[role="menuitem"]') ||
+                        e.target.closest('[role="alertdialog"]') ||
+                        e.target.closest('[role="dialog"]')
                       ) {
                         return;
                       }
@@ -1146,11 +1150,14 @@ export default function TableClients({
                     data-state={row.getIsSelected() && "selected"}
                     className="border-b border-gray-100 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
                     onClick={(e) => {
-                      // Ne pas naviguer si on clique sur la checkbox ou le menu d'actions
+                      // Ne pas naviguer si on clique sur la checkbox, le menu d'actions
+                      // ou à l'intérieur d'un dialog (portail Radix qui bubble en React)
                       if (
                         e.target.closest('[role="checkbox"]') ||
                         e.target.closest("button") ||
-                        e.target.closest('[role="menuitem"]')
+                        e.target.closest('[role="menuitem"]') ||
+                        e.target.closest('[role="alertdialog"]') ||
+                        e.target.closest('[role="dialog"]')
                       ) {
                         return;
                       }
@@ -1232,6 +1239,7 @@ function RowActions({
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showBlockDialog, setShowBlockDialog] = useState(false);
+  const [blockReason, setBlockReason] = useState("");
   const [showDeleteTooltip, setShowDeleteTooltip] = useState(null);
   const [addingToList, setAddingToList] = useState(false);
   const [removingFromList, setRemovingFromList] = useState(false);
@@ -1279,12 +1287,13 @@ function RowActions({
 
   const handleBlock = useCallback(async () => {
     try {
-      await blockClient(client.id);
+      await blockClient(client.id, blockReason.trim() || undefined);
       setShowBlockDialog(false);
+      setBlockReason("");
     } catch (error) {
       // Error handled by hook
     }
-  }, [blockClient, client.id]);
+  }, [blockClient, client.id, blockReason]);
 
   const handleAssign = useCallback(() => {
     toast.info("Fonctionnalité bientôt disponible");
@@ -1502,7 +1511,13 @@ function RowActions({
       </DropdownMenu>
 
       {/* Dialog de confirmation de blocage */}
-      <AlertDialog open={showBlockDialog} onOpenChange={setShowBlockDialog}>
+      <AlertDialog
+        open={showBlockDialog}
+        onOpenChange={(open) => {
+          setShowBlockDialog(open);
+          if (!open) setBlockReason("");
+        }}
+      >
         <AlertDialogContent>
           <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
             <div
@@ -1518,6 +1533,22 @@ function RowActions({
                 documents et des communications.
               </AlertDialogDescription>
             </AlertDialogHeader>
+          </div>
+          <div className="px-1">
+            <Label
+              htmlFor={`block-reason-${client.id}`}
+              className="text-sm font-medium mb-1.5 block"
+            >
+              Raison du blocage (optionnel)
+            </Label>
+            <Textarea
+              id={`block-reason-${client.id}`}
+              value={blockReason}
+              onChange={(e) => setBlockReason(e.target.value)}
+              placeholder="Ex: Impayés récurrents, communication difficile..."
+              className="resize-none"
+              rows={3}
+            />
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>

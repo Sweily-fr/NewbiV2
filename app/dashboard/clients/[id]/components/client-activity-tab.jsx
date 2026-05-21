@@ -412,6 +412,14 @@ export default function ClientActivityTab({ client }) {
                                       </button>
                                     )}
 
+                                  {/* Block reason */}
+                                  {item.type === "blocked" &&
+                                    meta.blockReason && (
+                                      <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                                        Raison : {meta.blockReason}
+                                      </p>
+                                    )}
+
                                   {/* Reminder details */}
                                   {meta.eventId && meta.eventTitle && (
                                     <p className="text-sm text-muted-foreground mt-1">
