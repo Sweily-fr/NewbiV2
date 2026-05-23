@@ -150,6 +150,8 @@ export const GET_CLIENT = gql`
           eventTitle
           eventDate
           blockReason
+          listId
+          listName
         }
       }
       createdAt

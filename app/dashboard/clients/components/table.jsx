@@ -132,6 +132,7 @@ import { useInvoices } from "@/src/graphql/invoiceQueries";
 import { toast } from "@/src/components/ui/sonner";
 import ClientsModal from "./clients-modal";
 import ClientFilters from "./client-filters";
+import CreateListDialog from "./create-list-dialog";
 // Custom filter function for multi-column searching
 const multiColumnFilterFn = (row, columnId, filterValue) => {
   const searchableRowContent =
@@ -196,7 +197,7 @@ const columns = (
         ? rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase()
         : "";
       return (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <UserAvatar
             name={displayName}
             colorKey={client.email}
@@ -210,6 +211,19 @@ const columns = (
           >
             {displayName}
           </div>
+          {client.isBlocked && (
+            <span
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border bg-red-100 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800 shrink-0"
+              title={
+                client.blockedReason
+                  ? `Bloqué : ${client.blockedReason}`
+                  : "Contact bloqué"
+              }
+            >
+              <ShieldOff className="w-3 h-3" aria-hidden="true" />
+              Bloqué
+            </span>
+          )}
         </div>
       );
     },
@@ -1243,6 +1257,7 @@ function RowActions({
   const [showDeleteTooltip, setShowDeleteTooltip] = useState(null);
   const [addingToList, setAddingToList] = useState(false);
   const [removingFromList, setRemovingFromList] = useState(false);
+  const [createListDialogOpen, setCreateListDialogOpen] = useState(false);
   const { deleteClient } = useDeleteClient();
   const { blockClient } = useBlockClient();
   const { addToLists } = useAddClientToLists();
@@ -1387,6 +1402,20 @@ function RowActions({
                   const availableLists = (allLists || []).filter(
                     (l) => !currentListIds.has(l.id),
                   );
+                  if ((allLists || []).length === 0) {
+                    return (
+                      <DropdownMenuItem
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          setCreateListDialogOpen(true);
+                        }}
+                        className="cursor-pointer gap-2"
+                      >
+                        <PlusIcon className="w-3.5 h-3.5" />
+                        <span>Créer une liste</span>
+                      </DropdownMenuItem>
+                    );
+                  }
                   if (availableLists.length === 0) {
                     return (
                       <DropdownMenuItem disabled>
@@ -1509,6 +1538,17 @@ function RowActions({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <CreateListDialog
+        open={createListDialogOpen}
+        onOpenChange={setCreateListDialogOpen}
+        workspaceId={workspaceId}
+        onListCreated={(newList) => {
+          if (newList?.id) {
+            handleAddToList(newList.id);
+          }
+        }}
+      />
 
       {/* Dialog de confirmation de blocage */}
       <AlertDialog

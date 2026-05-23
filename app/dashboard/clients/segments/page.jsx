@@ -460,6 +460,7 @@ function SegmentDialog({ open, onOpenChange, segment, onSubmit, loading }) {
 
 // ==================== Segment Detail View ====================
 function SegmentDetailView({ segment, onBack }) {
+  const router = useRouter();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -614,7 +615,10 @@ function SegmentDetailView({ segment, onBack }) {
                 {clients.map((client) => (
                   <tr
                     key={client.id}
-                    className="border-b hover:bg-muted/50 transition-colors"
+                    onClick={() =>
+                      router.push(`/dashboard/clients/${client.id}`)
+                    }
+                    className="border-b hover:bg-muted/50 transition-colors cursor-pointer"
                   >
                     <td className="p-2 pl-4 sm:pl-6 align-middle w-[35%]">
                       <div className="flex items-center gap-2">

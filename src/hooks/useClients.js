@@ -118,9 +118,6 @@ export const useCreateClient = () => {
           enhancedError.code = graphQLError.extensions?.code;
           throw enhancedError;
         }
-        if (result?.data?.createClient) {
-          toast.success("Client créé avec succès");
-        }
         return result?.data?.createClient;
       } catch (error) {
         // Extraire l'erreur GraphQL pour la propager avec les bonnes infos
@@ -202,9 +199,6 @@ export const useUpdateClient = () => {
           enhancedError.extensions = graphQLError.extensions;
           enhancedError.code = graphQLError.extensions?.code;
           throw enhancedError;
-        }
-        if (result?.data?.updateClient) {
-          toast.success("Client modifié avec succès");
         }
         return result?.data?.updateClient;
       } catch (error) {
