@@ -517,7 +517,7 @@ function SegmentDetailView({ segment, onBack }) {
       </div>
 
       {/* Rules display + Search */}
-      <div className="px-4 sm:px-6 pb-4 flex-shrink-0 space-y-3">
+      <div className="px-4 sm:px-6 pb-4 flex-shrink-0 space-y-5">
         <div className="flex flex-wrap gap-1.5">
           {segment.rules.map((rule, i) => {
             const fieldDef = getFieldDef(rule.field);
@@ -549,7 +549,7 @@ function SegmentDetailView({ segment, onBack }) {
             {segment.matchType === "all" ? "Toutes (ET)" : "Au moins une (OU)"}
           </Badge>
         </div>
-        <div className="relative max-w-xs">
+        <div className="relative w-full max-w-[220px]">
           <Search
             size={14}
             className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"

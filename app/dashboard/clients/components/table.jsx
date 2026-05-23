@@ -617,6 +617,34 @@ export default function TableClients({
     },
   });
 
+  const toggleableColumns = useMemo(() => {
+    const standard = [
+      { id: "email", label: "Email" },
+      { id: "type", label: "Type" },
+      { id: "invoiceCount", label: "Factures" },
+      { id: "address", label: "Adresse" },
+      { id: "phone", label: "Téléphone" },
+      { id: "firstName", label: "Prénom" },
+      { id: "lastName", label: "Nom de famille" },
+      { id: "siret", label: "SIRET" },
+      { id: "vatNumber", label: "N° TVA" },
+      { id: "isInternational", label: "International" },
+    ];
+    const cfCols = (customFieldDefinitions || []).map((f) => ({
+      id: `cf_${f.id}`,
+      label: f.name,
+    }));
+    return [...standard, ...cfCols];
+  }, [customFieldDefinitions]);
+
+  const customFieldNamesMap = useMemo(
+    () =>
+      Object.fromEntries(
+        (customFieldDefinitions || []).map((f) => [`cf_${f.id}`, f.name]),
+      ),
+    [customFieldDefinitions],
+  );
+
   // Get unique type values
   const uniqueTypeValues = useMemo(() => {
     const typeColumn = table.getColumn("type");
@@ -671,14 +699,14 @@ export default function TableClients({
       <div className="hidden md:flex md:flex-col flex-1 min-h-0">
         {/* Toolbar - Caché si hideSearchBar */}
         {!hideSearchBar && (
-          <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 flex-shrink-0">
+          <div className="flex items-center gap-4 px-4 sm:px-6 py-4 flex-shrink-0">
             {/* Search */}
             <div className="relative max-w-md">
               <Input
                 id={`${id}-input`}
                 ref={inputRef}
                 className={cn(
-                  "w-full sm:w-[490px] lg:w-[490px] ps-9",
+                  "w-full sm:w-[320px] lg:w-[320px] ps-9",
                   Boolean(table.getColumn("name")?.getFilterValue()) && "pe-9",
                 )}
                 value={globalFilter}
@@ -711,13 +739,15 @@ export default function TableClients({
             </div>
 
             {/* Filters Button */}
-            <div className="flex items-center gap-2">
-              <ClientFilters
-                selectedTypes={selectedTypes}
-                setSelectedTypes={setSelectedTypes}
-                table={table}
-              />
-            </div>
+            <ClientFilters
+              selectedTypes={selectedTypes}
+              setSelectedTypes={setSelectedTypes}
+              table={table}
+              columnVisibility={columnVisibility}
+              onColumnVisibilityChange={setColumnVisibility}
+              allColumns={toggleableColumns}
+              customFieldNames={customFieldNamesMap}
+            />
           </div>
         )}
 
