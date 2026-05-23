@@ -1,55 +1,66 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/src/components/ui/dialog';
-import { Button } from '@/src/components/ui/button';
-import { Input } from '@/src/components/ui/input';
-import { Label } from '@/src/components/ui/label';
-import { Textarea } from '@/src/components/ui/textarea';
-import { useCreateClientList } from '@/src/hooks/useClientLists';
-import { Loader2 } from 'lucide-react';
-import { toast } from '@/src/components/ui/sonner';
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
+import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
+import { Label } from "@/src/components/ui/label";
+import { Textarea } from "@/src/components/ui/textarea";
+import { useCreateClientList } from "@/src/hooks/useClientLists";
+import { Loader2 } from "lucide-react";
+import { toast } from "@/src/components/ui/sonner";
 
 const COLORS = [
-  '#3b82f6', // blue
-  '#10b981', // green
-  '#ef4444', // red
-  '#f59e0b', // amber
-  '#8b5cf6', // purple
-  '#ec4899', // pink
-  '#06b6d4', // cyan
-  '#6366f1', // indigo
+  "#3b82f6", // blue
+  "#10b981", // green
+  "#ef4444", // red
+  "#f59e0b", // amber
+  "#8b5cf6", // purple
+  "#ec4899", // pink
+  "#06b6d4", // cyan
+  "#6366f1", // indigo
 ];
 
-export default function CreateListDialog({ open, onOpenChange, workspaceId, onListCreated }) {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+export default function CreateListDialog({
+  open,
+  onOpenChange,
+  workspaceId,
+  onListCreated,
+}) {
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
   const { createList, loading } = useCreateClientList();
 
   const handleCreate = async () => {
     if (!name.trim()) {
-      toast.error('Le nom de la liste est requis');
+      toast.error("Le nom de la liste est requis");
       return;
     }
 
     try {
-      await createList(workspaceId, {
+      const newList = await createList(workspaceId, {
         name: name.trim(),
         description: description.trim(),
         color: selectedColor,
-        icon: 'Users'
+        icon: "Users",
       });
 
-      toast.success('Liste créée avec succès');
+      toast.success("Liste créée avec succès");
 
-      setName('');
-      setDescription('');
+      setName("");
+      setDescription("");
       setSelectedColor(COLORS[0]);
       onOpenChange(false);
-      onListCreated();
+      onListCreated?.(newList);
     } catch (error) {
-      toast.error(error.message || 'Impossible de créer la liste');
+      toast.error(error.message || "Impossible de créer la liste");
     }
   };
 
@@ -94,7 +105,9 @@ export default function CreateListDialog({ open, onOpenChange, workspaceId, onLi
                 <button
                   key={color}
                   className={`w-8 h-8 rounded-full border-2 transition-all ${
-                    selectedColor === color ? 'border-gray-800 scale-110' : 'border-gray-300'
+                    selectedColor === color
+                      ? "border-gray-800 scale-110"
+                      : "border-gray-300"
                   }`}
                   style={{ backgroundColor: color }}
                   onClick={() => setSelectedColor(color)}
@@ -113,11 +126,7 @@ export default function CreateListDialog({ open, onOpenChange, workspaceId, onLi
           >
             Annuler
           </Button>
-          <Button
-            onClick={handleCreate}
-            disabled={loading}
-            className="gap-2"
-          >
+          <Button onClick={handleCreate} disabled={loading} className="gap-2">
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             Créer la liste
           </Button>

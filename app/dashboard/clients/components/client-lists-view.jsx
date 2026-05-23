@@ -114,23 +114,35 @@ export default function ClientListsView({
       {
         id: "select",
         header: ({ table }) => {
-          const allSelected = table.getIsAllRowsSelected();
-          const someSelected = table.getIsSomeRowsSelected();
+          const selectableRows = table
+            .getRowModel()
+            .rows.filter((r) => !r.original.isDefault);
+          const allSelected =
+            selectableRows.length > 0 &&
+            selectableRows.every((r) => r.getIsSelected());
+          const someSelected =
+            !allSelected && selectableRows.some((r) => r.getIsSelected());
           return (
             <Checkbox
               checked={allSelected || (someSelected && "indeterminate")}
-              onCheckedChange={(value) => table.toggleAllRowsSelected(!!value)}
+              onCheckedChange={(value) => {
+                selectableRows.forEach((r) => r.toggleSelected(!!value));
+              }}
               aria-label="Sélectionner tout"
+              disabled={selectableRows.length === 0}
             />
           );
         },
-        cell: ({ row }) => (
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Sélectionner la ligne"
-          />
-        ),
+        cell: ({ row }) => {
+          if (row.original.isDefault) return null;
+          return (
+            <Checkbox
+              checked={row.getIsSelected()}
+              onCheckedChange={(value) => row.toggleSelected(!!value)}
+              aria-label="Sélectionner la ligne"
+            />
+          );
+        },
         size: 40,
         enableSorting: false,
         enableHiding: false,

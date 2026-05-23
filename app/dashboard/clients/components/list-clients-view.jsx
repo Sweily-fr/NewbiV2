@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { Button } from "@/src/components/ui/button";
 import {
   DropdownMenu,
@@ -37,8 +37,24 @@ import {
   useRemoveClientsFromList,
 } from "@/src/hooks/useClientLists";
 import { useDeleteClient } from "@/src/hooks/useClients";
+import { useClientCustomFields } from "@/src/hooks/useClientCustomFields";
+import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
 import { toast } from "@/src/components/ui/sonner";
 import ClientsTable from "./clients-table";
+import ClientFilters from "./client-filters";
+
+const STANDARD_COLUMNS = [
+  { id: "email", label: "Email" },
+  { id: "type", label: "Type" },
+  { id: "invoiceCount", label: "Factures" },
+  { id: "address", label: "Adresse" },
+  { id: "phone", label: "Téléphone" },
+  { id: "firstName", label: "Prénom" },
+  { id: "lastName", label: "Nom de famille" },
+  { id: "siret", label: "SIRET" },
+  { id: "vatNumber", label: "N° TVA" },
+  { id: "isInternational", label: "International" },
+];
 
 export default function ListClientsView({
   workspaceId,
@@ -57,10 +73,46 @@ export default function ListClientsView({
   const { addClients } = useAddClientsToList();
   const { removeClients } = useRemoveClientsFromList();
   const { deleteClient } = useDeleteClient();
+  const { fields: customFieldDefinitions } = useClientCustomFields(workspaceId);
 
   const [selectedClients, setSelectedClients] = useState(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedTypes, setSelectedTypes] = useState([]);
+  const [columnVisibility, setColumnVisibility] = usePersistentColumnVisibility(
+    "newbi:column-visibility:list-clients",
+    {
+      phone: false,
+      firstName: false,
+      lastName: false,
+      vatNumber: false,
+      isInternational: false,
+    },
+  );
+
+  const allToggleableColumns = useMemo(() => {
+    const cfCols = (customFieldDefinitions || []).map((f) => ({
+      id: `cf_${f.id}`,
+      label: f.name,
+    }));
+    return [...STANDARD_COLUMNS, ...cfCols];
+  }, [customFieldDefinitions]);
+
+  useEffect(() => {
+    if (!customFieldDefinitions || customFieldDefinitions.length === 0) return;
+    setColumnVisibility((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const f of customFieldDefinitions) {
+        const key = `cf_${f.id}`;
+        if (!(key in next)) {
+          next[key] = false;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [customFieldDefinitions, setColumnVisibility]);
 
   const selectedCount = selectedClients.size;
   const selectedIds = useMemo(
@@ -199,133 +251,148 @@ export default function ListClientsView({
             </p>
           </div>
 
-          {selectedCount > 0 && (
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <span className="text-sm text-muted-foreground">
-                {selectedCount} sélectionné{selectedCount > 1 ? "s" : ""}
-              </span>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <ClientFilters
+              selectedTypes={selectedTypes}
+              setSelectedTypes={setSelectedTypes}
+              columnVisibility={columnVisibility}
+              onColumnVisibilityChange={setColumnVisibility}
+              allColumns={allToggleableColumns}
+              customFieldNames={Object.fromEntries(
+                (customFieldDefinitions || []).map((f) => [
+                  `cf_${f.id}`,
+                  f.name,
+                ]),
+              )}
+            />
+            {selectedCount > 0 && (
+              <>
+                <span className="text-sm text-muted-foreground">
+                  {selectedCount} sélectionné{selectedCount > 1 ? "s" : ""}
+                </span>
 
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleBulkRemove}
-                disabled={bulkLoading}
-                className="gap-2 cursor-pointer"
-              >
-                <ListMinus className="w-4 h-4" />
-                Retirer de la liste
-              </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleBulkRemove}
+                  disabled={bulkLoading}
+                  className="gap-2 cursor-pointer"
+                >
+                  <ListMinus className="w-4 h-4" />
+                  Retirer de la liste
+                </Button>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={bulkLoading || otherLists.length === 0}
-                    className="gap-2 cursor-pointer"
-                  >
-                    <ArrowRightLeft className="w-4 h-4" />
-                    Changer de liste
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  {otherLists.length === 0 ? (
-                    <DropdownMenuItem disabled>
-                      Aucune autre liste
-                    </DropdownMenuItem>
-                  ) : (
-                    otherLists.map((l) => (
-                      <DropdownMenuItem
-                        key={l.id}
-                        onClick={() => handleBulkMoveTo(l.id)}
-                        disabled={bulkLoading}
-                        className="cursor-pointer"
-                      >
-                        <div className="flex items-center gap-2 w-full">
-                          <div
-                            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: l.color }}
-                          />
-                          <span>{l.name}</span>
-                        </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={bulkLoading || otherLists.length === 0}
+                      className="gap-2 cursor-pointer"
+                    >
+                      <ArrowRightLeft className="w-4 h-4" />
+                      Changer de liste
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    {otherLists.length === 0 ? (
+                      <DropdownMenuItem disabled>
+                        Aucune autre liste
                       </DropdownMenuItem>
-                    ))
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    ) : (
+                      otherLists.map((l) => (
+                        <DropdownMenuItem
+                          key={l.id}
+                          onClick={() => handleBulkMoveTo(l.id)}
+                          disabled={bulkLoading}
+                          className="cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2 w-full">
+                            <div
+                              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: l.color }}
+                            />
+                            <span>{l.name}</span>
+                          </div>
+                        </DropdownMenuItem>
+                      ))
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={bulkLoading}
-                    className="gap-2 cursor-pointer"
-                  >
-                    <ListPlus className="w-4 h-4" />
-                    Ajouter à une liste
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  {otherLists.length === 0 ? (
-                    <DropdownMenuItem disabled>
-                      Aucune autre liste
-                    </DropdownMenuItem>
-                  ) : (
-                    otherLists.map((l) => (
-                      <DropdownMenuItem
-                        key={l.id}
-                        onClick={() => handleBulkAddTo(l.id)}
-                        disabled={bulkLoading}
-                        className="cursor-pointer"
-                      >
-                        <div className="flex items-center gap-2 w-full">
-                          <div
-                            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: l.color }}
-                          />
-                          <span>{l.name}</span>
-                        </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={bulkLoading}
+                      className="gap-2 cursor-pointer"
+                    >
+                      <ListPlus className="w-4 h-4" />
+                      Ajouter à une liste
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    {otherLists.length === 0 ? (
+                      <DropdownMenuItem disabled>
+                        Aucune autre liste
                       </DropdownMenuItem>
-                    ))
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    ) : (
+                      otherLists.map((l) => (
+                        <DropdownMenuItem
+                          key={l.id}
+                          onClick={() => handleBulkAddTo(l.id)}
+                          disabled={bulkLoading}
+                          className="cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2 w-full">
+                            <div
+                              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: l.color }}
+                            />
+                            <span>{l.name}</span>
+                          </div>
+                        </DropdownMenuItem>
+                      ))
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={bulkLoading}
-                    className="gap-2 cursor-pointer"
-                  >
-                    <MoreHorizontal className="w-4 h-4" />
-                    Plus
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem
-                    onClick={() => setSelectedClients(new Set())}
-                    className="cursor-pointer"
-                  >
-                    Désélectionner tout
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onSelect={(e) => {
-                      e.preventDefault();
-                      setShowDeleteDialog(true);
-                    }}
-                    className="cursor-pointer text-red-600 focus:text-red-600 gap-2"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    Supprimer définitivement
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={bulkLoading}
+                      className="gap-2 cursor-pointer"
+                    >
+                      <MoreHorizontal className="w-4 h-4" />
+                      Plus
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuItem
+                      onClick={() => setSelectedClients(new Set())}
+                      className="cursor-pointer"
+                    >
+                      Désélectionner tout
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setShowDeleteDialog(true);
+                      }}
+                      className="cursor-pointer text-red-600 focus:text-red-600 gap-2"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Supprimer définitivement
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -351,8 +418,11 @@ export default function ListClientsView({
             onListsUpdated={onListUpdated}
             defaultListId={list.id}
             globalFilter={globalFilter}
+            selectedTypes={selectedTypes}
             selectedClients={selectedClients}
             onSelectedClientsChange={setSelectedClients}
+            columnVisibility={columnVisibility}
+            onColumnVisibilityChange={setColumnVisibility}
             currentList={{ id: list.id, name: list.name }}
             onClientRemovedFromList={handleSingleRemove}
           />

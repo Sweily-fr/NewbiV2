@@ -16,7 +16,7 @@ import {
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import {
   useClientLists,
-  useDeleteClientList,
+  useDeleteClientLists,
 } from "@/src/hooks/useClientLists";
 import {
   AlertDialog,
@@ -49,7 +49,7 @@ function ListesContent() {
     loading: listsLoading,
     refetch: refetchLists,
   } = useClientLists(workspaceId);
-  const { deleteList } = useDeleteClientList();
+  const { deleteLists } = useDeleteClientLists();
   const [createListDialogOpen, setCreateListDialogOpen] = useState(false);
   const [globalFilter, setGlobalFilter] = useState("");
   const [viewingList, setViewingList] = useState(false);
@@ -58,9 +58,17 @@ function ListesContent() {
   const [isDeletingMultiple, setIsDeletingMultiple] = useState(false);
   const inputRef = useRef(null);
 
+  const defaultListIds = useMemo(
+    () => new Set((lists || []).filter((l) => l.isDefault).map((l) => l.id)),
+    [lists],
+  );
+
   const selectedListIds = useMemo(
-    () => Object.keys(rowSelection).filter((id) => rowSelection[id]),
-    [rowSelection],
+    () =>
+      Object.keys(rowSelection).filter(
+        (id) => rowSelection[id] && !defaultListIds.has(id),
+      ),
+    [rowSelection, defaultListIds],
   );
 
   // Trouver la liste initiale à partir du query param
@@ -162,11 +170,11 @@ function ListesContent() {
                       onClick={async () => {
                         setIsDeletingMultiple(true);
                         try {
-                          for (const id of selectedListIds) {
-                            await deleteList(workspaceId, id);
-                          }
+                          await deleteLists(workspaceId, selectedListIds);
                           setRowSelection({});
                           refetchLists?.();
+                        } catch (err) {
+                          console.error("Erreur suppression multiple:", err);
                         } finally {
                           setIsDeletingMultiple(false);
                           setIsDeleteMultipleOpen(false);

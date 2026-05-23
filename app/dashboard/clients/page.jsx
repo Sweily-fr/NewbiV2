@@ -52,6 +52,7 @@ import ClientFilters from "./components/client-filters";
 import AutomationsPopover from "./components/automations-popover";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import ClientImportDialog from "./components/client-import-dialog";
+import CreateListDialog from "./components/create-list-dialog";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 const STANDARD_COLUMNS = [
@@ -137,6 +138,7 @@ function ClientsContent() {
   const { deleteClient } = useDeleteClient();
   const { blockClient } = useBlockClient();
   const [assigningList, setAssigningList] = useState(false);
+  const [createListDialogOpen, setCreateListDialogOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
 
   const selectedClientIds = Array.from(selectedClients);
@@ -160,6 +162,14 @@ function ClientsContent() {
       }
     },
     [selectedClients, workspaceId, addToLists, refetchLists],
+  );
+
+  const handleListCreatedFromBulk = useCallback(
+    async (newList) => {
+      if (!newList?.id) return;
+      await handleAddToList(newList.id);
+    },
+    [handleAddToList],
   );
 
   const handleDeleteSelected = useCallback(async () => {
@@ -334,7 +344,16 @@ function ClientsContent() {
                       </DropdownMenuItem>
                     ))
                   ) : (
-                    <DropdownMenuItem disabled>Aucune liste</DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setCreateListDialogOpen(true);
+                      }}
+                      className="cursor-pointer gap-2"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Créer une liste</span>
+                    </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -520,6 +539,12 @@ function ClientsContent() {
         open={importDialogOpen}
         onOpenChange={setImportDialogOpen}
         initialView={importDialogView}
+      />
+      <CreateListDialog
+        open={createListDialogOpen}
+        onOpenChange={setCreateListDialogOpen}
+        workspaceId={workspaceId}
+        onListCreated={handleListCreatedFromBulk}
       />
 
       {/* Bulk block dialog (with reason) */}

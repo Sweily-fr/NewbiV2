@@ -37,6 +37,7 @@ import {
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { useClientCustomFields } from "@/src/hooks/useClientCustomFields";
+import { useClientListsByClient } from "@/src/hooks/useClientLists";
 
 function SidebarSection({ title, defaultOpen = true, children }) {
   return (
@@ -134,6 +135,10 @@ export default function ClientDetailSidebar({
 }) {
   const [showMore, setShowMore] = useState(false);
   const { fields: customFieldDefs } = useClientCustomFields(workspaceId);
+  const { lists: clientLists } = useClientListsByClient(
+    workspaceId,
+    client?.id,
+  );
 
   const customFieldsDisplay = useMemo(() => {
     if (!client?.customFields?.length || !customFieldDefs?.length) return [];
@@ -419,22 +424,32 @@ export default function ClientDetailSidebar({
               label="Contact ajouté"
               value={createdDate}
             />
-            {client.lists && client.lists.length > 0 && (
-              <div className="flex items-center justify-between py-[7px]">
+            {clientLists && clientLists.length > 0 && (
+              <div className="flex items-start justify-between py-[7px]">
                 <div className="flex items-center gap-2.5 flex-shrink-0">
                   <List className="h-3.5 w-3.5 text-[#505154] dark:text-muted-foreground" />
                   <span className="text-[13px] text-[#505154] dark:text-muted-foreground">
                     Listes
                   </span>
                 </div>
-                <div className="flex flex-wrap gap-1 justify-end max-w-[200px]">
-                  {client.lists.map((list) => (
-                    <span
-                      key={list.id || list.name}
-                      className="text-[13px] text-[#242529] dark:text-foreground"
+                <div className="flex flex-wrap gap-1 justify-end max-w-[260px]">
+                  {clientLists.map((list) => (
+                    <Badge
+                      key={list.id}
+                      variant="outline"
+                      className="text-xs font-normal"
+                      style={
+                        list.color
+                          ? {
+                              borderColor: `${list.color}40`,
+                              color: list.color,
+                              backgroundColor: `${list.color}10`,
+                            }
+                          : undefined
+                      }
                     >
                       {list.name}
-                    </span>
+                    </Badge>
                   ))}
                 </div>
               </div>
