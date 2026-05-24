@@ -35,25 +35,38 @@ const PLANS_CONFIG = [
     description: "Parfait pour les indépendants et freelances",
     features: {
       users: "1 utilisateur",
-      accountants: "Un accès comptable",
-      extraUsers: false,
+      accountants: "1",
+      extraUsers: "7,49€/mois",
+      storage: "50 Go",
+      orgCreation: true,
       invoicing: true,
-      autoReminders: false,
-      ocr: "20 reçus/mois",
+      autoReminders: true,
+      accountingExports: "CSV / Excel",
+      eSignature: "3/mois",
+      eInvoicing: true,
+      legalArchive: true,
+      templates: "10",
+      crm: true,
+      catalog: true,
+      ocr: "50/mois",
       bankAccounts: "1 compte",
       cashFlow: true,
       projects: true,
-      signatures: "1 signature",
-      fileTransfer: "5 Go",
-      crm: true,
-      catalog: true,
+      fileTransfer: "5 Go/transfert",
+      signatures: "1",
+      customFields: "5",
+      calendar: "1",
+      docAutomations: "5 règles",
+      crmAutomations: "Listes auto",
+      segments: false,
+      analytics: true,
+      cashForecast: true,
       prioritySupport: false,
-      api: false,
     },
   },
   {
     key: "pme",
-    name: "PME",
+    name: "TPE",
     monthlyPrice: 48.99,
     annualPrice: 44.09,
     annualTotal: 529.08,
@@ -61,20 +74,33 @@ const PLANS_CONFIG = [
     description: "Idéal pour les petites et moyennes entreprises",
     features: {
       users: "Jusqu'à 10",
-      accountants: "3 accès comptables",
-      extraUsers: "7,49 €/utilisateur",
+      accountants: "3",
+      extraUsers: "7,49€/mois",
+      storage: "200 Go",
+      orgCreation: true,
       invoicing: true,
       autoReminders: true,
-      ocr: "Illimité",
+      accountingExports: "CSV / Excel / FEC",
+      eSignature: "20/mois",
+      eInvoicing: true,
+      legalArchive: true,
+      templates: "Illimité",
+      crm: true,
+      catalog: true,
+      ocr: true,
       bankAccounts: "3 comptes",
       cashFlow: true,
       projects: true,
-      signatures: "10 signatures",
-      fileTransfer: "15 Go",
-      crm: true,
-      catalog: true,
+      fileTransfer: "15 Go/transfert",
+      signatures: "10",
+      customFields: "Illimité",
+      calendar: "3",
+      docAutomations: "Illimité",
+      crmAutomations: "Listes auto + Emails",
+      segments: true,
+      analytics: true,
+      cashForecast: true,
       prioritySupport: true,
-      api: true,
     },
   },
   {
@@ -86,40 +112,94 @@ const PLANS_CONFIG = [
     description: "Pour les grandes structures avec des besoins avancés",
     features: {
       users: "Jusqu'à 25",
-      accountants: "5 accès comptables",
-      extraUsers: "5,99 €/utilisateur",
+      accountants: "5",
+      extraUsers: "5,99€/mois",
+      storage: "500 Go",
+      orgCreation: true,
       invoicing: true,
       autoReminders: true,
-      ocr: "Illimité",
+      accountingExports: "Tous formats",
+      eSignature: "Illimité",
+      eInvoicing: true,
+      legalArchive: true,
+      templates: "Illimité",
+      crm: true,
+      catalog: true,
+      ocr: true,
       bankAccounts: "5 comptes",
       cashFlow: true,
       projects: true,
-      signatures: "25 signatures",
-      fileTransfer: "50 Go",
-      crm: true,
-      catalog: true,
+      fileTransfer: "50 Go/transfert",
+      signatures: "25",
+      customFields: "Illimité",
+      calendar: "Illimité",
+      docAutomations: "Illimité",
+      crmAutomations: "Listes auto + Emails",
+      segments: true,
+      analytics: true,
+      cashForecast: true,
       prioritySupport: true,
-      api: true,
     },
   },
 ];
 
-const COMPARISON_ROWS = [
-  { key: "users", label: "Utilisateurs" },
-  { key: "accountants", label: "Accès comptable gratuit" },
-  { key: "extraUsers", label: "Utilisateurs supplémentaires" },
-  { key: "invoicing", label: "Facturation & Devis" },
-  { key: "autoReminders", label: "Relances automatiques" },
-  { key: "ocr", label: "OCR des reçus" },
-  { key: "bankAccounts", label: "Connexion bancaire" },
-  { key: "cashFlow", label: "Gestion de trésorerie" },
-  { key: "projects", label: "Gestion des projets" },
-  { key: "signatures", label: "Signatures email" },
-  { key: "fileTransfer", label: "Transfert de fichier" },
-  { key: "crm", label: "CRM client" },
-  { key: "catalog", label: "Catalogue" },
-  { key: "prioritySupport", label: "Support prioritaire" },
-  { key: "api", label: "Accès API" },
+const COMPARISON_SECTIONS = [
+  {
+    title: "Général",
+    rows: [
+      { key: "users", label: "Utilisateurs inclus" },
+      { key: "accountants", label: "Accès comptables gratuits" },
+      { key: "extraUsers", label: "Utilisateurs supplémentaires" },
+      { key: "storage", label: "Stockage documents" },
+      { key: "orgCreation", label: "Création d'organisation" },
+    ],
+  },
+  {
+    title: "Facturation",
+    rows: [
+      { key: "invoicing", label: "Factures & Devis" },
+      { key: "autoReminders", label: "Relance automatique impayés" },
+      { key: "accountingExports", label: "Exports comptables" },
+      { key: "eSignature", label: "E-signature devis" },
+      { key: "eInvoicing", label: "Facturation électronique" },
+      { key: "legalArchive", label: "Archivage légal" },
+      { key: "templates", label: "Modèles de documents" },
+    ],
+  },
+  {
+    title: "Gestion",
+    rows: [
+      { key: "crm", label: "CRM client" },
+      { key: "catalog", label: "Catalogue produits" },
+      { key: "ocr", label: "Scan de document OCR" },
+      { key: "bankAccounts", label: "Connexion bancaire" },
+      { key: "cashFlow", label: "Gestion de trésorerie" },
+      { key: "projects", label: "Gestion des projets" },
+      { key: "fileTransfer", label: "Transfert de fichier" },
+      { key: "signatures", label: "Signature de mail" },
+      { key: "customFields", label: "Champs personnalisés" },
+      { key: "calendar", label: "Calendrier connecté" },
+    ],
+  },
+  {
+    title: "Automatisations",
+    rows: [
+      { key: "docAutomations", label: "Automatisations documents" },
+      { key: "crmAutomations", label: "Automatisations CRM" },
+      { key: "segments", label: "Segments clients" },
+    ],
+  },
+  {
+    title: "Analytics & Prévisions",
+    rows: [
+      { key: "analytics", label: "Analytics & rapports" },
+      { key: "cashForecast", label: "Prévisions de trésorerie" },
+    ],
+  },
+  {
+    title: "Support",
+    rows: [{ key: "prioritySupport", label: "Support prioritaire" }],
+  },
 ];
 
 export function SubscriptionSection({
@@ -769,63 +849,74 @@ export function SubscriptionSection({
 
         {/* Comparison Rows */}
         <div className="relative before:content-[''] before:absolute before:top-0 before:left-4 before:right-4 before:h-px before:bg-gray-200 dark:before:bg-[#2c2c2c]">
-          {/* Section title */}
-          <div className="grid grid-cols-[1.2fr_1fr_1fr_1fr] relative after:content-[''] after:absolute after:bottom-0 after:left-4 after:right-4 after:h-px after:bg-gray-200 dark:after:bg-[#2c2c2c]">
-            <div className="px-4 py-2 bg-[#FBFBFB] dark:bg-[#111111] border-r border-gray-200 dark:border-[#2c2c2c]">
-              <p className="text-xs font-semibold">Fonctionnalités</p>
-            </div>
-            {PLANS_CONFIG.map((plan) => {
-              const isCurrentPlan = subscription?.plan === plan.key;
-              return (
-                <div
-                  key={plan.key}
-                  className={cn(
-                    "px-4 py-2",
-                    isCurrentPlan && "bg-[#5b50fe]/[0.02] dark:bg-[#5b50fe]/5",
-                  )}
-                />
-              );
-            })}
-          </div>
-
-          {/* Feature rows */}
-          {COMPARISON_ROWS.map((row, index) => (
-            <div
-              key={row.key}
-              className={cn(
-                "grid grid-cols-[1.2fr_1fr_1fr_1fr]",
-                index < COMPARISON_ROWS.length - 1 &&
-                  "relative after:content-[''] after:absolute after:bottom-0 after:left-4 after:right-4 after:h-px after:bg-gray-100 dark:after:bg-[#2c2c2c]",
-              )}
-            >
-              <div className="px-4 py-2.5 bg-[#FBFBFB] dark:bg-[#111111] border-r border-gray-200 dark:border-[#2c2c2c]">
-                <span className="text-xs text-muted-foreground">
-                  {row.label}
-                </span>
+          {COMPARISON_SECTIONS.map((section, sIdx) => (
+            <React.Fragment key={section.title}>
+              {/* Section title */}
+              <div
+                className={cn(
+                  "grid grid-cols-[1.2fr_1fr_1fr_1fr] relative after:content-[''] after:absolute after:bottom-0 after:left-4 after:right-4 after:h-px after:bg-gray-200 dark:after:bg-[#2c2c2c]",
+                  sIdx > 0 &&
+                    "before:content-[''] before:absolute before:top-0 before:left-4 before:right-4 before:h-px before:bg-gray-200 dark:before:bg-[#2c2c2c]",
+                )}
+              >
+                <div className="px-4 py-2 bg-[#FBFBFB] dark:bg-[#111111] border-r border-gray-200 dark:border-[#2c2c2c]">
+                  <p className="text-xs font-semibold">{section.title}</p>
+                </div>
+                {PLANS_CONFIG.map((plan) => {
+                  const isCurrentPlan = subscription?.plan === plan.key;
+                  return (
+                    <div
+                      key={plan.key}
+                      className={cn(
+                        "px-4 py-2",
+                        isCurrentPlan &&
+                          "bg-[#5b50fe]/[0.02] dark:bg-[#5b50fe]/5",
+                      )}
+                    />
+                  );
+                })}
               </div>
-              {PLANS_CONFIG.map((plan) => {
-                const isCurrentPlan = subscription?.plan === plan.key;
-                const value = plan.features[row.key];
-                return (
-                  <div
-                    key={plan.key}
-                    className={cn(
-                      "px-4 py-2.5 flex items-center",
-                      isCurrentPlan &&
-                        "bg-[#5b50fe]/[0.02] dark:bg-[#5b50fe]/5",
-                    )}
-                  >
-                    {value === true ? (
-                      <Check className="h-3.5 w-3.5 text-[#5b50fe]" />
-                    ) : value === false ? (
-                      <X className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600" />
-                    ) : (
-                      <span className="text-xs font-medium">{value}</span>
-                    )}
+
+              {/* Feature rows */}
+              {section.rows.map((row, index) => (
+                <div
+                  key={row.key}
+                  className={cn(
+                    "grid grid-cols-[1.2fr_1fr_1fr_1fr]",
+                    index < section.rows.length - 1 &&
+                      "relative after:content-[''] after:absolute after:bottom-0 after:left-4 after:right-4 after:h-px after:bg-gray-100 dark:after:bg-[#2c2c2c]",
+                  )}
+                >
+                  <div className="px-4 py-2.5 bg-[#FBFBFB] dark:bg-[#111111] border-r border-gray-200 dark:border-[#2c2c2c]">
+                    <span className="text-xs text-muted-foreground">
+                      {row.label}
+                    </span>
                   </div>
-                );
-              })}
-            </div>
+                  {PLANS_CONFIG.map((plan) => {
+                    const isCurrentPlan = subscription?.plan === plan.key;
+                    const value = plan.features[row.key];
+                    return (
+                      <div
+                        key={plan.key}
+                        className={cn(
+                          "px-4 py-2.5 flex items-center",
+                          isCurrentPlan &&
+                            "bg-[#5b50fe]/[0.02] dark:bg-[#5b50fe]/5",
+                        )}
+                      >
+                        {value === true ? (
+                          <Check className="h-3.5 w-3.5 text-[#5b50fe]" />
+                        ) : value === false ? (
+                          <X className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600" />
+                        ) : (
+                          <span className="text-xs font-medium">{value}</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </React.Fragment>
           ))}
         </div>
       </div>
