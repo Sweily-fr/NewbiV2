@@ -166,15 +166,6 @@ export const useDeleteClientLists = () => {
   };
 };
 
-const evictClients = (cache, clientIds) => {
-  const ids = Array.isArray(clientIds) ? clientIds : [clientIds];
-  ids.forEach((id) => {
-    if (!id) return;
-    cache.evict({ id: cache.identify({ __typename: "Client", id }) });
-  });
-  cache.gc();
-};
-
 export const useAddClientToList = () => {
   const [addClient, { loading, error }] = useMutation(ADD_CLIENT_TO_LIST);
 
@@ -190,7 +181,6 @@ export const useAddClientToList = () => {
               variables: { workspaceId, clientId },
             },
           ],
-          update: (cache) => evictClients(cache, clientId),
         });
         return data.addClientToList;
       } catch (err) {
@@ -220,7 +210,6 @@ export const useRemoveClientFromList = () => {
               variables: { workspaceId, clientId },
             },
           ],
-          update: (cache) => evictClients(cache, clientId),
         });
         return data.removeClientFromList;
       } catch (err) {
@@ -247,7 +236,6 @@ export const useAddClientsToList = () => {
           refetchQueries: [
             { query: GET_CLIENT_LISTS, variables: { workspaceId } },
           ],
-          update: (cache) => evictClients(cache, clientIds),
         });
         return data.addClientsToList;
       } catch (err) {
@@ -273,7 +261,6 @@ export const useRemoveClientsFromList = () => {
           refetchQueries: [
             { query: GET_CLIENT_LISTS, variables: { workspaceId } },
           ],
-          update: (cache) => evictClients(cache, clientIds),
         });
         return data.removeClientsFromList;
       } catch (err) {
@@ -304,7 +291,6 @@ export const useAddClientToLists = () => {
               variables: { workspaceId, clientId },
             },
           ],
-          update: (cache) => evictClients(cache, clientId),
         });
         return data.addClientToLists;
       } catch (err) {
@@ -334,7 +320,6 @@ export const useRemoveClientFromLists = () => {
               variables: { workspaceId, clientId },
             },
           ],
-          update: (cache) => evictClients(cache, clientId),
         });
         return data.removeClientFromLists;
       } catch (err) {
