@@ -13,6 +13,12 @@ export function useDashboardLayoutSimple() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const [subscription, setSubscription] = useState(null);
+  // Tracks whether the last subscription fetch returned authoritative data.
+  // Default `true` so the initial render doesn't trigger the "read-only"
+  // fallback before the first fetch lands. Flipped to `false` on network /
+  // 403 / 500 errors so downstream hooks (useSubscriptionAccess) can treat
+  // the absence of a subscription as "unknown" rather than "expired".
+  const [lastFetchOk, setLastFetchOk] = useState(true);
 
   // Données de session
   const { data: session, isPending: sessionLoading } = useSession();
@@ -160,8 +166,6 @@ export function useDashboardLayoutSimple() {
       try {
         setIsLoading(true);
 
-        // Fetch subscription silently
-
         // ✅ Utiliser l'API personnalisée qui récupère directement depuis MongoDB
         // (inclut les abonnements canceled, contrairement à Better Auth subscription.list)
         const response = await fetch(
@@ -169,14 +173,28 @@ export function useDashboardLayoutSimple() {
         );
         const data = await response.json();
 
-        // Result received
-
         if (response.ok && data) {
+          setLastFetchOk(true);
           // Vérifier si l'abonnement est actif ou encore valide (canceled mais dans la période payée)
           let activeSubscription = null;
 
-          // Si pas d'abonnement ou abonnement expiré
-          if (data.isDefault || data.status === "expired" || !data.status) {
+          // App-managed trial check (feature-flagged via API). When the flag is
+          // OFF the API returns appTrialEnabled=false, so this branch is
+          // skipped and the legacy behaviour below runs unchanged.
+          const trialActive =
+            data.appTrialEnabled === true &&
+            data.isTrialActive === true &&
+            data.trialEndDate &&
+            new Date(data.trialEndDate) > new Date();
+
+          if (trialActive) {
+            // Trial app actif → on conserve les champs trial même sans sub Stripe
+            activeSubscription = data;
+          } else if (
+            data.isDefault ||
+            data.status === "expired" ||
+            !data.status
+          ) {
             // No active subscription
             activeSubscription = null;
           } else if (data.status === "active" || data.status === "trialing") {
@@ -207,8 +225,14 @@ export function useDashboardLayoutSimple() {
               console.warn("Erreur sauvegarde cache abonnement:", error);
             }
           }
+        } else {
+          // Non-ok response (4xx/5xx) — don't conclude "expired" from this.
+          // Mark fetch as failed so downstream hooks can avoid red banners.
+          setLastFetchOk(false);
         }
       } catch (error) {
+        // Network error — same safety net: don't conclude "expired".
+        setLastFetchOk(false);
         console.warn("Erreur récupération abonnement:", error);
       } finally {
         setIsLoading(false);
@@ -498,7 +522,8 @@ export function useDashboardLayoutSimple() {
               if (
                 isValidCache &&
                 (cachedSub?.status === "active" ||
-                  cachedSub?.status === "trialing")
+                  cachedSub?.status === "trialing" ||
+                  cachedSub?.status === "past_due")
               ) {
                 return true; // Utiliser le cache valide pendant le chargement
               }
@@ -512,6 +537,18 @@ export function useDashboardLayoutSimple() {
                   return true;
                 }
               }
+              // App-managed trial active (feature-flagged via API). When the
+              // flag was OFF on the previous fetch, appTrialEnabled is false
+              // in the cached payload and this branch is skipped.
+              if (
+                isValidCache &&
+                cachedSub?.appTrialEnabled === true &&
+                cachedSub?.isTrialActive === true &&
+                cachedSub?.trialEndDate &&
+                new Date(cachedSub.trialEndDate) > new Date()
+              ) {
+                return true;
+              }
             }
           } catch {
             // Ignorer les erreurs de cache
@@ -522,10 +559,14 @@ export function useDashboardLayoutSimple() {
         return false;
       }
 
-      // Vérifier si l'abonnement Stripe est actif ou en période d'essai Stripe
+      // Vérifier si l'abonnement Stripe est actif ou en période d'essai Stripe.
+      // Décision #12 (Lot 5) — past_due (grace period Stripe pendant retries)
+      // est aligné avec le backend : l'utilisateur garde l'accès, une bannière
+      // d'avertissement s'affiche en parallèle.
       const hasActiveSubscription =
         subscription?.status === "active" ||
-        subscription?.status === "trialing";
+        subscription?.status === "trialing" ||
+        subscription?.status === "past_due";
 
       // ✅ Vérifier aussi si l'abonnement est annulé mais encore dans la période payée (prorata)
       const hasCanceledButValidSubscription =
@@ -533,19 +574,29 @@ export function useDashboardLayoutSimple() {
         subscription?.periodEnd &&
         new Date(subscription.periodEnd) > new Date();
 
-      const hasValidSubscription =
-        hasActiveSubscription || hasCanceledButValidSubscription;
+      // App-managed trial (feature-flagged via API). When the flag is OFF,
+      // appTrialEnabled is false and this branch is a no-op.
+      const hasActiveAppTrial =
+        subscription?.appTrialEnabled === true &&
+        subscription?.isTrialActive === true &&
+        subscription?.trialEndDate &&
+        new Date(subscription.trialEndDate) > new Date();
 
-      // Si on exige un abonnement payant, ignorer la période d'essai Stripe (trialing)
+      const hasValidSubscription =
+        hasActiveSubscription ||
+        hasCanceledButValidSubscription ||
+        hasActiveAppTrial;
+
+      // Si on exige un abonnement payant, ignorer toute forme de trial (Stripe ET app)
       if (requirePaidSubscription) {
         return (
           subscription?.status === "active" || hasCanceledButValidSubscription
         );
       }
 
-      // ⚠️ IMPORTANT: On ne fait plus de fallback sur le trial organisation
-      // Seuls les abonnements Stripe sont acceptés (active, trialing, canceled valide)
-      // Les anciens utilisateurs avec trial organisation devront souscrire via Stripe
+      // ⚠️ IMPORTANT: On ne fait plus de fallback sur le trial organisation legacy
+      // Seuls les abonnements Stripe (active, trialing, canceled valide) et le
+      // trial app-managed (feature-flagged) sont acceptés.
       return hasValidSubscription;
     },
     [
@@ -611,6 +662,9 @@ export function useDashboardLayoutSimple() {
       isHydrated,
       refreshLayoutData,
       invalidateOrganizationCache: refreshLayoutData,
+      // Lot 3 safety net: when the fetch fails, downstream hooks must NOT
+      // conclude "subscription expired" from the absence of data.
+      lastFetchOk,
       cacheInfo: {
         lastUpdate: null,
         isFromCache: false,
@@ -632,6 +686,7 @@ export function useDashboardLayoutSimple() {
       combinedInitialized,
       isHydrated,
       refreshLayoutData,
+      lastFetchOk,
     ],
   );
 }

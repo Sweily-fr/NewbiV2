@@ -39,7 +39,11 @@ const onboardingDataSchema = z
 
 export const onboardingStepSchema = z
   .object({
-    step: z.enum(["workspace", "plan", "recap"]), // "completed" excluded — webhook only
+    // "completed" is allowed only for the app-managed trial signup shortcut.
+    // The route handler enforces the ENABLE_APP_TRIAL feature flag in
+    // addition to this schema, so the historical webhook-only path remains
+    // the only way to reach "completed" when the flag is OFF.
+    step: z.enum(["workspace", "plan", "recap", "completed"]),
     data: onboardingDataSchema.optional(),
   })
   .strict();

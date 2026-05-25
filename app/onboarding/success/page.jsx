@@ -35,11 +35,6 @@ function SuccessContent() {
   const hasStartedRef = useRef(false);
   const { theme, setTheme } = useTheme();
   const [selectedTheme, setSelectedTheme] = useState(theme || "light");
-  // Org ID returned by verify-checkout-session — the one Stripe just
-  // attached the subscription to. We must activate THIS org, not orgs[0],
-  // otherwise a re-subscribing user with multiple orgs lands on an org
-  // without a sub and dashboard/layout.jsx bounces them back to /auth/signup.
-  const checkoutOrgIdRef = useRef(null);
 
   // Invite state
   const [inviteEmails, setInviteEmails] = useState([]);
@@ -127,11 +122,31 @@ function SuccessContent() {
     hasStartedRef.current = true;
 
     const completeOnboarding = async () => {
+      // Décision #5 (Lot 5) — quand on arrive ici SANS session_id Stripe,
+      // c'est le nouveau flow app-trial : l'org existe déjà (créée à
+      // user.create.after), on affiche directement le welcome screen.
       if (!sessionId) {
+        // Refresh session client pour s'assurer que activeOrganizationId
+        // est bien posé avant les étapes invite/theme.
+        try {
+          await authClient.getSession({
+            fetchOptions: { cache: "no-store" },
+          });
+          const { data: orgs } = await authClient.organization.list();
+          if (orgs?.length > 0) {
+            await authClient.organization.setActive({
+              organizationId: orgs[0].id,
+            });
+          }
+        } catch {
+          // Non-fatal — l'invite step se rabattra sur l'API si besoin.
+        }
         setReady(true);
         return;
       }
 
+      // Flow historique (flag OFF) — polling Stripe → verify-checkout-session.
+      // Conservé tel quel pour la cohorte legacy qui passe par Stripe au signup.
       const maxAttempts = 15;
       for (let i = 0; i < maxAttempts; i++) {
         try {
@@ -141,12 +156,7 @@ function SuccessContent() {
           const data = await res.json();
 
           if (data.success) {
-            // Remember the org Stripe attached the new sub to, so the final
-            // "Continuer" click activates the right one (and dashboard
-            // server-side check finds the subscription).
-            checkoutOrgIdRef.current = data.organizationId || null;
-
-            // Refresh client session & set the newly subscribed org as active.
+            // Refresh client session & set the newly created org as active.
             // The Stripe webhook updated sessions in DB but the client still
             // has the old (org-less) session in memory. Without this refresh,
             // the invite step fails with "Aucune organisation trouvée".
@@ -156,13 +166,8 @@ function SuccessContent() {
               });
               const { data: orgs } = await authClient.organization.list();
               if (orgs?.length > 0) {
-                const targetOrgId =
-                  checkoutOrgIdRef.current &&
-                  orgs.some((o) => o.id === checkoutOrgIdRef.current)
-                    ? checkoutOrgIdRef.current
-                    : orgs[0].id;
                 await authClient.organization.setActive({
-                  organizationId: targetOrgId,
+                  organizationId: orgs[0].id,
                 });
               }
             } catch {}
@@ -219,32 +224,13 @@ function SuccessContent() {
     try {
       const { data: organizations } = await authClient.organization.list();
       if (organizations?.length > 0) {
-        // Prefer the org Stripe just attached the subscription to (set during
-        // the verify-checkout-session step). Falls back to orgs[0] only if
-        // that org no longer exists in the list (defensive).
-        const targetOrgId =
-          checkoutOrgIdRef.current &&
-          organizations.some((o) => o.id === checkoutOrgIdRef.current)
-            ? checkoutOrgIdRef.current
-            : organizations[0].id;
         await authClient.organization.setActive({
-          organizationId: targetOrgId,
-        });
-        // Force a session refresh so the cookie/server-side session reflects
-        // activeOrganizationId BEFORE we navigate. Without this, dashboard's
-        // server-component layout can read a stale activeOrganizationId and
-        // bounce the user back to /auth/signup.
-        await authClient.getSession({
-          fetchOptions: { cache: "no-store" },
+          organizationId: organizations[0].id,
         });
       }
-    } catch (err) {
-      console.error("[ONBOARDING/SUCCESS] setActive failed:", err);
-    }
+    } catch {}
 
-    // Use a hard navigation rather than client-side router.push, so the
-    // dashboard server component re-runs with fresh cookies (no client cache).
-    window.location.assign("/dashboard?welcome=true");
+    router.push("/dashboard?welcome=true");
   };
 
   if (error) {

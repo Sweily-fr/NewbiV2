@@ -6,6 +6,7 @@ import {
   toObjectId,
   withErrorHandler,
 } from "@/src/lib/security";
+import { isAppTrialEnabled } from "@/src/lib/feature-flags";
 
 /**
  * GET /api/organizations/[organizationId]/subscription
@@ -19,17 +20,48 @@ async function handler(request, { params }) {
 
   await requireOrgMembership(user.id, organizationId);
 
-  // Subscription lookup (referenceId stored as string by org-creation.js)
   const orgObjectId = toObjectId(organizationId);
-  const subscription = await mongoDb.collection("subscription").findOne({
-    $or: [{ organizationId: orgObjectId }, { referenceId: organizationId }],
-  });
+
+  // Fetch subscription + organization in parallel — the organization carries
+  // the app-managed trial flags (trialEndDate / isTrialActive / stripeTrialActive)
+  // that the frontend needs to render trial state alongside the Stripe sub.
+  const [subscription, orgDoc] = await Promise.all([
+    mongoDb.collection("subscription").findOne({
+      $or: [{ organizationId: orgObjectId }, { referenceId: organizationId }],
+    }),
+    mongoDb.collection("organization").findOne(
+      { _id: orgObjectId },
+      {
+        projection: {
+          isTrialActive: 1,
+          trialEndDate: 1,
+          trialStartDate: 1,
+          stripeTrialActive: 1,
+          hasUsedTrial: 1,
+        },
+      },
+    ),
+  ]);
+
+  // `appTrialEnabled` is the server-side feature flag mirrored into the
+  // response so client components (which cannot read process.env directly)
+  // can gate any trial-aware behaviour. When this flag is false, clients
+  // MUST ignore the trial fields and behave exactly as before.
+  const trial = {
+    appTrialEnabled: isAppTrialEnabled(),
+    isTrialActive: orgDoc?.isTrialActive ?? false,
+    trialStartDate: orgDoc?.trialStartDate ?? null,
+    trialEndDate: orgDoc?.trialEndDate ?? null,
+    stripeTrialActive: orgDoc?.stripeTrialActive ?? false,
+    hasUsedTrial: orgDoc?.hasUsedTrial ?? false,
+  };
 
   if (!subscription) {
     return NextResponse.json({
       plan: null,
       status: null,
       isDefault: true,
+      ...trial,
     });
   }
 
@@ -49,6 +81,7 @@ async function handler(request, { params }) {
       periodEnd: subscription.periodEnd,
       isDefault: false,
       isExpired: true,
+      ...trial,
     });
   }
 
@@ -61,6 +94,7 @@ async function handler(request, { params }) {
     periodEnd: subscription.periodEnd,
     cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
     isDefault: false,
+    ...trial,
   });
 }
 

@@ -2,24 +2,34 @@ import { ObjectId } from "mongodb";
 import { toObjectId } from "@/src/lib/security/to-object-id";
 
 /**
- * Shared idempotent utility for organization + member + subscription + invitations creation.
- * Called from both the Stripe webhook (auth-plugins.js) and verify-checkout-session fallback.
+ * Shared idempotent utility for organization + member + (optional) subscription
+ * + invitations creation. Called from:
+ *   - The Stripe webhook (auth-plugins.js) — passes `subscriptionInfo`
+ *   - The verify-checkout-session fallback — passes `subscriptionInfo`
+ *   - `databaseHooks.user.create.after` for the app-managed trial — passes
+ *     `appTrialDays: 14` and NO `subscriptionInfo`
  *
  * @param {Object} input
  * @param {Object} input.mongoDb - MongoDB database instance
  * @param {string} input.userId - Better Auth user ID
  * @param {Object} input.orgData - Organization fields (companyName, siret, siren, etc.)
- * @param {Object} input.subscriptionInfo - Stripe subscription object
- * @param {Object} input.sessionMetadata - Checkout session metadata
- * @param {Object|null} input.pendingOrgData - Data from pending_org_data collection
- * @param {string|null} input.pendingOrgDataId - ID of pending_org_data doc to clean up
+ * @param {Object|null} [input.subscriptionInfo] - Stripe subscription object (omit for trial-only)
+ * @param {number|null} [input.appTrialDays] - When set, grants an app-managed
+ *   trial of this length on the org (sets isTrialActive/trialStartDate/
+ *   trialEndDate/hasUsedTrial). Mutually compatible with Stripe `trialing` but
+ *   sets `stripeTrialActive: false` to mark the origin as app-managed.
+ * @param {Object} [input.sessionMetadata] - Checkout session metadata
+ * @param {Object|null} [input.pendingOrgData] - Data from pending_org_data collection
+ * @param {string|null} [input.pendingOrgDataId] - ID of pending_org_data doc to clean up
  * @returns {Promise<Object>} Result with organizationId, flags for what was created
  */
 export async function createOrganizationWithSubscription({
   mongoDb,
   userId,
   orgData,
-  subscriptionInfo,
+  subscriptionInfo = null,
+  appTrialDays = null,
+  markOnboardingComplete = true,
   sessionMetadata = {},
   pendingOrgData = null,
   pendingOrgDataId = null,
@@ -230,22 +240,82 @@ export async function createOrganizationWithSubscription({
   // ──────────────────────────────────────────────
   // 4. Update user — mark onboarding as completed
   // ──────────────────────────────────────────────
-  await mongoDb.collection("user").updateOne(
-    { _id: new ObjectId(userId) },
-    {
-      $set: {
-        hasSeenOnboarding: true,
-        onboardingStep: "completed",
-        updatedAt: new Date(),
+  // Skipped when markOnboardingComplete=false (e.g. when called from
+  // databaseHooks.user.create.after, where the org is a placeholder and the
+  // user still has to fill the workspace step before being marked completed).
+  if (markOnboardingComplete) {
+    await mongoDb.collection("user").updateOne(
+      { _id: new ObjectId(userId) },
+      {
+        $set: {
+          hasSeenOnboarding: true,
+          onboardingStep: "completed",
+          updatedAt: new Date(),
+        },
+        $unset: {
+          onboardingData: "",
+        },
       },
-      $unset: {
-        onboardingData: "",
-      },
-    },
-  );
-  console.log(
-    `✅ [ORG-CREATION] onboardingStep set to "completed" for userId: ${userId}`,
-  );
+    );
+    console.log(
+      `✅ [ORG-CREATION] onboardingStep set to "completed" for userId: ${userId}`,
+    );
+  }
+
+  // ──────────────────────────────────────────────
+  // 4b. App-managed trial (no Stripe subscription)
+  // ──────────────────────────────────────────────
+  // Used by databaseHooks.user.create.after when ENABLE_APP_TRIAL is ON.
+  // Sets trial fields directly on the organization without creating a Stripe
+  // subscription. stripeTrialActive: false discriminates this from a Stripe
+  // trial (set elsewhere when subscriptionInfo.status === "trialing").
+  if (appTrialDays && !subscriptionInfo) {
+    // Decision #16: only the user's FIRST org gets the trial. Additional orgs
+    // created later must NOT re-grant a trial — detect by checking whether
+    // the user already had any other org marked hasUsedTrial.
+    let anotherTrialUsedOrg = null;
+    try {
+      const otherMember = await mongoDb.collection("member").findOne({
+        userId: new ObjectId(userId),
+        organizationId: { $ne: organizationObjectId },
+      });
+      if (otherMember) {
+        anotherTrialUsedOrg = await mongoDb
+          .collection("organization")
+          .findOne(
+            { _id: otherMember.organizationId, hasUsedTrial: true },
+            { projection: { _id: 1 } },
+          );
+      }
+    } catch (err) {
+      console.warn(`⚠️ [ORG-CREATION] Decision-16 check failed:`, err.message);
+    }
+
+    if (anotherTrialUsedOrg) {
+      console.log(
+        `🚫 [ORG-CREATION] Decision #16 — user already used a trial on another org, no app-trial granted`,
+      );
+    } else {
+      const now = new Date();
+      const end = new Date(now.getTime() + appTrialDays * 24 * 60 * 60 * 1000);
+      await mongoDb.collection("organization").updateOne(
+        { _id: organizationObjectId },
+        {
+          $set: {
+            isTrialActive: true,
+            trialStartDate: now.toISOString(),
+            trialEndDate: end.toISOString(),
+            hasUsedTrial: true,
+            stripeTrialActive: false,
+            updatedAt: now,
+          },
+        },
+      );
+      console.log(
+        `✅ [ORG-CREATION] App-managed trial granted (${appTrialDays} days) on org ${result.organizationId}`,
+      );
+    }
+  }
 
   // ──────────────────────────────────────────────
   // 5. Create subscription (with duplicate key catch)

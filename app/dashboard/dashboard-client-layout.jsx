@@ -30,6 +30,7 @@ import { AccountingViewProvider } from "@/src/contexts/accounting-view-context";
 import { FloatingTimer } from "@/src/components/FloatingTimer";
 import { SubscriptionBlockedDialog } from "@/src/components/subscription-blocked-dialog";
 import { SubscriptionReadOnlyBanner } from "@/src/components/subscription-readonly-banner";
+import { TrialBanner } from "@/src/components/trial-banner";
 import { OAuthCallbackHandler } from "@/src/components/oauth-callback-handler";
 // DÉSACTIVÉ: SuperPDP API pas encore active
 // import { EInvoicingPromoModal } from "@/src/components/e-invoicing-promo-modal";
@@ -40,7 +41,6 @@ import { BottomNavBar } from "@/src/components/bottom-nav-bar";
 import { PwaInstallBanner } from "@/src/components/pwa-install-banner";
 import { SessionGateProvider } from "@/src/contexts/session-gate-context";
 import { InactivityDetector } from "@/src/components/inactivity-detector";
-import { SessionValidityDetector } from "@/src/components/session-validity-detector";
 import { apolloClient } from "@/src/lib/apolloClient";
 import { gql } from "@apollo/client";
 
@@ -359,11 +359,11 @@ function DashboardContent({ children }) {
         <SidebarInset>
           <SiteHeader />
           <SubscriptionReadOnlyBanner />
+          <TrialBanner />
           <div className="flex flex-1 flex-col overflow-y-auto">
             <div className="flex flex-1 flex-col gap-2 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0">
               <SessionGateProvider>{children}</SessionGateProvider>
               <InactivityDetector />
-              <SessionValidityDetector />
             </div>
           </div>
         </SidebarInset>
