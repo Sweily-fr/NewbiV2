@@ -252,6 +252,8 @@ export function SendDocumentModal({
         bccEmails: data.bccEmails?.filter((e) => e && e.trim()) || [],
         pdfBase64,
         attachments: extraAttachments,
+        useCustomFooter: Boolean(data.useCustomFooter),
+        customEmailFooter: data.customEmailFooter || "",
       };
 
       let result;
