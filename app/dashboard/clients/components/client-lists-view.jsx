@@ -16,6 +16,7 @@ import {
   ChevronRightIcon,
   List,
   Plus,
+  UserPlus,
 } from "lucide-react";
 import {
   Empty,
@@ -34,6 +35,7 @@ import {
 import EditListDialog from "./edit-list-dialog";
 import DeleteListDialog from "./delete-list-dialog";
 import ListClientsView from "./list-clients-view";
+import AddClientsToListDialog from "./add-clients-to-list-dialog";
 import { useDeleteClientList } from "@/src/hooks/useClientLists";
 import {
   DropdownMenu,
@@ -78,6 +80,7 @@ export default function ClientListsView({
   const [selectedList, setSelectedList] = useState(initialSelectedList || null);
   const [editingList, setEditingList] = useState(null);
   const [deletingList, setDeletingList] = useState(null);
+  const [addingClientsToList, setAddingClientsToList] = useState(null);
   const { deleteList } = useDeleteClientList();
 
   // Mettre à jour selectedList quand initialSelectedList change
@@ -220,6 +223,13 @@ export default function ClientListsView({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => setAddingClientsToList(list)}
+                    className="cursor-pointer"
+                  >
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Ajouter des contacts
+                  </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setEditingList(list)}
                     className="cursor-pointer"
@@ -512,6 +522,19 @@ export default function ClientListsView({
           workspaceId={workspaceId}
           list={deletingList}
           onListDeleted={() => handleDeleteList(deletingList.id)}
+        />
+      )}
+
+      {addingClientsToList && (
+        <AddClientsToListDialog
+          open={!!addingClientsToList}
+          onOpenChange={(open) => !open && setAddingClientsToList(null)}
+          workspaceId={workspaceId}
+          list={addingClientsToList}
+          onClientsAdded={() => {
+            onListsUpdated?.();
+            setAddingClientsToList(null);
+          }}
         />
       )}
     </div>
