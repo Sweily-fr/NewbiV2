@@ -93,8 +93,12 @@ export function ManualEntryDialog({ open, onOpenChange, entry, defaults }) {
       setNotes(entry.notes || "");
     } else {
       setType(defaults?.type || "EXPENSE");
-      setAmount("");
-      setName("");
+      setAmount(
+        defaults?.amount != null && !Number.isNaN(defaults.amount)
+          ? String(defaults.amount)
+          : "",
+      );
+      setName(defaults?.name || "");
       // If defaults has a month (YYYY-MM), set startDate to first of that month
       if (defaults?.month) {
         setStartDate(`${defaults.month}-01`);
@@ -102,11 +106,12 @@ export function ManualEntryDialog({ open, onOpenChange, entry, defaults }) {
         setStartDate(todayInput());
       }
       setEndDate("");
-      setHasFrequency(false);
-      setFrequency("MONTHLY");
+      // T9 — pré-cocher la récurrence si une fréquence est passée en defaults
+      setHasFrequency(Boolean(defaults?.hasFrequency || defaults?.frequency));
+      setFrequency(defaults?.frequency || "MONTHLY");
       setNotes("");
     }
-  }, [open, entry]);
+  }, [open, entry, defaults]);
 
   const parsedAmount = parseFloat(amount);
   const canSubmit =
@@ -139,8 +144,8 @@ export function ManualEntryDialog({ open, onOpenChange, entry, defaults }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px] p-1 gap-0 top-[40%] border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
-        <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
+      <DialogContent className="sm:max-w-[520px] p-1 gap-0 border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl max-h-[90vh] flex flex-col">
+        <div className="bg-background rounded-xl overflow-y-auto ring-1 ring-black/[0.07] dark:ring-white/[0.1] flex-1 min-h-0">
           <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
             <DialogTitle className="text-sm font-medium flex items-center gap-2">
               {type === "INCOME" ? (

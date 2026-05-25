@@ -159,10 +159,20 @@ export function AnalyticsProductChart({ revenueByProduct, loading }) {
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
             <XAxis
               type="number"
-              tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+              tickFormatter={(v) => {
+                if (!v) return "0";
+                if (Math.abs(v) >= 1_000_000)
+                  return `${(v / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+                if (Math.abs(v) >= 1000)
+                  return `${(v / 1000).toFixed(1).replace(/\.0$/, "")}K`;
+                return new Intl.NumberFormat("fr-FR", {
+                  maximumFractionDigits: 0,
+                }).format(v);
+              }}
               tick={{ fontSize: 11 }}
               tickLine={false}
               axisLine={false}
+              allowDuplicatedCategory={false}
             />
             <YAxis type="category" dataKey="shortDesc" hide width={0} />
             <Tooltip content={<CustomTooltip />} />

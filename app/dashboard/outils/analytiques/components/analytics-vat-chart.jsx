@@ -10,8 +10,6 @@ import {
   CardTitle,
 } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { useChartColors } from "@/src/hooks/useChartColors";
-
 const formatCurrency = (value) =>
   new Intl.NumberFormat("fr-FR", {
     style: "currency",
@@ -32,7 +30,10 @@ const formatMonthLabel = (monthStr) => {
   );
 };
 
-function CustomTooltip({ active, payload, remap }) {
+const COLLECTED_VAT_COLOR = "#5b50ff"; // violet
+const DEDUCTIBLE_VAT_COLOR = "#f59e0b"; // ambre — différencier nettement
+
+function CustomTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;
   const data = payload[0]?.payload;
   if (!data) return null;
@@ -43,34 +44,55 @@ function CustomTooltip({ active, payload, remap }) {
     month: "long",
     year: "numeric",
   });
+  const net = (data.revenueVAT || 0) - (data.expenseVAT || 0);
 
   return (
     <div className="rounded-lg border bg-background p-3 shadow-sm text-sm">
       <p className="font-medium mb-2 capitalize">{label}</p>
-      <div className="flex items-center justify-between gap-6">
-        <span className="flex items-center gap-2">
-          <span
-            className="h-2.5 w-2.5 rounded-full"
-            style={{ backgroundColor: remap("#5b50ff") }}
-          />
-          TVA collectée
-        </span>
-        <span className="font-medium">{formatCurrency(data.revenueVAT)}</span>
+      <div className="space-y-1">
+        <div className="flex items-center justify-between gap-6">
+          <span className="flex items-center gap-2">
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ backgroundColor: COLLECTED_VAT_COLOR }}
+            />
+            TVA collectée
+          </span>
+          <span className="font-medium">{formatCurrency(data.revenueVAT)}</span>
+        </div>
+        <div className="flex items-center justify-between gap-6">
+          <span className="flex items-center gap-2">
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ backgroundColor: DEDUCTIBLE_VAT_COLOR }}
+            />
+            TVA déductible
+          </span>
+          <span className="font-medium">{formatCurrency(data.expenseVAT)}</span>
+        </div>
+        <div className="flex items-center justify-between gap-6 text-muted-foreground border-t pt-1 mt-1">
+          <span>TVA nette à reverser</span>
+          <span className={net < 0 ? "text-emerald-600" : ""}>
+            {formatCurrency(net)}
+          </span>
+        </div>
       </div>
     </div>
   );
 }
 
 export function AnalyticsVatChart({ monthlyRevenue, loading }) {
-  const { remap } = useChartColors();
   const chartConfig = {
-    revenueVAT: { label: "TVA collectée", color: remap("#5b50ff") },
+    revenueVAT: { label: "TVA collectée", color: COLLECTED_VAT_COLOR },
+    expenseVAT: { label: "TVA déductible", color: DEDUCTIBLE_VAT_COLOR },
   };
   const chartData = useMemo(() => {
     if (!monthlyRevenue?.length) return [];
     return monthlyRevenue.map((m) => ({
       ...m,
       monthLabel: formatMonthLabel(m.month),
+      revenueVAT: m.revenueVAT || 0,
+      expenseVAT: m.expenseVAT || 0,
     }));
   }, [monthlyRevenue]);
 
@@ -137,12 +159,20 @@ export function AnalyticsVatChart({ monthlyRevenue, loading }) {
               axisLine={false}
               width={35}
             />
-            <Tooltip content={<CustomTooltip remap={remap} />} />
+            <Tooltip content={<CustomTooltip />} />
             <Bar
               dataKey="revenueVAT"
-              fill={remap("#5b50ff")}
+              name="TVA collectée"
+              fill={COLLECTED_VAT_COLOR}
               radius={[4, 4, 0, 0]}
-              barSize={20}
+              barSize={18}
+            />
+            <Bar
+              dataKey="expenseVAT"
+              name="TVA déductible"
+              fill={DEDUCTIBLE_VAT_COLOR}
+              radius={[4, 4, 0, 0]}
+              barSize={18}
             />
           </BarChart>
         </ChartContainer>

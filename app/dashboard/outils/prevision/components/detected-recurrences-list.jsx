@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { EyeOff, Eye, RefreshCw } from "lucide-react";
+import { EyeOff, Eye, RefreshCw, Plus } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
   useDetectedRecurrences,
@@ -45,7 +45,7 @@ const formatCurrency = (value) =>
 
 const PAGE_SIZE = 5;
 
-export function DetectedRecurrencesList() {
+export function DetectedRecurrencesList({ onCreateForecast }) {
   const { recurrences, loading } = useDetectedRecurrences();
   const { setMuted, loading: muting } = useMuteDetectedRecurrence();
   const { runDetection, loading: detecting } = useRunRecurrenceDetection();
@@ -136,6 +136,24 @@ export function DetectedRecurrencesList() {
                       {isIncome ? "+" : "−"}
                       {formatCurrency(rec.averageAmount)}
                     </span>
+                    {onCreateForecast && !rec.isMuted && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onCreateForecast({
+                            type: rec.type,
+                            name: rec.partyName,
+                            amount: rec.averageAmount,
+                            frequency: "MONTHLY",
+                            category: rec.category,
+                          })
+                        }
+                        className="p-1 rounded-md text-muted-foreground/40 hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
+                        title="Créer une prévision récurrente à partir de cette détection"
+                      >
+                        <Plus size={13} />
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => setMuted(rec.id, !rec.isMuted)}

@@ -20,6 +20,7 @@ import {
   Lock,
   TrendingUp,
   AlertTriangle,
+  Plus,
 } from "lucide-react";
 import { ManualEntryDialog } from "./components/manual-entry-dialog";
 import {
@@ -46,16 +47,18 @@ const PERIOD_OPTIONS = [
 
 const getDateRange = (periodMonths) => {
   const now = new Date();
-  const half = Math.floor(periodMonths / 2);
 
-  const start = new Date(now);
-  start.setMonth(start.getMonth() - half);
+  // Démarre au mois en cours et couvre periodMonths mois inclus (mois en cours + N-1 suivants)
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
   const startStr = `${start.getFullYear()}-${String(
     start.getMonth() + 1,
   ).padStart(2, "0")}`;
 
-  const end = new Date(now);
-  end.setMonth(end.getMonth() + (periodMonths - half));
+  const end = new Date(
+    now.getFullYear(),
+    now.getMonth() + (periodMonths - 1),
+    1,
+  );
   const endStr = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(
     2,
     "0",
@@ -163,11 +166,22 @@ export default function PrevisionPage() {
             />
             <Button
               variant="primary"
+              onClick={() => {
+                setManualEntryDefaults(null);
+                setManualEntryOpen(true);
+              }}
+              className="cursor-pointer"
+            >
+              <Plus className="w-4 h-4" aria-hidden="true" />
+              Ajouter une prévision
+            </Button>
+            <Button
+              variant="outline"
               onClick={() => setExportOpen(true)}
               className="cursor-pointer"
             >
               <ExportIcon className="w-3.5 h-3.5" aria-hidden="true" />
-              Exporter la prévision
+              Exporter
             </Button>
           </div>
         </div>
@@ -371,8 +385,21 @@ export default function PrevisionPage() {
       </div>
 
       {/* ─── Auto-detected recurrences ─── */}
+      {/* T9 — chaque récurrence détectée peut être convertie en prévision récurrente */}
       <div className="px-4 sm:px-6 pb-6">
-        <DetectedRecurrencesList />
+        <DetectedRecurrencesList
+          onCreateForecast={(seed) => {
+            setManualEntryDefaults({
+              type: seed.type,
+              name: seed.name,
+              amount: seed.amount,
+              frequency: seed.frequency,
+              category: seed.category,
+              hasFrequency: true,
+            });
+            setManualEntryOpen(true);
+          }}
+        />
       </div>
 
       {/* TODO: réactiver la section KPIs Table

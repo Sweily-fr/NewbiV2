@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@apollo/client";
 import { useDashboardData } from "@/src/hooks/useDashboardData";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useChartColors } from "@/src/hooks/useChartColors";
+import { usePurchaseInvoiceStats } from "@/src/hooks/usePurchaseInvoices";
 import {
   getIncomeChartConfig,
   getExpenseChartConfig,
@@ -20,10 +21,44 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/src/components/ui/avatar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
+
+// T1 : filtres période pour le CA (mensuel, trimestriel, annuel)
+const CA_PERIOD_OPTIONS = [
+  { value: "month", label: "Mensuel" },
+  { value: "quarter", label: "Trimestriel" },
+  { value: "year", label: "Annuel" },
+];
+
+function getCaPeriodRange(period) {
+  const now = new Date();
+  switch (period) {
+    case "month":
+      return {
+        start: new Date(now.getFullYear(), now.getMonth(), 1),
+        end: now,
+      };
+    case "quarter": {
+      const qm = Math.floor(now.getMonth() / 3) * 3;
+      return { start: new Date(now.getFullYear(), qm, 1), end: now };
+    }
+    case "year":
+    default:
+      return { start: new Date(now.getFullYear(), 0, 1), end: now };
+  }
+}
 
 export default function VueDensemblePage() {
   const { workspaceId } = useRequiredWorkspace();
   const { remap } = useChartColors();
+  // T1 — filtre période sur la carte CA
+  const [caPeriod, setCaPeriod] = useState("year");
 
   const {
     bankAccounts,
@@ -34,6 +69,10 @@ export default function VueDensemblePage() {
     isLoading: bankLoading,
     formatCurrency,
   } = useDashboardData();
+
+  // T2 — Stats des factures d'achats (non payées) pour la carte "À Payer"
+  const { stats: purchaseInvoiceStats, loading: piStatsLoading } =
+    usePurchaseInvoiceStats();
 
   const { data: flowChartData, loading: flowChartLoading } = useQuery(
     GET_TREASURY_CHART,
@@ -65,6 +104,27 @@ export default function VueDensemblePage() {
   const expenseChartConfig = getExpenseChartConfig(remap);
   const cardsLoading = bankLoading;
   const chartsLoading = flowChartLoading;
+
+  // T1 — CA HT calculé sur les factures payées dont paymentDate est dans la période
+  const caForPeriod = useMemo(() => {
+    const { start, end } = getCaPeriodRange(caPeriod);
+    return (invoices || [])
+      .filter((i) => i.status === "COMPLETED")
+      .filter((i) => {
+        const d = i.paymentDate ? new Date(i.paymentDate) : null;
+        if (!d || isNaN(d.getTime())) return false;
+        return d >= start && d <= end;
+      })
+      .reduce((s, i) => s + (i.finalTotalHT || 0), 0);
+  }, [invoices, caPeriod]);
+
+  // T3 — Encours clients = factures à émettre (DRAFT) + en retard (OVERDUE)
+  // + en attente (PENDING, échéance future). Exclut COMPLETED et CANCELED.
+  const encoursClients = useMemo(() => {
+    return (invoices || [])
+      .filter((i) => ["DRAFT", "PENDING", "OVERDUE"].includes(i.status))
+      .reduce((s, i) => s + (i.finalTotalTTC || i.finalTotalHT || 0), 0);
+  }, [invoices]);
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -126,15 +186,25 @@ export default function VueDensemblePage() {
 
             <Card className="shadow-xs">
               <CardHeader>
-                <CardTitle className="text-sm font-normal">
-                  Chiffre d&apos;Affaires
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-normal">
+                    Chiffre d&apos;Affaires
+                  </CardTitle>
+                  <Select value={caPeriod} onValueChange={setCaPeriod}>
+                    <SelectTrigger className="h-7 w-auto border-none bg-transparent px-1 text-xs text-muted-foreground hover:bg-muted/50 focus:ring-0 shadow-none">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent align="end">
+                      {CA_PERIOD_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <span className="text-xl font-medium">
-                  {formatCurrency(
-                    invoices
-                      ?.filter((i) => i.status === "COMPLETED")
-                      .reduce((s, i) => s + (i.finalTotalHT || 0), 0) || 0,
-                  )}{" "}
+                  {formatCurrency(caForPeriod)}{" "}
                   <span className="text-xs font-normal text-muted-foreground">
                     HT
                   </span>
@@ -148,7 +218,11 @@ export default function VueDensemblePage() {
                   <div className="pr-4">
                     <p className="text-sm font-normal">À Payer</p>
                     <span className="text-xl font-medium mt-1 block">
-                      {formatCurrency(totalExpenses)}{" "}
+                      {piStatsLoading
+                        ? "—"
+                        : formatCurrency(
+                            purchaseInvoiceStats?.totalToPay || 0,
+                          )}{" "}
                       <span className="text-xs font-normal text-muted-foreground">
                         TTC
                       </span>
@@ -157,13 +231,9 @@ export default function VueDensemblePage() {
                   <div className="pl-4">
                     <p className="text-sm font-normal">Encours Clients</p>
                     <span className="text-xl font-medium mt-1 block">
-                      {formatCurrency(
-                        invoices
-                          ?.filter((i) => i.status === "PENDING")
-                          .reduce((s, i) => s + (i.finalTotalHT || 0), 0) || 0,
-                      )}{" "}
+                      {formatCurrency(encoursClients)}{" "}
                       <span className="text-xs font-normal text-muted-foreground">
-                        HT
+                        TTC
                       </span>
                     </span>
                   </div>

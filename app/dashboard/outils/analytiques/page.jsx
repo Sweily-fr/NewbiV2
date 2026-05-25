@@ -221,13 +221,13 @@ const TRESORERIE_BANK_KPI = [
 const TRESORERIE_KPI = [
   {
     key: "outstandingReceivables",
-    label: "Créances en cours",
-    tooltip: "Somme des factures en attente et en retard",
+    label: "Créances en cours TTC",
+    tooltip: "Somme TTC des factures en attente et en retard",
   },
   {
     key: "overdueAmount",
-    label: "Factures en retard",
-    tooltip: "Factures dont la date d'échéance est dépassée",
+    label: "Factures en retard TTC",
+    tooltip: "Montant TTC des factures dont la date d'échéance est dépassée",
   },
   {
     key: "dso",
@@ -261,7 +261,8 @@ const COMMERCIAL_KPI = [
     key: "retainedClientCount",
     label: "Clients fidélisés",
     format: formatNumber,
-    tooltip: "Clients actifs sur les deux périodes",
+    tooltip:
+      "Clients ayant facturé à la fois sur la période sélectionnée ET sur la période précédente de même durée (N-1).",
   },
   {
     key: "quoteConversionRate",
@@ -573,6 +574,7 @@ export default function AnalytiquesPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-4 sm:px-6">
               <AnalyticsBankFlowChart
                 monthlyRevenue={analyticsData?.monthlyRevenue}
+                monthlyCollection={analyticsData?.collection?.monthlyCollection}
                 bankTransactions={bankTransactions}
                 loading={loading || bankLoading}
               />
@@ -607,6 +609,14 @@ export default function AnalytiquesPage() {
               />
               <AnalyticsAgingChart
                 agingBuckets={analyticsData?.collection?.agingBuckets}
+                loading={loading}
+              />
+            </div>
+
+            {/* Payment Method (déplacé depuis l'onglet Taxes — T21) */}
+            <div className="px-4 sm:px-6">
+              <AnalyticsPaymentMethodChart
+                paymentMethodStats={analyticsData?.paymentMethodStats}
                 loading={loading}
               />
             </div>
@@ -651,14 +661,6 @@ export default function AnalytiquesPage() {
               />
             </div>
 
-            {/* Monthly invoice count */}
-            <div className="px-4 sm:px-6">
-              <AnalyticsCountChart
-                monthlyRevenue={analyticsData?.monthlyRevenue}
-                loading={loading}
-              />
-            </div>
-
             {/* Client Table */}
             <AnalyticsClientTable
               revenueByClient={analyticsData?.revenueByClient}
@@ -681,36 +683,19 @@ export default function AnalytiquesPage() {
             />
           </TabsContent>
 
-          {/* ===== Tab 5 — DETAIL & EXPORT ===== */}
+          {/* ===== Tab 5 — TAXES ===== */}
           <TabsContent
             value="detail"
             className="space-y-8 flex-1 min-h-0 overflow-y-auto pb-8"
           >
-            {/* VAT Chart + Payment Method */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-4 sm:px-6">
+            {/* VAT Chart (Méthode de paiement déplacée vers Trésorerie — T21,
+                Tableau croisé Dépenses x Mois supprimé — T23) */}
+            <div className="px-4 sm:px-6">
               <AnalyticsVatChart
                 monthlyRevenue={analyticsData?.monthlyRevenue}
                 loading={loading}
               />
-              <AnalyticsPaymentMethodChart
-                paymentMethodStats={analyticsData?.paymentMethodStats}
-                loading={loading}
-              />
             </div>
-
-            {/* Cross Tab Expenses x Month */}
-            <AnalyticsCrossTabTable
-              title="Tableau croisé Dépenses x Mois"
-              data={analyticsData?.expenseByCategoryMonthly}
-              rowKeyField="category"
-              valueOptions={[
-                { key: "amount", label: "Montant" },
-                { key: "count", label: "Nombre" },
-              ]}
-              defaultValue="amount"
-              rowLabelMap={CATEGORY_LABELS}
-              loading={loading}
-            />
           </TabsContent>
 
           {/* ===== Tab 6 — PLAN COMPTABLE (PCG) ===== */}
