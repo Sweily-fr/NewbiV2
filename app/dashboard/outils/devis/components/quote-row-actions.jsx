@@ -159,70 +159,62 @@ export default function QuoteRowActions({
     }
   };
 
-  const handleConvertToInvoice = async () => {
+  const fetchFullQuote = async () => {
+    if (!workspaceId) return null;
     try {
       const { data } = await apolloClient.query({
         query: GET_QUOTE,
         variables: { workspaceId, id: quote.id },
-        fetchPolicy: "cache-and-network",
+        fetchPolicy: "network-only",
       });
-      const fullQuote = data?.quote;
-      if (!fullQuote) {
-        toast.error("Impossible de récupérer le devis");
-        return;
-      }
+      return data?.quote || null;
+    } catch (error) {
+      console.error("[quote-row-actions] GET_QUOTE failed:", error);
+      return null;
+    }
+  };
+
+  const buildConversionPayload = (source) => ({
+    sourceQuoteId: source.id,
+    purchaseOrderNumber: `${source.prefix || ""}-${source.number || ""}`,
+    client: source.client,
+    items: source.items,
+    discount: source.discount,
+    discountType: source.discountType,
+    customFields: source.customFields,
+    shipping: source.shipping,
+    isReverseCharge: source.isReverseCharge,
+    retenueGarantie: source.retenueGarantie,
+    escompte: source.escompte,
+  });
+
+  const handleConvertToInvoice = async () => {
+    try {
+      const fullQuote = (await fetchFullQuote()) || quote;
       sessionStorage.setItem(
         "quoteInvoiceData",
-        JSON.stringify({
-          sourceQuoteId: fullQuote.id,
-          purchaseOrderNumber: `${fullQuote.prefix || ""}-${fullQuote.number || ""}`,
-          client: fullQuote.client,
-          items: fullQuote.items,
-          discount: fullQuote.discount,
-          discountType: fullQuote.discountType,
-          customFields: fullQuote.customFields,
-          shipping: fullQuote.shipping,
-          isReverseCharge: fullQuote.isReverseCharge,
-          retenueGarantie: fullQuote.retenueGarantie,
-          escompte: fullQuote.escompte,
-        }),
+        JSON.stringify(buildConversionPayload(fullQuote)),
       );
       router.push("/dashboard/outils/factures/new");
     } catch (error) {
+      console.error("[quote-row-actions] convert to invoice failed:", error);
       toast.error("Erreur lors de la conversion en facture");
     }
   };
 
   const handleConvertToPurchaseOrder = async () => {
     try {
-      const { data } = await apolloClient.query({
-        query: GET_QUOTE,
-        variables: { workspaceId, id: quote.id },
-        fetchPolicy: "cache-and-network",
-      });
-      const fullQuote = data?.quote;
-      if (!fullQuote) {
-        toast.error("Impossible de récupérer le devis");
-        return;
-      }
+      const fullQuote = (await fetchFullQuote()) || quote;
       sessionStorage.setItem(
         "quotePurchaseOrderData",
-        JSON.stringify({
-          sourceQuoteId: fullQuote.id,
-          purchaseOrderNumber: `${fullQuote.prefix || ""}-${fullQuote.number || ""}`,
-          client: fullQuote.client,
-          items: fullQuote.items,
-          discount: fullQuote.discount,
-          discountType: fullQuote.discountType,
-          customFields: fullQuote.customFields,
-          shipping: fullQuote.shipping,
-          isReverseCharge: fullQuote.isReverseCharge,
-          retenueGarantie: fullQuote.retenueGarantie,
-          escompte: fullQuote.escompte,
-        }),
+        JSON.stringify(buildConversionPayload(fullQuote)),
       );
       router.push("/dashboard/outils/bons-commande/new");
     } catch (error) {
+      console.error(
+        "[quote-row-actions] convert to purchase order failed:",
+        error,
+      );
       toast.error("Erreur lors de la conversion en bon de commande");
     }
   };
