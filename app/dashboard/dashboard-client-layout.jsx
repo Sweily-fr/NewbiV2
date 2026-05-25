@@ -40,6 +40,7 @@ import { BottomNavBar } from "@/src/components/bottom-nav-bar";
 import { PwaInstallBanner } from "@/src/components/pwa-install-banner";
 import { SessionGateProvider } from "@/src/contexts/session-gate-context";
 import { InactivityDetector } from "@/src/components/inactivity-detector";
+import { SessionValidityDetector } from "@/src/components/session-validity-detector";
 import { apolloClient } from "@/src/lib/apolloClient";
 import { gql } from "@apollo/client";
 
@@ -362,6 +363,7 @@ function DashboardContent({ children }) {
             <div className="flex flex-1 flex-col gap-2 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0">
               <SessionGateProvider>{children}</SessionGateProvider>
               <InactivityDetector />
+              <SessionValidityDetector />
             </div>
           </div>
         </SidebarInset>

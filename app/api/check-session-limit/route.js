@@ -3,6 +3,7 @@ import { auth } from "@/src/lib/auth";
 import { headers } from "next/headers";
 import { mongoDb } from "@/src/lib/mongodb";
 import { toObjectId, withErrorHandler } from "@/src/lib/security";
+import { enforceSessionLimit } from "@/src/lib/enforce-session-limit";
 
 async function handler() {
   const session = await auth.api.getSession({
@@ -43,16 +44,25 @@ async function handler() {
     now.getTime() - inactivityTimeoutHours * 60 * 60 * 1000,
   );
 
+  const currentSessionToken = session.session?.token || null;
+
   // Nettoyer les sessions inactives (updatedAt < seuil) en une seule opération
   // MOYEN-25 fix: userId is stored as ObjectId in session collection (ADR-004)
   await mongoDb.collection("session").deleteMany({
     userId: userObjectId,
     updatedAt: { $lt: inactivityThreshold },
-    // Ne pas supprimer la session actuelle
-    token: { $ne: session.session?.token },
+    token: { $ne: currentSessionToken },
   });
 
-  // Récupérer les sessions actives restantes (non expirées)
+  // Auto-révocation : si la limite est dépassée, supprimer les sessions
+  // les plus anciennes en conservant la session courante.
+  const { revokedCount } = await enforceSessionLimit({
+    userObjectId,
+    currentSessionToken,
+    maxSessions,
+  });
+
+  // Récupérer l'état final des sessions (après nettoyage + révocation)
   const activeSessions = await mongoDb
     .collection("session")
     .find({
@@ -61,13 +71,12 @@ async function handler() {
     })
     .toArray();
 
-  const hasReachedLimit = activeSessions.length > maxSessions;
-
   return NextResponse.json({
-    hasReachedLimit,
+    hasReachedLimit: false,
     sessionCount: activeSessions.length,
     maxSessions,
-    currentSessionToken: session.session?.token || null,
+    revokedCount,
+    currentSessionToken,
     sessions: activeSessions.map((s) => ({
       id: s._id.toString(),
       token: s.token,

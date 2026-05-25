@@ -232,11 +232,15 @@ const LoginForm = () => {
             .catch(() => null),
         ]);
 
-        // Vérifier la limite de sessions
-        if (sessionLimitResult?.hasReachedLimit) {
-          toast.info("Vous êtes déjà connecté sur un autre appareil");
-          router.push("/auth/manage-devices");
-          return;
+        // Auto-révocation côté serveur : informer l'utilisateur si
+        // d'autres sessions ont été déconnectées pour respecter la limite.
+        if (sessionLimitResult?.revokedCount > 0) {
+          const n = sessionLimitResult.revokedCount;
+          toast.info(
+            n === 1
+              ? "Une autre session a été déconnectée pour respecter votre limite"
+              : `${n} autres sessions ont été déconnectées pour respecter votre limite`,
+          );
         }
 
         // Étape 2 : Si pas d'organisation active (rare: nouvel user sans org),

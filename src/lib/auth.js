@@ -70,9 +70,11 @@ export const auth = betterAuth({
   session: {
     expiresIn: 30 * 24 * 60 * 60, // 30 jours - Session longue, standard industrie
     updateAge: 60 * 60, // 1 heure - Renouvellement automatique si utilisateur actif
+    // cookieCache désactivé : la révocation d'une session (limite maxSessions,
+    // déconnexion d'un appareil) doit être effective immédiatement sur les
+    // autres onglets/navigateurs. Coût : 1 query Mongo par requête authentifiée.
     cookieCache: {
-      enabled: true,
-      maxAge: 5 * 60, // 5 minutes — révocation de session effective rapidement
+      enabled: false,
     },
     // Ajouter activeOrganizationId aux champs de session
     additionalFields: {
