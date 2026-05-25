@@ -416,8 +416,7 @@ const UniversalPreviewPDF = ({
         taxDetails: [],
       };
 
-  // Utiliser le logo de l'organisation en priorité, puis celui des données comme fallback
-  const companyLogo = organization?.logo || data.companyInfo?.logo;
+  const companyLogo = data.companyInfo?.logo || organization?.logo;
 
   if (!data) {
     return (

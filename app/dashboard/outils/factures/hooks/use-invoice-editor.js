@@ -214,30 +214,59 @@ export function useInvoiceEditor({
   // Mettre à jour companyInfo quand organization est chargée
   useEffect(() => {
     if (organization && !formData.companyInfo?.legalForm) {
-      // Toujours mettre à jour avec les données complètes de l'organization
+      // Fallback sur la valeur sauvegardée (logo, etc.) si l'org active ne la fournit pas.
       const updatedCompanyInfo = {
-        name: organization?.companyName || "",
+        name: organization?.companyName || formData.companyInfo?.name || "",
         address: {
-          street: organization?.addressStreet || "",
-          city: organization?.addressCity || "",
-          postalCode: organization?.addressZipCode || "",
-          country: organization?.addressCountry || "",
+          street:
+            organization?.addressStreet ||
+            formData.companyInfo?.address?.street ||
+            "",
+          city:
+            organization?.addressCity ||
+            formData.companyInfo?.address?.city ||
+            "",
+          postalCode:
+            organization?.addressZipCode ||
+            formData.companyInfo?.address?.postalCode ||
+            "",
+          country:
+            organization?.addressCountry ||
+            formData.companyInfo?.address?.country ||
+            "",
         },
-        email: organization?.companyEmail || "",
-        phone: organization?.companyPhone || "",
-        siren: organization?.siren || "",
-        siret: organization?.siret || "",
-        vatNumber: organization?.vatNumber || "",
-        rcs: organization?.rcs || "",
-        legalForm: organization?.legalForm || "",
-        capitalSocial: organization?.capitalSocial || "",
-        fiscalRegime: organization?.fiscalRegime || "",
-        website: organization?.website || "",
-        logo: organization?.logo || "",
+        email: organization?.companyEmail || formData.companyInfo?.email || "",
+        phone: organization?.companyPhone || formData.companyInfo?.phone || "",
+        siren: organization?.siren || formData.companyInfo?.siren || "",
+        siret: organization?.siret || formData.companyInfo?.siret || "",
+        vatNumber:
+          organization?.vatNumber || formData.companyInfo?.vatNumber || "",
+        rcs: organization?.rcs || formData.companyInfo?.rcs || "",
+        legalForm:
+          organization?.legalForm || formData.companyInfo?.legalForm || "",
+        capitalSocial:
+          organization?.capitalSocial ||
+          formData.companyInfo?.capitalSocial ||
+          "",
+        fiscalRegime:
+          organization?.fiscalRegime ||
+          formData.companyInfo?.fiscalRegime ||
+          "",
+        website: organization?.website || formData.companyInfo?.website || "",
+        logo: organization?.logo || formData.companyInfo?.logo || "",
         bankDetails: {
-          iban: organization?.bankIban || "",
-          bic: organization?.bankBic || "",
-          bankName: organization?.bankName || "",
+          iban:
+            organization?.bankIban ||
+            formData.companyInfo?.bankDetails?.iban ||
+            "",
+          bic:
+            organization?.bankBic ||
+            formData.companyInfo?.bankDetails?.bic ||
+            "",
+          bankName:
+            organization?.bankName ||
+            formData.companyInfo?.bankDetails?.bankName ||
+            "",
         },
       };
 
