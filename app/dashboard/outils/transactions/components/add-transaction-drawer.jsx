@@ -636,6 +636,7 @@ export function AddTransactionDrawer({
                       <SelectItem value="TRANSFER">Virement</SelectItem>
                       <SelectItem value="CASH">Espèces</SelectItem>
                       <SelectItem value="CHECK">Chèque</SelectItem>
+                      <SelectItem value="DIRECT_DEBIT">Prélèvement</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
