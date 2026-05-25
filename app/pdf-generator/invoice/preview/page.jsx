@@ -1,43 +1,38 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "next/navigation";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import { domToJpeg } from "modern-screenshot";
-// jsPDF importé dynamiquement pour réduire la taille du bundle
 
-export default function PDFGeneratorPage() {
-  const params = useParams();
-  const [creditNoteData, setCreditNoteData] = useState(null);
+/**
+ * PDF Preview Generator Page
+ *
+ * Unlike /pdf-generator/invoice/[id] which fetches from DB,
+ * this page reads invoice data from window.__PREVIEW_DATA
+ * injected by Puppeteer via page.evaluateOnNewDocument().
+ *
+ * Used by POST /api/invoices/preview-pdf endpoint.
+ */
+export default function PDFPreviewPage() {
+  const [invoiceData, setInvoiceData] = useState(null);
   const [status, setStatus] = useState("loading");
   const [isVisual, setIsVisual] = useState(false);
   const componentRef = useRef(null);
 
   useEffect(() => {
-    async function fetchAndGenerate() {
+    async function init() {
       try {
-        console.log("🔍 Récupération avoir:", params.id);
-
-        // Récupérer les données de l'avoir depuis l'API
-        const fetchHeaders = {};
-        if (window.__PREVIEW_MODE === "visual") {
-          fetchHeaders["x-internal-secret"] =
-            process.env.NEXT_PUBLIC_INTERNAL_API_SECRET || "";
-        }
-        const response = await fetch(`/api/credit-notes/data/${params.id}`, {
-          headers: fetchHeaders,
-        });
-        console.log("📡 Réponse API:", response.status);
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error("❌ Erreur API:", errorText);
-          throw new Error("Avoir non trouvé");
+        // Read data injected by Puppeteer
+        const data = window.__PREVIEW_DATA;
+        if (!data) {
+          console.error("❌ No __PREVIEW_DATA found on window");
+          setStatus("error");
+          window.pdfGenerationResult = { error: "No preview data provided" };
+          return;
         }
 
-        const data = await response.json();
-        console.log("✅ Données reçues:", data);
-        setCreditNoteData(data);
+        console.log("✅ Preview data loaded");
+        setInvoiceData(data);
         setStatus("ready");
 
         // Visual mode: just render, no PDF generation
@@ -48,37 +43,27 @@ export default function PDFGeneratorPage() {
           return;
         }
 
-        // Attendre que le composant soit rendu
-        console.log("⏳ Attente rendu composant...");
+        // PDF mode: wait for render then generate
         await new Promise((resolve) => setTimeout(resolve, 3000));
-
-        // Générer le PDF
-        console.log("📄 Début génération PDF...");
-        await generatePDF(data);
+        await generatePDF();
       } catch (error) {
-        console.error("❌ Erreur:", error);
+        console.error("❌ Error:", error);
         setStatus("error");
         window.pdfGenerationResult = { error: error.message };
       }
     }
 
-    fetchAndGenerate();
-  }, [params.id]);
+    init();
+  }, []);
 
-  async function generatePDF(data) {
+  async function generatePDF() {
     try {
-      console.log("🎨 Génération PDF - Étape 1: Vérification composant");
       if (!componentRef.current) {
-        console.error("❌ componentRef.current est null");
-        throw new Error("Composant non trouvé");
+        throw new Error("Component ref not found");
       }
-      console.log("✅ Composant trouvé");
 
-      // Attendre le chargement des images
-      console.log("🖼️ Génération PDF - Étape 2: Chargement images");
+      // Wait for images
       const images = componentRef.current.querySelectorAll("img");
-      console.log(`📸 ${images.length} image(s) trouvée(s)`);
-
       await Promise.all(
         Array.from(images).map((img) => {
           if (img.complete) return Promise.resolve();
@@ -89,26 +74,19 @@ export default function PDFGeneratorPage() {
           });
         }),
       );
-
-      console.log("✅ Images chargées");
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // Capturer avec modern-screenshot
-      console.log("📷 Génération PDF - Étape 3: Capture screenshot");
+      // Capture with modern-screenshot
       const dataUrl = await domToJpeg(componentRef.current, {
         quality: 0.95,
         backgroundColor: "#ffffff",
         width: 794,
         scale: 2,
         fetch: {
-          requestInit: {
-            mode: "cors",
-            credentials: "omit",
-          },
+          requestInit: { mode: "cors", credentials: "omit" },
         },
       });
 
-      // Créer une image
       const img = new Image();
       await new Promise((resolve, reject) => {
         img.onload = resolve;
@@ -116,7 +94,7 @@ export default function PDFGeneratorPage() {
         img.src = dataUrl;
       });
 
-      // Créer le PDF (import dynamique)
+      // Create PDF
       const { default: jsPDF } = await import("jspdf");
       const pdf = new jsPDF({
         orientation: "portrait",
@@ -127,17 +105,22 @@ export default function PDFGeneratorPage() {
 
       const pdfWidth = 210;
       const pdfHeight = 297;
-      const imgWidthMM = pdfWidth;
       const imgHeightMM = (img.height * pdfWidth) / img.width;
 
-      // Vérifier si le contenu tient sur une seule page (avec une petite marge de tolérance)
-      const fitsOnOnePage = imgHeightMM <= pdfHeight + 1; // +1mm de tolérance
-
-      // Multi-pages avec découpage intelligent
-      if (!fitsOnOnePage) {
-        console.log("📄 Document multi-pages détecté");
-
-        // Détecter le footer pour le repositionner sur la dernière page
+      if (imgHeightMM <= pdfHeight + 1) {
+        // Single page
+        pdf.addImage(
+          dataUrl,
+          "JPEG",
+          0,
+          0,
+          pdfWidth,
+          imgHeightMM,
+          undefined,
+          "FAST",
+        );
+      } else {
+        // Multi-page (same logic as [id] page)
         const footerElement = componentRef.current.querySelector(
           '[data-pdf-section="footer"]',
         );
@@ -150,13 +133,8 @@ export default function PDFGeneratorPage() {
           const footerRect = footerElement.getBoundingClientRect();
           footerHeight = footerRect.height * 2;
           footerPositionY = (footerRect.top - containerRect.top) * 2;
-
-          console.log(
-            `🔖 Footer détecté: hauteur=${footerHeight}px, position=${footerPositionY}px`,
-          );
         }
 
-        // Extraire la couleur du footer
         const colorCanvas = document.createElement("canvas");
         colorCanvas.width = img.width;
         colorCanvas.height = img.height;
@@ -165,23 +143,18 @@ export default function PDFGeneratorPage() {
 
         if (footerPositionY < img.height) {
           const sampleY = Math.min(footerPositionY + 20, img.height - 1);
-          const sampleX = 50;
-          const pixelData = colorCtx.getImageData(sampleX, sampleY, 1, 1).data;
+          const pixelData = colorCtx.getImageData(50, sampleY, 1, 1).data;
           footerBgColor = `rgb(${pixelData[0]}, ${pixelData[1]}, ${pixelData[2]})`;
-          console.log(`🎨 Couleur extraite du footer: ${footerBgColor}`);
         }
 
         const paginationBannerHeightMM = 12;
         const paginationBannerHeightPx =
           paginationBannerHeightMM * (img.width / pdfWidth);
-
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
-        const canvasWidth = img.width;
         const pixelsPerMM = img.width / pdfWidth;
         const pageHeightPixels = pdfHeight * pixelsPerMM;
-
-        canvas.width = canvasWidth;
+        canvas.width = img.width;
         canvas.height = pageHeightPixels;
 
         let currentY = 0;
@@ -190,56 +163,46 @@ export default function PDFGeneratorPage() {
 
         while (currentY < img.height) {
           let targetY = currentY + pageHeightPixels;
-
-          if (targetY > img.height) {
-            targetY = img.height;
-          }
-
-          const sliceHeight = targetY - currentY;
+          if (targetY > img.height) targetY = img.height;
           const isLastPage = targetY >= img.height;
 
           ctx.fillStyle = "#ffffff";
           ctx.fillRect(0, 0, canvas.width, canvas.height);
 
           if (isLastPage && footerElement && footerHeight > 0) {
-            console.log("📄 Dernière page - repositionnement du footer");
-
             const topMarginPx = pageNumber > 0 ? 15 * pixelsPerMM : 0;
             const contentWithoutFooter = footerPositionY - currentY;
-
             if (contentWithoutFooter > 0) {
               ctx.drawImage(
                 img,
                 0,
                 currentY,
-                canvasWidth,
+                canvas.width,
                 contentWithoutFooter,
                 0,
                 topMarginPx,
-                canvasWidth,
+                canvas.width,
                 contentWithoutFooter,
               );
             }
-
             ctx.fillStyle = footerBgColor;
             ctx.fillRect(
               0,
               pageHeightPixels - paginationBannerHeightPx,
-              canvasWidth,
+              canvas.width,
               paginationBannerHeightPx,
             );
-
             const footerDestY =
               pageHeightPixels - footerHeight - paginationBannerHeightPx;
             ctx.drawImage(
               img,
               0,
               footerPositionY,
-              canvasWidth,
+              canvas.width,
               footerHeight,
               0,
               footerDestY,
-              canvasWidth,
+              canvas.width,
               footerHeight,
             );
           } else {
@@ -247,78 +210,55 @@ export default function PDFGeneratorPage() {
             const availableContentHeight =
               pageHeightPixels - paginationBannerHeightPx - topMarginPx;
             let contentToDraw = availableContentHeight;
-
             if (footerElement && footerPositionY > 0) {
               const maxContentY = footerPositionY - 2;
               if (currentY + contentToDraw > maxContentY) {
                 contentToDraw = Math.max(0, maxContentY - currentY);
               }
             }
-
             if (contentToDraw > 0) {
               ctx.drawImage(
                 img,
                 0,
                 currentY,
-                canvasWidth,
+                canvas.width,
                 contentToDraw,
                 0,
                 topMarginPx,
-                canvasWidth,
+                canvas.width,
                 contentToDraw,
               );
             }
-
             ctx.fillStyle = footerBgColor;
             ctx.fillRect(
               0,
               pageHeightPixels - paginationBannerHeightPx,
-              canvasWidth,
+              canvas.width,
               paginationBannerHeightPx,
             );
           }
 
-          const pageImageData = canvas.toDataURL("image/jpeg", 0.95);
-          const pageHeightMM = pdfHeight;
-
           pages.push({
-            imageData: pageImageData,
-            heightMM: pageHeightMM,
-            isLastPage: isLastPage,
+            imageData: canvas.toDataURL("image/jpeg", 0.95),
+            heightMM: pdfHeight,
+            isLastPage,
           });
-
-          console.log(`✅ Page ${pageNumber + 1} générée`);
 
           if (isLastPage) {
             currentY = targetY;
           } else {
-            const availableContentHeight =
-              pageHeightPixels - paginationBannerHeightPx;
-            if (
-              footerElement &&
-              currentY + availableContentHeight > footerPositionY
-            ) {
-              currentY = footerPositionY;
-            } else {
-              currentY += availableContentHeight;
-            }
+            const availH = pageHeightPixels - paginationBannerHeightPx;
+            currentY =
+              footerElement && currentY + availH > footerPositionY
+                ? footerPositionY
+                : currentY + availH;
           }
           pageNumber++;
-
-          if (pageNumber > 50) {
-            console.error("⚠️ Trop de pages, arrêt");
-            break;
-          }
+          if (pageNumber > 50) break;
         }
 
-        const totalPages = pages.length;
-        console.log(`📄 Total: ${totalPages} page(s)`);
-
         pages.forEach((page, index) => {
-          if (index > 0) {
-            pdf.addPage();
-          }
-
+          if (index > 0) pdf.addPage();
           pdf.addImage(
             page.imageData,
             "JPEG",
@@ -329,39 +269,25 @@ export default function PDFGeneratorPage() {
             undefined,
             "FAST",
           );
-
           pdf.setFontSize(9);
-          const pageText = `Page ${index + 1}/${totalPages}`;
-          const textWidth = pdf.getTextWidth(pageText);
-
           pdf.setTextColor(80, 80, 80);
-          const bannerY = pdfHeight - 4;
-          pdf.text(pageText, pdfWidth - textWidth - 10, bannerY);
+          const pageText = `Page ${index + 1}/${pages.length}`;
+          pdf.text(
+            pageText,
+            pdfWidth - pdf.getTextWidth(pageText) - 10,
+            pdfHeight - 4,
+          );
         });
-      } else {
-        console.log("📄 Document sur une seule page");
-        pdf.addImage(
-          dataUrl,
-          "JPEG",
-          0,
-          0,
-          imgWidthMM,
-          imgHeightMM,
-          undefined,
-          "FAST",
-        );
       }
 
-      // Stocker le résultat dans window pour que Puppeteer puisse le récupérer
       const arrayBuffer = pdf.output("arraybuffer");
       window.pdfGenerationResult = {
         success: true,
         buffer: Array.from(new Uint8Array(arrayBuffer)),
       };
-
       setStatus("complete");
     } catch (error) {
-      console.error("Erreur génération PDF:", error);
+      console.error("PDF generation error:", error);
       window.pdfGenerationResult = { error: error.message };
       setStatus("error");
     }
@@ -370,10 +296,7 @@ export default function PDFGeneratorPage() {
   if (status === "loading") {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p className="text-gray-600">Chargement...</p>
-        </div>
+        <p className="text-gray-600">Chargement...</p>
       </div>
     );
   }
@@ -381,9 +304,7 @@ export default function PDFGeneratorPage() {
   if (status === "error") {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white">
-        <div className="text-center text-red-600">
-          <p className="text-xl font-semibold">Erreur</p>
-        </div>
+        <p className="text-red-600">Erreur de génération</p>
       </div>
     );
   }
@@ -394,21 +315,6 @@ export default function PDFGeneratorPage() {
         isVisual ? "bg-white min-h-screen" : "bg-white min-h-screen p-4"
       }
     >
-      {!isVisual && status === "complete" && (
-        <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded z-50">
-          PDF généré avec succès
-        </div>
-      )}
-      {!isVisual && status === "loading" && (
-        <div className="fixed top-4 right-4 bg-blue-500 text-white px-4 py-2 rounded z-50">
-          Chargement...
-        </div>
-      )}
-      {!isVisual && status === "ready" && (
-        <div className="fixed top-4 right-4 bg-yellow-500 text-white px-4 py-2 rounded z-50">
-          Génération en cours...
-        </div>
-      )}
       <div
         ref={componentRef}
         style={
@@ -422,10 +328,10 @@ export default function PDFGeneratorPage() {
             : { width: "794px", backgroundColor: "#ffffff", margin: "0 auto" }
         }
       >
-        {creditNoteData && (
+        {invoiceData && (
           <UniversalPreviewPDF
-            data={creditNoteData}
-            type="creditNote"
+            data={invoiceData}
+            type="invoice"
             forPDF={!isVisual}
             isMobile={isVisual}
           />

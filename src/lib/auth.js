@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { jwt, oneTimeToken } from "better-auth/plugins";
+import { expo } from "@better-auth/expo";
 import { mongoDb } from "./mongodb";
 import {
   adminPlugin,
@@ -70,11 +71,9 @@ export const auth = betterAuth({
   session: {
     expiresIn: 30 * 24 * 60 * 60, // 30 jours - Session longue, standard industrie
     updateAge: 60 * 60, // 1 heure - Renouvellement automatique si utilisateur actif
-    // cookieCache désactivé : la révocation d'une session (limite maxSessions,
-    // déconnexion d'un appareil) doit être effective immédiatement sur les
-    // autres onglets/navigateurs. Coût : 1 query Mongo par requête authentifiée.
     cookieCache: {
-      enabled: false,
+      enabled: true,
+      maxAge: 5 * 60, // 5 minutes — révocation de session effective rapidement
     },
     // Ajouter activeOrganizationId aux champs de session
     additionalFields: {
@@ -213,6 +212,7 @@ export const auth = betterAuth({
     stripePlugin,
     organizationPlugin,
     multiSessionPlugin,
+    expo(),
   ],
 
   emailAndPassword: {
@@ -461,6 +461,12 @@ export const auth = betterAuth({
     github: {
       clientId: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
+    },
+    apple: {
+      clientId: process.env.APPLE_CLIENT_ID,
+      clientSecret: process.env.APPLE_CLIENT_SECRET || "placeholder",
+      appBundleIdentifier:
+        process.env.APPLE_APP_BUNDLE_IDENTIFIER || "fr.newbi.app",
     },
   },
 
