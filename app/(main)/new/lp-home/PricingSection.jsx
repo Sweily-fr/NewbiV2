@@ -101,7 +101,7 @@ const featureSections = [
       },
       {
         name: "Accès comptables gratuits",
-        tooltip: "Invitez un comptable sans frais supplémentaires",
+        tooltip: "Invitez un accès comptable sans frais supplémentaires",
         freelance: "1",
         pme: "3",
         entreprise: "5",

@@ -32,7 +32,7 @@ const PLANS_CONFIG = [
     monthlyPrice: 17.99,
     annualPrice: 16.19,
     annualTotal: 157.56,
-    description: "Parfait pour les indépendants et freelances",
+    description: "Pour les indépendants",
     features: {
       users: "1 utilisateur",
       accountants: "1",
@@ -71,7 +71,7 @@ const PLANS_CONFIG = [
     annualPrice: 44.09,
     annualTotal: 529.08,
     popular: true,
-    description: "Idéal pour les petites et moyennes entreprises",
+    description: "Pour les équipes en croissance",
     features: {
       users: "Jusqu'à 10",
       accountants: "3",
@@ -109,7 +109,7 @@ const PLANS_CONFIG = [
     monthlyPrice: 94.99,
     annualPrice: 85.49,
     annualTotal: 1025.88,
-    description: "Pour les grandes structures avec des besoins avancés",
+    description: "Pour les structures avancées",
     features: {
       users: "Jusqu'à 25",
       accountants: "5",
