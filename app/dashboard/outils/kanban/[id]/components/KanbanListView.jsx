@@ -1125,8 +1125,8 @@ function InlineAddTask({
       ref={rowRef}
       className="grid px-4 sm:px-6 py-1.5 items-center bg-muted/30 relative overflow-hidden after:absolute after:bottom-0 after:left-6 after:right-6 after:sm:left-8 after:sm:right-8 after:h-px after:bg-border/60 after:content-['']"
       style={{
-        gridTemplateColumns: "2.5fr 1fr 1fr 1fr 1fr 80px",
-        gap: "2rem",
+        gridTemplateColumns: "3fr 1.6fr 0.8fr 0.9fr 1fr 0.6fr 80px",
+        gap: "1rem",
       }}
     >
       {/* Colonne Nom — même structure que TaskRow */}
@@ -1163,6 +1163,9 @@ function InlineAddTask({
           />
         </div>
       </div>
+
+      {/* Colonne Tags — vide en mode création */}
+      <div />
 
       {/* Colonne Assigné — tous les boutons d'action groupés ici */}
       <div className="flex items-center gap-1.5">
@@ -1291,7 +1294,6 @@ function InlineAddTask({
       </div>
 
       {/* Colonnes restantes vides pour garder la grille */}
-      <div />
       <div />
       <div />
       <div />
@@ -1605,30 +1607,53 @@ function InlineEditTitle({
 
   return (
     <div className="flex-1 w-0 flex items-center gap-1 min-w-0 overflow-hidden">
-      <p className="text-sm truncate font-normal text-foreground/90 group-hover:text-[#5A50FF] transition-colors max-w-[200px] flex-shrink-0">
+      <p className="text-sm truncate font-normal text-foreground/90 group-hover:text-[#5A50FF] transition-colors min-w-0">
         {task.title}
       </p>
       {task.description && (
         <DescriptionHoverPopover description={task.description} />
       )}
-      {/* Tags inline — premier tag visible + badge "+N" pour les autres */}
+      <Button
+        variant="outline"
+        size="sm"
+        className="flex-shrink-0 h-5 w-5 p-0 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-background"
+        onClick={startEditing}
+        title="Modifier le nom"
+      >
+        <Pencil className="h-3 w-3 text-muted-foreground" />
+      </Button>
+    </div>
+  );
+}
+
+/**
+ * Cellule Tags pour la vue liste — affiche premier tag + badge "+N" + bouton ajouter
+ */
+function TaskTagsCell({ task, updateTask, workspaceId, allBoardTags }) {
+  const visibleTags = (task.tags || []).slice(0, 3);
+  const remaining = (task.tags?.length || 0) - visibleTags.length;
+  return (
+    <div className="flex items-center gap-1 min-w-0">
       {task.tags?.length > 0 && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="flex items-center gap-1 min-w-0 overflow-hidden flex-shrink-0">
-              <span
-                className="inline-flex items-center px-1.5 py-0 rounded text-[10px] font-medium max-w-[100px] truncate"
-                style={{
-                  backgroundColor: task.tags[0].bg,
-                  color: task.tags[0].text,
-                  border: `1px solid ${task.tags[0].border}`,
-                }}
-              >
-                {task.tags[0].name}
-              </span>
-              {task.tags.length > 1 && (
-                <span className="inline-flex items-center justify-center px-1.5 py-0 rounded text-[10px] font-medium bg-muted text-muted-foreground border border-border min-w-[20px]">
-                  +{task.tags.length - 1}
+            <div className="flex items-center gap-1 min-w-0 overflow-hidden">
+              {visibleTags.map((tag) => (
+                <span
+                  key={tag.name}
+                  className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium truncate leading-none min-w-0"
+                  style={{
+                    backgroundColor: tag.bg,
+                    color: tag.text,
+                    border: `1px solid ${tag.border}`,
+                  }}
+                >
+                  {tag.name}
+                </span>
+              ))}
+              {remaining > 0 && (
+                <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground border border-border leading-none flex-shrink-0">
+                  +{remaining}
                 </span>
               )}
             </div>
@@ -1652,15 +1677,6 @@ function InlineEditTitle({
           </TooltipContent>
         </Tooltip>
       )}
-      <Button
-        variant="outline"
-        size="sm"
-        className="flex-shrink-0 h-5 w-5 p-0 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-background"
-        onClick={startEditing}
-        title="Modifier le nom"
-      >
-        <Pencil className="h-3 w-3 text-muted-foreground" />
-      </Button>
       <InlineTagPopover
         task={task}
         updateTask={updateTask}
@@ -1691,8 +1707,8 @@ const TaskRow = React.memo(function TaskRow({
       data-dnd-list-column={column.id}
       data-dnd-list-index={index}
       style={{
-        gridTemplateColumns: "2.5fr 1fr 1fr 1fr 1fr 80px",
-        gap: "2rem",
+        gridTemplateColumns: "3fr 1.6fr 0.8fr 0.9fr 1fr 0.6fr 80px",
+        gap: "1rem",
         ...(isSelected ? { backgroundColor: "#5A50FF0D" } : {}),
       }}
       className={`grid px-4 sm:px-6 py-1.5 items-center hover:bg-muted/50 cursor-grab active:cursor-grabbing group relative overflow-hidden after:absolute after:bottom-0 after:h-px after:content-[""] ${isSelected ? "after:left-0 after:right-0 after:bg-[#5A50FF]/35" : "after:left-6 after:right-6 after:sm:left-8 after:sm:right-8 after:bg-border/60"} ${isSelected && index > 0 && !isPrevSelected ? 'before:absolute before:top-0 before:left-0 before:right-0 before:h-px before:bg-[#5A50FF]/35 before:content-[""]' : ""}`}
@@ -1835,6 +1851,14 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
           />
         </div>
       </div>
+
+      {/* Tags */}
+      <TaskTagsCell
+        task={task}
+        updateTask={updateTask}
+        workspaceId={workspaceId}
+        allBoardTags={allBoardTags}
+      />
 
       {/* Assignée */}
       <div className="flex items-center gap-0.5 min-w-0">
@@ -2617,14 +2641,16 @@ export function KanbanListView({
                   <div
                     className="grid px-4 sm:px-6 py-2 text-xs font-medium text-muted-foreground/70 tracking-wide relative after:absolute after:bottom-0 after:left-6 after:right-6 sm:after:left-8 sm:after:right-8 after:h-px after:bg-border/60 after:content-['']"
                     style={{
-                      gridTemplateColumns: "2.5fr 1fr 1fr 1fr 1fr 80px",
-                      gap: "2rem",
+                      gridTemplateColumns:
+                        "3fr 1.6fr 0.8fr 0.9fr 1fr 0.6fr 80px",
+                      gap: "1rem",
                     }}
                   >
                     <div className="flex items-center gap-2">
                       <GripVertical className="h-4 w-4 opacity-0" />
                       Nom
                     </div>
+                    <div className="flex items-center">Tags</div>
                     <div className="flex items-center">Assigné à</div>
                     <div className="flex items-center">Status</div>
                     <div className="flex items-center">Échéance</div>
