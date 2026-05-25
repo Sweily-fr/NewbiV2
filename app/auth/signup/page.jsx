@@ -83,10 +83,6 @@ function SignUpPageContent() {
   // "null" means "not yet determined" (session still loading)
   const [view, setView] = useState(null);
   const [sessionHydrated, setSessionHydrated] = useState(false);
-  // True when the user already completed onboarding but lost their subscription.
-  // In this mode, skip PATCH /api/onboarding/step calls (the API rejects them
-  // with 400 once onboardingStep === "completed").
-  const [isResubscribing, setIsResubscribing] = useState(false);
 
   // Determine the initial view once the session resolves
   useEffect(() => {
@@ -101,16 +97,12 @@ function SignUpPageContent() {
     } else {
       const step = getOnboardingStep(session.user);
       if (step === "completed") {
-        // Onboarding done. If the user is on this page, it's because
-        // dashboard/layout.jsx redirected them here (no valid subscription).
-        // Redirecting back to /dashboard would loop — show the plan step
-        // so they can re-subscribe.
-        setIsResubscribing(true);
-        setView("plan");
-      } else {
-        // Authenticated with incomplete onboarding → resume at the right step
-        setView(step);
+        // Onboarding done — shouldn't be on this page, redirect to dashboard
+        router.replace("/dashboard");
+        return;
       }
+      // Authenticated with incomplete onboarding → resume at the right step
+      setView(step);
     }
     setSessionHydrated(true);
   }, [sessionPending, session, sessionHydrated, router]);
@@ -119,6 +111,25 @@ function SignUpPageContent() {
   const [loadingPlan, setLoadingPlan] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [companyData, setCompanyData] = useState(null);
+  // Feature flag fetched from /api/feature-flags. When true, the workspace
+  // step is the final step and submits directly to "completed" (no plan/recap).
+  // When false (default), the historical 3-step Stripe flow is used.
+  const [appTrialEnabled, setAppTrialEnabled] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/feature-flags")
+      .then((r) => r.json())
+      .then((flags) => {
+        if (!cancelled) setAppTrialEnabled(flags?.appTrialEnabled === true);
+      })
+      .catch(() => {
+        // Network failure → keep flag OFF (historical flow), no regression.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const [inviteEmails, setInviteEmails] = useState([]);
   const [inviteInput, setInviteInput] = useState("");
   const [inviteRole, setInviteRole] = useState("member");
@@ -357,13 +368,36 @@ function SignUpPageContent() {
     };
     setCompanyData(newCompanyData);
 
-    // Re-subscribing users have onboardingStep="completed" already;
-    // the API rejects further step PATCHes, so skip persistence here.
-    if (isResubscribing) {
-      switchView("plan");
+    // App-managed trial flow (flag ON): workspace is the last data-collection
+    // step. Submit straight to "completed" — the route applies the data to
+    // the placeholder org and marks the user completed atomically.
+    //
+    // Then redirect to /onboarding/success which renders the welcome → invite
+    // → theme sequence (existing UI, designed to work without a Stripe
+    // session_id). After the theme step the user lands on /dashboard.
+    //
+    // The session refresh is critical: the cookieCache (5 min) may still
+    // serve a session with the OLD or missing activeOrganizationId. Without
+    // a no-store getSession, the /onboarding/success page (and downstream
+    // /dashboard) can briefly target the wrong org.
+    if (appTrialEnabled) {
+      const ok = await updateOnboardingStep("completed", {
+        ...newCompanyData,
+        billingCountry,
+      });
+      if (ok) {
+        try {
+          const { authClient } = await import("@/src/lib/auth-client");
+          await authClient.getSession({ fetchOptions: { cache: "no-store" } });
+        } catch {
+          // Non-fatal — onboarding/success will refetch as needed
+        }
+        router.replace("/onboarding/success");
+      }
       return;
     }
 
+    // Historical Stripe-first flow (flag OFF): continue to "plan" view.
     const ok = await updateOnboardingStep("plan", {
       ...newCompanyData,
       billingCountry,
@@ -374,12 +408,6 @@ function SignUpPageContent() {
   const handleSelectPlan = async (planKey) => {
     if (isSavingStep) return;
     setSelectedPlan(planKey);
-
-    // Re-subscribing users: skip the step PATCH (API would 400 on completed → recap).
-    if (isResubscribing) {
-      switchView("recap");
-      return;
-    }
 
     const ok = await updateOnboardingStep("recap", {
       selectedPlan: planKey,
@@ -446,9 +474,14 @@ function SignUpPageContent() {
       annualPrice: 16.19,
       description: "Pour les indépendants",
       features: [
-        "Facturation & Devis illimités",
+        "1 utilisateur",
+        "Facturation & Devis",
+        "Relances automatiques",
+        "E-signature (3/mois)",
+        "Scan OCR (50/mois)",
+        "Gestion de trésorerie",
         "CRM client",
-        "Un accès comptable gratuit",
+        "1 comptable gratuit",
       ],
     },
     {
@@ -457,10 +490,16 @@ function SignUpPageContent() {
       monthlyPrice: 48.99,
       annualPrice: 44.09,
       featured: true,
-      description: "Pour les équipes en croissance",
+      description: "Pour les petites entreprises",
       features: [
         "Jusqu'à 10 utilisateurs",
-        "E-signature & automatisations",
+        "Facturation & Devis",
+        "Relances automatiques",
+        "E-signature (20/mois)",
+        "Scan OCR illimité",
+        "Gestion de trésorerie",
+        "CRM client",
+        "3 comptables gratuits",
         "Support prioritaire",
       ],
     },
@@ -469,11 +508,17 @@ function SignUpPageContent() {
       name: "Entreprise",
       monthlyPrice: 94.99,
       annualPrice: 85.49,
-      description: "Pour les structures avancées",
+      description: "Pour les grandes structures",
       features: [
         "Jusqu'à 25 utilisateurs",
-        "Permissions avancées",
-        "Archivage légal & API",
+        "Facturation & Devis",
+        "E-signature illimitée",
+        "Scan OCR illimité",
+        "Gestion de trésorerie",
+        "CRM client",
+        "5 comptables gratuits",
+        "Support prioritaire",
+        "Automatisations illimitées",
       ],
     },
   ];
@@ -991,7 +1036,7 @@ function SignUpPageContent() {
                   </Link>{" "}
                   et notre{" "}
                   <Link
-                    href="/politique-de-confidentialite"
+                    href="/politique-confidentialite"
                     className="text-foreground hover:underline"
                   >
                     Politique de confidentialité
@@ -1035,10 +1080,6 @@ function SignUpPageContent() {
                 disabled={i >= currentDotIndex}
                 onClick={async () => {
                   if (i < currentDotIndex && !isSavingStep) {
-                    if (isResubscribing) {
-                      switchView(step);
-                      return;
-                    }
                     const ok = await updateOnboardingStep(step);
                     if (ok) switchView(step);
                   }

@@ -6,6 +6,7 @@ import {
   Pencil,
   Plus,
   Download,
+  Users,
   FileText,
   Crown,
   ScanLine,
@@ -57,6 +58,7 @@ export default function FacturationSection({
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancelConfirmText, setCancelConfirmText] = useState("");
+  const [seatsInfo, setSeatsInfo] = useState(null);
   const [billingPortalLoading, setBillingPortalLoading] = useState(false);
 
   const {
@@ -66,12 +68,31 @@ export default function FacturationSection({
     refetch: refetchInvoices,
     viewInvoice,
     downloadInvoice,
-  } = useStripeInvoices({ enabled: canManageSubscription });
+  } = useStripeInvoices();
   const { subscription, isActive, loading: subLoading } = useSubscription();
   const { workspaceId } = useWorkspace();
   const { quota: ocrQuota, loading: ocrLoading } = useUserOcrQuota(workspaceId);
 
   const orgId = session?.user?.organization?.id || organization?.id;
+
+  // Fetch seats info
+  useEffect(() => {
+    const fetchSeatsInfo = async () => {
+      if (!orgId) return;
+      try {
+        const response = await fetch(`/api/organizations/${orgId}/seats-info`);
+        if (response.ok) {
+          const data = await response.json();
+          setSeatsInfo(data);
+        }
+      } catch (error) {
+        console.error("Erreur récupération sièges:", error);
+      }
+    };
+    if (isActive()) {
+      fetchSeatsInfo();
+    }
+  }, [orgId, isActive]);
 
   // Helpers
   const formatDate = (dateString) => {
@@ -195,8 +216,22 @@ export default function FacturationSection({
     );
   };
 
-  // No subscription state
-  if (!isActive() && !subLoading) {
+  // App-managed trial without a Stripe billing relationship yet — fall through
+  // to the same empty-state UI (no Stripe customer means no portal to open),
+  // but with copy adapted to the trial context.
+  const isTrialAppWithoutStripe =
+    subscription?.appTrialEnabled === true &&
+    subscription?.isTrialActive === true &&
+    !subscription?.stripeCustomerId;
+
+  // No subscription state OR trial app without Stripe yet
+  if ((!isActive() || isTrialAppWithoutStripe) && !subLoading) {
+    const trialCopy = isTrialAppWithoutStripe
+      ? "Vous êtes en période d'essai gratuit. Souscrivez à un abonnement pour ne pas être interrompu à la fin de l'essai."
+      : "Vous devez avoir un abonnement pour accéder à la facturation.";
+    const trialTitle = isTrialAppWithoutStripe
+      ? "Aucun abonnement actif — essai gratuit en cours"
+      : "Aucun abonnement actif";
     return (
       <div className="space-y-8">
         <div>
@@ -212,18 +247,17 @@ export default function FacturationSection({
         <div className="text-center py-12">
           <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-            Aucun abonnement actif
+            {trialTitle}
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            Vous devez avoir un abonnement pour accéder à la facturation.
+            {trialCopy}
           </p>
           <Button
-            type="button"
             onClick={() => onTabChange?.("subscription")}
             className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"
           >
             <Crown className="h-4 w-4 mr-2" />
-            Voir les plans
+            {isTrialAppWithoutStripe ? "Souscrire" : "Voir les plans"}
           </Button>
         </div>
       </div>
@@ -277,7 +311,6 @@ export default function FacturationSection({
               </div>
             </div>
             <Button
-              type="button"
               onClick={handleOpenBillingPortal}
               disabled={billingPortalLoading || !canManageSubscription}
               className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer shrink-0"
@@ -464,7 +497,6 @@ export default function FacturationSection({
               </div>
             </div>
             <Button
-              type="button"
               variant="outline"
               size="sm"
               onClick={() => onTabChange?.("subscription")}
@@ -476,10 +508,53 @@ export default function FacturationSection({
         </div>
       </div>
 
-      {/* Consumption - OCR */}
+      {/* Consumption - Seats & OCR */}
       <div className="space-y-3">
         <h3 className="text-sm font-medium">Consommation</h3>
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Seats Card */}
+          <div className="rounded-xl border border-gray-200 dark:border-[#2c2c2c] p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-[#5b50fe]/10">
+                  <Users className="h-3.5 w-3.5 text-[#5b50fe]" />
+                </div>
+                <span className="text-sm font-medium">Sièges</span>
+              </div>
+              <span className="text-sm text-muted-foreground">
+                {seatsInfo
+                  ? `${seatsInfo.currentMembers}/${seatsInfo.includedSeats}`
+                  : "–"}
+              </span>
+            </div>
+            <Progress
+              value={
+                seatsInfo
+                  ? Math.min(
+                      100,
+                      (seatsInfo.currentMembers / seatsInfo.includedSeats) *
+                        100,
+                    )
+                  : 0
+              }
+              className="h-1 bg-[#5b50fe]/10 [&>[data-slot=progress-indicator]]:bg-[#5b50fe]"
+            />
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">
+                {seatsInfo?.additionalSeats > 0
+                  ? `${seatsInfo.additionalSeats} siège${seatsInfo.additionalSeats > 1 ? "s" : ""} supplémentaire${seatsInfo.additionalSeats > 1 ? "s" : ""}`
+                  : `${seatsInfo?.availableSeats || 0} siège${(seatsInfo?.availableSeats || 0) > 1 ? "s" : ""} disponible${(seatsInfo?.availableSeats || 0) > 1 ? "s" : ""}`}
+              </span>
+              <button
+                type="button"
+                onClick={() => onTabChange?.("personnes")}
+                className="text-xs text-[#5b50fe] hover:underline cursor-pointer"
+              >
+                Gérer les sièges
+              </button>
+            </div>
+          </div>
+
           {/* OCR Credits Card */}
           <div className="rounded-xl border border-gray-200 dark:border-[#2c2c2c] p-4 space-y-3">
             <div className="flex items-center justify-between">
@@ -542,7 +617,6 @@ export default function FacturationSection({
                 </p>
               </div>
               <Button
-                type="button"
                 variant="outline"
                 size="icon"
                 className="h-8 w-8 cursor-pointer"
@@ -595,7 +669,6 @@ export default function FacturationSection({
                 </p>
               </div>
               <Button
-                type="button"
                 variant="outline"
                 size="icon"
                 className="h-8 w-8 cursor-pointer"
@@ -615,7 +688,6 @@ export default function FacturationSection({
                 Vos moyens de paiement sont gérés directement par Stripe.
               </p>
               <Button
-                type="button"
                 variant="link"
                 size="sm"
                 className="text-[#5b50fe] cursor-pointer mt-1 h-auto p-0 text-xs"
@@ -629,151 +701,146 @@ export default function FacturationSection({
         </div>
       </div>
 
-      {/* Invoice History — réservé au propriétaire (données Stripe du client) */}
-      {canManageSubscription && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium">Historique des factures</h3>
+      {/* Invoice History */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium">Historique des factures</h3>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={refetchInvoices}
+            disabled={invoicesLoading}
+            className="cursor-pointer h-8 text-xs"
+          >
+            {invoicesLoading ? (
+              <LoaderCircle className="h-3 w-3 animate-spin mr-1" />
+            ) : null}
+            Actualiser
+          </Button>
+        </div>
+
+        {/* Loading state */}
+        {invoicesLoading && (
+          <div className="rounded-xl border border-gray-200 dark:border-[#2c2c2c] overflow-hidden">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between p-4 border-b last:border-b-0 border-gray-100 dark:border-[#2c2c2c]"
+              >
+                <div className="flex items-center gap-4 flex-1">
+                  <div className="h-4 bg-gray-200 dark:bg-[#292929] rounded animate-pulse w-24" />
+                  <div className="h-4 bg-gray-200 dark:bg-[#292929] rounded animate-pulse w-16" />
+                  <div className="h-5 bg-gray-200 dark:bg-[#292929] rounded-full animate-pulse w-14" />
+                </div>
+                <div className="h-8 bg-gray-200 dark:bg-[#292929] rounded animate-pulse w-8" />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Error state */}
+        {invoicesError && !invoicesLoading && (
+          <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20 p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertCircle className="h-4 w-4 text-red-500" />
+              <span className="text-sm font-medium text-red-700 dark:text-red-400">
+                Erreur
+              </span>
+            </div>
+            <p className="text-sm text-red-600 dark:text-red-400 mb-3">
+              {invoicesError}
+            </p>
             <Button
-              type="button"
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={refetchInvoices}
-              disabled={invoicesLoading}
-              className="cursor-pointer h-8 text-xs"
+              className="text-red-700 border-red-300 hover:bg-red-50 cursor-pointer"
             >
-              {invoicesLoading ? (
-                <LoaderCircle className="h-3 w-3 animate-spin mr-1" />
-              ) : null}
-              Actualiser
+              Réessayer
             </Button>
           </div>
+        )}
 
-          {/* Loading state */}
-          {invoicesLoading && (
-            <div className="rounded-xl border border-gray-200 dark:border-[#2c2c2c] overflow-hidden">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between p-4 border-b last:border-b-0 border-gray-100 dark:border-[#2c2c2c]"
-                >
-                  <div className="flex items-center gap-4 flex-1">
-                    <div className="h-4 bg-gray-200 dark:bg-[#292929] rounded animate-pulse w-24" />
-                    <div className="h-4 bg-gray-200 dark:bg-[#292929] rounded animate-pulse w-16" />
-                    <div className="h-5 bg-gray-200 dark:bg-[#292929] rounded-full animate-pulse w-14" />
-                  </div>
-                  <div className="h-8 bg-gray-200 dark:bg-[#292929] rounded animate-pulse w-8" />
-                </div>
-              ))}
+        {/* Invoice table */}
+        {!invoicesLoading && !invoicesError && invoices.length > 0 && (
+          <div className="rounded-xl border border-gray-200 dark:border-[#2c2c2c] overflow-hidden">
+            {/* Table Header */}
+            <div className="hidden md:grid grid-cols-[1fr_100px_120px_80px_48px] gap-4 px-4 py-2.5 bg-gray-50 dark:bg-[#141414] border-b border-gray-200 dark:border-[#2c2c2c]">
+              <span className="text-xs font-medium text-muted-foreground">
+                Référence
+              </span>
+              <span className="text-xs font-medium text-muted-foreground">
+                Total TTC
+              </span>
+              <span className="text-xs font-medium text-muted-foreground">
+                Date
+              </span>
+              <span className="text-xs font-medium text-muted-foreground">
+                Statut
+              </span>
+              <span className="text-xs font-medium text-muted-foreground" />
             </div>
-          )}
 
-          {/* Error state */}
-          {invoicesError && !invoicesLoading && (
-            <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20 p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertCircle className="h-4 w-4 text-red-500" />
-                <span className="text-sm font-medium text-red-700 dark:text-red-400">
-                  Erreur
-                </span>
-              </div>
-              <p className="text-sm text-red-600 dark:text-red-400 mb-3">
-                {invoicesError}
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={refetchInvoices}
-                className="text-red-700 border-red-300 hover:bg-red-50 cursor-pointer"
+            {/* Table Rows (max 5) */}
+            {invoices.slice(0, 3).map((facture, index, arr) => (
+              <div
+                key={facture.id}
+                className={`grid grid-cols-1 md:grid-cols-[1fr_100px_120px_80px_48px] gap-2 md:gap-4 px-4 py-3 items-center ${
+                  index < arr.length - 1
+                    ? "border-b border-gray-100 dark:border-[#2c2c2c]"
+                    : ""
+                }`}
               >
-                Réessayer
-              </Button>
-            </div>
-          )}
-
-          {/* Invoice table */}
-          {!invoicesLoading && !invoicesError && invoices.length > 0 && (
-            <div className="rounded-xl border border-gray-200 dark:border-[#2c2c2c] overflow-hidden">
-              {/* Table Header */}
-              <div className="hidden md:grid grid-cols-[1fr_100px_120px_80px_48px] gap-4 px-4 py-2.5 bg-gray-50 dark:bg-[#141414] border-b border-gray-200 dark:border-[#2c2c2c]">
-                <span className="text-xs font-medium text-muted-foreground">
-                  Référence
-                </span>
-                <span className="text-xs font-medium text-muted-foreground">
-                  Total TTC
-                </span>
-                <span className="text-xs font-medium text-muted-foreground">
-                  Date
-                </span>
-                <span className="text-xs font-medium text-muted-foreground">
-                  Statut
-                </span>
-                <span className="text-xs font-medium text-muted-foreground" />
-              </div>
-
-              {/* Table Rows (max 5) */}
-              {invoices.slice(0, 3).map((facture, index, arr) => (
-                <div
-                  key={facture.id}
-                  className={`grid grid-cols-1 md:grid-cols-[1fr_100px_120px_80px_48px] gap-2 md:gap-4 px-4 py-3 items-center ${
-                    index < arr.length - 1
-                      ? "border-b border-gray-100 dark:border-[#2c2c2c]"
-                      : ""
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground shrink-0 hidden md:block" />
-                    <span className="text-sm truncate">
-                      {facture.number || facture.description || `Facture`}
-                    </span>
-                  </div>
-                  <span className="text-sm font-medium">{facture.amount}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {facture.date}
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-muted-foreground shrink-0 hidden md:block" />
+                  <span className="text-sm truncate">
+                    {facture.number || facture.description || `Facture`}
                   </span>
-                  <div>{getStatusBadge(facture.status)}</div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 cursor-pointer"
-                    onClick={() => downloadInvoice(facture.stripeInvoiceId)}
-                  >
-                    <Download className="h-4 w-4" />
-                  </Button>
                 </div>
-              ))}
+                <span className="text-sm font-medium">{facture.amount}</span>
+                <span className="text-sm text-muted-foreground">
+                  {facture.date}
+                </span>
+                <div>{getStatusBadge(facture.status)}</div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 cursor-pointer"
+                  onClick={() => downloadInvoice(facture.stripeInvoiceId)}
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
 
-              {/* Voir plus */}
-              {invoices.length > 3 && (
-                <div className="px-4 py-2.5 border-t border-gray-100 dark:border-[#2c2c2c] text-center">
-                  <button
-                    type="button"
-                    onClick={handleOpenBillingPortal}
-                    className="text-xs text-[#5b50fe] hover:underline cursor-pointer"
-                  >
-                    Voir les {invoices.length - 3} autres factures
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+            {/* Voir plus */}
+            {invoices.length > 3 && (
+              <div className="px-4 py-2.5 border-t border-gray-100 dark:border-[#2c2c2c] text-center">
+                <button
+                  type="button"
+                  onClick={handleOpenBillingPortal}
+                  className="text-xs text-[#5b50fe] hover:underline cursor-pointer"
+                >
+                  Voir les {invoices.length - 3} autres factures
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
-          {/* Empty state */}
-          {!invoicesLoading && !invoicesError && invoices.length === 0 && (
-            <div className="rounded-xl border border-gray-200 dark:border-[#2c2c2c] p-8 text-center">
-              <FileText className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
-                Aucune facture
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Vos factures apparaîtront ici une fois générées.
-              </p>
-            </div>
-          )}
-        </div>
-      )}
+        {/* Empty state */}
+        {!invoicesLoading && !invoicesError && invoices.length === 0 && (
+          <div className="rounded-xl border border-gray-200 dark:border-[#2c2c2c] p-8 text-center">
+            <FileText className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+              Aucune facture
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Vos factures apparaîtront ici une fois générées.
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* Cancel Subscription */}
       {isActive() &&
@@ -792,7 +859,6 @@ export default function FacturationSection({
                 </p>
               </div>
               <Button
-                type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => setShowCancelDialog(true)}

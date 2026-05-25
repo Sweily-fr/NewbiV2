@@ -150,6 +150,47 @@ export const auth = betterAuth({
             console.log(
               `✅ [USER CREATE] Utilisateur ${user.email} créé (onboardingStep: workspace)`,
             );
+
+            // ──────────────────────────────────────────────────────────────
+            // ENABLE_APP_TRIAL : créer immédiatement une org placeholder + member
+            // + trial 14 jours app-managed. L'utilisateur remplira la SIRET à
+            // l'étape "workspace" qui mettra à jour l'org et basculera
+            // onboardingStep vers "completed".
+            //
+            // Quand le flag est OFF, ce bloc est totalement ignoré et le flow
+            // historique (création d'org par webhook Stripe après paiement)
+            // reste actif et inchangé.
+            // ──────────────────────────────────────────────────────────────
+            const { isAppTrialEnabled } = await import("./feature-flags.js");
+            if (isAppTrialEnabled()) {
+              try {
+                const { createOrganizationWithSubscription } =
+                  await import("./org-creation.js");
+                await createOrganizationWithSubscription({
+                  mongoDb,
+                  userId: user.id,
+                  orgData: {
+                    // Placeholder — sera enrichi à l'étape "workspace" du signup
+                    companyName: user.name || "Mon entreprise",
+                    orgName: user.name || "Mon entreprise",
+                    orgType: "business",
+                  },
+                  appTrialDays: 14,
+                  markOnboardingComplete: false, // workspace step still pending
+                });
+                console.log(
+                  `✅ [USER CREATE] Org placeholder + trial app 14j créés pour ${user.email}`,
+                );
+              } catch (trialError) {
+                // Non-fatal: better-auth ne bloque pas le signup si la création
+                // d'org placeholder échoue. L'utilisateur retombera sur le flow
+                // historique (création post-paiement).
+                console.error(
+                  `❌ [USER CREATE] Erreur création org+trial pour ${user.email}:`,
+                  trialError,
+                );
+              }
+            }
           } catch (error) {
             console.error("❌ [USER CREATE] Erreur:", error);
           }

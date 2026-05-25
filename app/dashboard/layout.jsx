@@ -1,8 +1,11 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { ObjectId } from "mongodb";
 import { auth } from "@/src/lib/auth";
 import { mongoDb } from "@/src/lib/mongodb";
 import { toObjectId } from "@/src/lib/security";
+import { isAppTrialEnabled } from "@/src/lib/feature-flags";
+import { isTrialAppActive } from "@/src/lib/trial-app";
 import DashboardClientLayout from "./dashboard-client-layout";
 
 /**
@@ -11,25 +14,52 @@ import DashboardClientLayout from "./dashboard-client-layout";
  * @returns {Promise<boolean>}
  */
 async function hasValidSubscription(orgId) {
+  // App-managed trial check (feature-flagged). When ENABLE_APP_TRIAL is OFF
+  // (default), this block is skipped and the legacy Stripe-based logic below
+  // runs unchanged — a Stripe-active user is never redirected to signup by
+  // this added branch.
+  if (isAppTrialEnabled()) {
+    try {
+      const orgObjectId = ObjectId.isValid(orgId) ? new ObjectId(orgId) : null;
+      const orgDoc = orgObjectId
+        ? await mongoDb
+            .collection("organization")
+            .findOne(
+              { _id: orgObjectId },
+              { projection: { isTrialActive: 1, trialEndDate: 1 } },
+            )
+        : null;
+      if (isTrialAppActive(orgDoc)) {
+        return true;
+      }
+    } catch (err) {
+      // Non-fatal — fall through to the Stripe-based check below.
+      console.warn(
+        `[Dashboard Layout] trial lookup failed for org ${orgId}:`,
+        err?.message,
+      );
+    }
+  }
+
   const subscription = await mongoDb.collection("subscription").findOne({
     $or: [{ referenceId: orgId }, { organizationId: orgId }],
   });
 
-  if (!subscription) {
-    console.log(`[Dashboard Layout] No subscription doc for orgId=${orgId}`);
-    return false;
-  }
+  if (!subscription) return false;
 
+  // Décision #12 (Lot 5) — past_due est un grace period Stripe pendant les
+  // retries de paiement. Le backend (rbac.js) le considère déjà actif ; on
+  // aligne ici pour ne pas rediriger ces utilisateurs vers /auth/signup
+  // pendant qu'ils règlent leur moyen de paiement.
   const isActive =
-    subscription.status === "active" || subscription.status === "trialing";
+    subscription.status === "active" ||
+    subscription.status === "trialing" ||
+    subscription.status === "past_due";
   const isCanceledButValid =
     subscription.status === "canceled" &&
     subscription.periodEnd &&
     new Date(subscription.periodEnd) > new Date();
 
-  console.log(
-    `[Dashboard Layout] Sub for orgId=${orgId}: status=${subscription.status}, periodEnd=${subscription.periodEnd}, valid=${isActive || isCanceledButValid}`,
-  );
   return isActive || isCanceledButValid;
 }
 
@@ -212,10 +242,7 @@ export default async function DashboardLayout({ children }) {
     redirect("/auth/login");
   }
 
-  console.log(
-    `[Dashboard Layout] Session trouvée pour: ${session.user.email} ` +
-      `(userId=${session.user.id}, activeOrgId=${session.session?.activeOrganizationId || "<none>"})`,
-  );
+  console.log(`[Dashboard Layout] Session trouvée pour: ${session.user.email}`);
 
   // Vérifier l'abonnement
   const { hasSubscription, reason, organizationId } = await checkSubscription(
@@ -224,7 +251,7 @@ export default async function DashboardLayout({ children }) {
   );
 
   console.log(
-    `[Dashboard Layout] hasSubscription: ${hasSubscription}, reason: ${reason}, resolvedOrgId: ${organizationId}`,
+    `[Dashboard Layout] hasSubscription: ${hasSubscription}, reason: ${reason}`,
   );
 
   // Si pas d'abonnement valide, vérifier s'il y a un paiement Stripe récent (webhook en cours)

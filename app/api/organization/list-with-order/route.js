@@ -2,6 +2,8 @@ import { auth } from "@/src/lib/auth";
 import { headers } from "next/headers";
 import { mongoDb } from "@/src/lib/mongodb";
 import { ObjectId } from "mongodb";
+import { isAppTrialEnabled } from "@/src/lib/feature-flags";
+import { isTrialAppActive } from "@/src/lib/trial-app";
 
 export async function GET() {
   try {
@@ -11,11 +13,17 @@ export async function GET() {
       session = await auth.api.getSession({ headers: await headers() });
     } catch (sessionError) {
       console.error("❌ [LIST-ORG] Erreur session:", sessionError.message);
-      return Response.json({ error: "Erreur de session", organizations: [] }, { status: 401 });
+      return Response.json(
+        { error: "Erreur de session", organizations: [] },
+        { status: 401 },
+      );
     }
 
     if (!session?.user) {
-      return Response.json({ error: "Non authentifié", organizations: [] }, { status: 401 });
+      return Response.json(
+        { error: "Non authentifié", organizations: [] },
+        { status: 401 },
+      );
     }
 
     // Récupérer les membres de l'utilisateur avec l'ordre
@@ -53,15 +61,34 @@ export async function GET() {
         sub.status === "canceled" &&
         sub.periodEnd &&
         new Date(sub.periodEnd) > new Date();
-      subscriptionMap[orgId] = isActive || isCanceledButValid ? "active" : "expired";
+      subscriptionMap[orgId] =
+        isActive || isCanceledButValid ? "active" : "expired";
     }
+
+    const appTrialOn = isAppTrialEnabled();
 
     // Fusionner les données : ajouter le champ order, role et subscriptionStatus à chaque organisation
     const organizationsWithOrder = organizations.map((org) => {
       const orgIdStr = org._id.toString();
       const member = members.find(
-        (m) => m.organizationId.toString() === orgIdStr
+        (m) => m.organizationId.toString() === orgIdStr,
       );
+
+      // App-managed trial check (feature-flagged). Only applied when the org
+      // has NO valid Stripe subscription — a Stripe sub always wins. When the
+      // flag is OFF, this branch is skipped entirely so the historical
+      // "active | expired | none" tristate is preserved exactly.
+      let subscriptionStatus = subscriptionMap[orgIdStr] || "none";
+      let trialEndDate = null;
+      if (
+        appTrialOn &&
+        subscriptionStatus !== "active" &&
+        isTrialAppActive(org)
+      ) {
+        subscriptionStatus = "trialing";
+        trialEndDate = org.trialEndDate;
+      }
+
       return {
         id: orgIdStr,
         name: org.name,
@@ -72,7 +99,10 @@ export async function GET() {
         customIcon: org.customIcon,
         order: member?.order ?? 999, // Si pas d'ordre, mettre à la fin
         role: member?.role, // Ajouter le rôle de l'utilisateur
-        subscriptionStatus: subscriptionMap[orgIdStr] || "none",
+        subscriptionStatus,
+        // trialEndDate only exposed when the org is in an app-managed trial
+        // (null otherwise to keep the legacy payload shape minimal).
+        trialEndDate,
       };
     });
 
@@ -84,7 +114,7 @@ export async function GET() {
     console.error("❌ [LIST-ORG] Erreur:", error);
     return Response.json(
       { error: "Erreur lors de la récupération des organisations" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

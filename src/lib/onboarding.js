@@ -50,9 +50,14 @@ export function parseOnboardingData(raw) {
 /**
  * Allowed step transitions (forward only).
  * Key = current step, value = set of allowed next steps.
+ *
+ * `workspace → completed` is a short-circuit reserved for the app-managed
+ * trial flow (ENABLE_APP_TRIAL=ON). The route handler enforces the feature
+ * flag in addition to this rule, so the historical 3-step flow remains intact
+ * when the flag is OFF.
  */
 const ALLOWED_TRANSITIONS = {
-  workspace: new Set(["plan"]),
+  workspace: new Set(["plan", "completed"]),
   plan: new Set(["recap"]),
   recap: new Set(["completed"]),
 };
