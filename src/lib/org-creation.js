@@ -7,7 +7,7 @@ import { toObjectId } from "@/src/lib/security/to-object-id";
  *   - The Stripe webhook (auth-plugins.js) — passes `subscriptionInfo`
  *   - The verify-checkout-session fallback — passes `subscriptionInfo`
  *   - `databaseHooks.user.create.after` for the app-managed trial — passes
- *     `appTrialDays: 14` and NO `subscriptionInfo`
+ *     `appTrialDays: 30` and NO `subscriptionInfo`
  *
  * @param {Object} input
  * @param {Object} input.mongoDb - MongoDB database instance

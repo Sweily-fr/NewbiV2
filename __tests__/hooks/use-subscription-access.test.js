@@ -93,7 +93,7 @@ describe("useSubscriptionAccess — Stripe-only behaviour (flag OFF)", () => {
         status: null,
         appTrialEnabled: false,
         isTrialActive: true,
-        trialEndDate: inFuture(14).toISOString(),
+        trialEndDate: inFuture(30).toISOString(),
       },
       isActive: false,
     });

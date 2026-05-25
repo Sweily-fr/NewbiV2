@@ -153,7 +153,7 @@ export const auth = betterAuth({
 
             // ──────────────────────────────────────────────────────────────
             // ENABLE_APP_TRIAL : créer immédiatement une org placeholder + member
-            // + trial 14 jours app-managed. L'utilisateur remplira la SIRET à
+            // + trial 30 jours app-managed. L'utilisateur remplira la SIRET à
             // l'étape "workspace" qui mettra à jour l'org et basculera
             // onboardingStep vers "completed".
             //
@@ -175,11 +175,11 @@ export const auth = betterAuth({
                     orgName: user.name || "Mon entreprise",
                     orgType: "business",
                   },
-                  appTrialDays: 14,
+                  appTrialDays: 30,
                   markOnboardingComplete: false, // workspace step still pending
                 });
                 console.log(
-                  `✅ [USER CREATE] Org placeholder + trial app 14j créés pour ${user.email}`,
+                  `✅ [USER CREATE] Org placeholder + trial app 30j créés pour ${user.email}`,
                 );
               } catch (trialError) {
                 // Non-fatal: better-auth ne bloque pas le signup si la création

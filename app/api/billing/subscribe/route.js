@@ -12,7 +12,7 @@ import { isAppTrialEnabled } from "@/src/lib/feature-flags";
  * Dedicated post-trial subscription endpoint (décision #10).
  *
  * For a user who ALREADY has an organization (typically because Lot 3 created
- * one at signup + granted a 14-day app trial) and wants to start a paid plan.
+ * one at signup + granted a 30-day app trial) and wants to start a paid plan.
  * Unlike /api/create-org-subscription this endpoint:
  *
  *   - does NOT create a pending_org_data document (the org already exists)
