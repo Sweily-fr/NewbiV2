@@ -16,6 +16,7 @@ const mockClearStore = vi.fn();
 const mockResetOrgId = vi.fn();
 const mockToastError = vi.fn();
 const mockToastSuccess = vi.fn();
+const mockToastInfo = vi.fn();
 
 vi.mock("../../src/lib/auth-client", () => ({
   authClient: {
@@ -48,7 +49,7 @@ vi.mock("@/src/components/ui/sonner", () => ({
   toast: {
     error: (...args) => mockToastError(...args),
     success: (...args) => mockToastSuccess(...args),
-    info: vi.fn(),
+    info: (...args) => mockToastInfo(...args),
   },
 }));
 
@@ -213,13 +214,13 @@ describe("LoginForm", () => {
     });
   });
 
-  it("redirige vers /auth/manage-devices si check-session-limit retourne hasReachedLimit", async () => {
+  it("affiche un toast quand check-session-limit a révoqué d'autres sessions", async () => {
     mockSignInEmail.mockImplementation(async (_data, callbacks) => {
       await callbacks.onSuccess({ data: {} });
     });
     mockFetch.mockResolvedValue({
       ok: true,
-      json: async () => ({ hasReachedLimit: true }),
+      json: async () => ({ hasReachedLimit: false, revokedCount: 1 }),
     });
 
     const user = userEvent.setup();
@@ -235,8 +236,11 @@ describe("LoginForm", () => {
     await user.click(screen.getByRole("button", { name: /Se connecter/i }));
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith("/auth/manage-devices");
+      expect(mockToastInfo).toHaveBeenCalledWith(
+        expect.stringMatching(/d[ée]connect[ée]/i),
+      );
     });
+    expect(mockPush).not.toHaveBeenCalledWith("/auth/manage-devices");
   });
 
   it("ouvre la dialog de vérification email si l'email n'est pas vérifié", async () => {

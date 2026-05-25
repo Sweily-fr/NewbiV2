@@ -3,6 +3,7 @@ import { auth } from "@/src/lib/auth";
 import { headers } from "next/headers";
 import { mongoDb } from "@/src/lib/mongodb";
 import { ObjectId } from "mongodb";
+import { enforceSessionLimit } from "@/src/lib/enforce-session-limit";
 
 // Valeurs par défaut
 const DEFAULTS = {
@@ -92,6 +93,23 @@ export async function PUT(req) {
       .collection("organization")
       .updateOne({ _id: new ObjectId(orgId) }, { $set: setFields });
 
+    // Si maxSessions a été modifié, appliquer immédiatement la nouvelle limite
+    // pour l'utilisateur en cours (révocation des sessions excédentaires).
+    let revokedCount = 0;
+    if (update.maxSessions !== undefined) {
+      try {
+        const userObjectId = new ObjectId(session.user.id);
+        const result = await enforceSessionLimit({
+          userObjectId,
+          currentSessionToken: session.session?.token || null,
+          maxSessions: update.maxSessions,
+        });
+        revokedCount = result.revokedCount;
+      } catch (err) {
+        console.error("❌ [SESSION-SETTINGS] enforceSessionLimit error:", err);
+      }
+    }
+
     // Lire les settings mis à jour
     const org = await mongoDb
       .collection("organization")
@@ -103,6 +121,7 @@ export async function PUT(req) {
     return NextResponse.json({
       ...DEFAULTS,
       ...(org?.sessionSettings || {}),
+      revokedCount,
     });
   } catch (error) {
     console.error("❌ [SESSION-SETTINGS] PUT error:", error);

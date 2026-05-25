@@ -374,6 +374,18 @@ export function SecuritySection({
       }
 
       toast.success("Paramètres de session mis à jour");
+
+      // Si la nouvelle limite a entraîné une révocation, prévenir + rafraîchir
+      // la liste des appareils affichée.
+      if (data.revokedCount > 0) {
+        const n = data.revokedCount;
+        toast.info(
+          n === 1
+            ? "Une autre session a été déconnectée pour respecter la limite"
+            : `${n} autres sessions ont été déconnectées pour respecter la limite`,
+        );
+        await fetchDeviceSessions();
+      }
     } catch (error) {
       console.error(
         "Erreur lors de la mise à jour des paramètres de session:",
