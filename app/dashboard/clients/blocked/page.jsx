@@ -230,7 +230,7 @@ function BlockedContent() {
           <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
             <table className="w-full table-fixed">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-800">
+                <tr>
                   <th className="h-10 p-2 pl-4 sm:pl-6 text-left align-middle w-[40px]">
                     <Checkbox disabled />
                   </th>
@@ -310,7 +310,7 @@ function BlockedContent() {
           <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
             <table className="w-full table-fixed">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-800">
+                <tr>
                   <th className="h-10 p-2 pl-4 sm:pl-6 text-left align-middle font-normal text-xs text-muted-foreground w-[40px]">
                     <Checkbox
                       checked={
