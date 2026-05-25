@@ -56,7 +56,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuPortal,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -1019,7 +1018,6 @@ function RowActions({ row, onEdit, onDelete }) {
         <DropdownMenuGroup>
           <DropdownMenuItem onClick={handleEdit}>
             <span>Modifier</span>
-            <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() =>
@@ -1027,7 +1025,6 @@ function RowActions({ row, onEdit, onDelete }) {
             }
           >
             <span>Copier référence</span>
-            <DropdownMenuShortcut>⌘C</DropdownMenuShortcut>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
@@ -1037,7 +1034,6 @@ function RowActions({ row, onEdit, onDelete }) {
           variant="destructive"
         >
           <span>Supprimer</span>
-          <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
         </DropdownMenuItem>
       </DropdownMenuContent>
 
