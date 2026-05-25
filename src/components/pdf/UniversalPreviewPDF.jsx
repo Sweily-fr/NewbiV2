@@ -1074,9 +1074,14 @@ const UniversalPreviewPDF = ({
                 line.trim() ? (
                   <div
                     key={index}
-                    className="dark:text-[#0A0A0A] whitespace-pre-wrap"
+                    className="dark:text-[#0A0A0A] whitespace-pre-wrap break-words"
                     data-no-break="true"
-                    style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+                    style={{
+                      pageBreakInside: "avoid",
+                      breakInside: "avoid",
+                      wordWrap: "break-word",
+                      overflowWrap: "break-word",
+                    }}
                   >
                     {line}
                   </div>
@@ -2014,9 +2019,14 @@ const UniversalPreviewPDF = ({
                   line.trim() ? (
                     <div
                       key={index}
-                      className="dark:text-[#0A0A0A] text-[10px] whitespace-pre-wrap"
+                      className="dark:text-[#0A0A0A] text-[10px] whitespace-pre-wrap break-words"
                       data-no-break="true"
-                      style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+                      style={{
+                        pageBreakInside: "avoid",
+                        breakInside: "avoid",
+                        wordWrap: "break-word",
+                        overflowWrap: "break-word",
+                      }}
                     >
                       {line}
                     </div>
@@ -2619,9 +2629,14 @@ const UniversalPreviewPDF = ({
                 line.trim() ? (
                   <div
                     key={index}
-                    className="dark:text-[#0A0A0A] text-[10px] whitespace-pre-wrap"
+                    className="dark:text-[#0A0A0A] text-[10px] whitespace-pre-wrap break-words"
                     data-no-break="true"
-                    style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+                    style={{
+                      pageBreakInside: "avoid",
+                      breakInside: "avoid",
+                      wordWrap: "break-word",
+                      overflowWrap: "break-word",
+                    }}
                   >
                     {line}
                   </div>
