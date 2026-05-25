@@ -3,7 +3,7 @@
  *
  * Mirror of newbi-api/src/utils/trialApp.js. Both implementations must match
  * exactly — this is the single source of truth for "is this org currently
- * inside its 14-day app-managed trial window".
+ * inside its 30-day app-managed trial window".
  *
  * Fields read from the Organization document (Better Auth):
  *   - isTrialActive    (boolean)

@@ -735,7 +735,7 @@ describe("createOrganizationWithSubscription — pending data cleanup", () => {
 
 // Lot 3 — app-managed trial branch
 describe("createOrganizationWithSubscription — appTrialDays branch", () => {
-  it("grants a 14-day app trial when appTrialDays is set and no subscriptionInfo", async () => {
+  it("grants a 30-day app trial when appTrialDays is set and no subscriptionInfo", async () => {
     const newOrgId = new ObjectId();
     const orgUpdates = [];
     const collections = {
@@ -755,7 +755,7 @@ describe("createOrganizationWithSubscription — appTrialDays branch", () => {
       userId,
       orgData: { companyName: "Acme" },
       subscriptionInfo: null,
-      appTrialDays: 14,
+      appTrialDays: 30,
     });
 
     // One of the updates must set the trial fields
@@ -765,12 +765,12 @@ describe("createOrganizationWithSubscription — appTrialDays branch", () => {
     expect(trialPatch.$set.stripeTrialActive).toBe(false);
     expect(typeof trialPatch.$set.trialStartDate).toBe("string");
     expect(typeof trialPatch.$set.trialEndDate).toBe("string");
-    // trialEndDate must be ~14 days after now
+    // trialEndDate must be ~30 days after now
     const diffDays =
       (new Date(trialPatch.$set.trialEndDate).getTime() - Date.now()) /
       86_400_000;
-    expect(diffDays).toBeGreaterThan(13.9);
-    expect(diffDays).toBeLessThan(14.1);
+    expect(diffDays).toBeGreaterThan(29.9);
+    expect(diffDays).toBeLessThan(30.1);
   });
 
   it("does NOT grant app trial when user already has another org with hasUsedTrial (decision #16)", async () => {
@@ -811,7 +811,7 @@ describe("createOrganizationWithSubscription — appTrialDays branch", () => {
       userId,
       orgData: { companyName: "Acme #2" },
       subscriptionInfo: null,
-      appTrialDays: 14,
+      appTrialDays: 30,
     });
 
     // Decision #16: NO trial patch should have been applied to the new org
@@ -840,7 +840,7 @@ describe("createOrganizationWithSubscription — appTrialDays branch", () => {
       userId,
       orgData: { companyName: "Acme" },
       subscriptionInfo: null,
-      appTrialDays: 14,
+      appTrialDays: 30,
       markOnboardingComplete: false,
     });
 

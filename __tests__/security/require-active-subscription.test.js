@@ -157,7 +157,7 @@ describe("requireActiveSubscription — app-managed trial (flag ON)", () => {
   it("returns trialing shape when app-trial is active (no Stripe sub needed)", async () => {
     mockOrgFindOne.mockResolvedValue({
       isTrialActive: true,
-      trialEndDate: inFuture(14),
+      trialEndDate: inFuture(30),
     });
     mockSubFindOne.mockResolvedValue(null);
 
@@ -172,7 +172,7 @@ describe("requireActiveSubscription — app-managed trial (flag ON)", () => {
   it("app-trial wins over an invalid Stripe sub", async () => {
     mockOrgFindOne.mockResolvedValue({
       isTrialActive: true,
-      trialEndDate: inFuture(14),
+      trialEndDate: inFuture(30),
     });
     mockSubFindOne.mockResolvedValue({ status: "unpaid" });
 
@@ -202,7 +202,7 @@ describe("requireActiveSubscription — app-managed trial (flag ON)", () => {
   it("falls through to Stripe when isTrialActive=false", async () => {
     mockOrgFindOne.mockResolvedValue({
       isTrialActive: false,
-      trialEndDate: inFuture(14),
+      trialEndDate: inFuture(30),
     });
     mockSubFindOne.mockResolvedValue({
       status: "active",
@@ -260,7 +260,7 @@ describe("requireActiveSubscription — flag OFF ignores trial fields", () => {
   it("ignores active trial in org doc when flag is OFF", async () => {
     mockOrgFindOne.mockResolvedValue({
       isTrialActive: true,
-      trialEndDate: new Date(Date.now() + 14 * 86_400_000).toISOString(),
+      trialEndDate: new Date(Date.now() + 30 * 86_400_000).toISOString(),
     });
     mockSubFindOne.mockResolvedValue(null);
     vi.spyOn(console, "error").mockImplementation(() => {});

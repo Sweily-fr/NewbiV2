@@ -70,7 +70,7 @@ describe("/api/organization/list-with-order — app trial recognition", () => {
         _id: orgIdA,
         name: "Acme",
         isTrialActive: true,
-        trialEndDate: inFuture(14),
+        trialEndDate: inFuture(30),
       },
     ]);
     const res = await GET();
@@ -81,7 +81,7 @@ describe("/api/organization/list-with-order — app trial recognition", () => {
 
   it("returns 'trialing' when flag ON and org has active app trial", async () => {
     process.env.ENABLE_APP_TRIAL = "true";
-    const trialEnd = inFuture(14);
+    const trialEnd = inFuture(30);
     mockOrganizations.mockReturnValue([
       {
         _id: orgIdA,
@@ -118,7 +118,7 @@ describe("/api/organization/list-with-order — app trial recognition", () => {
         _id: orgIdA,
         name: "Acme",
         isTrialActive: true,
-        trialEndDate: inFuture(14),
+        trialEndDate: inFuture(30),
       },
     ]);
     mockSubscriptions.mockReturnValue([
