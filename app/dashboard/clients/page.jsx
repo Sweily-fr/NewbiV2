@@ -59,6 +59,7 @@ import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 const STANDARD_COLUMNS = [
   { id: "email", label: "Email" },
   { id: "type", label: "Type" },
+  { id: "assignedMember", label: "Assigné" },
   { id: "invoiceCount", label: "Factures" },
   { id: "address", label: "Adresse" },
   { id: "phone", label: "Téléphone" },
