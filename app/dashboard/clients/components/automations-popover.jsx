@@ -451,23 +451,26 @@ function NewEmailAutomationRow({ dateFields, onCreate, onCancel, isCreating }) {
   };
 
   return (
-    <div className="space-y-3 py-2 border-t">
+    <div className="mt-3 rounded-lg border bg-muted/30 p-4 space-y-4">
       <div className="flex items-center gap-2">
-        <Mail className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+        <Mail className="w-4 h-4 text-[#5b50ff] flex-shrink-0" />
         <span className="text-sm font-medium">
           Nouvelle automatisation email
         </span>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-muted-foreground">
+          Champ date déclencheur
+        </label>
         <Select
           value={formData.triggerFieldId}
           onValueChange={(value) =>
             setFormData({ ...formData, triggerFieldId: value })
           }
         >
-          <SelectTrigger className="flex-1 min-w-0">
-            <SelectValue placeholder="Champ date..." />
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Sélectionner un champ date..." />
           </SelectTrigger>
           <SelectContent className="z-[9999]">
             {dateFields.map((field) => (
@@ -477,77 +480,106 @@ function NewEmailAutomationRow({ dateFields, onCreate, onCancel, isCreating }) {
             ))}
           </SelectContent>
         </Select>
-
-        {formData.timing !== "ON_DATE" && (
-          <div className="flex items-center gap-1 flex-shrink-0 border rounded-md px-2 h-9">
-            <input
-              type="number"
-              min="1"
-              max="365"
-              value={formData.daysOffset}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  daysOffset: parseInt(e.target.value) || 1,
-                })
-              }
-              className="w-8 text-center text-sm bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-            />
-            <span className="text-xs text-muted-foreground whitespace-nowrap">
-              jour{formData.daysOffset > 1 ? "s" : ""}
-            </span>
-          </div>
-        )}
-
-        <Select
-          value={formData.timing}
-          onValueChange={(value) => setFormData({ ...formData, timing: value })}
-        >
-          <SelectTrigger className="w-[130px] flex-shrink-0">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="z-[9999]">
-            {EMAIL_TIMING_TYPES.map((t) => (
-              <SelectItem key={t.value} value={t.value}>
-                {t.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select
-          value={formData.sendHour.toString()}
-          onValueChange={(value) =>
-            setFormData({ ...formData, sendHour: parseInt(value) })
-          }
-        >
-          <SelectTrigger className="w-[75px] flex-shrink-0">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="z-[9999] max-h-48">
-            {Array.from({ length: 24 }, (_, i) => (
-              <SelectItem key={i} value={i.toString()}>
-                {i}h
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
 
-      <Input
-        placeholder="Sujet de l'email..."
-        value={formData.subject}
-        onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-      />
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-muted-foreground">
+          Quand envoyer
+        </label>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Select
+            value={formData.timing}
+            onValueChange={(value) =>
+              setFormData({ ...formData, timing: value })
+            }
+          >
+            <SelectTrigger className="w-[160px] flex-shrink-0">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="z-[9999]">
+              {EMAIL_TIMING_TYPES.map((t) => (
+                <SelectItem key={t.value} value={t.value}>
+                  {t.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-      <textarea
-        placeholder="Contenu de l'email... (Variables: {clientName}, {clientEmail}, {customFieldValue})"
-        value={formData.body}
-        onChange={(e) => setFormData({ ...formData, body: e.target.value })}
-        className="w-full min-h-[80px] px-3 py-2 text-sm rounded-md border border-input bg-background resize-none"
-      />
+          {formData.timing !== "ON_DATE" && (
+            <div className="flex items-center gap-2 flex-shrink-0 border rounded-md px-3 h-9 bg-background">
+              <input
+                type="number"
+                min="1"
+                max="365"
+                value={formData.daysOffset}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    daysOffset: parseInt(e.target.value) || 1,
+                  })
+                }
+                className="w-10 text-center text-sm bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                jour{formData.daysOffset > 1 ? "s" : ""}
+              </span>
+            </div>
+          )}
 
-      <div className="flex justify-end gap-2">
+          <span className="text-sm text-muted-foreground flex-shrink-0">à</span>
+
+          <Select
+            value={formData.sendHour.toString()}
+            onValueChange={(value) =>
+              setFormData({ ...formData, sendHour: parseInt(value) })
+            }
+          >
+            <SelectTrigger className="w-[90px] flex-shrink-0">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="z-[9999] max-h-48">
+              {Array.from({ length: 24 }, (_, i) => (
+                <SelectItem key={i} value={i.toString()}>
+                  {i}h00
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-muted-foreground">
+          Sujet de l'email
+        </label>
+        <Input
+          placeholder="Ex: Rappel - {customFieldName}"
+          value={formData.subject}
+          onChange={(e) =>
+            setFormData({ ...formData, subject: e.target.value })
+          }
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-muted-foreground">
+          Contenu de l'email
+        </label>
+        <textarea
+          placeholder="Bonjour {clientName},..."
+          value={formData.body}
+          onChange={(e) => setFormData({ ...formData, body: e.target.value })}
+          className="w-full min-h-[100px] px-3 py-2 text-sm rounded-md border border-input bg-background resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        />
+        <p className="text-[11px] text-muted-foreground">
+          Variables disponibles :{" "}
+          <code className="text-[10px]">{"{clientName}"}</code>,{" "}
+          <code className="text-[10px]">{"{clientEmail}"}</code>,{" "}
+          <code className="text-[10px]">{"{customFieldValue}"}</code>
+        </p>
+      </div>
+
+      <div className="flex justify-end gap-2 pt-1">
         <Button variant="ghost" size="sm" onClick={onCancel}>
           Annuler
         </Button>
