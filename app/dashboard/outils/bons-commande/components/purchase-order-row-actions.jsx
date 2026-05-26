@@ -105,10 +105,20 @@ export default function PurchaseOrderRowActions({
   const handleConfirm = async () => {
     try {
       await changeStatus(purchaseOrder.id, PURCHASE_ORDER_STATUS.CONFIRMED);
-      toast.success("Bon de commande confirmé");
+      toast.success("Bon de commande mis en attente");
       if (onRefetch) onRefetch();
     } catch (error) {
       toast.error("Erreur lors de la confirmation");
+    }
+  };
+
+  const handleValidate = async () => {
+    try {
+      await changeStatus(purchaseOrder.id, PURCHASE_ORDER_STATUS.VALIDATED);
+      toast.success("Bon de commande validé par le client");
+      if (onRefetch) onRefetch();
+    } catch (error) {
+      toast.error("Erreur lors de la validation");
     }
   };
 
@@ -183,16 +193,19 @@ export default function PurchaseOrderRowActions({
   // Déterminer les actions disponibles selon le statut
   const isDraft = purchaseOrder.status === PURCHASE_ORDER_STATUS.DRAFT;
   const isConfirmed = purchaseOrder.status === PURCHASE_ORDER_STATUS.CONFIRMED;
+  const isValidated = purchaseOrder.status === PURCHASE_ORDER_STATUS.VALIDATED;
   const isInProgress =
     purchaseOrder.status === PURCHASE_ORDER_STATUS.IN_PROGRESS;
   const isDelivered = purchaseOrder.status === PURCHASE_ORDER_STATUS.DELIVERED;
 
-  const hasStatusActions = isDraft || isConfirmed || isInProgress;
+  const hasStatusActions =
+    isDraft || isConfirmed || isValidated || isInProgress;
   const hasLinkedInvoices =
     !!purchaseOrder.linkedInvoices && purchaseOrder.linkedInvoices.length > 0;
   const canConvertToInvoice =
-    (isConfirmed || isInProgress || isDelivered) && !hasLinkedInvoices;
-  const canCancel = !hasLinkedInvoices;
+    (isValidated || isInProgress || isDelivered) && !hasLinkedInvoices;
+  // Annulation possible uniquement avant validation client
+  const canCancel = (isDraft || isConfirmed) && !hasLinkedInvoices;
 
   return (
     <>
@@ -281,11 +294,11 @@ export default function PurchaseOrderRowActions({
               {isConfirmed && (
                 <>
                   <DropdownMenuItem
-                    onClick={handleStartProgress}
+                    onClick={handleValidate}
                     disabled={isLoading || isReadOnly}
                   >
-                    <Play className="mr-2 h-4 w-4" />
-                    Démarrer le traitement
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Marquer comme validé
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={handleRevertToDraft}
@@ -306,25 +319,24 @@ export default function PurchaseOrderRowActions({
                 </>
               )}
 
+              {isValidated && (
+                <DropdownMenuItem
+                  onClick={handleStartProgress}
+                  disabled={isLoading || isReadOnly}
+                >
+                  <Play className="mr-2 h-4 w-4" />
+                  Démarrer le traitement
+                </DropdownMenuItem>
+              )}
+
               {isInProgress && (
-                <>
-                  <DropdownMenuItem
-                    onClick={handleDeliver}
-                    disabled={isLoading || isReadOnly}
-                  >
-                    <Truck className="mr-2 h-4 w-4" />
-                    Marquer comme livré
-                  </DropdownMenuItem>
-                  {canCancel && (
-                    <DropdownMenuItem
-                      onClick={handleCancel}
-                      disabled={isLoading || isReadOnly}
-                    >
-                      <XCircle className="mr-2 h-4 w-4" />
-                      Annuler
-                    </DropdownMenuItem>
-                  )}
-                </>
+                <DropdownMenuItem
+                  onClick={handleDeliver}
+                  disabled={isLoading || isReadOnly}
+                >
+                  <Truck className="mr-2 h-4 w-4" />
+                  Marquer comme livré
+                </DropdownMenuItem>
               )}
 
               {canConvertToInvoice && (
