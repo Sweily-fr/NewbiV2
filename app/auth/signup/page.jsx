@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { useSession, performLogout } from "@/src/lib/auth-client";
 import { getOnboardingStep, parseOnboardingData } from "@/src/lib/onboarding";
+import { PLANS_DISPLAY } from "@/src/lib/plans-display";
 
 const GoogleIcon = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
@@ -466,12 +467,11 @@ function SignUpPageContent() {
     );
   };
 
-  const plans = [
-    {
-      key: "freelance",
-      name: "Freelance",
-      monthlyPrice: 17.99,
-      annualPrice: 16.19,
+  // Features et description marketing sont spécifiques au signup ; prix et
+  // label viennent du module central (plans-display.js) pour cohérence avec
+  // landing/pricing-modal/settings/workspace.
+  const PLAN_UI_EXTRA = {
+    freelance: {
       description: "Pour les indépendants",
       features: [
         "1 utilisateur",
@@ -484,11 +484,7 @@ function SignUpPageContent() {
         "1 comptable gratuit",
       ],
     },
-    {
-      key: "pme",
-      name: "TPE",
-      monthlyPrice: 48.99,
-      annualPrice: 44.09,
+    pme: {
       featured: true,
       description: "Pour les petites entreprises",
       features: [
@@ -503,11 +499,7 @@ function SignUpPageContent() {
         "Support prioritaire",
       ],
     },
-    {
-      key: "entreprise",
-      name: "Entreprise",
-      monthlyPrice: 94.99,
-      annualPrice: 85.49,
+    entreprise: {
       description: "Pour les grandes structures",
       features: [
         "Jusqu'à 25 utilisateurs",
@@ -521,7 +513,15 @@ function SignUpPageContent() {
         "Automatisations illimitées",
       ],
     },
-  ];
+  };
+
+  const plans = PLANS_DISPLAY.map((p) => ({
+    key: p.key,
+    name: p.displayName,
+    monthlyPrice: p.monthlyPrice,
+    annualPrice: p.annualMonthlyPrice,
+    ...PLAN_UI_EXTRA[p.key],
+  }));
 
   // ─── Title per view ───
   const titles = {

@@ -6,6 +6,7 @@ import { SeatSyncService } from "@/src/services/seatSyncService";
 import { withErrorHandler } from "@/src/lib/security";
 import crypto from "crypto";
 import { ObjectId } from "mongodb";
+import { getPlanDisplay } from "@/src/lib/plans-display";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const seatSyncService = new SeatSyncService();
@@ -560,16 +561,16 @@ async function handler(request) {
 
       const upgradeCheck = planHierarchy[newPlan] > planHierarchy[currentPlan];
 
-      // Prix à afficher
-      const planPrices = {
-        freelance: { monthly: "17,99€", annual: "16,19€" },
-        pme: { monthly: "48,99€", annual: "44,09€" },
-        entreprise: { monthly: "94,99€", annual: "85,49€" },
-      };
-
-      const formattedPrice = isAnnual
-        ? planPrices[newPlan]?.annual
-        : planPrices[newPlan]?.monthly;
+      // Prix dérivés du module central (plans-display.js) — plus de table
+      // hardcodée qui divergeait en silence des autres écrans.
+      const newPlanDisplay = getPlanDisplay(newPlan);
+      const priceAmount = isAnnual
+        ? newPlanDisplay?.annualMonthlyPrice
+        : newPlanDisplay?.monthlyPrice;
+      const formattedPrice =
+        typeof priceAmount === "number"
+          ? `${priceAmount.toFixed(2).replace(".", ",")}€`
+          : "—";
 
       await sendSubscriptionChangedEmail({
         to: customer.email,

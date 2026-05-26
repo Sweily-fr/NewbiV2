@@ -5,6 +5,33 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/src/components/ui/accordion";
+import { PLANS_DISPLAY, getPlanPricingStrings } from "@/src/lib/plans-display";
+
+// Génère dynamiquement la description tarifaire pour la FAQ.
+// Avant : valeurs HARDCODÉES et FAUSSES pour Freelance (14,59€ HT au lieu
+// de 17,99€ TTC). Source unique : plans-display.js. Toujours TTC.
+function buildPricingFaqContent() {
+  // "Jusqu'à X utilisateurs" — propre au plan (1 / 10 / 25)
+  const usersByPlan = {
+    freelance: "1 utilisateur",
+    pme: "10 utilisateurs",
+    entreprise: "25 utilisateurs",
+  };
+  const planLines = PLANS_DISPLAY.map((p) => {
+    const s = getPlanPricingStrings(p.key, { includeTtc: false });
+    return [
+      `• ${s.displayName} (${usersByPlan[p.key]}) :`,
+      `- Mensuel : ${s.monthly} TTC`,
+      `- Annuel : ${s.annualPerMonth} TTC (soit ${s.annualTotal} TTC, 10% de réduction)`,
+    ].join("\n");
+  }).join("\n\n");
+  return (
+    "À l'inscription, vous bénéficiez de 30 jours gratuits, durant lesquels vous pouvez résilier votre abonnement à tout moment.\n\n" +
+    "Newbi propose 3 formules :\n\n" +
+    planLines +
+    "\n\nVous pouvez à tout moment changer votre abonnement ou le résilier sans conditions."
+  );
+}
 
 const questions = [
   {
@@ -36,8 +63,7 @@ const questions = [
     id: "item-5",
     title:
       "Quelles formules et quels prix propose Newbi ? Y a-t-il un essai gratuit ?",
-    content:
-      "À l'inscription, vous bénéficiez de 30 jours gratuits, durant lesquels vous pouvez résilier votre abonnement à tout moment.\n\nNewbi propose 3 formules :\n\n• Freelance (1 utilisateur) :\n- Mensuel : 14,59€ HT/mois\n- Annuel : 13,13€ HT/mois (soit 157,56€ HT/an, 10% de réduction)\n\n• PME (10 utilisateurs) :\n- Mensuel : 48,99€ HT/mois\n- Annuel : 44,09€ HT/mois (soit 529,08€ HT/an, 10% de réduction)\n\n• Entreprise (25 utilisateurs) :\n- Mensuel : 94,99€ HT/mois\n- Annuel : 85,49€ HT/mois (soit 1 025,88€ HT/an, 10% de réduction)\n\nVous pouvez à tout moment changer votre abonnement ou le résilier sans conditions.",
+    content: buildPricingFaqContent(),
   },
   {
     id: "item-6",

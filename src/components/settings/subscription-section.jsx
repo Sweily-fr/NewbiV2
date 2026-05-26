@@ -23,15 +23,14 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import { cn } from "@/src/lib/utils";
+import { PLANS_DISPLAY, getAnnualTotalAmount } from "@/src/lib/plans-display";
 
-// Configuration des plans
-const PLANS_CONFIG = [
-  {
-    key: "freelance",
-    name: "Freelance",
-    monthlyPrice: 17.99,
-    annualPrice: 16.19,
-    annualTotal: 157.56,
+// Features (comparatif) sont spécifiques à ce composant — prix et label
+// dérivés du module central (plans-display.js) pour garantir la cohérence
+// avec landing/pricing-modal/workspace/signup. Le `annualTotal` est calculé
+// (× 12) — plus jamais écrit en dur.
+const PLAN_UI_EXTRA = {
+  freelance: {
     description: "Parfait pour les indépendants et freelances",
     features: {
       users: "1 utilisateur",
@@ -51,12 +50,7 @@ const PLANS_CONFIG = [
       api: false,
     },
   },
-  {
-    key: "pme",
-    name: "PME",
-    monthlyPrice: 48.99,
-    annualPrice: 44.09,
-    annualTotal: 529.08,
+  pme: {
     popular: true,
     description: "Idéal pour les petites et moyennes entreprises",
     features: {
@@ -77,12 +71,7 @@ const PLANS_CONFIG = [
       api: true,
     },
   },
-  {
-    key: "entreprise",
-    name: "Entreprise",
-    monthlyPrice: 94.99,
-    annualPrice: 85.49,
-    annualTotal: 1025.88,
+  entreprise: {
     description: "Pour les grandes structures avec des besoins avancés",
     features: {
       users: "Jusqu'à 25",
@@ -102,7 +91,16 @@ const PLANS_CONFIG = [
       api: true,
     },
   },
-];
+};
+
+const PLANS_CONFIG = PLANS_DISPLAY.map((p) => ({
+  key: p.key,
+  name: p.displayName,
+  monthlyPrice: p.monthlyPrice,
+  annualPrice: p.annualMonthlyPrice,
+  annualTotal: getAnnualTotalAmount(p),
+  ...PLAN_UI_EXTRA[p.key],
+}));
 
 const COMPARISON_ROWS = [
   { key: "users", label: "Utilisateurs" },

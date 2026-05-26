@@ -2,15 +2,12 @@
 
 import React from "react";
 import { PricingCard } from "../components/PricingCard";
+import { PLANS_DISPLAY, getPlanPricingStrings } from "@/src/lib/plans-display";
 
-const PLANS = [
-  {
-    key: "freelance",
-    name: "Freelance",
-    monthlyPrice: "17,99 €/mois",
-    annualPrice: "16,19 €/mois",
-    annualTotal: "157,56 € TTC/an",
-    description: "Pour les indépendants",
+// Features et "featured" sont spécifiques à cette UI ; les prix et le label
+// viennent du module central pour garantir la cohérence avec landing/settings.
+const PLAN_UI_EXTRA = {
+  freelance: {
     features: [
       "Facturation & Devis illimités",
       "CRM client",
@@ -18,13 +15,7 @@ const PLANS = [
     ],
     featured: false,
   },
-  {
-    key: "pme",
-    name: "TPE",
-    monthlyPrice: "48,99 €/mois",
-    annualPrice: "44,09 €/mois",
-    annualTotal: "529,08 € TTC/an",
-    description: "Pour les équipes en croissance",
+  pme: {
     features: [
       "Jusqu'à 10 utilisateurs",
       "E-signature & automatisations",
@@ -32,13 +23,7 @@ const PLANS = [
     ],
     featured: true,
   },
-  {
-    key: "entreprise",
-    name: "Entreprise",
-    monthlyPrice: "94,99 €/mois",
-    annualPrice: "85,49 €/mois",
-    annualTotal: "1 025,88 € TTC/an",
-    description: "Pour les structures avancées",
+  entreprise: {
     features: [
       "Jusqu'à 25 utilisateurs",
       "Permissions avancées",
@@ -46,7 +31,20 @@ const PLANS = [
     ],
     featured: false,
   },
-];
+};
+
+const PLANS = PLANS_DISPLAY.map((p) => {
+  const strings = getPlanPricingStrings(p.key);
+  return {
+    key: p.key,
+    name: strings.displayName,
+    monthlyPrice: strings.monthly,
+    annualPrice: strings.annualPerMonth,
+    annualTotal: strings.annualTotal,
+    description: p.description,
+    ...PLAN_UI_EXTRA[p.key],
+  };
+});
 
 export function PlanSelectionStep({
   selectedPlan,
