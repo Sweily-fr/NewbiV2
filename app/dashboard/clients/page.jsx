@@ -53,6 +53,7 @@ import AutomationsPopover from "./components/automations-popover";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import ClientImportDialog from "./components/client-import-dialog";
 import CreateListDialog from "./components/create-list-dialog";
+import AssignMembersDialog from "./components/assign-members-dialog";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 const STANDARD_COLUMNS = [
@@ -139,6 +140,7 @@ function ClientsContent() {
   const { blockClient } = useBlockClient();
   const [assigningList, setAssigningList] = useState(false);
   const [createListDialogOpen, setCreateListDialogOpen] = useState(false);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
 
   const selectedClientIds = Array.from(selectedClients);
@@ -202,7 +204,12 @@ function ClientsContent() {
   }, [selectedClients, blockClient, blockReason]);
 
   const handleAssign = useCallback(() => {
-    toast.info("Fonctionnalité bientôt disponible");
+    if (selectedClients.size === 0) return;
+    setTimeout(() => setAssignDialogOpen(true), 0);
+  }, [selectedClients.size]);
+
+  const handleAssignCompleted = useCallback(() => {
+    setSelectedClients(new Set());
   }, []);
 
   const handleOpenInviteDialog = () => {
@@ -399,7 +406,7 @@ function ClientsContent() {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="cursor-pointer gap-2 text-sm"
-                    onClick={handleAssign}
+                    onSelect={handleAssign}
                   >
                     <UserCheck className="w-3.5 h-3.5" />
                     Assigner
@@ -545,6 +552,13 @@ function ClientsContent() {
         onOpenChange={setCreateListDialogOpen}
         workspaceId={workspaceId}
         onListCreated={handleListCreatedFromBulk}
+      />
+
+      <AssignMembersDialog
+        open={assignDialogOpen}
+        onOpenChange={setAssignDialogOpen}
+        clientIds={selectedClientIds}
+        onAssigned={handleAssignCompleted}
       />
 
       {/* Bulk block dialog (with reason) */}

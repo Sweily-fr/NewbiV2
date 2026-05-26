@@ -133,6 +133,7 @@ import { toast } from "@/src/components/ui/sonner";
 import ClientsModal from "./clients-modal";
 import ClientFilters from "./client-filters";
 import CreateListDialog from "./create-list-dialog";
+import AssignMembersDialog from "./assign-members-dialog";
 // Custom filter function for multi-column searching
 const multiColumnFilterFn = (row, columnId, filterValue) => {
   const searchableRowContent =
@@ -1288,6 +1289,7 @@ function RowActions({
   const [addingToList, setAddingToList] = useState(false);
   const [removingFromList, setRemovingFromList] = useState(false);
   const [createListDialogOpen, setCreateListDialogOpen] = useState(false);
+  const [showAssignDialog, setShowAssignDialog] = useState(false);
   const { deleteClient } = useDeleteClient();
   const { blockClient } = useBlockClient();
   const { addToLists } = useAddClientToLists();
@@ -1341,7 +1343,7 @@ function RowActions({
   }, [blockClient, client.id, blockReason]);
 
   const handleAssign = useCallback(() => {
-    toast.info("Fonctionnalité bientôt disponible");
+    setTimeout(() => setShowAssignDialog(true), 0);
   }, []);
 
   const handleEdit = useCallback(() => {
@@ -1486,7 +1488,7 @@ function RowActions({
             )}
 
             {/* Assigner */}
-            <DropdownMenuItem onClick={handleAssign}>
+            <DropdownMenuItem onSelect={handleAssign}>
               <UserCheck className="w-3.5 h-3.5" />
               <span>Assigner</span>
             </DropdownMenuItem>
@@ -1578,6 +1580,12 @@ function RowActions({
             handleAddToList(newList.id);
           }
         }}
+      />
+
+      <AssignMembersDialog
+        open={showAssignDialog}
+        onOpenChange={setShowAssignDialog}
+        client={client}
       />
 
       {/* Dialog de confirmation de blocage */}
