@@ -129,10 +129,7 @@ export const IMPORT_QUOTE_DIRECT = gql`
 
 export const UPDATE_IMPORTED_QUOTE = gql`
   ${IMPORTED_QUOTE_FRAGMENT}
-  mutation UpdateImportedQuote(
-    $id: ID!
-    $input: UpdateImportedQuoteInput!
-  ) {
+  mutation UpdateImportedQuote($id: ID!, $input: UpdateImportedQuoteInput!) {
     updateImportedQuote(id: $id, input: $input) {
       ...ImportedQuoteFields
     }
@@ -144,6 +141,17 @@ export const VALIDATE_IMPORTED_QUOTE = gql`
   mutation ValidateImportedQuote($id: ID!) {
     validateImportedQuote(id: $id) {
       ...ImportedQuoteFields
+    }
+  }
+`;
+
+export const CONVERT_IMPORTED_QUOTE_TO_QUOTE = gql`
+  mutation ConvertImportedQuoteToQuote($id: ID!) {
+    convertImportedQuoteToQuote(id: $id) {
+      id
+      prefix
+      number
+      status
     }
   }
 `;
@@ -180,6 +188,7 @@ export const DELETE_IMPORTED_QUOTES = gql`
 
 // Status labels et colors
 export const IMPORTED_QUOTE_STATUS_LABELS = {
+  UPLOADED: "À vérifier",
   PENDING_REVIEW: "À vérifier",
   VALIDATED: "Validé",
   REJECTED: "Rejeté",
@@ -187,6 +196,7 @@ export const IMPORTED_QUOTE_STATUS_LABELS = {
 };
 
 export const IMPORTED_QUOTE_STATUS_COLORS = {
+  UPLOADED: "bg-amber-100 text-amber-700 border-amber-200",
   PENDING_REVIEW: "bg-amber-100 text-amber-700 border-amber-200",
   VALIDATED: "bg-emerald-100 text-emerald-700 border-emerald-200",
   REJECTED: "bg-red-100 text-red-700 border-red-200",
@@ -270,43 +280,71 @@ export function useImportedQuoteStats(workspaceId) {
 const IMPORTED_QUOTE_REFETCH = ["GetImportedQuotes", "GetImportedQuoteStats"];
 
 export function useUpdateImportedQuote() {
-  const [updateImportedQuote, { loading, error }] = useMutation(UPDATE_IMPORTED_QUOTE, {
-    refetchQueries: IMPORTED_QUOTE_REFETCH,
-  });
+  const [updateImportedQuote, { loading, error }] = useMutation(
+    UPDATE_IMPORTED_QUOTE,
+    {
+      refetchQueries: IMPORTED_QUOTE_REFETCH,
+    },
+  );
   return { updateImportedQuote, loading, error };
 }
 
 export function useValidateImportedQuote() {
-  const [validateImportedQuote, { loading, error }] = useMutation(VALIDATE_IMPORTED_QUOTE, {
-    refetchQueries: IMPORTED_QUOTE_REFETCH,
-  });
+  const [validateImportedQuote, { loading, error }] = useMutation(
+    VALIDATE_IMPORTED_QUOTE,
+    {
+      refetchQueries: IMPORTED_QUOTE_REFETCH,
+    },
+  );
   return { validateImportedQuote, loading, error };
 }
 
+export function useConvertImportedQuoteToQuote() {
+  const [convertImportedQuoteToQuote, { loading, error }] = useMutation(
+    CONVERT_IMPORTED_QUOTE_TO_QUOTE,
+    {
+      refetchQueries: [...IMPORTED_QUOTE_REFETCH, "GetQuotes", "GetQuoteStats"],
+    },
+  );
+  return { convertImportedQuoteToQuote, loading, error };
+}
+
 export function useRejectImportedQuote() {
-  const [rejectImportedQuote, { loading, error }] = useMutation(REJECT_IMPORTED_QUOTE, {
-    refetchQueries: IMPORTED_QUOTE_REFETCH,
-  });
+  const [rejectImportedQuote, { loading, error }] = useMutation(
+    REJECT_IMPORTED_QUOTE,
+    {
+      refetchQueries: IMPORTED_QUOTE_REFETCH,
+    },
+  );
   return { rejectImportedQuote, loading, error };
 }
 
 export function useArchiveImportedQuote() {
-  const [archiveImportedQuote, { loading, error }] = useMutation(ARCHIVE_IMPORTED_QUOTE, {
-    refetchQueries: IMPORTED_QUOTE_REFETCH,
-  });
+  const [archiveImportedQuote, { loading, error }] = useMutation(
+    ARCHIVE_IMPORTED_QUOTE,
+    {
+      refetchQueries: IMPORTED_QUOTE_REFETCH,
+    },
+  );
   return { archiveImportedQuote, loading, error };
 }
 
 export function useDeleteImportedQuote() {
-  const [deleteImportedQuote, { loading, error }] = useMutation(DELETE_IMPORTED_QUOTE, {
-    refetchQueries: IMPORTED_QUOTE_REFETCH,
-  });
+  const [deleteImportedQuote, { loading, error }] = useMutation(
+    DELETE_IMPORTED_QUOTE,
+    {
+      refetchQueries: IMPORTED_QUOTE_REFETCH,
+    },
+  );
   return { deleteImportedQuote, loading, error };
 }
 
 export function useDeleteImportedQuotes() {
-  const [deleteImportedQuotes, { loading, error }] = useMutation(DELETE_IMPORTED_QUOTES, {
-    refetchQueries: IMPORTED_QUOTE_REFETCH,
-  });
+  const [deleteImportedQuotes, { loading, error }] = useMutation(
+    DELETE_IMPORTED_QUOTES,
+    {
+      refetchQueries: IMPORTED_QUOTE_REFETCH,
+    },
+  );
   return { deleteImportedQuotes, loading, error };
 }

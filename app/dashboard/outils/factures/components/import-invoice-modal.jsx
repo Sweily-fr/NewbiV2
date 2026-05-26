@@ -94,14 +94,12 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
 
     let processedCount = 0;
     let successCount = 0;
-    let quotaExceeded = false;
-    let quotaErrorMessage = "";
 
     const PARALLEL_STREAMS = 5;
     const DELAY_BETWEEN_STARTS = 300;
     const estimatedSecondsPerFile = 8;
     const estimatedTotalSeconds = Math.ceil(
-      (totalFiles / PARALLEL_STREAMS) * estimatedSecondsPerFile
+      (totalFiles / PARALLEL_STREAMS) * estimatedSecondsPerFile,
     );
     const startTime = Date.now();
 
@@ -114,7 +112,7 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
 
     const toastId = toast.loading(
       `Import de ${totalFiles} facture(s) • Durée estimée: ${formatInitialEstimate()}`,
-      { duration: Infinity }
+      { duration: Infinity },
     );
 
     const formatTimeRemaining = () => {
@@ -125,7 +123,7 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
           : estimatedSecondsPerFile;
       const remainingFiles = totalFiles - processedCount;
       const remainingSeconds = Math.ceil(
-        (remainingFiles * avgSecondsPerFile) / PARALLEL_STREAMS
+        (remainingFiles * avgSecondsPerFile) / PARALLEL_STREAMS,
       );
 
       if (remainingSeconds < 60) return `~${remainingSeconds}s restantes`;
@@ -137,13 +135,11 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
     const updateToast = () => {
       toast.loading(
         `Import: ${processedCount}/${totalFiles} traité(s) • ${formatTimeRemaining()}`,
-        { id: toastId, duration: Infinity }
+        { id: toastId, duration: Infinity },
       );
     };
 
     const processFile = async (file) => {
-      if (quotaExceeded) return;
-
       try {
         const { data: importData, errors } = await importInvoiceDirect({
           variables: { file, workspaceId },
@@ -153,13 +149,11 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
           console.error(`Erreur GraphQL pour ${file.name}:`, errors[0].message);
         }
 
-        if (importData?.importInvoiceDirect?.success) {
+        const payload = importData?.importInvoiceDirect;
+        if (payload?.success) {
           successCount++;
-        } else if (importData?.importInvoiceDirect?.error?.includes("Quota OCR")) {
-          quotaExceeded = true;
-          quotaErrorMessage = importData.importInvoiceDirect.error;
-        } else if (importData?.importInvoiceDirect?.error) {
-          console.error(`Import échoué pour ${file.name}:`, importData.importInvoiceDirect.error);
+        } else if (payload?.error) {
+          console.error(`Import échoué pour ${file.name}:`, payload.error);
         }
       } catch (error) {
         console.error(`Erreur réseau pour ${file.name}:`, error.message);
@@ -176,8 +170,8 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
       const activePromises = new Set();
       let lastStartTime = 0;
 
-      while ((queue.length > 0 && !quotaExceeded) || activePromises.size > 0) {
-        while (queue.length > 0 && activePromises.size < PARALLEL_STREAMS && !quotaExceeded) {
+      while (queue.length > 0 || activePromises.size > 0) {
+        while (queue.length > 0 && activePromises.size < PARALLEL_STREAMS) {
           const now = Date.now();
           const timeSinceLastStart = now - lastStartTime;
           if (timeSinceLastStart < DELAY_BETWEEN_STARTS && lastStartTime > 0) {
@@ -204,26 +198,18 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
 
       toast.dismiss(toastId);
 
-      if (quotaExceeded) {
-        toast.error(quotaErrorMessage, { duration: 8000 });
-        if (successCount > 0) {
-          toast.success(
-            `${successCount} facture(s) importée(s) avant l'atteinte du quota.`,
-            { duration: 5000 }
-          );
-        }
-      } else {
-        const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
-        const elapsedMinutes = Math.floor(elapsedSeconds / 60);
-        const elapsedSecondsRemainder = elapsedSeconds % 60;
-        const timeDisplay =
-          elapsedMinutes > 0
-            ? `${elapsedMinutes}min ${elapsedSecondsRemainder}s`
-            : `${elapsedSeconds}s`;
+      const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+      const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+      const elapsedSecondsRemainder = elapsedSeconds % 60;
+      const timeDisplay =
+        elapsedMinutes > 0
+          ? `${elapsedMinutes}min ${elapsedSecondsRemainder}s`
+          : `${elapsedSeconds}s`;
 
+      if (successCount > 0) {
         toast.success(
           `${successCount} facture(s) importée(s) en ${timeDisplay} !`,
-          { duration: 5000 }
+          { duration: 5000 },
         );
       }
     } catch (error) {
@@ -258,7 +244,7 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
                 "border border-dashed rounded-lg p-5 text-center transition-colors cursor-pointer",
                 isDragging
                   ? "border-[#5b4fff] bg-[#5b4fff]/5"
-                  : "border-border hover:border-muted-foreground/50"
+                  : "border-border hover:border-muted-foreground/50",
               )}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -278,11 +264,10 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
                   <Upload className="size-4 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium">
-                    Glissez vos PDF ici
-                  </p>
+                  <p className="text-sm font-medium">Glissez vos PDF ici</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    ou cliquez pour sélectionner • max {MAX_FILES} fichiers, 10MB
+                    ou cliquez pour sélectionner • max {MAX_FILES} fichiers,
+                    10MB
                   </p>
                 </div>
               </div>
@@ -293,7 +278,8 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">
-                    {files.length} fichier{files.length > 1 ? "s" : ""} sélectionné{files.length > 1 ? "s" : ""}
+                    {files.length} fichier{files.length > 1 ? "s" : ""}{" "}
+                    sélectionné{files.length > 1 ? "s" : ""}
                   </p>
                   <button
                     onClick={() => setFiles([])}

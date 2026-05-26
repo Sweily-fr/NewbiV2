@@ -306,6 +306,7 @@ export const PURCHASE_EXTRA_OCR_IMPORTS = gql`
 
 // Status labels et colors
 export const IMPORTED_INVOICE_STATUS_LABELS = {
+  UPLOADED: "À vérifier",
   PENDING_REVIEW: "À vérifier",
   VALIDATED: "Validée",
   COMPLETED: "Encaissée",
@@ -314,6 +315,7 @@ export const IMPORTED_INVOICE_STATUS_LABELS = {
 };
 
 export const IMPORTED_INVOICE_STATUS_COLORS = {
+  UPLOADED: "bg-amber-100 text-amber-700 border-amber-200",
   PENDING_REVIEW: "bg-amber-100 text-amber-700 border-amber-200",
   VALIDATED: "bg-emerald-100 text-emerald-700 border-emerald-200",
   COMPLETED: "bg-blue-100 text-blue-700 border-blue-200",

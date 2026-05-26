@@ -78,6 +78,8 @@ import PurchaseOrderFilters from "./purchase-order-filters";
 import { SendDocumentModal } from "../../factures/components/send-document-modal";
 import { SavePurchaseOrderTemplateDialog } from "./SavePurchaseOrderTemplateDialog";
 import { ImportPurchaseOrderModal } from "./import-purchase-order-modal";
+import { ImportedPurchaseOrderSidebar } from "./imported-purchase-order-sidebar";
+import { useImportedPurchaseOrders } from "@/src/graphql/importedPurchaseOrderQueries";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import { useEmailTrackingSubscription } from "@/src/graphql/documentEmailQueries";
@@ -107,8 +109,13 @@ export default function PurchaseOrderTable({
   const [poToOpen, setPoToOpen] = useState(null);
   const [templatePurchaseOrder, setTemplatePurchaseOrder] = useState(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [selectedImportedPurchaseOrder, setSelectedImportedPurchaseOrder] =
+    useState(null);
   // État pour la modal d'envoi par email - géré au niveau du tableau pour éviter les re-renders
   const [sendEmailPO, setSendEmailPO] = useState(null);
+
+  const { importedPurchaseOrders, refetch: refetchImported } =
+    useImportedPurchaseOrders(workspaceId);
 
   const {
     table,
@@ -771,6 +778,24 @@ export default function PurchaseOrderTable({
       <ImportPurchaseOrderModal
         open={isImportModalOpen}
         onOpenChange={setIsImportModalOpen}
+        onImported={(pos) => {
+          if (pos && pos.length > 0) {
+            setSelectedImportedPurchaseOrder(pos[pos.length - 1]);
+          }
+          refetchImported?.();
+        }}
+      />
+
+      {/* Sidebar pour les bons de commande importés */}
+      <ImportedPurchaseOrderSidebar
+        purchaseOrder={selectedImportedPurchaseOrder}
+        open={!!selectedImportedPurchaseOrder}
+        onOpenChange={(open) => {
+          if (!open) setSelectedImportedPurchaseOrder(null);
+        }}
+        onUpdate={() => {
+          refetchImported();
+        }}
       />
 
       {/* Modal d'envoi par email - géré au niveau du tableau pour éviter les re-renders */}
