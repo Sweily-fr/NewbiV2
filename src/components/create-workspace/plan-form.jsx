@@ -3,48 +3,43 @@
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { cn } from "@/src/lib/utils";
+import { PLANS_DISPLAY, formatPrice } from "@/src/lib/plans-display";
 
-export const PLANS = [
-  {
-    key: "freelance",
-    name: "Freelance",
-    monthlyPrice: 17.99,
-    annualPrice: 16.19,
-    description: "Pour les indépendants",
+// Liste UI dérivée du module central. Les features/popular/description sont
+// spécifiques à cet écran ; les prix et le label viennent du central.
+const PLAN_UI_EXTRA = {
+  freelance: {
     features: [
       "Facturation & Devis illimités",
       "CRM client",
       "Un accès comptable gratuit",
     ],
   },
-  {
-    key: "pme",
-    name: "TPE",
-    monthlyPrice: 48.99,
-    annualPrice: 44.09,
+  pme: {
     popular: true,
-    description: "Pour les équipes en croissance",
     features: [
       "Jusqu'à 10 utilisateurs",
       "E-signature & automatisations",
       "Support prioritaire",
     ],
   },
-  {
-    key: "entreprise",
-    name: "Entreprise",
-    monthlyPrice: 94.99,
-    annualPrice: 85.49,
-    description: "Pour les structures avancées",
+  entreprise: {
     features: [
       "Jusqu'à 25 utilisateurs",
       "Permissions avancées",
       "Archivage légal & API",
     ],
   },
-];
+};
 
-const formatPrice = (amount) => amount.toFixed(2).replace(".", ",");
+export const PLANS = PLANS_DISPLAY.map((p) => ({
+  key: p.key,
+  name: p.displayName,
+  monthlyPrice: p.monthlyPrice,
+  annualPrice: p.annualMonthlyPrice,
+  description: p.description,
+  ...PLAN_UI_EXTRA[p.key],
+}));
 
 function CubeIcon() {
   return (
@@ -273,7 +268,7 @@ export function PlanForm({
                     <span className="text-sm font-semibold">{plan.name}</span>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <span>
-                        {formatPrice(price)} €/mois
+                        {formatPrice(price)}/mois TTC
                         {isAnnual
                           ? ", facturé annuellement"
                           : ", facturé mensuellement"}

@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Check, MoveRight, ChevronDown, Info } from "lucide-react";
+import { PLANS_DISPLAY, getPlanPricingStrings } from "@/src/lib/plans-display";
 
 // Icônes SVG
 const CheckIcon = () => (
@@ -34,58 +35,60 @@ const XIcon = () => (
   </svg>
 );
 
-// Plans config
-const plans = [
-  {
-    id: "freelance",
-    name: "Freelance",
-    monthly: "17,99€",
-    annual: "16,19€",
-    priceSuffix: "/mois, TTC",
-    annualTotal: "157,56€/an",
+// CTA / badge / highlights sont propres à la landing ; prix et label
+// dérivés du module central (plans-display.js).
+// Le `annualTotal` est calculé via getPlanPricingStrings — fini le bug
+// historique 157,56 € (qui était mathématiquement faux : 16,19 × 12 = 194,28).
+const PLAN_UI_EXTRA = {
+  freelance: {
     cta: "Essayer gratuitement",
     highlighted: false,
-    description: "Pour les indépendants",
     highlights: [
       "Facturation & Devis illimités",
       "CRM client",
       "Un accès comptable gratuit",
     ],
   },
-  {
-    id: "pme",
-    name: "TPE",
-    monthly: "48,99€",
-    annual: "44,09€",
-    priceSuffix: "/mois, TTC",
-    annualTotal: "529,08€/an",
+  pme: {
     cta: "Essayer gratuitement",
     highlighted: true,
     badge: "Populaire",
-    description: "Pour les équipes en croissance",
     highlights: [
       "Jusqu'à 10 utilisateurs",
       "E-signature & automatisations",
       "Support prioritaire",
     ],
   },
-  {
-    id: "entreprise",
-    name: "Entreprise",
-    monthly: "94,99€",
-    annual: "85,49€",
-    priceSuffix: "/mois, TTC",
-    annualTotal: "1 025,88€/an",
+  entreprise: {
     cta: "Essayer gratuitement",
     highlighted: false,
-    description: "Pour les structures avancées",
     highlights: [
       "Jusqu'à 25 utilisateurs",
       "Permissions avancées",
       "Archivage légal & API",
     ],
   },
-];
+};
+
+const plans = PLANS_DISPLAY.map((p) => {
+  const strings = getPlanPricingStrings(p.key, { includeTtc: false });
+  // Format compact pour la landing : "17,99€" sans espace ni suffixe.
+  const compactMonthly = `${p.monthlyPrice.toFixed(2).replace(".", ",")}€`;
+  const compactAnnual = `${p.annualMonthlyPrice.toFixed(2).replace(".", ",")}€`;
+  const compactAnnualTotal = `${strings.annualTotalAmount
+    .toFixed(2)
+    .replace(".", ",")}€/an`;
+  return {
+    id: p.key,
+    name: p.displayName,
+    monthly: compactMonthly,
+    annual: compactAnnual,
+    priceSuffix: "/mois, TTC",
+    annualTotal: compactAnnualTotal,
+    description: p.description,
+    ...PLAN_UI_EXTRA[p.key],
+  };
+});
 
 // Sections de features
 const featureSections = [

@@ -13,6 +13,7 @@ import { LoaderCircle, CircleCheck } from "lucide-react";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { authClient } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
+import { PLANS_DISPLAY, getPlanPricingStrings } from "@/src/lib/plans-display";
 
 export function PricingModal({ isOpen, onClose }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -54,7 +55,7 @@ export function PricingModal({ isOpen, onClose }) {
           window.location.href = data.url;
         } else {
           toast.error(
-            data.error || "Erreur lors de la création de l'abonnement"
+            data.error || "Erreur lors de la création de l'abonnement",
           );
         }
         return;
@@ -92,7 +93,7 @@ export function PricingModal({ isOpen, onClose }) {
         }, 800);
       } else {
         toast.error(
-          data.error || data.message || "Erreur lors du changement de plan"
+          data.error || data.message || "Erreur lors du changement de plan",
         );
       }
     } catch (error) {
@@ -103,12 +104,10 @@ export function PricingModal({ isOpen, onClose }) {
     }
   };
 
-  const plans = [
-    {
-      name: "Freelance",
-      monthlyPrice: "17,99 €/mois",
-      annualPrice: "16,19 €/mois",
-      annualTotal: "157,56 € TTC/an",
+  // Features et description marketing sont spécifiques à cette modale ;
+  // prix et label viennent du module central (plans-display.js).
+  const PLAN_UI_EXTRA = {
+    freelance: {
       description: "Parfait pour les indépendants et freelances",
       features: [
         "1 utilisateur",
@@ -120,15 +119,9 @@ export function PricingModal({ isOpen, onClose }) {
         "CRM client",
         "Analytics & prévisions",
       ],
-      current: subscription?.plan === "freelance",
-      planKey: "freelance",
       featured: false,
     },
-    {
-      name: "TPE",
-      monthlyPrice: "48,99 €/mois",
-      annualPrice: "44,09 €/mois",
-      annualTotal: "529,08 € TTC/an",
+    pme: {
       description: "Idéal pour les petites et moyennes entreprises",
       features: [
         "Jusqu'à 10 utilisateurs",
@@ -140,15 +133,9 @@ export function PricingModal({ isOpen, onClose }) {
         "CRM client avancé",
         "Support prioritaire",
       ],
-      current: subscription?.plan === "pme",
-      planKey: "pme",
       featured: true,
     },
-    {
-      name: "Entreprise",
-      monthlyPrice: "94,99 €/mois",
-      annualPrice: "85,49 €/mois",
-      annualTotal: "1 025,88 € TTC/an",
+    entreprise: {
       description: "Pour les grandes équipes qui ont besoin d'évolutivité",
       features: [
         "Jusqu'à 25 utilisateurs",
@@ -160,11 +147,22 @@ export function PricingModal({ isOpen, onClose }) {
         "CRM client avancé",
         "Support prioritaire",
       ],
-      current: subscription?.plan === "entreprise",
-      planKey: "entreprise",
       featured: false,
     },
-  ];
+  };
+
+  const plans = PLANS_DISPLAY.map((p) => {
+    const strings = getPlanPricingStrings(p.key);
+    return {
+      name: strings.displayName,
+      monthlyPrice: strings.monthly,
+      annualPrice: strings.annualPerMonth,
+      annualTotal: strings.annualTotal,
+      planKey: p.key,
+      current: subscription?.plan === p.key,
+      ...PLAN_UI_EXTRA[p.key],
+    };
+  });
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

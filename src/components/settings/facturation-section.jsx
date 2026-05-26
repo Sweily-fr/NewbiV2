@@ -41,13 +41,14 @@ import { useUserOcrQuota } from "@/src/graphql/importedInvoiceQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/components/ui/sonner";
 import { PLAN_LIMITS } from "@/src/lib/plan-limits";
+import { PLANS_DISPLAY } from "@/src/lib/plans-display";
 
-// Configuration des plans (prix et noms)
-const PLANS_CONFIG = {
-  freelance: { name: "Freelance", monthlyPrice: 17.99 },
-  pme: { name: "PME", monthlyPrice: 48.99 },
-  entreprise: { name: "Entreprise", monthlyPrice: 94.99 },
-};
+// Map dérivée du module central — garantit nom (TPE pour pme) + prix
+// alignés avec landing/pricing-modal/settings/signup/workspace.
+const PLANS_CONFIG = PLANS_DISPLAY.reduce((acc, p) => {
+  acc[p.key] = { name: p.displayName, monthlyPrice: p.monthlyPrice };
+  return acc;
+}, {});
 
 export default function FacturationSection({
   organization,
@@ -492,7 +493,7 @@ export default function FacturationSection({
               <div>
                 <p className="text-sm font-medium">Plan {planConfig.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {formatPrice(planConfig.monthlyPrice)} €/mois
+                  {formatPrice(planConfig.monthlyPrice)} €/mois TTC
                 </p>
               </div>
             </div>
