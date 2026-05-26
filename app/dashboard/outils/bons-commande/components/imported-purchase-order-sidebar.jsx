@@ -32,7 +32,6 @@ import {
   AlertDialogTrigger,
 } from "@/src/components/ui/alert-dialog";
 import {
-  Calendar,
   Building2,
   FileText,
   Edit,
@@ -45,55 +44,68 @@ import {
 } from "lucide-react";
 import { formatDateToFrench } from "@/src/utils/dateFormatter";
 import {
-  IMPORTED_QUOTE_STATUS_LABELS,
-  IMPORTED_QUOTE_STATUS_COLORS,
+  IMPORTED_PURCHASE_ORDER_STATUS_LABELS,
+  IMPORTED_PURCHASE_ORDER_STATUS_COLORS,
+  useUpdateImportedPurchaseOrder,
+  useDeleteImportedPurchaseOrder,
+  useConvertImportedPurchaseOrderToPurchaseOrder,
+} from "@/src/graphql/importedPurchaseOrderQueries";
+import {
   EXPENSE_CATEGORY_LABELS,
   PAYMENT_METHOD_LABELS,
-  useUpdateImportedQuote,
-  useDeleteImportedQuote,
-  useConvertImportedQuoteToQuote,
-} from "@/src/graphql/importedQuoteQueries";
+} from "@/src/graphql/importedInvoiceQueries";
 import { toast } from "sonner";
 
-export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
+export function ImportedPurchaseOrderSidebar({
+  purchaseOrder,
+  open,
+  onOpenChange,
+  onUpdate,
+}) {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
 
-  const { updateImportedQuote, loading: updateLoading } =
-    useUpdateImportedQuote();
-  const { deleteImportedQuote, loading: deleteLoading } =
-    useDeleteImportedQuote();
-  const { convertImportedQuoteToQuote, loading: convertLoading } =
-    useConvertImportedQuoteToQuote();
+  const { updateImportedPurchaseOrder, loading: updateLoading } =
+    useUpdateImportedPurchaseOrder();
+  const { deleteImportedPurchaseOrder, loading: deleteLoading } =
+    useDeleteImportedPurchaseOrder();
+  const {
+    convertImportedPurchaseOrderToPurchaseOrder,
+    loading: convertLoading,
+  } = useConvertImportedPurchaseOrderToPurchaseOrder();
 
   const isLoading = updateLoading || deleteLoading || convertLoading;
-  const isAlreadyConverted = quote?.status === "VALIDATED";
+  const isAlreadyConverted = purchaseOrder?.status === "VALIDATED";
 
-  if (!quote) return null;
+  if (!purchaseOrder) return null;
 
   const handleEdit = () => {
     setEditData({
-      originalQuoteNumber: quote.originalQuoteNumber || "",
-      clientName: quote.client?.name || quote.vendor?.name || "",
-      clientSiret: quote.client?.siret || quote.vendor?.siret || "",
-      quoteDate: quote.quoteDate?.split("T")[0] || "",
-      validUntil: quote.validUntil?.split("T")[0] || "",
-      totalHT: quote.totalHT || 0,
-      totalVAT: quote.totalVAT || 0,
-      totalTTC: quote.totalTTC || 0,
-      category: quote.category || "OTHER",
-      paymentMethod: quote.paymentMethod || "UNKNOWN",
-      notes: quote.notes || "",
+      originalPurchaseOrderNumber:
+        purchaseOrder.originalPurchaseOrderNumber || "",
+      vendorName: purchaseOrder.vendor?.name || "",
+      vendorSiret: purchaseOrder.vendor?.siret || "",
+      clientName: purchaseOrder.client?.name || "",
+      clientSiret: purchaseOrder.client?.siret || "",
+      purchaseOrderDate: purchaseOrder.purchaseOrderDate?.split("T")[0] || "",
+      deliveryDate: purchaseOrder.deliveryDate?.split("T")[0] || "",
+      dueDate: purchaseOrder.dueDate?.split("T")[0] || "",
+      totalHT: purchaseOrder.totalHT || 0,
+      totalVAT: purchaseOrder.totalVAT || 0,
+      totalTTC: purchaseOrder.totalTTC || 0,
+      category: purchaseOrder.category || "OTHER",
+      paymentMethod: purchaseOrder.paymentMethod || "UNKNOWN",
+      notes: purchaseOrder.notes || "",
     });
     setIsEditing(true);
   };
 
   const handleSave = async () => {
     try {
-      await updateImportedQuote({
-        variables: { id: quote.id, input: editData },
+      await updateImportedPurchaseOrder({
+        variables: { id: purchaseOrder.id, input: editData },
       });
-      toast.success("Devis mis à jour");
+      toast.success("Bon de commande mis à jour");
       setIsEditing(false);
       onUpdate?.();
     } catch (error) {
@@ -103,26 +115,30 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
 
   const handleConvert = async () => {
     try {
-      const result = await convertImportedQuoteToQuote({
-        variables: { id: quote.id },
+      const result = await convertImportedPurchaseOrderToPurchaseOrder({
+        variables: { id: purchaseOrder.id },
       });
-      const created = result.data?.convertImportedQuoteToQuote;
+      const created = result.data?.convertImportedPurchaseOrderToPurchaseOrder;
       toast.success(
         created?.number
-          ? `Devis ${created.prefix}${created.number} ajouté à votre tableau`
-          : "Devis ajouté à votre tableau",
+          ? `Bon de commande ${created.prefix}${created.number} ajouté à votre tableau`
+          : "Bon de commande ajouté à votre tableau",
       );
       onOpenChange(false);
       onUpdate?.();
     } catch (error) {
-      toast.error(error?.message || "Erreur lors de la validation du devis");
+      toast.error(
+        error?.message || "Erreur lors de la validation du bon de commande",
+      );
     }
   };
 
   const handleDelete = async () => {
     try {
-      await deleteImportedQuote({ variables: { id: quote.id } });
-      toast.success("Devis supprimé");
+      await deleteImportedPurchaseOrder({
+        variables: { id: purchaseOrder.id },
+      });
+      toast.success("Bon de commande supprimé");
       onOpenChange(false);
       onUpdate?.();
     } catch (error) {
@@ -133,13 +149,13 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
   const formatAmount = (amount) => {
     return new Intl.NumberFormat("fr-FR", {
       style: "currency",
-      currency: quote.currency || "EUR",
+      currency: purchaseOrder.currency || "EUR",
     }).format(amount || 0);
   };
 
   const handleDownload = () => {
-    if (quote.file?.url) {
-      window.open(quote.file.url, "_blank");
+    if (purchaseOrder.file?.url) {
+      window.open(purchaseOrder.file.url, "_blank");
     }
   };
 
@@ -149,12 +165,16 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
         <SheetHeader className="px-6 py-4 border-b shrink-0">
           <div className="flex items-center gap-3">
             <SheetTitle className="text-base font-medium">
-              Devis importé
+              Bon de commande importé
             </SheetTitle>
-            <Badge className={IMPORTED_QUOTE_STATUS_COLORS[quote.status]}>
-              {IMPORTED_QUOTE_STATUS_LABELS[quote.status]}
+            <Badge
+              className={
+                IMPORTED_PURCHASE_ORDER_STATUS_COLORS[purchaseOrder.status]
+              }
+            >
+              {IMPORTED_PURCHASE_ORDER_STATUS_LABELS[purchaseOrder.status]}
             </Badge>
-            {quote.isDuplicate && (
+            {purchaseOrder.isDuplicate && (
               <Badge
                 variant="outline"
                 className="border-amber-300 bg-amber-50 text-amber-700"
@@ -168,31 +188,47 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
 
         <ScrollArea className="flex-1 min-h-0">
           <div className="p-6 space-y-6">
-            {/* Montant principal */}
             <div className="text-center py-4">
               <p className="text-3xl font-bold">
-                {formatAmount(quote.totalTTC)}
+                {formatAmount(purchaseOrder.totalTTC)}
               </p>
               <p className="text-sm text-muted-foreground mt-1">
-                HT: {formatAmount(quote.totalHT)} | TVA:{" "}
-                {formatAmount(quote.totalVAT)}
+                HT: {formatAmount(purchaseOrder.totalHT)} | TVA:{" "}
+                {formatAmount(purchaseOrder.totalVAT)}
               </p>
             </div>
 
             <Separator />
 
-            {/* Mode édition ou affichage */}
             {isEditing ? (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>N° Devis</Label>
+                  <Label>N° Bon de commande</Label>
                   <Input
-                    value={editData.originalQuoteNumber}
+                    value={editData.originalPurchaseOrderNumber}
                     onChange={(e) =>
                       setEditData({
                         ...editData,
-                        originalQuoteNumber: e.target.value,
+                        originalPurchaseOrderNumber: e.target.value,
                       })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Fournisseur</Label>
+                  <Input
+                    value={editData.vendorName}
+                    onChange={(e) =>
+                      setEditData({ ...editData, vendorName: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>SIRET Fournisseur</Label>
+                  <Input
+                    value={editData.vendorSiret}
+                    onChange={(e) =>
+                      setEditData({ ...editData, vendorSiret: e.target.value })
                     }
                   />
                 </div>
@@ -206,31 +242,28 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>SIRET Client</Label>
+                  <Label>Date du bon de commande</Label>
                   <Input
-                    value={editData.clientSiret}
+                    type="date"
+                    value={editData.purchaseOrderDate}
                     onChange={(e) =>
-                      setEditData({ ...editData, clientSiret: e.target.value })
+                      setEditData({
+                        ...editData,
+                        purchaseOrderDate: e.target.value,
+                      })
                     }
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Date du devis</Label>
+                  <Label>Date de livraison</Label>
                   <Input
                     type="date"
-                    value={editData.quoteDate}
+                    value={editData.deliveryDate}
                     onChange={(e) =>
-                      setEditData({ ...editData, quoteDate: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Date de validité</Label>
-                  <Input
-                    type="date"
-                    value={editData.validUntil}
-                    onChange={(e) =>
-                      setEditData({ ...editData, validUntil: e.target.value })
+                      setEditData({
+                        ...editData,
+                        deliveryDate: e.target.value,
+                      })
                     }
                   />
                 </div>
@@ -334,10 +367,9 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
               </div>
             ) : (
               <>
-                {/* Client */}
                 <div className="space-y-3">
                   <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                    Client
+                    Fournisseur
                   </p>
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
@@ -345,13 +377,11 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
                     </div>
                     <div>
                       <p className="text-sm font-medium">
-                        {quote.client?.name ||
-                          quote.vendor?.name ||
-                          "Non spécifié"}
+                        {purchaseOrder.vendor?.name || "Non spécifié"}
                       </p>
-                      {(quote.client?.siret || quote.vendor?.siret) && (
+                      {purchaseOrder.vendor?.siret && (
                         <p className="text-xs text-muted-foreground">
-                          SIRET: {quote.client?.siret || quote.vendor?.siret}
+                          SIRET: {purchaseOrder.vendor.siret}
                         </p>
                       )}
                     </div>
@@ -360,19 +390,18 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
 
                 <Separator />
 
-                {/* Informations */}
                 <div className="space-y-4">
                   <p className="text-xs text-muted-foreground uppercase tracking-wide">
                     Informations
                   </p>
 
-                  {quote.originalQuoteNumber && (
+                  {purchaseOrder.originalPurchaseOrderNumber && (
                     <div className="flex justify-between">
                       <span className="text-sm text-muted-foreground">
-                        N° Devis
+                        N° BC
                       </span>
                       <span className="text-sm font-medium">
-                        {quote.originalQuoteNumber}
+                        {purchaseOrder.originalPurchaseOrderNumber}
                       </span>
                     </div>
                   )}
@@ -380,19 +409,19 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Date</span>
                     <span className="text-sm">
-                      {quote.quoteDate
-                        ? formatDateToFrench(quote.quoteDate)
+                      {purchaseOrder.purchaseOrderDate
+                        ? formatDateToFrench(purchaseOrder.purchaseOrderDate)
                         : "Non spécifiée"}
                     </span>
                   </div>
 
-                  {quote.validUntil && (
+                  {purchaseOrder.deliveryDate && (
                     <div className="flex justify-between">
                       <span className="text-sm text-muted-foreground">
-                        Validité
+                        Livraison
                       </span>
                       <span className="text-sm">
-                        {formatDateToFrench(quote.validUntil)}
+                        {formatDateToFrench(purchaseOrder.deliveryDate)}
                       </span>
                     </div>
                   )}
@@ -402,7 +431,8 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
                       Catégorie
                     </span>
                     <span className="text-sm">
-                      {EXPENSE_CATEGORY_LABELS[quote.category] || "Autre"}
+                      {EXPENSE_CATEGORY_LABELS[purchaseOrder.category] ||
+                        "Autre"}
                     </span>
                   </div>
 
@@ -411,18 +441,18 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
                       Paiement
                     </span>
                     <span className="text-sm">
-                      {PAYMENT_METHOD_LABELS[quote.paymentMethod] ||
+                      {PAYMENT_METHOD_LABELS[purchaseOrder.paymentMethod] ||
                         "Non spécifié"}
                     </span>
                   </div>
 
-                  {quote.ocrData?.confidence > 0 && (
+                  {purchaseOrder.ocrData?.confidence > 0 && (
                     <div className="flex justify-between">
                       <span className="text-sm text-muted-foreground">
                         Confiance OCR
                       </span>
                       <span className="text-sm">
-                        {Math.round(quote.ocrData.confidence * 100)}%
+                        {Math.round(purchaseOrder.ocrData.confidence * 100)}%
                       </span>
                     </div>
                   )}
@@ -432,8 +462,7 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
 
             <Separator />
 
-            {/* Fichier joint */}
-            {quote.file && (
+            {purchaseOrder.file && (
               <div className="space-y-3">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">
                   Document
@@ -445,11 +474,11 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
                   <FileText className="h-5 w-5 text-muted-foreground" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">
-                      {quote.file.originalFileName}
+                      {purchaseOrder.file.originalFileName}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {quote.file.fileSize
-                        ? `${Math.round(quote.file.fileSize / 1024)} KB`
+                      {purchaseOrder.file.fileSize
+                        ? `${Math.round(purchaseOrder.file.fileSize / 1024)} KB`
                         : "PDF"}
                     </p>
                   </div>
@@ -458,22 +487,20 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
               </div>
             )}
 
-            {/* Notes */}
-            {quote.notes && (
+            {purchaseOrder.notes && (
               <>
                 <Separator />
                 <div className="space-y-2">
                   <p className="text-xs text-muted-foreground uppercase tracking-wide">
                     Notes
                   </p>
-                  <p className="text-sm">{quote.notes}</p>
+                  <p className="text-sm">{purchaseOrder.notes}</p>
                 </div>
               </>
             )}
           </div>
         </ScrollArea>
 
-        {/* Actions - Footer fixe en bas */}
         <div className="border-t p-4 mt-auto shrink-0 bg-background">
           {isEditing ? (
             <div className="flex gap-2">
@@ -511,7 +538,7 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
                   ) : (
                     <CheckCircle2 className="h-4 w-4 mr-2" />
                   )}
-                  Valider et créer le devis
+                  Valider et créer le bon de commande
                 </Button>
               )}
               <div className="flex gap-2">
@@ -537,9 +564,11 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Supprimer ce devis ?</AlertDialogTitle>
+                      <AlertDialogTitle>
+                        Supprimer ce bon de commande ?
+                      </AlertDialogTitle>
                       <AlertDialogDescription>
-                        Cette action est irréversible. Le devis sera
+                        Cette action est irréversible. Le bon de commande sera
                         définitivement supprimé.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
