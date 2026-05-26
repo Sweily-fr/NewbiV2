@@ -228,13 +228,23 @@ export function useQuoteEditor({
           if (!client.address?.city || client.address.city.trim() === "")
             clientErrors.push("ville manquante");
 
+          // Déterminer si le client est français (les validations format FR ne s'appliquent qu'aux entreprises françaises)
+          const clientCountry = (client.address?.country || "")
+            .trim()
+            .toLowerCase();
+          const isClientInternational =
+            client.isInternational === true ||
+            (clientCountry !== "" &&
+              clientCountry !== "france" &&
+              clientCountry !== "fr");
+
           // Validation du code postal
           if (
             !client.address?.postalCode ||
             client.address.postalCode.trim() === ""
           ) {
             clientErrors.push("code postal manquant");
-          } else {
+          } else if (!isClientInternational) {
             // Vérifier le format du code postal (5 chiffres pour la France)
             const postalCodeRegex = /^\d{5}$/;
             if (!postalCodeRegex.test(client.address.postalCode.trim())) {
@@ -245,8 +255,8 @@ export function useQuoteEditor({
           if (!client.address?.country || client.address.country.trim() === "")
             clientErrors.push("pays manquant");
 
-          // Validations spécifiques aux entreprises
-          if (client.type === "COMPANY") {
+          // Validations spécifiques aux entreprises (format SIREN/SIRET FR uniquement pour les entreprises françaises)
+          if (client.type === "COMPANY" && !isClientInternational) {
             // Validation du SIREN/SIRET
             if (!client.siret || client.siret.trim() === "") {
               clientErrors.push(
@@ -680,12 +690,23 @@ export function useQuoteEditor({
             shippingErrors.push("adresse trop courte");
           }
 
+          const shippingCountry = (shippingAddr.country || "")
+            .trim()
+            .toLowerCase();
+          const isShippingInternational =
+            shippingCountry !== "" &&
+            shippingCountry !== "france" &&
+            shippingCountry !== "fr";
+
           if (
             !shippingAddr.postalCode ||
             shippingAddr.postalCode.trim() === ""
           ) {
             shippingErrors.push("code postal manquant");
-          } else if (!/^\d{5}$/.test(shippingAddr.postalCode.trim())) {
+          } else if (
+            !isShippingInternational &&
+            !/^\d{5}$/.test(shippingAddr.postalCode.trim())
+          ) {
             shippingErrors.push("code postal invalide");
           }
 
@@ -1434,13 +1455,23 @@ export function useQuoteEditor({
             shippingErrors.push("adresse trop courte");
           }
 
-          // Validation du code postal
+          // Validation du code postal (format FR uniquement si livraison en France)
+          const shippingCountry = (shippingAddr.country || "")
+            .trim()
+            .toLowerCase();
+          const isShippingInternational =
+            shippingCountry !== "" &&
+            shippingCountry !== "france" &&
+            shippingCountry !== "fr";
           if (
             !shippingAddr.postalCode ||
             shippingAddr.postalCode.trim() === ""
           ) {
             shippingErrors.push("code postal manquant");
-          } else if (!/^\d{5}$/.test(shippingAddr.postalCode.trim())) {
+          } else if (
+            !isShippingInternational &&
+            !/^\d{5}$/.test(shippingAddr.postalCode.trim())
+          ) {
             shippingErrors.push("code postal invalide (5 chiffres requis)");
           }
 
@@ -1742,13 +1773,23 @@ export function useQuoteEditor({
             shippingErrors.push("adresse trop courte");
           }
 
-          // Validation du code postal
+          // Validation du code postal (format FR uniquement si livraison en France)
+          const shippingCountry = (shippingAddr.country || "")
+            .trim()
+            .toLowerCase();
+          const isShippingInternational =
+            shippingCountry !== "" &&
+            shippingCountry !== "france" &&
+            shippingCountry !== "fr";
           if (
             !shippingAddr.postalCode ||
             shippingAddr.postalCode.trim() === ""
           ) {
             shippingErrors.push("code postal manquant");
-          } else if (!/^\d{5}$/.test(shippingAddr.postalCode.trim())) {
+          } else if (
+            !isShippingInternational &&
+            !/^\d{5}$/.test(shippingAddr.postalCode.trim())
+          ) {
             shippingErrors.push("code postal invalide (5 chiffres requis)");
           }
 
