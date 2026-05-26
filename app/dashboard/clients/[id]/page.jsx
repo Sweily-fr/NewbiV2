@@ -21,7 +21,7 @@ import ClientDetailHeader from "./components/client-detail-header";
 import ClientDetailSidebar from "./components/client-detail-sidebar";
 import ClientDetailTabs from "./components/client-detail-tabs";
 import { EventDialog } from "@/app/dashboard/calendar/components/event-dialog";
-import AssignMembersDialog from "./components/assign-members-dialog";
+import AssignMembersDialog from "../components/assign-members-dialog";
 import {
   AlertDialog,
   AlertDialogAction,

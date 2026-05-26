@@ -333,7 +333,7 @@ export const useUnblockClient = () => {
   };
 };
 
-export const useAssignClientMembers = () => {
+export const useAssignClientMembers = ({ silent = false } = {}) => {
   const { workspaceId } = useWorkspace();
   const { handleMutationError } = useErrorHandler();
 
@@ -348,7 +348,7 @@ export const useAssignClientMembers = () => {
       ],
       awaitRefetchQueries: false,
       onCompleted: () => {
-        toast.success("Membres assignés");
+        if (!silent) toast.success("Membres assignés");
       },
       onError: (error) => {
         handleMutationError(error, "assign", "client");

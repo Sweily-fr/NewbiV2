@@ -1,0 +1,196 @@
+"use client";
+
+import { useState, useEffect, useMemo, useRef } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/src/components/ui/dialog";
+import { Button } from "@/src/components/ui/button";
+import { Checkbox } from "@/src/components/ui/checkbox";
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+} from "@/src/components/ui/avatar";
+import { Loader2 } from "lucide-react";
+import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
+import { useAssignClientMembers } from "@/src/hooks/useClients";
+import { toast } from "@/src/components/ui/sonner";
+
+function getInitials(name) {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
+export default function AssignMembersDialog({
+  open,
+  onOpenChange,
+  client,
+  clientIds,
+  onAssigned,
+}) {
+  const isBulk = Array.isArray(clientIds) && clientIds.length > 0;
+  const targetIds = useMemo(
+    () => (isBulk ? clientIds : client?.id ? [client.id] : []),
+    [isBulk, clientIds, client?.id],
+  );
+
+  const { getAllCollaborators } = useOrganizationInvitations();
+  const { assignClientMembers, loading: assigning } = useAssignClientMembers({
+    silent: isBulk,
+  });
+
+  const [members, setMembers] = useState([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
+
+  const getAllCollaboratorsRef = useRef(getAllCollaborators);
+  getAllCollaboratorsRef.current = getAllCollaborators;
+
+  useEffect(() => {
+    if (!open) return;
+
+    let cancelled = false;
+
+    const fetchMembers = async () => {
+      setLoadingMembers(true);
+      const result = await getAllCollaboratorsRef.current();
+      if (!cancelled && result.success) {
+        const activeMembers = result.data
+          .filter((c) => c.type === "member")
+          .map((m) => ({
+            id: m.userId || m.id,
+            name: m.user?.name || m.name || m.email,
+            email: m.user?.email || m.email,
+            image: m.user?.image || m.image || null,
+            role: m.role,
+          }));
+        setMembers(activeMembers);
+      }
+      if (!cancelled) setLoadingMembers(false);
+    };
+
+    fetchMembers();
+    setSelectedIds(isBulk ? [] : client?.assignedMembers || []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, isBulk, client?.assignedMembers]);
+
+  const toggleMember = (memberId) => {
+    setSelectedIds((prev) =>
+      prev.includes(memberId)
+        ? prev.filter((id) => id !== memberId)
+        : [...prev, memberId],
+    );
+  };
+
+  const handleSave = async () => {
+    if (targetIds.length === 0) {
+      onOpenChange(false);
+      return;
+    }
+
+    if (!isBulk) {
+      await assignClientMembers(targetIds[0], selectedIds);
+      onAssigned?.(targetIds, selectedIds);
+      onOpenChange(false);
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await Promise.all(
+        targetIds.map((id) => assignClientMembers(id, selectedIds)),
+      );
+      toast.success(
+        `${targetIds.length} contact${targetIds.length > 1 ? "s" : ""} assigné${targetIds.length > 1 ? "s" : ""}`,
+      );
+      onAssigned?.(targetIds, selectedIds);
+      onOpenChange(false);
+    } catch (error) {
+      // Errors already surfaced by the hook
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const busy = assigning || submitting;
+  const title = isBulk
+    ? `Assigner ${targetIds.length} contact${targetIds.length > 1 ? "s" : ""}`
+    : "Assigner des membres";
+  const description = isBulk
+    ? `Sélectionnez les membres à assigner aux ${targetIds.length} contacts sélectionnés. L'assignation actuelle sera remplacée.`
+    : "Sélectionnez les membres du workspace à assigner à ce contact.";
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+
+        <div className="max-h-[300px] overflow-y-auto -mx-1 px-1">
+          {loadingMembers ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : members.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              Aucun membre dans le workspace.
+            </p>
+          ) : (
+            <div className="space-y-1">
+              {members.map((member) => (
+                <label
+                  key={member.id}
+                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                >
+                  <Checkbox
+                    checked={selectedIds.includes(member.id)}
+                    onCheckedChange={() => toggleMember(member.id)}
+                  />
+                  <Avatar className="size-7">
+                    {member.image && (
+                      <AvatarImage src={member.image} alt={member.name} />
+                    )}
+                    <AvatarFallback className="text-[10px]">
+                      {getInitials(member.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {member.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {member.email}
+                    </p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Annuler
+          </Button>
+          <Button onClick={handleSave} disabled={busy || loadingMembers}>
+            {busy && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
+            Enregistrer
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
