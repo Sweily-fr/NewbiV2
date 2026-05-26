@@ -114,10 +114,20 @@ export default function PurchaseOrderSidebar({
   const handleConfirm = async () => {
     try {
       await changeStatus(purchaseOrder.id, PURCHASE_ORDER_STATUS.CONFIRMED);
-      toast.success("Bon de commande confirmé");
+      toast.success("Bon de commande mis en attente");
       if (onRefetch) onRefetch();
     } catch (error) {
       toast.error("Erreur lors de la confirmation du bon de commande");
+    }
+  };
+
+  const handleValidate = async () => {
+    try {
+      await changeStatus(purchaseOrder.id, PURCHASE_ORDER_STATUS.VALIDATED);
+      toast.success("Bon de commande validé par le client");
+      if (onRefetch) onRefetch();
+    } catch (error) {
+      toast.error("Erreur lors de la validation du bon de commande");
     }
   };
 
@@ -199,14 +209,16 @@ export default function PurchaseOrderSidebar({
   // Determiner les statuts utiles
   const isDraft = purchaseOrder.status === PURCHASE_ORDER_STATUS.DRAFT;
   const isConfirmed = purchaseOrder.status === PURCHASE_ORDER_STATUS.CONFIRMED;
+  const isValidated = purchaseOrder.status === PURCHASE_ORDER_STATUS.VALIDATED;
   const isInProgress =
     purchaseOrder.status === PURCHASE_ORDER_STATUS.IN_PROGRESS;
   const isDelivered = purchaseOrder.status === PURCHASE_ORDER_STATUS.DELIVERED;
   const hasLinkedInvoices =
     !!purchaseOrder.linkedInvoices && purchaseOrder.linkedInvoices.length > 0;
   const canConvertToInvoice =
-    (isConfirmed || isInProgress || isDelivered) && !hasLinkedInvoices;
-  const canCancel = !hasLinkedInvoices;
+    (isValidated || isInProgress || isDelivered) && !hasLinkedInvoices;
+  // Annulation possible uniquement avant validation client
+  const canCancel = (isDraft || isConfirmed) && !hasLinkedInvoices;
 
   return (
     <>
@@ -254,11 +266,13 @@ export default function PurchaseOrderSidebar({
                       ? "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100"
                       : purchaseOrder.status === "CONFIRMED"
                         ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100"
-                        : purchaseOrder.status === "IN_PROGRESS"
-                          ? "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100"
-                          : purchaseOrder.status === "DELIVERED"
-                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-                            : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
+                        : purchaseOrder.status === "VALIDATED"
+                          ? "bg-violet-100 text-violet-800 dark:bg-violet-900 dark:text-violet-100"
+                          : purchaseOrder.status === "IN_PROGRESS"
+                            ? "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100"
+                            : purchaseOrder.status === "DELIVERED"
+                              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
+                              : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
                   }`}
                 >
                   {PURCHASE_ORDER_STATUS_LABELS[purchaseOrder.status] ||
@@ -612,16 +626,16 @@ export default function PurchaseOrderSidebar({
               </Button>
             )}
 
-            {/* Status Actions - CONFIRMED: Start / Revert to Draft / Cancel */}
+            {/* Status Actions - CONFIRMED (En attente): Validate / Revert / Cancel */}
             {isConfirmed && (
               <div className="flex flex-col space-y-2">
                 <Button
-                  onClick={handleStartProgress}
+                  onClick={handleValidate}
                   disabled={isLoading}
                   className="w-full"
                 >
-                  <Play className="h-4 w-4 mr-2" />
-                  Démarrer le traitement
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Marquer comme validé par le client
                 </Button>
                 <Button
                   variant="outline"
@@ -646,29 +660,28 @@ export default function PurchaseOrderSidebar({
               </div>
             )}
 
-            {/* Status Actions - IN_PROGRESS: Deliver / Cancel */}
+            {/* Status Actions - VALIDATED: Start progress */}
+            {isValidated && (
+              <Button
+                onClick={handleStartProgress}
+                disabled={isLoading}
+                className="w-full"
+              >
+                <Play className="h-4 w-4 mr-2" />
+                Démarrer le traitement
+              </Button>
+            )}
+
+            {/* Status Actions - IN_PROGRESS: Deliver */}
             {isInProgress && (
-              <div className="flex flex-col space-y-2">
-                <Button
-                  onClick={handleDeliver}
-                  disabled={isLoading}
-                  className="w-full"
-                >
-                  <Truck className="h-4 w-4 mr-2" />
-                  Marquer comme livré
-                </Button>
-                {canCancel && (
-                  <Button
-                    variant="outline"
-                    onClick={handleCancel}
-                    disabled={isLoading}
-                    className="w-full"
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Annuler le bon de commande
-                  </Button>
-                )}
-              </div>
+              <Button
+                onClick={handleDeliver}
+                disabled={isLoading}
+                className="w-full"
+              >
+                <Truck className="h-4 w-4 mr-2" />
+                Marquer comme livré
+              </Button>
             )}
 
             {/* Convert to Invoice - available for CONFIRMED, IN_PROGRESS, DELIVERED */}

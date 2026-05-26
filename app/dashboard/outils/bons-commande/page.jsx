@@ -100,11 +100,13 @@ function PurchaseOrdersContent() {
     let inProgressCount = 0;
 
     purchaseOrders.forEach((po) => {
-      if (po.status !== PURCHASE_ORDER_STATUS.DRAFT) {
-        totalAmount += po.totalHT || 0;
+      if (po.status === PURCHASE_ORDER_STATUS.CANCELED) {
+        return;
       }
 
-      if (po.status === PURCHASE_ORDER_STATUS.CONFIRMED) {
+      totalAmount += po.totalHT || 0;
+
+      if (po.status !== PURCHASE_ORDER_STATUS.DRAFT) {
         confirmedAmount += po.totalHT || 0;
       }
 

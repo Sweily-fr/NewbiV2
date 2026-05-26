@@ -173,6 +173,7 @@ const PurchaseOrderStatusIcon = ({ status }) => {
       icon = <CheckCircle2 className={`${cls} text-green-600`} />;
       break;
     case "CONFIRMED":
+    case "VALIDATED":
     case "IN_PROGRESS":
       icon = <Clock className={`${cls} text-blue-600`} />;
       break;
