@@ -3681,8 +3681,8 @@ export default function DocumentsPartagesPage() {
               />
 
               {/* Visibilité */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Visibilité</Label>
+              <div className="space-y-2 pt-3">
+                <Label className="text-sm font-normal">Visibilité</Label>
                 <div className="flex gap-2">
                   <Button
                     type="button"
