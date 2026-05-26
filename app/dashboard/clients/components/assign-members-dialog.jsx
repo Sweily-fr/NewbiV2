@@ -10,15 +10,16 @@ import {
   DialogFooter,
 } from "@/src/components/ui/dialog";
 import { Button } from "@/src/components/ui/button";
-import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   Avatar,
   AvatarImage,
   AvatarFallback,
 } from "@/src/components/ui/avatar";
-import { Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
+import { cn } from "@/src/lib/utils";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import { useAssignClientMembers } from "@/src/hooks/useClients";
+import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
 import { toast } from "@/src/components/ui/sonner";
 
 function getInitials(name) {
@@ -48,7 +49,7 @@ export default function AssignMembersDialog({
 
   const [members, setMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
-  const [selectedIds, setSelectedIds] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   const getAllCollaboratorsRef = useRef(getAllCollaborators);
@@ -78,19 +79,28 @@ export default function AssignMembersDialog({
     };
 
     fetchMembers();
-    setSelectedIds(isBulk ? [] : client?.assignedMembers || []);
+    setSelectedId(isBulk ? null : client?.assignedMembers?.[0] || null);
 
     return () => {
       cancelled = true;
     };
-  }, [open, isBulk, client?.assignedMembers]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  // Enrichir avec les infos User côté GraphQL (même source que le kanban)
+  // pour récupérer les vrais avatars (image) au lieu de seulement les initiales
+  const memberIds = useMemo(() => members.map((m) => m.id), [members]);
+  const { members: usersInfo } = useAssignedMembersInfo(memberIds);
+  const usersInfoById = useMemo(() => {
+    const map = {};
+    (usersInfo || []).forEach((u) => {
+      if (u?.id) map[u.id] = u;
+    });
+    return map;
+  }, [usersInfo]);
 
   const toggleMember = (memberId) => {
-    setSelectedIds((prev) =>
-      prev.includes(memberId)
-        ? prev.filter((id) => id !== memberId)
-        : [...prev, memberId],
-    );
+    setSelectedId((prev) => (prev === memberId ? null : memberId));
   };
 
   const handleSave = async () => {
@@ -99,9 +109,11 @@ export default function AssignMembersDialog({
       return;
     }
 
+    const memberIds = selectedId ? [selectedId] : [];
+
     if (!isBulk) {
-      await assignClientMembers(targetIds[0], selectedIds);
-      onAssigned?.(targetIds, selectedIds);
+      await assignClientMembers(targetIds[0], memberIds);
+      onAssigned?.(targetIds, memberIds);
       onOpenChange(false);
       return;
     }
@@ -109,12 +121,12 @@ export default function AssignMembersDialog({
     setSubmitting(true);
     try {
       await Promise.all(
-        targetIds.map((id) => assignClientMembers(id, selectedIds)),
+        targetIds.map((id) => assignClientMembers(id, memberIds)),
       );
       toast.success(
         `${targetIds.length} contact${targetIds.length > 1 ? "s" : ""} assigné${targetIds.length > 1 ? "s" : ""}`,
       );
-      onAssigned?.(targetIds, selectedIds);
+      onAssigned?.(targetIds, memberIds);
       onOpenChange(false);
     } catch (error) {
       // Errors already surfaced by the hook
@@ -128,12 +140,30 @@ export default function AssignMembersDialog({
     ? `Assigner ${targetIds.length} contact${targetIds.length > 1 ? "s" : ""}`
     : "Assigner des membres";
   const description = isBulk
-    ? `Sélectionnez les membres à assigner aux ${targetIds.length} contacts sélectionnés. L'assignation actuelle sera remplacée.`
-    : "Sélectionnez les membres du workspace à assigner à ce contact.";
+    ? `Sélectionnez un membre à assigner aux ${targetIds.length} contacts sélectionnés. L'assignation actuelle sera remplacée.`
+    : "Sélectionnez un membre du workspace à assigner à ce contact.";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent
+        className="sm:max-w-md"
+        onInteractOutside={(e) => {
+          if (loadingMembers) {
+            e.preventDefault();
+            return;
+          }
+          const target = e.target;
+          if (
+            target &&
+            target.closest &&
+            target.closest(
+              '[role="menu"],[data-radix-popper-content-wrapper],[data-radix-menu-content]',
+            )
+          ) {
+            e.preventDefault();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
@@ -150,33 +180,46 @@ export default function AssignMembersDialog({
             </p>
           ) : (
             <div className="space-y-1">
-              {members.map((member) => (
-                <label
-                  key={member.id}
-                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                >
-                  <Checkbox
-                    checked={selectedIds.includes(member.id)}
-                    onCheckedChange={() => toggleMember(member.id)}
-                  />
-                  <Avatar className="size-7">
-                    {member.image && (
-                      <AvatarImage src={member.image} alt={member.name} />
+              {members.map((member) => {
+                const isSelected = selectedId === member.id;
+                const enriched = usersInfoById[member.id];
+                const displayName = enriched?.name || member.name;
+                const displayEmail = enriched?.email || member.email;
+                const displayImage = enriched?.image || member.image;
+                return (
+                  <button
+                    key={member.id}
+                    type="button"
+                    onClick={() => toggleMember(member.id)}
+                    className={cn(
+                      "w-full flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors text-left",
+                      isSelected
+                        ? "bg-muted ring-1 ring-primary/30"
+                        : "hover:bg-muted/50",
                     )}
-                    <AvatarFallback className="text-[10px]">
-                      {getInitials(member.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {member.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {member.email}
-                    </p>
-                  </div>
-                </label>
-              ))}
+                  >
+                    <Avatar className="size-7">
+                      {displayImage && (
+                        <AvatarImage src={displayImage} alt={displayName} />
+                      )}
+                      <AvatarFallback className="text-[10px]">
+                        {getInitials(displayName)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {displayName}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {displayEmail}
+                      </p>
+                    </div>
+                    {isSelected && (
+                      <Check className="h-4 w-4 text-primary shrink-0" />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>

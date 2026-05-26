@@ -128,6 +128,7 @@ import {
   useAddClientToLists,
   useRemoveClientFromList,
 } from "@/src/hooks/useClientLists";
+import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
 import { toast } from "@/src/components/ui/sonner";
 import ClientsModal from "./clients-modal";
@@ -279,6 +280,31 @@ const columns = (
     filterFn: typeFilterFn,
   },
   {
+    id: "assignedMember",
+    header: "Assigné",
+    cell: ({ row, table }) => {
+      const memberId = row.original.assignedMembers?.[0];
+      if (!memberId) {
+        return <span className="text-xs text-muted-foreground">-</span>;
+      }
+      const member = table.options.meta?.membersById?.[memberId];
+      if (!member) {
+        return <span className="text-xs text-muted-foreground">-</span>;
+      }
+      return (
+        <div className="flex items-center" title={member.name}>
+          <UserAvatar
+            src={member.image}
+            name={member.name}
+            colorKey={member.email}
+            size="xs"
+          />
+        </div>
+      );
+    },
+    size: 100,
+  },
+  {
     header: "Factures",
     id: "invoiceCount",
     cell: ({ row }) => {
@@ -369,6 +395,7 @@ const columns = (
       const currentList = table.options.meta?.currentList;
       const onClientRemovedFromList =
         table.options.meta?.onClientRemovedFromList;
+      const onAssignMembers = table.options.meta?.onAssignMembers;
       return (
         <RowActions
           row={row}
@@ -378,6 +405,7 @@ const columns = (
           allLists={allLists}
           currentList={currentList}
           onClientRemovedFromList={onClientRemovedFromList}
+          onAssignMembers={onAssignMembers}
         />
       );
     },
@@ -421,6 +449,7 @@ export default function TableClients({
   const [internalGlobalFilter, setInternalGlobalFilter] = useState("");
   const [editingClient, setEditingClient] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [assignTargetClient, setAssignTargetClient] = useState(null);
 
   // Utiliser le filtre externe si hideSearchBar est true, sinon utiliser le filtre interne
   const globalFilter = hideSearchBar
@@ -508,6 +537,29 @@ export default function TableClients({
     }
     return counts;
   }, [invoices]);
+
+  // Collecter tous les userIds assignés sur la page courante et récupérer
+  // leurs infos via la même query GraphQL que le kanban (`usersInfo`)
+  const assignedUserIds = useMemo(() => {
+    const set = new Set();
+    (rawClients || []).forEach((c) => {
+      (c.assignedMembers || []).forEach((id) => {
+        if (id) set.add(id);
+      });
+    });
+    return Array.from(set);
+  }, [rawClients]);
+
+  const { members: assignedMembersInfo } =
+    useAssignedMembersInfo(assignedUserIds);
+
+  const membersById = useMemo(() => {
+    const map = {};
+    (assignedMembersInfo || []).forEach((m) => {
+      if (m?.id) map[m.id] = m;
+    });
+    return map;
+  }, [assignedMembersInfo]);
 
   const [sorting, setSorting] = useState([
     {
@@ -615,6 +667,8 @@ export default function TableClients({
       allLists,
       currentList,
       onClientRemovedFromList,
+      onAssignMembers: setAssignTargetClient,
+      membersById,
     },
   });
 
@@ -1267,6 +1321,14 @@ export default function TableClients({
         onOpenChange={setIsEditModalOpen}
         onSave={handleSaveClient}
       />
+
+      <AssignMembersDialog
+        open={!!assignTargetClient}
+        onOpenChange={(open) => {
+          if (!open) setAssignTargetClient(null);
+        }}
+        client={assignTargetClient}
+      />
     </div>
   );
 }
@@ -1279,6 +1341,7 @@ function RowActions({
   allLists,
   currentList,
   onClientRemovedFromList,
+  onAssignMembers,
 }) {
   const client = row.original;
   const router = useRouter();
@@ -1289,7 +1352,6 @@ function RowActions({
   const [addingToList, setAddingToList] = useState(false);
   const [removingFromList, setRemovingFromList] = useState(false);
   const [createListDialogOpen, setCreateListDialogOpen] = useState(false);
-  const [showAssignDialog, setShowAssignDialog] = useState(false);
   const { deleteClient } = useDeleteClient();
   const { blockClient } = useBlockClient();
   const { addToLists } = useAddClientToLists();
@@ -1343,8 +1405,8 @@ function RowActions({
   }, [blockClient, client.id, blockReason]);
 
   const handleAssign = useCallback(() => {
-    setTimeout(() => setShowAssignDialog(true), 0);
-  }, []);
+    onAssignMembers?.(client);
+  }, [onAssignMembers, client]);
 
   const handleEdit = useCallback(() => {
     if (onEdit) {
@@ -1580,12 +1642,6 @@ function RowActions({
             handleAddToList(newList.id);
           }
         }}
-      />
-
-      <AssignMembersDialog
-        open={showAssignDialog}
-        onOpenChange={setShowAssignDialog}
-        client={client}
       />
 
       {/* Dialog de confirmation de blocage */}
