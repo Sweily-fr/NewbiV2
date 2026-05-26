@@ -569,11 +569,15 @@ export default function DocumentsPartagesPage() {
   // On utilise directement les documents retournés par l'API
   const filteredDocuments = documents;
 
-  // Détection des doublons (même taille + même type MIME)
+  // Détection des doublons :
+  // - Priorité au hash SHA-256 du contenu (identifie un doublon exact peu importe le nom)
+  // - Fallback nom + taille + mime pour les anciens documents sans hash
   const duplicateGroups = useMemo(() => {
     const groups = {};
     filteredDocuments.forEach((doc) => {
-      const key = `${doc.fileSize}_${doc.mimeType || doc.fileExtension}`;
+      const key = doc.fileHash
+        ? `hash:${doc.fileHash}`
+        : `meta:${(doc.originalName || doc.name || "").trim().toLowerCase()}_${doc.fileSize}_${doc.mimeType || doc.fileExtension}`;
       if (!groups[key]) groups[key] = [];
       groups[key].push(doc);
     });
@@ -593,10 +597,13 @@ export default function DocumentsPartagesPage() {
   }, [duplicateGroups]);
 
   // Détection des doublons sur TOUS les documents (tous dossiers confondus)
+  // Même logique : hash en priorité, fallback métadonnées
   const allDuplicateGroups = useMemo(() => {
     const groups = {};
     allDocuments.forEach((doc) => {
-      const key = `${doc.fileSize}_${doc.mimeType || doc.fileExtension}`;
+      const key = doc.fileHash
+        ? `hash:${doc.fileHash}`
+        : `meta:${(doc.originalName || doc.name || "").trim().toLowerCase()}_${doc.fileSize}_${doc.mimeType || doc.fileExtension}`;
       if (!groups[key]) groups[key] = [];
       groups[key].push(doc);
     });

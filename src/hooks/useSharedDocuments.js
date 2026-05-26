@@ -35,6 +35,7 @@ export const GET_SHARED_DOCUMENTS = gql`
         mimeType
         fileSize
         fileExtension
+        fileHash
         workspaceId
         folderId
         uploadedBy
@@ -118,6 +119,7 @@ export const GET_TRASH_ITEMS = gql`
         mimeType
         fileSize
         fileExtension
+        fileHash
         workspaceId
         folderId
         originalFolderId
@@ -179,6 +181,7 @@ export const UPLOAD_SHARED_DOCUMENT = gql`
         mimeType
         fileSize
         fileExtension
+        fileHash
         folderId
         status
         createdAt
