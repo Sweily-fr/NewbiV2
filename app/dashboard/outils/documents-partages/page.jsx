@@ -4980,7 +4980,7 @@ export default function DocumentsPartagesPage() {
 
       {/* Modale des doublons */}
       <Dialog open={showDuplicatesModal} onOpenChange={setShowDuplicatesModal}>
-        <DialogContent className="max-w-4xl sm:max-w-4xl max-h-[90vh] flex flex-col">
+        <DialogContent className="max-w-4xl sm:max-w-4xl h-[90vh] !grid-rows-[auto_1fr_auto] grid">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Copy className="h-5 w-5 text-[#5a50ff]" />
@@ -5001,7 +5001,7 @@ export default function DocumentsPartagesPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <ScrollArea className="flex-1 -mx-6 px-6">
+          <div className="overflow-y-auto -mx-6 px-6 min-h-0">
             {allDuplicateGroups.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                 <CheckCircle2 className="h-12 w-12 mb-3 text-green-500" />
@@ -5093,7 +5093,7 @@ export default function DocumentsPartagesPage() {
                 ))}
               </div>
             )}
-          </ScrollArea>
+          </div>
 
           {allDuplicateGroups.length > 0 && (
             <DialogFooter className="sm:justify-between gap-2">
