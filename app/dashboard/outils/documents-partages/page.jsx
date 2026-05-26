@@ -3654,7 +3654,7 @@ export default function DocumentsPartagesPage() {
                 )}
               </DialogDescription>
             </DialogHeader>
-            <div className="py-4 space-y-3">
+            <div className="py-4 space-y-4">
               {newFolderParentId && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 px-3 py-2 rounded-md">
                   <FolderClosed className="h-4 w-4" />
@@ -3681,9 +3681,11 @@ export default function DocumentsPartagesPage() {
               />
 
               {/* Visibilité */}
-              <div className="space-y-2 pt-3">
-                <Label className="text-sm font-normal">Visibilité</Label>
-                <div className="flex gap-2">
+              <div className="space-y-3 pt-6">
+                <Label className="text-sm font-normal text-muted-foreground">
+                  Visibilité
+                </Label>
+                <div className="flex gap-2 pt-1">
                   <Button
                     type="button"
                     variant={
@@ -3720,7 +3722,7 @@ export default function DocumentsPartagesPage() {
                     Privé
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground pt-1">
                   {newFolderVisibility === "public"
                     ? "Visible par tous les membres du workspace."
                     : "Visible uniquement par vous et les membres sélectionnés."}
