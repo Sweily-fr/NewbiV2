@@ -857,12 +857,23 @@ export function useInvoiceEditor({
             shippingErrors.push("adresse trop courte");
           }
 
+          const shippingCountry = (shippingAddr.country || "")
+            .trim()
+            .toLowerCase();
+          const isShippingInternational =
+            shippingCountry !== "" &&
+            shippingCountry !== "france" &&
+            shippingCountry !== "fr";
+
           if (
             !shippingAddr.postalCode ||
             shippingAddr.postalCode.trim() === ""
           ) {
             shippingErrors.push("code postal manquant");
-          } else if (!/^\d{5}$/.test(shippingAddr.postalCode.trim())) {
+          } else if (
+            !isShippingInternational &&
+            !/^\d{5}$/.test(shippingAddr.postalCode.trim())
+          ) {
             shippingErrors.push("code postal invalide");
           }
 
@@ -1673,10 +1684,18 @@ export function useInvoiceEditor({
         shippingErrors.push("adresse trop courte");
       }
 
-      // Validation du code postal
+      // Validation du code postal (format FR uniquement si livraison en France)
+      const shippingCountry = (shippingAddr.country || "").trim().toLowerCase();
+      const isShippingInternational =
+        shippingCountry !== "" &&
+        shippingCountry !== "france" &&
+        shippingCountry !== "fr";
       if (!shippingAddr.postalCode || shippingAddr.postalCode.trim() === "") {
         shippingErrors.push("code postal manquant");
-      } else if (!/^\d{5}$/.test(shippingAddr.postalCode.trim())) {
+      } else if (
+        !isShippingInternational &&
+        !/^\d{5}$/.test(shippingAddr.postalCode.trim())
+      ) {
         shippingErrors.push("code postal invalide (5 chiffres requis)");
       }
 
@@ -2044,9 +2063,18 @@ export function useInvoiceEditor({
         shippingErrors.push("adresse trop courte");
       }
 
+      const shippingCountryAlt = (shipping.country || "").trim().toLowerCase();
+      const isShippingInternationalAlt =
+        shippingCountryAlt !== "" &&
+        shippingCountryAlt !== "france" &&
+        shippingCountryAlt !== "fr";
+
       if (!shipping.postalCode || shipping.postalCode.trim() === "") {
         shippingErrors.push("code postal manquant");
-      } else if (!/^\d{5}$/.test(shipping.postalCode.trim())) {
+      } else if (
+        !isShippingInternationalAlt &&
+        !/^\d{5}$/.test(shipping.postalCode.trim())
+      ) {
         shippingErrors.push("code postal invalide");
       }
 
