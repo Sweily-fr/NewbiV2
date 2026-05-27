@@ -60,7 +60,8 @@ export default function FacturationSection({
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancelConfirmText, setCancelConfirmText] = useState("");
-  const [seatsInfo, setSeatsInfo] = useState(null);
+  // TODO: réactiver la gestion des sièges plus tard
+  // const [seatsInfo, setSeatsInfo] = useState(null);
   const [billingPortalLoading, setBillingPortalLoading] = useState(false);
 
   const {
@@ -79,24 +80,25 @@ export default function FacturationSection({
 
   const orgId = session?.user?.organization?.id || organization?.id;
 
+  // TODO: réactiver la gestion des sièges plus tard
   // Fetch seats info
-  useEffect(() => {
-    const fetchSeatsInfo = async () => {
-      if (!orgId) return;
-      try {
-        const response = await fetch(`/api/organizations/${orgId}/seats-info`);
-        if (response.ok) {
-          const data = await response.json();
-          setSeatsInfo(data);
-        }
-      } catch (error) {
-        console.error("Erreur récupération sièges:", error);
-      }
-    };
-    if (isActive()) {
-      fetchSeatsInfo();
-    }
-  }, [orgId, isActive]);
+  // useEffect(() => {
+  //   const fetchSeatsInfo = async () => {
+  //     if (!orgId) return;
+  //     try {
+  //       const response = await fetch(`/api/organizations/${orgId}/seats-info`);
+  //       if (response.ok) {
+  //         const data = await response.json();
+  //         setSeatsInfo(data);
+  //       }
+  //     } catch (error) {
+  //       console.error("Erreur récupération sièges:", error);
+  //     }
+  //   };
+  //   if (isActive()) {
+  //     fetchSeatsInfo();
+  //   }
+  // }, [orgId, isActive]);
 
   // Helpers
   const formatDate = (dateString) => {
@@ -512,11 +514,11 @@ export default function FacturationSection({
         </div>
       </div>
 
-      {/* Consumption - Seats & OCR */}
+      {/* Consumption - OCR (Seats temporairement masqués, à réactiver plus tard) */}
       <div className="space-y-3">
         <h3 className="text-sm font-medium">Consommation</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Seats Card */}
+        <div className="grid grid-cols-1 gap-4">
+          {/* TODO: réactiver la carte Sièges plus tard
           <div className="rounded-xl border border-gray-200 dark:border-[#2c2c2c] p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -558,6 +560,7 @@ export default function FacturationSection({
               </button>
             </div>
           </div>
+          */}
 
           {/* OCR Credits Card */}
           <div className="rounded-xl border border-gray-200 dark:border-[#2c2c2c] p-4 space-y-3">
