@@ -33,6 +33,7 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import { useStripeInvoices } from "@/src/hooks/useStripeInvoices";
+import { useStripeCustomer } from "@/src/hooks/useStripeCustomer";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { useSession } from "@/src/lib/auth-client";
 import { authClient } from "@/src/lib/auth-client";
@@ -71,6 +72,8 @@ export default function FacturationSection({
     downloadInvoice,
   } = useStripeInvoices();
   const { subscription, isActive, loading: subLoading } = useSubscription();
+  const { customer: stripeCustomer, loading: stripeCustomerLoading } =
+    useStripeCustomer();
   const { workspaceId } = useWorkspace();
   const { quota: ocrQuota, loading: ocrLoading } = useUserOcrQuota(workspaceId);
 
@@ -614,47 +617,58 @@ export default function FacturationSection({
               <div>
                 <p className="text-sm font-medium">Adresse de facturation</p>
                 <p className="text-xs text-muted-foreground">
-                  Informations utilisées sur vos factures
+                  Gérer via le portail Stripe
                 </p>
               </div>
               <Button
                 variant="outline"
                 size="icon"
                 className="h-8 w-8 cursor-pointer"
-                onClick={() => onTabChange?.("generale")}
+                onClick={handleOpenBillingPortal}
+                disabled={billingPortalLoading || !canManageSubscription}
               >
-                <Pencil className="h-4 w-4" />
+                {billingPortalLoading ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Pencil className="h-4 w-4" />
+                )}
               </Button>
             </div>
             <div className="text-sm divide-y divide-gray-100 dark:divide-[#2c2c2c]">
               <div className="flex justify-between py-3">
                 <span className="text-muted-foreground">Email</span>
                 <span className="text-right truncate ml-2">
-                  {organization?.companyEmail || session?.user?.email || "–"}
+                  {stripeCustomerLoading ? "..." : stripeCustomer?.email || "–"}
                 </span>
               </div>
               <div className="flex justify-between py-3">
                 <span className="text-muted-foreground">Entreprise</span>
                 <span className="text-right truncate ml-2">
-                  {organization?.companyName || "–"}
+                  {stripeCustomerLoading ? "..." : stripeCustomer?.name || "–"}
                 </span>
               </div>
               <div className="flex justify-between py-3">
                 <span className="text-muted-foreground">Adresse</span>
                 <span className="text-right truncate ml-2">
-                  {[
-                    organization?.addressStreet,
-                    organization?.addressZipCode,
-                    organization?.addressCity,
-                  ]
-                    .filter(Boolean)
-                    .join(", ") || "–"}
+                  {stripeCustomerLoading
+                    ? "..."
+                    : [
+                        stripeCustomer?.address?.line1,
+                        stripeCustomer?.address?.line2,
+                        stripeCustomer?.address?.postal_code,
+                        stripeCustomer?.address?.city,
+                        stripeCustomer?.address?.country,
+                      ]
+                        .filter(Boolean)
+                        .join(", ") || "–"}
                 </span>
               </div>
               <div className="flex justify-between py-3">
                 <span className="text-muted-foreground">N° TVA</span>
                 <span className="text-right truncate ml-2">
-                  {organization?.vatNumber || "–"}
+                  {stripeCustomerLoading
+                    ? "..."
+                    : stripeCustomer?.vatNumber || "–"}
                 </span>
               </div>
             </div>
