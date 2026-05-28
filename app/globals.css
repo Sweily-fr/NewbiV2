@@ -365,14 +365,25 @@
 }
 
 /* Tooltip styles - fond noir #202020 */
-[data-slot="tooltip-content"] {
+[data-slot="tooltip-content"]:not(.tooltip-light) {
   background-color: #202020 !important;
   color: white !important;
 }
 
-[data-slot="tooltip-content"] [class*="Arrow"] {
+[data-slot="tooltip-content"]:not(.tooltip-light) [class*="Arrow"] {
   background-color: #202020 !important;
   fill: #202020 !important;
+}
+
+/* Variante claire (opt-in via className="tooltip-light") */
+[data-slot="tooltip-content"].tooltip-light {
+  background-color: #ffffff !important;
+  color: #1f2937 !important;
+}
+
+[data-slot="tooltip-content"].tooltip-light [class*="Arrow"] {
+  background-color: #ffffff !important;
+  fill: #ffffff !important;
 }
 
 /* Styles spécifiques pour les footers fixes sur mobile Safari */
