@@ -1,4 +1,12 @@
-import React, { useState, useRef, Fragment, useMemo, useCallback } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useLayoutEffect,
+  Fragment,
+  useMemo,
+  useCallback,
+} from "react";
 import {
   MoreHorizontal,
   Calendar,
@@ -1125,15 +1133,14 @@ function InlineAddTask({
       ref={rowRef}
       className="grid px-4 sm:px-6 py-1.5 items-center bg-muted/30 relative overflow-hidden after:absolute after:bottom-0 after:left-6 after:right-6 after:sm:left-8 after:sm:right-8 after:h-px after:bg-border/60 after:content-['']"
       style={{
-        gridTemplateColumns: "3fr 1.6fr 0.8fr 0.9fr 1fr 0.6fr 80px",
+        gridTemplateColumns:
+          "minmax(0, 4.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.6fr) 80px",
         gap: "1rem",
       }}
     >
       {/* Colonne Nom — même structure que TaskRow */}
       <div className="min-w-0">
         <div className="flex items-center gap-3">
-          {/* Spacer grip */}
-          <div className="h-4 w-4 flex-shrink-0" />
           {/* Spacer checkbox */}
           <div className="h-4 w-4 flex-shrink-0 mr-4" />
           {/* Status dot — même style que les tâches existantes */}
@@ -1306,15 +1313,27 @@ function InlineAddTask({
  * Titre éditable inline — clic sur pencil → input, sauvegarde sur Enter ou blur
  */
 const TAG_COLORS = [
-  { bg: "#EDE9FE", text: "#6D28D9", border: "#DDD6FE" },
-  { bg: "#DBEAFE", text: "#1D4ED8", border: "#BFDBFE" },
-  { bg: "#DCFCE7", text: "#15803D", border: "#BBF7D0" },
-  { bg: "#FEF3C7", text: "#B45309", border: "#FDE68A" },
-  { bg: "#FEE2E2", text: "#B91C1C", border: "#FECACA" },
-  { bg: "#FCE7F3", text: "#BE185D", border: "#FBCFE8" },
-  { bg: "#E0E7FF", text: "#4338CA", border: "#C7D2FE" },
-  { bg: "#F3F4F6", text: "#374151", border: "#E5E7EB" },
+  { bg: "#DBEAFE", text: "#1D4ED8", border: "#BFDBFE" }, // blue
+  { bg: "#DCFCE7", text: "#15803D", border: "#BBF7D0" }, // green
+  { bg: "#FEF3C7", text: "#B45309", border: "#FDE68A" }, // amber
+  { bg: "#FEE2E2", text: "#B91C1C", border: "#FECACA" }, // red
+  { bg: "#EDE9FE", text: "#6D28D9", border: "#DDD6FE" }, // violet
+  { bg: "#FCE7F3", text: "#BE185D", border: "#FBCFE8" }, // pink
+  { bg: "#CFFAFE", text: "#0E7490", border: "#A5F3FC" }, // cyan
+  { bg: "#FFEDD5", text: "#C2410C", border: "#FED7AA" }, // orange
 ];
+
+// Couleur déterministe par hash du nom — on ignore les valeurs stockées
+// pour garantir un rendu visuel cohérent (palette unique pour tous les tags).
+function resolveTagColors(tag) {
+  const name = tag?.name || "";
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const c = TAG_COLORS[Math.abs(hash) % TAG_COLORS.length];
+  return { ...tag, bg: c.bg, text: c.text, border: c.border };
+}
 
 function InlineTagPopover({
   task,
@@ -1543,6 +1562,41 @@ function InlineTagPopover({
   );
 }
 
+function TruncatedTitle({ title }) {
+  const ref = useRef(null);
+  const [isTruncated, setIsTruncated] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const check = () => setIsTruncated(el.scrollWidth > el.clientWidth + 1);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [title]);
+
+  const node = (
+    <p
+      ref={ref}
+      className="text-sm truncate font-normal text-foreground/90 group-hover:text-[#5A50FF] transition-colors min-w-0"
+    >
+      {title}
+    </p>
+  );
+
+  if (!isTruncated) return node;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{node}</TooltipTrigger>
+      <TooltipContent side="top" className="max-w-[400px] break-words">
+        {title}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 function InlineEditTitle({
   task,
   updateTask,
@@ -1607,9 +1661,7 @@ function InlineEditTitle({
 
   return (
     <div className="flex-1 w-0 flex items-center gap-1 min-w-0 overflow-hidden">
-      <p className="text-sm truncate font-normal text-foreground/90 group-hover:text-[#5A50FF] transition-colors min-w-0">
-        {task.title}
-      </p>
+      <TruncatedTitle title={task.title} />
       {task.description && (
         <DescriptionHoverPopover description={task.description} />
       )}
@@ -1627,21 +1679,149 @@ function InlineEditTitle({
 }
 
 /**
+ * Tooltip de tags qui se rétracte à la largeur de la ligne la plus large
+ * après wrap (mesurée en JS après render).
+ */
+function TagsTooltipGrid({ tags }) {
+  const ref = useRef(null);
+  const [width, setWidth] = useState();
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => {
+      const containerLeft = el.getBoundingClientRect().left;
+      const lines = new Map();
+      Array.from(el.children).forEach((child) => {
+        const rect = child.getBoundingClientRect();
+        const y = Math.round(rect.top);
+        const right = rect.right - containerLeft;
+        const cur = lines.get(y) || 0;
+        if (right > cur) lines.set(y, right);
+      });
+      let maxLine = 0;
+      for (const v of lines.values()) if (v > maxLine) maxLine = v;
+      if (maxLine > 0) setWidth(Math.ceil(maxLine));
+    };
+    measure();
+  }, [tags]);
+
+  return (
+    <div
+      ref={ref}
+      className="flex flex-wrap gap-1"
+      style={{ maxWidth: 244, width }}
+    >
+      {tags.map((tag) => (
+        <span
+          key={tag.name}
+          className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium"
+          style={{
+            backgroundColor: tag.bg,
+            color: tag.text,
+            border: `1px solid ${tag.border}`,
+          }}
+        >
+          {tag.name?.length > 20 ? tag.name.slice(0, 20) + "…" : tag.name}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/**
  * Cellule Tags pour la vue liste — affiche premier tag + badge "+N" + bouton ajouter
  */
 function TaskTagsCell({ task, updateTask, workspaceId, allBoardTags }) {
-  const visibleTags = (task.tags || []).slice(0, 3);
-  const remaining = (task.tags?.length || 0) - visibleTags.length;
+  const allTags = useMemo(() => {
+    const tags = task.tags || [];
+    if (tags.length === 0) return [];
+    // Couleur déterministe par nom, mais on évite que deux tags adjacents
+    // dans l'ordre d'affichage (trié par longueur) aient la même couleur.
+    const displayOrder = [...tags].sort(
+      (a, b) => (a.name?.length || 0) - (b.name?.length || 0),
+    );
+    const colorByName = new Map();
+    let prevIdx = -1;
+    displayOrder.forEach((tag) => {
+      const name = tag.name || "";
+      let hash = 0;
+      for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      let idx = Math.abs(hash) % TAG_COLORS.length;
+      if (idx === prevIdx) idx = (idx + 1) % TAG_COLORS.length;
+      prevIdx = idx;
+      colorByName.set(name, TAG_COLORS[idx]);
+    });
+    return tags.map((tag) => {
+      const c = colorByName.get(tag.name || "") || TAG_COLORS[0];
+      return { ...tag, bg: c.bg, text: c.text, border: c.border };
+    });
+  }, [task.tags]);
+  const sortedTags = useMemo(
+    () =>
+      [...allTags].sort(
+        (a, b) => (a.name?.length || 0) - (b.name?.length || 0),
+      ),
+    [allTags],
+  );
+  const containerRef = useRef(null);
+  const measureRef = useRef(null);
+  const [fittedCount, setFittedCount] = useState(0);
+
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    const measure = measureRef.current;
+    if (!container || !measure) return;
+
+    const compute = () => {
+      const containerWidth = container.clientWidth;
+      const children = Array.from(measure.children);
+      if (children.length === 0) return;
+      const widths = children.map((c) => c.getBoundingClientRect().width);
+      const badgeWidth = widths[widths.length - 1];
+      const tagWidths = widths.slice(0, -1);
+      const gap = 4;
+
+      let count = 0;
+      let used = 0;
+      for (let i = 0; i < tagWidths.length; i++) {
+        const next = used + (count > 0 ? gap : 0) + tagWidths[i];
+        const willHaveMore = i < tagWidths.length - 1;
+        const limit = containerWidth - (willHaveMore ? gap + badgeWidth : 0);
+        if (next <= limit) {
+          used = next;
+          count++;
+        } else {
+          break;
+        }
+      }
+      setFittedCount(count);
+    };
+
+    compute();
+    const ro = new ResizeObserver(compute);
+    ro.observe(container);
+    return () => ro.disconnect();
+  }, [sortedTags]);
+
+  const visibleTags = sortedTags.slice(0, fittedCount);
+  const remaining = allTags.length - visibleTags.length;
+
   return (
     <div className="flex items-center gap-1 min-w-0">
-      {task.tags?.length > 0 && (
+      {allTags.length > 0 && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="flex items-center gap-1 min-w-0 overflow-hidden">
+            <div
+              ref={containerRef}
+              className="relative flex items-center gap-1 min-w-0 overflow-hidden w-full"
+            >
               {visibleTags.map((tag) => (
                 <span
                   key={tag.name}
-                  className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium truncate leading-none min-w-0"
+                  className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium leading-none flex-shrink-0"
                   style={{
                     backgroundColor: tag.bg,
                     color: tag.text,
@@ -1656,24 +1836,31 @@ function TaskTagsCell({ task, updateTask, workspaceId, allBoardTags }) {
                   +{remaining}
                 </span>
               )}
+              {/* Couche cachée pour mesurer les largeurs réelles */}
+              <div
+                ref={measureRef}
+                aria-hidden
+                className="absolute left-0 top-0 invisible pointer-events-none flex items-center gap-1 whitespace-nowrap"
+              >
+                {sortedTags.map((tag) => (
+                  <span
+                    key={`m-${tag.name}`}
+                    className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium leading-none"
+                  >
+                    {tag.name}
+                  </span>
+                ))}
+                <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-medium leading-none border">
+                  +{allTags.length}
+                </span>
+              </div>
             </div>
           </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-[300px]">
-            <div className="flex flex-wrap gap-1">
-              {task.tags.map((tag) => (
-                <span
-                  key={tag.name}
-                  className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium"
-                  style={{
-                    backgroundColor: tag.bg,
-                    color: tag.text,
-                    border: `1px solid ${tag.border}`,
-                  }}
-                >
-                  {tag.name}
-                </span>
-              ))}
-            </div>
+          <TooltipContent
+            side="top"
+            className="tooltip-light p-2 border border-border shadow-md"
+          >
+            <TagsTooltipGrid tags={allTags} />
           </TooltipContent>
         </Tooltip>
       )}
@@ -1707,7 +1894,8 @@ const TaskRow = React.memo(function TaskRow({
       data-dnd-list-column={column.id}
       data-dnd-list-index={index}
       style={{
-        gridTemplateColumns: "3fr 1.6fr 0.8fr 0.9fr 1fr 0.6fr 80px",
+        gridTemplateColumns:
+          "minmax(0, 4.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.6fr) 80px",
         gap: "1rem",
         ...(isSelected ? { backgroundColor: "#5A50FF0D" } : {}),
       }}
@@ -1785,7 +1973,6 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
       {/* Nom avec drag handle et checkbox */}
       <div className="min-w-0">
         <div className="flex items-center gap-3">
-          <GripVertical className="h-4 w-4 text-muted-foreground/40 flex-shrink-0 cursor-grab opacity-0 group-hover:opacity-100 transition-opacity" />
           <Checkbox
             checked={isSelected}
             onCheckedChange={(checked) => {
@@ -1894,6 +2081,34 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
           moveTask={moveTask}
           workspaceId={workspaceId}
           popoverOpenRef={popoverOpenRef}
+        />
+      </div>
+
+      {/* Priorité */}
+      <div className="flex items-center gap-1 min-w-0">
+        <PriorityPopoverWrapper
+          task={task}
+          updateTask={updateTask}
+          workspaceId={workspaceId}
+          popoverOpenRef={popoverOpenRef}
+          trigger={
+            <button
+              className="bg-transparent border-0 p-0 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {task.priority ? (
+                getPriorityBadge(task.priority)
+              ) : (
+                <Badge
+                  variant="outline"
+                  className="inline-flex items-center gap-1 py-1 px-2.5 text-xs font-medium rounded-md text-muted-foreground"
+                >
+                  <Flag className="h-4 w-4 text-[#8D8D8D] fill-gray-400" />
+                  <span className="text-muted-foreground">-</span>
+                </Badge>
+              )}
+            </button>
+          }
         />
       </div>
 
@@ -2040,34 +2255,6 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
             </PopoverContent>
           </Popover>
         )}
-      </div>
-
-      {/* Priorité */}
-      <div className="flex items-center gap-1 min-w-0">
-        <PriorityPopoverWrapper
-          task={task}
-          updateTask={updateTask}
-          workspaceId={workspaceId}
-          popoverOpenRef={popoverOpenRef}
-          trigger={
-            <button
-              className="bg-transparent border-0 p-0 cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {task.priority ? (
-                getPriorityBadge(task.priority)
-              ) : (
-                <Badge
-                  variant="outline"
-                  className="inline-flex items-center gap-1 py-1 px-2.5 text-xs font-medium rounded-md text-muted-foreground"
-                >
-                  <Flag className="h-4 w-4 text-[#8D8D8D] fill-gray-400" />
-                  <span className="text-muted-foreground">-</span>
-                </Badge>
-              )}
-            </button>
-          }
-        />
       </div>
 
       {/* Actions */}
@@ -2642,19 +2829,16 @@ export function KanbanListView({
                     className="grid px-4 sm:px-6 py-2 text-xs font-medium text-muted-foreground/70 tracking-wide relative after:absolute after:bottom-0 after:left-6 after:right-6 sm:after:left-8 sm:after:right-8 after:h-px after:bg-border/60 after:content-['']"
                     style={{
                       gridTemplateColumns:
-                        "3fr 1.6fr 0.8fr 0.9fr 1fr 0.6fr 80px",
+                        "minmax(0, 4.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.6fr) 80px",
                       gap: "1rem",
                     }}
                   >
-                    <div className="flex items-center gap-2">
-                      <GripVertical className="h-4 w-4 opacity-0" />
-                      Nom
-                    </div>
+                    <div className="flex items-center gap-2">Nom</div>
                     <div className="flex items-center">Tags</div>
                     <div className="flex items-center">Assigné à</div>
                     <div className="flex items-center">Status</div>
-                    <div className="flex items-center">Échéance</div>
                     <div className="flex items-center">Priorité</div>
+                    <div className="flex items-center">Échéance</div>
                     <div className="flex items-center justify-center">
                       Actions
                     </div>
@@ -2662,7 +2846,7 @@ export function KanbanListView({
                 </div>
                 {/* Conteneur avec scroll pour le tableau */}
                 <div className="w-full overflow-x-auto scrollbar-hide">
-                  <div className="w-max min-w-full">
+                  <div className="w-full">
                     {/* Liste des tâches */}
                     <div
                       data-dnd-list-zone={column.id}

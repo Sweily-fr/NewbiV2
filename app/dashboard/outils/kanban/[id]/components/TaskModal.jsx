@@ -629,14 +629,14 @@ export function TaskModal({
   // Générer une couleur pour un tag basée sur son nom
   const getTagColor = (tagName) => {
     const colors = [
-      { bg: "#3b82f620", border: "#3b82f640", text: "#3b82f6" }, // blue
-      { bg: "#10b98120", border: "#10b98140", text: "#10b981" }, // green
-      { bg: "#f59e0b20", border: "#f59e0b40", text: "#f59e0b" }, // amber
-      { bg: "#ef444420", border: "#ef444440", text: "#ef4444" }, // red
-      { bg: "#8b5cf620", border: "#8b5cf640", text: "#8b5cf6" }, // violet
-      { bg: "#ec489920", border: "#ec489940", text: "#ec4899" }, // pink
-      { bg: "#06b6d420", border: "#06b6d440", text: "#06b6d4" }, // cyan
-      { bg: "#f97316 20", border: "#f9731640", text: "#f97316" }, // orange
+      { bg: "#DBEAFE", text: "#1D4ED8", border: "#BFDBFE" }, // blue
+      { bg: "#DCFCE7", text: "#15803D", border: "#BBF7D0" }, // green
+      { bg: "#FEF3C7", text: "#B45309", border: "#FDE68A" }, // amber
+      { bg: "#FEE2E2", text: "#B91C1C", border: "#FECACA" }, // red
+      { bg: "#EDE9FE", text: "#6D28D9", border: "#DDD6FE" }, // violet
+      { bg: "#FCE7F3", text: "#BE185D", border: "#FBCFE8" }, // pink
+      { bg: "#CFFAFE", text: "#0E7490", border: "#A5F3FC" }, // cyan
+      { bg: "#FFEDD5", text: "#C2410C", border: "#FED7AA" }, // orange
     ];
 
     // Utiliser le hash du nom pour choisir une couleur de façon consistante
@@ -1210,12 +1210,13 @@ export function TaskModal({
                           <PopoverTrigger asChild>
                             <div className="cursor-pointer">
                               {taskForm.tags?.length > 0 ? (
-                                <div className="flex flex-wrap gap-1">
+                                <div className="flex flex-wrap gap-1 min-w-0">
                                   {taskForm.tags.map((tag, i) => {
                                     const color = getTagColor(tag.name);
                                     return (
                                       <span
                                         key={i}
+                                        title={tag.name}
                                         className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium"
                                         style={{
                                           backgroundColor: color.bg,
@@ -1223,7 +1224,9 @@ export function TaskModal({
                                           border: `1px solid ${color.border}`,
                                         }}
                                       >
-                                        {tag.name}
+                                        {tag.name?.length > 15
+                                          ? tag.name.slice(0, 15) + "…"
+                                          : tag.name}
                                       </span>
                                     );
                                   })}
@@ -1252,6 +1255,7 @@ export function TaskModal({
                                   return (
                                     <span
                                       key={i}
+                                      title={tag.name}
                                       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium"
                                       style={{
                                         backgroundColor: color.bg,
@@ -1259,7 +1263,9 @@ export function TaskModal({
                                         border: `1px solid ${color.border}`,
                                       }}
                                     >
-                                      {tag.name}
+                                      {tag.name?.length > 15
+                                        ? tag.name.slice(0, 15) + "…"
+                                        : tag.name}
                                       <button
                                         type="button"
                                         onClick={() => {
@@ -2150,6 +2156,7 @@ export function TaskModal({
                                 return (
                                   <div
                                     key={index}
+                                    title={tag.name}
                                     className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border"
                                     style={{
                                       backgroundColor: color.bg,
@@ -2157,7 +2164,9 @@ export function TaskModal({
                                       color: color.text,
                                     }}
                                   >
-                                    {tag.name}
+                                    {tag.name?.length > 15
+                                      ? tag.name.slice(0, 15) + "…"
+                                      : tag.name}
                                     <button
                                       type="button"
                                       onClick={() => {
