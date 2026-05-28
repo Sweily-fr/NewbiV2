@@ -839,27 +839,7 @@ function KanbanBoardPageContent({ params }) {
     board?.title,
   ]);
 
-  // Navigation prev/next entre tâches pour le modal — calculée ici pour ne pas
-  // forcer le modal à dépendre de board.tasks.
   const editingTaskId = editingTask?.id || editingTask?._id;
-  const taskNavigation = React.useMemo(() => {
-    if (!editingTaskId || !board?.tasks) {
-      return {
-        prevTask: null,
-        nextTask: null,
-        currentIndex: -1,
-        totalTasks: 0,
-      };
-    }
-    const tasks = board.tasks;
-    const idx = tasks.findIndex((t) => t.id === editingTaskId);
-    return {
-      prevTask: idx > 0 ? tasks[idx - 1] : null,
-      nextTask: idx < tasks.length - 1 ? tasks[idx + 1] : null,
-      currentIndex: idx,
-      totalTasks: tasks.length,
-    };
-  }, [board?.tasks, editingTaskId]);
 
   // Préchargement du chunk TaskActivity (lazy-loadé dans TaskModal). En idle
   // après le mount de la page, on charge le JS pour que la première ouverture
@@ -1096,6 +1076,39 @@ function KanbanBoardPageContent({ params }) {
     },
     [filterTasksBySearch, filterTasksByMember],
   );
+
+  // Navigation prev/next entre tâches pour le modal.
+  // Utilise l'ordre visible (colonnes ordonnées → tâches triées par position,
+  // après application des filtres recherche/membre) plutôt que l'ordre brut
+  // de board.tasks — sinon les flèches sautent vers une tâche "aléatoire"
+  // qui ne correspond pas à ce que l'utilisateur voit.
+  const taskNavigation = React.useMemo(() => {
+    if (!editingTaskId || !localColumns || localColumns.length === 0) {
+      return {
+        prevTask: null,
+        nextTask: null,
+        currentIndex: -1,
+        totalTasks: 0,
+      };
+    }
+    const orderedTasks = [];
+    for (const column of localColumns) {
+      const columnTasks = filterTasks(column.tasks || []);
+      for (const task of columnTasks) {
+        orderedTasks.push(task);
+      }
+    }
+    const idx = orderedTasks.findIndex((t) => t.id === editingTaskId);
+    return {
+      prevTask: idx > 0 ? orderedTasks[idx - 1] : null,
+      nextTask:
+        idx >= 0 && idx < orderedTasks.length - 1
+          ? orderedTasks[idx + 1]
+          : null,
+      currentIndex: idx,
+      totalTasks: orderedTasks.length,
+    };
+  }, [localColumns, filterTasks, editingTaskId]);
 
   // Calcule le temps effectif en secondes (inclut le timer actif, comme TimerDisplay)
   const getEffectiveSeconds = React.useCallback((tt) => {
