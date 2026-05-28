@@ -18,8 +18,6 @@ import {
   CardTitle,
 } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { useChartColors } from "@/src/hooks/useChartColors";
-
 const formatCurrency = (value) =>
   new Intl.NumberFormat("fr-FR", {
     style: "currency",
@@ -38,7 +36,7 @@ const formatMonthLabel = (monthStr) => {
     .toUpperCase();
 };
 
-function CustomTooltip({ active, payload, remap }) {
+function CustomTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;
   const data = payload[0]?.payload;
   if (!data) return null;
@@ -58,28 +56,29 @@ function CustomTooltip({ active, payload, remap }) {
           <span className="flex items-center gap-2">
             <span
               className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: remap("#5b50ff") }}
+              style={{ backgroundColor: COLLECTED_TABLE_COLOR }}
             />
-            Facturé
-          </span>
-          <span className="font-medium">
-            {formatCurrency(data.invoicedTTC)}
-          </span>
-        </div>
-        <div className="flex items-center justify-between gap-6">
-          <span className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-            Encaissé
+            Encaissé TTC
           </span>
           <span className="font-medium">
             {formatCurrency(data.collectedTTC)}
           </span>
         </div>
+        <div className="flex items-center justify-between gap-6">
+          <span className="flex items-center gap-2">
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ backgroundColor: INVOICED_TABLE_COLOR }}
+            />
+            Impayé TTC
+          </span>
+          <span className="font-medium">{formatCurrency(data.unpaidTTC)}</span>
+        </div>
         <div className="flex items-center justify-between gap-6 text-muted-foreground border-t pt-1 mt-1">
-          <span>Taux</span>
+          <span>Taux recouvrement</span>
           <span>
-            {data.invoicedTTC > 0
-              ? `${((data.collectedTTC / data.invoicedTTC) * 100).toFixed(0)}%`
+            {data.recoveryRate != null
+              ? `${data.recoveryRate.toFixed(0)}%`
               : "—"}
           </span>
         </div>
@@ -88,18 +87,37 @@ function CustomTooltip({ active, payload, remap }) {
   );
 }
 
+// Couleurs fixes pour bien différencier les séries (T15)
+const INVOICED_TABLE_COLOR = "#5b50ff"; // violet
+const COLLECTED_TABLE_COLOR = "#10b981"; // vert
+
 export function AnalyticsCollectionChart({ monthlyCollection, loading }) {
-  const { remap } = useChartColors();
+  // Pas de remap : on veut des couleurs distinctes coûte que coûte
   const chartConfig = {
-    invoicedTTC: { label: "Facturé TTC", color: remap("#5b50ff") },
-    collectedTTC: { label: "Encaissé TTC", color: remap("#10b981") },
+    invoicedTTC: {
+      label: "Facture TTC encaissée",
+      color: COLLECTED_TABLE_COLOR,
+    },
+    collectedTTC: {
+      label: "Facture TTC impayée",
+      color: INVOICED_TABLE_COLOR,
+    },
   };
   const chartData = useMemo(() => {
     if (!monthlyCollection?.length) return [];
-    return monthlyCollection.map((m) => ({
-      ...m,
-      monthLabel: formatMonthLabel(m.month),
-    }));
+    return monthlyCollection.map((m) => {
+      const collected = m.collectedTTC || 0;
+      // unpaidTTC = factures émises non encore encaissées sur le mois
+      const unpaid = Math.max(0, (m.invoicedTTC || 0) - collected);
+      return {
+        ...m,
+        monthLabel: formatMonthLabel(m.month),
+        // T15.3 : Taux de recouvrement = encaissé / impayé × 100
+        // (Si impayé == 0, on retourne null pour éviter division par zéro)
+        recoveryRate: unpaid > 0 ? (collected / unpaid) * 100 : null,
+        unpaidTTC: unpaid,
+      };
+    });
   }, [monthlyCollection]);
 
   if (loading) {
@@ -170,21 +188,22 @@ export function AnalyticsCollectionChart({ monthlyCollection, loading }) {
               axisLine={false}
               width={35}
             />
-            <Tooltip content={<CustomTooltip remap={remap} />} />
+            <Tooltip content={<CustomTooltip />} />
             <Bar
-              dataKey="invoicedTTC"
-              fill={remap("#5b50ff")}
-              fillOpacity={0.6}
-              radius={[4, 4, 0, 0]}
-              barSize={24}
-            />
-            <Line
-              type="monotone"
               dataKey="collectedTTC"
-              stroke={remap("#10b981")}
-              strokeWidth={2.5}
-              dot={false}
-              activeDot={{ r: 5, fill: remap("#10b981") }}
+              name="Facture TTC encaissée"
+              fill={COLLECTED_TABLE_COLOR}
+              fillOpacity={0.85}
+              radius={[4, 4, 0, 0]}
+              barSize={20}
+            />
+            <Bar
+              dataKey="unpaidTTC"
+              name="Facture TTC impayée"
+              fill={INVOICED_TABLE_COLOR}
+              fillOpacity={0.85}
+              radius={[4, 4, 0, 0]}
+              barSize={20}
             />
           </ComposedChart>
         </ChartContainer>

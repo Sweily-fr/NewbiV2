@@ -80,11 +80,17 @@ function FieldTypeIcon({ type, className }) {
 }
 
 function OptionEditor({ options, onChange }) {
-  const [newOption, setNewOption] = useState({ label: "", value: "", color: "#6b7280" });
+  const [newOption, setNewOption] = useState({
+    label: "",
+    value: "",
+    color: "#6b7280",
+  });
 
   const addOption = () => {
     if (!newOption.label.trim()) return;
-    const value = newOption.value.trim() || newOption.label.trim().toLowerCase().replace(/\s+/g, "_");
+    const value =
+      newOption.value.trim() ||
+      newOption.label.trim().toLowerCase().replace(/\s+/g, "_");
     onChange([...options, { ...newOption, value }]);
     setNewOption({ label: "", value: "", color: "#6b7280" });
   };
@@ -132,12 +138,16 @@ function OptionEditor({ options, onChange }) {
         <input
           type="color"
           value={newOption.color}
-          onChange={(e) => setNewOption({ ...newOption, color: e.target.value })}
+          onChange={(e) =>
+            setNewOption({ ...newOption, color: e.target.value })
+          }
           className="w-8 h-8 rounded border cursor-pointer"
         />
         <Input
           value={newOption.label}
-          onChange={(e) => setNewOption({ ...newOption, label: e.target.value })}
+          onChange={(e) =>
+            setNewOption({ ...newOption, label: e.target.value })
+          }
           placeholder="Nouvelle option..."
           className="flex-1"
           onKeyDown={(e) => e.key === "Enter" && addOption()}
@@ -169,7 +179,12 @@ function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
         description: field?.description || "",
         placeholder: field?.placeholder || "",
         isRequired: field?.isRequired ?? false,
-        options: field?.options?.map(o => ({ label: o.label, value: o.value, color: o.color })) || [],
+        options:
+          field?.options?.map((o) => ({
+            label: o.label,
+            value: o.value,
+            color: o.color,
+          })) || [],
       });
     }
   }, [open, field]);
@@ -209,7 +224,9 @@ function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
             <Input
               id="name"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
               placeholder="Ex: Fournisseur, Stock, Code barre..."
             />
           </div>
@@ -305,13 +322,18 @@ function FieldRow({ field, onEdit, onDelete, onToggle }) {
   return (
     <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-md border bg-card hover:bg-accent/50 transition-colors">
       <div className="flex items-center justify-center w-6 h-6 rounded bg-primary/10 flex-shrink-0">
-        <FieldTypeIcon type={field.fieldType} className="h-3 w-3 text-primary" />
+        <FieldTypeIcon
+          type={field.fieldType}
+          className="h-3 w-3 text-primary"
+        />
       </div>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
           <span className="text-sm font-medium truncate">{field.name}</span>
-          <span className="text-[11px] text-muted-foreground">{fieldType?.label}</span>
+          <span className="text-[11px] text-muted-foreground">
+            {fieldType?.label}
+          </span>
           {field.isRequired && (
             <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">
               Requis
@@ -361,8 +383,9 @@ export default function ProductCustomFieldsManager({ open, onOpenChange }) {
   const [deletingField, setDeletingField] = useState(null);
 
   const customFieldsLimit = planLimits.customFields;
-  const isLimitReached = customFieldsLimit !== -1 && fields.length >= customFieldsLimit;
-  const nextPlanName = customFieldsLimit <= 3 ? "PME" : "Entreprise";
+  const isLimitReached =
+    customFieldsLimit !== -1 && fields.length >= customFieldsLimit;
+  const nextPlanName = customFieldsLimit <= 3 ? "TPE" : "Entreprise";
 
   const handleCreate = async (data) => {
     try {
@@ -424,18 +447,27 @@ export default function ProductCustomFieldsManager({ open, onOpenChange }) {
           ) : fields.length === 0 ? (
             <div className="text-center py-12 border rounded-lg bg-muted/20">
               <Settings2 className="mx-auto h-12 w-12 text-muted-foreground/50" />
-              <h4 className="mt-4 text-lg font-medium">Aucun champ personnalisé</h4>
+              <h4 className="mt-4 text-lg font-medium">
+                Aucun champ personnalisé
+              </h4>
               <p className="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
-                Créez des champs personnalisés pour enrichir vos fiches produits avec
-                des informations spécifiques (fournisseur, stock, poids...).
+                Créez des champs personnalisés pour enrichir vos fiches produits
+                avec des informations spécifiques (fournisseur, stock,
+                poids...).
               </p>
-              <Button className="mt-4" onClick={() => setIsFormOpen(true)} disabled={isLimitReached}>
+              <Button
+                className="mt-4"
+                onClick={() => setIsFormOpen(true)}
+                disabled={isLimitReached}
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 Créer un champ
               </Button>
               {isLimitReached && (
                 <p className="mt-2 text-sm text-amber-600">
-                  Limite atteinte ({fields.length}/{customFieldsLimit} champs). Passez au plan {nextPlanName} pour plus de champs personnalisés.
+                  Limite atteinte ({fields.length}/{customFieldsLimit} champs).
+                  Passez au plan {nextPlanName} pour plus de champs
+                  personnalisés.
                 </p>
               )}
             </div>
@@ -446,14 +478,20 @@ export default function ProductCustomFieldsManager({ open, onOpenChange }) {
                   {fields.length} champ{fields.length > 1 ? "s" : ""}
                   {customFieldsLimit !== -1 && ` / ${customFieldsLimit}`}
                 </p>
-                <Button size="sm" onClick={() => setIsFormOpen(true)} disabled={isLimitReached}>
+                <Button
+                  size="sm"
+                  onClick={() => setIsFormOpen(true)}
+                  disabled={isLimitReached}
+                >
                   <Plus className="mr-2 h-4 w-4" />
                   Nouveau champ
                 </Button>
               </div>
               {isLimitReached && (
                 <p className="text-sm text-amber-600">
-                  Limite atteinte ({fields.length}/{customFieldsLimit} champs). Passez au plan {nextPlanName} pour plus de champs personnalisés.
+                  Limite atteinte ({fields.length}/{customFieldsLimit} champs).
+                  Passez au plan {nextPlanName} pour plus de champs
+                  personnalisés.
                 </p>
               )}
               <div className="space-y-2">
@@ -497,8 +535,9 @@ export default function ProductCustomFieldsManager({ open, onOpenChange }) {
             <AlertDialogHeader>
               <AlertDialogTitle>Supprimer le champ</AlertDialogTitle>
               <AlertDialogDescription>
-                Êtes-vous sûr de vouloir supprimer le champ &quot;{deletingField?.name}&quot;
-                ? Les données associées à ce champ seront perdues.
+                Êtes-vous sûr de vouloir supprimer le champ &quot;
+                {deletingField?.name}&quot; ? Les données associées à ce champ
+                seront perdues.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

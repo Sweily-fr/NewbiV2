@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import { flushSync } from "react-dom";
 import { useMutation } from "@apollo/client";
 import {
   Dialog,
@@ -12,14 +13,7 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
 import { Progress } from "@/src/components/ui/progress";
-import {
-  Upload,
-  FileText,
-  X,
-  Check,
-  AlertCircle,
-  Loader2,
-} from "lucide-react";
+import { Upload, FileText, X, Check, AlertCircle, Loader2 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { toast } from "sonner";
 import {
@@ -44,7 +38,7 @@ function formatFileSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function ImportQuoteModal({ open, onOpenChange }) {
+export function ImportQuoteModal({ open, onOpenChange, onImported }) {
   const { workspaceId } = useRequiredWorkspace();
   const [files, setFiles] = useState([]);
   const [phase, setPhase] = useState(PHASE.SELECT);
@@ -56,37 +50,37 @@ export function ImportQuoteModal({ open, onOpenChange }) {
 
   const [importQuoteDirect] = useMutation(IMPORT_QUOTE_DIRECT, {
     refetchQueries: [
-      { query: GET_IMPORTED_QUOTES, variables: { workspaceId, page: 1, limit: 1000 } },
+      {
+        query: GET_IMPORTED_QUOTES,
+        variables: { workspaceId, page: 1, limit: 1000 },
+      },
       { query: GET_IMPORTED_QUOTE_STATS, variables: { workspaceId } },
       { query: GET_USER_OCR_QUOTA, variables: { workspaceId } },
     ],
   });
 
-  const addFiles = useCallback(
-    (newFiles) => {
-      const validFiles = newFiles.filter((file) => {
-        if (file.type !== "application/pdf") {
-          toast.error(`${file.name}: Seuls les fichiers PDF sont acceptés`);
-          return false;
-        }
-        if (file.size > MAX_FILE_SIZE) {
-          toast.error(`${file.name}: Fichier trop volumineux (max 10MB)`);
-          return false;
-        }
-        return true;
-      });
+  const addFiles = useCallback((newFiles) => {
+    const validFiles = newFiles.filter((file) => {
+      if (file.type !== "application/pdf") {
+        toast.error(`${file.name}: Seuls les fichiers PDF sont acceptés`);
+        return false;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(`${file.name}: Fichier trop volumineux (max 10MB)`);
+        return false;
+      }
+      return true;
+    });
 
-      setFiles((prev) => {
-        const combined = [...prev, ...validFiles];
-        if (combined.length > MAX_FILES) {
-          toast.error(`Maximum ${MAX_FILES} fichiers`);
-          return combined.slice(0, MAX_FILES);
-        }
-        return combined;
-      });
-    },
-    []
-  );
+    setFiles((prev) => {
+      const combined = [...prev, ...validFiles];
+      if (combined.length > MAX_FILES) {
+        toast.error(`Maximum ${MAX_FILES} fichiers`);
+        return combined.slice(0, MAX_FILES);
+      }
+      return combined;
+    });
+  }, []);
 
   const removeFile = useCallback((index) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
@@ -109,7 +103,7 @@ export function ImportQuoteModal({ open, onOpenChange }) {
       const droppedFiles = Array.from(e.dataTransfer.files);
       addFiles(droppedFiles);
     },
-    [addFiles]
+    [addFiles],
   );
 
   const handleImport = async () => {
@@ -122,6 +116,7 @@ export function ImportQuoteModal({ open, onOpenChange }) {
 
     let completed = 0;
     let successCount = 0;
+    const importedQuotes = [];
 
     for (let i = 0; i < files.length; i++) {
       setUploadStatus((prev) => ({ ...prev, [i]: "uploading" }));
@@ -134,14 +129,14 @@ export function ImportQuoteModal({ open, onOpenChange }) {
           },
         });
 
-        if (result.data?.importQuoteDirect?.success) {
+        const payload = result.data?.importQuoteDirect;
+        if (payload?.success) {
           setUploadStatus((prev) => ({ ...prev, [i]: "uploaded" }));
           successCount++;
+          if (payload.quote) importedQuotes.push(payload.quote);
         } else {
           setUploadStatus((prev) => ({ ...prev, [i]: "error" }));
-          toast.error(
-            `${files[i].name}: ${result.data?.importQuoteDirect?.error || "Erreur"}`
-          );
+          toast.error(`${files[i].name}: ${payload?.error || "Erreur"}`);
         }
       } catch (error) {
         setUploadStatus((prev) => ({ ...prev, [i]: "error" }));
@@ -154,15 +149,21 @@ export function ImportQuoteModal({ open, onOpenChange }) {
     }
 
     if (successCount > 0) {
-      toast.success(
-        `${successCount} devis importé(s) avec succès`
-      );
+      toast.success(`${successCount} devis importé(s) avec succès`);
     }
 
-    // Fermer automatiquement après un court délai
-    setTimeout(() => {
-      handleClose();
-    }, 1500);
+    // Forcer la fermeture du modal AVANT d'ouvrir la sidebar côté parent,
+    // sinon React bat les deux updates dans le même render et Radix peut
+    // garder la Dialog visible à cause du focus capté par la Sheet.
+    flushSync(() => {
+      setFiles([]);
+      setPhase(PHASE.SELECT);
+      setUploadProgress(0);
+      setUploadedCount(0);
+      setUploadStatus({});
+      onOpenChange(false);
+    });
+    if (importedQuotes.length > 0) onImported?.(importedQuotes);
   };
 
   const handleClose = () => {
@@ -175,7 +176,10 @@ export function ImportQuoteModal({ open, onOpenChange }) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={phase === PHASE.UPLOADING ? undefined : handleClose}>
+    <Dialog
+      open={open}
+      onOpenChange={phase === PHASE.UPLOADING ? undefined : handleClose}
+    >
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Importer des devis</DialogTitle>
@@ -194,7 +198,7 @@ export function ImportQuoteModal({ open, onOpenChange }) {
                 "border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer",
                 isDragging
                   ? "border-primary bg-primary/5"
-                  : "border-muted-foreground/25 hover:border-muted-foreground/50"
+                  : "border-muted-foreground/25 hover:border-muted-foreground/50",
               )}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}

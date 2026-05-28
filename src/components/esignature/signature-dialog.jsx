@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import {
-  Signature,
-  LoaderCircle,
-  Plus,
-  X,
-  CornerDownLeft,
-} from "lucide-react";
+import { Signature, LoaderCircle, Plus, X, CornerDownLeft } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import {
@@ -45,7 +39,7 @@ async function generatePdfBase64FromRef(componentRef) {
         img.onerror = resolve;
         setTimeout(resolve, 3000);
       });
-    })
+    }),
   );
 
   await new Promise((resolve) => setTimeout(resolve, 500));
@@ -100,21 +94,45 @@ async function generatePdfBase64FromRef(componentRef) {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(
         img,
-        0, currentY, canvasWidth, sliceHeight,
-        0, 0, canvasWidth, sliceHeight
+        0,
+        currentY,
+        canvasWidth,
+        sliceHeight,
+        0,
+        0,
+        canvasWidth,
+        sliceHeight,
       );
 
       const pageData = canvas.toDataURL("image/jpeg", 0.95);
       const pageHeightMM = sliceHeight / pixelsPerMM;
 
       if (pageNumber > 0) pdf.addPage();
-      pdf.addImage(pageData, "JPEG", 0, 0, pdfWidth, pageHeightMM, undefined, "FAST");
+      pdf.addImage(
+        pageData,
+        "JPEG",
+        0,
+        0,
+        pdfWidth,
+        pageHeightMM,
+        undefined,
+        "FAST",
+      );
 
       currentY += sliceHeight;
       pageNumber++;
     }
   } else {
-    pdf.addImage(dataUrl, "JPEG", 0, 0, imgWidthMM, imgHeightMM, undefined, "FAST");
+    pdf.addImage(
+      dataUrl,
+      "JPEG",
+      0,
+      0,
+      imgWidthMM,
+      imgHeightMM,
+      undefined,
+      "FAST",
+    );
   }
 
   const pdfArrayBuffer = pdf.output("arraybuffer");
@@ -187,7 +205,7 @@ export function SignatureDialog({
   };
 
   const isValid = signers.every(
-    (s) => s.name.trim() && s.surname.trim() && s.email.trim()
+    (s) => s.name.trim() && s.surname.trim() && s.email.trim(),
   );
 
   const isBusy = loading || generatingPdf;
@@ -289,7 +307,9 @@ export function SignatureDialog({
           <div className="px-5 pt-3 pb-0">
             {/* Description */}
             <p className="text-xs text-muted-foreground mb-4">
-              {documentLabel === "devis" ? "Le" : "La"} {documentLabel} sera envoyé{documentLabel === "facture" ? "e" : ""} par email avec un lien sécurisé pour signature.
+              {documentLabel === "devis" ? "Le" : "La"} {documentLabel} sera
+              envoyé{documentLabel === "facture" ? "e" : ""} par email avec un
+              lien sécurisé pour signature.
             </p>
 
             {/* Type de signature - visible uniquement pour le plan Entreprise (QES) */}
@@ -309,19 +329,23 @@ export function SignatureDialog({
                     }`}
                   >
                     <span className="block font-medium">SES</span>
-                    <span className="block text-[10px] mt-0.5 opacity-70">Signature simple</span>
+                    <span className="block text-[10px] mt-0.5 opacity-70">
+                      Signature simple
+                    </span>
                   </button>
                   <button
                     type="button"
-                    onClick={() => setSignatureType("QES")}
+                    onClick={() => setSignatureType("QES_automatic")}
                     className={`flex-1 text-xs px-3 py-2 rounded-lg border transition-colors ${
-                      signatureType === "QES"
+                      signatureType === "QES_automatic"
                         ? "border-primary bg-primary/5 text-foreground font-medium"
                         : "border-border text-muted-foreground hover:border-primary/50"
                     }`}
                   >
                     <span className="block font-medium">QES</span>
-                    <span className="block text-[10px] mt-0.5 opacity-70">Signature qualifiée</span>
+                    <span className="block text-[10px] mt-0.5 opacity-70">
+                      Signature qualifiée
+                    </span>
                   </button>
                 </div>
               </div>
@@ -352,13 +376,17 @@ export function SignatureDialog({
                     <Input
                       ref={index === 0 ? firstInputRef : undefined}
                       value={signer.name}
-                      onChange={(e) => updateSigner(index, "name", e.target.value)}
+                      onChange={(e) =>
+                        updateSigner(index, "name", e.target.value)
+                      }
                       placeholder="Prénom *"
                       className="h-9 text-sm"
                     />
                     <Input
                       value={signer.surname}
-                      onChange={(e) => updateSigner(index, "surname", e.target.value)}
+                      onChange={(e) =>
+                        updateSigner(index, "surname", e.target.value)
+                      }
                       placeholder="Nom *"
                       className="h-9 text-sm"
                     />
@@ -367,14 +395,18 @@ export function SignatureDialog({
                     <Input
                       type="email"
                       value={signer.email}
-                      onChange={(e) => updateSigner(index, "email", e.target.value)}
+                      onChange={(e) =>
+                        updateSigner(index, "email", e.target.value)
+                      }
                       placeholder="Email *"
                       className="h-9 text-sm"
                     />
                     <Input
                       type="tel"
                       value={signer.mobile}
-                      onChange={(e) => updateSigner(index, "mobile", e.target.value)}
+                      onChange={(e) =>
+                        updateSigner(index, "mobile", e.target.value)
+                      }
                       placeholder="Téléphone"
                       className="h-9 text-sm"
                     />

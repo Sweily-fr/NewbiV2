@@ -78,6 +78,8 @@ import PurchaseOrderFilters from "./purchase-order-filters";
 import { SendDocumentModal } from "../../factures/components/send-document-modal";
 import { SavePurchaseOrderTemplateDialog } from "./SavePurchaseOrderTemplateDialog";
 import { ImportPurchaseOrderModal } from "./import-purchase-order-modal";
+import { ImportedPurchaseOrderSidebar } from "./imported-purchase-order-sidebar";
+import { useImportedPurchaseOrders } from "@/src/graphql/importedPurchaseOrderQueries";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import { useEmailTrackingSubscription } from "@/src/graphql/documentEmailQueries";
@@ -107,8 +109,13 @@ export default function PurchaseOrderTable({
   const [poToOpen, setPoToOpen] = useState(null);
   const [templatePurchaseOrder, setTemplatePurchaseOrder] = useState(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [selectedImportedPurchaseOrder, setSelectedImportedPurchaseOrder] =
+    useState(null);
   // État pour la modal d'envoi par email - géré au niveau du tableau pour éviter les re-renders
   const [sendEmailPO, setSendEmailPO] = useState(null);
+
+  const { importedPurchaseOrders, refetch: refetchImported } =
+    useImportedPurchaseOrders(workspaceId);
 
   const {
     table,
@@ -141,6 +148,8 @@ export default function PurchaseOrderTable({
       setStatusFilter(["DRAFT"]);
     } else if (value === "confirmed") {
       setStatusFilter(["CONFIRMED"]);
+    } else if (value === "validated") {
+      setStatusFilter(["VALIDATED"]);
     } else if (value === "inProgress") {
       setStatusFilter(["IN_PROGRESS"]);
     } else if (value === "delivered") {
@@ -154,12 +163,14 @@ export default function PurchaseOrderTable({
       all: (purchaseOrders || []).length,
       draft: 0,
       confirmed: 0,
+      validated: 0,
       inProgress: 0,
       delivered: 0,
     };
     (purchaseOrders || []).forEach((po) => {
       if (po.status === "DRAFT") counts.draft++;
       else if (po.status === "CONFIRMED") counts.confirmed++;
+      else if (po.status === "VALIDATED") counts.validated++;
       else if (po.status === "IN_PROGRESS") counts.inProgress++;
       else if (po.status === "DELIVERED") counts.delivered++;
     });
@@ -329,9 +340,18 @@ export default function PurchaseOrderTable({
                 value="confirmed"
                 className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
               >
-                <span>Confirmés</span>
+                <span>En attente</span>
                 <span className="text-xs text-muted-foreground">
                   {poCounts.confirmed}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="validated"
+                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              >
+                <span>Validés</span>
+                <span className="text-xs text-muted-foreground">
+                  {poCounts.validated}
                 </span>
               </TabsTrigger>
               <TabsTrigger
@@ -758,6 +778,24 @@ export default function PurchaseOrderTable({
       <ImportPurchaseOrderModal
         open={isImportModalOpen}
         onOpenChange={setIsImportModalOpen}
+        onImported={(pos) => {
+          if (pos && pos.length > 0) {
+            setSelectedImportedPurchaseOrder(pos[pos.length - 1]);
+          }
+          refetchImported?.();
+        }}
+      />
+
+      {/* Sidebar pour les bons de commande importés */}
+      <ImportedPurchaseOrderSidebar
+        purchaseOrder={selectedImportedPurchaseOrder}
+        open={!!selectedImportedPurchaseOrder}
+        onOpenChange={(open) => {
+          if (!open) setSelectedImportedPurchaseOrder(null);
+        }}
+        onUpdate={() => {
+          refetchImported();
+        }}
       />
 
       {/* Modal d'envoi par email - géré au niveau du tableau pour éviter les re-renders */}

@@ -1,47 +1,63 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { useParams } from 'next/navigation';
-import UniversalPreviewPDF from '@/src/components/pdf/UniversalPreviewPDF';
-import { domToJpeg } from 'modern-screenshot';
+import { useEffect, useRef, useState } from "react";
+import { useParams } from "next/navigation";
+import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
+import { domToJpeg } from "modern-screenshot";
 // jsPDF importé dynamiquement pour réduire la taille du bundle
 
 export default function PDFGeneratorPage() {
   const params = useParams();
   const [creditNoteData, setCreditNoteData] = useState(null);
-  const [status, setStatus] = useState('loading');
+  const [status, setStatus] = useState("loading");
+  const [isVisual, setIsVisual] = useState(false);
   const componentRef = useRef(null);
 
   useEffect(() => {
     async function fetchAndGenerate() {
       try {
-        console.log('🔍 Récupération avoir:', params.id);
-        
+        console.log("🔍 Récupération avoir:", params.id);
+
         // Récupérer les données de l'avoir depuis l'API
-        const response = await fetch(`/api/credit-notes/data/${params.id}`);
-        console.log('📡 Réponse API:', response.status);
-        
+        const fetchHeaders = {};
+        if (window.__PREVIEW_MODE === "visual") {
+          fetchHeaders["x-internal-secret"] =
+            process.env.NEXT_PUBLIC_INTERNAL_API_SECRET || "";
+        }
+        const response = await fetch(`/api/credit-notes/data/${params.id}`, {
+          headers: fetchHeaders,
+        });
+        console.log("📡 Réponse API:", response.status);
+
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('❌ Erreur API:', errorText);
-          throw new Error('Avoir non trouvé');
+          console.error("❌ Erreur API:", errorText);
+          throw new Error("Avoir non trouvé");
         }
-        
+
         const data = await response.json();
-        console.log('✅ Données reçues:', data);
+        console.log("✅ Données reçues:", data);
         setCreditNoteData(data);
-        setStatus('ready');
+        setStatus("ready");
+
+        // Visual mode: just render, no PDF generation
+        const isVisualMode = window.__PREVIEW_MODE === "visual";
+        if (isVisualMode) {
+          console.log("👁️ Visual mode — skipping PDF generation");
+          setIsVisual(true);
+          return;
+        }
 
         // Attendre que le composant soit rendu
-        console.log('⏳ Attente rendu composant...');
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        console.log("⏳ Attente rendu composant...");
+        await new Promise((resolve) => setTimeout(resolve, 3000));
 
         // Générer le PDF
-        console.log('📄 Début génération PDF...');
+        console.log("📄 Début génération PDF...");
         await generatePDF(data);
       } catch (error) {
-        console.error('❌ Erreur:', error);
-        setStatus('error');
+        console.error("❌ Erreur:", error);
+        setStatus("error");
         window.pdfGenerationResult = { error: error.message };
       }
     }
@@ -51,43 +67,43 @@ export default function PDFGeneratorPage() {
 
   async function generatePDF(data) {
     try {
-      console.log('🎨 Génération PDF - Étape 1: Vérification composant');
+      console.log("🎨 Génération PDF - Étape 1: Vérification composant");
       if (!componentRef.current) {
-        console.error('❌ componentRef.current est null');
-        throw new Error('Composant non trouvé');
+        console.error("❌ componentRef.current est null");
+        throw new Error("Composant non trouvé");
       }
-      console.log('✅ Composant trouvé');
+      console.log("✅ Composant trouvé");
 
       // Attendre le chargement des images
-      console.log('🖼️ Génération PDF - Étape 2: Chargement images');
-      const images = componentRef.current.querySelectorAll('img');
+      console.log("🖼️ Génération PDF - Étape 2: Chargement images");
+      const images = componentRef.current.querySelectorAll("img");
       console.log(`📸 ${images.length} image(s) trouvée(s)`);
-      
+
       await Promise.all(
-        Array.from(images).map(img => {
+        Array.from(images).map((img) => {
           if (img.complete) return Promise.resolve();
           return new Promise((resolve) => {
             img.onload = () => resolve();
             img.onerror = () => resolve();
             setTimeout(() => resolve(), 3000);
           });
-        })
+        }),
       );
 
-      console.log('✅ Images chargées');
-      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log("✅ Images chargées");
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Capturer avec modern-screenshot
-      console.log('📷 Génération PDF - Étape 3: Capture screenshot');
+      console.log("📷 Génération PDF - Étape 3: Capture screenshot");
       const dataUrl = await domToJpeg(componentRef.current, {
         quality: 0.95,
-        backgroundColor: '#ffffff',
+        backgroundColor: "#ffffff",
         width: 794,
         scale: 2,
         fetch: {
           requestInit: {
-            mode: 'cors',
-            credentials: 'omit',
+            mode: "cors",
+            credentials: "omit",
           },
         },
       });
@@ -101,11 +117,11 @@ export default function PDFGeneratorPage() {
       });
 
       // Créer le PDF (import dynamique)
-      const { default: jsPDF } = await import('jspdf');
+      const { default: jsPDF } = await import("jspdf");
       const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
         compress: true,
       });
 
@@ -119,30 +135,34 @@ export default function PDFGeneratorPage() {
 
       // Multi-pages avec découpage intelligent
       if (!fitsOnOnePage) {
-        console.log('📄 Document multi-pages détecté');
+        console.log("📄 Document multi-pages détecté");
 
         // Détecter le footer pour le repositionner sur la dernière page
-        const footerElement = componentRef.current.querySelector('[data-pdf-section="footer"]');
+        const footerElement = componentRef.current.querySelector(
+          '[data-pdf-section="footer"]',
+        );
         let footerHeight = 0;
         let footerPositionY = img.height;
-        let footerBgColor = 'rgb(232, 232, 232)';
-        
+        let footerBgColor = "rgb(232, 232, 232)";
+
         if (footerElement) {
           const containerRect = componentRef.current.getBoundingClientRect();
           const footerRect = footerElement.getBoundingClientRect();
           footerHeight = footerRect.height * 2;
           footerPositionY = (footerRect.top - containerRect.top) * 2;
-          
-          console.log(`🔖 Footer détecté: hauteur=${footerHeight}px, position=${footerPositionY}px`);
+
+          console.log(
+            `🔖 Footer détecté: hauteur=${footerHeight}px, position=${footerPositionY}px`,
+          );
         }
-        
+
         // Extraire la couleur du footer
-        const colorCanvas = document.createElement('canvas');
+        const colorCanvas = document.createElement("canvas");
         colorCanvas.width = img.width;
         colorCanvas.height = img.height;
-        const colorCtx = colorCanvas.getContext('2d');
+        const colorCtx = colorCanvas.getContext("2d");
         colorCtx.drawImage(img, 0, 0);
-        
+
         if (footerPositionY < img.height) {
           const sampleY = Math.min(footerPositionY + 20, img.height - 1);
           const sampleX = 50;
@@ -150,12 +170,13 @@ export default function PDFGeneratorPage() {
           footerBgColor = `rgb(${pixelData[0]}, ${pixelData[1]}, ${pixelData[2]})`;
           console.log(`🎨 Couleur extraite du footer: ${footerBgColor}`);
         }
-        
-        const paginationBannerHeightMM = 12;
-        const paginationBannerHeightPx = paginationBannerHeightMM * (img.width / pdfWidth);
 
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+        const paginationBannerHeightMM = 12;
+        const paginationBannerHeightPx =
+          paginationBannerHeightMM * (img.width / pdfWidth);
+
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
         const canvasWidth = img.width;
         const pixelsPerMM = img.width / pdfWidth;
         const pageHeightPixels = pdfHeight * pixelsPerMM;
@@ -169,7 +190,7 @@ export default function PDFGeneratorPage() {
 
         while (currentY < img.height) {
           let targetY = currentY + pageHeightPixels;
-          
+
           if (targetY > img.height) {
             targetY = img.height;
           }
@@ -177,69 +198,93 @@ export default function PDFGeneratorPage() {
           const sliceHeight = targetY - currentY;
           const isLastPage = targetY >= img.height;
 
-          ctx.fillStyle = '#ffffff';
+          ctx.fillStyle = "#ffffff";
           ctx.fillRect(0, 0, canvas.width, canvas.height);
 
           if (isLastPage && footerElement && footerHeight > 0) {
-            console.log('📄 Dernière page - repositionnement du footer');
-            
+            console.log("📄 Dernière page - repositionnement du footer");
+
             const topMarginPx = pageNumber > 0 ? 15 * pixelsPerMM : 0;
             const contentWithoutFooter = footerPositionY - currentY;
-            
+
             if (contentWithoutFooter > 0) {
               ctx.drawImage(
                 img,
-                0, currentY,
-                canvasWidth, contentWithoutFooter,
-                0, topMarginPx,
-                canvasWidth, contentWithoutFooter
+                0,
+                currentY,
+                canvasWidth,
+                contentWithoutFooter,
+                0,
+                topMarginPx,
+                canvasWidth,
+                contentWithoutFooter,
               );
             }
-            
+
             ctx.fillStyle = footerBgColor;
-            ctx.fillRect(0, pageHeightPixels - paginationBannerHeightPx, canvasWidth, paginationBannerHeightPx);
-            
-            const footerDestY = pageHeightPixels - footerHeight - paginationBannerHeightPx;
+            ctx.fillRect(
+              0,
+              pageHeightPixels - paginationBannerHeightPx,
+              canvasWidth,
+              paginationBannerHeightPx,
+            );
+
+            const footerDestY =
+              pageHeightPixels - footerHeight - paginationBannerHeightPx;
             ctx.drawImage(
               img,
-              0, footerPositionY,
-              canvasWidth, footerHeight,
-              0, footerDestY,
-              canvasWidth, footerHeight
+              0,
+              footerPositionY,
+              canvasWidth,
+              footerHeight,
+              0,
+              footerDestY,
+              canvasWidth,
+              footerHeight,
             );
           } else {
             const topMarginPx = pageNumber > 0 ? 15 * pixelsPerMM : 0;
-            const availableContentHeight = pageHeightPixels - paginationBannerHeightPx - topMarginPx;
+            const availableContentHeight =
+              pageHeightPixels - paginationBannerHeightPx - topMarginPx;
             let contentToDraw = availableContentHeight;
-            
+
             if (footerElement && footerPositionY > 0) {
               const maxContentY = footerPositionY - 2;
               if (currentY + contentToDraw > maxContentY) {
                 contentToDraw = Math.max(0, maxContentY - currentY);
               }
             }
-            
+
             if (contentToDraw > 0) {
               ctx.drawImage(
                 img,
-                0, currentY,
-                canvasWidth, contentToDraw,
-                0, topMarginPx,
-                canvasWidth, contentToDraw
+                0,
+                currentY,
+                canvasWidth,
+                contentToDraw,
+                0,
+                topMarginPx,
+                canvasWidth,
+                contentToDraw,
               );
             }
-            
+
             ctx.fillStyle = footerBgColor;
-            ctx.fillRect(0, pageHeightPixels - paginationBannerHeightPx, canvasWidth, paginationBannerHeightPx);
+            ctx.fillRect(
+              0,
+              pageHeightPixels - paginationBannerHeightPx,
+              canvasWidth,
+              paginationBannerHeightPx,
+            );
           }
 
-          const pageImageData = canvas.toDataURL('image/jpeg', 0.95);
+          const pageImageData = canvas.toDataURL("image/jpeg", 0.95);
           const pageHeightMM = pdfHeight;
-          
+
           pages.push({
             imageData: pageImageData,
             heightMM: pageHeightMM,
-            isLastPage: isLastPage
+            isLastPage: isLastPage,
           });
 
           console.log(`✅ Page ${pageNumber + 1} générée`);
@@ -247,8 +292,12 @@ export default function PDFGeneratorPage() {
           if (isLastPage) {
             currentY = targetY;
           } else {
-            const availableContentHeight = pageHeightPixels - paginationBannerHeightPx;
-            if (footerElement && currentY + availableContentHeight > footerPositionY) {
+            const availableContentHeight =
+              pageHeightPixels - paginationBannerHeightPx;
+            if (
+              footerElement &&
+              currentY + availableContentHeight > footerPositionY
+            ) {
               currentY = footerPositionY;
             } else {
               currentY += availableContentHeight;
@@ -257,7 +306,7 @@ export default function PDFGeneratorPage() {
           pageNumber++;
 
           if (pageNumber > 50) {
-            console.error('⚠️ Trop de pages, arrêt');
+            console.error("⚠️ Trop de pages, arrêt");
             break;
           }
         }
@@ -272,44 +321,53 @@ export default function PDFGeneratorPage() {
 
           pdf.addImage(
             page.imageData,
-            'JPEG',
+            "JPEG",
             0,
             0,
             pdfWidth,
             page.heightMM,
             undefined,
-            'FAST'
+            "FAST",
           );
 
           pdf.setFontSize(9);
           const pageText = `Page ${index + 1}/${totalPages}`;
           const textWidth = pdf.getTextWidth(pageText);
-          
+
           pdf.setTextColor(80, 80, 80);
           const bannerY = pdfHeight - 4;
           pdf.text(pageText, pdfWidth - textWidth - 10, bannerY);
         });
       } else {
-        console.log('📄 Document sur une seule page');
-        pdf.addImage(dataUrl, 'JPEG', 0, 0, imgWidthMM, imgHeightMM, undefined, 'FAST');
+        console.log("📄 Document sur une seule page");
+        pdf.addImage(
+          dataUrl,
+          "JPEG",
+          0,
+          0,
+          imgWidthMM,
+          imgHeightMM,
+          undefined,
+          "FAST",
+        );
       }
 
       // Stocker le résultat dans window pour que Puppeteer puisse le récupérer
-      const arrayBuffer = pdf.output('arraybuffer');
+      const arrayBuffer = pdf.output("arraybuffer");
       window.pdfGenerationResult = {
         success: true,
-        buffer: Array.from(new Uint8Array(arrayBuffer))
+        buffer: Array.from(new Uint8Array(arrayBuffer)),
       };
 
-      setStatus('complete');
+      setStatus("complete");
     } catch (error) {
-      console.error('Erreur génération PDF:', error);
+      console.error("Erreur génération PDF:", error);
       window.pdfGenerationResult = { error: error.message };
-      setStatus('error');
+      setStatus("error");
     }
   }
 
-  if (status === 'loading') {
+  if (status === "loading") {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white">
         <div className="text-center">
@@ -320,7 +378,7 @@ export default function PDFGeneratorPage() {
     );
   }
 
-  if (status === 'error') {
+  if (status === "error") {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white">
         <div className="text-center text-red-600">
@@ -331,35 +389,45 @@ export default function PDFGeneratorPage() {
   }
 
   return (
-    <div className="bg-white min-h-screen p-4">
-      {status === 'complete' && (
+    <div
+      className={
+        isVisual ? "bg-white min-h-screen" : "bg-white min-h-screen p-4"
+      }
+    >
+      {!isVisual && status === "complete" && (
         <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded z-50">
           PDF généré avec succès
         </div>
       )}
-      {status === 'loading' && (
+      {!isVisual && status === "loading" && (
         <div className="fixed top-4 right-4 bg-blue-500 text-white px-4 py-2 rounded z-50">
           Chargement...
         </div>
       )}
-      {status === 'ready' && (
+      {!isVisual && status === "ready" && (
         <div className="fixed top-4 right-4 bg-yellow-500 text-white px-4 py-2 rounded z-50">
           Génération en cours...
         </div>
       )}
-      <div 
+      <div
         ref={componentRef}
-        style={{ 
-          width: '794px',
-          backgroundColor: '#ffffff',
-          margin: '0 auto',
-        }}
+        style={
+          isVisual
+            ? {
+                width: "100%",
+                maxWidth: "794px",
+                backgroundColor: "#ffffff",
+                margin: "0 auto",
+              }
+            : { width: "794px", backgroundColor: "#ffffff", margin: "0 auto" }
+        }
       >
         {creditNoteData && (
           <UniversalPreviewPDF
             data={creditNoteData}
             type="creditNote"
-            forPDF={true}
+            forPDF={!isVisual}
+            isMobile={isVisual}
           />
         )}
       </div>

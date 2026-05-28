@@ -374,6 +374,18 @@ export function SecuritySection({
       }
 
       toast.success("Paramètres de session mis à jour");
+
+      // Si la nouvelle limite a entraîné une révocation, prévenir + rafraîchir
+      // la liste des appareils affichée.
+      if (data.revokedCount > 0) {
+        const n = data.revokedCount;
+        toast.info(
+          n === 1
+            ? "Une autre session a été déconnectée pour respecter la limite"
+            : `${n} autres sessions ont été déconnectées pour respecter la limite`,
+        );
+        await fetchDeviceSessions();
+      }
     } catch (error) {
       console.error(
         "Erreur lors de la mise à jour des paramètres de session:",
@@ -415,37 +427,59 @@ export function SecuritySection({
     }
   };
 
-  // Fonction pour déconnecter tous les autres appareils
+  // Fonction pour déconnecter tous les appareils (y compris l'utilisateur courant
+  // et tous les autres comptes actifs via multi-session dans ce navigateur)
   const handleLogoutAllOtherDevices = async () => {
     try {
-      const response = await fetch("/api/revoke-all-other-sessions", {
-        method: "POST",
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        toast.error("Erreur lors de la déconnexion globale");
-        return;
-      }
-
-      const result = await response.json();
-
-      if (result.revokedCount === 0) {
-        toast.info("Aucun autre appareil connecté");
-      } else {
-        toast.success(
-          `${result.revokedCount} session(s) déconnectée(s) avec succès`,
+      // 1. Révoquer toutes les sessions de l'utilisateur courant sur les autres
+      //    appareils (en DB). Doit être fait pendant que la session courante est
+      //    encore valide.
+      try {
+        await fetch("/api/revoke-all-other-sessions", {
+          method: "POST",
+          credentials: "include",
+        });
+      } catch (e) {
+        console.warn(
+          "Erreur lors de la révocation des sessions cross-device:",
+          e,
         );
       }
 
-      // Recharger la liste des appareils
-      await fetchDeviceSessions();
+      // 2. Lister tous les comptes actifs via multi-session dans ce navigateur,
+      //    puis révoquer chaque compte autre que la session courante. Cela
+      //    supprime les cookies multi-session et déconnecte les autres
+      //    utilisateurs du navigateur.
+      const currentToken = session?.session?.token;
+      try {
+        const { data } = await authClient.multiSession.listDeviceSessions();
+        const sessions = Array.isArray(data)
+          ? data
+          : data?.sessions || (data ? [data] : []);
+
+        for (const s of sessions) {
+          const token = s?.session?.token || s?.token;
+          if (!token || token === currentToken) continue;
+          try {
+            await authClient.multiSession.revoke({ sessionToken: token });
+          } catch (e) {
+            console.warn("Erreur lors de la révocation multi-session:", e);
+          }
+        }
+      } catch (e) {
+        console.warn("Erreur lors du listing multi-session:", e);
+      }
+
+      toast.success("Déconnexion de tous les appareils en cours…");
+
+      // 3. Déconnexion finale de l'utilisateur courant : nettoie Apollo,
+      //    localStorage, signOut Better Auth, puis hard redirect vers /auth/login.
+      await performLogout();
     } catch (error) {
-      console.error(
-        "Erreur lors de la déconnexion des autres appareils:",
-        error,
-      );
+      console.error("Erreur lors de la déconnexion globale:", error);
       toast.error("Erreur lors de la déconnexion globale");
+      // Forcer la déconnexion locale même en cas d'erreur partielle
+      await performLogout();
     }
   };
 

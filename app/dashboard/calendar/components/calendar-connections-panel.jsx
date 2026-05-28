@@ -126,11 +126,8 @@ export function CalendarConnectionsPanel() {
 
       setConnecting(provider);
       try {
-        const apiUrl = (
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
-        ).replace(/\/+$/, "");
         const response = await fetch(
-          `${apiUrl}/calendar-connect/${provider}/authorize`,
+          `/api/calendar-connect/${provider}/authorize`,
           {
             credentials: "include",
           },

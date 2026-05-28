@@ -292,8 +292,8 @@ export function NavUser({ user }) {
                     )}
                   >
                     <div className="flex items-center gap-1">
-                      <span className="w-3 h-3 rounded-full bg-emerald-500" />
-                      <span className="w-3 h-3 rounded-full bg-red-500" />
+                      <span className="cb-swatch w-3 h-3 rounded-full cb-swatch-green" />
+                      <span className="cb-swatch w-3 h-3 rounded-full cb-swatch-red" />
                     </div>
                     <span className="text-[13px] font-normal">Standard</span>
                   </DropdownMenuItem>
@@ -305,8 +305,8 @@ export function NavUser({ user }) {
                     )}
                   >
                     <div className="flex items-center gap-1">
-                      <span className="w-3 h-3 rounded-full bg-blue-500" />
-                      <span className="w-3 h-3 rounded-full bg-gray-900 dark:bg-gray-300" />
+                      <span className="cb-swatch w-3 h-3 rounded-full cb-swatch-blue" />
+                      <span className="cb-swatch w-3 h-3 rounded-full cb-swatch-black" />
                     </div>
                     <span className="text-[13px] font-normal">Daltonien</span>
                   </DropdownMenuItem>

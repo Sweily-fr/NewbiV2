@@ -42,6 +42,7 @@ import {
   ShieldOff,
   TrashIcon,
   UserCheck,
+  Users,
 } from "lucide-react";
 
 import { useRouter } from "next/navigation";
@@ -74,7 +75,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuPortal,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -82,6 +82,7 @@ import {
 } from "@/src/components/ui/dropdown-menu";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
+import { Textarea } from "@/src/components/ui/textarea";
 import {
   Pagination,
   PaginationContent,
@@ -107,6 +108,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/src/components/ui/table";
+import {
+  Empty,
+  EmptyMedia,
+  EmptyHeader,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
+} from "@/src/components/ui/empty";
 import { Skeleton } from "@/src/components/ui/skeleton";
 // Le composant est exporté par défaut, pas en named export
 import {
@@ -119,10 +128,13 @@ import {
   useAddClientToLists,
   useRemoveClientFromList,
 } from "@/src/hooks/useClientLists";
+import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
 import { toast } from "@/src/components/ui/sonner";
 import ClientsModal from "./clients-modal";
 import ClientFilters from "./client-filters";
+import CreateListDialog from "./create-list-dialog";
+import AssignMembersDialog from "./assign-members-dialog";
 // Custom filter function for multi-column searching
 const multiColumnFilterFn = (row, columnId, filterValue) => {
   const searchableRowContent =
@@ -187,7 +199,7 @@ const columns = (
         ? rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase()
         : "";
       return (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <UserAvatar
             name={displayName}
             colorKey={client.email}
@@ -201,6 +213,19 @@ const columns = (
           >
             {displayName}
           </div>
+          {client.isBlocked && (
+            <span
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border bg-red-100 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800 shrink-0"
+              title={
+                client.blockedReason
+                  ? `Bloqué : ${client.blockedReason}`
+                  : "Contact bloqué"
+              }
+            >
+              <ShieldOff className="w-3 h-3" aria-hidden="true" />
+              Bloqué
+            </span>
+          )}
         </div>
       );
     },
@@ -253,6 +278,31 @@ const columns = (
     },
     size: 120,
     filterFn: typeFilterFn,
+  },
+  {
+    id: "assignedMember",
+    header: "Assigné",
+    cell: ({ row, table }) => {
+      const memberId = row.original.assignedMembers?.[0];
+      if (!memberId) {
+        return <span className="text-xs text-muted-foreground">-</span>;
+      }
+      const member = table.options.meta?.membersById?.[memberId];
+      if (!member) {
+        return <span className="text-xs text-muted-foreground">-</span>;
+      }
+      return (
+        <div className="flex items-center" title={member.name}>
+          <UserAvatar
+            src={member.image}
+            name={member.name}
+            colorKey={member.email}
+            size="xs"
+          />
+        </div>
+      );
+    },
+    size: 100,
   },
   {
     header: "Factures",
@@ -345,6 +395,7 @@ const columns = (
       const currentList = table.options.meta?.currentList;
       const onClientRemovedFromList =
         table.options.meta?.onClientRemovedFromList;
+      const onAssignMembers = table.options.meta?.onAssignMembers;
       return (
         <RowActions
           row={row}
@@ -354,6 +405,7 @@ const columns = (
           allLists={allLists}
           currentList={currentList}
           onClientRemovedFromList={onClientRemovedFromList}
+          onAssignMembers={onAssignMembers}
         />
       );
     },
@@ -397,6 +449,7 @@ export default function TableClients({
   const [internalGlobalFilter, setInternalGlobalFilter] = useState("");
   const [editingClient, setEditingClient] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [assignTargetClient, setAssignTargetClient] = useState(null);
 
   // Utiliser le filtre externe si hideSearchBar est true, sinon utiliser le filtre interne
   const globalFilter = hideSearchBar
@@ -484,6 +537,29 @@ export default function TableClients({
     }
     return counts;
   }, [invoices]);
+
+  // Collecter tous les userIds assignés sur la page courante et récupérer
+  // leurs infos via la même query GraphQL que le kanban (`usersInfo`)
+  const assignedUserIds = useMemo(() => {
+    const set = new Set();
+    (rawClients || []).forEach((c) => {
+      (c.assignedMembers || []).forEach((id) => {
+        if (id) set.add(id);
+      });
+    });
+    return Array.from(set);
+  }, [rawClients]);
+
+  const { members: assignedMembersInfo } =
+    useAssignedMembersInfo(assignedUserIds);
+
+  const membersById = useMemo(() => {
+    const map = {};
+    (assignedMembersInfo || []).forEach((m) => {
+      if (m?.id) map[m.id] = m;
+    });
+    return map;
+  }, [assignedMembersInfo]);
 
   const [sorting, setSorting] = useState([
     {
@@ -591,8 +667,38 @@ export default function TableClients({
       allLists,
       currentList,
       onClientRemovedFromList,
+      onAssignMembers: setAssignTargetClient,
+      membersById,
     },
   });
+
+  const toggleableColumns = useMemo(() => {
+    const standard = [
+      { id: "email", label: "Email" },
+      { id: "type", label: "Type" },
+      { id: "invoiceCount", label: "Factures" },
+      { id: "address", label: "Adresse" },
+      { id: "phone", label: "Téléphone" },
+      { id: "firstName", label: "Prénom" },
+      { id: "lastName", label: "Nom de famille" },
+      { id: "siret", label: "SIRET" },
+      { id: "vatNumber", label: "N° TVA" },
+      { id: "isInternational", label: "International" },
+    ];
+    const cfCols = (customFieldDefinitions || []).map((f) => ({
+      id: `cf_${f.id}`,
+      label: f.name,
+    }));
+    return [...standard, ...cfCols];
+  }, [customFieldDefinitions]);
+
+  const customFieldNamesMap = useMemo(
+    () =>
+      Object.fromEntries(
+        (customFieldDefinitions || []).map((f) => [`cf_${f.id}`, f.name]),
+      ),
+    [customFieldDefinitions],
+  );
 
   // Get unique type values
   const uniqueTypeValues = useMemo(() => {
@@ -648,14 +754,14 @@ export default function TableClients({
       <div className="hidden md:flex md:flex-col flex-1 min-h-0">
         {/* Toolbar - Caché si hideSearchBar */}
         {!hideSearchBar && (
-          <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 flex-shrink-0">
+          <div className="flex items-center gap-4 px-4 sm:px-6 py-4 flex-shrink-0">
             {/* Search */}
             <div className="relative max-w-md">
               <Input
                 id={`${id}-input`}
                 ref={inputRef}
                 className={cn(
-                  "w-full sm:w-[490px] lg:w-[490px] ps-9",
+                  "w-full sm:w-[320px] lg:w-[320px] ps-9",
                   Boolean(table.getColumn("name")?.getFilterValue()) && "pe-9",
                 )}
                 value={globalFilter}
@@ -688,13 +794,15 @@ export default function TableClients({
             </div>
 
             {/* Filters Button */}
-            <div className="flex items-center gap-2">
-              <ClientFilters
-                selectedTypes={selectedTypes}
-                setSelectedTypes={setSelectedTypes}
-                table={table}
-              />
-            </div>
+            <ClientFilters
+              selectedTypes={selectedTypes}
+              setSelectedTypes={setSelectedTypes}
+              table={table}
+              columnVisibility={columnVisibility}
+              onColumnVisibilityChange={setColumnVisibility}
+              allColumns={toggleableColumns}
+              customFieldNames={customFieldNamesMap}
+            />
           </div>
         )}
 
@@ -803,11 +911,14 @@ export default function TableClients({
                     data-state={row.getIsSelected() && "selected"}
                     className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
                     onClick={(e) => {
-                      // Ne pas naviguer si on clique sur la checkbox ou le menu d'actions
+                      // Ne pas naviguer si on clique sur la checkbox, le menu d'actions
+                      // ou à l'intérieur d'un dialog (portail Radix qui bubble en React)
                       if (
                         e.target.closest('[role="checkbox"]') ||
                         e.target.closest("button") ||
-                        e.target.closest('[role="menuitem"]')
+                        e.target.closest('[role="menuitem"]') ||
+                        e.target.closest('[role="alertdialog"]') ||
+                        e.target.closest('[role="dialog"]')
                       ) {
                         return;
                       }
@@ -844,8 +955,31 @@ export default function TableClients({
                 </tr>
               ) : (
                 <tr>
-                  <td colSpan={8} className="h-24 text-center p-2">
-                    Aucun contact trouvé.
+                  <td colSpan={8} className="p-0">
+                    <div className="flex items-start justify-center pt-20">
+                      <Empty>
+                        <EmptyMedia variant="icon">
+                          <Users />
+                        </EmptyMedia>
+                        <EmptyHeader>
+                          <EmptyTitle>Aucun contact</EmptyTitle>
+                          <EmptyDescription>
+                            Créez votre premier contact pour commencer à gérer
+                            votre base de données clients.
+                          </EmptyDescription>
+                        </EmptyHeader>
+                        <EmptyContent>
+                          <Button
+                            variant="primary"
+                            onClick={handleAddUser}
+                            className="font-normal"
+                          >
+                            <PlusIcon size={14} className="mr-1" />
+                            Nouveau contact
+                          </Button>
+                        </EmptyContent>
+                      </Empty>
+                    </div>
                   </td>
                 </tr>
               )}
@@ -1115,11 +1249,14 @@ export default function TableClients({
                     data-state={row.getIsSelected() && "selected"}
                     className="border-b border-gray-100 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
                     onClick={(e) => {
-                      // Ne pas naviguer si on clique sur la checkbox ou le menu d'actions
+                      // Ne pas naviguer si on clique sur la checkbox, le menu d'actions
+                      // ou à l'intérieur d'un dialog (portail Radix qui bubble en React)
                       if (
                         e.target.closest('[role="checkbox"]') ||
                         e.target.closest("button") ||
-                        e.target.closest('[role="menuitem"]')
+                        e.target.closest('[role="menuitem"]') ||
+                        e.target.closest('[role="alertdialog"]') ||
+                        e.target.closest('[role="dialog"]')
                       ) {
                         return;
                       }
@@ -1184,6 +1321,14 @@ export default function TableClients({
         onOpenChange={setIsEditModalOpen}
         onSave={handleSaveClient}
       />
+
+      <AssignMembersDialog
+        open={!!assignTargetClient}
+        onOpenChange={(open) => {
+          if (!open) setAssignTargetClient(null);
+        }}
+        client={assignTargetClient}
+      />
     </div>
   );
 }
@@ -1196,14 +1341,17 @@ function RowActions({
   allLists,
   currentList,
   onClientRemovedFromList,
+  onAssignMembers,
 }) {
   const client = row.original;
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showBlockDialog, setShowBlockDialog] = useState(false);
+  const [blockReason, setBlockReason] = useState("");
   const [showDeleteTooltip, setShowDeleteTooltip] = useState(null);
   const [addingToList, setAddingToList] = useState(false);
   const [removingFromList, setRemovingFromList] = useState(false);
+  const [createListDialogOpen, setCreateListDialogOpen] = useState(false);
   const { deleteClient } = useDeleteClient();
   const { blockClient } = useBlockClient();
   const { addToLists } = useAddClientToLists();
@@ -1248,16 +1396,17 @@ function RowActions({
 
   const handleBlock = useCallback(async () => {
     try {
-      await blockClient(client.id);
+      await blockClient(client.id, blockReason.trim() || undefined);
       setShowBlockDialog(false);
+      setBlockReason("");
     } catch (error) {
       // Error handled by hook
     }
-  }, [blockClient, client.id]);
+  }, [blockClient, client.id, blockReason]);
 
   const handleAssign = useCallback(() => {
-    toast.info("Fonctionnalité bientôt disponible");
-  }, []);
+    onAssignMembers?.(client);
+  }, [onAssignMembers, client]);
 
   const handleEdit = useCallback(() => {
     if (onEdit) {
@@ -1306,29 +1455,6 @@ function RowActions({
     }
   }, [showDeleteDialog, handleDelete]);
 
-  // Gestion des raccourcis pour le dropdown menu
-  useEffect(() => {
-    const handleGlobalKeyDown = (event) => {
-      // Raccourcis globaux uniquement si aucun dialog n'est ouvert
-      if (showDeleteDialog) return;
-
-      if ((event.metaKey || event.ctrlKey) && event.key === "e") {
-        handleEdit();
-        event.preventDefault();
-      }
-
-      if ((event.metaKey || event.ctrlKey) && event.key === "Backspace") {
-        if (!client.hasDocuments) {
-          setShowDeleteDialog(true);
-        }
-        event.preventDefault();
-      }
-    };
-
-    document.addEventListener("keydown", handleGlobalKeyDown);
-    return () => document.removeEventListener("keydown", handleGlobalKeyDown);
-  }, [handleEdit, showDeleteDialog, client.hasDocuments]);
-
   return (
     <>
       <DropdownMenu>
@@ -1348,11 +1474,9 @@ function RowActions({
           <DropdownMenuGroup>
             <DropdownMenuItem onClick={handleEdit}>
               <span>Modifier</span>
-              <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleCopyEmail}>
               <span>Copier email</span>
-              <DropdownMenuShortcut>⌘C</DropdownMenuShortcut>
             </DropdownMenuItem>
           </DropdownMenuGroup>
 
@@ -1372,6 +1496,20 @@ function RowActions({
                   const availableLists = (allLists || []).filter(
                     (l) => !currentListIds.has(l.id),
                   );
+                  if ((allLists || []).length === 0) {
+                    return (
+                      <DropdownMenuItem
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          setCreateListDialogOpen(true);
+                        }}
+                        className="cursor-pointer gap-2"
+                      >
+                        <PlusIcon className="w-3.5 h-3.5" />
+                        <span>Créer une liste</span>
+                      </DropdownMenuItem>
+                    );
+                  }
                   if (availableLists.length === 0) {
                     return (
                       <DropdownMenuItem disabled>
@@ -1412,7 +1550,7 @@ function RowActions({
             )}
 
             {/* Assigner */}
-            <DropdownMenuItem onClick={handleAssign}>
+            <DropdownMenuItem onSelect={handleAssign}>
               <UserCheck className="w-3.5 h-3.5" />
               <span>Assigner</span>
             </DropdownMenuItem>
@@ -1491,13 +1629,29 @@ function RowActions({
             variant="destructive"
           >
             <span>Supprimer</span>
-            <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
+      <CreateListDialog
+        open={createListDialogOpen}
+        onOpenChange={setCreateListDialogOpen}
+        workspaceId={workspaceId}
+        onListCreated={(newList) => {
+          if (newList?.id) {
+            handleAddToList(newList.id);
+          }
+        }}
+      />
+
       {/* Dialog de confirmation de blocage */}
-      <AlertDialog open={showBlockDialog} onOpenChange={setShowBlockDialog}>
+      <AlertDialog
+        open={showBlockDialog}
+        onOpenChange={(open) => {
+          setShowBlockDialog(open);
+          if (!open) setBlockReason("");
+        }}
+      >
         <AlertDialogContent>
           <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
             <div
@@ -1513,6 +1667,22 @@ function RowActions({
                 documents et des communications.
               </AlertDialogDescription>
             </AlertDialogHeader>
+          </div>
+          <div className="px-1">
+            <Label
+              htmlFor={`block-reason-${client.id}`}
+              className="text-sm font-medium mb-1.5 block"
+            >
+              Raison du blocage (optionnel)
+            </Label>
+            <Textarea
+              id={`block-reason-${client.id}`}
+              value={blockReason}
+              onChange={(e) => setBlockReason(e.target.value)}
+              placeholder="Ex: Impayés récurrents, communication difficile..."
+              className="resize-none"
+              rows={3}
+            />
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>

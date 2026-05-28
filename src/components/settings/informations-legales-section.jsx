@@ -18,7 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
-import { format, parse } from "date-fns";
+import { format, parse, addYears } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Calendar as ShadcnCalendar } from "@/src/components/ui/calendar";
 import {
@@ -110,6 +110,37 @@ const VAT_MODES = [
   { value: "encaissements", label: "Encaissements" },
 ];
 
+const RequiredLabel = ({ htmlFor, children, isRequired, tooltip }) => (
+  <div className="flex items-center gap-2">
+    <Label
+      htmlFor={htmlFor}
+      className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+    >
+      {children}
+      {isRequired && <span className="text-red-500 ml-1">*</span>}
+    </Label>
+    {tooltip && (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
+          <p>{tooltip}</p>
+        </TooltipContent>
+      </Tooltip>
+    )}
+  </div>
+);
+
+const SectionTitle = ({ children }) => (
+  <div className="flex items-center gap-2 mb-4">
+    <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+      {children}
+    </h3>
+    <div className="flex-1 h-px bg-[#eeeff1] dark:bg-[#232323]" />
+  </div>
+);
+
 export function InformationsLegalesSection({
   session,
   organization,
@@ -194,37 +225,6 @@ export function InformationsLegalesSection({
     selectedLegalForm,
     isVatSubject,
     hasCommercialActivity,
-  );
-
-  const RequiredLabel = ({ htmlFor, children, isRequired, tooltip }) => (
-    <div className="flex items-center gap-2">
-      <Label
-        htmlFor={htmlFor}
-        className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-      >
-        {children}
-        {isRequired && <span className="text-red-500 ml-1">*</span>}
-      </Label>
-      {tooltip && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-          </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
-            <p>{tooltip}</p>
-          </TooltipContent>
-        </Tooltip>
-      )}
-    </div>
-  );
-
-  const SectionTitle = ({ children }) => (
-    <div className="flex items-center gap-2 mb-4">
-      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
-        {children}
-      </h3>
-      <div className="flex-1 h-px bg-[#eeeff1] dark:bg-[#232323]" />
-    </div>
   );
 
   return (
@@ -672,6 +672,18 @@ export function InformationsLegalesSection({
                   <PopoverContent className="w-auto p-0" align="start">
                     <ShadcnCalendar
                       mode="single"
+                      captionLayout="dropdown"
+                      startMonth={new Date(1990, 0)}
+                      endMonth={new Date(new Date().getFullYear() + 10, 11)}
+                      defaultMonth={
+                        watchedValues.legal?.fiscalYearStartDate
+                          ? parse(
+                              watchedValues.legal.fiscalYearStartDate,
+                              "yyyy-MM-dd",
+                              new Date(),
+                            )
+                          : new Date()
+                      }
                       selected={
                         watchedValues.legal?.fiscalYearStartDate
                           ? parse(
@@ -682,11 +694,23 @@ export function InformationsLegalesSection({
                           : undefined
                       }
                       onSelect={(date) => {
-                        setValue(
-                          "legal.fiscalYearStartDate",
-                          date ? format(date, "yyyy-MM-dd") : "",
-                          { shouldDirty: true },
-                        );
+                        if (date) {
+                          setValue(
+                            "legal.fiscalYearStartDate",
+                            format(date, "yyyy-MM-dd"),
+                            { shouldDirty: true },
+                          );
+                          const endDate = addYears(date, 1);
+                          setValue(
+                            "legal.fiscalYearEndDate",
+                            format(endDate, "yyyy-MM-dd"),
+                            { shouldDirty: true },
+                          );
+                        } else {
+                          setValue("legal.fiscalYearStartDate", "", {
+                            shouldDirty: true,
+                          });
+                        }
                         setStartDateOpen(false);
                       }}
                       locale={fr}
@@ -730,6 +754,24 @@ export function InformationsLegalesSection({
                   <PopoverContent className="w-auto p-0" align="start">
                     <ShadcnCalendar
                       mode="single"
+                      captionLayout="dropdown"
+                      startMonth={new Date(1990, 0)}
+                      endMonth={new Date(new Date().getFullYear() + 10, 11)}
+                      defaultMonth={
+                        watchedValues.legal?.fiscalYearEndDate
+                          ? parse(
+                              watchedValues.legal.fiscalYearEndDate,
+                              "yyyy-MM-dd",
+                              new Date(),
+                            )
+                          : watchedValues.legal?.fiscalYearStartDate
+                            ? parse(
+                                watchedValues.legal.fiscalYearStartDate,
+                                "yyyy-MM-dd",
+                                new Date(),
+                              )
+                            : new Date()
+                      }
                       selected={
                         watchedValues.legal?.fiscalYearEndDate
                           ? parse(

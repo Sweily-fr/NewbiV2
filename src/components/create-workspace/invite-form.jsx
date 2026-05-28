@@ -20,14 +20,22 @@ const ROLE_LABELS = {
   accountant: "Comptable",
 };
 
-export function InviteForm({ members, setMembers, selectedPlan, onContinue, onSkip }) {
+export function InviteForm({
+  members,
+  setMembers,
+  selectedPlan,
+  onContinue,
+  onSkip,
+}) {
   const limits = getPlanLimits(selectedPlan);
   const isFreelance = selectedPlan === "freelance";
 
   // Count used seats by type
   const filledMembers = members.filter((m) => m.email.trim());
   const usedUsers = filledMembers.filter((m) => m.role !== "accountant").length;
-  const usedAccountants = filledMembers.filter((m) => m.role === "accountant").length;
+  const usedAccountants = filledMembers.filter(
+    (m) => m.role === "accountant",
+  ).length;
   const totalSeats = limits.invitableUsers + limits.accountants;
   const usedTotal = usedUsers + usedAccountants;
 
@@ -58,17 +66,35 @@ export function InviteForm({ members, setMembers, selectedPlan, onContinue, onSk
   };
 
   // Available roles depend on plan and current counts
-  const planRoles = getPlanLimits(selectedPlan).availableRoles || ["accountant"];
+  const planRoles = getPlanLimits(selectedPlan).availableRoles || [
+    "accountant",
+  ];
   const getAvailableRoles = (currentRole) => {
     if (isFreelance) {
       return ["accountant"];
     }
     const roles = [];
     // Only show roles allowed by the plan, respecting seat limits
-    if (planRoles.includes("admin") && (currentRole === "admin" || !isUserLimitReached)) roles.push("admin");
-    if (planRoles.includes("member") && (currentRole === "member" || !isUserLimitReached)) roles.push("member");
-    if (planRoles.includes("viewer") && (currentRole === "viewer" || !isUserLimitReached)) roles.push("viewer");
-    if (planRoles.includes("accountant") && (currentRole === "accountant" || !isAccountantLimitReached)) roles.push("accountant");
+    if (
+      planRoles.includes("admin") &&
+      (currentRole === "admin" || !isUserLimitReached)
+    )
+      roles.push("admin");
+    if (
+      planRoles.includes("member") &&
+      (currentRole === "member" || !isUserLimitReached)
+    )
+      roles.push("member");
+    if (
+      planRoles.includes("viewer") &&
+      (currentRole === "viewer" || !isUserLimitReached)
+    )
+      roles.push("viewer");
+    if (
+      planRoles.includes("accountant") &&
+      (currentRole === "accountant" || !isAccountantLimitReached)
+    )
+      roles.push("accountant");
     // Deduplicate
     return [...new Set(roles)];
   };
@@ -77,7 +103,7 @@ export function InviteForm({ members, setMembers, selectedPlan, onContinue, onSk
 
   const handleContinue = () => {
     const invalidEmails = filledMembers.filter(
-      (m) => !EMAIL_REGEX.test(m.email.trim())
+      (m) => !EMAIL_REGEX.test(m.email.trim()),
     );
     if (invalidEmails.length > 0) {
       toast.error("Veuillez saisir des adresses email valides");
@@ -87,7 +113,8 @@ export function InviteForm({ members, setMembers, selectedPlan, onContinue, onSk
   };
 
   // Progress bar percentage
-  const seatPercent = totalSeats > 0 ? Math.min((usedTotal / totalSeats) * 100, 100) : 0;
+  const seatPercent =
+    totalSeats > 0 ? Math.min((usedTotal / totalSeats) * 100, 100) : 0;
 
   return (
     <div className="flex flex-col h-full px-20 py-6">
@@ -151,11 +178,12 @@ export function InviteForm({ members, setMembers, selectedPlan, onContinue, onSk
               value={seatPercent}
               className={`h-1.5 flex-1 ${isTotalLimitReached ? "bg-red-100 [&_[data-slot=progress-indicator]]:bg-red-500" : ""}`}
             />
-            <span className={`text-xs whitespace-nowrap ${isTotalLimitReached ? "text-red-500" : "text-muted-foreground"}`}>
+            <span
+              className={`text-xs whitespace-nowrap ${isTotalLimitReached ? "text-red-500" : "text-muted-foreground"}`}
+            >
               {isFreelance
-                ? `${usedAccountants} / ${limits.accountants} comptable`
-                : `${usedUsers} / ${limits.invitableUsers} sièges${limits.accountants > 0 ? ` · ${usedAccountants} / ${limits.accountants} comptable${limits.accountants > 1 ? "s" : ""}` : ""}`
-              }
+                ? `${usedAccountants} / ${limits.accountants} accès comptable`
+                : `${usedUsers} / ${limits.invitableUsers} sièges${limits.accountants > 0 ? ` · ${usedAccountants} / ${limits.accountants} accès comptable${limits.accountants > 1 ? "s" : ""}` : ""}`}
             </span>
           </div>
         )}
@@ -165,7 +193,9 @@ export function InviteForm({ members, setMembers, selectedPlan, onContinue, onSk
           <Button
             variant="filter"
             onClick={addRow}
-            disabled={isFreelance ? isAccountantLimitReached : isTotalLimitReached}
+            disabled={
+              isFreelance ? isAccountantLimitReached : isTotalLimitReached
+            }
             className="flex items-center gap-1.5"
           >
             <UserPlus className="size-4" />
@@ -199,7 +229,10 @@ export function InviteForm({ members, setMembers, selectedPlan, onContinue, onSk
       {/* Legal text at bottom */}
       <div className="mt-auto pt-8 pb-4">
         <p className="text-[11px] text-muted-foreground leading-tight">
-          En continuant, vous acceptez nos conditions générales d&apos;utilisation. Vous confirmez que les services Newbi sont destinés à un usage professionnel et que vous avez l&apos;autorité légale pour agir au nom de l&apos;entreprise.
+          En continuant, vous acceptez nos conditions générales
+          d&apos;utilisation. Vous confirmez que les services Newbi sont
+          destinés à un usage professionnel et que vous avez l&apos;autorité
+          légale pour agir au nom de l&apos;entreprise.
         </p>
       </div>
     </div>

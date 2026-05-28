@@ -2,63 +2,49 @@
 
 import React from "react";
 import { PricingCard } from "../components/PricingCard";
+import { PLANS_DISPLAY, getPlanPricingStrings } from "@/src/lib/plans-display";
 
-const PLANS = [
-  {
-    key: "freelance",
-    name: "Freelance",
-    monthlyPrice: "14,59 €/mois",
-    annualPrice: "13,13 €/mois",
-    annualTotal: "157,56 € TTC/an",
-    description: "Parfait pour les indépendants et freelances",
+// Features et "featured" sont spécifiques à cette UI ; les prix et le label
+// viennent du module central pour garantir la cohérence avec landing/settings.
+const PLAN_UI_EXTRA = {
+  freelance: {
     features: [
-      "1 utilisateur",
-      "1 workspace inclus",
-      "Facturation complète",
-      "Gestion client",
-      "OCR des reçus",
-      "Catalogue produits",
+      "Facturation & Devis illimités",
+      "CRM client",
+      "Un accès comptable gratuit",
     ],
     featured: false,
   },
-  {
-    key: "pme",
-    name: "PME",
-    monthlyPrice: "48,99 €/mois",
-    annualPrice: "44,09 €/mois",
-    annualTotal: "529,08 € TTC/an",
-    description: "Idéal pour les petites et moyennes entreprises",
+  pme: {
     features: [
       "Jusqu'à 10 utilisateurs",
-      "Workspaces illimités",
-      "Facturation complète",
-      "Gestion client avancée",
-      "OCR des reçus",
-      "Catalogue produits",
+      "E-signature & automatisations",
       "Support prioritaire",
     ],
     featured: true,
   },
-  {
-    key: "entreprise",
-    name: "Entreprise",
-    monthlyPrice: "94,99 €/mois",
-    annualPrice: "85,49 €/mois",
-    annualTotal: "1 025,88 € TTC/an",
-    description: "Pour les grandes équipes qui ont besoin d'évolutivité",
+  entreprise: {
     features: [
       "Jusqu'à 25 utilisateurs",
-      "Workspaces illimités",
-      "Facturation complète",
-      "Gestion client avancée",
-      "OCR des reçus",
-      "Catalogue produits",
-      "Support prioritaire",
-      "API access",
+      "Permissions avancées",
+      "Archivage légal & API",
     ],
     featured: false,
   },
-];
+};
+
+const PLANS = PLANS_DISPLAY.map((p) => {
+  const strings = getPlanPricingStrings(p.key);
+  return {
+    key: p.key,
+    name: strings.displayName,
+    monthlyPrice: strings.monthly,
+    annualPrice: strings.annualPerMonth,
+    annualTotal: strings.annualTotal,
+    description: p.description,
+    ...PLAN_UI_EXTRA[p.key],
+  };
+});
 
 export function PlanSelectionStep({
   selectedPlan,

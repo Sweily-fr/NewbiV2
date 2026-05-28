@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import { flushSync } from "react-dom";
 import { useMutation } from "@apollo/client";
 import {
   Dialog,
@@ -12,14 +13,7 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
 import { Progress } from "@/src/components/ui/progress";
-import {
-  Upload,
-  FileText,
-  X,
-  Check,
-  AlertCircle,
-  Loader2,
-} from "lucide-react";
+import { Upload, FileText, X, Check, AlertCircle, Loader2 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { toast } from "sonner";
 import {
@@ -44,7 +38,7 @@ function formatFileSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function ImportPurchaseOrderModal({ open, onOpenChange }) {
+export function ImportPurchaseOrderModal({ open, onOpenChange, onImported }) {
   const { workspaceId } = useRequiredWorkspace();
   const [files, setFiles] = useState([]);
   const [phase, setPhase] = useState(PHASE.SELECT);
@@ -54,39 +48,45 @@ export function ImportPurchaseOrderModal({ open, onOpenChange }) {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
-  const [importPurchaseOrderDirect] = useMutation(IMPORT_PURCHASE_ORDER_DIRECT, {
-    refetchQueries: [
-      { query: GET_IMPORTED_PURCHASE_ORDERS, variables: { workspaceId, page: 1, limit: 1000 } },
-      { query: GET_IMPORTED_PURCHASE_ORDER_STATS, variables: { workspaceId } },
-      { query: GET_USER_OCR_QUOTA, variables: { workspaceId } },
-    ],
-  });
-
-  const addFiles = useCallback(
-    (newFiles) => {
-      const validFiles = newFiles.filter((file) => {
-        if (file.type !== "application/pdf") {
-          toast.error(`${file.name}: Seuls les fichiers PDF sont acceptés`);
-          return false;
-        }
-        if (file.size > MAX_FILE_SIZE) {
-          toast.error(`${file.name}: Fichier trop volumineux (max 10MB)`);
-          return false;
-        }
-        return true;
-      });
-
-      setFiles((prev) => {
-        const combined = [...prev, ...validFiles];
-        if (combined.length > MAX_FILES) {
-          toast.error(`Maximum ${MAX_FILES} fichiers`);
-          return combined.slice(0, MAX_FILES);
-        }
-        return combined;
-      });
+  const [importPurchaseOrderDirect] = useMutation(
+    IMPORT_PURCHASE_ORDER_DIRECT,
+    {
+      refetchQueries: [
+        {
+          query: GET_IMPORTED_PURCHASE_ORDERS,
+          variables: { workspaceId, page: 1, limit: 1000 },
+        },
+        {
+          query: GET_IMPORTED_PURCHASE_ORDER_STATS,
+          variables: { workspaceId },
+        },
+        { query: GET_USER_OCR_QUOTA, variables: { workspaceId } },
+      ],
     },
-    []
   );
+
+  const addFiles = useCallback((newFiles) => {
+    const validFiles = newFiles.filter((file) => {
+      if (file.type !== "application/pdf") {
+        toast.error(`${file.name}: Seuls les fichiers PDF sont acceptés`);
+        return false;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(`${file.name}: Fichier trop volumineux (max 10MB)`);
+        return false;
+      }
+      return true;
+    });
+
+    setFiles((prev) => {
+      const combined = [...prev, ...validFiles];
+      if (combined.length > MAX_FILES) {
+        toast.error(`Maximum ${MAX_FILES} fichiers`);
+        return combined.slice(0, MAX_FILES);
+      }
+      return combined;
+    });
+  }, []);
 
   const removeFile = useCallback((index) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
@@ -109,7 +109,7 @@ export function ImportPurchaseOrderModal({ open, onOpenChange }) {
       const droppedFiles = Array.from(e.dataTransfer.files);
       addFiles(droppedFiles);
     },
-    [addFiles]
+    [addFiles],
   );
 
   const handleImport = async () => {
@@ -122,6 +122,7 @@ export function ImportPurchaseOrderModal({ open, onOpenChange }) {
 
     let completed = 0;
     let successCount = 0;
+    const importedPos = [];
 
     for (let i = 0; i < files.length; i++) {
       setUploadStatus((prev) => ({ ...prev, [i]: "uploading" }));
@@ -134,14 +135,14 @@ export function ImportPurchaseOrderModal({ open, onOpenChange }) {
           },
         });
 
-        if (result.data?.importPurchaseOrderDirect?.success) {
+        const payload = result.data?.importPurchaseOrderDirect;
+        if (payload?.success) {
           setUploadStatus((prev) => ({ ...prev, [i]: "uploaded" }));
           successCount++;
+          if (payload.purchaseOrder) importedPos.push(payload.purchaseOrder);
         } else {
           setUploadStatus((prev) => ({ ...prev, [i]: "error" }));
-          toast.error(
-            `${files[i].name}: ${result.data?.importPurchaseOrderDirect?.error || "Erreur"}`
-          );
+          toast.error(`${files[i].name}: ${payload?.error || "Erreur"}`);
         }
       } catch (error) {
         setUploadStatus((prev) => ({ ...prev, [i]: "error" }));
@@ -155,14 +156,22 @@ export function ImportPurchaseOrderModal({ open, onOpenChange }) {
 
     if (successCount > 0) {
       toast.success(
-        `${successCount} bon(s) de commande importé(s) avec succès`
+        `${successCount} bon(s) de commande importé(s) avec succès`,
       );
     }
 
-    // Fermer automatiquement après un court délai
-    setTimeout(() => {
-      handleClose();
-    }, 1500);
+    // Forcer la fermeture du modal AVANT d'ouvrir la sidebar côté parent,
+    // sinon React bat les deux updates dans le même render et Radix peut
+    // garder la Dialog visible à cause du focus capté par la Sheet.
+    flushSync(() => {
+      setFiles([]);
+      setPhase(PHASE.SELECT);
+      setUploadProgress(0);
+      setUploadedCount(0);
+      setUploadStatus({});
+      onOpenChange(false);
+    });
+    if (importedPos.length > 0) onImported?.(importedPos);
   };
 
   const handleClose = () => {
@@ -175,13 +184,16 @@ export function ImportPurchaseOrderModal({ open, onOpenChange }) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={phase === PHASE.UPLOADING ? undefined : handleClose}>
+    <Dialog
+      open={open}
+      onOpenChange={phase === PHASE.UPLOADING ? undefined : handleClose}
+    >
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Importer des bons de commande</DialogTitle>
           <DialogDescription>
-            Importez vos bons de commande PDF. L'OCR extraira automatiquement les
-            informations.
+            Importez vos bons de commande PDF. L'OCR extraira automatiquement
+            les informations.
           </DialogDescription>
         </DialogHeader>
 
@@ -194,7 +206,7 @@ export function ImportPurchaseOrderModal({ open, onOpenChange }) {
                 "border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer",
                 isDragging
                   ? "border-primary bg-primary/5"
-                  : "border-muted-foreground/25 hover:border-muted-foreground/50"
+                  : "border-muted-foreground/25 hover:border-muted-foreground/50",
               )}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -280,7 +292,8 @@ export function ImportPurchaseOrderModal({ open, onOpenChange }) {
                 Annuler
               </Button>
               <Button onClick={handleImport} disabled={files.length === 0}>
-                Importer {files.length > 0 && `${files.length} bon(s) de commande`}
+                Importer{" "}
+                {files.length > 0 && `${files.length} bon(s) de commande`}
               </Button>
             </div>
           </div>

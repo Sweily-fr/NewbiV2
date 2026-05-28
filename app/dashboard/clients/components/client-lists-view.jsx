@@ -15,6 +15,8 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   List,
+  Plus,
+  UserPlus,
 } from "lucide-react";
 import {
   Empty,
@@ -33,6 +35,7 @@ import {
 import EditListDialog from "./edit-list-dialog";
 import DeleteListDialog from "./delete-list-dialog";
 import ListClientsView from "./list-clients-view";
+import AddClientsToListDialog from "./add-clients-to-list-dialog";
 import { useDeleteClientList } from "@/src/hooks/useClientLists";
 import {
   DropdownMenu,
@@ -77,6 +80,7 @@ export default function ClientListsView({
   const [selectedList, setSelectedList] = useState(initialSelectedList || null);
   const [editingList, setEditingList] = useState(null);
   const [deletingList, setDeletingList] = useState(null);
+  const [addingClientsToList, setAddingClientsToList] = useState(null);
   const { deleteList } = useDeleteClientList();
 
   // Mettre à jour selectedList quand initialSelectedList change
@@ -113,23 +117,35 @@ export default function ClientListsView({
       {
         id: "select",
         header: ({ table }) => {
-          const allSelected = table.getIsAllRowsSelected();
-          const someSelected = table.getIsSomeRowsSelected();
+          const selectableRows = table
+            .getRowModel()
+            .rows.filter((r) => !r.original.isDefault);
+          const allSelected =
+            selectableRows.length > 0 &&
+            selectableRows.every((r) => r.getIsSelected());
+          const someSelected =
+            !allSelected && selectableRows.some((r) => r.getIsSelected());
           return (
             <Checkbox
               checked={allSelected || (someSelected && "indeterminate")}
-              onCheckedChange={(value) => table.toggleAllRowsSelected(!!value)}
+              onCheckedChange={(value) => {
+                selectableRows.forEach((r) => r.toggleSelected(!!value));
+              }}
               aria-label="Sélectionner tout"
+              disabled={selectableRows.length === 0}
             />
           );
         },
-        cell: ({ row }) => (
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Sélectionner la ligne"
-          />
-        ),
+        cell: ({ row }) => {
+          if (row.original.isDefault) return null;
+          return (
+            <Checkbox
+              checked={row.getIsSelected()}
+              onCheckedChange={(value) => row.toggleSelected(!!value)}
+              aria-label="Sélectionner la ligne"
+            />
+          );
+        },
         size: 40,
         enableSorting: false,
         enableHiding: false,
@@ -208,6 +224,13 @@ export default function ClientListsView({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem
+                    onClick={() => setAddingClientsToList(list)}
+                    className="cursor-pointer"
+                  >
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Ajouter des contacts
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
                     onClick={() => setEditingList(list)}
                     className="cursor-pointer"
                   >
@@ -270,13 +293,13 @@ export default function ClientListsView({
     <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden">
       {/* Table */}
       {lists?.length === 0 && !globalFilter ? (
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-start justify-center pt-20">
           <Empty>
             <EmptyMedia variant="icon">
               <List />
             </EmptyMedia>
-            <EmptyHeader className="max-w-md">
-              <EmptyTitle>Commencez votre organisation</EmptyTitle>
+            <EmptyHeader>
+              <EmptyTitle>Aucune liste</EmptyTitle>
               <EmptyDescription>
                 Créez votre première liste pour organiser vos contacts par
                 catégories ou segments.
@@ -284,11 +307,12 @@ export default function ClientListsView({
             </EmptyHeader>
             <EmptyContent>
               <Button
-                variant="outline"
+                variant="primary"
                 onClick={onCreateList}
                 className="font-normal"
               >
-                Créer votre première liste
+                <Plus size={14} className="mr-1" />
+                Créer une liste
               </Button>
             </EmptyContent>
           </Empty>
@@ -498,6 +522,19 @@ export default function ClientListsView({
           workspaceId={workspaceId}
           list={deletingList}
           onListDeleted={() => handleDeleteList(deletingList.id)}
+        />
+      )}
+
+      {addingClientsToList && (
+        <AddClientsToListDialog
+          open={!!addingClientsToList}
+          onOpenChange={(open) => !open && setAddingClientsToList(null)}
+          workspaceId={workspaceId}
+          list={addingClientsToList}
+          onClientsAdded={() => {
+            onListsUpdated?.();
+            setAddingClientsToList(null);
+          }}
         />
       )}
     </div>

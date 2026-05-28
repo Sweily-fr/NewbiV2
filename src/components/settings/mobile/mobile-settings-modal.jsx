@@ -27,6 +27,7 @@ export function MobileSettingsModal({
   refetchOrganization,
   formIsSubmitting,
   isDirty,
+  isValid,
   onSubmit,
 }) {
   const [activeTab, setActiveTab] = useState("generale");
@@ -238,8 +239,13 @@ export function MobileSettingsModal({
           </Button>
           <Button
             className="flex-1 bg-[#5b4eff] hover:bg-[#4a3fdf] text-white"
-            disabled={formIsSubmitting || !isDirty}
+            disabled={formIsSubmitting || !isDirty || isValid === false}
             onClick={onSubmit}
+            title={
+              isValid === false
+                ? "Corrigez les erreurs du formulaire pour continuer"
+                : ""
+            }
           >
             {formIsSubmitting ? "Sauvegarde..." : "Valider"}
           </Button>

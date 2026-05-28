@@ -1,30 +1,30 @@
-import { NextResponse } from 'next/server';
-import { headers } from 'next/headers';
+import { NextResponse } from "next/server";
+import { requireSession, withErrorHandler } from "@/src/lib/security";
 
-export async function GET() {
-  try {
-    const headersList = await headers();
-    const authorization = headersList.get('authorization');
+async function handler(request) {
+  const { cookieHeader } = await requireSession(request);
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-    const response = await fetch(`${apiUrl}/calendar-connect/google/authorize`, {
+  const backendUrl = (
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+  ).replace(/\/+$/, "");
+
+  const response = await fetch(
+    `${backendUrl}/calendar-connect/google/authorize`,
+    {
       headers: {
-        'Authorization': authorization || '',
+        Cookie: cookieHeader,
+        "Content-Type": "application/json",
       },
-    });
+    },
+  );
 
-    const data = await response.json();
+  const data = await response.json().catch(() => ({}));
 
-    if (!response.ok) {
-      return NextResponse.json(data, { status: response.status });
-    }
-
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error('Error proxying Google Calendar authorize:', error);
-    return NextResponse.json(
-      { error: 'Erreur lors de la connexion à Google Calendar' },
-      { status: 500 }
-    );
+  if (!response.ok) {
+    return NextResponse.json(data, { status: response.status });
   }
+
+  return NextResponse.json(data);
 }
+
+export const GET = withErrorHandler(handler);

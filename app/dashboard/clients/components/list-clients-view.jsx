@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { Button } from "@/src/components/ui/button";
 import {
   DropdownMenu,
@@ -29,6 +29,7 @@ import {
   MoreHorizontal,
   Trash2,
   CircleAlertIcon,
+  UserPlus,
 } from "lucide-react";
 import {
   useClientsInList,
@@ -37,8 +38,11 @@ import {
   useRemoveClientsFromList,
 } from "@/src/hooks/useClientLists";
 import { useDeleteClient } from "@/src/hooks/useClients";
+import { useClientCustomFields } from "@/src/hooks/useClientCustomFields";
+import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
 import { toast } from "@/src/components/ui/sonner";
 import ClientsTable from "./clients-table";
+import AddClientsToListDialog from "./add-clients-to-list-dialog";
 
 export default function ListClientsView({
   workspaceId,
@@ -57,10 +61,38 @@ export default function ListClientsView({
   const { addClients } = useAddClientsToList();
   const { removeClients } = useRemoveClientsFromList();
   const { deleteClient } = useDeleteClient();
+  const { fields: customFieldDefinitions } = useClientCustomFields(workspaceId);
 
   const [selectedClients, setSelectedClients] = useState(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showAddClientsDialog, setShowAddClientsDialog] = useState(false);
+  const [columnVisibility, setColumnVisibility] = usePersistentColumnVisibility(
+    "newbi:column-visibility:list-clients",
+    {
+      phone: false,
+      firstName: false,
+      lastName: false,
+      vatNumber: false,
+      isInternational: false,
+    },
+  );
+
+  useEffect(() => {
+    if (!customFieldDefinitions || customFieldDefinitions.length === 0) return;
+    setColumnVisibility((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const f of customFieldDefinitions) {
+        const key = `cf_${f.id}`;
+        if (!(key in next)) {
+          next[key] = false;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [customFieldDefinitions, setColumnVisibility]);
 
   const selectedCount = selectedClients.size;
   const selectedIds = useMemo(
@@ -189,15 +221,22 @@ export default function ListClientsView({
               />
               <h2 className="text-2xl font-medium">{list.name}</h2>
             </div>
-            {list.description && (
-              <p className="text-sm text-muted-foreground">
-                {list.description}
-              </p>
-            )}
             <p className="text-sm text-muted-foreground">
               {totalItems} contact{totalItems !== 1 ? "s" : ""}
             </p>
           </div>
+
+          {selectedCount === 0 && clients.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowAddClientsDialog(true)}
+              className="gap-2 cursor-pointer flex-shrink-0"
+            >
+              <UserPlus className="w-4 h-4" />
+              Ajouter des contacts
+            </Button>
+          )}
 
           {selectedCount > 0 && (
             <div className="flex items-center gap-2 flex-shrink-0">
@@ -336,11 +375,23 @@ export default function ListClientsView({
             <Loader2 className="w-8 h-8 animate-spin" />
           </div>
         ) : clients.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-96">
+          <div className="flex flex-col items-center justify-center h-96 px-6 text-center">
             <Users className="w-12 h-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground mb-1">
               Aucun client dans cette liste
             </p>
+            <p className="text-sm text-muted-foreground mb-4">
+              Ajoutez des contacts existants pour commencer à organiser cette
+              liste.
+            </p>
+            <Button
+              variant="primary"
+              onClick={() => setShowAddClientsDialog(true)}
+              className="gap-2"
+            >
+              <UserPlus className="w-4 h-4" />
+              Ajouter des contacts
+            </Button>
           </div>
         ) : (
           <ClientsTable
@@ -353,11 +404,24 @@ export default function ListClientsView({
             globalFilter={globalFilter}
             selectedClients={selectedClients}
             onSelectedClientsChange={setSelectedClients}
+            columnVisibility={columnVisibility}
+            onColumnVisibilityChange={setColumnVisibility}
             currentList={{ id: list.id, name: list.name }}
             onClientRemovedFromList={handleSingleRemove}
           />
         )}
       </div>
+
+      <AddClientsToListDialog
+        open={showAddClientsDialog}
+        onOpenChange={setShowAddClientsDialog}
+        workspaceId={workspaceId}
+        list={list}
+        onClientsAdded={async () => {
+          await refetch?.();
+          onListUpdated?.();
+        }}
+      />
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>

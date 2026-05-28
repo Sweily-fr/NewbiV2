@@ -214,30 +214,59 @@ export function useInvoiceEditor({
   // Mettre à jour companyInfo quand organization est chargée
   useEffect(() => {
     if (organization && !formData.companyInfo?.legalForm) {
-      // Toujours mettre à jour avec les données complètes de l'organization
+      // Fallback sur la valeur sauvegardée (logo, etc.) si l'org active ne la fournit pas.
       const updatedCompanyInfo = {
-        name: organization?.companyName || "",
+        name: organization?.companyName || formData.companyInfo?.name || "",
         address: {
-          street: organization?.addressStreet || "",
-          city: organization?.addressCity || "",
-          postalCode: organization?.addressZipCode || "",
-          country: organization?.addressCountry || "",
+          street:
+            organization?.addressStreet ||
+            formData.companyInfo?.address?.street ||
+            "",
+          city:
+            organization?.addressCity ||
+            formData.companyInfo?.address?.city ||
+            "",
+          postalCode:
+            organization?.addressZipCode ||
+            formData.companyInfo?.address?.postalCode ||
+            "",
+          country:
+            organization?.addressCountry ||
+            formData.companyInfo?.address?.country ||
+            "",
         },
-        email: organization?.companyEmail || "",
-        phone: organization?.companyPhone || "",
-        siren: organization?.siren || "",
-        siret: organization?.siret || "",
-        vatNumber: organization?.vatNumber || "",
-        rcs: organization?.rcs || "",
-        legalForm: organization?.legalForm || "",
-        capitalSocial: organization?.capitalSocial || "",
-        fiscalRegime: organization?.fiscalRegime || "",
-        website: organization?.website || "",
-        logo: organization?.logo || "",
+        email: organization?.companyEmail || formData.companyInfo?.email || "",
+        phone: organization?.companyPhone || formData.companyInfo?.phone || "",
+        siren: organization?.siren || formData.companyInfo?.siren || "",
+        siret: organization?.siret || formData.companyInfo?.siret || "",
+        vatNumber:
+          organization?.vatNumber || formData.companyInfo?.vatNumber || "",
+        rcs: organization?.rcs || formData.companyInfo?.rcs || "",
+        legalForm:
+          organization?.legalForm || formData.companyInfo?.legalForm || "",
+        capitalSocial:
+          organization?.capitalSocial ||
+          formData.companyInfo?.capitalSocial ||
+          "",
+        fiscalRegime:
+          organization?.fiscalRegime ||
+          formData.companyInfo?.fiscalRegime ||
+          "",
+        website: organization?.website || formData.companyInfo?.website || "",
+        logo: organization?.logo || formData.companyInfo?.logo || "",
         bankDetails: {
-          iban: organization?.bankIban || "",
-          bic: organization?.bankBic || "",
-          bankName: organization?.bankName || "",
+          iban:
+            organization?.bankIban ||
+            formData.companyInfo?.bankDetails?.iban ||
+            "",
+          bic:
+            organization?.bankBic ||
+            formData.companyInfo?.bankDetails?.bic ||
+            "",
+          bankName:
+            organization?.bankName ||
+            formData.companyInfo?.bankDetails?.bankName ||
+            "",
         },
       };
 
@@ -828,12 +857,23 @@ export function useInvoiceEditor({
             shippingErrors.push("adresse trop courte");
           }
 
+          const shippingCountry = (shippingAddr.country || "")
+            .trim()
+            .toLowerCase();
+          const isShippingInternational =
+            shippingCountry !== "" &&
+            shippingCountry !== "france" &&
+            shippingCountry !== "fr";
+
           if (
             !shippingAddr.postalCode ||
             shippingAddr.postalCode.trim() === ""
           ) {
             shippingErrors.push("code postal manquant");
-          } else if (!/^\d{5}$/.test(shippingAddr.postalCode.trim())) {
+          } else if (
+            !isShippingInternational &&
+            !/^\d{5}$/.test(shippingAddr.postalCode.trim())
+          ) {
             shippingErrors.push("code postal invalide");
           }
 
@@ -1224,6 +1264,67 @@ export function useInvoiceEditor({
     }
   }, [isFormInitialized, formData.companyInfo, setValue]);
 
+  // Sync inverse : propager les champs plats édités dans la vue paramètres
+  // vers companyInfo.* pour que la preview (qui lit companyInfo) se mette à jour
+  // en direct et que les changements soient inclus dans la sauvegarde du document.
+  useEffect(() => {
+    if (!isFormInitialized) return;
+    const current = getValues("companyInfo") || {};
+    const currentAddress = current.address || {};
+    const nextName = formData.companyName ?? current.name ?? "";
+    const nextEmail = formData.companyEmail ?? current.email ?? "";
+    const nextPhone = formData.companyPhone ?? current.phone ?? "";
+    const nextWebsite = formData.website ?? current.website ?? "";
+    const nextStreet = formData.addressStreet ?? currentAddress.street ?? "";
+    const nextCity = formData.addressCity ?? currentAddress.city ?? "";
+    const nextPostalCode =
+      formData.addressZipCode ?? currentAddress.postalCode ?? "";
+    const nextCountry =
+      formData.addressCountry ?? currentAddress.country ?? "France";
+
+    if (
+      nextName !== (current.name || "") ||
+      nextEmail !== (current.email || "") ||
+      nextPhone !== (current.phone || "") ||
+      nextWebsite !== (current.website || "") ||
+      nextStreet !== (currentAddress.street || "") ||
+      nextCity !== (currentAddress.city || "") ||
+      nextPostalCode !== (currentAddress.postalCode || "") ||
+      nextCountry !== (currentAddress.country || "France")
+    ) {
+      setValue(
+        "companyInfo",
+        {
+          ...current,
+          name: nextName,
+          email: nextEmail,
+          phone: nextPhone,
+          website: nextWebsite,
+          address: {
+            ...currentAddress,
+            street: nextStreet,
+            city: nextCity,
+            postalCode: nextPostalCode,
+            country: nextCountry,
+          },
+        },
+        { shouldDirty: true },
+      );
+    }
+  }, [
+    isFormInitialized,
+    formData.companyName,
+    formData.companyEmail,
+    formData.companyPhone,
+    formData.website,
+    formData.addressStreet,
+    formData.addressCity,
+    formData.addressZipCode,
+    formData.addressCountry,
+    getValues,
+    setValue,
+  ]);
+
   // Pré-remplir la date d'émission avec max(aujourd'hui, date de la dernière facture)
   // pour éviter l'erreur de validation backend "date antérieure à la dernière facture"
   // Ajuste aussi la date d'échéance pour rester cohérente (>= issueDate)
@@ -1583,10 +1684,18 @@ export function useInvoiceEditor({
         shippingErrors.push("adresse trop courte");
       }
 
-      // Validation du code postal
+      // Validation du code postal (format FR uniquement si livraison en France)
+      const shippingCountry = (shippingAddr.country || "").trim().toLowerCase();
+      const isShippingInternational =
+        shippingCountry !== "" &&
+        shippingCountry !== "france" &&
+        shippingCountry !== "fr";
       if (!shippingAddr.postalCode || shippingAddr.postalCode.trim() === "") {
         shippingErrors.push("code postal manquant");
-      } else if (!/^\d{5}$/.test(shippingAddr.postalCode.trim())) {
+      } else if (
+        !isShippingInternational &&
+        !/^\d{5}$/.test(shippingAddr.postalCode.trim())
+      ) {
         shippingErrors.push("code postal invalide (5 chiffres requis)");
       }
 
@@ -1954,9 +2063,18 @@ export function useInvoiceEditor({
         shippingErrors.push("adresse trop courte");
       }
 
+      const shippingCountryAlt = (shipping.country || "").trim().toLowerCase();
+      const isShippingInternationalAlt =
+        shippingCountryAlt !== "" &&
+        shippingCountryAlt !== "france" &&
+        shippingCountryAlt !== "fr";
+
       if (!shipping.postalCode || shipping.postalCode.trim() === "") {
         shippingErrors.push("code postal manquant");
-      } else if (!/^\d{5}$/.test(shipping.postalCode.trim())) {
+      } else if (
+        !isShippingInternationalAlt &&
+        !/^\d{5}$/.test(shipping.postalCode.trim())
+      ) {
         shippingErrors.push("code postal invalide");
       }
 

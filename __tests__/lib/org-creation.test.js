@@ -732,3 +732,122 @@ describe("createOrganizationWithSubscription — pending data cleanup", () => {
     expect(collections.pending_org_data.deleteOne).not.toHaveBeenCalled();
   });
 });
+
+// Lot 3 — app-managed trial branch
+describe("createOrganizationWithSubscription — appTrialDays branch", () => {
+  it("grants a 30-day app trial when appTrialDays is set and no subscriptionInfo", async () => {
+    const newOrgId = new ObjectId();
+    const orgUpdates = [];
+    const collections = {
+      member: buildCollection({ findOne: vi.fn().mockResolvedValue(null) }),
+      organization: buildCollection({
+        insertOne: vi.fn().mockResolvedValue({ insertedId: newOrgId }),
+        updateOne: vi.fn(async (filter, update) => {
+          orgUpdates.push(update);
+          return { modifiedCount: 1 };
+        }),
+      }),
+    };
+    const mongoDb = buildMongoDb(collections);
+
+    await createOrganizationWithSubscription({
+      mongoDb,
+      userId,
+      orgData: { companyName: "Acme" },
+      subscriptionInfo: null,
+      appTrialDays: 30,
+    });
+
+    // One of the updates must set the trial fields
+    const trialPatch = orgUpdates.find((u) => u?.$set?.isTrialActive === true);
+    expect(trialPatch).toBeDefined();
+    expect(trialPatch.$set.hasUsedTrial).toBe(true);
+    expect(trialPatch.$set.stripeTrialActive).toBe(false);
+    expect(typeof trialPatch.$set.trialStartDate).toBe("string");
+    expect(typeof trialPatch.$set.trialEndDate).toBe("string");
+    // trialEndDate must be ~30 days after now
+    const diffDays =
+      (new Date(trialPatch.$set.trialEndDate).getTime() - Date.now()) /
+      86_400_000;
+    expect(diffDays).toBeGreaterThan(29.9);
+    expect(diffDays).toBeLessThan(30.1);
+  });
+
+  it("does NOT grant app trial when user already has another org with hasUsedTrial (decision #16)", async () => {
+    const newOrgId = new ObjectId();
+    const otherOrgId = new ObjectId();
+    const orgUpdates = [];
+
+    // First call (.findOne in step 1) returns null = no existing membership match,
+    // so we create a new org. Second call (.findOne in step 4b decision-16
+    // lookup) returns the OTHER user's org with hasUsedTrial=true.
+    const memberFindOne = vi
+      .fn()
+      .mockResolvedValueOnce(null) // step 1: no existing member
+      .mockResolvedValueOnce({
+        userId: new ObjectId(userId),
+        organizationId: otherOrgId,
+      }); // step 4b: yes, user has another org
+
+    const orgFindOne = vi
+      .fn()
+      .mockResolvedValueOnce({ _id: otherOrgId, hasUsedTrial: true });
+
+    const collections = {
+      member: buildCollection({ findOne: memberFindOne }),
+      organization: buildCollection({
+        findOne: orgFindOne,
+        insertOne: vi.fn().mockResolvedValue({ insertedId: newOrgId }),
+        updateOne: vi.fn(async (filter, update) => {
+          orgUpdates.push(update);
+          return { modifiedCount: 1 };
+        }),
+      }),
+    };
+    const mongoDb = buildMongoDb(collections);
+
+    await createOrganizationWithSubscription({
+      mongoDb,
+      userId,
+      orgData: { companyName: "Acme #2" },
+      subscriptionInfo: null,
+      appTrialDays: 30,
+    });
+
+    // Decision #16: NO trial patch should have been applied to the new org
+    const trialPatch = orgUpdates.find((u) => u?.$set?.isTrialActive === true);
+    expect(trialPatch).toBeUndefined();
+  });
+
+  it("skips user 'onboardingStep: completed' update when markOnboardingComplete=false", async () => {
+    const newOrgId = new ObjectId();
+    const userUpdates = [];
+    const collections = {
+      organization: buildCollection({
+        insertOne: vi.fn().mockResolvedValue({ insertedId: newOrgId }),
+      }),
+      user: buildCollection({
+        updateOne: vi.fn(async (filter, update) => {
+          userUpdates.push(update);
+          return { modifiedCount: 1 };
+        }),
+      }),
+    };
+    const mongoDb = buildMongoDb(collections);
+
+    await createOrganizationWithSubscription({
+      mongoDb,
+      userId,
+      orgData: { companyName: "Acme" },
+      subscriptionInfo: null,
+      appTrialDays: 30,
+      markOnboardingComplete: false,
+    });
+
+    // user collection should NOT have received a "onboardingStep: completed" update
+    const completedPatch = userUpdates.find(
+      (u) => u?.$set?.onboardingStep === "completed",
+    );
+    expect(completedPatch).toBeUndefined();
+  });
+});

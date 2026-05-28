@@ -40,6 +40,7 @@ import {
   Save,
   ExternalLink,
   AlertTriangle,
+  CheckCircle2,
   Loader2,
 } from "lucide-react";
 import { formatDateToFrench } from "@/src/utils/dateFormatter";
@@ -50,6 +51,7 @@ import {
   PAYMENT_METHOD_LABELS,
   useUpdateImportedQuote,
   useDeleteImportedQuote,
+  useConvertImportedQuoteToQuote,
 } from "@/src/graphql/importedQuoteQueries";
 import { toast } from "sonner";
 
@@ -57,10 +59,15 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
 
-  const { updateImportedQuote, loading: updateLoading } = useUpdateImportedQuote();
-  const { deleteImportedQuote, loading: deleteLoading } = useDeleteImportedQuote();
+  const { updateImportedQuote, loading: updateLoading } =
+    useUpdateImportedQuote();
+  const { deleteImportedQuote, loading: deleteLoading } =
+    useDeleteImportedQuote();
+  const { convertImportedQuoteToQuote, loading: convertLoading } =
+    useConvertImportedQuoteToQuote();
 
-  const isLoading = updateLoading || deleteLoading;
+  const isLoading = updateLoading || deleteLoading || convertLoading;
+  const isAlreadyConverted = quote?.status === "VALIDATED";
 
   if (!quote) return null;
 
@@ -91,6 +98,24 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
       onUpdate?.();
     } catch (error) {
       toast.error("Erreur lors de la mise à jour");
+    }
+  };
+
+  const handleConvert = async () => {
+    try {
+      const result = await convertImportedQuoteToQuote({
+        variables: { id: quote.id },
+      });
+      const created = result.data?.convertImportedQuoteToQuote;
+      toast.success(
+        created?.number
+          ? `Devis ${created.prefix}${created.number} ajouté à votre tableau`
+          : "Devis ajouté à votre tableau",
+      );
+      onOpenChange(false);
+      onUpdate?.();
+    } catch (error) {
+      toast.error(error?.message || "Erreur lors de la validation du devis");
     }
   };
 
@@ -130,7 +155,10 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
               {IMPORTED_QUOTE_STATUS_LABELS[quote.status]}
             </Badge>
             {quote.isDuplicate && (
-              <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-700">
+              <Badge
+                variant="outline"
+                className="border-amber-300 bg-amber-50 text-amber-700"
+              >
                 <AlertTriangle className="h-3 w-3 mr-1" />
                 Doublon
               </Badge>
@@ -142,9 +170,12 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
           <div className="p-6 space-y-6">
             {/* Montant principal */}
             <div className="text-center py-4">
-              <p className="text-3xl font-bold">{formatAmount(quote.totalTTC)}</p>
+              <p className="text-3xl font-bold">
+                {formatAmount(quote.totalTTC)}
+              </p>
               <p className="text-sm text-muted-foreground mt-1">
-                HT: {formatAmount(quote.totalHT)} | TVA: {formatAmount(quote.totalVAT)}
+                HT: {formatAmount(quote.totalHT)} | TVA:{" "}
+                {formatAmount(quote.totalVAT)}
               </p>
             </div>
 
@@ -157,21 +188,30 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
                   <Label>N° Devis</Label>
                   <Input
                     value={editData.originalQuoteNumber}
-                    onChange={(e) => setEditData({ ...editData, originalQuoteNumber: e.target.value })}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        originalQuoteNumber: e.target.value,
+                      })
+                    }
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Client</Label>
                   <Input
                     value={editData.clientName}
-                    onChange={(e) => setEditData({ ...editData, clientName: e.target.value })}
+                    onChange={(e) =>
+                      setEditData({ ...editData, clientName: e.target.value })
+                    }
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>SIRET Client</Label>
                   <Input
                     value={editData.clientSiret}
-                    onChange={(e) => setEditData({ ...editData, clientSiret: e.target.value })}
+                    onChange={(e) =>
+                      setEditData({ ...editData, clientSiret: e.target.value })
+                    }
                   />
                 </div>
                 <div className="space-y-2">
@@ -179,7 +219,9 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
                   <Input
                     type="date"
                     value={editData.quoteDate}
-                    onChange={(e) => setEditData({ ...editData, quoteDate: e.target.value })}
+                    onChange={(e) =>
+                      setEditData({ ...editData, quoteDate: e.target.value })
+                    }
                   />
                 </div>
                 <div className="space-y-2">
@@ -187,7 +229,9 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
                   <Input
                     type="date"
                     value={editData.validUntil}
-                    onChange={(e) => setEditData({ ...editData, validUntil: e.target.value })}
+                    onChange={(e) =>
+                      setEditData({ ...editData, validUntil: e.target.value })
+                    }
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -197,7 +241,15 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
                       type="number"
                       step="0.01"
                       value={editData.totalHT ?? ""}
-                      onChange={(e) => setEditData({ ...editData, totalHT: e.target.value === "" ? 0 : parseFloat(e.target.value) || 0 })}
+                      onChange={(e) =>
+                        setEditData({
+                          ...editData,
+                          totalHT:
+                            e.target.value === ""
+                              ? 0
+                              : parseFloat(e.target.value) || 0,
+                        })
+                      }
                     />
                   </div>
                   <div className="space-y-2">
@@ -206,7 +258,15 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
                       type="number"
                       step="0.01"
                       value={editData.totalVAT ?? ""}
-                      onChange={(e) => setEditData({ ...editData, totalVAT: e.target.value === "" ? 0 : parseFloat(e.target.value) || 0 })}
+                      onChange={(e) =>
+                        setEditData({
+                          ...editData,
+                          totalVAT:
+                            e.target.value === ""
+                              ? 0
+                              : parseFloat(e.target.value) || 0,
+                        })
+                      }
                     />
                   </div>
                   <div className="space-y-2">
@@ -215,7 +275,15 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
                       type="number"
                       step="0.01"
                       value={editData.totalTTC ?? ""}
-                      onChange={(e) => setEditData({ ...editData, totalTTC: e.target.value === "" ? 0 : parseFloat(e.target.value) || 0 })}
+                      onChange={(e) =>
+                        setEditData({
+                          ...editData,
+                          totalTTC:
+                            e.target.value === ""
+                              ? 0
+                              : parseFloat(e.target.value) || 0,
+                        })
+                      }
                     />
                   </div>
                 </div>
@@ -223,15 +291,21 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
                   <Label>Catégorie</Label>
                   <Select
                     value={editData.category}
-                    onValueChange={(value) => setEditData({ ...editData, category: value })}
+                    onValueChange={(value) =>
+                      setEditData({ ...editData, category: value })
+                    }
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.entries(EXPENSE_CATEGORY_LABELS).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>{label}</SelectItem>
-                      ))}
+                      {Object.entries(EXPENSE_CATEGORY_LABELS).map(
+                        ([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ),
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -239,15 +313,21 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
                   <Label>Paiement</Label>
                   <Select
                     value={editData.paymentMethod}
-                    onValueChange={(value) => setEditData({ ...editData, paymentMethod: value })}
+                    onValueChange={(value) =>
+                      setEditData({ ...editData, paymentMethod: value })
+                    }
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.entries(PAYMENT_METHOD_LABELS).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>{label}</SelectItem>
-                      ))}
+                      {Object.entries(PAYMENT_METHOD_LABELS).map(
+                        ([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ),
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -256,15 +336,23 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
               <>
                 {/* Client */}
                 <div className="space-y-3">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Client</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                    Client
+                  </p>
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
                       <Building2 className="h-5 w-5 text-muted-foreground" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium">{quote.client?.name || quote.vendor?.name || "Non spécifié"}</p>
+                      <p className="text-sm font-medium">
+                        {quote.client?.name ||
+                          quote.vendor?.name ||
+                          "Non spécifié"}
+                      </p>
                       {(quote.client?.siret || quote.vendor?.siret) && (
-                        <p className="text-xs text-muted-foreground">SIRET: {quote.client?.siret || quote.vendor?.siret}</p>
+                        <p className="text-xs text-muted-foreground">
+                          SIRET: {quote.client?.siret || quote.vendor?.siret}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -274,41 +362,68 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
 
                 {/* Informations */}
                 <div className="space-y-4">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Informations</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                    Informations
+                  </p>
 
                   {quote.originalQuoteNumber && (
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">N° Devis</span>
-                      <span className="text-sm font-medium">{quote.originalQuoteNumber}</span>
+                      <span className="text-sm text-muted-foreground">
+                        N° Devis
+                      </span>
+                      <span className="text-sm font-medium">
+                        {quote.originalQuoteNumber}
+                      </span>
                     </div>
                   )}
 
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Date</span>
-                    <span className="text-sm">{quote.quoteDate ? formatDateToFrench(quote.quoteDate) : "Non spécifiée"}</span>
+                    <span className="text-sm">
+                      {quote.quoteDate
+                        ? formatDateToFrench(quote.quoteDate)
+                        : "Non spécifiée"}
+                    </span>
                   </div>
 
                   {quote.validUntil && (
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Validité</span>
-                      <span className="text-sm">{formatDateToFrench(quote.validUntil)}</span>
+                      <span className="text-sm text-muted-foreground">
+                        Validité
+                      </span>
+                      <span className="text-sm">
+                        {formatDateToFrench(quote.validUntil)}
+                      </span>
                     </div>
                   )}
 
                   <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Catégorie</span>
-                    <span className="text-sm">{EXPENSE_CATEGORY_LABELS[quote.category] || "Autre"}</span>
+                    <span className="text-sm text-muted-foreground">
+                      Catégorie
+                    </span>
+                    <span className="text-sm">
+                      {EXPENSE_CATEGORY_LABELS[quote.category] || "Autre"}
+                    </span>
                   </div>
 
                   <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Paiement</span>
-                    <span className="text-sm">{PAYMENT_METHOD_LABELS[quote.paymentMethod] || "Non spécifié"}</span>
+                    <span className="text-sm text-muted-foreground">
+                      Paiement
+                    </span>
+                    <span className="text-sm">
+                      {PAYMENT_METHOD_LABELS[quote.paymentMethod] ||
+                        "Non spécifié"}
+                    </span>
                   </div>
 
                   {quote.ocrData?.confidence > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Confiance OCR</span>
-                      <span className="text-sm">{Math.round(quote.ocrData.confidence * 100)}%</span>
+                      <span className="text-sm text-muted-foreground">
+                        Confiance OCR
+                      </span>
+                      <span className="text-sm">
+                        {Math.round(quote.ocrData.confidence * 100)}%
+                      </span>
                     </div>
                   )}
                 </div>
@@ -320,16 +435,22 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
             {/* Fichier joint */}
             {quote.file && (
               <div className="space-y-3">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Document</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                  Document
+                </p>
                 <div
                   className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 cursor-pointer hover:bg-muted/50"
                   onClick={handleDownload}
                 >
                   <FileText className="h-5 w-5 text-muted-foreground" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{quote.file.originalFileName}</p>
+                    <p className="text-sm font-medium truncate">
+                      {quote.file.originalFileName}
+                    </p>
                     <p className="text-xs text-muted-foreground">
-                      {quote.file.fileSize ? `${Math.round(quote.file.fileSize / 1024)} KB` : "PDF"}
+                      {quote.file.fileSize
+                        ? `${Math.round(quote.file.fileSize / 1024)} KB`
+                        : "PDF"}
                     </p>
                   </div>
                   <ExternalLink className="h-4 w-4 text-muted-foreground" />
@@ -342,7 +463,9 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
               <>
                 <Separator />
                 <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Notes</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                    Notes
+                  </p>
                   <p className="text-sm">{quote.notes}</p>
                 </div>
               </>
@@ -354,42 +477,84 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
         <div className="border-t p-4 mt-auto shrink-0 bg-background">
           {isEditing ? (
             <div className="flex gap-2">
-              <Button variant="outline" className="flex-1" onClick={() => setIsEditing(false)} disabled={isLoading}>
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setIsEditing(false)}
+                disabled={isLoading}
+              >
                 Annuler
               </Button>
-              <Button className="flex-1" onClick={handleSave} disabled={isLoading}>
-                {updateLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+              <Button
+                className="flex-1"
+                onClick={handleSave}
+                disabled={isLoading}
+              >
+                {updateLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Save className="h-4 w-4 mr-2" />
+                )}
                 Enregistrer
               </Button>
             </div>
           ) : (
-            <div className="flex gap-2">
-              <Button variant="outline" className="flex-1" onClick={handleEdit} disabled={isLoading}>
-                <Edit className="h-4 w-4 mr-2" />
-                Modifier
-              </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" className="flex-1" disabled={isLoading}>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Supprimer
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Supprimer ce devis ?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Cette action est irréversible. Le devis sera définitivement supprimé.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Annuler</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+            <div className="flex flex-col gap-2">
+              {!isAlreadyConverted && (
+                <Button
+                  className="w-full"
+                  onClick={handleConvert}
+                  disabled={isLoading}
+                >
+                  {convertLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                  )}
+                  Valider et créer le devis
+                </Button>
+              )}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={handleEdit}
+                  disabled={isLoading}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Modifier
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      className="flex-1"
+                      disabled={isLoading}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
                       Supprimer
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Supprimer ce devis ?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Cette action est irréversible. Le devis sera
+                        définitivement supprimé.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDelete}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        Supprimer
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </div>
           )}
         </div>

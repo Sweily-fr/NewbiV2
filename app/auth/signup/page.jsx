@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { useSession, performLogout } from "@/src/lib/auth-client";
 import { getOnboardingStep, parseOnboardingData } from "@/src/lib/onboarding";
+import { PLANS_DISPLAY } from "@/src/lib/plans-display";
 
 const GoogleIcon = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
@@ -111,6 +112,25 @@ function SignUpPageContent() {
   const [loadingPlan, setLoadingPlan] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [companyData, setCompanyData] = useState(null);
+  // Feature flag fetched from /api/feature-flags. When true, the workspace
+  // step is the final step and submits directly to "completed" (no plan/recap).
+  // When false (default), the historical 3-step Stripe flow is used.
+  const [appTrialEnabled, setAppTrialEnabled] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/feature-flags")
+      .then((r) => r.json())
+      .then((flags) => {
+        if (!cancelled) setAppTrialEnabled(flags?.appTrialEnabled === true);
+      })
+      .catch(() => {
+        // Network failure → keep flag OFF (historical flow), no regression.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const [inviteEmails, setInviteEmails] = useState([]);
   const [inviteInput, setInviteInput] = useState("");
   const [inviteRole, setInviteRole] = useState("member");
@@ -349,6 +369,36 @@ function SignUpPageContent() {
     };
     setCompanyData(newCompanyData);
 
+    // App-managed trial flow (flag ON): workspace is the last data-collection
+    // step. Submit straight to "completed" — the route applies the data to
+    // the placeholder org and marks the user completed atomically.
+    //
+    // Then redirect to /onboarding/success which renders the welcome → invite
+    // → theme sequence (existing UI, designed to work without a Stripe
+    // session_id). After the theme step the user lands on /dashboard.
+    //
+    // The session refresh is critical: the cookieCache (5 min) may still
+    // serve a session with the OLD or missing activeOrganizationId. Without
+    // a no-store getSession, the /onboarding/success page (and downstream
+    // /dashboard) can briefly target the wrong org.
+    if (appTrialEnabled) {
+      const ok = await updateOnboardingStep("completed", {
+        ...newCompanyData,
+        billingCountry,
+      });
+      if (ok) {
+        try {
+          const { authClient } = await import("@/src/lib/auth-client");
+          await authClient.getSession({ fetchOptions: { cache: "no-store" } });
+        } catch {
+          // Non-fatal — onboarding/success will refetch as needed
+        }
+        router.replace("/onboarding/success");
+      }
+      return;
+    }
+
+    // Historical Stripe-first flow (flag OFF): continue to "plan" view.
     const ok = await updateOnboardingStep("plan", {
       ...newCompanyData,
       billingCountry,
@@ -417,12 +467,11 @@ function SignUpPageContent() {
     );
   };
 
-  const plans = [
-    {
-      key: "freelance",
-      name: "Freelance",
-      monthlyPrice: 17.99,
-      annualPrice: 16.19,
+  // Features et description marketing sont spécifiques au signup ; prix et
+  // label viennent du module central (plans-display.js) pour cohérence avec
+  // landing/pricing-modal/settings/workspace.
+  const PLAN_UI_EXTRA = {
+    freelance: {
       description: "Pour les indépendants",
       features: [
         "1 utilisateur",
@@ -435,11 +484,7 @@ function SignUpPageContent() {
         "1 comptable gratuit",
       ],
     },
-    {
-      key: "pme",
-      name: "TPE",
-      monthlyPrice: 48.99,
-      annualPrice: 44.09,
+    pme: {
       featured: true,
       description: "Pour les petites entreprises",
       features: [
@@ -454,11 +499,7 @@ function SignUpPageContent() {
         "Support prioritaire",
       ],
     },
-    {
-      key: "entreprise",
-      name: "Entreprise",
-      monthlyPrice: 94.99,
-      annualPrice: 85.49,
+    entreprise: {
       description: "Pour les grandes structures",
       features: [
         "Jusqu'à 25 utilisateurs",
@@ -472,7 +513,15 @@ function SignUpPageContent() {
         "Automatisations illimitées",
       ],
     },
-  ];
+  };
+
+  const plans = PLANS_DISPLAY.map((p) => ({
+    key: p.key,
+    name: p.displayName,
+    monthlyPrice: p.monthlyPrice,
+    annualPrice: p.annualMonthlyPrice,
+    ...PLAN_UI_EXTRA[p.key],
+  }));
 
   // ─── Title per view ───
   const titles = {
@@ -987,7 +1036,7 @@ function SignUpPageContent() {
                   </Link>{" "}
                   et notre{" "}
                   <Link
-                    href="/politique-de-confidentialite"
+                    href="/politique-confidentialite"
                     className="text-foreground hover:underline"
                   >
                     Politique de confidentialité

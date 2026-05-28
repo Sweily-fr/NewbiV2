@@ -1,5 +1,8 @@
+import { ObjectId } from "mongodb";
 import { mongoDb } from "@/src/lib/mongodb";
 import { apiError } from "./api-error";
+import { isAppTrialEnabled } from "../feature-flags";
+import { isTrialAppActive } from "../trial-app";
 
 /**
  * Verify that the organization has an active or trialing subscription.
@@ -15,6 +18,39 @@ import { apiError } from "./api-error";
  * @throws {NextResponse} 402 "Abonnement requis" if no active subscription found
  */
 export async function requireActiveSubscription(userId, orgId) {
+  // App-managed trial check (feature-flagged). When ENABLE_APP_TRIAL is OFF
+  // (default), this block is skipped and the legacy Stripe-based check below
+  // runs unchanged — zero behavioural change for existing users.
+  if (isAppTrialEnabled()) {
+    try {
+      const orgObjectId = ObjectId.isValid(orgId) ? new ObjectId(orgId) : null;
+      const orgDoc = orgObjectId
+        ? await mongoDb.collection("organization").findOne(
+            { _id: orgObjectId },
+            {
+              projection: {
+                isTrialActive: 1,
+                trialEndDate: 1,
+                stripeTrialActive: 1,
+              },
+            },
+          )
+        : null;
+      if (isTrialAppActive(orgDoc)) {
+        return {
+          active: true,
+          plan: "freelance",
+          status: "trialing",
+          expiresAt: orgDoc.trialEndDate
+            ? new Date(orgDoc.trialEndDate)
+            : undefined,
+        };
+      }
+    } catch {
+      // Non-fatal — fall through to legacy Stripe-based check.
+    }
+  }
+
   // Search by referenceId (string) — this is how org-creation.js stores it
   const subscription = await mongoDb.collection("subscription").findOne({
     referenceId: orgId,
@@ -26,8 +62,11 @@ export async function requireActiveSubscription(userId, orgId) {
 
   const { status, periodEnd, plan } = subscription;
 
-  // Active or trialing — straightforward
-  if (status === "active" || status === "trialing") {
+  // Active / trialing / past_due — straightforward.
+  // Décision #12 (Lot 5) — past_due est un grace period Stripe pendant les
+  // retries. Aligné avec rbac.js et le dashboard layout : l'utilisateur garde
+  // l'accès pendant que Stripe re-tente le paiement.
+  if (status === "active" || status === "trialing" || status === "past_due") {
     return {
       active: true,
       plan: plan || "freelance",
@@ -46,6 +85,6 @@ export async function requireActiveSubscription(userId, orgId) {
     };
   }
 
-  // Any other status (past_due, incomplete, expired, canceled+expired)
+  // Any other status (incomplete, expired, canceled+expired)
   throw apiError(402, "Aucun abonnement actif");
 }

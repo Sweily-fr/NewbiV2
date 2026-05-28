@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
+import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -55,7 +56,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuPortal,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -291,7 +291,12 @@ function buildCustomFieldColumn(field) {
 export default function TableProduct({
   handleAddProduct,
   hideHeaderButtons = false,
+  rowSelection: externalRowSelection,
+  onRowSelectionChange,
 }) {
+  const [internalRowSelection, setInternalRowSelection] = useState({});
+  const rowSelection = externalRowSelection ?? internalRowSelection;
+  const setRowSelection = onRowSelectionChange ?? setInternalRowSelection;
   const id = useId();
   const { workspaceId } = useWorkspace();
   const { fields: customFields } = useProductCustomFields(workspaceId);
@@ -314,7 +319,10 @@ export default function TableProduct({
   }, [cfKey]);
 
   const [columnFilters, setColumnFilters] = useState([]);
-  const [columnVisibility, setColumnVisibility] = useState({});
+  const [columnVisibility, setColumnVisibility] = usePersistentColumnVisibility(
+    "newbi:column-visibility:catalogue-products",
+    {},
+  );
 
   // When custom fields load/change, hide new ones by default (don't overwrite user choices)
   useEffect(() => {
@@ -425,6 +433,7 @@ export default function TableProduct({
   const table = useReactTable({
     data: filteredProducts,
     columns,
+    getRowId: (row) => row.id,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     onSortingChange: setSorting,
@@ -436,6 +445,7 @@ export default function TableProduct({
     },
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
@@ -444,6 +454,7 @@ export default function TableProduct({
       pagination,
       columnFilters,
       columnVisibility,
+      rowSelection,
     },
     meta: {
       handleEditProduct,
@@ -1007,7 +1018,6 @@ function RowActions({ row, onEdit, onDelete }) {
         <DropdownMenuGroup>
           <DropdownMenuItem onClick={handleEdit}>
             <span>Modifier</span>
-            <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() =>
@@ -1015,7 +1025,6 @@ function RowActions({ row, onEdit, onDelete }) {
             }
           >
             <span>Copier référence</span>
-            <DropdownMenuShortcut>⌘C</DropdownMenuShortcut>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
@@ -1025,7 +1034,6 @@ function RowActions({ row, onEdit, onDelete }) {
           variant="destructive"
         >
           <span>Supprimer</span>
-          <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
         </DropdownMenuItem>
       </DropdownMenuContent>
 

@@ -145,7 +145,6 @@ export default function QuoteTable({
   const [quoteToOpen, setQuoteToOpen] = useState(null);
   const [templateQuote, setTemplateQuote] = useState(null);
   const [signatureQuote, setSignatureQuote] = useState(null);
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [selectedImportedQuote, setSelectedImportedQuote] = useState(null);
   // État pour la modal d'envoi par email - géré au niveau du tableau pour éviter les re-renders
   const [sendEmailQuote, setSendEmailQuote] = useState(null);
@@ -313,13 +312,9 @@ export default function QuoteTable({
     }
   }, [quoteIdToOpen, quotes]);
 
-  // Gérer le déclenchement de l'import depuis le parent
-  useEffect(() => {
-    if (triggerImport) {
-      setIsImportModalOpen(true);
-      onImportTriggered?.();
-    }
-  }, [triggerImport, onImportTriggered]);
+  // L'ouverture/fermeture du modal d'import est pilotée directement par
+  // `triggerImport` (état partagé via la page) pour éviter qu'un second
+  // QuoteTable (desktop/mobile) ne reste avec un modal "fantôme" ouvert.
 
   if (loading) {
     return <QuoteTableSkeleton />;
@@ -1012,10 +1007,18 @@ export default function QuoteTable({
         />
       )}
 
-      {/* Modal d'import de devis */}
+      {/* Modal d'import de devis - état piloté par triggerImport (page) */}
       <ImportQuoteModal
-        open={isImportModalOpen}
-        onOpenChange={setIsImportModalOpen}
+        open={!!triggerImport}
+        onOpenChange={(open) => {
+          if (!open) onImportTriggered?.();
+        }}
+        onImported={(quotes) => {
+          if (quotes && quotes.length > 0) {
+            setSelectedImportedQuote(quotes[quotes.length - 1]);
+          }
+          refetchImported?.();
+        }}
       />
 
       {/* Sidebar pour les devis importés */}

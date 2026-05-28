@@ -12,6 +12,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { toast } from "@/src/components/ui/sonner";
+import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
 import {
   useDeletePurchaseInvoice,
   useBulkDelete,
@@ -166,6 +167,7 @@ export default function PurchaseInvoiceTable({
   invoices = [],
   loading,
   refetch,
+  refetchStats,
   onRowClick,
   importedInvoices = [],
   importedLoading,
@@ -178,11 +180,14 @@ export default function PurchaseInvoiceTable({
   const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState([{ id: "issueDate", desc: true }]);
   const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState({
-    invoiceNumber: false,
-    amountHT: false,
-    amountTVA: false,
-  });
+  const [columnVisibility, setColumnVisibility] = usePersistentColumnVisibility(
+    "newbi:column-visibility:purchase-invoices",
+    {
+      invoiceNumber: false,
+      amountHT: false,
+      amountTVA: false,
+    },
+  );
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 25 });
   const [activeTab, setActiveTab] = useState("all");
   const [statusFilters, setStatusFilters] = useState([]);
@@ -283,8 +288,21 @@ export default function PurchaseInvoiceTable({
     );
   }, [invoices, activeTab, statusFilters, categoryFilters]);
 
+  const handleDeleteInvoice = async (id) => {
+    const result = await deleteInvoice(id);
+    if (result?.success) {
+      refetch?.();
+      refetchStats?.();
+    }
+  };
+
   const columns = useMemo(
-    () => getColumns({ onViewInvoice: onRowClick }),
+    () =>
+      getColumns({
+        onViewInvoice: onRowClick,
+        onDeleteInvoice: handleDeleteInvoice,
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [onRowClick],
   );
 
@@ -327,6 +345,7 @@ export default function PurchaseInvoiceTable({
     await bulkDelete(ids);
     setRowSelection({});
     refetch?.();
+    refetchStats?.();
   };
 
   const handleBulkStatus = async (status) => {
@@ -334,6 +353,7 @@ export default function PurchaseInvoiceTable({
     await bulkUpdateStatus(ids, status);
     setRowSelection({});
     refetch?.();
+    refetchStats?.();
   };
 
   const handleBulkCategorize = async (category) => {
@@ -387,7 +407,7 @@ export default function PurchaseInvoiceTable({
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent align="start" className="w-[280px] p-0">
+              <PopoverContent align="start" className="w-[440px] p-0">
                 <div className="flex items-center justify-between px-3 py-2 border-b">
                   <span className="text-sm font-medium">Filtres</span>
                   {activeFiltersCount > 0 && (
@@ -399,44 +419,46 @@ export default function PurchaseInvoiceTable({
                     </button>
                   )}
                 </div>
-                {/* Status filters */}
-                <div className="px-3 py-2 border-b">
-                  <p className="text-xs text-muted-foreground font-medium mb-2">
-                    Statut
-                  </p>
-                  <div className="space-y-1.5">
-                    {Object.entries(STATUS_LABELS).map(([key, label]) => (
-                      <label
-                        key={key}
-                        className="flex items-center gap-2 cursor-pointer"
-                      >
-                        <Checkbox
-                          checked={statusFilters.includes(key)}
-                          onCheckedChange={() => toggleStatusFilter(key)}
-                        />
-                        <span className="text-sm">{label}</span>
-                      </label>
-                    ))}
+                <div className="grid grid-cols-2 divide-x">
+                  {/* Status filters */}
+                  <div className="px-3 py-2 flex flex-col min-h-0">
+                    <p className="text-xs text-muted-foreground font-medium mb-2">
+                      Statut
+                    </p>
+                    <div className="space-y-1.5 max-h-[260px] overflow-y-auto pr-1">
+                      {Object.entries(STATUS_LABELS).map(([key, label]) => (
+                        <label
+                          key={key}
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
+                          <Checkbox
+                            checked={statusFilters.includes(key)}
+                            onCheckedChange={() => toggleStatusFilter(key)}
+                          />
+                          <span className="text-sm">{label}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
-                </div>
-                {/* Category filters */}
-                <div className="px-3 py-2 max-h-[200px] overflow-y-auto">
-                  <p className="text-xs text-muted-foreground font-medium mb-2">
-                    Catégorie
-                  </p>
-                  <div className="space-y-1.5">
-                    {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-                      <label
-                        key={key}
-                        className="flex items-center gap-2 cursor-pointer"
-                      >
-                        <Checkbox
-                          checked={categoryFilters.includes(key)}
-                          onCheckedChange={() => toggleCategoryFilter(key)}
-                        />
-                        <span className="text-sm">{label}</span>
-                      </label>
-                    ))}
+                  {/* Category filters */}
+                  <div className="px-3 py-2 flex flex-col min-h-0">
+                    <p className="text-xs text-muted-foreground font-medium mb-2">
+                      Catégorie
+                    </p>
+                    <div className="space-y-1.5 max-h-[260px] overflow-y-auto pr-1">
+                      {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+                        <label
+                          key={key}
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
+                          <Checkbox
+                            checked={categoryFilters.includes(key)}
+                            onCheckedChange={() => toggleCategoryFilter(key)}
+                          />
+                          <span className="text-sm">{label}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </PopoverContent>

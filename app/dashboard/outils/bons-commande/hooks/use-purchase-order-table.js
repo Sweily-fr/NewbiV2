@@ -26,22 +26,7 @@ import { formatDate, isDateExpired } from "../utils/date-utils";
 import PurchaseOrderRowActions from "../components/purchase-order-row-actions";
 import { EmailTrackingStatus } from "@/src/components/email-tracking-status";
 import { toast } from "@/src/components/ui/sonner";
-
-// Custom filter functions
-const multiColumnFilterFn = (row, columnId, filterValue) => {
-  const searchableContent = [
-    row.original.number,
-    row.original.client?.name,
-    row.original.client?.email,
-    PURCHASE_ORDER_STATUS_LABELS[row.original.status],
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-
-  const searchTerm = (filterValue ?? "").toLowerCase();
-  return searchableContent.includes(searchTerm);
-};
+import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
 
 const statusFilterFn = (row, columnId, filterValue) => {
   if (!filterValue?.length) return true;
@@ -196,6 +181,10 @@ export function usePurchaseOrderTable({
   const [statusFilter, setStatusFilter] = useState([]);
   const [clientFilter, setClientFilter] = useState([]);
   const [dateFilter, setDateFilter] = useState(null);
+  const [columnVisibility, setColumnVisibility] = usePersistentColumnVisibility(
+    "newbi:column-visibility:purchase-orders",
+    { finalTotalHT: false, finalTotalVAT: false },
+  );
 
   // Hook pour la suppression de bons de commande
   const { deletePurchaseOrder, loading: isDeleting } = useDeletePurchaseOrder();
@@ -266,7 +255,7 @@ export function usePurchaseOrderTable({
               </div>
               <div className="text-xs text-muted-foreground truncate max-w-[100px] md:max-w-none">
                 {(purchaseOrder.prefix
-                  ? `${purchaseOrder.prefix}${purchaseOrder.number}`
+                  ? `${purchaseOrder.prefix.replace(/-$/, "")}-${purchaseOrder.number}`
                   : purchaseOrder.number) || (
                   <span className="italic">Brouillon</span>
                 )}
@@ -275,7 +264,6 @@ export function usePurchaseOrderTable({
           );
         },
         size: 200,
-        filterFn: multiColumnFilterFn,
       },
       {
         accessorKey: "purchaseOrderNumber",
@@ -607,9 +595,11 @@ export function usePurchaseOrderTable({
     enableMultiRemove: true,
 
     onGlobalFilterChange: setGlobalFilter,
+    onColumnVisibilityChange: setColumnVisibility,
     globalFilterFn: memoizedMultiColumnFilter,
     state: {
       globalFilter,
+      columnVisibility,
       columnFilters: [
         ...(statusFilter.length > 0
           ? [{ id: "status", value: statusFilter }]
@@ -628,10 +618,6 @@ export function usePurchaseOrderTable({
     initialState: {
       pagination: {
         pageSize: 10,
-      },
-      columnVisibility: {
-        finalTotalHT: false,
-        finalTotalVAT: false,
       },
     },
   });

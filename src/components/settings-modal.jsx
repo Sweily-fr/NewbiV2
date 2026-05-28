@@ -130,7 +130,7 @@ export function SettingsModal({
 
   const {
     handleSubmit,
-    formState: { errors, isSubmitting: formIsSubmitting, isDirty },
+    formState: { errors, isSubmitting: formIsSubmitting, isDirty, isValid },
     reset,
     watch,
   } = formMethods;
@@ -271,6 +271,10 @@ export function SettingsModal({
           if (refetchOrg) {
             await refetchOrg();
           }
+          // Réinitialiser les defaultValues du form avec les valeurs sauvegardées
+          // pour que isDirty reparte à false (sinon un retour à la valeur précédente
+          // serait considéré comme "non modifié" et bloquerait le bouton Sauvegarder)
+          reset(formData, { keepDirty: false, keepValues: true });
           toast.success("Modifications sauvegardées avec succès");
         },
         onError: (error) => {
@@ -499,6 +503,7 @@ export function SettingsModal({
           refetchOrganization={refetchOrg}
           formIsSubmitting={formIsSubmitting}
           isDirty={isDirty}
+          isValid={isValid}
           onSubmit={handleSubmit(handleSaveAll)}
         />
       </FormProvider>
@@ -644,13 +649,18 @@ export function SettingsModal({
                     <Button
                       type="submit"
                       disabled={
-                        formIsSubmitting || !isDirty || !canManageOrgSettings
+                        formIsSubmitting ||
+                        !isDirty ||
+                        !isValid ||
+                        !canManageOrgSettings
                       }
                       className="bg-[#5b4eff] cursor-pointer hover:bg-[#5b4eff] dark:text-white"
                       title={
                         !canManageOrgSettings
                           ? "Seuls les owners et admins peuvent modifier les paramètres"
-                          : ""
+                          : !isValid
+                            ? "Corrigez les erreurs du formulaire pour continuer"
+                            : ""
                       }
                     >
                       {formIsSubmitting ? "Sauvegarde..." : "Sauvegarder"}

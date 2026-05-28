@@ -132,16 +132,22 @@ describe("validateField — legal fields", () => {
 
   it.each([
     ["FR12345678901", true],
+    ["FRAB123456789", true],
     ["DE123456789", true],
-    ["FRABC", true],
+    ["BE0123456789", true],
+    ["IT12345678901", true],
   ])("accepts valid VAT number: %s", (value) => {
     expect(validateField(value, "vatNumber", true).isValid).toBe(true);
   });
 
-  it("rejects VAT number with lowercase country code", () => {
-    expect(validateField("fr12345678901", "vatNumber", true).isValid).toBe(
-      false,
-    );
+  it.each([
+    ["FR07", "incomplete French VAT"],
+    ["FRABC", "incomplete French VAT with letters"],
+    ["FR12345678", "French VAT too short"],
+    ["XX12345678901", "invalid country code"],
+    ["fr12345678901", "lowercase country code"],
+  ])("rejects invalid VAT number (%s — %s)", (value) => {
+    expect(validateField(value, "vatNumber", true).isValid).toBe(false);
   });
 });
 

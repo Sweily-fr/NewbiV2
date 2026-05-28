@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useId } from "react";
+import { useState, useEffect, useId, useRef } from "react";
 import { useFormContext } from "react-hook-form";
 import { ChevronDownIcon, ChevronRight, ChevronLeft } from "lucide-react";
 import { useQuery } from "@apollo/client";
@@ -234,6 +234,7 @@ export default function EnhancedQuoteForm({
   const { watch, setValue, getValues, control } = useFormContext();
   const data = watch();
   const [internalCurrentStep, setInternalCurrentStep] = useState(1);
+  const scrollContainerRef = useRef(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -329,6 +330,12 @@ export default function EnhancedQuoteForm({
     setCurrentStep(1);
   };
 
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: "auto" });
+    }
+  }, [currentStep]);
+
   const handleSaveDraft = () => {
     if (onSave) {
       onSave({ ...data, status: "DRAFT" });
@@ -375,7 +382,10 @@ export default function EnhancedQuoteForm({
   return (
     <div className="flex flex-col h-full w-full">
       {/* Form Content */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto overflow-x-hidden min-h-0"
+      >
         <div className="space-y-4 pb-20 px-2">
           {/* Étape 1: Détails du document */}
           {currentStep === 1 && (

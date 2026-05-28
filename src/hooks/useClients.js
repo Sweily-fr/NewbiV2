@@ -66,7 +66,9 @@ export const useCreateClient = () => {
   const [createClientMutation, { loading, error }] = useMutation(
     CREATE_CLIENT,
     {
-      update: (cache, { data: { createClient: newClient } }) => {
+      update: (cache, { data }) => {
+        const newClient = data?.createClient;
+        if (!newClient) return;
         try {
           // Lire la query existante
           const existingClients = cache.readQuery({
@@ -97,13 +99,8 @@ export const useCreateClient = () => {
       onCompleted: () => {
         toast.success("Client créé avec succès");
       },
-      onError: (error) => {
-        // Extraire le message d'erreur GraphQL pour l'afficher en description du toast
-        const serverMessage = error.graphQLErrors?.[0]?.message;
-        handleMutationError(error, "create", "client", {
-          ...(serverMessage && { description: serverMessage }),
-        });
-      },
+      // Pas d'onError ici: la gestion d'erreur est faite par le composant appelant
+      // pour pouvoir afficher l'erreur soit en toast soit inline sur un champ.
     },
   );
 
@@ -113,8 +110,13 @@ export const useCreateClient = () => {
         const result = await createClientMutation({
           variables: { workspaceId, input },
         });
-        if (result?.data?.createClient) {
-          toast.success("Client créé avec succès");
+        // Avec errorPolicy:"all" la mutation ne throw pas: il faut inspecter result.errors
+        if (result?.errors && result.errors.length > 0) {
+          const graphQLError = result.errors[0];
+          const enhancedError = new Error(graphQLError.message);
+          enhancedError.extensions = graphQLError.extensions;
+          enhancedError.code = graphQLError.extensions?.code;
+          throw enhancedError;
         }
         return result?.data?.createClient;
       } catch (error) {
@@ -140,7 +142,9 @@ export const useUpdateClient = () => {
   const [updateClientMutation, { loading, error }] = useMutation(
     UPDATE_CLIENT,
     {
-      update: (cache, { data: { updateClient: updatedClient } }) => {
+      update: (cache, { data }) => {
+        const updatedClient = data?.updateClient;
+        if (!updatedClient) return;
         // Mettre à jour le client dans le cache GET_CLIENT
         cache.writeQuery({
           query: GET_CLIENT,
@@ -178,12 +182,7 @@ export const useUpdateClient = () => {
       onCompleted: () => {
         toast.success("Client modifié avec succès");
       },
-      onError: (error) => {
-        const serverMessage = error.graphQLErrors?.[0]?.message;
-        handleMutationError(error, "update", "client", {
-          ...(serverMessage && { description: serverMessage }),
-        });
-      },
+      // Pas d'onError ici: la gestion d'erreur est faite par le composant appelant.
     },
   );
 
@@ -193,8 +192,13 @@ export const useUpdateClient = () => {
         const result = await updateClientMutation({
           variables: { workspaceId, id, input },
         });
-        if (result?.data?.updateClient) {
-          toast.success("Client modifié avec succès");
+        // Avec errorPolicy:"all" la mutation ne throw pas: il faut inspecter result.errors
+        if (result?.errors && result.errors.length > 0) {
+          const graphQLError = result.errors[0];
+          const enhancedError = new Error(graphQLError.message);
+          enhancedError.extensions = graphQLError.extensions;
+          enhancedError.code = graphQLError.extensions?.code;
+          throw enhancedError;
         }
         return result?.data?.updateClient;
       } catch (error) {
@@ -329,7 +333,7 @@ export const useUnblockClient = () => {
   };
 };
 
-export const useAssignClientMembers = () => {
+export const useAssignClientMembers = ({ silent = false } = {}) => {
   const { workspaceId } = useWorkspace();
   const { handleMutationError } = useErrorHandler();
 
@@ -344,7 +348,7 @@ export const useAssignClientMembers = () => {
       ],
       awaitRefetchQueries: false,
       onCompleted: () => {
-        toast.success("Membres assignés");
+        if (!silent) toast.success("Membres assignés");
       },
       onError: (error) => {
         handleMutationError(error, "assign", "client");

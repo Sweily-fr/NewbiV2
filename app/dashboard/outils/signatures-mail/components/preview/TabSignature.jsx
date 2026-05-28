@@ -14,7 +14,6 @@ import { gql } from "@apollo/client";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
 
-import { ScrollArea, ScrollBar } from "@/src/components/ui/scroll-area";
 import {
   Tabs,
   TabsContent,
@@ -170,7 +169,7 @@ function UsersTab() {
   useEffect(() => {
     if (members.length > 0 && selectedUserId === null) {
       const currentUserId = session?.user?.id;
-      const currentMember = members.find(m => m.id === currentUserId);
+      const currentMember = members.find((m) => m.id === currentUserId);
       if (currentMember) {
         setSelectedUserId(currentMember.id);
       }
@@ -219,7 +218,8 @@ function UsersTab() {
           Aucun membre
         </h3>
         <p className="text-xs text-neutral-500 max-w-[200px]">
-          Invitez des membres à votre organisation pour leur attribuer cette signature
+          Invitez des membres à votre organisation pour leur attribuer cette
+          signature
         </p>
       </div>
     );
@@ -228,7 +228,8 @@ function UsersTab() {
   return (
     <div className="space-y-1">
       <div className="text-xs text-muted-foreground mb-2">
-        Sélectionnez un membre pour pré-remplir la signature avec ses informations
+        Sélectionnez un membre pour pré-remplir la signature avec ses
+        informations
       </div>
       {members.map((member) => {
         const isSelected = selectedUserId === member.id;
@@ -239,9 +240,7 @@ function UsersTab() {
             key={member.id}
             onClick={() => handleSelectUser(member)}
             className={`w-full flex items-center gap-3 p-2 rounded-md transition-colors cursor-pointer ${
-              isSelected
-                ? "bg-accent"
-                : "hover:bg-accent"
+              isSelected ? "bg-accent" : "hover:bg-accent"
             }`}
           >
             <UserAvatar
@@ -258,7 +257,9 @@ function UsersTab() {
                   <span className="text-muted-foreground ml-1">(Vous)</span>
                 )}
               </div>
-              <div className="text-xs text-muted-foreground truncate">{member.email}</div>
+              <div className="text-xs text-muted-foreground truncate">
+                {member.email}
+              </div>
             </div>
 
             {isSelected && (
@@ -953,28 +954,29 @@ export function TabSignature({ existingSignatureId = null }) {
       >
         {/* Header fixe avec les onglets */}
         <div className="flex-shrink-0 p-5 pb-0">
-          <ScrollArea className="w-full">
-            <TabsList className="mb-3 w-full">
-              <TabsTrigger value="tab-widgets" className="flex-1" title="Widgets">
-                <Blocks size={16} aria-hidden="true" />
-              </TabsTrigger>
-              <TabsTrigger
-                value="tab-selection"
-                className="flex-1 relative"
-                title="Sélection"
-                disabled={!selectedBlockId && !selectedElementId}
-              >
-                <MousePointerClick size={16} aria-hidden="true" />
-                {(selectedBlockId || selectedElementId) && (
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#5a50ff] rounded-full" />
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="tab-users" className="flex-1" title="Utilisateurs">
-                <Users size={16} aria-hidden="true" />
-              </TabsTrigger>
-            </TabsList>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
+          <TabsList className="mb-3 w-full">
+            <TabsTrigger value="tab-widgets" className="flex-1" title="Widgets">
+              <Blocks size={16} aria-hidden="true" />
+            </TabsTrigger>
+            <TabsTrigger
+              value="tab-selection"
+              className="flex-1 relative"
+              title="Sélection"
+              disabled={!selectedBlockId && !selectedElementId}
+            >
+              <MousePointerClick size={16} aria-hidden="true" />
+              {(selectedBlockId || selectedElementId) && (
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#5a50ff] rounded-full" />
+              )}
+            </TabsTrigger>
+            <TabsTrigger
+              value="tab-users"
+              className="flex-1"
+              title="Utilisateurs"
+            >
+              <Users size={16} aria-hidden="true" />
+            </TabsTrigger>
+          </TabsList>
         </div>
 
         {/* Contenu scrollable - prend l'espace restant automatiquement */}
@@ -1007,7 +1009,8 @@ export function TabSignature({ existingSignatureId = null }) {
                     Aucune sélection
                   </h3>
                   <p className="text-xs text-neutral-500 max-w-[200px]">
-                    Cliquez sur un bloc ou un élément dans la signature pour voir ses propriétés
+                    Cliquez sur un bloc ou un élément dans la signature pour
+                    voir ses propriétés
                   </p>
                 </div>
               )}

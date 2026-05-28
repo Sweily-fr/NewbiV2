@@ -902,6 +902,7 @@ export const useSendPurchaseOrder = () => {
 export const PURCHASE_ORDER_STATUS = {
   DRAFT: "DRAFT",
   CONFIRMED: "CONFIRMED",
+  VALIDATED: "VALIDATED",
   IN_PROGRESS: "IN_PROGRESS",
   DELIVERED: "DELIVERED",
   CANCELED: "CANCELED",
@@ -910,7 +911,8 @@ export const PURCHASE_ORDER_STATUS = {
 // Libellés pour l'affichage
 export const PURCHASE_ORDER_STATUS_LABELS = {
   [PURCHASE_ORDER_STATUS.DRAFT]: "Brouillon",
-  [PURCHASE_ORDER_STATUS.CONFIRMED]: "Confirmé",
+  [PURCHASE_ORDER_STATUS.CONFIRMED]: "En attente",
+  [PURCHASE_ORDER_STATUS.VALIDATED]: "Validé",
   [PURCHASE_ORDER_STATUS.IN_PROGRESS]: "En cours",
   [PURCHASE_ORDER_STATUS.DELIVERED]: "Livré",
   [PURCHASE_ORDER_STATUS.CANCELED]: "Annulé",
@@ -1026,6 +1028,8 @@ export const PURCHASE_ORDER_STATUS_COLORS = {
   [PURCHASE_ORDER_STATUS.DRAFT]: "bg-gray-100 text-gray-700 border-gray-200",
   [PURCHASE_ORDER_STATUS.CONFIRMED]:
     "bg-blue-100 text-blue-700 border-blue-200",
+  [PURCHASE_ORDER_STATUS.VALIDATED]:
+    "bg-violet-100 text-violet-700 border-violet-200",
   [PURCHASE_ORDER_STATUS.IN_PROGRESS]:
     "bg-amber-100 text-amber-700 border-amber-200",
   [PURCHASE_ORDER_STATUS.DELIVERED]:

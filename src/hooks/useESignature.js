@@ -83,7 +83,7 @@ export function useRequestSignature() {
 
   const requestSignature = async (input) => {
     try {
-      const { data } = await requestMutation({
+      const { data, errors } = await requestMutation({
         variables: { input },
         refetchQueries: [
           {
@@ -106,21 +106,21 @@ export function useRequestSignature() {
           signatureRequest: data.requestDocumentSignature.signatureRequest,
         };
       } else {
-        toast.error("Erreur", {
-          description:
-            data?.requestDocumentSignature?.message ||
-            "Impossible d'envoyer la demande de signature",
-        });
-        return {
-          success: false,
-          error: data?.requestDocumentSignature?.message,
-        };
+        const errorMessage =
+          data?.requestDocumentSignature?.message ||
+          errors?.[0]?.message ||
+          "Impossible d'envoyer la demande de signature";
+        toast.error("Erreur", { description: errorMessage });
+        return { success: false, error: errorMessage };
       }
     } catch (error) {
-      toast.error("Erreur", {
-        description: error.message || "Une erreur est survenue",
-      });
-      return { success: false, error: error.message };
+      const errorMessage =
+        error?.graphQLErrors?.[0]?.message ||
+        error?.networkError?.message ||
+        error?.message ||
+        "Une erreur est survenue";
+      toast.error("Erreur", { description: errorMessage });
+      return { success: false, error: errorMessage };
     }
   };
 

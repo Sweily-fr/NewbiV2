@@ -21,6 +21,38 @@ import {
 import { toast } from "@/src/components/ui/sonner";
 import { cn } from "@/src/lib/utils";
 
+const REDIRECT_ROUTE_MAP = {
+  dashboard: "/dashboard",
+  outils: "/dashboard",
+  kanban: "/dashboard/outils/kanban",
+  calendar: "/dashboard/calendar",
+  factures: "/dashboard/outils/factures",
+  devis: "/dashboard/outils/devis",
+  clients: "/dashboard/clients",
+  transactions: "/dashboard/outils/transactions",
+  depenses: "/dashboard/outils/transactions",
+  signatures: "/dashboard/outils/signatures-mail",
+  transferts: "/dashboard/outils/transferts-fichiers",
+  "documents-partages": "/dashboard/outils/documents-partages",
+  catalogues: "/dashboard/catalogues",
+  collaborateurs: "/dashboard/collaborateurs",
+  analytics: "/dashboard/analytics",
+  favoris: "/dashboard/favoris",
+};
+
+async function resolvePostLoginPath() {
+  try {
+    const { data: session } = await authClient.getSession();
+    const userRedirectPage = session?.user?.redirect_after_login;
+    if (userRedirectPage && userRedirectPage !== "last-page") {
+      return REDIRECT_ROUTE_MAP[userRedirectPage] || "/dashboard";
+    }
+  } catch (err) {
+    console.error("[2FA] Erreur récupération session pour redirection:", err);
+  }
+  return "/dashboard";
+}
+
 export default function Verify2FAPage() {
   const router = useRouter();
   const [code, setCode] = useState("");
@@ -99,7 +131,8 @@ export default function Verify2FAPage() {
 
       if (data) {
         toast.success("Authentification réussie !");
-        router.push("/dashboard");
+        const redirectPath = await resolvePostLoginPath();
+        router.push(redirectPath);
       }
     } catch (err) {
       console.error("Erreur vérification 2FA:", err);
@@ -131,7 +164,8 @@ export default function Verify2FAPage() {
 
       if (data) {
         toast.success("Authentification réussie !");
-        router.push("/dashboard");
+        const redirectPath = await resolvePostLoginPath();
+        router.push(redirectPath);
       }
     } catch (err) {
       console.error("Erreur vérification OTP email:", err);
@@ -169,7 +203,8 @@ export default function Verify2FAPage() {
       if (data) {
         toast.success("Authentification réussie avec le code de secours !");
         toast.info("Ce code de secours ne peut plus être utilisé.");
-        router.push("/dashboard");
+        const redirectPath = await resolvePostLoginPath();
+        router.push(redirectPath);
       }
     } catch (err) {
       console.error("Erreur vérification code de secours:", err);

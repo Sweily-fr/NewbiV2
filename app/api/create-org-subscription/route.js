@@ -3,6 +3,7 @@ import { auth } from "@/src/lib/auth";
 import Stripe from "stripe";
 import { createOrgSubscriptionSchema } from "@/src/lib/schemas/create-org-subscription";
 import { apiError, withErrorHandler } from "@/src/lib/security";
+import { isAppTrialEnabled } from "@/src/lib/feature-flags";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -33,6 +34,22 @@ async function handler(request) {
   const { organizationData } = validation.data;
   const planName = organizationData.planName;
   const isAnnual = organizationData.isAnnual;
+
+  // When ENABLE_APP_TRIAL is ON, the trial is fully managed by the app
+  // (Lot 3 cron + Lot 1 gating). Stripe is then ONLY used for paid plans,
+  // so trial_period_days must be 0 — never re-grant a Stripe trial.
+  //
+  // - Main signup with flag ON does NOT reach this endpoint anymore (org +
+  //   app trial are created at user.create.after).
+  // - /create-workspace (additional org) reaches this with flag ON → decision
+  //   #16: no trial, payment immediate (trial_period_days: 0).
+  // - Flag OFF preserves the legacy 30-day Stripe trial for the entire flow.
+  const trialDays = isAppTrialEnabled() ? 0 : 30;
+  if (isAppTrialEnabled()) {
+    console.log(
+      `🚫 [CREATE-SUB] App-trial flag ON — Stripe trial_period_days forced to 0`,
+    );
+  }
 
   try {
     console.log(
@@ -211,8 +228,11 @@ async function handler(request) {
         ),
       },
       subscription_data: {
-        // ✅ Trial de 30 jours - L'utilisateur ne sera pas prélevé avant 30 jours
-        trial_period_days: 30,
+        // Stripe rejects `trial_period_days: 0` (minimum is 1) — to mean
+        // "no trial" the field must be OMITTED entirely. We spread it
+        // conditionally so flag OFF / decision #16 (additional org) keeps the
+        // historical Stripe trial, and flag ON paths go straight to billing.
+        ...(trialDays > 0 ? { trial_period_days: trialDays } : {}),
         metadata: {
           userId: session.user.id,
           isNewOrganization: isNewOrganization ? "true" : "false",
@@ -223,16 +243,19 @@ async function handler(request) {
           isAnnual: isAnnual ? "true" : "false",
           organizationId: session.session?.activeOrganizationId || "",
           employeeCount: organizationData.employeeCount || "",
-          hasTrial: "true",
-          trialDays: "30",
+          hasTrial: trialDays > 0 ? "true" : "false",
+          trialDays: String(trialDays),
         },
       },
-      // Message personnalisé avec info trial 30 jours
+      // Message personnalisé — adapté au trial period choisi
       custom_text: {
         submit: {
-          message: isOnboarding
-            ? `Essai gratuit 30 jours - Aucun prélèvement avant la fin de l'essai`
-            : `Souscription au plan ${planName.toUpperCase()} - 30 jours d'essai gratuit`,
+          message:
+            trialDays > 0
+              ? isOnboarding
+                ? `Essai gratuit ${trialDays} jours - Aucun prélèvement avant la fin de l'essai`
+                : `Souscription au plan ${planName.toUpperCase()} - ${trialDays} jours d'essai gratuit`
+              : `Souscription au plan ${planName.toUpperCase()} - Paiement immédiat`,
         },
       },
     });

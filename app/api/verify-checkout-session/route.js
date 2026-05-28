@@ -93,6 +93,10 @@ export async function GET(request) {
     // Récupérer l'abonnement Stripe si présent
     let subscriptionStatus = null;
     let subscriptionId = null;
+    // Resolved org ID that owns the subscription — returned to the client so
+    // /onboarding/success can set the correct active org (otherwise it falls
+    // back to organizations[0], which may not be the one with the new sub).
+    let resolvedOrganizationId = null;
 
     // L'abonnement est déjà expandé dans la requête
     const subscription = checkoutSession.subscription;
@@ -219,6 +223,8 @@ export async function GET(request) {
       } else {
         console.error(`❌ [VERIFY-CHECKOUT] Pas d'organizationId trouvé !`);
       }
+
+      resolvedOrganizationId = organizationId || null;
     }
 
     return NextResponse.json({
@@ -226,6 +232,7 @@ export async function GET(request) {
       paymentStatus: checkoutSession.payment_status,
       subscriptionStatus: subscriptionStatus,
       subscriptionId: subscriptionId,
+      organizationId: resolvedOrganizationId,
       message: "Paiement vérifié avec succès",
     });
   } catch (error) {

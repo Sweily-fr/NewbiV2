@@ -122,11 +122,31 @@ function SuccessContent() {
     hasStartedRef.current = true;
 
     const completeOnboarding = async () => {
+      // Décision #5 (Lot 5) — quand on arrive ici SANS session_id Stripe,
+      // c'est le nouveau flow app-trial : l'org existe déjà (créée à
+      // user.create.after), on affiche directement le welcome screen.
       if (!sessionId) {
+        // Refresh session client pour s'assurer que activeOrganizationId
+        // est bien posé avant les étapes invite/theme.
+        try {
+          await authClient.getSession({
+            fetchOptions: { cache: "no-store" },
+          });
+          const { data: orgs } = await authClient.organization.list();
+          if (orgs?.length > 0) {
+            await authClient.organization.setActive({
+              organizationId: orgs[0].id,
+            });
+          }
+        } catch {
+          // Non-fatal — l'invite step se rabattra sur l'API si besoin.
+        }
         setReady(true);
         return;
       }
 
+      // Flow historique (flag OFF) — polling Stripe → verify-checkout-session.
+      // Conservé tel quel pour la cohorte legacy qui passe par Stripe au signup.
       const maxAttempts = 15;
       for (let i = 0; i < maxAttempts; i++) {
         try {

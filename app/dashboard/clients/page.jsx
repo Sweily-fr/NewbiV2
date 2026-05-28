@@ -4,6 +4,8 @@ import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
+import { Label } from "@/src/components/ui/label";
+import { Textarea } from "@/src/components/ui/textarea";
 import { PermissionButton } from "@/src/components/rbac";
 import {
   DropdownMenu,
@@ -36,13 +38,13 @@ import {
   CircleAlertIcon,
   Upload,
   Settings2,
-  ChevronDown,
 } from "lucide-react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useClientLists } from "@/src/hooks/useClientLists";
 import { useAddClientToLists } from "@/src/hooks/useClientLists";
 import { useDeleteClient, useBlockClient } from "@/src/hooks/useClients";
 import { useClientCustomFields } from "@/src/hooks/useClientCustomFields";
+import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
 import { toast } from "@/src/components/ui/sonner";
 import ClientsTable from "./components/clients-table";
 import ClientsModal from "./components/clients-modal";
@@ -50,11 +52,14 @@ import ClientFilters from "./components/client-filters";
 import AutomationsPopover from "./components/automations-popover";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import ClientImportDialog from "./components/client-import-dialog";
+import CreateListDialog from "./components/create-list-dialog";
+import AssignMembersDialog from "./components/assign-members-dialog";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 const STANDARD_COLUMNS = [
   { id: "email", label: "Email" },
   { id: "type", label: "Type" },
+  { id: "assignedMember", label: "Assigné" },
   { id: "invoiceCount", label: "Factures" },
   { id: "address", label: "Adresse" },
   { id: "phone", label: "Téléphone" },
@@ -73,15 +78,20 @@ function ClientsContent() {
   const [selectedTypes, setSelectedTypes] = useState([]);
   const [selectedClients, setSelectedClients] = useState(new Set());
   const [editClientId, setEditClientId] = useState(null);
+  const [blockDialogOpen, setBlockDialogOpen] = useState(false);
+  const [blockReason, setBlockReason] = useState("");
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importDialogView, setImportDialogView] = useState("import");
-  const [columnVisibility, setColumnVisibility] = useState({
-    phone: false,
-    firstName: false,
-    lastName: false,
-    vatNumber: false,
-    isInternational: false,
-  });
+  const [columnVisibility, setColumnVisibility] = usePersistentColumnVisibility(
+    "newbi:column-visibility:clients",
+    {
+      phone: false,
+      firstName: false,
+      lastName: false,
+      vatNumber: false,
+      isInternational: false,
+    },
+  );
   const inputRef = useRef(null);
 
   const { workspaceId } = useWorkspace();
@@ -130,6 +140,8 @@ function ClientsContent() {
   const { deleteClient } = useDeleteClient();
   const { blockClient } = useBlockClient();
   const [assigningList, setAssigningList] = useState(false);
+  const [createListDialogOpen, setCreateListDialogOpen] = useState(false);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
 
   const selectedClientIds = Array.from(selectedClients);
@@ -155,6 +167,14 @@ function ClientsContent() {
     [selectedClients, workspaceId, addToLists, refetchLists],
   );
 
+  const handleListCreatedFromBulk = useCallback(
+    async (newList) => {
+      if (!newList?.id) return;
+      await handleAddToList(newList.id);
+    },
+    [handleAddToList],
+  );
+
   const handleDeleteSelected = useCallback(async () => {
     try {
       await Promise.all(
@@ -169,18 +189,28 @@ function ClientsContent() {
 
   const handleBlock = useCallback(async () => {
     if (selectedClients.size === 0) return;
+    const reason = blockReason.trim() || undefined;
     try {
       await Promise.all(
-        Array.from(selectedClients).map((clientId) => blockClient(clientId)),
+        Array.from(selectedClients).map((clientId) =>
+          blockClient(clientId, reason),
+        ),
       );
       setSelectedClients(new Set());
+      setBlockDialogOpen(false);
+      setBlockReason("");
     } catch {
       // Error handled by hook
     }
-  }, [selectedClients, blockClient]);
+  }, [selectedClients, blockClient, blockReason]);
 
   const handleAssign = useCallback(() => {
-    toast.info("Fonctionnalité bientôt disponible");
+    if (selectedClients.size === 0) return;
+    setTimeout(() => setAssignDialogOpen(true), 0);
+  }, [selectedClients.size]);
+
+  const handleAssignCompleted = useCallback(() => {
+    setSelectedClients(new Set());
   }, []);
 
   const handleOpenInviteDialog = () => {
@@ -201,66 +231,32 @@ function ClientsContent() {
           </div>
           <div className="flex gap-2">
             <AutomationsPopover />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="self-start gap-1.5"
-                  disabled={isReadOnly}
-                  title={readOnlyTooltip}
-                >
-                  <Upload size={14} strokeWidth={2} aria-hidden="true" />
-                  Importer
-                  <ChevronDown
-                    size={12}
-                    strokeWidth={2}
-                    className="text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64">
-                <DropdownMenuItem
-                  onClick={() => {
-                    setImportDialogView("import");
-                    setImportDialogOpen(true);
-                  }}
-                  className="cursor-pointer gap-2"
-                >
-                  <Upload
-                    size={14}
-                    strokeWidth={2}
-                    className="text-muted-foreground"
-                  />
-                  <div>
-                    <div className="text-sm">Importer un fichier</div>
-                    <div className="text-xs text-muted-foreground">
-                      CSV, Excel — import en masse
-                    </div>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => {
-                    setImportDialogView("fields");
-                    setImportDialogOpen(true);
-                  }}
-                  className="cursor-pointer gap-2"
-                >
-                  <Settings2
-                    size={14}
-                    strokeWidth={2}
-                    className="text-muted-foreground"
-                  />
-                  <div>
-                    <div className="text-sm">Gérer les champs perso</div>
-                    <div className="text-xs text-muted-foreground">
-                      Configurez vos champs avant d'importer
-                    </div>
-                  </div>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setImportDialogView("fields");
+                setImportDialogOpen(true);
+              }}
+              className="self-start gap-1.5 cursor-pointer"
+              disabled={isReadOnly}
+              title={readOnlyTooltip}
+            >
+              <Settings2 size={14} strokeWidth={2} aria-hidden="true" />
+              Champs
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setImportDialogView("import");
+                setImportDialogOpen(true);
+              }}
+              className="self-start gap-1.5 cursor-pointer"
+              disabled={isReadOnly}
+              title={readOnlyTooltip}
+            >
+              <Upload size={14} strokeWidth={2} aria-hidden="true" />
+              Importer
+            </Button>
             <PermissionButton
               requiresActiveSubscription
               resource="clients"
@@ -356,7 +352,16 @@ function ClientsContent() {
                       </DropdownMenuItem>
                     ))
                   ) : (
-                    <DropdownMenuItem disabled>Aucune liste</DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setCreateListDialogOpen(true);
+                      }}
+                      className="cursor-pointer gap-2"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Créer une liste</span>
+                    </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -389,56 +394,20 @@ function ClientsContent() {
                       <DropdownMenuSeparator />
                     </>
                   )}
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <DropdownMenuItem
-                        className="cursor-pointer gap-2 text-sm"
-                        onSelect={(e) => e.preventDefault()}
-                      >
-                        <ShieldOff className="w-3.5 h-3.5" />
-                        Bloquer{" "}
-                        {selectedClients.size > 1
-                          ? "les contacts"
-                          : "le contact"}
-                      </DropdownMenuItem>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
-                        <div
-                          className="flex size-9 shrink-0 items-center justify-center rounded-full border"
-                          aria-hidden="true"
-                        >
-                          <ShieldOff className="opacity-80" size={16} />
-                        </div>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            Bloquer{" "}
-                            {selectedClients.size > 1
-                              ? "les contacts"
-                              : "le contact"}{" "}
-                            ?
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            {selectedClients.size > 1
-                              ? `${selectedClients.size} contacts seront bloqués. Ils seront exclus de la création de documents et des communications.`
-                              : "Ce contact sera bloqué. Il sera exclu de la création de documents et des communications."}
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                      </div>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Annuler</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleBlock}
-                          className="bg-red-600 hover:bg-red-700"
-                        >
-                          Bloquer
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
                   <DropdownMenuItem
                     className="cursor-pointer gap-2 text-sm"
-                    onClick={handleAssign}
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      setBlockDialogOpen(true);
+                    }}
+                  >
+                    <ShieldOff className="w-3.5 h-3.5" />
+                    Bloquer{" "}
+                    {selectedClients.size > 1 ? "les contacts" : "le contact"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="cursor-pointer gap-2 text-sm"
+                    onSelect={handleAssign}
                   >
                     <UserCheck className="w-3.5 h-3.5" />
                     Assigner
@@ -517,40 +486,32 @@ function ClientsContent() {
               <h1 className="text-2xl font-medium mb-1">Contacts</h1>
             </div>
             <div className="flex gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="cursor-pointer"
-                  >
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setImportDialogView("import");
-                      setImportDialogOpen(true);
-                    }}
-                    className="cursor-pointer gap-2"
-                  >
-                    <Upload size={14} strokeWidth={2} />
-                    Importer un fichier
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setImportDialogView("fields");
-                      setImportDialogOpen(true);
-                    }}
-                    className="cursor-pointer gap-2"
-                  >
-                    <Settings2 size={14} strokeWidth={2} />
-                    Gérer les champs perso
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  setImportDialogView("fields");
+                  setImportDialogOpen(true);
+                }}
+                className="cursor-pointer"
+                disabled={isReadOnly}
+                title={readOnlyTooltip}
+              >
+                <Settings2 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  setImportDialogView("import");
+                  setImportDialogOpen(true);
+                }}
+                className="cursor-pointer"
+                disabled={isReadOnly}
+                title={readOnlyTooltip}
+              >
+                <Upload className="h-4 w-4" />
+              </Button>
               <PermissionButton
                 requiresActiveSubscription
                 resource="clients"
@@ -587,6 +548,81 @@ function ClientsContent() {
         onOpenChange={setImportDialogOpen}
         initialView={importDialogView}
       />
+      <CreateListDialog
+        open={createListDialogOpen}
+        onOpenChange={setCreateListDialogOpen}
+        workspaceId={workspaceId}
+        onListCreated={handleListCreatedFromBulk}
+      />
+
+      <AssignMembersDialog
+        open={assignDialogOpen}
+        onOpenChange={setAssignDialogOpen}
+        clientIds={selectedClientIds}
+        onAssigned={handleAssignCompleted}
+      />
+
+      {/* Bulk block dialog (with reason) */}
+      <AlertDialog
+        open={blockDialogOpen}
+        onOpenChange={(open) => {
+          setBlockDialogOpen(open);
+          if (!open) setBlockReason("");
+        }}
+      >
+        <AlertDialogContent>
+          <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
+            <div
+              className="flex size-9 shrink-0 items-center justify-center rounded-full border"
+              aria-hidden="true"
+            >
+              <ShieldOff className="opacity-80" size={16} />
+            </div>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Bloquer{" "}
+                {selectedClients.size > 1 ? "les contacts" : "le contact"} ?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {selectedClients.size > 1
+                  ? `${selectedClients.size} contacts seront bloqués. Ils seront exclus de la création de documents et des communications.`
+                  : "Ce contact sera bloqué. Il sera exclu de la création de documents et des communications."}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+          </div>
+          <div className="px-1">
+            <Label
+              htmlFor="bulk-block-reason"
+              className="text-sm font-medium mb-1.5 block"
+            >
+              Raison du blocage (optionnel)
+            </Label>
+            <Textarea
+              id="bulk-block-reason"
+              value={blockReason}
+              onChange={(e) => setBlockReason(e.target.value)}
+              placeholder="Ex: Impayés récurrents, communication difficile..."
+              className="resize-none"
+              rows={3}
+            />
+            {selectedClients.size > 1 && (
+              <p className="text-xs text-muted-foreground mt-1.5">
+                La même raison sera appliquée aux {selectedClients.size}{" "}
+                contacts sélectionnés.
+              </p>
+            )}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBlock}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Bloquer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

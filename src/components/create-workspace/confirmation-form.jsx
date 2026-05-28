@@ -6,12 +6,17 @@ import { Button } from "@/src/components/ui/button";
 import { Separator } from "@/src/components/ui/separator";
 import { UserAvatar } from "@/src/components/ui/user-avatar";
 import { AvatarGroup } from "@/src/components/ui/avatar";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/src/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/src/components/ui/tooltip";
 import { authClient } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
 import { useQuery } from "@apollo/client";
 import { LOOKUP_USERS_BY_EMAILS } from "@/src/graphql/queries/user";
 import { PLANS } from "@/src/components/create-workspace/plan-form";
+import { getPlanPricingStrings } from "@/src/lib/plans-display";
 
 const formatPrice = (amount) => amount.toFixed(2).replace(".", ",");
 
@@ -28,11 +33,16 @@ export function ConfirmationForm({
 
   const plan = PLANS.find((p) => p.key === selectedPlan);
   const price = plan ? (isAnnual ? plan.annualPrice : plan.monthlyPrice) : 0;
+  // Strings de prix issues du module central (cohérent avec landing /
+  // pricing-modal / settings / signup).
+  const pricingStrings = selectedPlan
+    ? getPlanPricingStrings(selectedPlan)
+    : null;
   const filledMembers = members.filter((m) => m.email.trim());
 
   const emails = useMemo(
     () => filledMembers.map((m) => m.email.trim()),
-    [filledMembers]
+    [filledMembers],
   );
 
   const { data: lookupData } = useQuery(LOOKUP_USERS_BY_EMAILS, {
@@ -89,7 +99,7 @@ export function ConfirmationForm({
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(
-          errorData.error || "Erreur lors de la création de la session"
+          errorData.error || "Erreur lors de la création de la session",
         );
       }
 
@@ -168,7 +178,8 @@ export function ConfirmationForm({
                   Membres invités
                 </p>
                 <span className="text-xs text-muted-foreground">
-                  {filledMembers.length} membre{filledMembers.length > 1 ? "s" : ""}
+                  {filledMembers.length} membre
+                  {filledMembers.length > 1 ? "s" : ""}
                 </span>
               </div>
               <AvatarGroup className="mt-3">
@@ -190,9 +201,7 @@ export function ConfirmationForm({
                           />
                         </span>
                       </TooltipTrigger>
-                      <TooltipContent>
-                        {email}
-                      </TooltipContent>
+                      <TooltipContent>{email}</TooltipContent>
                     </Tooltip>
                   );
                 })}
@@ -201,13 +210,22 @@ export function ConfirmationForm({
           )}
         </div>
 
-        {/* Trial info */}
+        {/* Paiement immédiat — décision #16 : un workspace ADDITIONNEL n'a
+            pas de période d'essai. Texte aligné sur le Stripe Checkout
+            (custom_text "Souscription au plan X — Paiement immédiat"). */}
         <div className="mt-6 rounded-xl bg-[#5A50FF]/5 border border-[#5A50FF]/10 p-4">
           <p className="text-xs text-[#5A50FF] font-medium">
-            30 jours d&apos;essai gratuit — Aucun prélèvement immédiat
+            {pricingStrings
+              ? isAnnual
+                ? `Paiement immédiat — ${pricingStrings.annualPerMonth} (facturé annuellement, ${pricingStrings.annualTotal})`
+                : `Paiement immédiat — ${pricingStrings.monthly}`
+              : "Paiement immédiat"}
           </p>
           <p className="text-[11px] text-muted-foreground mt-1">
-            Vous serez redirigé vers Stripe pour enregistrer votre moyen de paiement.
+            Cet espace de travail est une organisation additionnelle : aucune
+            période d&apos;essai. La facturation s&apos;ajoute à votre
+            abonnement existant. Vous serez redirigé vers Stripe pour finaliser
+            le paiement.
           </p>
         </div>
 
@@ -234,7 +252,10 @@ export function ConfirmationForm({
       {/* Legal text */}
       <div className="mt-auto pt-8 pb-4">
         <p className="text-[11px] text-muted-foreground leading-tight">
-          En continuant, vous acceptez nos conditions générales d&apos;utilisation et notre politique de confidentialité. Votre essai gratuit de 30 jours commencera immédiatement.
+          En continuant, vous acceptez nos conditions générales
+          d&apos;utilisation et notre politique de confidentialité. La
+          facturation de cet espace de travail additionnel démarre
+          immédiatement.
         </p>
       </div>
     </div>

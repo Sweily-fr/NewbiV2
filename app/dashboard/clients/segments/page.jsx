@@ -78,10 +78,15 @@ import {
 
 // Field definitions for the rule builder
 const RULE_FIELDS = [
-  { value: "type", label: "Type de client", type: "select", options: [
-    { value: "COMPANY", label: "Entreprise" },
-    { value: "INDIVIDUAL", label: "Particulier" },
-  ]},
+  {
+    value: "type",
+    label: "Type de client",
+    type: "select",
+    options: [
+      { value: "COMPANY", label: "Entreprise" },
+      { value: "INDIVIDUAL", label: "Particulier" },
+    ],
+  },
   { value: "name", label: "Nom", type: "text" },
   { value: "email", label: "Email", type: "text" },
   { value: "address.city", label: "Ville", type: "text" },
@@ -150,7 +155,11 @@ function RuleRow({ rule, index, onChange, onRemove, canRemove, members }) {
         onValueChange={(val) => {
           const newFieldDef = getFieldDef(val);
           const newOps = OPERATORS_BY_TYPE[newFieldDef?.type] || [];
-          onChange(index, { field: val, operator: newOps[0]?.value || "", value: null });
+          onChange(index, {
+            field: val,
+            operator: newOps[0]?.value || "",
+            value: null,
+          });
         }}
       >
         <SelectTrigger className="w-[160px] h-8 text-xs">
@@ -219,7 +228,13 @@ function RuleRow({ rule, index, onChange, onRemove, canRemove, members }) {
         <Input
           value={rule.value || ""}
           onChange={(e) => onChange(index, { ...rule, value: e.target.value })}
-          placeholder={rule.operator === "in_last_days" ? "Nombre de jours" : fieldDef?.type === "date" ? "YYYY-MM-DD" : "Valeur"}
+          placeholder={
+            rule.operator === "in_last_days"
+              ? "Nombre de jours"
+              : fieldDef?.type === "date"
+                ? "YYYY-MM-DD"
+                : "Valeur"
+          }
           className="w-[150px] h-8 text-xs"
         />
       ) : null}
@@ -248,8 +263,12 @@ function SegmentDialog({ open, onOpenChange, segment, onSubmit, loading }) {
   const [color, setColor] = useState(segment?.color || "#8b5cf6");
   const [rules, setRules] = useState(
     segment?.rules?.length > 0
-      ? segment.rules.map((r) => ({ field: r.field, operator: r.operator, value: r.value }))
-      : [{ field: "type", operator: "equals", value: "COMPANY" }]
+      ? segment.rules.map((r) => ({
+          field: r.field,
+          operator: r.operator,
+          value: r.value,
+        }))
+      : [{ field: "type", operator: "equals", value: "COMPANY" }],
   );
 
   useEffect(() => {
@@ -262,7 +281,7 @@ function SegmentDialog({ open, onOpenChange, segment, onSubmit, loading }) {
               .map((m) => ({
                 id: m.userId || m.id,
                 name: m.user?.name || m.name || m.email,
-              }))
+              })),
           );
         }
       });
@@ -278,7 +297,10 @@ function SegmentDialog({ open, onOpenChange, segment, onSubmit, loading }) {
   };
 
   const handleAddRule = () => {
-    setRules((prev) => [...prev, { field: "name", operator: "contains", value: "" }]);
+    setRules((prev) => [
+      ...prev,
+      { field: "name", operator: "contains", value: "" },
+    ]);
   };
 
   const handleSubmit = () => {
@@ -297,19 +319,32 @@ function SegmentDialog({ open, onOpenChange, segment, onSubmit, loading }) {
     });
   };
 
-  const COLORS = ["#8b5cf6", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#ec4899", "#6366f1", "#14b8a6"];
+  const COLORS = [
+    "#8b5cf6",
+    "#3b82f6",
+    "#10b981",
+    "#f59e0b",
+    "#ef4444",
+    "#ec4899",
+    "#6366f1",
+    "#14b8a6",
+  ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[560px]">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Modifier le segment" : "Nouveau segment"}</DialogTitle>
+          <DialogTitle>
+            {isEdit ? "Modifier le segment" : "Nouveau segment"}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           {/* Name */}
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Nom</label>
+            <label className="text-xs font-medium text-muted-foreground">
+              Nom
+            </label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -320,7 +355,9 @@ function SegmentDialog({ open, onOpenChange, segment, onSubmit, loading }) {
 
           {/* Description */}
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Description</label>
+            <label className="text-xs font-medium text-muted-foreground">
+              Description
+            </label>
             <Input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -331,14 +368,18 @@ function SegmentDialog({ open, onOpenChange, segment, onSubmit, loading }) {
 
           {/* Color */}
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Couleur</label>
+            <label className="text-xs font-medium text-muted-foreground">
+              Couleur
+            </label>
             <div className="flex items-center gap-2">
               {COLORS.map((c) => (
                 <button
                   key={c}
                   onClick={() => setColor(c)}
                   className={`w-6 h-6 rounded-full cursor-pointer transition-all ${
-                    color === c ? "ring-2 ring-offset-2 ring-gray-400" : "hover:scale-110"
+                    color === c
+                      ? "ring-2 ring-offset-2 ring-gray-400"
+                      : "hover:scale-110"
                   }`}
                   style={{ backgroundColor: c }}
                 />
@@ -348,21 +389,29 @@ function SegmentDialog({ open, onOpenChange, segment, onSubmit, loading }) {
 
           {/* Match type */}
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Les contacts correspondent à</label>
+            <label className="text-xs font-medium text-muted-foreground">
+              Les contacts correspondent à
+            </label>
             <Select value={matchType} onValueChange={setMatchType}>
               <SelectTrigger className="w-[200px] h-8 text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all" className="text-xs">Toutes les règles (ET)</SelectItem>
-                <SelectItem value="any" className="text-xs">Au moins une règle (OU)</SelectItem>
+                <SelectItem value="all" className="text-xs">
+                  Toutes les règles (ET)
+                </SelectItem>
+                <SelectItem value="any" className="text-xs">
+                  Au moins une règle (OU)
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {/* Rules */}
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Règles</label>
+            <label className="text-xs font-medium text-muted-foreground">
+              Règles
+            </label>
             <div className="space-y-2">
               {rules.map((rule, i) => (
                 <RuleRow
@@ -376,7 +425,12 @@ function SegmentDialog({ open, onOpenChange, segment, onSubmit, loading }) {
                 />
               ))}
             </div>
-            <Button variant="ghost" size="sm" onClick={handleAddRule} className="text-xs mt-1 font-normal">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleAddRule}
+              className="text-xs mt-1 font-normal"
+            >
               <Plus size={12} className="mr-1" />
               Ajouter une règle
             </Button>
@@ -406,11 +460,17 @@ function SegmentDialog({ open, onOpenChange, segment, onSubmit, loading }) {
 
 // ==================== Segment Detail View ====================
 function SegmentDetailView({ segment, onBack }) {
+  const router = useRouter();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const limit = 25;
-  const { clients, totalItems, totalPages, loading } = useClientsInSegment(segment.id, page, limit, search);
+  const { clients, totalItems, totalPages, loading } = useClientsInSegment(
+    segment.id,
+    page,
+    limit,
+    search,
+  );
 
   const searchTimeoutRef = useRef(null);
 
@@ -428,7 +488,12 @@ function SegmentDetailView({ segment, onBack }) {
       {/* Header */}
       <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6 pb-4">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onBack}
+            className="shrink-0"
+          >
             <ChevronLeft size={16} />
           </Button>
           <div className="flex items-center gap-2">
@@ -439,7 +504,9 @@ function SegmentDetailView({ segment, onBack }) {
             <div>
               <h1 className="text-2xl font-medium mb-0">{segment.name}</h1>
               {segment.description && (
-                <p className="text-muted-foreground text-sm mt-0.5">{segment.description}</p>
+                <p className="text-muted-foreground text-sm mt-0.5">
+                  {segment.description}
+                </p>
               )}
             </div>
           </div>
@@ -450,29 +517,43 @@ function SegmentDetailView({ segment, onBack }) {
       </div>
 
       {/* Rules display + Search */}
-      <div className="px-4 sm:px-6 pb-4 flex-shrink-0 space-y-3">
+      <div className="px-4 sm:px-6 pb-4 flex-shrink-0 space-y-5">
         <div className="flex flex-wrap gap-1.5">
           {segment.rules.map((rule, i) => {
             const fieldDef = getFieldDef(rule.field);
-            const displayValue = rule.value && !NO_VALUE_OPERATORS.includes(rule.operator)
-              ? fieldDef?.type === "select"
-                ? fieldDef.options?.find((opt) => opt.value === rule.value)?.label || rule.value
-                : rule.value
-              : null;
+            const displayValue =
+              rule.value && !NO_VALUE_OPERATORS.includes(rule.operator)
+                ? fieldDef?.type === "select"
+                  ? fieldDef.options?.find((opt) => opt.value === rule.value)
+                      ?.label || rule.value
+                  : rule.value
+                : null;
             return (
-              <Badge key={i} variant="outline" className="text-xs font-normal py-1">
+              <Badge
+                key={i}
+                variant="outline"
+                className="text-xs font-normal py-1"
+              >
                 {fieldDef?.label || rule.field}{" "}
-                {getOperatorsForField(rule.field)?.find((o) => o.value === rule.operator)?.label || rule.operator}
+                {getOperatorsForField(rule.field)?.find(
+                  (o) => o.value === rule.operator,
+                )?.label || rule.operator}
                 {displayValue ? ` "${displayValue}"` : ""}
               </Badge>
             );
           })}
-          <Badge variant="outline" className="text-xs font-normal py-1 bg-muted">
+          <Badge
+            variant="outline"
+            className="text-xs font-normal py-1 bg-muted"
+          >
             {segment.matchType === "all" ? "Toutes (ET)" : "Au moins une (OU)"}
           </Badge>
         </div>
-        <div className="relative max-w-xs">
-          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <div className="relative w-full max-w-[220px]">
+          <Search
+            size={14}
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+          />
           <Input
             value={searchInput}
             onChange={(e) => handleSearchChange(e.target.value)}
@@ -500,7 +581,9 @@ function SegmentDetailView({ segment, onBack }) {
           <div className="text-center">
             <Users className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
             <p className="text-sm text-muted-foreground">
-              {search ? "Aucun contact trouvé pour cette recherche" : "Aucun contact ne correspond à ce segment"}
+              {search
+                ? "Aucun contact trouvé pour cette recherche"
+                : "Aucun contact ne correspond à ce segment"}
             </p>
           </div>
         </div>
@@ -510,10 +593,18 @@ function SegmentDetailView({ segment, onBack }) {
             <table className="w-full table-fixed">
               <thead>
                 <tr>
-                  <th className="h-10 p-2 pl-4 sm:pl-6 text-left align-middle font-normal text-xs text-muted-foreground w-[35%]">Contact</th>
-                  <th className="h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground w-[30%]">Email</th>
-                  <th className="h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground w-[20%]">Ville</th>
-                  <th className="h-10 p-2 pr-4 sm:pr-6 text-left align-middle font-normal text-xs text-muted-foreground w-[15%]">Type</th>
+                  <th className="h-10 p-2 pl-4 sm:pl-6 text-left align-middle font-normal text-xs text-muted-foreground w-[35%]">
+                    Contact
+                  </th>
+                  <th className="h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground w-[30%]">
+                    Email
+                  </th>
+                  <th className="h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground w-[20%]">
+                    Ville
+                  </th>
+                  <th className="h-10 p-2 pr-4 sm:pr-6 text-left align-middle font-normal text-xs text-muted-foreground w-[15%]">
+                    Type
+                  </th>
                 </tr>
               </thead>
             </table>
@@ -522,24 +613,41 @@ function SegmentDetailView({ segment, onBack }) {
             <table className="w-full table-fixed">
               <tbody>
                 {clients.map((client) => (
-                  <tr key={client.id} className="border-b hover:bg-muted/50 transition-colors">
+                  <tr
+                    key={client.id}
+                    onClick={() =>
+                      router.push(`/dashboard/clients/${client.id}`)
+                    }
+                    className="border-b hover:bg-muted/50 transition-colors cursor-pointer"
+                  >
                     <td className="p-2 pl-4 sm:pl-6 align-middle w-[35%]">
                       <div className="flex items-center gap-2">
                         <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted">
                           {client.type === "COMPANY" ? (
-                            <Building2 size={13} className="text-muted-foreground" />
+                            <Building2
+                              size={13}
+                              className="text-muted-foreground"
+                            />
                           ) : (
                             <User size={13} className="text-muted-foreground" />
                           )}
                         </div>
-                        <span className="text-sm font-medium truncate">{client.name}</span>
+                        <span className="text-sm font-medium truncate">
+                          {client.name}
+                        </span>
                       </div>
                     </td>
-                    <td className="p-2 align-middle text-sm text-muted-foreground w-[30%] truncate">{client.email}</td>
-                    <td className="p-2 align-middle text-sm text-muted-foreground w-[20%] truncate">{client.address?.city || "—"}</td>
+                    <td className="p-2 align-middle text-sm text-muted-foreground w-[30%] truncate">
+                      {client.email}
+                    </td>
+                    <td className="p-2 align-middle text-sm text-muted-foreground w-[20%] truncate">
+                      {client.address?.city || "—"}
+                    </td>
                     <td className="p-2 pr-4 sm:pr-6 align-middle w-[15%]">
                       <Badge variant="outline" className="text-xs font-normal">
-                        {client.type === "COMPANY" ? "Entreprise" : "Particulier"}
+                        {client.type === "COMPANY"
+                          ? "Entreprise"
+                          : "Particulier"}
                       </Badge>
                     </td>
                   </tr>
@@ -666,8 +774,9 @@ function SegmentsContent() {
             <EmptyHeader>
               <EmptyTitle>Fonctionnalité réservée au plan PME</EmptyTitle>
               <EmptyDescription>
-                Les segments dynamiques vous permettent de cibler automatiquement vos contacts selon des critères avancés.
-                Passez au plan PME ou Entreprise pour y accéder.
+                Les segments dynamiques vous permettent de cibler
+                automatiquement vos contacts selon des critères avancés. Passez
+                au plan PME ou Entreprise pour y accéder.
               </EmptyDescription>
             </EmptyHeader>
           </Empty>
@@ -712,7 +821,7 @@ function SegmentsContent() {
             ))}
           </div>
         ) : segments.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center min-h-[400px]">
+          <div className="flex-1 flex items-start justify-center pt-20">
             <Empty>
               <EmptyMedia variant="icon">
                 <Filter />
@@ -720,12 +829,17 @@ function SegmentsContent() {
               <EmptyHeader>
                 <EmptyTitle>Aucun segment</EmptyTitle>
                 <EmptyDescription>
-                  Les segments filtrent automatiquement vos contacts selon des critères dynamiques.
-                  Créez votre premier segment pour commencer.
+                  Les segments filtrent automatiquement vos contacts selon des
+                  critères dynamiques. Créez votre premier segment pour
+                  commencer.
                 </EmptyDescription>
               </EmptyHeader>
               <EmptyContent>
-                <Button variant="primary" onClick={() => setDialogOpen(true)} className="font-normal">
+                <Button
+                  variant="primary"
+                  onClick={() => setDialogOpen(true)}
+                  className="font-normal"
+                >
                   <Plus size={14} className="mr-1" />
                   Créer un segment
                 </Button>
@@ -746,7 +860,9 @@ function SegmentsContent() {
                       className="w-2.5 h-2.5 rounded-full shrink-0"
                       style={{ backgroundColor: segment.color }}
                     />
-                    <h3 className="text-sm font-medium truncate">{segment.name}</h3>
+                    <h3 className="text-sm font-medium truncate">
+                      {segment.name}
+                    </h3>
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -794,12 +910,19 @@ function SegmentsContent() {
                 {/* Rules as badges */}
                 <div className="flex flex-wrap gap-1 mb-3">
                   {segment.rules.slice(0, 3).map((rule, i) => (
-                    <Badge key={i} variant="outline" className="text-[10px] font-normal py-0.5">
+                    <Badge
+                      key={i}
+                      variant="outline"
+                      className="text-[10px] font-normal py-0.5"
+                    >
                       {getFieldDef(rule.field)?.label || rule.field}
                     </Badge>
                   ))}
                   {segment.rules.length > 3 && (
-                    <Badge variant="outline" className="text-[10px] font-normal py-0.5">
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] font-normal py-0.5"
+                    >
                       +{segment.rules.length - 3}
                     </Badge>
                   )}
@@ -809,7 +932,8 @@ function SegmentsContent() {
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Users size={12} />
                   <span>
-                    {segment.clientCount != null ? segment.clientCount : "—"} contact{segment.clientCount !== 1 ? "s" : ""}
+                    {segment.clientCount != null ? segment.clientCount : "—"}{" "}
+                    contact{segment.clientCount !== 1 ? "s" : ""}
                   </span>
                 </div>
               </div>
@@ -841,7 +965,10 @@ function SegmentsContent() {
       )}
 
       {/* Delete confirmation */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
         <AlertDialogContent>
           <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
             <div
@@ -853,13 +980,17 @@ function SegmentsContent() {
             <AlertDialogHeader>
               <AlertDialogTitle>Supprimer ce segment ?</AlertDialogTitle>
               <AlertDialogDescription>
-                Le segment &quot;{deleteTarget?.name}&quot; sera supprimé. Les contacts ne seront pas affectés.
+                Le segment &quot;{deleteTarget?.name}&quot; sera supprimé. Les
+                contacts ne seront pas affectés.
               </AlertDialogDescription>
             </AlertDialogHeader>
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
               Supprimer
             </AlertDialogAction>
           </AlertDialogFooter>

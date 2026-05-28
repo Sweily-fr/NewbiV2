@@ -71,8 +71,7 @@ function BlockedContent() {
     const s = search.toLowerCase();
     return blocked.filter(
       (c) =>
-        c.name?.toLowerCase().includes(s) ||
-        c.email?.toLowerCase().includes(s)
+        c.name?.toLowerCase().includes(s) || c.email?.toLowerCase().includes(s),
     );
   }, [clients, search]);
 
@@ -189,7 +188,9 @@ function BlockedContent() {
                   disabled={bulkUnblocking}
                 >
                   <ShieldOff className="w-4 h-4" />
-                  {bulkUnblocking ? "Déblocage..." : `Débloquer (${selectedIds.size})`}
+                  {bulkUnblocking
+                    ? "Déblocage..."
+                    : `Débloquer (${selectedIds.size})`}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -202,10 +203,12 @@ function BlockedContent() {
                   </div>
                   <AlertDialogHeader>
                     <AlertDialogTitle>
-                      Débloquer {selectedIds.size} contact{selectedIds.size > 1 ? "s" : ""} ?
+                      Débloquer {selectedIds.size} contact
+                      {selectedIds.size > 1 ? "s" : ""} ?
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                      Les contacts sélectionnés pourront de nouveau être utilisés dans vos documents et communications.
+                      Les contacts sélectionnés pourront de nouveau être
+                      utilisés dans vos documents et communications.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                 </div>
@@ -227,14 +230,22 @@ function BlockedContent() {
           <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
             <table className="w-full table-fixed">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-800">
+                <tr>
                   <th className="h-10 p-2 pl-4 sm:pl-6 text-left align-middle w-[40px]">
                     <Checkbox disabled />
                   </th>
-                  <th className="h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground w-[28%]">Contact</th>
-                  <th className="h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground w-[25%]">Email</th>
-                  <th className="h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground w-[18%]">Bloqué le</th>
-                  <th className="h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground w-[14%]">Raison</th>
+                  <th className="h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground w-[28%]">
+                    Contact
+                  </th>
+                  <th className="h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground w-[25%]">
+                    Email
+                  </th>
+                  <th className="h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground w-[18%]">
+                    Bloqué le
+                  </th>
+                  <th className="h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground w-[14%]">
+                    Raison
+                  </th>
                   <th className="h-10 p-2 pr-4 sm:pr-6 text-right align-middle font-normal text-xs text-muted-foreground w-[10%]"></th>
                 </tr>
               </thead>
@@ -245,12 +256,24 @@ function BlockedContent() {
               <tbody>
                 {Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="border-b">
-                    <td className="p-2 pl-4 sm:pl-6 w-[40px]"><Skeleton className="h-4 w-4 rounded" /></td>
-                    <td className="p-2 w-[28%]"><Skeleton className="h-4 w-[150px] rounded" /></td>
-                    <td className="p-2 w-[25%]"><Skeleton className="h-4 w-[180px] rounded" /></td>
-                    <td className="p-2 w-[18%]"><Skeleton className="h-4 w-[100px] rounded" /></td>
-                    <td className="p-2 w-[14%]"><Skeleton className="h-4 w-[80px] rounded" /></td>
-                    <td className="p-2 pr-4 sm:pr-6 w-[10%]"><Skeleton className="h-4 w-[60px] rounded ml-auto" /></td>
+                    <td className="p-2 pl-4 sm:pl-6 w-[40px]">
+                      <Skeleton className="h-4 w-4 rounded" />
+                    </td>
+                    <td className="p-2 w-[28%]">
+                      <Skeleton className="h-4 w-[150px] rounded" />
+                    </td>
+                    <td className="p-2 w-[25%]">
+                      <Skeleton className="h-4 w-[180px] rounded" />
+                    </td>
+                    <td className="p-2 w-[18%]">
+                      <Skeleton className="h-4 w-[100px] rounded" />
+                    </td>
+                    <td className="p-2 w-[14%]">
+                      <Skeleton className="h-4 w-[80px] rounded" />
+                    </td>
+                    <td className="p-2 pr-4 sm:pr-6 w-[10%]">
+                      <Skeleton className="h-4 w-[60px] rounded ml-auto" />
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -258,7 +281,7 @@ function BlockedContent() {
           </div>
         </div>
       ) : blockedClients.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-start justify-center pt-20">
           <Empty>
             <EmptyMedia variant="icon">
               <ShieldCheck />
@@ -272,7 +295,7 @@ function BlockedContent() {
             </EmptyHeader>
             <EmptyContent>
               <Button
-                variant="outline"
+                variant="primary"
                 onClick={() => router.push("/dashboard/clients")}
                 className="font-normal"
               >
@@ -287,18 +310,29 @@ function BlockedContent() {
           <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
             <table className="w-full table-fixed">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-800">
+                <tr>
                   <th className="h-10 p-2 pl-4 sm:pl-6 text-left align-middle font-normal text-xs text-muted-foreground w-[40px]">
                     <Checkbox
-                      checked={paginatedClients.length > 0 && paginatedClients.every((c) => selectedIds.has(c.id))}
+                      checked={
+                        paginatedClients.length > 0 &&
+                        paginatedClients.every((c) => selectedIds.has(c.id))
+                      }
                       onCheckedChange={toggleSelectAll}
                       aria-label="Tout sélectionner"
                     />
                   </th>
-                  <th className="h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground w-[28%]">Contact</th>
-                  <th className="h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground w-[25%]">Email</th>
-                  <th className="h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground w-[18%]">Bloqué le</th>
-                  <th className="h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground w-[14%]">Raison</th>
+                  <th className="h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground w-[28%]">
+                    Contact
+                  </th>
+                  <th className="h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground w-[25%]">
+                    Email
+                  </th>
+                  <th className="h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground w-[18%]">
+                    Bloqué le
+                  </th>
+                  <th className="h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground w-[14%]">
+                    Raison
+                  </th>
                   <th className="h-10 p-2 pr-4 sm:pr-6 text-right align-middle font-normal text-xs text-muted-foreground w-[10%]"></th>
                 </tr>
               </thead>
@@ -313,9 +347,14 @@ function BlockedContent() {
                   <tr
                     key={client.id}
                     className="border-b hover:bg-muted/50 transition-colors cursor-pointer"
-                    onClick={() => router.push(`/dashboard/clients/${client.id}`)}
+                    onClick={() =>
+                      router.push(`/dashboard/clients/${client.id}`)
+                    }
                   >
-                    <td className="p-2 pl-4 sm:pl-6 align-middle w-[40px]" onClick={(e) => e.stopPropagation()}>
+                    <td
+                      className="p-2 pl-4 sm:pl-6 align-middle w-[40px]"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <Checkbox
                         checked={selectedIds.has(client.id)}
                         onCheckedChange={() => toggleSelect(client.id)}
@@ -326,7 +365,10 @@ function BlockedContent() {
                       <div className="flex items-center gap-2">
                         <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted">
                           {client.type === "COMPANY" ? (
-                            <Building2 size={13} className="text-muted-foreground" />
+                            <Building2
+                              size={13}
+                              className="text-muted-foreground"
+                            />
                           ) : (
                             <User size={13} className="text-muted-foreground" />
                           )}
@@ -355,10 +397,15 @@ function BlockedContent() {
                           {client.blockedReason}
                         </span>
                       ) : (
-                        <span className="text-xs text-muted-foreground/50">—</span>
+                        <span className="text-xs text-muted-foreground/50">
+                          —
+                        </span>
                       )}
                     </td>
-                    <td className="p-2 pr-4 sm:pr-6 align-middle text-right w-[10%]" onClick={(e) => e.stopPropagation()}>
+                    <td
+                      className="p-2 pr-4 sm:pr-6 align-middle text-right w-[10%]"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
@@ -384,8 +431,8 @@ function BlockedContent() {
                                 Débloquer ce contact ?
                               </AlertDialogTitle>
                               <AlertDialogDescription>
-                                {client.name} pourra de nouveau être utilisé dans
-                                vos documents et communications.
+                                {client.name} pourra de nouveau être utilisé
+                                dans vos documents et communications.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                           </div>
@@ -411,14 +458,22 @@ function BlockedContent() {
             <div className="flex-1 text-xs font-normal text-muted-foreground">
               {(() => {
                 const start = pageIndex * pageSize + 1;
-                const end = Math.min((pageIndex + 1) * pageSize, blockedClients.length);
+                const end = Math.min(
+                  (pageIndex + 1) * pageSize,
+                  blockedClients.length,
+                );
                 return `${start}-${end} sur ${blockedClients.length}`;
               })()}
             </div>
             <div className="flex items-center space-x-4 lg:space-x-6">
               <div className="flex items-center gap-1.5">
-                <p className="whitespace-nowrap text-xs font-normal">Lignes par page</p>
-                <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+                <p className="whitespace-nowrap text-xs font-normal">
+                  Lignes par page
+                </p>
+                <Select
+                  value={pageSize.toString()}
+                  onValueChange={handlePageSizeChange}
+                >
                   <SelectTrigger className="h-7 w-[70px] text-xs">
                     <SelectValue />
                   </SelectTrigger>
@@ -465,7 +520,9 @@ function BlockedContent() {
                       size="icon"
                       variant="ghost"
                       className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
-                      onClick={() => setPageIndex((p) => Math.min(totalPages - 1, p + 1))}
+                      onClick={() =>
+                        setPageIndex((p) => Math.min(totalPages - 1, p + 1))
+                      }
                       disabled={pageIndex >= totalPages - 1}
                       aria-label="Page suivante"
                     >

@@ -330,6 +330,13 @@ function NoteComposer({
       if (item.command === "createLink") {
         const url = prompt("URL du lien :");
         if (url) document.execCommand("createLink", false, url);
+      } else if (item.command === "formatBlock") {
+        const currentBlock = (
+          document.queryCommandValue("formatBlock") || ""
+        ).toLowerCase();
+        const targetBlock = item.value?.toLowerCase();
+        const nextValue = currentBlock === targetBlock ? "p" : item.value;
+        document.execCommand("formatBlock", false, nextValue);
       } else if (item.value) {
         document.execCommand(item.command, false, item.value);
       } else {
@@ -439,7 +446,7 @@ function NoteComposer({
       </div>
 
       {/* Rich text editor */}
-      <div className="relative px-4 py-3 min-h-[80px]">
+      <div className="relative px-4 py-3 min-h-[80px] max-h-[240px] overflow-y-auto">
         {isEmpty && (
           <span className="absolute top-3 left-4 text-sm text-muted-foreground pointer-events-none">
             Ajouter une note...
@@ -455,7 +462,7 @@ function NoteComposer({
             setTimeout(() => setMentionState(null), 200);
           }}
           onKeyDown={handleKeyDown}
-          className="w-full text-sm text-foreground focus:outline-none min-h-[56px] [&_b]:font-bold [&_i]:italic [&_u]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-[#eeeff1] dark:border-[#232323] [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground [&_pre]:bg-[#f8f9fa] [&_pre]:rounded [&_pre]:px-2 [&_pre]:py-1 [&_pre]:font-mono [&_pre]:text-xs [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-[#5a50ff] [&_a]:underline"
+          className="w-full text-sm text-foreground focus:outline-none min-h-[56px] break-words [&_b]:font-bold [&_i]:italic [&_u]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-[#eeeff1] dark:border-[#232323] [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground [&_pre]:bg-[#f8f9fa] [&_pre]:rounded [&_pre]:px-2 [&_pre]:py-1 [&_pre]:font-mono [&_pre]:text-xs [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-[#5a50ff] [&_a]:underline"
         />
       </div>
 

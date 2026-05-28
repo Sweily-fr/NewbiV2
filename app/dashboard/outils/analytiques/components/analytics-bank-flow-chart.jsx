@@ -39,7 +39,7 @@ const formatMonthLabel = (monthStr) => {
     .toUpperCase();
 };
 
-function CustomTooltip({ active, payload, colors, remap }) {
+function CustomTooltip({ active, payload, colors }) {
   if (!active || !payload?.length) return null;
   const data = payload[0]?.payload;
   if (!data) return null;
@@ -55,9 +55,9 @@ function CustomTooltip({ active, payload, colors, remap }) {
           <span className="flex items-center gap-2">
             <span
               className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: remap("#5b50ff") }}
+              style={{ backgroundColor: "#5b50ff" }}
             />
-            Facturé
+            Facture TTC
           </span>
           <span className="font-medium">{formatCurrency(data.invoiced)}</span>
         </div>
@@ -65,9 +65,9 @@ function CustomTooltip({ active, payload, colors, remap }) {
           <span className="flex items-center gap-2">
             <span
               className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: colors.success }}
+              style={{ backgroundColor: "#10b981" }}
             />
-            Encaissé
+            Encaissement bancaire
           </span>
           <span className="font-medium">{formatCurrency(data.collected)}</span>
         </div>
@@ -83,30 +83,51 @@ function CustomTooltip({ active, payload, colors, remap }) {
   );
 }
 
+// Couleurs fixes pour différencier clairement les barres, sans remap thématique
+const INVOICED_COLOR = "#5b50ff"; // violet — Facture TTC
+const COLLECTED_COLOR = "#10b981"; // vert — Encaissement bancaire
+
 export function AnalyticsBankFlowChart({
   monthlyRevenue,
+  monthlyCollection,
   bankTransactions,
   loading,
 }) {
   const chartColors = useChartColors();
-  const { remap } = chartColors;
   const chartConfig = useMemo(
     () => ({
-      invoiced: { label: "Facturé TTC", color: remap("#5b50ff") },
-      collected: { label: "Encaissé bancaire", color: chartColors.success },
+      invoiced: { label: "Facture TTC", color: INVOICED_COLOR },
+      collected: { label: "Encaissement bancaire", color: COLLECTED_COLOR },
     }),
-    [chartColors, remap],
+    [],
   );
   const chartData = useMemo(() => {
-    if (!monthlyRevenue?.length) return [];
+    // Préférer monthlyCollection (qui inclut les factures importées par date d'émission)
+    // sinon fallback sur monthlyRevenue
+    const baseMonths =
+      monthlyCollection && monthlyCollection.length > 0
+        ? monthlyCollection.map((m) => ({
+            month: m.month,
+            invoicedTTC: m.invoicedTTC || 0,
+          }))
+        : (monthlyRevenue || []).map((m) => ({
+            month: m.month,
+            invoicedTTC: m.revenueTTC || 0,
+          }));
+    if (!baseMonths.length) return [];
 
-    // Build set of valid months from monthlyRevenue to scope bank transactions
-    const validMonths = new Set(monthlyRevenue.map((m) => m.month));
+    const validMonths = new Set(baseMonths.map((m) => m.month));
 
-    // Aggregate positive completed bank transactions by month (only within date range)
+    // Agréger les transactions entrantes par mois.
+    // T14.4 : inclure aussi les transactions "revenu" hors compte bancaire (ex : espèces).
+    // On considère qu'une transaction sans `fromAccount` / `accountId` est hors compte
+    // et fait quand même partie des encaissements.
     const bankByMonth = {};
     (bankTransactions || []).forEach((t) => {
-      if (t.amount <= 0 || t.status !== "completed") return;
+      if (t.amount <= 0) return;
+      // Garder pending et completed ; ignorer cancelled/draft
+      if (t.status && !["completed", "pending", "PAID"].includes(t.status))
+        return;
       const rawDate = t.date || t.processedAt || t.createdAt;
       if (!rawDate) return;
       const d = new Date(rawDate);
@@ -116,13 +137,13 @@ export function AnalyticsBankFlowChart({
       bankByMonth[monthKey] = (bankByMonth[monthKey] || 0) + t.amount;
     });
 
-    return monthlyRevenue.map((m) => ({
+    return baseMonths.map((m) => ({
       month: m.month,
       monthLabel: formatMonthLabel(m.month),
-      invoiced: m.revenueTTC || 0,
+      invoiced: m.invoicedTTC,
       collected: bankByMonth[m.month] || 0,
     }));
-  }, [monthlyRevenue, bankTransactions]);
+  }, [monthlyRevenue, monthlyCollection, bankTransactions]);
 
   if (loading) {
     return (
@@ -192,9 +213,7 @@ export function AnalyticsBankFlowChart({
               axisLine={false}
               width={35}
             />
-            <Tooltip
-              content={<CustomTooltip colors={chartColors} remap={remap} />}
-            />
+            <Tooltip content={<CustomTooltip colors={chartColors} />} />
             <Legend
               verticalAlign="top"
               height={36}
@@ -208,14 +227,15 @@ export function AnalyticsBankFlowChart({
             />
             <Bar
               dataKey="invoiced"
-              fill={remap("#5b50ff")}
-              fillOpacity={0.7}
+              fill={INVOICED_COLOR}
+              fillOpacity={0.85}
               radius={[4, 4, 0, 0]}
               barSize={20}
             />
             <Bar
               dataKey="collected"
-              fill={chartColors.success}
+              fill={COLLECTED_COLOR}
+              fillOpacity={0.85}
               radius={[4, 4, 0, 0]}
               barSize={20}
             />

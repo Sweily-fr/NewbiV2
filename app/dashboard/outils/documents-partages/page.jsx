@@ -569,11 +569,15 @@ export default function DocumentsPartagesPage() {
   // On utilise directement les documents retournés par l'API
   const filteredDocuments = documents;
 
-  // Détection des doublons (même taille + même type MIME)
+  // Détection des doublons :
+  // - Priorité au hash SHA-256 du contenu (identifie un doublon exact peu importe le nom)
+  // - Fallback nom + taille + mime pour les anciens documents sans hash
   const duplicateGroups = useMemo(() => {
     const groups = {};
     filteredDocuments.forEach((doc) => {
-      const key = `${doc.fileSize}_${doc.mimeType || doc.fileExtension}`;
+      const key = doc.fileHash
+        ? `hash:${doc.fileHash}`
+        : `meta:${(doc.originalName || doc.name || "").trim().toLowerCase()}_${doc.fileSize}_${doc.mimeType || doc.fileExtension}`;
       if (!groups[key]) groups[key] = [];
       groups[key].push(doc);
     });
@@ -593,10 +597,13 @@ export default function DocumentsPartagesPage() {
   }, [duplicateGroups]);
 
   // Détection des doublons sur TOUS les documents (tous dossiers confondus)
+  // Même logique : hash en priorité, fallback métadonnées
   const allDuplicateGroups = useMemo(() => {
     const groups = {};
     allDocuments.forEach((doc) => {
-      const key = `${doc.fileSize}_${doc.mimeType || doc.fileExtension}`;
+      const key = doc.fileHash
+        ? `hash:${doc.fileHash}`
+        : `meta:${(doc.originalName || doc.name || "").trim().toLowerCase()}_${doc.fileSize}_${doc.mimeType || doc.fileExtension}`;
       if (!groups[key]) groups[key] = [];
       groups[key].push(doc);
     });
@@ -3647,7 +3654,7 @@ export default function DocumentsPartagesPage() {
                 )}
               </DialogDescription>
             </DialogHeader>
-            <div className="py-4 space-y-3">
+            <div className="py-4 space-y-4">
               {newFolderParentId && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 px-3 py-2 rounded-md">
                   <FolderClosed className="h-4 w-4" />
@@ -3674,9 +3681,11 @@ export default function DocumentsPartagesPage() {
               />
 
               {/* Visibilité */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Visibilité</Label>
-                <div className="flex gap-2">
+              <div className="space-y-3 pt-6">
+                <Label className="text-sm font-normal text-muted-foreground">
+                  Visibilité
+                </Label>
+                <div className="flex gap-2 pt-1">
                   <Button
                     type="button"
                     variant={
@@ -3713,7 +3722,7 @@ export default function DocumentsPartagesPage() {
                     Privé
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground pt-1">
                   {newFolderVisibility === "public"
                     ? "Visible par tous les membres du workspace."
                     : "Visible uniquement par vous et les membres sélectionnés."}
@@ -4973,7 +4982,7 @@ export default function DocumentsPartagesPage() {
 
       {/* Modale des doublons */}
       <Dialog open={showDuplicatesModal} onOpenChange={setShowDuplicatesModal}>
-        <DialogContent className="max-w-4xl sm:max-w-4xl max-h-[90vh] flex flex-col">
+        <DialogContent className="max-w-4xl sm:max-w-4xl h-[90vh] !grid-rows-[auto_1fr_auto] grid">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Copy className="h-5 w-5 text-[#5a50ff]" />
@@ -4994,7 +5003,7 @@ export default function DocumentsPartagesPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <ScrollArea className="flex-1 -mx-6 px-6">
+          <div className="overflow-y-auto -mx-6 px-6 min-h-0">
             {allDuplicateGroups.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                 <CheckCircle2 className="h-12 w-12 mb-3 text-green-500" />
@@ -5086,7 +5095,7 @@ export default function DocumentsPartagesPage() {
                 ))}
               </div>
             )}
-          </ScrollArea>
+          </div>
 
           {allDuplicateGroups.length > 0 && (
             <DialogFooter className="sm:justify-between gap-2">

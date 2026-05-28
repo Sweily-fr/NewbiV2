@@ -578,7 +578,7 @@ function DashboardContent() {
             title={readOnlyTooltip}
             onClick={() =>
               !isReadOnly &&
-              router.push("/dashboard/outils/transferts-fichiers/new")
+              router.push("/dashboard/outils/transferts-fichiers?new=1")
             }
           >
             <SendIcon className="w-4 h-4" />

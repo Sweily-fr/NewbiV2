@@ -50,7 +50,8 @@ export default function PurchaseOrderSidebar({
   isViewMode = false,
 }) {
   const router = useRouter();
-  const { changeStatus, loading: changingStatus } = useChangePurchaseOrderStatus();
+  const { changeStatus, loading: changingStatus } =
+    useChangePurchaseOrderStatus();
   const { deletePurchaseOrder, loading: deleting } = useDeletePurchaseOrder();
 
   // Recuperer les donnees completes du bon de commande
@@ -113,10 +114,20 @@ export default function PurchaseOrderSidebar({
   const handleConfirm = async () => {
     try {
       await changeStatus(purchaseOrder.id, PURCHASE_ORDER_STATUS.CONFIRMED);
-      toast.success("Bon de commande confirmé");
+      toast.success("Bon de commande mis en attente");
       if (onRefetch) onRefetch();
     } catch (error) {
       toast.error("Erreur lors de la confirmation du bon de commande");
+    }
+  };
+
+  const handleValidate = async () => {
+    try {
+      await changeStatus(purchaseOrder.id, PURCHASE_ORDER_STATUS.VALIDATED);
+      toast.success("Bon de commande validé par le client");
+      if (onRefetch) onRefetch();
+    } catch (error) {
+      toast.error("Erreur lors de la validation du bon de commande");
     }
   };
 
@@ -162,20 +173,23 @@ export default function PurchaseOrderSidebar({
 
   const handleConvertToInvoice = () => {
     const po = purchaseOrder;
-    sessionStorage.setItem('purchaseOrderInvoiceData', JSON.stringify({
-      sourcePurchaseOrderId: po.id,
-      purchaseOrderNumber: `${po.prefix || ''}-${po.number || ''}`,
-      client: po.client,
-      items: po.items,
-      discount: po.discount,
-      discountType: po.discountType,
-      customFields: po.customFields,
-      shipping: po.shipping,
-      isReverseCharge: po.isReverseCharge,
-      retenueGarantie: po.retenueGarantie,
-      escompte: po.escompte,
-    }));
-    router.push('/dashboard/outils/factures/new');
+    sessionStorage.setItem(
+      "purchaseOrderInvoiceData",
+      JSON.stringify({
+        sourcePurchaseOrderId: po.id,
+        purchaseOrderNumber: `${po.prefix || ""}-${po.number || ""}`,
+        client: po.client,
+        items: po.items,
+        discount: po.discount,
+        discountType: po.discountType,
+        customFields: po.customFields,
+        shipping: po.shipping,
+        isReverseCharge: po.isReverseCharge,
+        retenueGarantie: po.retenueGarantie,
+        escompte: po.escompte,
+      }),
+    );
+    router.push("/dashboard/outils/factures/new");
     onClose();
   };
 
@@ -195,11 +209,16 @@ export default function PurchaseOrderSidebar({
   // Determiner les statuts utiles
   const isDraft = purchaseOrder.status === PURCHASE_ORDER_STATUS.DRAFT;
   const isConfirmed = purchaseOrder.status === PURCHASE_ORDER_STATUS.CONFIRMED;
-  const isInProgress = purchaseOrder.status === PURCHASE_ORDER_STATUS.IN_PROGRESS;
+  const isValidated = purchaseOrder.status === PURCHASE_ORDER_STATUS.VALIDATED;
+  const isInProgress =
+    purchaseOrder.status === PURCHASE_ORDER_STATUS.IN_PROGRESS;
   const isDelivered = purchaseOrder.status === PURCHASE_ORDER_STATUS.DELIVERED;
+  const hasLinkedInvoices =
+    !!purchaseOrder.linkedInvoices && purchaseOrder.linkedInvoices.length > 0;
   const canConvertToInvoice =
-    (isConfirmed || isInProgress || isDelivered) &&
-    (!purchaseOrder.linkedInvoices || purchaseOrder.linkedInvoices.length === 0);
+    (isValidated || isInProgress || isDelivered) && !hasLinkedInvoices;
+  // Annulation possible uniquement avant validation client
+  const canCancel = (isDraft || isConfirmed) && !hasLinkedInvoices;
 
   return (
     <>
@@ -235,23 +254,29 @@ export default function PurchaseOrderSidebar({
           <div className="flex items-center justify-between p-6 border-b">
             <div className="flex flex-col gap-2">
               <h2 className="font-normal text-lg">
-                Bon de commande {purchaseOrder.prefix && purchaseOrder.number ? `${purchaseOrder.prefix}-${purchaseOrder.number}` : purchaseOrder.number || "Brouillon"}
+                Bon de commande{" "}
+                {purchaseOrder.prefix && purchaseOrder.number
+                  ? `${purchaseOrder.prefix}-${purchaseOrder.number}`
+                  : purchaseOrder.number || "Brouillon"}
               </h2>
               <div className="flex items-center gap-2">
                 <span
                   className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                    purchaseOrder.status === 'DRAFT'
-                      ? 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
-                      : purchaseOrder.status === 'CONFIRMED'
-                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
-                      : purchaseOrder.status === 'IN_PROGRESS'
-                      ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100'
-                      : purchaseOrder.status === 'DELIVERED'
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
-                      : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+                    purchaseOrder.status === "DRAFT"
+                      ? "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100"
+                      : purchaseOrder.status === "CONFIRMED"
+                        ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100"
+                        : purchaseOrder.status === "VALIDATED"
+                          ? "bg-violet-100 text-violet-800 dark:bg-violet-900 dark:text-violet-100"
+                          : purchaseOrder.status === "IN_PROGRESS"
+                            ? "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100"
+                            : purchaseOrder.status === "DELIVERED"
+                              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
+                              : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
                   }`}
                 >
-                  {PURCHASE_ORDER_STATUS_LABELS[purchaseOrder.status] || purchaseOrder.status}
+                  {PURCHASE_ORDER_STATUS_LABELS[purchaseOrder.status] ||
+                    purchaseOrder.status}
                 </span>
                 {isValidUntilExpired() && (
                   <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100">
@@ -263,7 +288,11 @@ export default function PurchaseOrderSidebar({
             <div className="flex items-center gap-2">
               {/* Bouton PDF - masque pour les brouillons */}
               {purchaseOrder.status !== PURCHASE_ORDER_STATUS.DRAFT && (
-                <UniversalPDFDownloaderWithFacturX data={purchaseOrder} type="purchaseOrder" enableFacturX={false} />
+                <UniversalPDFDownloaderWithFacturX
+                  data={purchaseOrder}
+                  type="purchaseOrder"
+                  enableFacturX={false}
+                />
               )}
               <Button
                 variant="ghost"
@@ -283,7 +312,9 @@ export default function PurchaseOrderSidebar({
           <div className="flex-1 overflow-y-auto p-6 space-y-8">
             {/* Client Info */}
             <div className="space-y-2.5">
-              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Client</h3>
+              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Client
+              </h3>
               {purchaseOrder.client ? (
                 <div className="space-y-1.5">
                   <div>
@@ -330,17 +361,26 @@ export default function PurchaseOrderSidebar({
               if (shippingData?.shippingAddress && shippingData?.billShipping) {
                 return (
                   <div className="space-y-2.5">
-                    <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Adresse de livraison</h3>
+                    <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Adresse de livraison
+                    </h3>
                     <div className="text-sm text-muted-foreground">
                       {shippingData.shippingAddress.fullName && (
-                        <p className="font-medium text-foreground">{shippingData.shippingAddress.fullName}</p>
+                        <p className="font-medium text-foreground">
+                          {shippingData.shippingAddress.fullName}
+                        </p>
                       )}
                       {shippingData.shippingAddress.street && (
                         <p>{shippingData.shippingAddress.street}</p>
                       )}
-                      {(shippingData.shippingAddress.postalCode || shippingData.shippingAddress.city) && (
+                      {(shippingData.shippingAddress.postalCode ||
+                        shippingData.shippingAddress.city) && (
                         <p>
-                          {shippingData.shippingAddress.postalCode}{shippingData.shippingAddress.postalCode && shippingData.shippingAddress.city && " "}{shippingData.shippingAddress.city}
+                          {shippingData.shippingAddress.postalCode}
+                          {shippingData.shippingAddress.postalCode &&
+                            shippingData.shippingAddress.city &&
+                            " "}
+                          {shippingData.shippingAddress.city}
                         </p>
                       )}
                       {shippingData.shippingAddress.country && (
@@ -350,20 +390,32 @@ export default function PurchaseOrderSidebar({
                   </div>
                 );
               }
-              if (purchaseOrder.client?.hasDifferentShippingAddress && purchaseOrder.client?.shippingAddress) {
+              if (
+                purchaseOrder.client?.hasDifferentShippingAddress &&
+                purchaseOrder.client?.shippingAddress
+              ) {
                 return (
                   <div className="space-y-2.5">
-                    <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Adresse de livraison</h3>
+                    <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Adresse de livraison
+                    </h3>
                     <div className="text-sm text-muted-foreground">
                       {purchaseOrder.client.shippingAddress.fullName && (
-                        <p className="font-medium text-foreground">{purchaseOrder.client.shippingAddress.fullName}</p>
+                        <p className="font-medium text-foreground">
+                          {purchaseOrder.client.shippingAddress.fullName}
+                        </p>
                       )}
                       {purchaseOrder.client.shippingAddress.street && (
                         <p>{purchaseOrder.client.shippingAddress.street}</p>
                       )}
-                      {(purchaseOrder.client.shippingAddress.postalCode || purchaseOrder.client.shippingAddress.city) && (
+                      {(purchaseOrder.client.shippingAddress.postalCode ||
+                        purchaseOrder.client.shippingAddress.city) && (
                         <p>
-                          {purchaseOrder.client.shippingAddress.postalCode}{purchaseOrder.client.shippingAddress.postalCode && purchaseOrder.client.shippingAddress.city && " "}{purchaseOrder.client.shippingAddress.city}
+                          {purchaseOrder.client.shippingAddress.postalCode}
+                          {purchaseOrder.client.shippingAddress.postalCode &&
+                            purchaseOrder.client.shippingAddress.city &&
+                            " "}
+                          {purchaseOrder.client.shippingAddress.city}
                         </p>
                       )}
                       {purchaseOrder.client.shippingAddress.country && (
@@ -378,7 +430,9 @@ export default function PurchaseOrderSidebar({
 
             {/* Dates */}
             <div className="space-y-2.5">
-              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Dates</h3>
+              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Dates
+              </h3>
               <div className="space-y-1.5">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Date d'émission</span>
@@ -412,10 +466,13 @@ export default function PurchaseOrderSidebar({
             {/* Source Quote */}
             {purchaseOrder.sourceQuote && (
               <div className="space-y-2.5">
-                <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Devis source</h3>
+                <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Devis source
+                </h3>
                 <div className="text-sm">
                   <span className="text-muted-foreground">
-                    {purchaseOrder.sourceQuote.prefix}-{purchaseOrder.sourceQuote.number}
+                    {purchaseOrder.sourceQuote.prefix}-
+                    {purchaseOrder.sourceQuote.number}
                   </span>
                 </div>
               </div>
@@ -423,7 +480,9 @@ export default function PurchaseOrderSidebar({
 
             {/* Articles */}
             <div className="space-y-2.5">
-              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Articles</h3>
+              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Articles
+              </h3>
               <div className="space-y-1.5">
                 {purchaseOrder.items && purchaseOrder.items.length > 0 ? (
                   purchaseOrder.items.map((item, index) => (
@@ -445,7 +504,9 @@ export default function PurchaseOrderSidebar({
 
             {/* Totals */}
             <div className="space-y-2.5">
-              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Totaux</h3>
+              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Totaux
+              </h3>
               <div className="space-y-1.5">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Sous-total HT</span>
@@ -454,18 +515,22 @@ export default function PurchaseOrderSidebar({
                 {purchaseOrder.discountAmount > 0 && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Remise</span>
-                    <span>-{formatCurrency(purchaseOrder.discountAmount || 0)}</span>
+                    <span>
+                      -{formatCurrency(purchaseOrder.discountAmount || 0)}
+                    </span>
                   </div>
                 )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Total HT</span>
                   <span>
                     {formatCurrency(
-                      purchaseOrder.finalTotalHT !== undefined && purchaseOrder.finalTotalHT !== null
+                      purchaseOrder.finalTotalHT !== undefined &&
+                        purchaseOrder.finalTotalHT !== null
                         ? purchaseOrder.finalTotalHT
-                        : purchaseOrder.totalHT !== undefined && purchaseOrder.totalHT !== null
+                        : purchaseOrder.totalHT !== undefined &&
+                            purchaseOrder.totalHT !== null
                           ? purchaseOrder.totalHT
-                          : 0
+                          : 0,
                     )}
                   </span>
                 </div>
@@ -473,11 +538,13 @@ export default function PurchaseOrderSidebar({
                   <span className="text-muted-foreground">TVA</span>
                   <span>
                     {formatCurrency(
-                      purchaseOrder.finalTotalVAT !== undefined && purchaseOrder.finalTotalVAT !== null
+                      purchaseOrder.finalTotalVAT !== undefined &&
+                        purchaseOrder.finalTotalVAT !== null
                         ? purchaseOrder.finalTotalVAT
-                        : purchaseOrder.totalVAT !== undefined && purchaseOrder.totalVAT !== null
+                        : purchaseOrder.totalVAT !== undefined &&
+                            purchaseOrder.totalVAT !== null
                           ? purchaseOrder.totalVAT
-                          : 0
+                          : 0,
                     )}
                   </span>
                 </div>
@@ -485,11 +552,13 @@ export default function PurchaseOrderSidebar({
                   <span>Total TTC</span>
                   <span>
                     {formatCurrency(
-                      purchaseOrder.finalTotalTTC !== undefined && purchaseOrder.finalTotalTTC !== null
+                      purchaseOrder.finalTotalTTC !== undefined &&
+                        purchaseOrder.finalTotalTTC !== null
                         ? purchaseOrder.finalTotalTTC
-                        : purchaseOrder.totalTTC !== undefined && purchaseOrder.totalTTC !== null
+                        : purchaseOrder.totalTTC !== undefined &&
+                            purchaseOrder.totalTTC !== null
                           ? purchaseOrder.totalTTC
-                          : 0
+                          : 0,
                     )}
                   </span>
                 </div>
@@ -497,28 +566,35 @@ export default function PurchaseOrderSidebar({
             </div>
 
             {/* Linked Invoices */}
-            {purchaseOrder.linkedInvoices && purchaseOrder.linkedInvoices.length > 0 && (
-              <div className="space-y-2.5">
-                <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Factures liées</h3>
-                <div className="space-y-1.5">
-                  {purchaseOrder.linkedInvoices.map((invoice) => (
-                    <div
-                      key={invoice.id}
-                      className="flex justify-between items-center text-sm cursor-pointer hover:bg-muted/50 rounded px-2 py-1 -mx-2"
-                      onClick={() => {
-                        router.push(`/dashboard/outils/factures/${invoice.id}`);
-                        onClose();
-                      }}
-                    >
-                      <span className="text-muted-foreground">
-                        Facture {invoice.number}
-                      </span>
-                      <span>{formatCurrency(invoice.finalTotalTTC || 0)}</span>
-                    </div>
-                  ))}
+            {purchaseOrder.linkedInvoices &&
+              purchaseOrder.linkedInvoices.length > 0 && (
+                <div className="space-y-2.5">
+                  <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Factures liées
+                  </h3>
+                  <div className="space-y-1.5">
+                    {purchaseOrder.linkedInvoices.map((invoice) => (
+                      <div
+                        key={invoice.id}
+                        className="flex justify-between items-center text-sm cursor-pointer hover:bg-muted/50 rounded px-2 py-1 -mx-2"
+                        onClick={() => {
+                          router.push(
+                            `/dashboard/outils/factures/${invoice.id}`,
+                          );
+                          onClose();
+                        }}
+                      >
+                        <span className="text-muted-foreground">
+                          Facture {invoice.number}
+                        </span>
+                        <span>
+                          {formatCurrency(invoice.finalTotalTTC || 0)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
           </div>
 
           {/* Action Buttons */}
@@ -550,16 +626,16 @@ export default function PurchaseOrderSidebar({
               </Button>
             )}
 
-            {/* Status Actions - CONFIRMED: Start / Revert to Draft / Cancel */}
+            {/* Status Actions - CONFIRMED (En attente): Validate / Revert / Cancel */}
             {isConfirmed && (
               <div className="flex flex-col space-y-2">
                 <Button
-                  onClick={handleStartProgress}
+                  onClick={handleValidate}
                   disabled={isLoading}
                   className="w-full"
                 >
-                  <Play className="h-4 w-4 mr-2" />
-                  Démarrer le traitement
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Marquer comme validé par le client
                 </Button>
                 <Button
                   variant="outline"
@@ -570,39 +646,42 @@ export default function PurchaseOrderSidebar({
                   <RotateCcw className="h-4 w-4 mr-2" />
                   Repasser en brouillon
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleCancel}
-                  disabled={isLoading}
-                  className="w-full"
-                >
-                  <XCircle className="h-4 w-4 mr-2" />
-                  Annuler le bon de commande
-                </Button>
+                {canCancel && (
+                  <Button
+                    variant="outline"
+                    onClick={handleCancel}
+                    disabled={isLoading}
+                    className="w-full"
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Annuler le bon de commande
+                  </Button>
+                )}
               </div>
             )}
 
-            {/* Status Actions - IN_PROGRESS: Deliver / Cancel */}
+            {/* Status Actions - VALIDATED: Start progress */}
+            {isValidated && (
+              <Button
+                onClick={handleStartProgress}
+                disabled={isLoading}
+                className="w-full"
+              >
+                <Play className="h-4 w-4 mr-2" />
+                Démarrer le traitement
+              </Button>
+            )}
+
+            {/* Status Actions - IN_PROGRESS: Deliver */}
             {isInProgress && (
-              <div className="flex flex-col space-y-2">
-                <Button
-                  onClick={handleDeliver}
-                  disabled={isLoading}
-                  className="w-full"
-                >
-                  <Truck className="h-4 w-4 mr-2" />
-                  Marquer comme livré
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleCancel}
-                  disabled={isLoading}
-                  className="w-full"
-                >
-                  <XCircle className="h-4 w-4 mr-2" />
-                  Annuler le bon de commande
-                </Button>
-              </div>
+              <Button
+                onClick={handleDeliver}
+                disabled={isLoading}
+                className="w-full"
+              >
+                <Truck className="h-4 w-4 mr-2" />
+                Marquer comme livré
+              </Button>
             )}
 
             {/* Convert to Invoice - available for CONFIRMED, IN_PROGRESS, DELIVERED */}

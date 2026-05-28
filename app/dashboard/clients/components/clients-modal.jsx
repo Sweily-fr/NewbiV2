@@ -113,6 +113,7 @@ export default function ClientsModal({
     watch,
     reset,
     setValue,
+    setError,
     trigger,
     formState: { errors, isValid },
   } = useForm({
@@ -649,13 +650,22 @@ export default function ClientsModal({
       setCompanyQuery("");
       setCompanies([]);
     } catch (error) {
-      // Afficher une toast d'erreur précise
-      const message = error.message || "Une erreur est survenue";
-      toast.error(
-        isEditing
-          ? `Impossible de modifier le client : ${message}`
-          : `Impossible de créer le client : ${message}`,
-      );
+      const code = error.code || error.extensions?.code;
+      const field = error.extensions?.details?.field;
+      const serverMessage = error.message || "Une erreur est survenue";
+
+      // Doublon serveur (ex: email déjà utilisé) → champ en rouge + toast explicite
+      if (code === "ALREADY_EXISTS" && field === "email") {
+        setError("email", {
+          type: "server",
+          message: "Cet email est déjà utilisé par un autre client",
+        });
+        toast.error(serverMessage);
+        return;
+      }
+
+      // Autres erreurs : afficher directement le message renvoyé par le serveur
+      toast.error(serverMessage);
       // Ne pas fermer le modal en cas d'erreur
     }
   };

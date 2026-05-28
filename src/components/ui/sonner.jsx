@@ -162,7 +162,9 @@ const ErrorToast = ({ message, isMobile, details }) => {
             {details.errorCode && (
               <p>
                 Code:{" "}
-                <span style={{ color: "#ef4444" }}>{details.errorCode}</span>
+                <span style={{ color: "var(--color-status-danger)" }}>
+                  {details.errorCode}
+                </span>
               </p>
             )}
             {details.rawMessage && (

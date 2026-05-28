@@ -28,7 +28,7 @@ export function useDashboardLayoutContext() {
 
   if (context === undefined) {
     throw new Error(
-      "useDashboardLayoutContext must be used within a DashboardLayoutProvider"
+      "useDashboardLayoutContext must be used within a DashboardLayoutProvider",
     );
   }
 
@@ -46,6 +46,7 @@ export function useSubscription() {
     isActive,
     isLoading,
     refreshLayoutData,
+    lastFetchOk,
   } = useDashboardLayoutContext();
 
   return {
@@ -56,6 +57,9 @@ export function useSubscription() {
     getLimit,
     isActive,
     refreshSubscription: refreshLayoutData,
+    // Lot 3 safety net — exposed for useSubscriptionAccess to distinguish
+    // "no subscription (definitive)" from "fetch failed (unknown)".
+    lastFetchOk: lastFetchOk !== false,
   };
 }
 

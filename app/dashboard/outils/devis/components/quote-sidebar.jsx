@@ -26,6 +26,7 @@ import {
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import { useRouter } from "next/navigation";
+import { useLazyQuery } from "@apollo/client";
 import {
   useChangeQuoteStatus,
   useQuote,
@@ -33,6 +34,8 @@ import {
   QUOTE_STATUS_LABELS,
   QUOTE_STATUS_COLORS,
 } from "@/src/graphql/quoteQueries";
+import { GET_CLIENT } from "@/src/graphql/clientQueries";
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/components/ui/sonner";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDFDownloaderWithFacturX";
@@ -51,6 +54,10 @@ export default function QuoteSidebar({
 }) {
   const router = useRouter();
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
+  const { workspaceId } = useRequiredWorkspace();
+  const [fetchClient] = useLazyQuery(GET_CLIENT, {
+    fetchPolicy: "network-only",
+  });
 
   // Récupérer les données complètes du devis
   const {
@@ -145,20 +152,23 @@ export default function QuoteSidebar({
 
   const handleConvertToPurchaseOrder = () => {
     try {
-      sessionStorage.setItem('quotePurchaseOrderData', JSON.stringify({
-        sourceQuoteId: quote.id,
-        purchaseOrderNumber: `${quote.prefix || ''}-${quote.number || ''}`,
-        client: quote.client,
-        items: quote.items,
-        discount: quote.discount,
-        discountType: quote.discountType,
-        customFields: quote.customFields,
-        shipping: quote.shipping,
-        isReverseCharge: quote.isReverseCharge,
-        retenueGarantie: quote.retenueGarantie,
-        escompte: quote.escompte,
-      }));
-      router.push('/dashboard/outils/bons-commande/new');
+      sessionStorage.setItem(
+        "quotePurchaseOrderData",
+        JSON.stringify({
+          sourceQuoteId: quote.id,
+          purchaseOrderNumber: `${quote.prefix || ""}-${quote.number || ""}`,
+          client: quote.client,
+          items: quote.items,
+          discount: quote.discount,
+          discountType: quote.discountType,
+          customFields: quote.customFields,
+          shipping: quote.shipping,
+          isReverseCharge: quote.isReverseCharge,
+          retenueGarantie: quote.retenueGarantie,
+          escompte: quote.escompte,
+        }),
+      );
+      router.push("/dashboard/outils/bons-commande/new");
       onClose();
     } catch (error) {
       toast.error("Erreur lors de la conversion en bon de commande");
@@ -185,29 +195,43 @@ export default function QuoteSidebar({
     }
   };
 
-  const handleConvertToInvoice = () => {
-    sessionStorage.setItem('quoteInvoiceData', JSON.stringify({
-      sourceQuoteId: quote.id,
-      purchaseOrderNumber: `${quote.prefix || ''}-${quote.number || ''}`,
-      client: quote.client,
-      items: quote.items,
-      discount: quote.discount,
-      discountType: quote.discountType,
-      customFields: quote.customFields,
-      shipping: quote.shipping,
-      isReverseCharge: quote.isReverseCharge,
-      retenueGarantie: quote.retenueGarantie,
-      escompte: quote.escompte,
-    }));
-    router.push('/dashboard/outils/factures/new');
+  const handleConvertToInvoice = async () => {
+    let freshClient = quote.client;
+    if (quote.client?.id && workspaceId) {
+      try {
+        const { data } = await fetchClient({
+          variables: { workspaceId, id: quote.client.id },
+        });
+        if (data?.client) freshClient = data.client;
+      } catch {
+        // fallback sur le snapshot du devis si le refetch échoue
+      }
+    }
+    sessionStorage.setItem(
+      "quoteInvoiceData",
+      JSON.stringify({
+        sourceQuoteId: quote.id,
+        purchaseOrderNumber: `${quote.prefix || ""}-${quote.number || ""}`,
+        client: freshClient,
+        items: quote.items,
+        discount: quote.discount,
+        discountType: quote.discountType,
+        customFields: quote.customFields,
+        shipping: quote.shipping,
+        isReverseCharge: quote.isReverseCharge,
+        retenueGarantie: quote.retenueGarantie,
+        escompte: quote.escompte,
+      }),
+    );
+    router.push("/dashboard/outils/factures/new");
     onClose();
   };
 
-  const handleCreateLinkedInvoice = ({ quoteId, amount, isDeposit }) => {
+  const handleCreateLinkedInvoice = async ({ quoteId, amount, isDeposit }) => {
     const vatRate = 20;
     const unitPriceHT = amount / (1 + vatRate / 100);
     const remainingAmount = calculateRemainingAmount();
-    const quoteRef = `${quote.prefix || ''}-${quote.number || ''}`;
+    const quoteRef = `${quote.prefix || ""}-${quote.number || ""}`;
 
     let description;
     if (isDeposit) {
@@ -218,24 +242,41 @@ export default function QuoteSidebar({
       description = `Facture partielle sur devis ${quoteRef}`;
     }
 
-    sessionStorage.setItem('quoteLinkedInvoiceData', JSON.stringify({
-      sourceQuoteId: quoteId,
-      purchaseOrderNumber: quoteRef,
-      client: quote.client,
-      isDeposit,
-      items: [{
-        description,
-        quantity: 1,
-        unitPrice: unitPriceHT,
-        vatRate,
-        unit: "forfait",
-        discount: 0,
-        discountType: "FIXED",
-        details: "",
-        vatExemptionText: "",
-      }],
-    }));
-    router.push('/dashboard/outils/factures/new');
+    let freshClient = quote.client;
+    if (quote.client?.id && workspaceId) {
+      try {
+        const { data } = await fetchClient({
+          variables: { workspaceId, id: quote.client.id },
+        });
+        if (data?.client) freshClient = data.client;
+      } catch {
+        // fallback sur le snapshot du devis si le refetch échoue
+      }
+    }
+
+    sessionStorage.setItem(
+      "quoteLinkedInvoiceData",
+      JSON.stringify({
+        sourceQuoteId: quoteId,
+        purchaseOrderNumber: quoteRef,
+        client: freshClient,
+        isDeposit,
+        items: [
+          {
+            description,
+            quantity: 1,
+            unitPrice: unitPriceHT,
+            vatRate,
+            unit: "forfait",
+            discount: 0,
+            discountType: "FIXED",
+            details: "",
+            vatExemptionText: "",
+          },
+        ],
+      }),
+    );
+    router.push("/dashboard/outils/factures/new");
     onClose();
   };
 
@@ -264,7 +305,6 @@ export default function QuoteSidebar({
         </div>
       </div>
 
-
       {/* Main Sidebar */}
       <div
         className={`fixed inset-y-0 right-0 z-50 w-[35%] bg-background border-l shadow-lg transform transition-transform duration-300 ease-in-out ${
@@ -276,18 +316,21 @@ export default function QuoteSidebar({
           <div className="flex items-center justify-between p-6 border-b">
             <div className="flex flex-col gap-2">
               <h2 className="font-normal text-lg">
-                Devis {quote.prefix && quote.number ? `${quote.prefix}-${quote.number}` : quote.number || "Brouillon"}
+                Devis{" "}
+                {quote.prefix && quote.number
+                  ? `${quote.prefix}-${quote.number}`
+                  : quote.number || "Brouillon"}
               </h2>
               <div className="flex items-center gap-2">
                 <span
                   className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                    quote.status === 'DRAFT'
-                      ? 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
-                      : quote.status === 'PENDING'
-                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
-                      : quote.status === 'COMPLETED'
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
-                      : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+                    quote.status === "DRAFT"
+                      ? "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100"
+                      : quote.status === "PENDING"
+                        ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100"
+                        : quote.status === "COMPLETED"
+                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
+                          : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
                   }`}
                 >
                   {QUOTE_STATUS_LABELS[quote.status] || quote.status}
@@ -305,7 +348,11 @@ export default function QuoteSidebar({
             <div className="flex items-center gap-2">
               {/* Bouton PDF - masqué pour les brouillons */}
               {quote.status !== QUOTE_STATUS.DRAFT && (
-                <UniversalPDFDownloaderWithFacturX data={quote} type="quote" enableFacturX={false} />
+                <UniversalPDFDownloaderWithFacturX
+                  data={quote}
+                  type="quote"
+                  enableFacturX={false}
+                />
               )}
               <Button
                 variant="ghost"
@@ -325,7 +372,9 @@ export default function QuoteSidebar({
           <div className="flex-1 overflow-y-auto p-6 space-y-8">
             {/* Client Info */}
             <div className="space-y-2.5">
-              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Client</h3>
+              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Client
+              </h3>
               {quote.client ? (
                 <div className="space-y-1.5">
                   <div>
@@ -372,17 +421,26 @@ export default function QuoteSidebar({
               if (shippingData?.shippingAddress && shippingData?.billShipping) {
                 return (
                   <div className="space-y-2.5">
-                    <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Adresse de livraison</h3>
+                    <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Adresse de livraison
+                    </h3>
                     <div className="text-sm text-muted-foreground">
                       {shippingData.shippingAddress.fullName && (
-                        <p className="font-medium text-foreground">{shippingData.shippingAddress.fullName}</p>
+                        <p className="font-medium text-foreground">
+                          {shippingData.shippingAddress.fullName}
+                        </p>
                       )}
                       {shippingData.shippingAddress.street && (
                         <p>{shippingData.shippingAddress.street}</p>
                       )}
-                      {(shippingData.shippingAddress.postalCode || shippingData.shippingAddress.city) && (
+                      {(shippingData.shippingAddress.postalCode ||
+                        shippingData.shippingAddress.city) && (
                         <p>
-                          {shippingData.shippingAddress.postalCode}{shippingData.shippingAddress.postalCode && shippingData.shippingAddress.city && " "}{shippingData.shippingAddress.city}
+                          {shippingData.shippingAddress.postalCode}
+                          {shippingData.shippingAddress.postalCode &&
+                            shippingData.shippingAddress.city &&
+                            " "}
+                          {shippingData.shippingAddress.city}
                         </p>
                       )}
                       {shippingData.shippingAddress.country && (
@@ -392,20 +450,32 @@ export default function QuoteSidebar({
                   </div>
                 );
               }
-              if (quote.client?.hasDifferentShippingAddress && quote.client?.shippingAddress) {
+              if (
+                quote.client?.hasDifferentShippingAddress &&
+                quote.client?.shippingAddress
+              ) {
                 return (
                   <div className="space-y-2.5">
-                    <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Adresse de livraison</h3>
+                    <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Adresse de livraison
+                    </h3>
                     <div className="text-sm text-muted-foreground">
                       {quote.client.shippingAddress.fullName && (
-                        <p className="font-medium text-foreground">{quote.client.shippingAddress.fullName}</p>
+                        <p className="font-medium text-foreground">
+                          {quote.client.shippingAddress.fullName}
+                        </p>
                       )}
                       {quote.client.shippingAddress.street && (
                         <p>{quote.client.shippingAddress.street}</p>
                       )}
-                      {(quote.client.shippingAddress.postalCode || quote.client.shippingAddress.city) && (
+                      {(quote.client.shippingAddress.postalCode ||
+                        quote.client.shippingAddress.city) && (
                         <p>
-                          {quote.client.shippingAddress.postalCode}{quote.client.shippingAddress.postalCode && quote.client.shippingAddress.city && " "}{quote.client.shippingAddress.city}
+                          {quote.client.shippingAddress.postalCode}
+                          {quote.client.shippingAddress.postalCode &&
+                            quote.client.shippingAddress.city &&
+                            " "}
+                          {quote.client.shippingAddress.city}
                         </p>
                       )}
                       {quote.client.shippingAddress.country && (
@@ -420,7 +490,9 @@ export default function QuoteSidebar({
 
             {/* Dates */}
             <div className="space-y-2.5">
-              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Dates</h3>
+              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Dates
+              </h3>
               <div className="space-y-1.5">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Date d'émission</span>
@@ -444,7 +516,9 @@ export default function QuoteSidebar({
 
             {/* Articles */}
             <div className="space-y-2.5">
-              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Articles</h3>
+              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Articles
+              </h3>
               <div className="space-y-1.5">
                 {quote.items && quote.items.length > 0 ? (
                   quote.items.map((item, index) => (
@@ -466,7 +540,9 @@ export default function QuoteSidebar({
 
             {/* Totals */}
             <div className="space-y-2.5">
-              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Totaux</h3>
+              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Totaux
+              </h3>
               <div className="space-y-1.5">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Sous-total HT</span>
@@ -482,11 +558,12 @@ export default function QuoteSidebar({
                   <span className="text-muted-foreground">Total HT</span>
                   <span>
                     {formatCurrency(
-                      quote.finalTotalHT !== undefined && quote.finalTotalHT !== null
+                      quote.finalTotalHT !== undefined &&
+                        quote.finalTotalHT !== null
                         ? quote.finalTotalHT
                         : quote.totalHT !== undefined && quote.totalHT !== null
                           ? quote.totalHT
-                          : 0
+                          : 0,
                     )}
                   </span>
                 </div>
@@ -494,11 +571,13 @@ export default function QuoteSidebar({
                   <span className="text-muted-foreground">TVA</span>
                   <span>
                     {formatCurrency(
-                      quote.finalTotalVAT !== undefined && quote.finalTotalVAT !== null
+                      quote.finalTotalVAT !== undefined &&
+                        quote.finalTotalVAT !== null
                         ? quote.finalTotalVAT
-                        : quote.totalVAT !== undefined && quote.totalVAT !== null
+                        : quote.totalVAT !== undefined &&
+                            quote.totalVAT !== null
                           ? quote.totalVAT
-                          : 0
+                          : 0,
                     )}
                   </span>
                 </div>
@@ -506,11 +585,13 @@ export default function QuoteSidebar({
                   <span>Total TTC</span>
                   <span>
                     {formatCurrency(
-                      quote.finalTotalTTC !== undefined && quote.finalTotalTTC !== null
+                      quote.finalTotalTTC !== undefined &&
+                        quote.finalTotalTTC !== null
                         ? quote.finalTotalTTC
-                        : quote.totalTTC !== undefined && quote.totalTTC !== null
+                        : quote.totalTTC !== undefined &&
+                            quote.totalTTC !== null
                           ? quote.totalTTC
-                          : 0
+                          : 0,
                     )}
                   </span>
                 </div>
@@ -533,7 +614,8 @@ export default function QuoteSidebar({
           <div className="border-t p-6 space-y-3">
             {/* Primary Actions */}
             <div className="flex gap-2">
-              {(quote.status === QUOTE_STATUS.DRAFT || quote.status === QUOTE_STATUS.PENDING) && (
+              {(quote.status === QUOTE_STATUS.DRAFT ||
+                quote.status === QUOTE_STATUS.PENDING) && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -602,7 +684,7 @@ export default function QuoteSidebar({
                     (() => {
                       const totalInvoiced = quote.linkedInvoices.reduce(
                         (sum, invoice) => sum + (invoice.finalTotalTTC || 0),
-                        0
+                        0,
                       );
                       const remainingAmount =
                         (quote.finalTotalTTC || 0) - totalInvoiced;

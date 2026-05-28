@@ -138,9 +138,15 @@ export const useDeleteTransaction = () => {
       }
     } catch (error) {
       console.error("❌ [DELETE TRANSACTION] Erreur:", error);
-      toast.error(
-        error.message || "Erreur lors de la suppression de la transaction",
-      );
+      let errorMessage = "Erreur lors de la suppression de la transaction";
+      if (error.graphQLErrors && error.graphQLErrors.length > 0) {
+        errorMessage = error.graphQLErrors[0].message;
+      } else if (error.networkError) {
+        errorMessage = "Erreur de connexion au serveur";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      toast.error(errorMessage);
       return { success: false, error };
     }
   };

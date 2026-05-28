@@ -60,14 +60,20 @@ function HighlightCard({ icon: Icon, label, value, highlighted }) {
   return (
     <div
       className={`rounded-lg p-4 flex flex-col gap-2.5 border border-[#eeeff1] dark:border-[#232323] dark:border-[#232323] ${
-        highlighted ? "bg-[rgba(90,80,255,0.03)] dark:bg-[rgba(90,80,255,0.06)]" : ""
+        highlighted
+          ? "bg-[rgba(90,80,255,0.03)] dark:bg-[rgba(90,80,255,0.06)]"
+          : ""
       }`}
     >
       <div className="flex items-center justify-between">
-        <span className="text-[13px] text-[#606164] dark:text-muted-foreground">{label}</span>
+        <span className="text-[13px] text-[#606164] dark:text-muted-foreground">
+          {label}
+        </span>
         <Icon className="h-4 w-4 text-[#b0b0b0] dark:text-muted-foreground" />
       </div>
-      <span className="text-sm font-medium text-[#242529] dark:text-foreground dark:text-foreground">{value}</span>
+      <span className="text-sm font-medium text-[#242529] dark:text-foreground dark:text-foreground">
+        {value}
+      </span>
     </div>
   );
 }
@@ -80,25 +86,30 @@ export default function ClientOverviewTab({
 }) {
   const clientInvoices = useMemo(
     () => invoices.filter((inv) => inv.client?.id === client.id),
-    [invoices, client.id]
+    [invoices, client.id],
   );
 
   const clientQuotes = useMemo(
     () => quotes.filter((q) => q.client?.id === client.id),
-    [quotes, client.id]
+    [quotes, client.id],
   );
 
   const invoiceStats = useMemo(() => {
     const total = clientInvoices.reduce(
       (sum, inv) => sum + (inv.finalTotalTTC || inv.totalTTC || 0),
-      0
+      0,
     );
     const pending = clientInvoices.filter((inv) => inv.status === "PENDING");
     const pendingTotal = pending.reduce(
       (sum, inv) => sum + (inv.finalTotalTTC || inv.totalTTC || 0),
-      0
+      0,
     );
-    return { count: clientInvoices.length, total, pendingCount: pending.length, pendingTotal };
+    return {
+      count: clientInvoices.length,
+      total,
+      pendingCount: pending.length,
+      pendingTotal,
+    };
   }, [clientInvoices]);
 
   const formatCurrency = (amount) =>
@@ -109,21 +120,12 @@ export default function ClientOverviewTab({
 
   // Recent activities (max 3)
   const recentActivities = useMemo(() => {
-    const activities = [...(client?.activity || [])].filter((a) => a.type !== "note_added");
-    const notes = (client?.notes || []).map((note) => ({
-      id: note.id,
-      type: "note_added",
-      description: note.content,
-      userName: note.userName,
-      userImage: note.userImage,
-      createdAt: note.createdAt,
-      metadata: {},
-    }));
-    return [...activities, ...notes]
+    return [...(client?.activity || [])]
+      .filter((a) => a.type !== "automation_executed")
       .filter((item) => item.createdAt)
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, 3);
-  }, [client?.activity, client?.notes]);
+  }, [client?.activity]);
 
   // Recent notes (max 3)
   const recentNotes = useMemo(() => {
@@ -139,8 +141,13 @@ export default function ClientOverviewTab({
       {/* Highlights */}
       <div className="px-4 sm:px-6 pt-5 pb-2">
         <div className="flex items-center gap-2 mb-4">
-          <LayoutGridIcon className="h-4 w-4 text-[#242529] dark:text-foreground" strokeWidth={1.5} />
-          <h3 className="text-sm font-medium text-[#242529] dark:text-foreground">Résumé</h3>
+          <LayoutGridIcon
+            className="h-4 w-4 text-[#242529] dark:text-foreground"
+            strokeWidth={1.5}
+          />
+          <h3 className="text-sm font-medium text-[#242529] dark:text-foreground">
+            Résumé
+          </h3>
         </div>
         <div className="grid grid-cols-3 gap-3">
           <HighlightCard
@@ -197,8 +204,13 @@ export default function ClientOverviewTab({
           onClick={() => onSwitchTab?.("activity")}
           className="flex items-center gap-2 mb-3 cursor-pointer group rounded-md px-2 py-1 -ml-2 hover:bg-[#f8f9fa] dark:hover:bg-gray-800/50 transition-colors"
         >
-          <Activity className="h-4 w-4 text-[#242529] dark:text-foreground" strokeWidth={1.5} />
-          <h3 className="text-sm font-medium text-[#242529] dark:text-foreground">Activité</h3>
+          <Activity
+            className="h-4 w-4 text-[#242529] dark:text-foreground"
+            strokeWidth={1.5}
+          />
+          <h3 className="text-sm font-medium text-[#242529] dark:text-foreground">
+            Activité
+          </h3>
           <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
         </button>
         <div className="rounded-lg border border-[#eeeff1] dark:border-[#232323]">
@@ -224,14 +236,17 @@ export default function ClientOverviewTab({
                     <span className="font-medium text-[#242529] dark:text-foreground">
                       {item.userName || "Système"}
                     </span>{" "}
-                    <span className="text-[#737373] dark:text-muted-foreground">{getActionText(item)}</span>
+                    <span className="text-[#737373] dark:text-muted-foreground">
+                      {getActionText(item)}
+                    </span>
                   </p>
                   <span className="text-xs text-[#999999] dark:text-muted-foreground whitespace-nowrap flex-shrink-0">
                     {formatRelativeDate(item.createdAt)}
                   </span>
                 </div>
               ))}
-              {(client?.activity?.length || 0) + (client?.notes?.length || 0) > 3 && (
+              {(client?.activity?.length || 0) + (client?.notes?.length || 0) >
+                3 && (
                 <button
                   onClick={() => onSwitchTab?.("activity")}
                   className="w-full text-left px-4 py-2.5 text-sm text-[#737373] dark:text-muted-foreground hover:text-[#242529] dark:hover:text-foreground dark:text-foreground cursor-pointer transition-colors"
@@ -251,8 +266,13 @@ export default function ClientOverviewTab({
             onClick={() => onSwitchTab?.("notes")}
             className="flex items-center gap-2 cursor-pointer group rounded-md px-2 py-1 -ml-2 hover:bg-[#f8f9fa] dark:hover:bg-gray-800/50 transition-colors"
           >
-            <StickyNote className="h-4 w-4 text-[#242529] dark:text-foreground" strokeWidth={1.5} />
-            <h3 className="text-sm font-medium text-[#242529] dark:text-foreground">Notes</h3>
+            <StickyNote
+              className="h-4 w-4 text-[#242529] dark:text-foreground"
+              strokeWidth={1.5}
+            />
+            <h3 className="text-sm font-medium text-[#242529] dark:text-foreground">
+              Notes
+            </h3>
             {notesCount > 0 && (
               <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
                 {notesCount}
@@ -285,7 +305,10 @@ export default function ClientOverviewTab({
                       {note.userName}
                     </span>
                     <span className="text-sm text-[#737373] dark:text-muted-foreground truncate">
-                      {(note.content || "").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").trim() || "Note sans contenu"}
+                      {(note.content || "")
+                        .replace(/<[^>]+>/g, " ")
+                        .replace(/&nbsp;/g, " ")
+                        .trim() || "Note sans contenu"}
                     </span>
                   </div>
                   <span className="text-xs text-[#999999] dark:text-muted-foreground whitespace-nowrap flex-shrink-0">

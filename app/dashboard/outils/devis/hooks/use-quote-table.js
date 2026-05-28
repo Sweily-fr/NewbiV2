@@ -31,6 +31,7 @@ import { formatDate, isDateExpired } from "../utils/date-utils";
 import QuoteRowActions from "../components/quote-row-actions";
 import { EmailTrackingStatus } from "@/src/components/email-tracking-status";
 import { toast } from "@/src/components/ui/sonner";
+import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
 
 // Custom filter functions
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -221,6 +222,10 @@ export function useQuoteTable({
   const [statusFilter, setStatusFilter] = useState([]);
   const [clientFilter, setClientFilter] = useState([]);
   const [dateFilter, setDateFilter] = useState(null);
+  const [columnVisibility, setColumnVisibility] = usePersistentColumnVisibility(
+    "newbi:column-visibility:quotes",
+    { finalTotalHT: false, finalTotalVAT: false },
+  );
 
   // Hook pour la suppression de devis
   const { deleteQuote, loading: isDeleting } = useDeleteQuote();
@@ -323,7 +328,7 @@ export function useQuoteTable({
               </div>
               <div className="text-xs text-muted-foreground truncate max-w-[100px] md:max-w-none">
                 {(quote.prefix
-                  ? `${quote.prefix}${quote.number}`
+                  ? `${quote.prefix.replace(/-$/, "")}-${quote.number}`
                   : quote.number) || <span className="italic">Brouillon</span>}
               </div>
             </div>
@@ -761,9 +766,11 @@ export function useQuoteTable({
 
     // Filtering
     onGlobalFilterChange: setGlobalFilter,
+    onColumnVisibilityChange: setColumnVisibility,
     globalFilterFn: memoizedMultiColumnFilter,
     state: {
       globalFilter,
+      columnVisibility,
       columnFilters: [
         ...(statusFilter.length > 0
           ? [{ id: "status", value: statusFilter }]
@@ -783,10 +790,6 @@ export function useQuoteTable({
     initialState: {
       pagination: {
         pageSize: 10,
-      },
-      columnVisibility: {
-        finalTotalHT: false,
-        finalTotalVAT: false,
       },
     },
   });

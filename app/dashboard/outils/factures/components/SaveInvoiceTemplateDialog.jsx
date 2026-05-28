@@ -61,7 +61,7 @@ export function SaveInvoiceTemplateDialog({
     (quoteTemplatesData?.quoteTemplates?.length || 0);
   const isLimitReached = templateLimit !== -1 && currentCount >= templateLimit;
 
-  const nextPlanLabel = planName === "freelance" ? "PME" : "Entreprise";
+  const nextPlanLabel = planName === "freelance" ? "TPE" : "Entreprise";
 
   useEffect(() => {
     if (open) {

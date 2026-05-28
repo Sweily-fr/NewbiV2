@@ -10,7 +10,6 @@ import {
 } from "@apollo/client";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 // import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
 // Query pour récupérer toutes les signatures de l'utilisateur
@@ -387,7 +386,12 @@ const SIGNATURE_UPDATED_SUBSCRIPTION = gql`
 
 // Hook pour récupérer les signatures
 export const useSignatures = () => {
-  const { data, loading: queryLoading, error: queryError, refetch } = useQuery(GET_MY_EMAIL_SIGNATURES, {
+  const {
+    data,
+    loading: queryLoading,
+    error: queryError,
+    refetch,
+  } = useQuery(GET_MY_EMAIL_SIGNATURES, {
     fetchPolicy: "cache-and-network",
     notifyOnNetworkStatusChange: true,
   });
@@ -399,7 +403,8 @@ export const useSignatures = () => {
   useSubscription(SIGNATURE_UPDATED_SUBSCRIPTION, {
     onData: ({ data: subscriptionData }) => {
       if (subscriptionData?.data?.signatureUpdated) {
-        const { type, signature, signatureId } = subscriptionData.data.signatureUpdated;
+        const { type, signature, signatureId } =
+          subscriptionData.data.signatureUpdated;
 
         try {
           const cacheData = apolloClient.cache.readQuery({
@@ -409,22 +414,22 @@ export const useSignatures = () => {
           if (cacheData?.getMyEmailSignatures) {
             let newSignatures;
 
-            if (type === 'DELETED') {
+            if (type === "DELETED") {
               // Supprimer la signature du cache
               newSignatures = cacheData.getMyEmailSignatures.filter(
-                (sig) => sig.id !== signatureId
+                (sig) => sig.id !== signatureId,
               );
               // Pas de toast ici - le handler s'en charge pour éviter les doublons
-            } else if (type === 'CREATED' && signature) {
+            } else if (type === "CREATED" && signature) {
               // Ajouter la nouvelle signature au cache
               newSignatures = [signature, ...cacheData.getMyEmailSignatures];
-              toast.info('Nouvelle signature créée');
-            } else if (type === 'UPDATED' && signature) {
+              toast.info("Nouvelle signature créée");
+            } else if (type === "UPDATED" && signature) {
               // Mettre à jour la signature dans le cache
               newSignatures = cacheData.getMyEmailSignatures.map((sig) =>
-                sig.id === signature.id ? signature : sig
+                sig.id === signature.id ? signature : sig,
               );
-              toast.info('Signature mise à jour');
+              toast.info("Signature mise à jour");
             } else {
               return;
             }
@@ -435,12 +440,12 @@ export const useSignatures = () => {
             });
           }
         } catch (error) {
-          console.error('❌ Erreur lors de la mise à jour du cache:', error);
+          console.error("❌ Erreur lors de la mise à jour du cache:", error);
         }
       }
     },
     onError: (error) => {
-      console.error('❌ Erreur subscription signatures:', error);
+      console.error("❌ Erreur subscription signatures:", error);
     },
   });
 
@@ -452,9 +457,33 @@ export const useSignatures = () => {
   };
 };
 
+const stripTypename = (value) => {
+  if (value === null || value === undefined) return value;
+  if (Array.isArray(value)) return value.map(stripTypename);
+  if (typeof value === "object") {
+    const result = {};
+    for (const [key, val] of Object.entries(value)) {
+      if (key === "__typename") continue;
+      result[key] = stripTypename(val);
+    }
+    return result;
+  }
+  return value;
+};
+
+const buildDuplicateName = (baseName, existingNames) => {
+  const taken = new Set(existingNames);
+  const root = `${baseName} - copie`;
+  if (!taken.has(root)) return root;
+  let i = 2;
+  while (taken.has(`${root} ${i}`)) i++;
+  return `${root} ${i}`;
+};
+
 // Hook pour les actions de signature
 export const useSignatureActions = () => {
   const router = useRouter();
+  const apolloClient = useApolloClient();
   // const { workspaceId } = useRequiredWorkspace();
 
   const [deleteSignature, { loading: deleting }] = useMutation(
@@ -472,7 +501,7 @@ export const useSignatureActions = () => {
 
             if (existingData?.getMyEmailSignatures) {
               const newSignatures = existingData.getMyEmailSignatures.filter(
-                (sig) => sig.id !== variables.id
+                (sig) => sig.id !== variables.id,
               );
 
               cache.writeQuery({
@@ -481,11 +510,11 @@ export const useSignatureActions = () => {
               });
             }
           } catch (error) {
-            console.error('❌ Erreur lors de la mise à jour du cache:', error);
+            console.error("❌ Erreur lors de la mise à jour du cache:", error);
           }
         }
       },
-    }
+    },
   );
 
   const [deleteMultipleSignatures, { loading: deletingMultiple }] = useMutation(
@@ -503,7 +532,7 @@ export const useSignatureActions = () => {
 
             if (existingData?.getMyEmailSignatures) {
               const newSignatures = existingData.getMyEmailSignatures.filter(
-                (sig) => !variables.ids.includes(sig.id)
+                (sig) => !variables.ids.includes(sig.id),
               );
 
               cache.writeQuery({
@@ -512,18 +541,18 @@ export const useSignatureActions = () => {
               });
             }
           } catch (error) {
-            console.error('❌ Erreur lors de la mise à jour du cache:', error);
+            console.error("❌ Erreur lors de la mise à jour du cache:", error);
           }
         }
       },
-    }
+    },
   );
 
   const [setDefaultSignature, { loading: settingDefault }] = useMutation(
     SET_DEFAULT_EMAIL_SIGNATURE,
     {
       refetchQueries: [GET_MY_EMAIL_SIGNATURES],
-    }
+    },
   );
 
   const [getSignatureForEdit] = useLazyQuery(GET_EMAIL_SIGNATURE);
@@ -532,7 +561,7 @@ export const useSignatureActions = () => {
     CREATE_EMAIL_SIGNATURE,
     {
       refetchQueries: [GET_MY_EMAIL_SIGNATURES],
-    }
+    },
   );
 
   // Handlers pour les actions
@@ -543,13 +572,16 @@ export const useSignatureActions = () => {
       });
       if (data?.getEmailSignature) {
         router.push(
-          `/dashboard/outils/signatures-mail/new?edit=true&id=${data.getEmailSignature.id}`
+          `/dashboard/outils/signatures-mail/new?edit=true&id=${data.getEmailSignature.id}`,
         );
       } else {
         toast.error("Signature introuvable");
       }
     } catch (error) {
-      console.error("❌ [EDIT] Erreur lors de l'ouverture de l'éditeur:", error);
+      console.error(
+        "❌ [EDIT] Erreur lors de l'ouverture de l'éditeur:",
+        error,
+      );
       toast.error("Erreur lors de la récupération de la signature");
     }
   };
@@ -559,7 +591,7 @@ export const useSignatureActions = () => {
 
     if (!signatureId) {
       toast.error(
-        "Erreur: Impossible de trouver l'identifiant de la signature"
+        "Erreur: Impossible de trouver l'identifiant de la signature",
       );
       return;
     }
@@ -582,42 +614,42 @@ export const useSignatureActions = () => {
       const { data } = await getSignatureForEdit({
         variables: { id: signature.id },
       });
-      if (data?.getEmailSignature) {
-        const originalSignature = data.getEmailSignature;
-
-        const duplicateData = {
-          signatureName: `${originalSignature.signatureName} (Copie)`,
-          firstName: originalSignature.firstName,
-          lastName: originalSignature.lastName,
-          email: originalSignature.email,
-          position: originalSignature.position,
-          companyName: originalSignature.companyName,
-          phone: originalSignature.phone,
-          website: originalSignature.website,
-          address: originalSignature.address,
-          photo: originalSignature.photo,
-          logo: originalSignature.logo,
-          primaryColor: originalSignature.primaryColor,
-        };
-
-        const filteredData = Object.fromEntries(
-          Object.entries(duplicateData).filter(
-            ([key, value]) =>
-              value !== null && value !== undefined && value !== ""
-          )
-        );
-
-        await createSignature({ 
-          variables: { 
-            input: {
-              ...filteredData,
-              // workspaceId, // Plus nécessaire - le backend filtre automatiquement
-            }
-          } 
-        });
-        toast.success("Signature dupliquée avec succès");
+      if (!data?.getEmailSignature) {
+        toast.error("Signature introuvable");
+        return;
       }
-    } catch {
+
+      const cleaned = stripTypename(data.getEmailSignature);
+      delete cleaned.id;
+      delete cleaned.isDefault;
+      delete cleaned.createdAt;
+      delete cleaned.updatedAt;
+
+      const existing =
+        apolloClient.cache.readQuery({ query: GET_MY_EMAIL_SIGNATURES })
+          ?.getMyEmailSignatures ?? [];
+
+      const duplicateData = {
+        ...cleaned,
+        signatureName: buildDuplicateName(
+          cleaned.signatureName,
+          existing.map((s) => s.signatureName),
+        ),
+        isDefault: false,
+      };
+
+      const filteredData = Object.fromEntries(
+        Object.entries(duplicateData).filter(
+          ([, value]) => value !== null && value !== undefined && value !== "",
+        ),
+      );
+
+      await createSignature({
+        variables: { input: filteredData },
+      });
+      toast.success("Signature dupliquée avec succès");
+    } catch (error) {
+      console.error("Erreur lors de la duplication:", error);
       toast.error("Erreur lors de la duplication de la signature");
     }
   };
@@ -643,7 +675,9 @@ export const useSignatureActions = () => {
       await deleteMultipleSignatures({
         variables: { ids: signatureIds },
       });
-      toast.success(`${signatureIds.length} signature(s) supprimée(s) avec succès`);
+      toast.success(
+        `${signatureIds.length} signature(s) supprimée(s) avec succès`,
+      );
     } catch (error) {
       console.error("Erreur lors de la suppression multiple:", error);
       toast.error("Erreur lors de la suppression des signatures");

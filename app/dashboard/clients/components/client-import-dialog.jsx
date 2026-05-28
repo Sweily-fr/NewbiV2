@@ -12,7 +12,16 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Progress } from "@/src/components/ui/progress";
 import { toast } from "@/src/components/ui/sonner";
-import { ArrowLeft, ArrowRight, Loader2, Upload, CheckCircle2, XCircle, Download, Settings2 } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Loader2,
+  Upload,
+  CheckCircle2,
+  XCircle,
+  Download,
+  Settings2,
+} from "lucide-react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import {
   useClientCustomFields,
@@ -44,7 +53,11 @@ const STEPS = [
 
 const BATCH_SIZE = 10;
 
-export default function ClientImportDialog({ open, onOpenChange, initialView = "import" }) {
+export default function ClientImportDialog({
+  open,
+  onOpenChange,
+  initialView = "import",
+}) {
   const { workspaceId } = useWorkspace();
   const { fields: customFields } = useClientCustomFields(workspaceId);
   const { createField } = useCreateClientCustomField();
@@ -65,8 +78,13 @@ export default function ClientImportDialog({ open, onOpenChange, initialView = "
   const [mapping, setMapping] = useState({});
   const [customFieldMappings, setCustomFieldMappings] = useState([]);
   const [isImporting, setIsImporting] = useState(false);
-  const [importResults, setImportResults] = useState({ successCount: 0, errors: [] });
-  const [showCustomFields, setShowCustomFields] = useState(initialView === "fields");
+  const [importResults, setImportResults] = useState({
+    successCount: 0,
+    errors: [],
+  });
+  const [showCustomFields, setShowCustomFields] = useState(
+    initialView === "fields",
+  );
 
   // Sync initialView when dialog opens
   useEffect(() => {
@@ -79,7 +97,12 @@ export default function ClientImportDialog({ open, onOpenChange, initialView = "
   const transformedClients = useMemo(() => {
     if (!parsedData) return [];
     return parsedData.rows.map((row) =>
-      transformRowToClient(row, parsedData.headers, mapping, customFieldMappings)
+      transformRowToClient(
+        row,
+        parsedData.headers,
+        mapping,
+        customFieldMappings,
+      ),
     );
   }, [parsedData, mapping, customFieldMappings]);
 
@@ -90,7 +113,9 @@ export default function ClientImportDialog({ open, onOpenChange, initialView = "
     }).length;
   }, [transformedClients]);
 
-  const importFinished = !isImporting && (importResults.successCount > 0 || importResults.errors.length > 0);
+  const importFinished =
+    !isImporting &&
+    (importResults.successCount > 0 || importResults.errors.length > 0);
 
   // Reset all state
   const resetState = useCallback(() => {
@@ -138,7 +163,9 @@ export default function ClientImportDialog({ open, onOpenChange, initialView = "
       }
 
       // Filter out completely empty rows
-      data.rows = data.rows.filter((row) => row.some((cell) => cell.trim() !== ""));
+      data.rows = data.rows.filter((row) =>
+        row.some((cell) => cell.trim() !== ""),
+      );
 
       if (data.rows.length === 0) {
         toast.error("Le fichier ne contient aucune ligne de données.");
@@ -148,7 +175,7 @@ export default function ClientImportDialog({ open, onOpenChange, initialView = "
 
       if (data.rows.length > 500) {
         toast.warning(
-          `Le fichier contient ${data.rows.length} lignes. L'import sera effectué par lots de ${BATCH_SIZE}.`
+          `Le fichier contient ${data.rows.length} lignes. L'import sera effectué par lots de ${BATCH_SIZE}.`,
         );
       }
 
@@ -192,8 +219,8 @@ export default function ClientImportDialog({ open, onOpenChange, initialView = "
               workspaceId,
               input: client,
             },
-          }).then(() => ({ idx }))
-        )
+          }).then(() => ({ idx })),
+        ),
       );
 
       for (let j = 0; j < results.length; j++) {
@@ -221,19 +248,35 @@ export default function ClientImportDialog({ open, onOpenChange, initialView = "
       } catch {
         // Ignore refetch errors
       }
-      toast.success(`${successCount} contact${successCount > 1 ? "s" : ""} importé${successCount > 1 ? "s" : ""}`);
+      toast.success(
+        `${successCount} contact${successCount > 1 ? "s" : ""} importé${successCount > 1 ? "s" : ""}`,
+      );
     }
     if (errors.length > 0) {
-      toast.error(`${errors.length} erreur${errors.length > 1 ? "s" : ""} lors de l'import`);
+      toast.error(
+        `${errors.length} erreur${errors.length > 1 ? "s" : ""} lors de l'import`,
+      );
     }
-  }, [parsedData, workspaceId, transformedClients, mapping, createClient, apolloClient]);
+  }, [
+    parsedData,
+    workspaceId,
+    transformedClients,
+    mapping,
+    createClient,
+    apolloClient,
+  ]);
 
   const handleCreateCustomField = useCallback(
     async ({ name, fieldType = "TEXT", options = [], isRequired = false }) => {
-      const field = await createField(workspaceId, { name, fieldType, options, isRequired });
+      const field = await createField(workspaceId, {
+        name,
+        fieldType,
+        options,
+        isRequired,
+      });
       return field;
     },
-    [createField, workspaceId]
+    [createField, workspaceId],
   );
 
   // ── Navigation ──
@@ -243,7 +286,11 @@ export default function ClientImportDialog({ open, onOpenChange, initialView = "
       case 0:
         return !!file;
       case 1:
-        return mapping.name !== null && mapping.name !== undefined && importableCount > 0;
+        return (
+          mapping.name !== null &&
+          mapping.name !== undefined &&
+          importableCount > 0
+        );
       default:
         return false;
     }
@@ -272,214 +319,238 @@ export default function ClientImportDialog({ open, onOpenChange, initialView = "
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent
-        className="sm:max-w-[580px] flex flex-col p-1 gap-0 border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl top-[40%]"
+        className={`${currentStep === 1 && !showCustomFields ? "sm:max-w-[56rem]" : "sm:max-w-[580px]"} flex flex-col p-1 gap-0 border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl top-[40%]`}
         showCloseButton={false}
       >
         <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1] flex flex-col h-full">
-        {showCustomFields ? (
-          <>
-            {/* Custom Fields Header */}
-            <div className="px-5 pt-4 pb-3 border-b border-border/40 flex-shrink-0">
-              <DialogHeader>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setShowCustomFields(false)}
-                    className="flex items-center justify-center h-7 w-7 rounded-md hover:bg-accent transition-colors cursor-pointer"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </button>
-                  <DialogTitle className="text-sm font-medium">Champs personnalisés clients</DialogTitle>
-                </div>
-              </DialogHeader>
-            </div>
-
-            {/* Custom Fields Content */}
-            <div className="flex-1 overflow-auto px-5 py-4">
-              <CustomFieldsPanel
-                workspaceId={workspaceId}
-                fields={customFields}
-                planLimits={planLimits}
-                onCreateField={(data) => createField(workspaceId, data)}
-                onUpdateField={(fieldId, data) => updateField(workspaceId, fieldId, data)}
-                onDeleteField={(fieldId) => deleteField(workspaceId, fieldId)}
-              />
-            </div>
-          </>
-        ) : (
-          <>
-            {/* Import Header */}
-            <div className="px-5 pt-4 pb-3 border-b border-border/40 flex-shrink-0">
-              <DialogHeader>
-                <div className="flex items-center justify-between">
-                  <DialogTitle className="text-sm font-medium flex items-center gap-2">
-                    <Upload className="size-4" />
-                    Importer des contacts
-                  </DialogTitle>
-                  {!isImporting && !importFinished && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setShowCustomFields(true)}
-                      className="h-7 w-7"
+          {showCustomFields ? (
+            <>
+              {/* Custom Fields Header */}
+              <div className="px-5 pt-4 pb-3 border-b border-border/40 flex-shrink-0">
+                <DialogHeader>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setShowCustomFields(false)}
+                      className="flex items-center justify-center h-7 w-7 rounded-md hover:bg-accent transition-colors cursor-pointer"
                     >
-                      <Settings2 className="h-3.5 w-3.5" />
+                      <ArrowLeft className="h-4 w-4" />
+                    </button>
+                    <DialogTitle className="text-sm font-medium">
+                      Champs personnalisés clients
+                    </DialogTitle>
+                  </div>
+                </DialogHeader>
+              </div>
+
+              {/* Custom Fields Content */}
+              <div className="flex-1 overflow-auto px-5 py-4">
+                <CustomFieldsPanel
+                  workspaceId={workspaceId}
+                  fields={customFields}
+                  planLimits={planLimits}
+                  onCreateField={(data) => createField(workspaceId, data)}
+                  onUpdateField={(fieldId, data) =>
+                    updateField(workspaceId, fieldId, data)
+                  }
+                  onDeleteField={(fieldId) => deleteField(workspaceId, fieldId)}
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Import Header */}
+              <div className="px-5 pt-4 pb-3 border-b border-border/40 flex-shrink-0">
+                <DialogHeader>
+                  <div className="flex items-center justify-between">
+                    <DialogTitle className="text-sm font-medium flex items-center gap-2">
+                      <Upload className="size-4" />
+                      Importer des contacts
+                    </DialogTitle>
+                    {!isImporting && !importFinished && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setShowCustomFields(true)}
+                        className="h-7 w-7"
+                      >
+                        <Settings2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {step.label} — Étape {step.number} sur {STEPS.length}
+                  </p>
+                </DialogHeader>
+                <Progress value={progressValue} className="h-1 mt-3" />
+              </div>
+
+              {/* Import Content */}
+              <div className="flex-1 overflow-auto px-5 py-4">
+                {currentStep === 0 && (
+                  <ImportStepUpload
+                    file={file}
+                    onFileSelected={handleFileSelected}
+                    onFileRemoved={handleFileRemoved}
+                  />
+                )}
+                {currentStep === 1 &&
+                  parsedData &&
+                  !isImporting &&
+                  !importFinished && (
+                    <ImportStepMapping
+                      headers={parsedData.headers}
+                      firstRow={parsedData.rows[0]}
+                      mapping={mapping}
+                      onMappingChange={setMapping}
+                      customFieldMappings={customFieldMappings}
+                      onCustomFieldMappingsChange={setCustomFieldMappings}
+                      onCreateCustomField={handleCreateCustomField}
+                      existingCustomFields={customFields}
+                    />
+                  )}
+
+                {/* Import progress */}
+                {currentStep === 1 && isImporting && (
+                  <div className="flex flex-col items-center justify-center h-full gap-4">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    <div className="text-center space-y-2 w-full max-w-md">
+                      <p className="text-sm font-medium">
+                        Import en cours...{" "}
+                        {importResults.successCount +
+                          importResults.errors.length}{" "}
+                        / {importableCount}
+                      </p>
+                      <Progress
+                        value={
+                          importableCount > 0
+                            ? Math.round(
+                                ((importResults.successCount +
+                                  importResults.errors.length) /
+                                  importableCount) *
+                                  100,
+                              )
+                            : 0
+                        }
+                        className="h-2"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Import results */}
+                {currentStep === 1 && importFinished && (
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <div className="w-full max-w-md space-y-4">
+                      <div className="flex items-center gap-3 p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/10">
+                        <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                        <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                          {importResults.successCount} contact
+                          {importResults.successCount > 1 ? "s" : ""} importé
+                          {importResults.successCount > 1 ? "s" : ""} avec
+                          succès
+                        </p>
+                      </div>
+
+                      {importResults.errors.length > 0 && (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3 p-4 rounded-lg bg-red-50 dark:bg-red-900/10">
+                            <XCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                            <p className="text-sm font-medium text-red-700 dark:text-red-300">
+                              {importResults.errors.length} erreur
+                              {importResults.errors.length > 1 ? "s" : ""}
+                            </p>
+                          </div>
+
+                          <div className="border rounded-lg max-h-[200px] overflow-auto">
+                            <div className="divide-y">
+                              {importResults.errors.map((err, idx) => (
+                                <div key={idx} className="px-4 py-2 text-xs">
+                                  <span className="font-medium text-red-600 dark:text-red-400">
+                                    Ligne {err.row}
+                                  </span>
+                                  <span className="text-muted-foreground ml-2">
+                                    {err.message}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-2"
+                            onClick={() =>
+                              downloadErrorsCSV(importResults.errors)
+                            }
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                            Télécharger les erreurs (CSV)
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Import Footer */}
+              <div className="px-5 py-3 border-t border-border/40 flex items-center justify-between flex-shrink-0">
+                <div>
+                  {currentStep > 0 && !isImporting && !importFinished && (
+                    <Button
+                      variant="outline"
+                      onClick={handlePrev}
+                      className="gap-2"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      Précédent
                     </Button>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {step.label} — Étape {step.number} sur {STEPS.length}
-                </p>
-              </DialogHeader>
-              <Progress value={progressValue} className="h-1 mt-3" />
-            </div>
-
-            {/* Import Content */}
-            <div className="flex-1 overflow-auto px-5 py-4">
-              {currentStep === 0 && (
-                <ImportStepUpload
-                  file={file}
-                  onFileSelected={handleFileSelected}
-                  onFileRemoved={handleFileRemoved}
-                />
-              )}
-              {currentStep === 1 && parsedData && !isImporting && !importFinished && (
-                <ImportStepMapping
-                  headers={parsedData.headers}
-                  firstRow={parsedData.rows[0]}
-                  mapping={mapping}
-                  onMappingChange={setMapping}
-                  customFieldMappings={customFieldMappings}
-                  onCustomFieldMappingsChange={setCustomFieldMappings}
-                  onCreateCustomField={handleCreateCustomField}
-                  existingCustomFields={customFields}
-                />
-              )}
-
-              {/* Import progress */}
-              {currentStep === 1 && isImporting && (
-                <div className="flex flex-col items-center justify-center h-full gap-4">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                  <div className="text-center space-y-2 w-full max-w-md">
-                    <p className="text-sm font-medium">
-                      Import en cours... {importResults.successCount + importResults.errors.length} / {importableCount}
-                    </p>
-                    <Progress
-                      value={importableCount > 0 ? Math.round(((importResults.successCount + importResults.errors.length) / importableCount) * 100) : 0}
-                      className="h-2"
-                    />
-                  </div>
+                <div className="flex items-center gap-2">
+                  {!isImporting && !importFinished && (
+                    <Button variant="outline" onClick={handleClose}>
+                      Annuler
+                    </Button>
+                  )}
+                  {currentStep === 0 && (
+                    <Button
+                      onClick={handleNext}
+                      disabled={!canGoNext || parsing}
+                      className="gap-2"
+                    >
+                      {parsing ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Lecture...
+                        </>
+                      ) : (
+                        <>
+                          Suivant
+                          <ArrowRight className="h-4 w-4" />
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  {currentStep === 1 && !isImporting && !importFinished && (
+                    <Button
+                      onClick={handleNext}
+                      disabled={!canGoNext}
+                      className="gap-2"
+                    >
+                      <Upload className="h-4 w-4" />
+                      Importer {importableCount} contact
+                      {importableCount > 1 ? "s" : ""}
+                    </Button>
+                  )}
+                  {importFinished && (
+                    <Button onClick={handleClose}>Fermer</Button>
+                  )}
                 </div>
-              )}
-
-              {/* Import results */}
-              {currentStep === 1 && importFinished && (
-                <div className="flex flex-col items-center justify-center h-full">
-                  <div className="w-full max-w-md space-y-4">
-                    <div className="flex items-center gap-3 p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/10">
-                      <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-                      <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
-                        {importResults.successCount} contact{importResults.successCount > 1 ? "s" : ""} importé{importResults.successCount > 1 ? "s" : ""} avec succès
-                      </p>
-                    </div>
-
-                    {importResults.errors.length > 0 && (
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-3 p-4 rounded-lg bg-red-50 dark:bg-red-900/10">
-                          <XCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
-                          <p className="text-sm font-medium text-red-700 dark:text-red-300">
-                            {importResults.errors.length} erreur{importResults.errors.length > 1 ? "s" : ""}
-                          </p>
-                        </div>
-
-                        <div className="border rounded-lg max-h-[200px] overflow-auto">
-                          <div className="divide-y">
-                            {importResults.errors.map((err, idx) => (
-                              <div key={idx} className="px-4 py-2 text-xs">
-                                <span className="font-medium text-red-600 dark:text-red-400">
-                                  Ligne {err.row}
-                                </span>
-                                <span className="text-muted-foreground ml-2">
-                                  {err.message}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="gap-2"
-                          onClick={() => downloadErrorsCSV(importResults.errors)}
-                        >
-                          <Download className="h-3.5 w-3.5" />
-                          Télécharger les erreurs (CSV)
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Import Footer */}
-            <div className="px-5 py-3 border-t border-border/40 flex items-center justify-between flex-shrink-0">
-              <div>
-                {currentStep > 0 && !isImporting && !importFinished && (
-                  <Button
-                    variant="outline"
-                    onClick={handlePrev}
-                    className="gap-2"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                    Précédent
-                  </Button>
-                )}
               </div>
-              <div className="flex items-center gap-2">
-                {!isImporting && !importFinished && (
-                  <Button variant="outline" onClick={handleClose}>
-                    Annuler
-                  </Button>
-                )}
-                {currentStep === 0 && (
-                  <Button
-                    onClick={handleNext}
-                    disabled={!canGoNext || parsing}
-                    className="gap-2"
-                  >
-                    {parsing ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Lecture...
-                      </>
-                    ) : (
-                      <>
-                        Suivant
-                        <ArrowRight className="h-4 w-4" />
-                      </>
-                    )}
-                  </Button>
-                )}
-                {currentStep === 1 && !isImporting && !importFinished && (
-                  <Button
-                    onClick={handleNext}
-                    disabled={!canGoNext}
-                    className="gap-2"
-                  >
-                    <Upload className="h-4 w-4" />
-                    Importer {importableCount} contact{importableCount > 1 ? "s" : ""}
-                  </Button>
-                )}
-                {importFinished && (
-                  <Button onClick={handleClose}>
-                    Fermer
-                  </Button>
-                )}
-              </div>
-            </div>
-          </>
-        )}
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>

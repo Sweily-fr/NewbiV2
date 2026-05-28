@@ -236,59 +236,13 @@ export const stripePlugin = stripe({
         },
       },
     ],
-    // Paramètres personnalisés pour le checkout Stripe
-    getCheckoutSessionParams: async ({ user, plan, coupon, metadata }) => {
-      // Déterminer quel coupon utiliser
-      const couponToApply =
-        coupon || process.env.STRIPE_FIRST_YEAR_DISCOUNT_COUPON_ID;
-
-      // Message personnalisé avec info trial
-      const trialMessage =
-        "Essai gratuit 30 jours - Aucun prélèvement avant la fin de l'essai";
-
-      const discountType =
-        coupon === process.env.STRIPE_NEW_ORG_COUPON_ID
-          ? "new_org_25_percent"
-          : "first_year_20_percent";
-
-      return {
-        params: {
-          // Appliquer le coupon approprié (s'appliquera après le trial)
-          discounts: couponToApply ? [{ coupon: couponToApply }] : [],
-          // Collecter l'adresse de facturation
-          billing_address_collection: "required",
-          // ✅ Trial de 30 jours - L'utilisateur ne sera pas prélevé avant 30 jours
-          subscription_data: {
-            trial_period_days: 30,
-            metadata: {
-              hasTrial: "true",
-              trialDays: "30",
-              planType: plan.name,
-              userId: user.id,
-            },
-          },
-          // Message personnalisé
-          custom_text: {
-            submit: {
-              message: trialMessage,
-            },
-          },
-          // Métadonnées pour le suivi
-          metadata: {
-            planType: plan.name,
-            discountApplied: discountType,
-            userId: user.id,
-            hasTrial: "true",
-            trialDays: "30",
-            ...metadata, // Métadonnées additionnelles
-          },
-        },
-        options: {
-          // Clé d'idempotence pour éviter les doublons
-          idempotencyKey: `sub_${user.id}_${plan.name}_${Date.now()}`,
-        },
-      };
-    },
+    // [Lot 6 cleanup] `getCheckoutSessionParams` removed — was the Better
+    // Auth plugin callback for `auth.subscription.upgrade()`. We never call
+    // that API: every checkout goes through our custom routes
+    // `/api/create-org-subscription` (legacy / multi-org) and
+    // `/api/billing/subscribe` (post-trial Lot 5). The dead callback also
+    // referenced `STRIPE_FIRST_YEAR_DISCOUNT_COUPON_ID` which is therefore
+    // no longer used anywhere — the env var can be retired from .env.
   },
   // Webhooks Stripe pour mettre à jour automatiquement le statut
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -754,6 +708,13 @@ export const stripePlugin = stripe({
           break;
 
         case "customer.subscription.updated":
+          // Décision audit/Lot 5 — déduplication explicite, alignée avec les
+          // autres handlers. Sans cela, un replay du même event pouvait
+          // ré-écrire la sub sans garde-fou.
+          if (await isEventAlreadyProcessed(event.id, event.type)) {
+            break;
+          }
+
           const updatedSub = event.data.object;
 
           try {
@@ -1680,6 +1641,27 @@ export const organizationPlugin = organization({
         hasUsedTrial: {
           type: "boolean",
           input: true,
+          required: false,
+        },
+        // Décision #11 (Lot 5) — formalised. Discriminates the source of a
+        // trial: true means it came from Stripe (legacy 30-day Stripe trial),
+        // false means it is app-managed (Lot 3 onwards). The cron and the
+        // gating layer rely on this to leave Stripe-origin trials untouched.
+        stripeTrialActive: {
+          type: "boolean",
+          input: true,
+          required: false,
+        },
+        // Anti-doublon markers used by the trial cleanup cron (Lot 4) to
+        // avoid sending the J-3 / J0 emails more than once per organisation.
+        trialEndingEmailSentAt: {
+          type: "string",
+          input: false,
+          required: false,
+        },
+        trialEndedEmailSentAt: {
+          type: "string",
+          input: false,
           required: false,
         },
       },

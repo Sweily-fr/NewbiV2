@@ -1,47 +1,63 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { useParams } from 'next/navigation';
-import UniversalPreviewPDF from '@/src/components/pdf/UniversalPreviewPDF';
-import { domToJpeg } from 'modern-screenshot';
+import { useEffect, useRef, useState } from "react";
+import { useParams } from "next/navigation";
+import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
+import { domToJpeg } from "modern-screenshot";
 // jsPDF importé dynamiquement pour réduire la taille du bundle
 
 export default function PDFGeneratorPage() {
   const params = useParams();
   const [invoiceData, setInvoiceData] = useState(null);
-  const [status, setStatus] = useState('loading');
+  const [status, setStatus] = useState("loading");
+  const [isVisual, setIsVisual] = useState(false);
   const componentRef = useRef(null);
 
   useEffect(() => {
     async function fetchAndGenerate() {
       try {
-        console.log('🔍 Récupération facture:', params.id);
-        
+        console.log("🔍 Récupération facture:", params.id);
+
         // Récupérer les données de la facture depuis l'API
-        const response = await fetch(`/api/invoices/data/${params.id}`);
-        console.log('📡 Réponse API:', response.status);
-        
+        const fetchHeaders = {};
+        if (window.__PREVIEW_MODE === "visual") {
+          fetchHeaders["x-internal-secret"] =
+            process.env.NEXT_PUBLIC_INTERNAL_API_SECRET || "";
+        }
+        const response = await fetch(`/api/invoices/data/${params.id}`, {
+          headers: fetchHeaders,
+        });
+        console.log("📡 Réponse API:", response.status);
+
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('❌ Erreur API:', errorText);
-          throw new Error('Facture non trouvée');
+          console.error("❌ Erreur API:", errorText);
+          throw new Error("Facture non trouvée");
         }
-        
+
         const data = await response.json();
-        console.log('✅ Données reçues:', data);
+        console.log("✅ Données reçues:", data);
         setInvoiceData(data);
-        setStatus('ready');
+        setStatus("ready");
+
+        // Visual mode: just render, no PDF generation
+        const isVisualMode = window.__PREVIEW_MODE === "visual";
+        if (isVisualMode) {
+          console.log("👁️ Visual mode — skipping PDF generation");
+          setIsVisual(true);
+          return;
+        }
 
         // Attendre que le composant soit rendu
-        console.log('⏳ Attente rendu composant...');
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        console.log("⏳ Attente rendu composant...");
+        await new Promise((resolve) => setTimeout(resolve, 3000));
 
         // Générer le PDF
-        console.log('📄 Début génération PDF...');
+        console.log("📄 Début génération PDF...");
         await generatePDF(data);
       } catch (error) {
-        console.error('❌ Erreur:', error);
-        setStatus('error');
+        console.error("❌ Erreur:", error);
+        setStatus("error");
         window.pdfGenerationResult = { error: error.message };
       }
     }
@@ -51,43 +67,43 @@ export default function PDFGeneratorPage() {
 
   async function generatePDF(data) {
     try {
-      console.log('🎨 Génération PDF - Étape 1: Vérification composant');
+      console.log("🎨 Génération PDF - Étape 1: Vérification composant");
       if (!componentRef.current) {
-        console.error('❌ componentRef.current est null');
-        throw new Error('Composant non trouvé');
+        console.error("❌ componentRef.current est null");
+        throw new Error("Composant non trouvé");
       }
-      console.log('✅ Composant trouvé');
+      console.log("✅ Composant trouvé");
 
       // Attendre le chargement des images
-      console.log('🖼️ Génération PDF - Étape 2: Chargement images');
-      const images = componentRef.current.querySelectorAll('img');
+      console.log("🖼️ Génération PDF - Étape 2: Chargement images");
+      const images = componentRef.current.querySelectorAll("img");
       console.log(`📸 ${images.length} image(s) trouvée(s)`);
-      
+
       await Promise.all(
-        Array.from(images).map(img => {
+        Array.from(images).map((img) => {
           if (img.complete) return Promise.resolve();
           return new Promise((resolve) => {
             img.onload = () => resolve();
             img.onerror = () => resolve();
             setTimeout(() => resolve(), 3000);
           });
-        })
+        }),
       );
 
-      console.log('✅ Images chargées');
-      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log("✅ Images chargées");
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Capturer avec modern-screenshot
-      console.log('📷 Génération PDF - Étape 3: Capture screenshot');
+      console.log("📷 Génération PDF - Étape 3: Capture screenshot");
       const dataUrl = await domToJpeg(componentRef.current, {
         quality: 0.95,
-        backgroundColor: '#ffffff',
+        backgroundColor: "#ffffff",
         width: 794,
         scale: 2,
         fetch: {
           requestInit: {
-            mode: 'cors',
-            credentials: 'omit',
+            mode: "cors",
+            credentials: "omit",
           },
         },
       });
@@ -101,11 +117,11 @@ export default function PDFGeneratorPage() {
       });
 
       // Créer le PDF (import dynamique)
-      const { default: jsPDF } = await import('jspdf');
+      const { default: jsPDF } = await import("jspdf");
       const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
         compress: true,
       });
 
@@ -119,30 +135,34 @@ export default function PDFGeneratorPage() {
 
       // Multi-pages avec découpage intelligent (même logique que UniversalPDFDownloader)
       if (!fitsOnOnePage) {
-        console.log('📄 Document multi-pages détecté');
+        console.log("📄 Document multi-pages détecté");
 
         // Détecter le footer pour le repositionner sur la dernière page
-        const footerElement = componentRef.current.querySelector('[data-pdf-section="footer"]');
+        const footerElement = componentRef.current.querySelector(
+          '[data-pdf-section="footer"]',
+        );
         let footerHeight = 0;
         let footerPositionY = img.height;
-        let footerBgColor = 'rgb(232, 232, 232)'; // Couleur par défaut
-        
+        let footerBgColor = "rgb(232, 232, 232)"; // Couleur par défaut
+
         if (footerElement) {
           const containerRect = componentRef.current.getBoundingClientRect();
           const footerRect = footerElement.getBoundingClientRect();
           footerHeight = footerRect.height * 2; // *2 pour le scale
           footerPositionY = (footerRect.top - containerRect.top) * 2;
-          
-          console.log(`🔖 Footer détecté: hauteur=${footerHeight}px, position=${footerPositionY}px`);
+
+          console.log(
+            `🔖 Footer détecté: hauteur=${footerHeight}px, position=${footerPositionY}px`,
+          );
         }
-        
+
         // Extraire la couleur du footer directement depuis l'image capturée
-        const colorCanvas = document.createElement('canvas');
+        const colorCanvas = document.createElement("canvas");
         colorCanvas.width = img.width;
         colorCanvas.height = img.height;
-        const colorCtx = colorCanvas.getContext('2d');
+        const colorCtx = colorCanvas.getContext("2d");
         colorCtx.drawImage(img, 0, 0);
-        
+
         // Récupérer la couleur d'un pixel au milieu du footer (10px à l'intérieur)
         if (footerPositionY < img.height) {
           const sampleY = Math.min(footerPositionY + 20, img.height - 1); // 10px dans le footer (scale 2)
@@ -151,13 +171,14 @@ export default function PDFGeneratorPage() {
           footerBgColor = `rgb(${pixelData[0]}, ${pixelData[1]}, ${pixelData[2]})`;
           console.log(`🎨 Couleur extraite du footer: ${footerBgColor}`);
         }
-        
+
         // Hauteur du bandeau de pagination (en mm pour le PDF)
         const paginationBannerHeightMM = 12; // 12mm de hauteur
-        const paginationBannerHeightPx = paginationBannerHeightMM * (img.width / pdfWidth); // Convertir en pixels
+        const paginationBannerHeightPx =
+          paginationBannerHeightMM * (img.width / pdfWidth); // Convertir en pixels
 
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
         const canvasWidth = img.width;
         const pixelsPerMM = img.width / pdfWidth;
         const pageHeightPixels = pdfHeight * pixelsPerMM;
@@ -172,7 +193,7 @@ export default function PDFGeneratorPage() {
         // Première passe : générer toutes les pages
         while (currentY < img.height) {
           let targetY = currentY + pageHeightPixels;
-          
+
           // S'assurer de ne pas dépasser l'image
           if (targetY > img.height) {
             targetY = img.height;
@@ -182,54 +203,69 @@ export default function PDFGeneratorPage() {
           const isLastPage = targetY >= img.height;
 
           // Remplir le canvas avec du blanc
-          ctx.fillStyle = '#ffffff';
+          ctx.fillStyle = "#ffffff";
           ctx.fillRect(0, 0, canvas.width, canvas.height);
 
           // Si c'est la dernière page et qu'il y a un footer, on le repositionne en bas
           if (isLastPage && footerElement && footerHeight > 0) {
-            console.log('📄 Dernière page - repositionnement du footer');
-            
+            console.log("📄 Dernière page - repositionnement du footer");
+
             // Marge en haut pour les pages après la première (15mm)
             const topMarginPx = pageNumber > 0 ? 15 * pixelsPerMM : 0;
-            
+
             // Calculer la hauteur du contenu sans le footer
             const contentWithoutFooter = footerPositionY - currentY;
-            
+
             // Dessiner le contenu (sans le footer, avec marge en haut si pas première page)
             if (contentWithoutFooter > 0) {
               ctx.drawImage(
                 img,
-                0, currentY,
-                canvasWidth, contentWithoutFooter,
-                0, topMarginPx,
-                canvasWidth, contentWithoutFooter
+                0,
+                currentY,
+                canvasWidth,
+                contentWithoutFooter,
+                0,
+                topMarginPx,
+                canvasWidth,
+                contentWithoutFooter,
               );
             }
-            
+
             // Dessiner le bandeau de pagination en bas
             ctx.fillStyle = footerBgColor;
-            ctx.fillRect(0, pageHeightPixels - paginationBannerHeightPx, canvasWidth, paginationBannerHeightPx);
-            
+            ctx.fillRect(
+              0,
+              pageHeightPixels - paginationBannerHeightPx,
+              canvasWidth,
+              paginationBannerHeightPx,
+            );
+
             // Dessiner le footer au-dessus du bandeau de pagination
-            const footerDestY = pageHeightPixels - footerHeight - paginationBannerHeightPx;
+            const footerDestY =
+              pageHeightPixels - footerHeight - paginationBannerHeightPx;
             ctx.drawImage(
               img,
-              0, footerPositionY,
-              canvasWidth, footerHeight,
-              0, footerDestY,
-              canvasWidth, footerHeight
+              0,
+              footerPositionY,
+              canvasWidth,
+              footerHeight,
+              0,
+              footerDestY,
+              canvasWidth,
+              footerHeight,
             );
           } else {
             // Page intermédiaire : dessiner le contenu + bandeau de pagination en bas
             // Marge en haut pour les pages après la première (15mm)
             const topMarginPx = pageNumber > 0 ? 15 * pixelsPerMM : 0;
-            
+
             // Calculer la hauteur disponible pour le contenu (page - bandeau - marge haut)
-            const availableContentHeight = pageHeightPixels - paginationBannerHeightPx - topMarginPx;
-            
+            const availableContentHeight =
+              pageHeightPixels - paginationBannerHeightPx - topMarginPx;
+
             // Calculer combien de contenu on peut dessiner (sans dépasser le footer)
             let contentToDraw = availableContentHeight;
-            
+
             // IMPORTANT: Ne jamais dessiner le footer sur les pages intermédiaires
             // Le footer commence à footerPositionY, on s'arrête juste avant
             if (footerElement && footerPositionY > 0) {
@@ -238,34 +274,43 @@ export default function PDFGeneratorPage() {
                 contentToDraw = Math.max(0, maxContentY - currentY);
               }
             }
-            
+
             // Dessiner le contenu (avec marge en haut si ce n'est pas la première page)
             if (contentToDraw > 0) {
               ctx.drawImage(
                 img,
-                0, currentY,
-                canvasWidth, contentToDraw,
-                0, topMarginPx,
-                canvasWidth, contentToDraw
+                0,
+                currentY,
+                canvasWidth,
+                contentToDraw,
+                0,
+                topMarginPx,
+                canvasWidth,
+                contentToDraw,
               );
             }
-            
+
             // Dessiner le bandeau de pagination en bas
             ctx.fillStyle = footerBgColor;
-            ctx.fillRect(0, pageHeightPixels - paginationBannerHeightPx, canvasWidth, paginationBannerHeightPx);
+            ctx.fillRect(
+              0,
+              pageHeightPixels - paginationBannerHeightPx,
+              canvasWidth,
+              paginationBannerHeightPx,
+            );
           }
 
           // Convertir le canvas en image
-          const pageImageData = canvas.toDataURL('image/jpeg', 0.95);
-          
+          const pageImageData = canvas.toDataURL("image/jpeg", 0.95);
+
           // Toutes les pages font la hauteur complète A4
           const pageHeightMM = pdfHeight;
-          
+
           // Stocker les données de la page avec sa hauteur réelle
           pages.push({
             imageData: pageImageData,
             heightMM: pageHeightMM,
-            isLastPage: isLastPage
+            isLastPage: isLastPage,
           });
 
           console.log(`✅ Page ${pageNumber + 1} générée`);
@@ -275,9 +320,13 @@ export default function PDFGeneratorPage() {
             currentY = targetY;
           } else {
             // On avance de la hauteur disponible pour le contenu (page - bandeau)
-            const availableContentHeight = pageHeightPixels - paginationBannerHeightPx;
+            const availableContentHeight =
+              pageHeightPixels - paginationBannerHeightPx;
             // Mais on ne dépasse pas le footer
-            if (footerElement && currentY + availableContentHeight > footerPositionY) {
+            if (
+              footerElement &&
+              currentY + availableContentHeight > footerPositionY
+            ) {
               currentY = footerPositionY;
             } else {
               currentY += availableContentHeight;
@@ -287,7 +336,7 @@ export default function PDFGeneratorPage() {
 
           // Sécurité pour éviter boucle infinie
           if (pageNumber > 50) {
-            console.error('⚠️ Trop de pages, arrêt');
+            console.error("⚠️ Trop de pages, arrêt");
             break;
           }
         }
@@ -304,20 +353,20 @@ export default function PDFGeneratorPage() {
           // Ajouter l'image de la page avec sa hauteur réelle
           pdf.addImage(
             page.imageData,
-            'JPEG',
+            "JPEG",
             0,
             0,
             pdfWidth,
             page.heightMM,
             undefined,
-            'FAST'
+            "FAST",
           );
 
           // Ajouter la numérotation en bas de page à droite (dans le bandeau)
           pdf.setFontSize(9);
           const pageText = `Page ${index + 1}/${totalPages}`;
           const textWidth = pdf.getTextWidth(pageText);
-          
+
           // Pagination en gris foncé sur le bandeau coloré (fond clair)
           // Position : centré verticalement dans le bandeau de 12mm
           // Le bandeau va de (pdfHeight - 12) à pdfHeight, donc le centre est à pdfHeight - 6
@@ -328,26 +377,35 @@ export default function PDFGeneratorPage() {
         });
       } else {
         // Une seule page
-        console.log('📄 Document sur une seule page');
-        pdf.addImage(dataUrl, 'JPEG', 0, 0, imgWidthMM, imgHeightMM, undefined, 'FAST');
+        console.log("📄 Document sur une seule page");
+        pdf.addImage(
+          dataUrl,
+          "JPEG",
+          0,
+          0,
+          imgWidthMM,
+          imgHeightMM,
+          undefined,
+          "FAST",
+        );
       }
 
       // Stocker le résultat dans window pour que Puppeteer puisse le récupérer
-      const arrayBuffer = pdf.output('arraybuffer');
+      const arrayBuffer = pdf.output("arraybuffer");
       window.pdfGenerationResult = {
         success: true,
-        buffer: Array.from(new Uint8Array(arrayBuffer))
+        buffer: Array.from(new Uint8Array(arrayBuffer)),
       };
 
-      setStatus('complete');
+      setStatus("complete");
     } catch (error) {
-      console.error('Erreur génération PDF:', error);
+      console.error("Erreur génération PDF:", error);
       window.pdfGenerationResult = { error: error.message };
-      setStatus('error');
+      setStatus("error");
     }
   }
 
-  if (status === 'loading') {
+  if (status === "loading") {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white">
         <div className="text-center">
@@ -358,7 +416,7 @@ export default function PDFGeneratorPage() {
     );
   }
 
-  if (status === 'error') {
+  if (status === "error") {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white">
         <div className="text-center text-red-600">
@@ -369,35 +427,45 @@ export default function PDFGeneratorPage() {
   }
 
   return (
-    <div className="bg-white min-h-screen p-4">
-      {status === 'complete' && (
+    <div
+      className={
+        isVisual ? "bg-white min-h-screen" : "bg-white min-h-screen p-4"
+      }
+    >
+      {!isVisual && status === "complete" && (
         <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded z-50">
           PDF généré avec succès
         </div>
       )}
-      {status === 'loading' && (
+      {!isVisual && status === "loading" && (
         <div className="fixed top-4 right-4 bg-blue-500 text-white px-4 py-2 rounded z-50">
           Chargement...
         </div>
       )}
-      {status === 'ready' && (
+      {!isVisual && status === "ready" && (
         <div className="fixed top-4 right-4 bg-yellow-500 text-white px-4 py-2 rounded z-50">
           Génération en cours...
         </div>
       )}
-      <div 
+      <div
         ref={componentRef}
-        style={{ 
-          width: '794px',
-          backgroundColor: '#ffffff',
-          margin: '0 auto',
-        }}
+        style={
+          isVisual
+            ? {
+                width: "100%",
+                maxWidth: "794px",
+                backgroundColor: "#ffffff",
+                margin: "0 auto",
+              }
+            : { width: "794px", backgroundColor: "#ffffff", margin: "0 auto" }
+        }
       >
         {invoiceData && (
           <UniversalPreviewPDF
             data={invoiceData}
             type="invoice"
-            forPDF={true}
+            forPDF={!isVisual}
+            isMobile={isVisual}
           />
         )}
       </div>

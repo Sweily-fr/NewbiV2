@@ -223,15 +223,6 @@ export function FilePreviewDrawer({
                         onError={handleImageError}
                       />
                     )}
-                    {/* Bouton download sur l'image - masqué si filigrane */}
-                    {!isDownloadBlocked && !imageLoading && !imageError && (
-                      <button
-                        onClick={() => onDownload?.(file)}
-                        className="absolute bottom-4 right-4 w-10 h-10 bg-black/80 hover:bg-black rounded-full flex items-center justify-center transition-colors"
-                      >
-                        <Download className="w-5 h-5 text-white" />
-                      </button>
-                    )}
                   </div>
                 ) : isVideo(file) ? (
                   <div className="relative">
@@ -243,14 +234,6 @@ export function FilePreviewDrawer({
                     >
                       Votre navigateur ne supporte pas la lecture vidéo.
                     </video>
-                    {!isDownloadBlocked && (
-                      <button
-                        onClick={() => onDownload?.(file)}
-                        className="absolute bottom-4 right-4 w-10 h-10 bg-black/80 hover:bg-black rounded-full flex items-center justify-center transition-colors"
-                      >
-                        <Download className="w-5 h-5 text-white" />
-                      </button>
-                    )}
                   </div>
                 ) : isPdf(file) ? (
                   <iframe

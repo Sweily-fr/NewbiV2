@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  FIELD_TYPES,
-} from "@/src/hooks/useClientCustomFields";
+import { FIELD_TYPES } from "@/src/hooks/useClientCustomFields";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
@@ -73,11 +71,17 @@ function FieldTypeIcon({ type, className }) {
 }
 
 function OptionEditor({ options, onChange }) {
-  const [newOption, setNewOption] = useState({ label: "", value: "", color: "#6b7280" });
+  const [newOption, setNewOption] = useState({
+    label: "",
+    value: "",
+    color: "#6b7280",
+  });
 
   const addOption = () => {
     if (!newOption.label.trim()) return;
-    const value = newOption.value.trim() || newOption.label.trim().toLowerCase().replace(/\s+/g, "_");
+    const value =
+      newOption.value.trim() ||
+      newOption.label.trim().toLowerCase().replace(/\s+/g, "_");
     onChange([...options, { ...newOption, value }]);
     setNewOption({ label: "", value: "", color: "#6b7280" });
   };
@@ -125,12 +129,16 @@ function OptionEditor({ options, onChange }) {
         <input
           type="color"
           value={newOption.color}
-          onChange={(e) => setNewOption({ ...newOption, color: e.target.value })}
+          onChange={(e) =>
+            setNewOption({ ...newOption, color: e.target.value })
+          }
           className="w-8 h-8 rounded border cursor-pointer"
         />
         <Input
           value={newOption.label}
-          onChange={(e) => setNewOption({ ...newOption, label: e.target.value })}
+          onChange={(e) =>
+            setNewOption({ ...newOption, label: e.target.value })
+          }
           placeholder="Nouvelle option..."
           className="flex-1"
           onKeyDown={(e) => e.key === "Enter" && addOption()}
@@ -161,7 +169,12 @@ function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
         description: field?.description || "",
         placeholder: field?.placeholder || "",
         isRequired: field?.isRequired ?? false,
-        options: field?.options?.map(o => ({ label: o.label, value: o.value, color: o.color })) || [],
+        options:
+          field?.options?.map((o) => ({
+            label: o.label,
+            value: o.value,
+            color: o.color,
+          })) || [],
       });
     }
   }, [open, field]);
@@ -194,17 +207,23 @@ function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
 
           <div className="space-y-3 px-5 pt-3 pb-0">
             <div className="space-y-2">
-              <label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Nom du champ *</label>
+              <label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                Nom du champ *
+              </label>
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 placeholder="Ex: Date anniversaire, Source, Réseaux sociaux..."
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Type de champ *</label>
+              <label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                Type de champ *
+              </label>
               <Select
                 value={formData.fieldType}
                 onValueChange={(value) =>
@@ -235,7 +254,9 @@ function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
             )}
 
             <div className="space-y-2">
-              <label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Placeholder (optionnel)</label>
+              <label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                Placeholder (optionnel)
+              </label>
               <Input
                 id="placeholder"
                 value={formData.placeholder}
@@ -247,7 +268,9 @@ function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Description (optionnel)</label>
+              <label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                Description (optionnel)
+              </label>
               <Input
                 id="description"
                 value={formData.description}
@@ -260,7 +283,9 @@ function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
 
             <div className="flex items-center justify-between py-1">
               <div className="space-y-0.5">
-                <label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Champ obligatoire</label>
+                <label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                  Champ obligatoire
+                </label>
                 <p className="text-xs text-muted-foreground">
                   Le champ devra être rempli pour chaque client
                 </p>
@@ -278,8 +303,14 @@ function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
                 <Button variant="outline" onClick={() => onOpenChange(false)}>
                   Annuler
                 </Button>
-                <Button variant="primary" onClick={handleSubmit} disabled={isLoading}>
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Button
+                  variant="primary"
+                  onClick={handleSubmit}
+                  disabled={isLoading}
+                >
+                  {isLoading && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   {isEditing ? "Enregistrer" : "Créer"}
                 </Button>
               </div>
@@ -297,13 +328,18 @@ function FieldRow({ field, onEdit, onDelete, onToggle }) {
   return (
     <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-md border bg-card hover:bg-accent/50 transition-colors">
       <div className="flex items-center justify-center w-6 h-6 rounded bg-primary/10 flex-shrink-0">
-        <FieldTypeIcon type={field.fieldType} className="h-3 w-3 text-primary" />
+        <FieldTypeIcon
+          type={field.fieldType}
+          className="h-3 w-3 text-primary"
+        />
       </div>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
           <span className="text-sm font-medium truncate">{field.name}</span>
-          <span className="text-[11px] text-muted-foreground">{fieldType?.label}</span>
+          <span className="text-[11px] text-muted-foreground">
+            {fieldType?.label}
+          </span>
           {field.isRequired && (
             <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">
               Requis
@@ -354,8 +390,9 @@ export default function CustomFieldsPanel({
   const [updateLoading, setUpdateLoading] = useState(false);
 
   const customFieldsLimit = planLimits?.customFields ?? -1;
-  const isLimitReached = customFieldsLimit !== -1 && fields.length >= customFieldsLimit;
-  const nextPlanName = customFieldsLimit <= 3 ? "PME" : "Entreprise";
+  const isLimitReached =
+    customFieldsLimit !== -1 && fields.length >= customFieldsLimit;
+  const nextPlanName = customFieldsLimit <= 3 ? "TPE" : "Entreprise";
 
   const handleCreate = async (data) => {
     setCreateLoading(true);
@@ -411,13 +448,18 @@ export default function CustomFieldsPanel({
             Créez des champs personnalisés pour enrichir vos fiches clients avec
             des informations spécifiques à votre activité.
           </p>
-          <Button className="mt-4" onClick={() => setIsFormOpen(true)} disabled={isLimitReached}>
+          <Button
+            className="mt-4"
+            onClick={() => setIsFormOpen(true)}
+            disabled={isLimitReached}
+          >
             <Plus className="mr-2 h-4 w-4" />
             Créer un champ
           </Button>
           {isLimitReached && (
             <p className="mt-2 text-sm text-amber-600">
-              Limite atteinte ({fields.length}/{customFieldsLimit} champs). Passez au plan {nextPlanName} pour plus de champs personnalisés.
+              Limite atteinte ({fields.length}/{customFieldsLimit} champs).
+              Passez au plan {nextPlanName} pour plus de champs personnalisés.
             </p>
           )}
         </div>
@@ -428,14 +470,19 @@ export default function CustomFieldsPanel({
               {fields.length} champ{fields.length > 1 ? "s" : ""}
               {customFieldsLimit !== -1 && ` / ${customFieldsLimit}`}
             </p>
-            <Button size="sm" onClick={() => setIsFormOpen(true)} disabled={isLimitReached}>
+            <Button
+              size="sm"
+              onClick={() => setIsFormOpen(true)}
+              disabled={isLimitReached}
+            >
               <Plus className="mr-2 h-4 w-4" />
               Nouveau champ
             </Button>
           </div>
           {isLimitReached && (
             <p className="text-sm text-amber-600">
-              Limite atteinte ({fields.length}/{customFieldsLimit} champs). Passez au plan {nextPlanName} pour plus de champs personnalisés.
+              Limite atteinte ({fields.length}/{customFieldsLimit} champs).
+              Passez au plan {nextPlanName} pour plus de champs personnalisés.
             </p>
           )}
           <div className="space-y-2">
@@ -478,8 +525,9 @@ export default function CustomFieldsPanel({
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer le champ</AlertDialogTitle>
             <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer le champ &quot;{deletingField?.name}&quot;
-              ? Les données associées à ce champ seront perdues.
+              Êtes-vous sûr de vouloir supprimer le champ &quot;
+              {deletingField?.name}&quot; ? Les données associées à ce champ
+              seront perdues.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -5,15 +5,21 @@ import { authClient } from "@/src/lib/auth-client";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { toast } from "@/src/components/ui/sonner";
 
-export function useStripeInvoices() {
+export function useStripeInvoices({ enabled = true } = {}) {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const { data: session } = authClient.useSession();
-  const { subscription, isActive } = useSubscription();
+  const { subscription } = useSubscription();
 
   const fetchStripeInvoices = async () => {
+    // Si l'appel est désactivé (ex: utilisateur non propriétaire), ne rien faire
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
+
     // Vérifier si l'utilisateur est connecté et a un abonnement avec customer ID
     if (!session?.user || !subscription?.stripeCustomerId) {
       setLoading(false);
@@ -25,12 +31,15 @@ export function useStripeInvoices() {
       setError(null);
 
       // Appel à l'API pour récupérer les factures Stripe avec le customer ID
-      const response = await fetch(`/api/stripe/invoices?customerId=${encodeURIComponent(subscription.stripeCustomerId)}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `/api/stripe/invoices?customerId=${encodeURIComponent(subscription.stripeCustomerId)}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
         },
-      });
+      );
 
       if (!response.ok) {
         throw new Error(`Erreur ${response.status}: ${response.statusText}`);
@@ -71,7 +80,7 @@ export function useStripeInvoices() {
         setInvoices(formattedInvoices);
       } else {
         throw new Error(
-          data.message || "Erreur lors de la récupération des factures"
+          data.message || "Erreur lors de la récupération des factures",
         );
       }
     } catch (err) {
@@ -150,7 +159,7 @@ export function useStripeInvoices() {
 
   useEffect(() => {
     fetchStripeInvoices();
-  }, [session?.user, subscription?.stripeCustomerId]);
+  }, [session?.user, subscription?.stripeCustomerId, enabled]);
 
   return {
     invoices,

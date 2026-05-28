@@ -126,11 +126,12 @@ function TransfertsContent() {
     return counts;
   }, [transfers]);
 
-  // Vérifier si on revient d'une création de transfert
+  // Vérifier si on revient d'une création de transfert ou si on demande l'ouverture de la modal
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const shareLink = urlParams.get("shareLink");
     const accessKey = urlParams.get("accessKey");
+    const openNew = urlParams.get("new");
 
     if (shareLink && accessKey) {
       const fullLink = `${window.location.origin}/transfer/${shareLink}?key=${accessKey}`;
@@ -140,8 +141,14 @@ function TransfertsContent() {
       // Nettoyer l'URL
       const newUrl = window.location.pathname;
       window.history.replaceState({}, document.title, newUrl);
+    } else if (openNew && !isReadOnly) {
+      setShowUploadModal(true);
+
+      // Nettoyer l'URL pour éviter de rouvrir la modal au refresh
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
     }
-  }, []);
+  }, [isReadOnly]);
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(transferLink);

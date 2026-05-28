@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,15 +10,16 @@ import {
   DialogFooter,
 } from "@/src/components/ui/dialog";
 import { Button } from "@/src/components/ui/button";
-import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   Avatar,
   AvatarImage,
   AvatarFallback,
 } from "@/src/components/ui/avatar";
-import { Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
+import { cn } from "@/src/lib/utils";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import { useAssignClientMembers } from "@/src/hooks/useClients";
+import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
 
 function getInitials(name) {
   if (!name) return "?";
@@ -33,7 +34,7 @@ export default function AssignMembersDialog({ open, onOpenChange, client }) {
 
   const [members, setMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
-  const [selectedIds, setSelectedIds] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
 
   const getAllCollaboratorsRef = useRef(getAllCollaborators);
   getAllCollaboratorsRef.current = getAllCollaborators;
@@ -62,21 +63,30 @@ export default function AssignMembersDialog({ open, onOpenChange, client }) {
     };
 
     fetchMembers();
-    setSelectedIds(client?.assignedMembers || []);
+    setSelectedId(client?.assignedMembers?.[0] || null);
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [open]);
 
+  // Enrichir avec usersInfo (même source que le kanban) pour les avatars
+  const memberIds = useMemo(() => members.map((m) => m.id), [members]);
+  const { members: usersInfo } = useAssignedMembersInfo(memberIds);
+  const usersInfoById = useMemo(() => {
+    const map = {};
+    (usersInfo || []).forEach((u) => {
+      if (u?.id) map[u.id] = u;
+    });
+    return map;
+  }, [usersInfo]);
+
   const toggleMember = (memberId) => {
-    setSelectedIds((prev) =>
-      prev.includes(memberId)
-        ? prev.filter((id) => id !== memberId)
-        : [...prev, memberId]
-    );
+    setSelectedId((prev) => (prev === memberId ? null : memberId));
   };
 
   const handleSave = async () => {
-    await assignClientMembers(client.id, selectedIds);
+    await assignClientMembers(client.id, selectedId ? [selectedId] : []);
     onOpenChange(false);
   };
 
@@ -86,7 +96,7 @@ export default function AssignMembersDialog({ open, onOpenChange, client }) {
         <DialogHeader>
           <DialogTitle>Assigner des membres</DialogTitle>
           <DialogDescription>
-            Sélectionnez les membres du workspace à assigner à ce contact.
+            Sélectionnez un membre du workspace à assigner à ce contact.
           </DialogDescription>
         </DialogHeader>
 
@@ -101,27 +111,46 @@ export default function AssignMembersDialog({ open, onOpenChange, client }) {
             </p>
           ) : (
             <div className="space-y-1">
-              {members.map((member) => (
-                <label
-                  key={member.id}
-                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                >
-                  <Checkbox
-                    checked={selectedIds.includes(member.id)}
-                    onCheckedChange={() => toggleMember(member.id)}
-                  />
-                  <Avatar className="size-7">
-                    {member.image && <AvatarImage src={member.image} alt={member.name} />}
-                    <AvatarFallback className="text-[10px]">
-                      {getInitials(member.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{member.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{member.email}</p>
-                  </div>
-                </label>
-              ))}
+              {members.map((member) => {
+                const isSelected = selectedId === member.id;
+                const enriched = usersInfoById[member.id];
+                const displayName = enriched?.name || member.name;
+                const displayEmail = enriched?.email || member.email;
+                const displayImage = enriched?.image || member.image;
+                return (
+                  <button
+                    key={member.id}
+                    type="button"
+                    onClick={() => toggleMember(member.id)}
+                    className={cn(
+                      "w-full flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors text-left",
+                      isSelected
+                        ? "bg-muted ring-1 ring-primary/30"
+                        : "hover:bg-muted/50",
+                    )}
+                  >
+                    <Avatar className="size-7">
+                      {displayImage && (
+                        <AvatarImage src={displayImage} alt={displayName} />
+                      )}
+                      <AvatarFallback className="text-[10px]">
+                        {getInitials(displayName)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {displayName}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {displayEmail}
+                      </p>
+                    </div>
+                    {isSelected && (
+                      <Check className="h-4 w-4 text-primary shrink-0" />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -131,7 +160,9 @@ export default function AssignMembersDialog({ open, onOpenChange, client }) {
             Annuler
           </Button>
           <Button onClick={handleSave} disabled={assigning || loadingMembers}>
-            {assigning && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
+            {assigning && (
+              <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+            )}
             Enregistrer
           </Button>
         </DialogFooter>

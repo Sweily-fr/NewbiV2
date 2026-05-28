@@ -7,6 +7,8 @@ import {
   apiError,
   withErrorHandler,
 } from "@/src/lib/security";
+import { isAppTrialEnabled } from "@/src/lib/feature-flags";
+import { isTrialAppActive } from "@/src/lib/trial-app";
 
 /**
  * POST /api/organizations/[organizationId]/complete-onboarding
@@ -21,18 +23,34 @@ async function handler(request, { params }) {
   // MOYEN-16: role check — only owner/admin can complete onboarding
   await requireOrgMembership(user.id, organizationId, ["owner", "admin"]);
 
+  // App-managed trial check (feature-flagged). When the flag is OFF, the
+  // legacy Stripe-only validation below runs unchanged.
+  let trialAppActive = false;
+  if (isAppTrialEnabled()) {
+    const orgDoc = await mongoDb
+      .collection("organization")
+      .findOne(
+        { _id: toObjectId(organizationId) },
+        { projection: { isTrialActive: 1, trialEndDate: 1 } },
+      );
+    if (isTrialAppActive(orgDoc)) {
+      trialAppActive = true;
+    }
+  }
+
   // Verify active subscription before marking onboarding complete
   const subscription = await mongoDb.collection("subscription").findOne({
     $or: [{ organizationId: organizationId }, { referenceId: organizationId }],
   });
 
   const hasActiveSubscription =
-    subscription &&
-    (subscription.status === "active" ||
-      subscription.status === "trialing" ||
-      (subscription.status === "canceled" &&
-        subscription.periodEnd &&
-        new Date(subscription.periodEnd) > new Date()));
+    trialAppActive ||
+    (subscription &&
+      (subscription.status === "active" ||
+        subscription.status === "trialing" ||
+        (subscription.status === "canceled" &&
+          subscription.periodEnd &&
+          new Date(subscription.periodEnd) > new Date())));
 
   if (!hasActiveSubscription) {
     return apiError(400, "Aucun abonnement actif trouvé");

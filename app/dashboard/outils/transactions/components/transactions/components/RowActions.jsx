@@ -21,13 +21,13 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import { toast } from "@/src/components/ui/sonner";
-import { useDeleteExpense } from "@/src/hooks/useExpenses";
+import { useDeleteTransaction } from "@/src/hooks/useTransactions";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 export function RowActions({ row, onEdit, onRefresh, onDownloadAttachment }) {
   const transaction = row.original;
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const { deleteExpense, loading: deleteLoading } = useDeleteExpense();
+  const { deleteTransaction, loading: deleteLoading } = useDeleteTransaction();
   const { isReadOnly, isOwner } = useSubscriptionAccess();
 
   const handleEdit = () => {
@@ -46,14 +46,14 @@ export function RowActions({ row, onEdit, onRefresh, onDownloadAttachment }) {
     }
 
     try {
-      const result = await deleteExpense(transaction.id);
+      const result = await deleteTransaction(transaction.id);
       setShowDeleteDialog(false);
 
       if (result.success && onRefresh) {
         onRefresh();
       }
     } catch (error) {
-      console.error("Error deleting expense:", error);
+      console.error("Error deleting transaction:", error);
       setShowDeleteDialog(false);
     }
   };

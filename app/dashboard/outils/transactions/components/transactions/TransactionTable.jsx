@@ -40,6 +40,7 @@ import { useActiveOrganization } from "@/src/lib/organization-client";
 import { useSession } from "@/src/lib/auth-client";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { usePromoteTemporaryFile } from "@/src/hooks/usePromoteTemporaryFile";
+import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
 
 import { columns } from "./columns/transactionColumns";
 import { multiColumnFilterFn } from "./filters/multiColumnFilterFn";
@@ -71,8 +72,10 @@ import {
   DropdownMenuItem,
   DropdownMenuContent,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
+import { Checkbox } from "@/src/components/ui/checkbox";
 import { cn } from "@/src/lib/utils";
 import {
   TagIcon,
@@ -564,9 +567,12 @@ export default function TransactionTable({
     },
   ]);
 
-  const [columnVisibility, setColumnVisibility] = useState({
-    paymentMethod: false, // Cacher la colonne "Moyen de paiement" par défaut
-  });
+  const [columnVisibility, setColumnVisibility] = usePersistentColumnVisibility(
+    "newbi:column-visibility:transactions",
+    {
+      paymentMethod: false,
+    },
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => {}, 300);
@@ -581,26 +587,22 @@ export default function TransactionTable({
       return;
     }
 
-    // Filtrer les transactions manuelles (supprimables)
-    const manualRows = selectedRows.filter(
-      (row) =>
-        row.original.source === "MANUAL" || row.original.provider === "manual",
+    // Filtrer les factures (non supprimables depuis cette interface)
+    const deletableRows = selectedRows.filter(
+      (row) => row.original.source !== "invoice",
     );
-    const bankRows = selectedRows.filter(
-      (row) =>
-        row.original.source === "BANK" && row.original.provider !== "manual",
+    const invoiceRows = selectedRows.filter(
+      (row) => row.original.source === "invoice",
     );
 
-    if (bankRows.length > 0) {
+    if (invoiceRows.length > 0) {
       toast.warning(
-        `${bankRows.length} transaction(s) bancaire(s) ignorée(s) (non supprimables)`,
+        `${invoiceRows.length} facture(s) ignorée(s) (non supprimables depuis cette interface)`,
       );
     }
 
-    if (manualRows.length === 0) {
-      toast.error(
-        "Aucune transaction manuelle sélectionnée pour la suppression",
-      );
+    if (deletableRows.length === 0) {
+      toast.error("Aucune transaction sélectionnée pour la suppression");
       return;
     }
 
@@ -609,7 +611,7 @@ export default function TransactionTable({
       let deletedCount = 0;
       let failedCount = 0;
 
-      for (const row of manualRows) {
+      for (const row of deletableRows) {
         const result = await deleteTransaction(row.original.id);
         if (result.success) {
           deletedCount++;
@@ -669,12 +671,6 @@ export default function TransactionTable({
       toast.error(
         "Les factures ne peuvent pas être supprimées depuis cette interface",
       );
-      return;
-    }
-
-    // Seules les transactions manuelles peuvent être supprimées
-    if (transaction.source !== "MANUAL" && transaction.provider !== "manual") {
-      toast.error("Seules les transactions manuelles peuvent être supprimées");
       return;
     }
 
@@ -1175,54 +1171,69 @@ export default function TransactionTable({
             )}
           </div>
 
-          {/* Gérer les colonnes Button */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline">
-                <Setting4Icon className="w-3.5 h-3.5" aria-hidden="true" />
-                Gérer les colonnes
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="flex flex-col gap-1">
-              <DropdownMenuLabel>Afficher les colonnes</DropdownMenuLabel>
-              {tableWithFilteredData
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => {
-                  const label =
-                    column.columnDef.meta?.label ||
-                    column.columnDef.header ||
-                    column.id;
-                  const columnIcons = {
-                    category: TagIcon,
-                    paymentMethod: WalletIcon,
-                    source: Wallet1Icon,
-                    hasReceipt: Link2Icon,
-                    pcgAccount: GraphIcon,
-                    amount: DollarSquareIcon,
-                  };
-                  const IconComp = columnIcons[column.id];
-                  return (
-                    <DropdownMenuItem
-                      key={column.id}
-                      className={cn(
-                        "capitalize cursor-pointer gap-2",
-                        column.getIsVisible() && "bg-accent",
-                      )}
-                      onClick={() =>
-                        column.toggleVisibility(!column.getIsVisible())
-                      }
-                      onSelect={(event) => event.preventDefault()}
-                    >
-                      {IconComp && (
-                        <IconComp className="!size-3 text-sidebar-foreground" />
-                      )}
-                      {label}
-                    </DropdownMenuItem>
-                  );
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Colonnes visibles Button */}
+          {(() => {
+            const hideableColumns = tableWithFilteredData
+              .getAllColumns()
+              .filter(
+                (column) =>
+                  typeof column.accessorFn !== "undefined" &&
+                  column.getCanHide(),
+              );
+            const allColumnsVisible =
+              hideableColumns.length > 0 &&
+              hideableColumns.every((column) => column.getIsVisible());
+            return (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="filter" className="cursor-pointer">
+                    <Setting4Icon className="w-3.5 h-3.5" aria-hidden="true" />
+                    Colonnes visibles
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  className="w-[250px] max-h-[400px] overflow-y-auto"
+                >
+                  <div
+                    className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
+                    onClick={() =>
+                      tableWithFilteredData.toggleAllColumnsVisible(
+                        !allColumnsVisible,
+                      )
+                    }
+                  >
+                    <Checkbox
+                      checked={allColumnsVisible}
+                      className="mr-2 pointer-events-none"
+                    />
+                    <span>Tout sélectionner</span>
+                  </div>
+                  <DropdownMenuSeparator />
+                  {hideableColumns.map((column) => {
+                    const label =
+                      column.columnDef.meta?.label ||
+                      (typeof column.columnDef.header === "string"
+                        ? column.columnDef.header
+                        : column.id);
+                    return (
+                      <div
+                        key={column.id}
+                        className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
+                        onClick={() => column.toggleVisibility()}
+                      >
+                        <Checkbox
+                          checked={column.getIsVisible()}
+                          className="mr-2 pointer-events-none"
+                        />
+                        <span>{label}</span>
+                      </div>
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            );
+          })()}
 
           {/* Filtres avancés Button */}
           <Popover open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
@@ -1239,7 +1250,7 @@ export default function TransactionTable({
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent align="start" className="w-[500px] p-0">
+            <PopoverContent align="start" className="w-[620px] p-0">
               <div className="p-4 border-b">
                 <div className="flex items-center justify-between">
                   <h4 className="font-medium">Filtres</h4>
@@ -1276,7 +1287,7 @@ export default function TransactionTable({
                           updateFilter(filter.id, "field", value)
                         }
                       >
-                        <SelectTrigger className="w-[140px]">
+                        <SelectTrigger className="w-[200px]">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="z-[9999]">

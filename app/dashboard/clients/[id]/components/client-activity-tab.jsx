@@ -31,6 +31,8 @@ function getActionText(activity) {
     return activity.description;
   }
 
+  const listName = meta.listName ? ` "${meta.listName}"` : "";
+
   const actions = {
     created: "a créé le client",
     updated: "a mis à jour la fiche",
@@ -48,6 +50,8 @@ function getActionText(activity) {
     crm_email_sent: `a reçu un email automatique${meta.automationName ? ` "${meta.automationName}"` : ""}`,
     blocked: "a été bloqué",
     unblocked: "a été débloqué",
+    added_to_list: `a ajouté le client à la liste${listName}`,
+    removed_from_list: `a retiré le client de la liste${listName}`,
   };
   return actions[activity.type] || "a effectué une action";
 }
@@ -109,6 +113,7 @@ const FILTER_TYPES = [
   { label: "Emails", value: "email" },
   { label: "Notes", value: "note" },
   { label: "Rappels", value: "reminder" },
+  { label: "Listes", value: "list" },
 ];
 
 export default function ClientActivityTab({ client }) {
@@ -121,22 +126,11 @@ export default function ClientActivityTab({ client }) {
   const [isQuoteSidebarOpen, setIsQuoteSidebarOpen] = useState(false);
 
   const allActivities = useMemo(() => {
-    const activities = [...(client?.activity || [])].filter(
-      (a) => a.type !== "note_added" && a.type !== "automation_executed",
-    );
-    const notes = (client?.notes || []).map((note) => ({
-      id: note.id,
-      type: "note_added",
-      description: note.content,
-      userName: note.userName,
-      userImage: note.userImage,
-      createdAt: note.createdAt,
-      metadata: {},
-    }));
-    return [...activities, ...notes]
+    return [...(client?.activity || [])]
+      .filter((a) => a.type !== "automation_executed")
       .filter((item) => item.createdAt)
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  }, [client?.activity, client?.notes]);
+  }, [client?.activity]);
 
   const filtered = useMemo(() => {
     let items = allActivities;
@@ -159,6 +153,10 @@ export default function ClientActivityTab({ client }) {
           return (
             item.type === "reminder_created" ||
             item.type === "invoice_reminder_sent"
+          );
+        if (filterType === "list")
+          return (
+            item.type === "added_to_list" || item.type === "removed_from_list"
           );
         return true;
       });
@@ -319,6 +317,8 @@ export default function ClientActivityTab({ client }) {
                               "crm_email_sent",
                               "blocked",
                               "unblocked",
+                              "added_to_list",
+                              "removed_from_list",
                             ];
                             const hideDescription =
                               typesWithActionText.includes(item.type);
@@ -362,9 +362,16 @@ export default function ClientActivityTab({ client }) {
                                     </span>
                                   </div>
 
-                                  {/* Note card */}
-                                  {item.type === "note_added" &&
-                                    item.description && (
+                                  {/* Note card (note_added & note_updated)
+                                     Legacy entries stored just the action text in `description`
+                                     ("a ajouté une note" / "a modifié une note") — skip the card
+                                     for those so we don't render the action text twice. */}
+                                  {(item.type === "note_added" ||
+                                    item.type === "note_updated") &&
+                                    item.description &&
+                                    item.description !== "a ajouté une note" &&
+                                    item.description !==
+                                      "a modifié une note" && (
                                       <div className="mt-2 rounded-lg border border-[#eeeff1] dark:border-[#232323] p-3">
                                         {/<[a-z][\s\S]*>/i.test(
                                           item.description,
@@ -385,6 +392,7 @@ export default function ClientActivityTab({ client }) {
 
                                   {/* Description for non-note types (sauf quand déjà dans le texte d'action) */}
                                   {item.type !== "note_added" &&
+                                    item.type !== "note_updated" &&
                                     !hideDescription &&
                                     item.description && (
                                       <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
@@ -410,6 +418,14 @@ export default function ClientActivityTab({ client }) {
                                           : "Voir le devis"}
                                         <ExternalLink className="h-3 w-3" />
                                       </button>
+                                    )}
+
+                                  {/* Block reason */}
+                                  {item.type === "blocked" &&
+                                    meta.blockReason && (
+                                      <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                                        Raison : {meta.blockReason}
+                                      </p>
                                     )}
 
                                   {/* Reminder details */}

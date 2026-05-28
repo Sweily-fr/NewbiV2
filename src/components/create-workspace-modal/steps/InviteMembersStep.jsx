@@ -32,23 +32,23 @@ export function InviteMembersStep({
 
   // Compter les utilisateurs et comptables invités
   const invitedUsers = membersWithRoles.filter(
-    (m) => m.role !== "accountant"
+    (m) => m.role !== "accountant",
   ).length;
   const invitedAccountants = membersWithRoles.filter(
-    (m) => m.role === "accountant"
+    (m) => m.role === "accountant",
   ).length;
 
   const availableUsers = Math.max(0, planLimits.users - invitedUsers);
   const availableAccountants = Math.max(
     0,
-    planLimits.accountants - invitedAccountants
+    planLimits.accountants - invitedAccountants,
   );
 
   // Forcer le rôle "accountant" pour le plan Freelance
   React.useEffect(() => {
     if (selectedPlan === "freelance" && membersWithRoles.length > 0) {
       const hasNonAccountant = membersWithRoles.some(
-        (m) => m.role !== "accountant"
+        (m) => m.role !== "accountant",
       );
       if (hasNonAccountant) {
         // Convertir tous les membres en comptables
@@ -105,7 +105,7 @@ export function InviteMembersStep({
                 <span className="font-medium text-gray-900 dark:text-white">
                   {invitedAccountants}
                 </span>{" "}
-                comptable{invitedAccountants > 1 ? "s" : ""} •{" "}
+                accès comptable{invitedAccountants > 1 ? "s" : ""} •{" "}
                 <span className="font-medium text-gray-900 dark:text-white">
                   {availableAccountants}
                 </span>{" "}

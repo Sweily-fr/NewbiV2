@@ -154,10 +154,26 @@ export function useErrorHandler() {
    */
   const handleMutationError = useCallback(
     (error, operation, context, options = {}) => {
+      const errorCode =
+        error?.graphQLErrors?.[0]?.extensions?.code || error?.code;
+      const errorDetails =
+        error?.graphQLErrors?.[0]?.extensions?.details || error?.details;
+      const backendMessage =
+        error?.graphQLErrors?.[0]?.message || error?.message || "";
+
       const contextualOptions = {
         ...options,
         customMessage: getOperationErrorMessage(operation, context),
       };
+
+      // Cas spécifique: ressource utilisée — on garde le titre générique
+      // mais on ajoute la raison détaillée du backend en description
+      // (ex: "Il est utilisé dans des factures existantes.")
+      if (errorCode === "RESOURCE_IN_USE" && !options.description) {
+        contextualOptions.description = errorDetails?.usedIn
+          ? `Il est utilisé dans des ${errorDetails.usedIn} existants. Supprimez-les d'abord ou modifiez le client qui leur est associé.`
+          : backendMessage;
+      }
 
       return handleGraphQLError(error, context, contextualOptions);
     },

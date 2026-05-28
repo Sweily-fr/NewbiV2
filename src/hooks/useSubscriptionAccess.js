@@ -18,7 +18,7 @@ import { usePermissions } from "@/src/hooks/usePermissions";
  *   null/undefined → pas d'abonnement → lecture seule
  */
 export function useSubscriptionAccess() {
-  const { subscription, isActive, loading } = useSubscription();
+  const { subscription, isActive, loading, lastFetchOk } = useSubscription();
   const { getUserRole } = usePermissions();
 
   return useMemo(() => {
@@ -28,9 +28,22 @@ export function useSubscriptionAccess() {
       : null;
     const now = new Date();
 
+    // ─── App-managed trial (feature-flagged via API) ───
+    //
+    // When ENABLE_APP_TRIAL is OFF, the API returns appTrialEnabled=false and
+    // all trial-aware branches below are no-ops (zero behavioural change).
+    const trialEndDate = subscription?.trialEndDate
+      ? new Date(subscription.trialEndDate)
+      : null;
+    const isTrialApp =
+      subscription?.appTrialEnabled === true &&
+      subscription?.isTrialActive === true &&
+      trialEndDate &&
+      trialEndDate > now;
+
     // ─── Core states ───
 
-    const isInTrial = status === "trialing";
+    const isInTrial = status === "trialing" || isTrialApp;
 
     const isCanceled = status === "canceled" && periodEnd && periodEnd > now;
 
@@ -39,23 +52,40 @@ export function useSubscriptionAccess() {
 
     const isGracePeriod = status === "past_due";
 
+    // Active app-trial short-circuits read-only. Without that guard, a user
+    // whose org has a trial but no Stripe sub yet would land in (!loading && !status)
+    // and be treated as expired.
+    //
+    // Lot 3 safety net: `lastFetchOk === false` means the subscription fetch
+    // errored (network / 4xx / 5xx). Don't conclude "expired" from missing
+    // data in that case — the server-side dashboard layout already vetted
+    // access; an intermittent client fetch failure must not produce a red
+    // banner.
+    const fetchAuthoritative = lastFetchOk !== false;
     const isReadOnly =
-      status === "unpaid" ||
-      status === "incomplete" ||
-      status === "expired" ||
-      isPeriodEnded ||
-      (!loading && !status);
+      !isTrialApp &&
+      fetchAuthoritative &&
+      (status === "unpaid" ||
+        status === "incomplete" ||
+        status === "expired" ||
+        isPeriodEnded ||
+        (!loading && !status));
 
     const subscriptionIsActive = isActive();
 
     // ─── Trial info ───
 
-    const trialDaysRemaining =
-      isInTrial && periodEnd
+    const trialDaysRemaining = isTrialApp
+      ? Math.max(0, Math.ceil((trialEndDate - now) / (1000 * 60 * 60 * 24)))
+      : isInTrial && periodEnd
         ? Math.max(0, Math.ceil((periodEnd - now) / (1000 * 60 * 60 * 24)))
         : null;
 
-    const trialEndsAt = isInTrial && periodEnd ? periodEnd : null;
+    const trialEndsAt = isTrialApp
+      ? trialEndDate
+      : isInTrial && periodEnd
+        ? periodEnd
+        : null;
 
     // ─── Canceled info ───
 
@@ -117,6 +147,7 @@ export function useSubscriptionAccess() {
       loading,
       isActive: subscriptionIsActive,
       isInTrial,
+      isTrialApp,
       isReadOnly,
       isGracePeriod,
       isCanceled,
@@ -144,5 +175,5 @@ export function useSubscriptionAccess() {
       // Subscription data
       plan: subscription?.plan || null,
     };
-  }, [subscription, isActive, loading, getUserRole]);
+  }, [subscription, isActive, loading, lastFetchOk, getUserRole]);
 }
