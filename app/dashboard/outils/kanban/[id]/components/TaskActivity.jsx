@@ -53,6 +53,27 @@ import {
 import { useSession } from "@/src/lib/auth-client";
 import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
 
+const TAG_COLORS = [
+  { bg: "#DBEAFE", text: "#1D4ED8", border: "#BFDBFE" },
+  { bg: "#DCFCE7", text: "#15803D", border: "#BBF7D0" },
+  { bg: "#FEF3C7", text: "#B45309", border: "#FDE68A" },
+  { bg: "#FEE2E2", text: "#B91C1C", border: "#FECACA" },
+  { bg: "#EDE9FE", text: "#6D28D9", border: "#DDD6FE" },
+  { bg: "#FCE7F3", text: "#BE185D", border: "#FBCFE8" },
+  { bg: "#CFFAFE", text: "#0E7490", border: "#A5F3FC" },
+  { bg: "#FFEDD5", text: "#C2410C", border: "#FED7AA" },
+];
+
+function resolveTagColors(tag) {
+  const name = tag?.name || "";
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const c = TAG_COLORS[Math.abs(hash) % TAG_COLORS.length];
+  return { ...tag, bg: c.bg, text: c.text, border: c.border };
+}
+
 const TaskActivityComponent = ({
   task: initialTask,
   workspaceId,
@@ -1053,26 +1074,48 @@ const TaskActivityComponent = ({
                                 {display.tagDetails && (
                                   <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                                     {display.tagDetails.added.map(
-                                      (tag, idx) => (
-                                        <span
-                                          key={`add-${idx}`}
-                                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${tag.bg} ${tag.text} ${tag.border}`}
-                                        >
-                                          <Plus className="w-3 h-3" />
-                                          {tag.name}
-                                        </span>
-                                      ),
+                                      (rawTag, idx) => {
+                                        const tag = resolveTagColors(rawTag);
+                                        return (
+                                          <span
+                                            key={`add-${idx}`}
+                                            title={tag.name}
+                                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium"
+                                            style={{
+                                              backgroundColor: tag.bg,
+                                              color: tag.text,
+                                              border: `1px solid ${tag.border}`,
+                                            }}
+                                          >
+                                            <Plus className="w-3 h-3" />
+                                            {tag.name?.length > 30
+                                              ? tag.name.slice(0, 30) + "…"
+                                              : tag.name}
+                                          </span>
+                                        );
+                                      },
                                     )}
                                     {display.tagDetails.removed.map(
-                                      (tag, idx) => (
-                                        <span
-                                          key={`rem-${idx}`}
-                                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border line-through opacity-60 ${tag.bg} ${tag.text} ${tag.border}`}
-                                        >
-                                          <X className="w-3 h-3" />
-                                          {tag.name}
-                                        </span>
-                                      ),
+                                      (rawTag, idx) => {
+                                        const tag = resolveTagColors(rawTag);
+                                        return (
+                                          <span
+                                            key={`rem-${idx}`}
+                                            title={tag.name}
+                                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium line-through opacity-60"
+                                            style={{
+                                              backgroundColor: tag.bg,
+                                              color: tag.text,
+                                              border: `1px solid ${tag.border}`,
+                                            }}
+                                          >
+                                            <X className="w-3 h-3" />
+                                            {tag.name?.length > 30
+                                              ? tag.name.slice(0, 30) + "…"
+                                              : tag.name}
+                                          </span>
+                                        );
+                                      },
                                     )}
                                   </div>
                                 )}
@@ -1405,24 +1448,46 @@ const TaskActivityComponent = ({
                           )}
                           {display.tagDetails && (
                             <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                              {display.tagDetails.added.map((tag, idx) => (
-                                <span
-                                  key={`add-${idx}`}
-                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${tag.bg} ${tag.text} ${tag.border}`}
-                                >
-                                  <Plus className="w-3 h-3" />
-                                  {tag.name}
-                                </span>
-                              ))}
-                              {display.tagDetails.removed.map((tag, idx) => (
-                                <span
-                                  key={`rem-${idx}`}
-                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border line-through opacity-60 ${tag.bg} ${tag.text} ${tag.border}`}
-                                >
-                                  <X className="w-3 h-3" />
-                                  {tag.name}
-                                </span>
-                              ))}
+                              {display.tagDetails.added.map((rawTag, idx) => {
+                                const tag = resolveTagColors(rawTag);
+                                return (
+                                  <span
+                                    key={`add-${idx}`}
+                                    title={tag.name}
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium"
+                                    style={{
+                                      backgroundColor: tag.bg,
+                                      color: tag.text,
+                                      border: `1px solid ${tag.border}`,
+                                    }}
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                    {tag.name?.length > 30
+                                      ? tag.name.slice(0, 30) + "…"
+                                      : tag.name}
+                                  </span>
+                                );
+                              })}
+                              {display.tagDetails.removed.map((rawTag, idx) => {
+                                const tag = resolveTagColors(rawTag);
+                                return (
+                                  <span
+                                    key={`rem-${idx}`}
+                                    title={tag.name}
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium line-through opacity-60"
+                                    style={{
+                                      backgroundColor: tag.bg,
+                                      color: tag.text,
+                                      border: `1px solid ${tag.border}`,
+                                    }}
+                                  >
+                                    <X className="w-3 h-3" />
+                                    {tag.name?.length > 30
+                                      ? tag.name.slice(0, 30) + "…"
+                                      : tag.name}
+                                  </span>
+                                );
+                              })}
                             </div>
                           )}
                           {display.checklistDetails && (

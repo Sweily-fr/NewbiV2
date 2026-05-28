@@ -101,14 +101,14 @@ function DescriptionPopover({ description }) {
 }
 
 const TAG_COLORS = [
-  { bg: "#EDE9FE", text: "#6D28D9", border: "#DDD6FE" },
-  { bg: "#DBEAFE", text: "#1D4ED8", border: "#BFDBFE" },
-  { bg: "#DCFCE7", text: "#15803D", border: "#BBF7D0" },
-  { bg: "#FEF3C7", text: "#B45309", border: "#FDE68A" },
-  { bg: "#FEE2E2", text: "#B91C1C", border: "#FECACA" },
-  { bg: "#FCE7F3", text: "#BE185D", border: "#FBCFE8" },
-  { bg: "#E0E7FF", text: "#4338CA", border: "#C7D2FE" },
-  { bg: "#F3F4F6", text: "#374151", border: "#E5E7EB" },
+  { bg: "#DBEAFE", text: "#1D4ED8", border: "#BFDBFE" }, // blue
+  { bg: "#DCFCE7", text: "#15803D", border: "#BBF7D0" }, // green
+  { bg: "#FEF3C7", text: "#B45309", border: "#FDE68A" }, // amber
+  { bg: "#FEE2E2", text: "#B91C1C", border: "#FECACA" }, // red
+  { bg: "#EDE9FE", text: "#6D28D9", border: "#DDD6FE" }, // violet
+  { bg: "#FCE7F3", text: "#BE185D", border: "#FBCFE8" }, // pink
+  { bg: "#CFFAFE", text: "#0E7490", border: "#A5F3FC" }, // cyan
+  { bg: "#FFEDD5", text: "#C2410C", border: "#FED7AA" }, // orange
 ];
 
 const CardTagPopover = memo(function CardTagPopover({
