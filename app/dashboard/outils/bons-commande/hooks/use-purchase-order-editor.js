@@ -844,6 +844,26 @@ export function usePurchaseOrderEditor({
     }
   }, [existingPurchaseOrder, mode, reset]);
 
+  // Appliquer le réglage global de numérotation séquentielle continue lors de
+  // l'édition d'un brouillon. Les brouillons ne persistent pas autoNumbering
+  // (transformPurchaseOrderToFormData ne le renvoie pas) : sans cela, le numéro
+  // affiché serait calculé par préfixe (0001) au lieu de globalement (0003).
+  // Appliqué une seule fois, dès que l'organisation est disponible, pour ne pas
+  // écraser une bascule manuelle faite ensuite dans les paramètres de l'éditeur.
+  const draftAutoNumberingAppliedRef = useRef(false);
+  useEffect(() => {
+    if (draftAutoNumberingAppliedRef.current) return;
+    if (!organization) return;
+    const isDraftEdit =
+      mode === "edit" && existingPurchaseOrder?.status === "DRAFT";
+    if (!isDraftEdit) return;
+
+    draftAutoNumberingAppliedRef.current = true;
+    const orgAutoNumbering = organization.purchaseOrderAutoNumbering || false;
+    setCurrentAutoNumbering(orgAutoNumbering);
+    setValue("autoNumbering", orgAutoNumbering, { shouldDirty: false });
+  }, [organization, mode, existingPurchaseOrder?.status, setValue]);
+
   // Synchroniser les données client avec la collection Client (données à jour)
   useEffect(() => {
     if (!isFormInitialized || !freshClient || mode === "create") return;

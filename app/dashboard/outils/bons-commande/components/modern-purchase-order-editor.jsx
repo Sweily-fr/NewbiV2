@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { FormProvider } from "react-hook-form";
 import {
   ArrowLeft,
@@ -154,6 +154,16 @@ export default function ModernPurchaseOrderEditor({
 
     return () => clearTimeout(timer);
   }, [formData]);
+
+  // Aperçu PDF mémoïsé : ne se re-rend que lorsque les données debouncées
+  // changent (pas à chaque frappe), pour éviter de recalculer tout le rendu.
+  const previewElement = useMemo(
+    () =>
+      debouncedFormData ? (
+        <UniversalPreviewPDF data={debouncedFormData} type="purchaseOrder" />
+      ) : null,
+    [debouncedFormData],
+  );
 
   // Détecter les changements d'organisation
   useOrganizationChange({
@@ -683,16 +693,15 @@ export default function ModernPurchaseOrderEditor({
         {/* Right Panel - Preview */}
         <div className="border-l flex-col h-full overflow-hidden hidden lg:flex">
           <div className="flex-1 overflow-y-auto pl-18 pr-18 pt-22 pb-22 bg-[#F9F9F9] dark:bg-[#1a1a1a] h-full relative">
-            {loading ? (
+            {/* Une fois l'aperçu disponible, on le garde toujours monté : le
+                loader ne s'affiche qu'au tout premier chargement. Sinon, les
+                états de chargement transitoires (numéro, sauvegarde…) le
+                feraient disparaître puis réapparaître à chaque modification. */}
+            {debouncedFormData ? (
+              <div ref={pdfRef}>{previewElement}</div>
+            ) : loading ? (
               <div className="absolute inset-0 flex items-center justify-center bg-[#F9F9F9] dark:bg-[#1a1a1a]">
                 <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : debouncedFormData ? (
-              <div ref={pdfRef}>
-                <UniversalPreviewPDF
-                  data={debouncedFormData}
-                  type="purchaseOrder"
-                />
               </div>
             ) : null}
           </div>
