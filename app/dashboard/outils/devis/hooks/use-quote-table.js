@@ -21,6 +21,7 @@ import {
   CheckCircle,
   XCircle,
   CircleAlert,
+  Upload,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
@@ -247,13 +248,16 @@ export function useQuoteTable({
             aria-label="Sélectionner tout"
           />
         ),
-        cell: ({ row }) => (
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Sélectionner la ligne"
-          />
-        ),
+        cell: ({ row }) =>
+          row.original._type === "imported" ? (
+            <span className="inline-block w-4" />
+          ) : (
+            <Checkbox
+              checked={row.getIsSelected()}
+              onCheckedChange={(value) => row.toggleSelected(!!value)}
+              aria-label="Sélectionner la ligne"
+            />
+          ),
         size: 40,
         enableSorting: false,
         enableHiding: false,
@@ -313,24 +317,48 @@ export function useQuoteTable({
         cell: ({ row }) => {
           const client = row.original.client;
           const quote = row.original;
+          const isImported = quote._type === "imported";
           const clientName = client?.name || "Non défini";
           return (
-            <div>
-              <div
-                className="font-normal max-w-[100px] md:max-w-none truncate"
-                title={clientName}
-              >
-                {client?.name || (
-                  <span className="text-muted-foreground italic">
-                    Non défini
-                  </span>
-                )}
+            <div className="min-h-[40px] flex items-center gap-2">
+              <div className="flex flex-col justify-center min-w-0">
+                <div
+                  className="font-normal max-w-[100px] md:max-w-none truncate"
+                  title={clientName}
+                >
+                  {client?.name || (
+                    <span className="text-muted-foreground italic">
+                      {isImported ? "Client inconnu" : "Non défini"}
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground truncate max-w-[100px] md:max-w-none">
+                  {isImported
+                    ? quote.originalQuoteNumber || (
+                        <span className="italic">Devis importé</span>
+                      )
+                    : (quote.prefix
+                        ? `${quote.prefix.replace(/-$/, "")}-${quote.number}`
+                        : quote.number) || (
+                        <span className="italic">Brouillon</span>
+                      )}
+                </div>
               </div>
-              <div className="text-xs text-muted-foreground truncate max-w-[100px] md:max-w-none">
-                {(quote.prefix
-                  ? `${quote.prefix.replace(/-$/, "")}-${quote.number}`
-                  : quote.number) || <span className="italic">Brouillon</span>}
-              </div>
+              {isImported && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="flex-shrink-0 inline-flex items-center justify-center w-5 h-5 rounded bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400 cursor-default">
+                      <Upload className="w-3 h-3" />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="top"
+                    className="bg-[#202020] text-white border-none text-xs"
+                  >
+                    Devis importé
+                  </TooltipContent>
+                </Tooltip>
+              )}
             </div>
           );
         },
@@ -507,6 +535,35 @@ export function useQuoteTable({
         },
         cell: ({ row }) => {
           const status = row.getValue("status");
+          const isImported = row.original._type === "imported";
+
+          // Statuts spécifiques aux devis importés
+          if (isImported) {
+            const importedLabel =
+              status === "VALIDATED" ? "Terminé" : "À vérifier";
+            const importedClassName =
+              status === "VALIDATED"
+                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400"
+                : "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400";
+            const importedIcon =
+              status === "VALIDATED" ? (
+                <CheckCircle className="w-3 h-3" />
+              ) : (
+                <Clock className="w-3 h-3" />
+              );
+            return (
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium",
+                  importedClassName,
+                )}
+              >
+                {importedIcon}
+                {importedLabel}
+              </span>
+            );
+          }
+
           const label = QUOTE_STATUS_LABELS[status] || status;
 
           const getStatusConfig = () => {
@@ -694,16 +751,22 @@ export function useQuoteTable({
       {
         id: "actions",
         header: () => <div className="text-right font-normal">Actions</div>,
-        cell: ({ row }) => (
-          <QuoteRowActions
-            row={row}
-            onRefetch={onRefetch}
-            onSendEmail={onSendEmail}
-            onSaveAsTemplate={onSaveAsTemplate}
-            onRequestSignature={onRequestSignature}
-            onOpenSidebar={onOpenSidebar}
-          />
-        ),
+        cell: ({ row }) => {
+          // Les devis importés s'ouvrent au clic sur la ligne (sidebar dédiée)
+          if (row.original._type === "imported") {
+            return <div className="h-8" />;
+          }
+          return (
+            <QuoteRowActions
+              row={row}
+              onRefetch={onRefetch}
+              onSendEmail={onSendEmail}
+              onSaveAsTemplate={onSaveAsTemplate}
+              onRequestSignature={onRequestSignature}
+              onOpenSidebar={onOpenSidebar}
+            />
+          );
+        },
         size: 60,
         enableHiding: false,
       },

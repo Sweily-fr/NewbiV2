@@ -15,7 +15,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
-import { ArrowUpDown, CircleAlert } from "lucide-react";
+import {
+  ArrowUpDown,
+  CircleAlert,
+  Upload,
+  Clock,
+  CheckCircle,
+} from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
   PURCHASE_ORDER_STATUS_LABELS,
@@ -206,13 +212,16 @@ export function usePurchaseOrderTable({
             aria-label="Selectionner tout"
           />
         ),
-        cell: ({ row }) => (
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Selectionner la ligne"
-          />
-        ),
+        cell: ({ row }) =>
+          row.original._type === "imported" ? (
+            <span className="inline-block w-4" />
+          ) : (
+            <Checkbox
+              checked={row.getIsSelected()}
+              onCheckedChange={(value) => row.toggleSelected(!!value)}
+              aria-label="Selectionner la ligne"
+            />
+          ),
         size: 40,
         enableSorting: false,
         enableHiding: false,
@@ -240,26 +249,48 @@ export function usePurchaseOrderTable({
         cell: ({ row }) => {
           const client = row.original.client;
           const purchaseOrder = row.original;
+          const isImported = purchaseOrder._type === "imported";
           const clientName = client?.name || "Non defini";
           return (
-            <div>
-              <div
-                className="font-normal max-w-[100px] md:max-w-none truncate"
-                title={clientName}
-              >
-                {client?.name || (
-                  <span className="text-muted-foreground italic">
-                    Non defini
-                  </span>
-                )}
+            <div className="min-h-[40px] flex items-center gap-2">
+              <div className="flex flex-col justify-center min-w-0">
+                <div
+                  className="font-normal max-w-[100px] md:max-w-none truncate"
+                  title={clientName}
+                >
+                  {client?.name || (
+                    <span className="text-muted-foreground italic">
+                      {isImported ? "Client inconnu" : "Non defini"}
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground truncate max-w-[100px] md:max-w-none">
+                  {isImported
+                    ? purchaseOrder.originalPurchaseOrderNumber || (
+                        <span className="italic">Bon de commande importé</span>
+                      )
+                    : (purchaseOrder.prefix
+                        ? `${purchaseOrder.prefix.replace(/-$/, "")}-${purchaseOrder.number}`
+                        : purchaseOrder.number) || (
+                        <span className="italic">Brouillon</span>
+                      )}
+                </div>
               </div>
-              <div className="text-xs text-muted-foreground truncate max-w-[100px] md:max-w-none">
-                {(purchaseOrder.prefix
-                  ? `${purchaseOrder.prefix.replace(/-$/, "")}-${purchaseOrder.number}`
-                  : purchaseOrder.number) || (
-                  <span className="italic">Brouillon</span>
-                )}
-              </div>
+              {isImported && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="flex-shrink-0 inline-flex items-center justify-center w-5 h-5 rounded bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400 cursor-default">
+                      <Upload className="w-3 h-3" />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="top"
+                    className="bg-[#202020] text-white border-none text-xs"
+                  >
+                    Bon de commande importé
+                  </TooltipContent>
+                </Tooltip>
+              )}
             </div>
           );
         },
@@ -398,6 +429,30 @@ export function usePurchaseOrderTable({
         },
         cell: ({ row }) => {
           const status = row.getValue("status");
+          const isImported = row.original._type === "imported";
+
+          // Statuts spécifiques aux bons de commande importés
+          if (isImported) {
+            const importedLabel =
+              status === "VALIDATED" ? "Terminé" : "À vérifier";
+            const importedClassName =
+              status === "VALIDATED"
+                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400"
+                : "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400";
+            const importedIcon =
+              status === "VALIDATED" ? (
+                <CheckCircle className="w-3 h-3 mr-1" />
+              ) : (
+                <Clock className="w-3 h-3 mr-1" />
+              );
+            return (
+              <Badge className={cn("font-normal", importedClassName)}>
+                {importedIcon}
+                {importedLabel}
+              </Badge>
+            );
+          }
+
           const label = PURCHASE_ORDER_STATUS_LABELS[status] || status;
           const colorClass = PURCHASE_ORDER_STATUS_COLORS[status] || "";
 
@@ -538,14 +593,20 @@ export function usePurchaseOrderTable({
       {
         id: "actions",
         header: () => <div className="text-right font-normal">Actions</div>,
-        cell: ({ row }) => (
-          <PurchaseOrderRowActions
-            row={row}
-            onRefetch={onRefetch}
-            onSendEmail={onSendEmail}
-            onSaveAsTemplate={onSaveAsTemplate}
-          />
-        ),
+        cell: ({ row }) => {
+          // Les bons de commande importés s'ouvrent au clic sur la ligne
+          if (row.original._type === "imported") {
+            return <div className="h-8" />;
+          }
+          return (
+            <PurchaseOrderRowActions
+              row={row}
+              onRefetch={onRefetch}
+              onSendEmail={onSendEmail}
+              onSaveAsTemplate={onSaveAsTemplate}
+            />
+          );
+        },
         size: 60,
         enableHiding: false,
       },
