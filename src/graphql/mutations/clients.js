@@ -189,6 +189,28 @@ export const BLOCK_CLIENT = gql`
       isBlocked
       blockedAt
       blockedReason
+      activity {
+        id
+        type
+        description
+        field
+        oldValue
+        newValue
+        userId
+        userName
+        userImage
+        metadata {
+          documentType
+          documentId
+          documentNumber
+          status
+          originalInvoiceNumber
+          eventId
+          eventTitle
+          eventDate
+        }
+        createdAt
+      }
     }
   }
 `;
@@ -200,6 +222,28 @@ export const UNBLOCK_CLIENT = gql`
       isBlocked
       blockedAt
       blockedReason
+      activity {
+        id
+        type
+        description
+        field
+        oldValue
+        newValue
+        userId
+        userName
+        userImage
+        metadata {
+          documentType
+          documentId
+          documentNumber
+          status
+          originalInvoiceNumber
+          eventId
+          eventTitle
+          eventDate
+        }
+        createdAt
+      }
     }
   }
 `;
@@ -217,6 +261,18 @@ export const ASSIGN_CLIENT_MEMBERS = gql`
     ) {
       id
       assignedMembers
+      activity {
+        id
+        type
+        description
+        field
+        oldValue
+        newValue
+        userId
+        userName
+        userImage
+        createdAt
+      }
     }
   }
 `;
