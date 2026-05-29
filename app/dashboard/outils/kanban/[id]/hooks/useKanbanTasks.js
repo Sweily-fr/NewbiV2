@@ -184,9 +184,15 @@ export const useKanbanTasks = (boardId, board) => {
                 completed: Boolean(item?.completed),
               }))
             : prev.checklist,
-          assignedMembers: Array.isArray(editingTaskFromBoard.assignedMembers)
-            ? editingTaskFromBoard.assignedMembers
-            : prev.assignedMembers,
+          // NE PAS écraser les membres avec la valeur du board pendant l'édition.
+          // Les membres sont pilotés localement (toggle + flush debouncé, exclus
+          // de l'auto-save) : un écho non lié (commentaire, autre champ, autre
+          // utilisateur) qui re-synchroniserait `assignedMembers` avec une valeur
+          // en retard écraserait l'état optimiste en plein milieu d'une série de
+          // clics → on supprimerait/remettrait le mauvais membre. On garde donc
+          // toujours la valeur locale (la vérité serveur est rétablie en cas
+          // d'échec via le onError du flush).
+          assignedMembers: prev.assignedMembers,
           images: Array.isArray(editingTaskFromBoard.images)
             ? editingTaskFromBoard.images
             : prev.images,
@@ -358,6 +364,19 @@ export const useKanbanTasks = (boardId, board) => {
   );
 
   const [moveTask] = useMutation(MOVE_TASK, {
+    // Mise à jour optimiste : la colonne/position de la tâche déplacée sont
+    // appliquées immédiatement dans le cache normalisé (board ET liste lisent
+    // la même entité Task). Évite que l'UI « revienne en arrière » quand
+    // l'override local du board expire avant la réponse serveur.
+    optimisticResponse: (vars) => ({
+      moveTask: {
+        __typename: "Task",
+        id: vars.id,
+        columnId: vars.columnId,
+        position: vars.position,
+        updatedAt: new Date().toISOString(),
+      },
+    }),
     onCompleted: () => {
       // Plus de toast ici - la subscription temps réel s'en charge
       // Plus besoin de refetch() - la subscription s'en charge

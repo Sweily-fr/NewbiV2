@@ -67,6 +67,7 @@ import { TimerControls } from "./TimerControls";
 import { LocalTimerControls } from "./LocalTimerControls";
 import { TaskImageUpload } from "./TaskImageUpload";
 import { useTaskImageUpload } from "../hooks/useTaskImageUpload";
+import { useDebouncedMemberFlush } from "../hooks/useMemberToggle";
 import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
 import { cn } from "@/src/lib/utils";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
@@ -565,6 +566,36 @@ export function TaskModal({
   // On ne déclenche PLUS `triggerAutoSave()` ici : l'auto-save n'envoie plus
   // `assignedMembers` (cf. useKanbanTasks.handleUpdateTask), donc il n'y a
   // plus de risque d'écraser l'état des membres.
+  // Coalesce les clics rapides en une seule mutation par tâche (debounce).
+  // Cf. useMemberToggle : sans cela, retirer plusieurs membres très vite envoie
+  // une rafale de mutations dont les échos désordonnés « remettent » un membre.
+  // Dernière liste de membres CONFIRMÉE par le serveur (point de retour en cas
+  // d'échec). Initialisée à l'ouverture, mise à jour à chaque flush réussi.
+  const confirmedMembersRef = useRef(taskForm?.assignedMembers || []);
+  useEffect(() => {
+    if (isOpen) {
+      confirmedMembersRef.current = assignedMembersRef.current || [];
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, taskForm?.id]);
+
+  const flushMembers = useDebouncedMemberFlush({
+    updateTask,
+    workspaceId,
+    localMutationRef,
+    onSuccess: (_taskId, members) => {
+      confirmedMembersRef.current = members;
+    },
+    // En cas d'échec (ex: erreur d'auth), revenir à la dernière valeur confirmée :
+    // la mutation n'a pas été persistée, donc l'état local optimiste est faux et
+    // doit être réaligné, sinon les toggles suivants partent d'une base fausse.
+    onError: () => {
+      const truth = confirmedMembersRef.current || [];
+      assignedMembersRef.current = truth;
+      setTaskForm((prev) => ({ ...prev, assignedMembers: truth }));
+    },
+  });
+
   const handleMemberToggle = useCallback(
     (memberId) => {
       const current = assignedMembersRef.current || [];
@@ -578,28 +609,12 @@ export function TaskModal({
 
       setTaskForm((prev) => ({ ...prev, assignedMembers: newMembers }));
 
-      // En mode édition, envoyer uniquement assignedMembers au serveur
+      // En mode édition, planifier l'envoi (debouncé) au serveur.
       if (isEditing && updateTask && taskForm.id) {
-        // Marquer comme mutation locale pour éviter que le hook
-        // ne re-synchronise le form avec les données du board
-        if (localMutationRef) localMutationRef.current = true;
-
-        updateTask({
-          variables: {
-            input: { id: taskForm.id, assignedMembers: newMembers },
-            workspaceId,
-          },
-        });
+        flushMembers(taskForm.id, newMembers);
       }
     },
-    [
-      setTaskForm,
-      isEditing,
-      updateTask,
-      workspaceId,
-      taskForm.id,
-      localMutationRef,
-    ],
+    [setTaskForm, isEditing, updateTask, taskForm.id, flushMembers],
   );
 
   // Gestion de la date d'échéance
