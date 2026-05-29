@@ -453,8 +453,8 @@ export function TransactionDetailDrawer({
         CHECK: "CHECK",
         CARD: "CARD",
         TRANSFER: "TRANSFER",
-        DIRECT_DEBIT: "TRANSFER",
-        SEPA_DEBIT: "TRANSFER",
+        DIRECT_DEBIT: "DIRECT_DEBIT",
+        SEPA_DEBIT: "DIRECT_DEBIT",
       };
       const formPaymentMethod =
         apiPaymentMethodToForm[transaction.paymentMethod] || "CARD";
