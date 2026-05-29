@@ -120,6 +120,31 @@ export default function PurchaseOrderTable({
   const { importedPurchaseOrders, refetch: refetchImported } =
     useImportedPurchaseOrders(workspaceId);
 
+  // Fusionner les BC natifs et les BC importés (lignes "À vérifier" / "Terminé")
+  const combinedPurchaseOrders = useMemo(() => {
+    const normalPos = (purchaseOrders || []).map((po) => ({
+      ...po,
+      _type: "normal",
+    }));
+    const imported = (importedPurchaseOrders || []).map((po) => ({
+      ...po,
+      _type: "imported",
+      client: {
+        name: po.client?.name || po.vendor?.name || "Client inconnu",
+      },
+      issueDate: po.purchaseOrderDate,
+      validUntil: po.dueDate || po.deliveryDate,
+      finalTotalHT: po.totalHT,
+      finalTotalVAT: po.totalVAT,
+      finalTotalTTC: po.totalTTC,
+    }));
+    return [...normalPos, ...imported].sort((a, b) => {
+      const dateA = new Date(a.issueDate || a.createdAt || 0);
+      const dateB = new Date(b.issueDate || b.createdAt || 0);
+      return dateB - dateA;
+    });
+  }, [purchaseOrders, importedPurchaseOrders]);
+
   const {
     table,
     globalFilter,
@@ -134,7 +159,7 @@ export default function PurchaseOrderTable({
     handleDeleteSelected,
     isDeleting,
   } = usePurchaseOrderTable({
-    data: purchaseOrders || [],
+    data: combinedPurchaseOrders,
     onRefetch: refetch,
     onSendEmail: setSendEmailPO,
     onSaveAsTemplate: setTemplatePurchaseOrder,
@@ -163,7 +188,7 @@ export default function PurchaseOrderTable({
   // Compter les BC par statut
   const poCounts = useMemo(() => {
     const counts = {
-      all: (purchaseOrders || []).length,
+      all: combinedPurchaseOrders.length,
       draft: 0,
       confirmed: 0,
       validated: 0,
@@ -178,7 +203,7 @@ export default function PurchaseOrderTable({
       else if (po.status === "DELIVERED") counts.delivered++;
     });
     return counts;
-  }, [purchaseOrders]);
+  }, [purchaseOrders, combinedPurchaseOrders]);
 
   // Vérifier les permissions
   useEffect(() => {
@@ -543,6 +568,11 @@ export default function PurchaseOrderTable({
                     ) {
                       return;
                     }
+                    // Bon de commande importé : ouvrir la sidebar dédiée
+                    if (row.original._type === "imported") {
+                      setSelectedImportedPurchaseOrder(row.original);
+                      return;
+                    }
                     const actionsButton = e.currentTarget.querySelector(
                       "[data-view-purchase-order]",
                     );
@@ -642,7 +672,17 @@ export default function PurchaseOrderTable({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-900"
+                  className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-900 cursor-pointer"
+                  onClick={(e) => {
+                    if (row.original._type !== "imported") return;
+                    if (
+                      e.target.closest('[role="checkbox"]') ||
+                      e.target.closest("[data-actions-cell]") ||
+                      e.target.closest('[role="menu"]')
+                    )
+                      return;
+                    setSelectedImportedPurchaseOrder(row.original);
+                  }}
                 >
                   {row
                     .getVisibleCells()

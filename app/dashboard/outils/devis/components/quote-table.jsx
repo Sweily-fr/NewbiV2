@@ -156,6 +156,30 @@ export default function QuoteTable({
   // État pour le fullscreen mobile - géré au niveau du tableau
   const [mobileFullscreenQuote, setMobileFullscreenQuote] = useState(null);
 
+  // Fusionner les devis natifs et les devis importés (lignes "À vérifier" / "Terminé")
+  const combinedQuotes = useMemo(() => {
+    const normalQuotes = (quotes || []).map((q) => ({
+      ...q,
+      _type: "normal",
+    }));
+    const imported = (importedQuotes || []).map((q) => ({
+      ...q,
+      _type: "imported",
+      // Mapper les champs pour compatibilité avec les colonnes du tableau
+      client: { name: q.client?.name || q.vendor?.name || "Client inconnu" },
+      issueDate: q.quoteDate,
+      validUntil: q.validUntil,
+      finalTotalHT: q.totalHT,
+      finalTotalVAT: q.totalVAT,
+      finalTotalTTC: q.totalTTC,
+    }));
+    return [...normalQuotes, ...imported].sort((a, b) => {
+      const dateA = new Date(a.issueDate || a.createdAt || 0);
+      const dateB = new Date(b.issueDate || b.createdAt || 0);
+      return dateB - dateA;
+    });
+  }, [quotes, importedQuotes]);
+
   const {
     table,
     globalFilter,
@@ -170,7 +194,7 @@ export default function QuoteTable({
     handleDeleteSelected,
     isDeleting,
   } = useQuoteTable({
-    data: quotes || [],
+    data: combinedQuotes,
     onRefetch: refetch,
     onSendEmail: (quote) => {
       // Fermer la sidebar avant d'ouvrir le modal d'envoi pour éviter les conflits z-index
@@ -216,7 +240,7 @@ export default function QuoteTable({
   // Compter les devis par statut
   const quoteCounts = useMemo(() => {
     const counts = {
-      all: (quotes || []).length,
+      all: combinedQuotes.length,
       draft: 0,
       sent: 0,
       accepted: 0,
@@ -227,7 +251,7 @@ export default function QuoteTable({
       else if (quote.status === "COMPLETED") counts.accepted++;
     });
     return counts;
-  }, [quotes]);
+  }, [quotes, combinedQuotes]);
 
   // --- Mobile responsive state ---
   const [isMobileScrolled, setIsMobileScrolled] = useState(false);
@@ -700,6 +724,11 @@ export default function QuoteTable({
                     ) {
                       return;
                     }
+                    // Devis importé : ouvrir la sidebar dédiée
+                    if (row.original._type === "imported") {
+                      setSelectedImportedQuote(row.original);
+                      return;
+                    }
                     // Déclencher l'ouverture de la sidebar via le bouton d'actions
                     const actionsButton =
                       e.currentTarget.querySelector("[data-view-quote]");
@@ -794,6 +823,10 @@ export default function QuoteTable({
                           e.target.closest('[role="menu"]')
                         )
                           return;
+                        if (row.original._type === "imported") {
+                          setSelectedImportedQuote(row.original);
+                          return;
+                        }
                         setMobileFullscreenQuote(row.original);
                       }}
                     >
