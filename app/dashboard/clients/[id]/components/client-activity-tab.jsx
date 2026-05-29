@@ -25,10 +25,23 @@ function getActionText(activity) {
   const meta = activity.metadata || {};
   const docNum = meta.documentNumber ? ` ${meta.documentNumber}` : "";
 
-  // Pour "updated", utiliser la description directement comme texte d'action
-  // La description contient déjà "a modifié le nom, l'email..."
+  // Pour "updated", utiliser la description directement (phrase complète,
+  // ex. "a modifié le nom, l'email...").
   if (activity.type === "updated" && activity.description) {
     return activity.description;
+  }
+
+  // Pour "assigned", n'afficher que le verbe : le(s) membre(s) sont rendus
+  // séparément sous forme de chip (avatar + nom). Repli sur la description
+  // complète pour les entrées sans metadata.
+  if (activity.type === "assigned") {
+    const members = activity.metadata?.assignedMembers || [];
+    if (members.length === 0) {
+      return activity.description || "a modifié les membres assignés";
+    }
+    return (activity.description || "").startsWith("a retiré")
+      ? "a retiré"
+      : "a assigné";
   }
 
   const listName = meta.listName ? ` "${meta.listName}"` : "";
@@ -303,6 +316,7 @@ export default function ClientActivityTab({ client }) {
                             const typesWithActionText = [
                               "created",
                               "updated",
+                              "assigned",
                               "invoice_created",
                               "invoice_status_changed",
                               "quote_created",
@@ -356,6 +370,26 @@ export default function ClientActivityTab({ client }) {
                                       <span className="text-[#737373] dark:text-muted-foreground">
                                         {actionText}
                                       </span>
+                                      {item.type === "assigned" &&
+                                        (meta.assignedMembers || []).map(
+                                          (m) => (
+                                            <span
+                                              key={m.id}
+                                              className="inline-flex items-center gap-1 align-middle ml-1.5 rounded-full bg-[#f8f9fa] dark:bg-[#1a1a1a] py-0.5 pl-0.5 pr-2 shadow-[inset_0_0_0_1px_#eeeff1] dark:shadow-[inset_0_0_0_1px_#232323]"
+                                            >
+                                              <UserAvatar
+                                                name={m.name}
+                                                src={m.image}
+                                                size="xs"
+                                                className="rounded-full size-4"
+                                                fallbackClassName="bg-gray-100 text-gray-500 rounded-full text-[8px]"
+                                              />
+                                              <span className="text-xs font-medium text-[#242529] dark:text-foreground">
+                                                {m.name}
+                                              </span>
+                                            </span>
+                                          ),
+                                        )}
                                     </p>
                                     <span className="text-xs text-[#999999] whitespace-nowrap flex-shrink-0">
                                       {formatRelativeDate(item.createdAt)}

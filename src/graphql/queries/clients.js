@@ -152,6 +152,11 @@ export const GET_CLIENT = gql`
           blockReason
           listId
           listName
+          assignedMembers {
+            id
+            name
+            image
+          }
         }
       }
       createdAt

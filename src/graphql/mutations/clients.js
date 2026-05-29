@@ -272,6 +272,13 @@ export const ASSIGN_CLIENT_MEMBERS = gql`
         userName
         userImage
         createdAt
+        metadata {
+          assignedMembers {
+            id
+            name
+            image
+          }
+        }
       }
     }
   }
