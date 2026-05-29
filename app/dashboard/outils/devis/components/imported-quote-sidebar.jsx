@@ -41,6 +41,7 @@ import {
   ExternalLink,
   AlertTriangle,
   CheckCircle2,
+  ChevronRight,
   Loader2,
 } from "lucide-react";
 import { formatDateToFrench } from "@/src/utils/dateFormatter";
@@ -51,11 +52,18 @@ import {
   PAYMENT_METHOD_LABELS,
   useUpdateImportedQuote,
   useDeleteImportedQuote,
-  useConvertImportedQuoteToQuote,
+  useValidateImportedQuote,
 } from "@/src/graphql/importedQuoteQueries";
 import { toast } from "sonner";
 
-export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
+export function ImportedQuoteSidebar({
+  quote,
+  open,
+  onOpenChange,
+  onUpdate,
+  reviewInfo = null,
+  onValidated,
+}) {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
 
@@ -63,13 +71,16 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
     useUpdateImportedQuote();
   const { deleteImportedQuote, loading: deleteLoading } =
     useDeleteImportedQuote();
-  const { convertImportedQuoteToQuote, loading: convertLoading } =
-    useConvertImportedQuoteToQuote();
+  const { validateImportedQuote, loading: validateLoading } =
+    useValidateImportedQuote();
 
-  const isLoading = updateLoading || deleteLoading || convertLoading;
-  const isAlreadyConverted = quote?.status === "VALIDATED";
+  const isLoading = updateLoading || deleteLoading || validateLoading;
 
   if (!quote) return null;
+
+  const needsValidation =
+    quote.status === "PENDING_REVIEW" || quote.status === "UPLOADED";
+  const isReviewMode = !!reviewInfo;
 
   const handleEdit = () => {
     setEditData({
@@ -101,30 +112,42 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
     }
   };
 
-  const handleConvert = async () => {
+  const handleValidate = async () => {
     try {
-      const result = await convertImportedQuoteToQuote({
-        variables: { id: quote.id },
-      });
-      const created = result.data?.convertImportedQuoteToQuote;
-      toast.success(
-        created?.number
-          ? `Devis ${created.prefix}${created.number} ajouté à votre tableau`
-          : "Devis ajouté à votre tableau",
-      );
-      onOpenChange(false);
+      if (isEditing) {
+        await updateImportedQuote({
+          variables: { id: quote.id, input: editData },
+        });
+        setIsEditing(false);
+      }
+      await validateImportedQuote({ variables: { id: quote.id } });
+      toast.success("Devis validé");
       onUpdate?.();
+      if (isReviewMode) {
+        onValidated?.();
+      } else {
+        onOpenChange(false);
+      }
     } catch (error) {
       toast.error(error?.message || "Erreur lors de la validation du devis");
     }
+  };
+
+  const handleSkip = () => {
+    setIsEditing(false);
+    onValidated?.();
   };
 
   const handleDelete = async () => {
     try {
       await deleteImportedQuote({ variables: { id: quote.id } });
       toast.success("Devis supprimé");
-      onOpenChange(false);
       onUpdate?.();
+      if (isReviewMode) {
+        onValidated?.();
+      } else {
+        onOpenChange(false);
+      }
     } catch (error) {
       toast.error("Erreur lors de la suppression");
     }
@@ -147,6 +170,11 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-md md:max-w-lg p-0 flex flex-col h-full overflow-hidden">
         <SheetHeader className="px-6 py-4 border-b shrink-0">
+          {isReviewMode && (
+            <p className="text-xs font-medium text-muted-foreground mb-1">
+              Validation des imports · {reviewInfo.current}/{reviewInfo.total}
+            </p>
+          )}
           <div className="flex items-center gap-3">
             <SheetTitle className="text-base font-medium">
               Devis importé
@@ -487,31 +515,33 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
               </Button>
               <Button
                 className="flex-1"
-                onClick={handleSave}
+                onClick={isReviewMode ? handleValidate : handleSave}
                 disabled={isLoading}
               >
-                {updateLoading ? (
+                {updateLoading || validateLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : isReviewMode ? (
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
                 ) : (
                   <Save className="h-4 w-4 mr-2" />
                 )}
-                Enregistrer
+                {isReviewMode ? "Enregistrer et valider" : "Enregistrer"}
               </Button>
             </div>
           ) : (
             <div className="flex flex-col gap-2">
-              {!isAlreadyConverted && (
+              {needsValidation && (
                 <Button
                   className="w-full"
-                  onClick={handleConvert}
+                  onClick={handleValidate}
                   disabled={isLoading}
                 >
-                  {convertLoading ? (
+                  {validateLoading ? (
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   ) : (
                     <CheckCircle2 className="h-4 w-4 mr-2" />
                   )}
-                  Valider et créer le devis
+                  Valider
                 </Button>
               )}
               <div className="flex gap-2">
@@ -555,6 +585,17 @@ export function ImportedQuoteSidebar({ quote, open, onOpenChange, onUpdate }) {
                   </AlertDialogContent>
                 </AlertDialog>
               </div>
+              {isReviewMode && (
+                <Button
+                  variant="ghost"
+                  className="w-full text-muted-foreground"
+                  onClick={handleSkip}
+                  disabled={isLoading}
+                >
+                  Passer
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              )}
             </div>
           )}
         </div>

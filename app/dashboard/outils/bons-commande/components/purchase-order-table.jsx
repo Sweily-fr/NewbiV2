@@ -111,6 +111,9 @@ export default function PurchaseOrderTable({
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [selectedImportedPurchaseOrder, setSelectedImportedPurchaseOrder] =
     useState(null);
+  // File d'attente de validation après import (revue 1 par 1)
+  const [reviewQueue, setReviewQueue] = useState([]);
+  const [reviewIndex, setReviewIndex] = useState(0);
   // État pour la modal d'envoi par email - géré au niveau du tableau pour éviter les re-renders
   const [sendEmailPO, setSendEmailPO] = useState(null);
 
@@ -779,19 +782,43 @@ export default function PurchaseOrderTable({
         open={isImportModalOpen}
         onOpenChange={setIsImportModalOpen}
         onImported={(pos) => {
-          if (pos && pos.length > 0) {
-            setSelectedImportedPurchaseOrder(pos[pos.length - 1]);
-          }
           refetchImported?.();
+          if (pos && pos.length > 0) {
+            setSelectedImportedPurchaseOrder(null);
+            setReviewQueue(pos);
+            setReviewIndex(0);
+          }
         }}
       />
 
-      {/* Sidebar pour les bons de commande importés */}
+      {/* Sidebar pour les bons de commande importés (revue 1 par 1 ou ouverture simple) */}
       <ImportedPurchaseOrderSidebar
-        purchaseOrder={selectedImportedPurchaseOrder}
-        open={!!selectedImportedPurchaseOrder}
+        purchaseOrder={
+          reviewQueue.length > 0
+            ? reviewQueue[reviewIndex]
+            : selectedImportedPurchaseOrder
+        }
+        open={reviewQueue.length > 0 || !!selectedImportedPurchaseOrder}
+        reviewInfo={
+          reviewQueue.length > 0
+            ? { current: reviewIndex + 1, total: reviewQueue.length }
+            : null
+        }
+        onValidated={() => {
+          refetchImported();
+          if (reviewIndex + 1 < reviewQueue.length) {
+            setReviewIndex((i) => i + 1);
+          } else {
+            setReviewQueue([]);
+            setReviewIndex(0);
+          }
+        }}
         onOpenChange={(open) => {
-          if (!open) setSelectedImportedPurchaseOrder(null);
+          if (!open) {
+            setSelectedImportedPurchaseOrder(null);
+            setReviewQueue([]);
+            setReviewIndex(0);
+          }
         }}
         onUpdate={() => {
           refetchImported();

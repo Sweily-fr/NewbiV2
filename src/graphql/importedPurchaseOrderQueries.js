@@ -193,7 +193,7 @@ export const DELETE_IMPORTED_PURCHASE_ORDERS = gql`
 export const IMPORTED_PURCHASE_ORDER_STATUS_LABELS = {
   UPLOADED: "À vérifier",
   PENDING_REVIEW: "À vérifier",
-  VALIDATED: "Validé",
+  VALIDATED: "Terminé",
   REJECTED: "Rejeté",
   ARCHIVED: "Archivé",
 };

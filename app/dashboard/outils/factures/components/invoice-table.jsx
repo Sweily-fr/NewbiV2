@@ -136,6 +136,9 @@ export default function InvoiceTable({
   // États pour les factures importées
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [selectedImportedInvoice, setSelectedImportedInvoice] = useState(null);
+  // File d'attente de validation après import (revue 1 par 1)
+  const [reviewQueue, setReviewQueue] = useState([]);
+  const [reviewIndex, setReviewIndex] = useState(0);
   const { workspaceId } = useRequiredWorkspace();
 
   // Subscription temps réel pour le tracking d'ouverture d'email
@@ -1225,22 +1228,55 @@ export default function InvoiceTable({
       <ImportInvoiceModal
         open={isImportModalOpen}
         onOpenChange={setIsImportModalOpen}
-        onImportSuccess={() => {
+        onImportSuccess={(importedDocs) => {
           refetchImported();
           refetch();
           onBalancesRefetch?.();
+          // Ouvrir la sidebar pour valider les imports un par un
+          if (importedDocs && importedDocs.length > 0) {
+            setSelectedImportedInvoice(null);
+            setReviewQueue(importedDocs);
+            setReviewIndex(0);
+          }
         }}
       />
 
-      {/* Sidebar pour les factures importées */}
+      {/* Sidebar pour les factures importées (revue 1 par 1 ou ouverture simple) */}
       <ImportedInvoiceSidebar
-        invoice={selectedImportedInvoice}
-        open={!!selectedImportedInvoice}
-        onOpenChange={(open) => !open && setSelectedImportedInvoice(null)}
+        invoice={
+          reviewQueue.length > 0
+            ? reviewQueue[reviewIndex]
+            : selectedImportedInvoice
+        }
+        open={reviewQueue.length > 0 || !!selectedImportedInvoice}
+        reviewInfo={
+          reviewQueue.length > 0
+            ? { current: reviewIndex + 1, total: reviewQueue.length }
+            : null
+        }
+        onValidated={() => {
+          refetchImported();
+          onBalancesRefetch?.();
+          if (reviewIndex + 1 < reviewQueue.length) {
+            setReviewIndex((i) => i + 1);
+          } else {
+            setReviewQueue([]);
+            setReviewIndex(0);
+          }
+        }}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedImportedInvoice(null);
+            setReviewQueue([]);
+            setReviewIndex(0);
+          }
+        }}
         onUpdate={() => {
           refetchImported();
           onBalancesRefetch?.();
-          setSelectedImportedInvoice(null);
+          if (reviewQueue.length === 0) {
+            setSelectedImportedInvoice(null);
+          }
         }}
       />
 

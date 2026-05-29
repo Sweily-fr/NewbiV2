@@ -146,6 +146,9 @@ export default function QuoteTable({
   const [templateQuote, setTemplateQuote] = useState(null);
   const [signatureQuote, setSignatureQuote] = useState(null);
   const [selectedImportedQuote, setSelectedImportedQuote] = useState(null);
+  // File d'attente de validation après import (revue 1 par 1)
+  const [reviewQueue, setReviewQueue] = useState([]);
+  const [reviewIndex, setReviewIndex] = useState(0);
   // État pour la modal d'envoi par email - géré au niveau du tableau pour éviter les re-renders
   const [sendEmailQuote, setSendEmailQuote] = useState(null);
   // État pour la sidebar - gérée au niveau du tableau pour éviter les conflits z-index avec les modals
@@ -1014,19 +1017,44 @@ export default function QuoteTable({
           if (!open) onImportTriggered?.();
         }}
         onImported={(quotes) => {
-          if (quotes && quotes.length > 0) {
-            setSelectedImportedQuote(quotes[quotes.length - 1]);
-          }
           refetchImported?.();
+          if (quotes && quotes.length > 0) {
+            setSelectedImportedQuote(null);
+            setReviewQueue(quotes);
+            setReviewIndex(0);
+          }
         }}
       />
 
-      {/* Sidebar pour les devis importés */}
+      {/* Sidebar pour les devis importés (revue 1 par 1 ou ouverture simple) */}
       <ImportedQuoteSidebar
-        quote={selectedImportedQuote}
-        open={!!selectedImportedQuote}
+        quote={
+          reviewQueue.length > 0
+            ? reviewQueue[reviewIndex]
+            : selectedImportedQuote
+        }
+        open={reviewQueue.length > 0 || !!selectedImportedQuote}
+        reviewInfo={
+          reviewQueue.length > 0
+            ? { current: reviewIndex + 1, total: reviewQueue.length }
+            : null
+        }
+        onValidated={() => {
+          refetchImported();
+          onBalancesRefetch?.();
+          if (reviewIndex + 1 < reviewQueue.length) {
+            setReviewIndex((i) => i + 1);
+          } else {
+            setReviewQueue([]);
+            setReviewIndex(0);
+          }
+        }}
         onOpenChange={(open) => {
-          if (!open) setSelectedImportedQuote(null);
+          if (!open) {
+            setSelectedImportedQuote(null);
+            setReviewQueue([]);
+            setReviewIndex(0);
+          }
         }}
         onUpdate={() => {
           refetchImported();

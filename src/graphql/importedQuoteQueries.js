@@ -190,7 +190,7 @@ export const DELETE_IMPORTED_QUOTES = gql`
 export const IMPORTED_QUOTE_STATUS_LABELS = {
   UPLOADED: "À vérifier",
   PENDING_REVIEW: "À vérifier",
-  VALIDATED: "Validé",
+  VALIDATED: "Terminé",
   REJECTED: "Rejeté",
   ARCHIVED: "Archivé",
 };
