@@ -919,79 +919,65 @@ export function PurchaseInvoiceDetailDrawer({
                           Date de paiement
                         </span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "w-40 h-8 justify-start text-left font-normal text-sm",
-                                !form.paymentDate && "text-muted-foreground",
-                              )}
-                              type="button"
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {form.paymentDate ? (
-                                (() => {
-                                  try {
-                                    const date = new Date(
-                                      form.paymentDate + "T00:00:00",
-                                    );
-                                    if (isNaN(date.getTime()))
-                                      return <span>Date invalide</span>;
-                                    return format(date, "PPP", { locale: fr });
-                                  } catch {
-                                    return <span>Date invalide</span>;
-                                  }
-                                })()
-                              ) : (
-                                <span>Choisir une date</span>
-                              )}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="end">
-                            <Calendar
-                              mode="single"
-                              selected={
-                                form.paymentDate
-                                  ? new Date(form.paymentDate + "T00:00:00")
-                                  : undefined
-                              }
-                              disabled={
-                                form.issueDate
-                                  ? {
-                                      before: new Date(
-                                        form.issueDate + "T00:00:00",
-                                      ),
-                                    }
-                                  : undefined
-                              }
-                              onSelect={(date) => {
-                                if (date) {
-                                  handleChange(
-                                    "paymentDate",
-                                    format(date, "yyyy-MM-dd"),
-                                  );
-                                }
-                              }}
-                              initialFocus
-                              locale={fr}
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        {form.paymentDate && (
+                      <Popover>
+                        <PopoverTrigger asChild>
                           <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleChange("paymentDate", "")}
+                            variant="outline"
+                            className={cn(
+                              "w-40 h-8 justify-start text-left font-normal text-sm",
+                              !form.paymentDate && "text-muted-foreground",
+                            )}
                             type="button"
-                            title="Effacer la date"
                           >
-                            <X className="h-3.5 w-3.5" />
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {form.paymentDate ? (
+                              (() => {
+                                try {
+                                  const date = new Date(
+                                    form.paymentDate + "T00:00:00",
+                                  );
+                                  if (isNaN(date.getTime()))
+                                    return <span>Date invalide</span>;
+                                  return format(date, "PPP", { locale: fr });
+                                } catch {
+                                  return <span>Date invalide</span>;
+                                }
+                              })()
+                            ) : (
+                              <span>Choisir une date</span>
+                            )}
                           </Button>
-                        )}
-                      </div>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="end">
+                          <Calendar
+                            mode="single"
+                            selected={
+                              form.paymentDate
+                                ? new Date(form.paymentDate + "T00:00:00")
+                                : undefined
+                            }
+                            disabled={
+                              form.issueDate
+                                ? {
+                                    before: new Date(
+                                      form.issueDate + "T00:00:00",
+                                    ),
+                                  }
+                                : undefined
+                            }
+                            onSelect={(date) => {
+                              if (date) {
+                                handleChange(
+                                  "paymentDate",
+                                  format(date, "yyyy-MM-dd"),
+                                );
+                              }
+                            }}
+                            initialFocus
+                            locale={fr}
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
                   </div>
                 </div>
