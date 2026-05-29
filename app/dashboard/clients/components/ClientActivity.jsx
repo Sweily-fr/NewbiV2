@@ -299,6 +299,12 @@ const ClientActivity = ({
       document_email_sent: "📧",
       invoice_reminder_sent: "🔔",
       reminder_created: "🔔",
+      assigned: "👤",
+      blocked: "🚫",
+      unblocked: "✅",
+      added_to_list: "➕",
+      removed_from_list: "➖",
+      crm_email_sent: "📧",
     };
 
     let text = activity.description || "a effectué une action";
