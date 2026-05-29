@@ -6,7 +6,7 @@ export const mapCategoryToEnum = (category) => {
     materiel: "HARDWARE", // ✅ Matériel informatique
     mobilier: "OFFICE_SUPPLIES", // ✅ Mobilier de bureau
     equipement: "HARDWARE", // ✅ Équipement professionnel
-    
+
     // Transport et déplacements
     transport: "TRAVEL",
     carburant: "TRAVEL",
@@ -16,12 +16,12 @@ export const mapCategoryToEnum = (category) => {
     train: "TRAVEL",
     avion: "TRAVEL",
     location_vehicule: "TRAVEL",
-    
+
     // Repas et hébergement
     repas: "MEALS",
     restaurant: "MEALS",
     hotel: "ACCOMMODATION", // ✅ Hébergement
-    
+
     // Communication et marketing
     marketing: "MARKETING",
     publicite: "MARKETING",
@@ -30,13 +30,13 @@ export const mapCategoryToEnum = (category) => {
     internet: "UTILITIES", // ✅ Charges/Utilities
     site_web: "MARKETING",
     reseaux_sociaux: "MARKETING",
-    
+
     // Formation et développement
     formation: "TRAINING",
     conference: "TRAINING",
     livres: "TRAINING",
     abonnement: "SUBSCRIPTIONS", // ✅ Abonnements
-    
+
     // Services professionnels
     comptabilite: "SERVICES",
     juridique: "SERVICES",
@@ -44,31 +44,31 @@ export const mapCategoryToEnum = (category) => {
     banque: "SERVICES",
     conseil: "SERVICES",
     sous_traitance: "SERVICES",
-    
+
     // Locaux et charges
     loyer: "RENT",
     electricite: "UTILITIES", // ✅ Charges/Utilities
     eau: "UTILITIES", // ✅ Charges/Utilities
     chauffage: "UTILITIES", // ✅ Charges/Utilities
     entretien: "MAINTENANCE", // ✅ Maintenance
-    
+
     // Logiciels et outils
     logiciel: "SOFTWARE", // ✅ Logiciels
     saas: "SUBSCRIPTIONS", // ✅ Abonnements SaaS
     licence: "SOFTWARE", // ✅ Licences logicielles
-    
+
     // Ressources humaines
     salaire: "SALARIES",
     charges_sociales: "SALARIES",
     recrutement: "SERVICES",
-    
+
     // Autres
     cadeaux: "MARKETING",
     representation: "MARKETING",
     poste: "OFFICE_SUPPLIES",
     impression: "OFFICE_SUPPLIES",
     autre: "OTHER",
-    
+
     // Mapping ancien format (majuscules) pour compatibilité
     Transport: "TRAVEL",
     Repas: "MEALS",
@@ -91,6 +91,7 @@ export const mapPaymentMethodToEnum = (paymentMethod) => {
     CASH: "CASH",
     TRANSFER: "BANK_TRANSFER",
     CHECK: "CHECK",
+    DIRECT_DEBIT: "DIRECT_DEBIT",
   };
 
   return paymentMethodMap[paymentMethod] || "BANK_TRANSFER";
