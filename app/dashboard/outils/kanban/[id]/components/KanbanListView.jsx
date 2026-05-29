@@ -64,6 +64,7 @@ import { Calendar as CalendarComponent } from "@/src/components/ui/calendar";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { MemberSelector } from "./MemberSelector";
+import { useTaskMembers } from "../hooks/useMemberToggle";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { toast } from "sonner";
 
@@ -147,18 +148,13 @@ const MembersPopover = React.memo(function MembersPopover({
     }
   };
 
-  const toggleMember = (memberId) => {
-    const current = task.assignedMembers || [];
-    const newMembers = current.includes(memberId)
-      ? current.filter((id) => id !== memberId)
-      : [...current, memberId];
-    updateTask({
-      variables: {
-        input: { id: task.id, assignedMembers: newMembers },
-        workspaceId,
-      },
-    });
-  };
+  // Base optimiste + debounce : les clics rapides calculent à partir de l'état
+  // local (et non du cache qui retarde), et sont coalescés en une mutation.
+  const { members: effectiveMembers, toggle: toggleMember } = useTaskMembers({
+    task,
+    updateTask,
+    workspaceId,
+  });
 
   return (
     <Popover open={isOpen} onOpenChange={handleOpenChange}>
@@ -168,7 +164,7 @@ const MembersPopover = React.memo(function MembersPopover({
             className="flex -space-x-2 cursor-pointer"
             onClick={(e) => e.stopPropagation()}
           >
-            {task.assignedMembers.slice(0, 3).map((memberId, idx) => {
+            {effectiveMembers.slice(0, 3).map((memberId, idx) => {
               const memberInfo = membersInfo.find((m) => m.id === memberId);
               return (
                 <div key={memberId} className="relative group/avatar">
@@ -180,7 +176,7 @@ const MembersPopover = React.memo(function MembersPopover({
                           name={memberInfo?.name || memberId}
                           size="xs"
                           className="border border-background ring-1 ring-border/10 hover:ring-primary/50 transition-all"
-                          style={{ zIndex: task.assignedMembers.length - idx }}
+                          style={{ zIndex: effectiveMembers.length - idx }}
                         />
                       </div>
                     </TooltipTrigger>
@@ -204,9 +200,9 @@ const MembersPopover = React.memo(function MembersPopover({
                 </div>
               );
             })}
-            {task.assignedMembers.length > 3 && (
+            {effectiveMembers.length > 3 && (
               <div className="w-5 h-5 rounded-full bg-muted/80 border border-background flex items-center justify-center text-[8px] font-semibold text-muted-foreground flex-shrink-0">
-                +{task.assignedMembers.length - 3}
+                +{effectiveMembers.length - 3}
               </div>
             )}
           </div>
@@ -244,9 +240,7 @@ const MembersPopover = React.memo(function MembersPopover({
               m.name?.toLowerCase().includes(searchQuery.toLowerCase()),
             )
             .map((member) => {
-              const isSelected = (task.assignedMembers || []).includes(
-                member.id,
-              );
+              const isSelected = effectiveMembers.includes(member.id);
               return (
                 <button
                   key={member.id}
@@ -337,18 +331,28 @@ function StatusPopoverContent({
             key={col.id}
             onClick={(e) => {
               e.stopPropagation();
-              // Fermer le Popover AVANT le moveTask pour éviter un portal orphelin
+              // Fermer le Popover AVANT le moveTask, PUIS différer la mutation
+              // d'un tick. La maj optimiste de moveTask re-render la liste
+              // synchroniquement : si elle s'exécute avant que la fermeture du
+              // Popover ne soit committée, la ligne (qui change de colonne) se
+              // démonte avec le portail Radix encore ouvert → portail orphelin
+              // qui fige l'écran (plus de scroll/clic). Le différé garantit que
+              // Radix a nettoyé le portail avant le re-render.
               onClose?.();
-              moveTask({
-                variables: {
-                  id: task.id,
-                  columnId: col.id,
-                  position: 0,
-                  workspaceId,
-                },
-              }).catch((error) => {
-                console.error("Erreur lors du déplacement de la tâche:", error);
-              });
+              const variables = {
+                id: task.id,
+                columnId: col.id,
+                position: 0,
+                workspaceId,
+              };
+              setTimeout(() => {
+                moveTask({ variables }).catch((error) => {
+                  console.error(
+                    "Erreur lors du déplacement de la tâche:",
+                    error,
+                  );
+                });
+              }, 0);
             }}
             className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors cursor-pointer ${
               col.id === column.id ? "bg-muted/60" : ""
@@ -395,6 +399,7 @@ function BulkActionBar({
 }) {
   const bulkBarRef = useRef(null);
   const count = selectedTaskIds.size;
+  const [moveOpen, setMoveOpen] = useState(false);
 
   // Centrer la barre par rapport à la zone de contenu (SidebarInset)
   React.useEffect(() => {
@@ -443,11 +448,19 @@ function BulkActionBar({
   };
 
   const bulkMove = (columnId) => {
-    selectedIds.forEach((taskId) => {
-      moveTask({
-        variables: { id: taskId, columnId, position: 0, workspaceId },
+    // Capturer les ids avant le différé (la sélection peut changer).
+    const ids = [...selectedIds];
+    // Fermer le Popover et différer les mutations : la maj optimiste re-render
+    // la liste synchroniquement et démonterait le portail Radix encore ouvert
+    // (portail orphelin → écran figé). Cf. StatusPopoverContent.
+    setMoveOpen(false);
+    setTimeout(() => {
+      ids.forEach((taskId) => {
+        moveTask({
+          variables: { id: taskId, columnId, position: 0, workspaceId },
+        });
       });
-    });
+    }, 0);
   };
 
   const bulkDelete = () => {
@@ -676,7 +689,7 @@ function BulkActionBar({
           />
 
           {/* Déplacer */}
-          <Popover>
+          <Popover open={moveOpen} onOpenChange={setMoveOpen}>
             <PopoverTrigger asChild>
               <button
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium hover:bg-white/10 transition-colors cursor-pointer whitespace-nowrap"
@@ -1982,7 +1995,9 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
             className={`flex-shrink-0 h-4 w-4 border-muted-foreground/30 mr-4 transition-opacity ${isSelected ? "opacity-100 border-[#5A50FF] bg-[#5A50FF] text-white data-[state=checked]:bg-[#5A50FF] data-[state=checked]:border-[#5A50FF]" : "opacity-0 group-hover:opacity-100"}`}
             onClick={(e) => e.stopPropagation()}
           />
-          <DropdownMenu>
+          {/* modal={false} : pas de scroll-lock body → pas d'écran figé si la
+              ligne se démonte (move) pendant la fermeture du menu */}
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <button
                 className="flex-shrink-0 w-2.5 h-2.5 rounded-full cursor-pointer hover:opacity-80 transition-opacity"
@@ -2000,23 +2015,29 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
               {columns.map((col) => (
                 <DropdownMenuItem
                   key={col.id}
-                  onClick={async (e) => {
+                  onClick={(e) => {
                     e.stopPropagation();
-                    try {
-                      await moveTask({
-                        variables: {
-                          id: task.id,
-                          columnId: col.id,
-                          position: 0,
-                          workspaceId,
-                        },
+                    // DropdownMenu Radix = modal → pose un scroll-lock +
+                    // pointer-events:none sur le body. La maj optimiste de
+                    // moveTask re-render et démonte la ligne (qui change de
+                    // colonne) AVANT que le menu ne se ferme : son nettoyage
+                    // (react-remove-scroll) ne s'exécute pas et le body reste
+                    // verrouillé → écran figé. On diffère la mutation pour
+                    // laisser le menu se fermer et nettoyer d'abord.
+                    const variables = {
+                      id: task.id,
+                      columnId: col.id,
+                      position: 0,
+                      workspaceId,
+                    };
+                    setTimeout(() => {
+                      moveTask({ variables }).catch((error) => {
+                        console.error(
+                          "Erreur lors du déplacement de la tâche:",
+                          error,
+                        );
                       });
-                    } catch (error) {
-                      console.error(
-                        "Erreur lors du déplacement de la tâche:",
-                        error,
-                      );
-                    }
+                    }, 0);
                   }}
                   className="flex items-center gap-2 cursor-pointer"
                 >
@@ -2914,7 +2935,10 @@ export function KanbanListView({
                                       onClick={(e) => e.stopPropagation()}
                                     />
                                     {/* Rond de couleur du status */}
-                                    <DropdownMenu>
+                                    {/* modal={false} : évite le scroll-lock
+                                        body orphelin si la ligne se démonte
+                                        (move) pendant la fermeture du menu */}
+                                    <DropdownMenu modal={false}>
                                       <DropdownMenuTrigger asChild>
                                         <button
                                           className="flex-shrink-0 w-2.5 h-2.5 rounded-full cursor-pointer hover:opacity-80 transition-opacity"
@@ -2936,24 +2960,31 @@ export function KanbanListView({
                                         {columns.map((col) => (
                                           <DropdownMenuItem
                                             key={col.id}
-                                            onClick={async (e) => {
+                                            onClick={(e) => {
                                               e.stopPropagation();
-                                              // Déplacer la tâche vers la colonne col.id
-                                              try {
-                                                await moveTask({
-                                                  variables: {
-                                                    id: task.id,
-                                                    columnId: col.id,
-                                                    position: 0,
-                                                    workspaceId,
+                                              // Différer la mutation : le menu
+                                              // (modal) doit se fermer et lever
+                                              // son scroll-lock AVANT que la maj
+                                              // optimiste ne démonte la ligne,
+                                              // sinon le body reste verrouillé
+                                              // (écran figé). Cf. l'autre
+                                              // DropdownMenu de status ci-dessus.
+                                              const variables = {
+                                                id: task.id,
+                                                columnId: col.id,
+                                                position: 0,
+                                                workspaceId,
+                                              };
+                                              setTimeout(() => {
+                                                moveTask({ variables }).catch(
+                                                  (error) => {
+                                                    console.error(
+                                                      "Erreur lors du déplacement de la tâche:",
+                                                      error,
+                                                    );
                                                   },
-                                                });
-                                              } catch (error) {
-                                                console.error(
-                                                  "Erreur lors du déplacement de la tâche:",
-                                                  error,
                                                 );
-                                              }
+                                              }, 0);
                                             }}
                                             className="flex items-center gap-2 cursor-pointer"
                                           >
