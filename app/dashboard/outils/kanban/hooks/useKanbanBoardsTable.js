@@ -25,7 +25,6 @@ import {
   TooltipContent,
 } from "@/src/components/ui/tooltip";
 import { BoardMembersPopover } from "../components/BoardMembersPopover";
-import { UserAvatar } from "@/src/components/ui/user-avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -62,24 +61,6 @@ function TruncatedText({ children, className }) {
       </TooltipContent>
     </Tooltip>
   );
-}
-
-// Formatage date relative
-function formatRelativeDate(dateStr) {
-  if (!dateStr) return "-";
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now - date;
-  const diffMin = Math.floor(diffMs / 60000);
-  const diffH = Math.floor(diffMs / 3600000);
-  const diffD = Math.floor(diffMs / 86400000);
-
-  if (diffMin < 1) return "À l'instant";
-  if (diffMin < 60) return `Il y a ${diffMin} min`;
-  if (diffH < 24) return `Il y a ${diffH}h`;
-  if (diffD === 1) return "Hier";
-  if (diffD < 7) return `Il y a ${diffD}j`;
-  return date.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
 
 // Custom filter function for multi-column search
@@ -278,35 +259,6 @@ export function useKanbanBoardsTable({
         size: 90,
       },
       {
-        id: "creator",
-        header: () => <span className="font-normal">Créateur</span>,
-        cell: ({ row }) => {
-          const board = row.original;
-          const creatorId = board?.userId ? String(board.userId) : null;
-          const creator = creatorId
-            ? (board?.members || []).find(
-                (m) => String(m.userId || m.id) === creatorId,
-              )
-            : null;
-          if (!creator) return <span className="text-muted-foreground">-</span>;
-          return (
-            <div className="flex items-center gap-2 min-w-0">
-              <UserAvatar
-                src={creator.image}
-                name={creator.name || creator.email}
-                size="xs"
-                className="h-6 w-6 flex-shrink-0"
-              />
-              <span className="truncate text-xs">
-                {creator.name || creator.email}
-              </span>
-            </div>
-          );
-        },
-        size: 160,
-        enableSorting: false,
-      },
-      {
         id: "members",
         header: () => <span className="font-normal">Membres</span>,
         cell: ({ row }) => (
@@ -340,28 +292,6 @@ export function useKanbanBoardsTable({
             },
           ]
         : []),
-      {
-        accessorKey: "updatedAt",
-        header: () => <span className="font-normal">Dernière activité</span>,
-        cell: ({ row }) => {
-          const date = row.getValue("updatedAt");
-          if (!date) return "-";
-          return (
-            <span className="font-normal">{formatRelativeDate(date)}</span>
-          );
-        },
-        size: 140,
-      },
-      {
-        accessorKey: "createdAt",
-        header: () => <span className="font-normal">Créée le</span>,
-        cell: ({ row }) => {
-          const date = row.getValue("createdAt");
-          if (!date) return "-";
-          return <span className="font-normal">{formatDate(date)}</span>;
-        },
-        size: 120,
-      },
       {
         id: "actions",
         header: () => <span className="font-normal">Actions</span>,
