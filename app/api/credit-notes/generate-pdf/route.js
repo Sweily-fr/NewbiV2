@@ -4,6 +4,7 @@ import { mongoDb } from "@/src/lib/mongodb";
 import {
   requireSession,
   requireOrgMembership,
+  hasInternalSecret,
   toObjectId,
   apiError,
   withErrorHandler,
@@ -23,15 +24,19 @@ async function handler(request) {
     return apiError(400, "creditNoteId est requis");
   }
 
-  // Auth check BEFORE launching Puppeteer
-  const { user } = await requireSession(request);
-  const creditNote = await mongoDb.collection("creditnotes").findOne({
-    _id: toObjectId(creditNoteId),
-  });
-  if (!creditNote) {
-    return apiError(404, "Avoir introuvable");
+  // Auth : session utilisateur OU appel interne serveur-à-serveur (backend
+  // d'envoi d'email) authentifié via x-internal-secret. Dans ce dernier cas,
+  // l'autorisation a déjà été vérifiée côté GraphQL (RBAC + scope workspace).
+  if (!hasInternalSecret(request)) {
+    const { user } = await requireSession(request);
+    const creditNote = await mongoDb.collection("creditnotes").findOne({
+      _id: toObjectId(creditNoteId),
+    });
+    if (!creditNote) {
+      return apiError(404, "Avoir introuvable");
+    }
+    await requireOrgMembership(user.id, creditNote.workspaceId);
   }
-  await requireOrgMembership(user.id, creditNote.workspaceId);
 
   // User is authorized — launch Puppeteer to generate the PDF
   let browser = null;
