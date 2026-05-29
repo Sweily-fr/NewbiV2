@@ -4,6 +4,7 @@ import { mongoDb } from "@/src/lib/mongodb";
 import {
   requireSession,
   requireOrgMembership,
+  hasInternalSecret,
   toObjectId,
   apiError,
   withErrorHandler,
@@ -23,15 +24,19 @@ async function handler(request) {
     return apiError(400, "purchaseOrderId est requis");
   }
 
-  // Auth check BEFORE launching Puppeteer
-  const { user } = await requireSession(request);
-  const purchaseOrder = await mongoDb.collection("purchaseorders").findOne({
-    _id: toObjectId(purchaseOrderId),
-  });
-  if (!purchaseOrder) {
-    return apiError(404, "Bon de commande introuvable");
+  // Auth : session utilisateur OU appel interne serveur-à-serveur (backend
+  // d'envoi d'email) authentifié via x-internal-secret. Dans ce dernier cas,
+  // l'autorisation a déjà été vérifiée côté GraphQL (RBAC + scope workspace).
+  if (!hasInternalSecret(request)) {
+    const { user } = await requireSession(request);
+    const purchaseOrder = await mongoDb.collection("purchaseorders").findOne({
+      _id: toObjectId(purchaseOrderId),
+    });
+    if (!purchaseOrder) {
+      return apiError(404, "Bon de commande introuvable");
+    }
+    await requireOrgMembership(user.id, purchaseOrder.workspaceId);
   }
-  await requireOrgMembership(user.id, purchaseOrder.workspaceId);
 
   // User is authorized — launch Puppeteer to generate the PDF
   let browser = null;

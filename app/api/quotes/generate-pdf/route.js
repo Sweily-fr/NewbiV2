@@ -4,6 +4,7 @@ import { mongoDb } from "@/src/lib/mongodb";
 import {
   requireSession,
   requireOrgMembership,
+  hasInternalSecret,
   toObjectId,
   apiError,
   withErrorHandler,
@@ -23,15 +24,19 @@ async function handler(request) {
     return apiError(400, "quoteId est requis");
   }
 
-  // Auth check BEFORE launching Puppeteer
-  const { user } = await requireSession(request);
-  const quote = await mongoDb.collection("quotes").findOne({
-    _id: toObjectId(quoteId),
-  });
-  if (!quote) {
-    return apiError(404, "Devis introuvable");
+  // Auth : session utilisateur OU appel interne serveur-à-serveur (backend
+  // d'envoi d'email) authentifié via x-internal-secret. Dans ce dernier cas,
+  // l'autorisation a déjà été vérifiée côté GraphQL (RBAC + scope workspace).
+  if (!hasInternalSecret(request)) {
+    const { user } = await requireSession(request);
+    const quote = await mongoDb.collection("quotes").findOne({
+      _id: toObjectId(quoteId),
+    });
+    if (!quote) {
+      return apiError(404, "Devis introuvable");
+    }
+    await requireOrgMembership(user.id, quote.workspaceId);
   }
-  await requireOrgMembership(user.id, quote.workspaceId);
 
   // User is authorized — launch Puppeteer to generate the PDF
   let browser = null;

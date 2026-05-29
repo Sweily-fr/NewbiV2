@@ -4,6 +4,7 @@ import { mongoDb } from "@/src/lib/mongodb";
 import {
   requireSession,
   requireOrgMembership,
+  hasInternalSecret,
   toObjectId,
   apiError,
   withErrorHandler,
@@ -23,16 +24,19 @@ async function handler(request) {
     return apiError(400, "invoiceId est requis");
   }
 
-  // Auth check BEFORE launching Puppeteer — this is where we verify
-  // the user has access to this invoice's organization
-  const { user } = await requireSession(request);
-  const invoice = await mongoDb.collection("invoices").findOne({
-    _id: toObjectId(invoiceId),
-  });
-  if (!invoice) {
-    return apiError(404, "Facture introuvable");
+  // Auth : session utilisateur OU appel interne serveur-à-serveur (backend
+  // d'envoi d'email) authentifié via x-internal-secret. Dans ce dernier cas,
+  // l'autorisation a déjà été vérifiée côté GraphQL (RBAC + scope workspace).
+  if (!hasInternalSecret(request)) {
+    const { user } = await requireSession(request);
+    const invoice = await mongoDb.collection("invoices").findOne({
+      _id: toObjectId(invoiceId),
+    });
+    if (!invoice) {
+      return apiError(404, "Facture introuvable");
+    }
+    await requireOrgMembership(user.id, invoice.workspaceId);
   }
-  await requireOrgMembership(user.id, invoice.workspaceId);
 
   // User is authorized — launch Puppeteer to generate the PDF
   let browser = null;
