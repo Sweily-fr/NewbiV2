@@ -216,6 +216,96 @@ const formatTotalSize = (bytes) => {
 // Composant image avec loader pour les aperçus (utile pour les HEIC qui nécessitent une conversion côté serveur)
 // PreviewImage importé depuis @/src/components/ui/preview-image
 
+// Affiche récursivement un nœud de l'arborescence dans le dialog de ZIP :
+// dossier → ses fichiers → ses sous-dossiers (eux-mêmes récursifs), comme la sidebar.
+// Le dossier racine (isRoot) n'est pas désélectionnable ; les sous-dossiers ont une case.
+function ZipTreeNode({
+  node,
+  isRoot = false,
+  excludedSubfolders,
+  onToggleExclusion,
+}) {
+  const excluded = !isRoot && excludedSubfolders.includes(node.id);
+  const hasChildren = node.files.length > 0 || node.subfolders.length > 0;
+
+  return (
+    <div className="space-y-0.5">
+      <div className="flex items-center gap-2 py-1">
+        {!isRoot && (
+          <button
+            type="button"
+            onClick={() => onToggleExclusion(node.id)}
+            className={cn(
+              "size-4 rounded border flex items-center justify-center shrink-0 transition-colors",
+              !excluded
+                ? "bg-primary border-primary text-primary-foreground"
+                : "border-muted-foreground/40",
+            )}
+          >
+            {!excluded && <Check className="size-3" strokeWidth={2.5} />}
+          </button>
+        )}
+        <FolderClosed
+          className={cn(
+            "shrink-0",
+            isRoot
+              ? "size-4 text-primary/70"
+              : "size-3.5 text-muted-foreground/70",
+          )}
+        />
+        <span
+          className={cn(
+            isRoot ? "font-medium text-sm" : "text-sm flex-1",
+            excluded && "text-muted-foreground line-through",
+          )}
+        >
+          {node.name}
+        </span>
+        <span
+          className={cn("text-xs text-muted-foreground", isRoot && "ml-auto")}
+        >
+          {node.filesCount} fichier{node.filesCount > 1 ? "s" : ""} —{" "}
+          {formatFileSize(node.totalSize)}
+        </span>
+      </div>
+      {!excluded && hasChildren && (
+        <div className="ml-4 pl-2 border-l border-border/60 space-y-0.5">
+          {node.files.map((file) => (
+            <div key={file.id} className="flex items-center gap-2 py-1">
+              <File className="size-3.5 text-muted-foreground/70 shrink-0" />
+              <span className="text-sm truncate flex-1">{file.name}</span>
+              <span className="text-xs text-muted-foreground">
+                {formatFileSize(file.size)}
+              </span>
+            </div>
+          ))}
+          {node.subfolders.map((sub) => (
+            <ZipTreeNode
+              key={sub.id}
+              node={sub}
+              excludedSubfolders={excludedSubfolders}
+              onToggleExclusion={onToggleExclusion}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Total (fichiers + taille) d'un nœud en ignorant les sous-dossiers exclus.
+function computeZipNodeTotals(node, excludedSubfolders) {
+  let files = node.files.length;
+  let size = node.files.reduce((sum, f) => sum + f.size, 0);
+  for (const sub of node.subfolders) {
+    if (excludedSubfolders.includes(sub.id)) continue;
+    const totals = computeZipNodeTotals(sub, excludedSubfolders);
+    files += totals.files;
+    size += totals.size;
+  }
+  return { files, size };
+}
+
 export default function DocumentsPartagesPage() {
   const isMobile = useIsMobile();
   const { isReadOnly, isOwner } = useSubscriptionAccess();
@@ -1186,10 +1276,27 @@ export default function DocumentsPartagesPage() {
     window.open(transferLink, "_blank");
   }, [transferLink]);
 
+  // Normalise la sélection pour le ZIP : on ne garde que les dossiers
+  // racines (les sous-dossiers sont inclus côté backend via l'arborescence)
+  // et uniquement les documents qui ne sont dans aucun dossier sélectionné.
+  // Sinon le backend reçoit des sous-dossiers à plat et des documents déjà
+  // contenus dans les dossiers, qui apparaissent alors en « individuels ».
+  const getZipSelection = useCallback(() => {
+    const selectedSet = new Set(selectedFolders);
+    const topLevelFolderIds = selectedFolders.filter((id) => {
+      const folder = folders.find((f) => f.id === id);
+      return !folder?.parentId || !selectedSet.has(folder.parentId);
+    });
+    const standaloneDocIds = selectedDocuments.filter((docId) => {
+      const doc = allDocuments.find((d) => d.id === docId);
+      return !doc?.folderId || !selectedSet.has(doc.folderId);
+    });
+    return { folderIds: topLevelFolderIds, documentIds: standaloneDocIds };
+  }, [selectedFolders, selectedDocuments, folders, allDocuments]);
+
   // Open ZIP configuration dialog or download directly
   const handleZipDownload = useCallback(async () => {
-    const folderIds = selectedFolders;
-    const docIds = selectedDocuments;
+    const { folderIds, documentIds: docIds } = getZipSelection();
 
     if (folderIds.length === 0 && docIds.length === 0) {
       toast.error("Aucun élément sélectionné");
@@ -1210,30 +1317,20 @@ export default function DocumentsPartagesPage() {
 
     // Direct download without dialog
     await downloadSelection({ folderIds, documentIds: docIds });
-  }, [
-    selectedFolders,
-    selectedDocuments,
-    hasSubfolders,
-    fetchSelectionInfo,
-    downloadSelection,
-  ]);
+  }, [getZipSelection, hasSubfolders, fetchSelectionInfo, downloadSelection]);
 
   // Execute ZIP download with exclusions
   const handleZipDownloadConfirm = useCallback(async () => {
+    const { folderIds, documentIds } = getZipSelection();
     await downloadSelection({
-      folderIds: selectedFolders,
-      documentIds: selectedDocuments,
+      folderIds,
+      documentIds,
       excludedFolderIds: excludedSubfolders,
     });
     setShowZipDialog(false);
     setZipSelectionInfo(null);
     setExcludedSubfolders([]);
-  }, [
-    selectedFolders,
-    selectedDocuments,
-    excludedSubfolders,
-    downloadSelection,
-  ]);
+  }, [getZipSelection, excludedSubfolders, downloadSelection]);
 
   // Toggle subfolder exclusion
   const toggleSubfolderExclusion = useCallback((subfolderId) => {
@@ -4701,58 +4798,15 @@ export default function DocumentsPartagesPage() {
             </DialogHeader>
             {zipSelectionInfo && (
               <div className="space-y-4 max-h-[400px] overflow-y-auto">
-                {/* Folders tree */}
+                {/* Folders tree (dossiers + fichiers imbriqués) */}
                 {zipSelectionInfo.folders.map((folder) => (
-                  <div key={folder.id} className="space-y-1">
-                    <div className="flex items-center gap-2 py-1">
-                      <FolderClosed className="size-4 text-primary/70 shrink-0" />
-                      <span className="font-medium text-sm">{folder.name}</span>
-                      <span className="text-xs text-muted-foreground ml-auto">
-                        {folder.filesCount} fichier
-                        {folder.filesCount > 1 ? "s" : ""} —{" "}
-                        {formatFileSize(folder.totalSize)}
-                      </span>
-                    </div>
-                    {folder.subfolders.length > 0 && (
-                      <div className="ml-6 space-y-0.5">
-                        {folder.subfolders.map((sub) => (
-                          <label
-                            key={sub.id}
-                            className="flex items-center gap-2 py-1 px-2 rounded hover:bg-accent/40 cursor-pointer"
-                          >
-                            <button
-                              onClick={() => toggleSubfolderExclusion(sub.id)}
-                              className={cn(
-                                "size-4 rounded border flex items-center justify-center shrink-0 transition-colors",
-                                !excludedSubfolders.includes(sub.id)
-                                  ? "bg-primary border-primary text-primary-foreground"
-                                  : "border-muted-foreground/40",
-                              )}
-                            >
-                              {!excludedSubfolders.includes(sub.id) && (
-                                <Check className="size-3" strokeWidth={2.5} />
-                              )}
-                            </button>
-                            <FolderClosed className="size-3.5 text-muted-foreground/70 shrink-0" />
-                            <span
-                              className={cn(
-                                "text-sm flex-1",
-                                excludedSubfolders.includes(sub.id) &&
-                                  "text-muted-foreground line-through",
-                              )}
-                            >
-                              {sub.name}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {sub.filesCount} fichier
-                              {sub.filesCount > 1 ? "s" : ""} —{" "}
-                              {formatFileSize(sub.size)}
-                            </span>
-                          </label>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <ZipTreeNode
+                    key={folder.id}
+                    node={folder}
+                    isRoot
+                    excludedSubfolders={excludedSubfolders}
+                    onToggleExclusion={toggleSubfolderExclusion}
+                  />
                 ))}
 
                 {/* Individual documents */}
@@ -4780,32 +4834,33 @@ export default function DocumentsPartagesPage() {
 
                 {/* Summary */}
                 <Separator />
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Total</span>
-                  <span className="font-medium">
-                    {zipSelectionInfo.totalFiles -
-                      zipSelectionInfo.folders.reduce(
-                        (sum, f) =>
-                          sum +
-                          f.subfolders
-                            .filter((s) => excludedSubfolders.includes(s.id))
-                            .reduce((acc, s) => acc + s.filesCount, 0),
-                        0,
-                      )}{" "}
-                    fichier(s) —{" "}
-                    {formatFileSize(
-                      zipSelectionInfo.totalSize -
-                        zipSelectionInfo.folders.reduce(
-                          (sum, f) =>
-                            sum +
-                            f.subfolders
-                              .filter((s) => excludedSubfolders.includes(s.id))
-                              .reduce((acc, s) => acc + s.size, 0),
-                          0,
-                        ),
-                    )}
-                  </span>
-                </div>
+                {(() => {
+                  const folderTotals = zipSelectionInfo.folders.reduce(
+                    (acc, f) => {
+                      const t = computeZipNodeTotals(f, excludedSubfolders);
+                      acc.files += t.files;
+                      acc.size += t.size;
+                      return acc;
+                    },
+                    { files: 0, size: 0 },
+                  );
+                  const docsSize = zipSelectionInfo.documents.reduce(
+                    (sum, d) => sum + d.size,
+                    0,
+                  );
+                  const totalFiles =
+                    folderTotals.files + zipSelectionInfo.documents.length;
+                  const totalSize = folderTotals.size + docsSize;
+                  return (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Total</span>
+                      <span className="font-medium">
+                        {totalFiles} fichier{totalFiles > 1 ? "s" : ""} —{" "}
+                        {formatFileSize(totalSize)}
+                      </span>
+                    </div>
+                  );
+                })()}
               </div>
             )}
             <DialogFooter>
