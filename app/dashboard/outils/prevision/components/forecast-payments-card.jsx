@@ -14,8 +14,6 @@ import {
 } from "recharts";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import {
-  ChevronRight,
-  ChevronLeft,
   ChevronDown,
   Clock,
   Wallet,
@@ -55,7 +53,6 @@ import { useChartColors } from "@/src/hooks/useChartColors";
 const LABEL_COL_WIDTH = 160;
 const COLUMN_WIDTH = 120;
 const CHART_HEIGHT = 200;
-const VISIBLE_MONTHS = 7;
 const CHART_MARGIN = { top: 12, right: 0, bottom: 0, left: 0 };
 const X_AXIS_HEIGHT = 32;
 
@@ -452,24 +449,8 @@ export function ForecastPaymentsCard({ months, kpi, loading, onCellClick }) {
   const now = new Date();
   const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
-  const N = safeMonths.length;
-
-  // Pagination
-  const currentMonthIdx = safeMonths.findIndex((m) => m.month === currentMonth);
-  const defaultStart = Math.max(
-    0,
-    Math.min(
-      currentMonthIdx - Math.floor(VISIBLE_MONTHS / 2),
-      N - VISIBLE_MONTHS,
-    ),
-  );
-  const [visibleStart, setVisibleStart] = useState(Math.max(0, defaultStart));
-  const canGoBack = visibleStart > 0;
-  const canGoForward = visibleStart + VISIBLE_MONTHS < N;
-  const visibleMonths = useMemo(
-    () => safeMonths.slice(visibleStart, visibleStart + VISIBLE_MONTHS),
-    [safeMonths, visibleStart],
-  );
+  // On affiche tous les mois de l'horizon sélectionné, sans fenêtrage ni navigation.
+  const visibleMonths = safeMonths;
 
   // Chart data (visible months only)
   const chartData = useMemo(() => {
@@ -576,30 +557,6 @@ export function ForecastPaymentsCard({ months, kpi, loading, onCellClick }) {
     <div>
       {/* ─── Chart ─── */}
       <div className="relative">
-        {/* Navigation arrows */}
-        {N > VISIBLE_MONTHS && (
-          <div className="flex items-center gap-1 absolute bottom-1 left-0 z-10">
-            <button
-              type="button"
-              onClick={() => setVisibleStart((s) => Math.max(0, s - 1))}
-              disabled={!canGoBack}
-              className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-20 disabled:cursor-default"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                setVisibleStart((s) => Math.min(N - VISIBLE_MONTHS, s + 1))
-              }
-              disabled={!canGoForward}
-              className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-20 disabled:cursor-default"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        )}
-
         {chartData.length > 0 && (
           <div className="w-full" style={{ height: CHART_HEIGHT }}>
             <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
