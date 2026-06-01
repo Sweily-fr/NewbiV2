@@ -928,10 +928,8 @@ const UniversalPreviewPDF = ({
                       )}
                       {data.client?.siret && (
                         <div className="dark:text-[#0A0A0A]">
-                          {data.client.siret.replace(/\D/g, "").length === 9
-                            ? "SIREN"
-                            : "SIRET"}
-                          : {data.client.siret}
+                          SIREN:{" "}
+                          {data.client.siret.replace(/\D/g, "").slice(0, 9)}
                         </div>
                       )}
                       {data.client?.vatNumber && (
@@ -964,10 +962,8 @@ const UniversalPreviewPDF = ({
                       )}
                       {data.client?.siret && (
                         <div className="dark:text-[#0A0A0A]">
-                          {data.client.siret.replace(/\D/g, "").length === 9
-                            ? "SIREN"
-                            : "SIRET"}
-                          : {data.client.siret}
+                          SIREN:{" "}
+                          {data.client.siret.replace(/\D/g, "").slice(0, 9)}
                         </div>
                       )}
                       {data.client?.phone && (
