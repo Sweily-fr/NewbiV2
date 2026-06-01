@@ -358,7 +358,7 @@ export default function ListClientsView({
                     }}
                     className="cursor-pointer text-red-600 focus:text-red-600 gap-2"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-3.5 h-3.5 text-red-600" />
                     Supprimer définitivement
                   </DropdownMenuItem>
                 </DropdownMenuContent>
