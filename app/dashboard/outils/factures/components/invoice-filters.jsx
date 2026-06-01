@@ -184,11 +184,6 @@ export default function InvoiceFilters({
       );
   }, [table]);
 
-  // Calculer le nombre de colonnes visibles
-  const visibleColumnsCount = hideableColumns.filter((column) =>
-    column.getIsVisible(),
-  ).length;
-
   // Vérifier si toutes les colonnes sont visibles
   const allColumnsVisible =
     hideableColumns.length > 0 &&
@@ -466,9 +461,6 @@ export default function InvoiceFilters({
         <DropdownMenuSub>
           <DropdownMenuSubTrigger className="whitespace-nowrap">
             Colonnes visibles
-            <Badge variant="secondary" className="ml-auto">
-              {visibleColumnsCount}
-            </Badge>
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="w-[250px] max-h-[400px] overflow-y-auto">
             {/* Checkbox Tout sélectionner */}

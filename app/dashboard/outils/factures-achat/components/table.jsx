@@ -71,7 +71,6 @@ import {
   XCircle,
   Loader2,
   Check,
-  Columns3,
 } from "lucide-react";
 import {
   useConvertImportedInvoice,
@@ -83,14 +82,14 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/src/components/ui/popover";
 import { Checkbox } from "@/src/components/ui/checkbox";
+import { Badge } from "@/src/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 
 const STATUS_LABELS = {
@@ -392,8 +391,8 @@ export default function PurchaseInvoiceTable({
               )}
             </div>
 
-            <Popover>
-              <PopoverTrigger asChild>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button
                   variant={activeFiltersCount > 0 ? "primary" : "filter"}
                   className="cursor-pointer"
@@ -406,98 +405,104 @@ export default function PurchaseInvoiceTable({
                     </span>
                   )}
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-[440px] p-0">
-                <div className="flex items-center justify-between px-3 py-2 border-b">
-                  <span className="text-sm font-medium">Filtres</span>
-                  {activeFiltersCount > 0 && (
-                    <button
-                      onClick={clearAllFilters}
-                      className="text-xs text-muted-foreground hover:text-foreground"
-                    >
-                      Tout effacer
-                    </button>
-                  )}
-                </div>
-                <div className="grid grid-cols-2 divide-x">
-                  {/* Status filters */}
-                  <div className="px-3 py-2 flex flex-col min-h-0">
-                    <p className="text-xs text-muted-foreground font-medium mb-2">
-                      Statut
-                    </p>
-                    <div className="space-y-1.5 max-h-[260px] overflow-y-auto pr-1">
-                      {Object.entries(STATUS_LABELS).map(([key, label]) => (
-                        <label
-                          key={key}
-                          className="flex items-center gap-2 cursor-pointer"
-                        >
-                          <Checkbox
-                            checked={statusFilters.includes(key)}
-                            onCheckedChange={() => toggleStatusFilter(key)}
-                          />
-                          <span className="text-sm">{label}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                  {/* Category filters */}
-                  <div className="px-3 py-2 flex flex-col min-h-0">
-                    <p className="text-xs text-muted-foreground font-medium mb-2">
-                      Catégorie
-                    </p>
-                    <div className="space-y-1.5 max-h-[260px] overflow-y-auto pr-1">
-                      {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-                        <label
-                          key={key}
-                          className="flex items-center gap-2 cursor-pointer"
-                        >
-                          <Checkbox
-                            checked={categoryFilters.includes(key)}
-                            onCheckedChange={() => toggleCategoryFilter(key)}
-                          />
-                          <span className="text-sm">{label}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-[240px]">
+                {/* Effacer tous les filtres */}
+                <DropdownMenuItem
+                  onClick={clearAllFilters}
+                  className="cursor-pointer"
+                >
+                  Effacer tous les filtres
+                </DropdownMenuItem>
 
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="cursor-pointer">
-                  <Columns3 size={14} />
-                  Colonnes
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-[200px] p-0">
-                <div className="px-3 py-2 border-b">
-                  <span className="text-sm font-medium">Colonnes visibles</span>
-                </div>
-                <div className="px-3 py-2 space-y-1.5">
-                  {table
-                    .getAllColumns()
-                    .filter((col) => col.getCanHide())
-                    .map((col) => (
-                      <label
-                        key={col.id}
-                        className="flex items-center gap-2 cursor-pointer"
+                <DropdownMenuSeparator />
+
+                {/* Statut - sous-menu */}
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="whitespace-nowrap">
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Statut
+                    {statusFilters.length > 0 && (
+                      <Badge variant="secondary" className="ml-auto">
+                        {statusFilters.length}
+                      </Badge>
+                    )}
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-[220px] max-h-[min(400px,calc(var(--radix-dropdown-menu-content-available-height)_-_2.5rem))] overflow-y-auto">
+                    {Object.entries(STATUS_LABELS).map(([key, label]) => (
+                      <div
+                        key={key}
+                        className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
+                        onClick={() => toggleStatusFilter(key)}
                       >
                         <Checkbox
-                          checked={col.getIsVisible()}
-                          onCheckedChange={(value) =>
-                            col.toggleVisibility(!!value)
-                          }
+                          checked={statusFilters.includes(key)}
+                          className="mr-2 pointer-events-none"
                         />
-                        <span className="text-sm">
-                          {col.columnDef.meta?.label || col.id}
-                        </span>
-                      </label>
+                        <span>{label}</span>
+                      </div>
                     ))}
-                </div>
-              </PopoverContent>
-            </Popover>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+
+                {/* Catégorie - sous-menu */}
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="whitespace-nowrap">
+                    <Tag className="h-4 w-4 mr-2" />
+                    Catégorie
+                    {categoryFilters.length > 0 && (
+                      <Badge variant="secondary" className="ml-auto">
+                        {categoryFilters.length}
+                      </Badge>
+                    )}
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-[220px] max-h-[min(400px,calc(var(--radix-dropdown-menu-content-available-height)_-_2.5rem))] overflow-y-auto">
+                    {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+                      <div
+                        key={key}
+                        className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
+                        onClick={() => toggleCategoryFilter(key)}
+                      >
+                        <Checkbox
+                          checked={categoryFilters.includes(key)}
+                          className="mr-2 pointer-events-none"
+                        />
+                        <span>{label}</span>
+                      </div>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+
+                <DropdownMenuSeparator />
+
+                {/* Colonnes visibles - sous-menu */}
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="whitespace-nowrap">
+                    Colonnes visibles
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-[220px] max-h-[min(400px,calc(var(--radix-dropdown-menu-content-available-height)_-_2.5rem))] overflow-y-auto">
+                    {table
+                      .getAllColumns()
+                      .filter((col) => col.getCanHide())
+                      .map((col) => (
+                        <div
+                          key={col.id}
+                          className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
+                          onClick={() =>
+                            col.toggleVisibility(!col.getIsVisible())
+                          }
+                        >
+                          <Checkbox
+                            checked={col.getIsVisible()}
+                            className="mr-2 pointer-events-none"
+                          />
+                          <span>{col.columnDef.meta?.label || col.id}</span>
+                        </div>
+                      ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           <div className="flex items-center gap-2">
