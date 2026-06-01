@@ -2293,17 +2293,16 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
             <DropdownMenuItem
-              onClick={(e) => {
-                e.stopPropagation();
-                onEditTask(task);
+              onSelect={() => {
+                // Laisser le menu se fermer avant d'ouvrir la modale d'édition
+                setTimeout(() => onEditTask(task), 0);
               }}
             >
               Modifier
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={(e) => {
-                e.stopPropagation();
-                onDeleteTask(task.id);
+              onSelect={() => {
+                setTimeout(() => onDeleteTask(task.id), 0);
               }}
               className="text-red-600 focus:text-red-600 focus:bg-red-50"
             >
