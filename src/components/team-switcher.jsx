@@ -105,6 +105,7 @@ import { RenameOrganizationModal } from "./rename-organization-modal";
 import { apolloClient } from "@/src/lib/apolloClient";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter, usePathname } from "next/navigation";
+import { stripIdFromPathname } from "@/src/utils/orgRedirect";
 // app/dashboard/collaborateurs/components/invite-members
 import {
   DropdownMenu,
@@ -279,14 +280,11 @@ export function TeamSwitcher() {
       const orgName = newOrg?.name || "l'organisation";
       toast.success(`Vous êtes sur l'espace ${orgName}`);
 
-      // 5. Rediriger vers le dashboard si on est sur une page de détail
-      //    (les données de détail appartiennent à l'ancienne org)
-      if (
-        pathname &&
-        pathname !== "/dashboard" &&
-        pathname.split("/").length > 3
-      ) {
-        router.push("/dashboard");
+      // 5. Si on est sur une page de détail (URL avec un ID de ressource),
+      //    rediriger vers la page liste : l'ID n'existe pas dans la nouvelle org.
+      const safePath = stripIdFromPathname(pathname);
+      if (safePath !== pathname) {
+        router.push(safePath);
       }
     } catch (error) {
       console.error("Erreur changement d'organisation:", error);
