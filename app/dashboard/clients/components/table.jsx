@@ -237,6 +237,15 @@ const columns = (
   {
     header: "Email",
     accessorKey: "email",
+    cell: ({ row }) => {
+      const email = row.getValue("email");
+      if (!email) return "-";
+      return (
+        <div className="max-w-[220px] truncate" title={email}>
+          {email}
+        </div>
+      );
+    },
     size: 220,
   },
   {

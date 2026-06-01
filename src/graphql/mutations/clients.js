@@ -168,6 +168,14 @@ export const UPDATE_CLIENT = gql`
           eventId
           eventTitle
           eventDate
+          blockReason
+          listId
+          listName
+          assignedMembers {
+            id
+            name
+            image
+          }
         }
       }
       createdAt
@@ -208,6 +216,14 @@ export const BLOCK_CLIENT = gql`
           eventId
           eventTitle
           eventDate
+          blockReason
+          listId
+          listName
+          assignedMembers {
+            id
+            name
+            image
+          }
         }
         createdAt
       }
@@ -241,6 +257,14 @@ export const UNBLOCK_CLIENT = gql`
           eventId
           eventTitle
           eventDate
+          blockReason
+          listId
+          listName
+          assignedMembers {
+            id
+            name
+            image
+          }
         }
         createdAt
       }
