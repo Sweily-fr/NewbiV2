@@ -456,7 +456,7 @@ export default function PurchaseInvoiceTable({
                       </Badge>
                     )}
                   </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="w-[220px] max-h-[min(400px,calc(var(--radix-dropdown-menu-content-available-height)_-_2.5rem))] overflow-y-auto">
+                  <DropdownMenuSubContent className="w-[220px] max-h-[min(20.5rem,calc(var(--radix-dropdown-menu-content-available-height)_-_2.5rem))] overflow-y-auto">
                     {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
                       <div
                         key={key}
