@@ -52,8 +52,9 @@ import {
   Layers,
   LayersPlus,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { authClient } from "@/src/lib/auth-client";
+import { stripIdFromPathname } from "@/src/utils/orgRedirect";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { Badge } from "@/src/components/ui/badge";
 import { Input } from "@/src/components/ui/input";
@@ -124,6 +125,7 @@ const getIconComponent = (iconName) => {
 
 export function OrganizationSwitcherHeader() {
   const router = useRouter();
+  const pathname = usePathname();
   const { isActive } = useSubscription();
   const [searchQuery, setSearchQuery] = React.useState("");
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
@@ -233,8 +235,15 @@ export function OrganizationSwitcherHeader() {
       );
       setIsOpen(false);
 
-      // 4. Forcer le refresh SSR pour que layout.jsx re-vérifie avec la bonne session
-      router.refresh();
+      // 4. Si on est sur une page de détail (URL avec un ID de ressource),
+      //    rediriger vers la page liste : l'ID n'existe pas dans la nouvelle org.
+      //    Sinon, forcer le refresh SSR pour que layout.jsx re-vérifie la session.
+      const safePath = stripIdFromPathname(pathname);
+      if (safePath !== pathname) {
+        router.replace(safePath);
+      } else {
+        router.refresh();
+      }
     } catch (error) {
       console.error("Erreur changement d'organisation:", error);
       toast.error("Erreur lors du changement d'organisation");

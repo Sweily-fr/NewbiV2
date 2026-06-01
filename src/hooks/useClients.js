@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@apollo/client";
 import {
   CREATE_CLIENT,
@@ -13,6 +14,39 @@ import { toast } from "@/src/components/ui/sonner";
 import { useWorkspace } from "./useWorkspace";
 import { useErrorHandler } from "./useErrorHandler";
 
+const MAX_AUTO_RETRIES = 2;
+
+/**
+ * Relance automatiquement (de façon bornée) une requête qui tombe sur une
+ * erreur transitoire : course sur le JWT/header d'organisation, ou cache Apollo
+ * vidé sans refetch après un changement d'org. Évite à l'utilisateur de devoir
+ * cliquer "Réessayer" : tant qu'on est sous la limite, on expose `isRetrying`
+ * (le composant affiche un spinner plutôt que l'état d'erreur). L'erreur n'est
+ * finalement remontée que si l'auto-retry a épuisé ses tentatives.
+ */
+function useAutoRetryOnError({ error, refetch, enabled = true }) {
+  const [attempts, setAttempts] = useState(0);
+
+  // Réinitialiser le compteur dès qu'on n'est plus en erreur (refetch réussi)
+  useEffect(() => {
+    if (!error) setAttempts(0);
+  }, [error]);
+
+  useEffect(() => {
+    if (!enabled || !error || attempts >= MAX_AUTO_RETRIES) return;
+    const timer = setTimeout(
+      () => {
+        setAttempts((n) => n + 1);
+        refetch?.().catch(() => {});
+      },
+      500 * (attempts + 1),
+    );
+    return () => clearTimeout(timer);
+  }, [error, attempts, enabled, refetch]);
+
+  return { isRetrying: !!error && attempts < MAX_AUTO_RETRIES };
+}
+
 export const useClients = (page = 1, limit = 10, search = "") => {
   const { workspaceId, loading: workspaceLoading } = useWorkspace();
 
@@ -26,14 +60,23 @@ export const useClients = (page = 1, limit = 10, search = "") => {
     skip: !workspaceId,
   });
 
+  const { isRetrying } = useAutoRetryOnError({
+    error,
+    refetch,
+    enabled: !!workspaceId,
+  });
+
   return {
     clients: data?.clients?.items || [],
     totalItems: data?.clients?.totalItems || 0,
     currentPage: data?.clients?.currentPage || 1,
     totalPages: data?.clients?.totalPages || 1,
     loading:
-      (workspaceLoading && !workspaceId) || (queryLoading && !data?.clients),
-    error,
+      (workspaceLoading && !workspaceId) ||
+      (queryLoading && !data?.clients) ||
+      isRetrying,
+    // Ne remonter l'erreur (bouton "Réessayer") qu'une fois l'auto-retry épuisé
+    error: isRetrying ? null : error,
     refetch,
   };
 };
@@ -51,11 +94,19 @@ export const useClient = (id) => {
     skip: !id || !workspaceId,
   });
 
+  const { isRetrying } = useAutoRetryOnError({
+    error,
+    refetch,
+    enabled: !!workspaceId && !!id,
+  });
+
   return {
     client: data?.client,
     loading:
-      (workspaceLoading && !workspaceId) || (queryLoading && !data?.client),
-    error,
+      (workspaceLoading && !workspaceId) ||
+      (queryLoading && !data?.client) ||
+      isRetrying,
+    error: isRetrying ? null : error,
     refetch,
   };
 };
