@@ -97,7 +97,7 @@ export default function RecentTransactionsCard({
         <Button
           variant="ghost"
           size="sm"
-          className="text-xs text-muted-foreground hover:text-foreground"
+          className="text-xs text-[#5b50FF] hover:text-[#5b50FF]"
           onClick={() => router.push("/dashboard/outils/transactions")}
         >
           Voir tout
