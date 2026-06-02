@@ -732,7 +732,7 @@ export default function FileUploadNew({
           </div>
 
           {/* Options scrollables */}
-          <div className="flex-1 overflow-y-auto space-y-6 px-2 min-h-0">
+          <div className="flex-1 overflow-y-auto space-y-6 pr-2 pl-1 pb-2 min-h-0">
             {/* Expiration */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
@@ -1120,10 +1120,8 @@ export default function FileUploadNew({
               </Label>
               <Textarea
                 placeholder="Ajoutez un message pour le destinataire..."
-                value={transferOptions.customMessage}
-                onChange={(e) =>
-                  handleOptionChange("customMessage", e.target.value)
-                }
+                value={transferOptions.message}
+                onChange={(e) => handleOptionChange("message", e.target.value)}
                 rows={3}
               />
             </div>

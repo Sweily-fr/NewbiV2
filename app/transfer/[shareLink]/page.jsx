@@ -21,6 +21,7 @@ import {
   LoaderCircle,
   Lock,
   X,
+  MessageSquare,
 } from "lucide-react";
 import Image from "next/image";
 import JSZip from "jszip";
@@ -1015,6 +1016,21 @@ export default function TransferPage() {
                   {formatExpiryDate(transfer?.fileTransfer?.expiryDate)}
                 </p>
               </div>
+
+              {/* Message personnalisé de l'expéditeur */}
+              {transfer?.fileTransfer?.message?.trim() && (
+                <div className="mx-4 mb-4 rounded-xl bg-gray-50 border border-gray-200 p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MessageSquare className="w-4 h-4 text-[#5a50ff] flex-shrink-0" />
+                    <span className="text-xs font-medium text-gray-700">
+                      Message
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 whitespace-pre-wrap break-words">
+                    {transfer.fileTransfer.message}
+                  </p>
+                </div>
+              )}
 
               {/* Liste des fichiers */}
               {zipContainer && zipLoading ? (

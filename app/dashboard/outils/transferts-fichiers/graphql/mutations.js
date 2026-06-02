@@ -360,6 +360,7 @@ export const GET_TRANSFER_BY_LINK = gql`
         status
         downloadCount
         recipientEmail
+        message
         # Nouvelles options
         passwordProtected
         allowPreview
