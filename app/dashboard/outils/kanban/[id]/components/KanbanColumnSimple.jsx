@@ -18,6 +18,7 @@ import {
   CheckCheck,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { CmdEnterHint } from "./CmdEnterHint";
 import { Input } from "@/src/components/ui/input";
 import { UserAvatar } from "@/src/components/ui/user-avatar";
 import {
@@ -88,6 +89,7 @@ function InlineNewTask({
   members,
   createTask,
   workspaceId,
+  tasks = [],
   onCancel,
   onEditTask,
 }) {
@@ -121,6 +123,10 @@ function InlineNewTask({
   const handleSave = async (openAfter = false) => {
     if (!title.trim() || saving) return;
     setSaving(true);
+    // Nouvelle tâche placée en dernier dans la colonne
+    const nextPosition = tasks.length
+      ? Math.max(...tasks.map((t) => t.position ?? 0)) + 1
+      : 0;
     try {
       const result = await createTask({
         variables: {
@@ -128,7 +134,7 @@ function InlineNewTask({
             title: title.trim(),
             columnId,
             boardId,
-            position: 0,
+            position: nextPosition,
             assignedMembers,
             dueDate: dueDate ? dueDate.toISOString() : null,
             priority: priority || "",
@@ -160,19 +166,26 @@ function InlineNewTask({
       ref={cardRef}
       className="relative bg-card rounded-xl border border-[#4840D9] shadow-sm p-3 mb-1.5 sm:mb-2 space-y-1.5"
     >
-      {/* Save button en haut à droite */}
-      <Button
-        size="sm"
-        className="absolute top-2 right-2 h-7 px-3 text-xs gap-1 text-white"
-        style={{ backgroundColor: "#4840D9" }}
-        onClick={handleSave}
-        disabled={!title.trim() || saving}
-      >
-        Créer <CornerDownLeft className="h-3 w-3" />
-      </Button>
+      {/* Actions en haut à droite */}
+      <div className="absolute top-2 right-2 flex items-center gap-1.5">
+        <CmdEnterHint
+          onClick={() => handleSave(true)}
+          disabled={!title.trim() || saving}
+          className="h-7"
+        />
+        <Button
+          size="sm"
+          className="h-7 px-3 text-xs gap-1 text-white"
+          style={{ backgroundColor: "#4840D9" }}
+          onClick={() => handleSave(false)}
+          disabled={!title.trim() || saving}
+        >
+          Créer <CornerDownLeft className="h-3 w-3" />
+        </Button>
+      </div>
 
       {/* Titre */}
-      <div className="pr-20">
+      <div className="pr-28">
         <input
           ref={inputRef}
           type="text"
@@ -613,6 +626,7 @@ function KanbanColumnSimpleInner({
                 members={members}
                 createTask={createTask}
                 workspaceId={workspaceId}
+                tasks={tasks}
                 onCancel={() => setShowInlineAdd(false)}
                 onEditTask={onEditTask}
               />
