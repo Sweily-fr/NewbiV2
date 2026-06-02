@@ -1920,6 +1920,7 @@ function KanbanBoardPageContent({ params }) {
                 createTask={createTask}
                 boardId={id}
                 workspaceId={workspaceId}
+                scrollRootRef={listScrollRef}
               />
             </div>
           )}

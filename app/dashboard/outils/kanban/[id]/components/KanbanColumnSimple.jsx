@@ -39,6 +39,34 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { TaskCard } from "./TaskCard";
 import { TaskCardSkeleton } from "./TaskCardSkeleton";
+import { useLazyVisible } from "../hooks/useLazyVisible";
+
+// Hauteur réservée pour une carte tant que son contenu n'est pas monté.
+const BOARD_CARD_MIN_HEIGHT = 92;
+
+/**
+ * Carte de tâche à montage paresseux : le conteneur (data-dnd-*) est toujours
+ * monté pour préserver le drag & drop ; le TaskCard lourd n'est rendu que
+ * lorsque la carte approche la zone visible de la colonne, puis au scroll.
+ */
+function LazyTaskCard({ task, index, column, scrollRootRef, ...cardProps }) {
+  const [ref, isVisible] = useLazyVisible({
+    rootRef: scrollRootRef,
+    rootMargin: "600px 0px",
+  });
+  return (
+    <div
+      ref={ref}
+      data-dnd-task={task.id}
+      data-dnd-column-id={column.id}
+      data-dnd-index={index}
+      style={isVisible ? undefined : { minHeight: BOARD_CARD_MIN_HEIGHT }}
+      className="cursor-grab active:cursor-grabbing mb-1.5 sm:mb-2 last:mb-0"
+    >
+      {isVisible ? <TaskCard task={task} {...cardProps} /> : null}
+    </div>
+  );
+}
 
 // Styles pour le scrollbar personnalisé
 const scrollbarStyles = `
@@ -639,24 +667,20 @@ function KanbanColumnSimpleInner({
               </div>
             ) : (
               tasks.map((task, index) => (
-                <div
+                <LazyTaskCard
                   key={task.id}
-                  data-dnd-task={task.id}
-                  data-dnd-column-id={column.id}
-                  data-dnd-index={index}
-                  className="cursor-grab active:cursor-grabbing mb-1.5 sm:mb-2 last:mb-0"
-                >
-                  <TaskCard
-                    task={task}
-                    onEdit={onEditTask}
-                    onDelete={onDeleteTask}
-                    isDragging={false}
-                    updateTask={updateTask}
-                    workspaceId={workspaceId}
-                    allBoardTags={allBoardTags}
-                    members={members}
-                  />
-                </div>
+                  task={task}
+                  index={index}
+                  column={column}
+                  scrollRootRef={scrollContainerRef}
+                  onEdit={onEditTask}
+                  onDelete={onDeleteTask}
+                  isDragging={false}
+                  updateTask={updateTask}
+                  workspaceId={workspaceId}
+                  allBoardTags={allBoardTags}
+                  members={members}
+                />
               ))
             )}
 

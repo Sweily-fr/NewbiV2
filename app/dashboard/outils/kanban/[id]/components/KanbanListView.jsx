@@ -66,6 +66,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { MemberSelector } from "./MemberSelector";
 import { useTaskMembers } from "../hooks/useMemberToggle";
+import { useLazyVisible } from "../hooks/useLazyVisible";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { toast } from "sonner";
 
@@ -1903,6 +1904,10 @@ function TaskTagsCell({ task, updateTask, workspaceId, allBoardTags }) {
  * Ligne de tâche avec data attributes pour le custom DnD.
  * L'original reste en place, le hook useListDnD gère le clone + indicator.
  */
+// Hauteur réservée pour une ligne tant que son contenu n'est pas monté.
+// (≈ py-1.5 + une ligne de contenu) — évite les sauts de scroll.
+const LIST_ROW_MIN_HEIGHT = 33;
+
 const TaskRow = React.memo(function TaskRow({
   task,
   column,
@@ -1911,10 +1916,17 @@ const TaskRow = React.memo(function TaskRow({
   isSelected,
   isPrevSelected,
   popoverOpenRef,
+  scrollRootRef,
   children,
 }) {
+  // Windowing de contenu : on ne monte le contenu lourd de la ligne (popovers,
+  // avatars, tags…) que lorsqu'elle approche la zone visible. Le conteneur
+  // (avec ses data-dnd-*) reste toujours monté → le drag & drop n'est pas
+  // impacté.
+  const [rowRef, isVisible] = useLazyVisible({ rootRef: scrollRootRef });
   return (
     <div
+      ref={rowRef}
       data-dnd-list-task={task.id}
       data-dnd-list-column={column.id}
       data-dnd-list-index={index}
@@ -1922,6 +1934,7 @@ const TaskRow = React.memo(function TaskRow({
         gridTemplateColumns:
           "minmax(0, 4.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.6fr) 80px",
         gap: "1rem",
+        minHeight: LIST_ROW_MIN_HEIGHT,
         ...(isSelected ? { backgroundColor: "#5A50FF0D" } : {}),
       }}
       className={`grid px-4 sm:px-6 py-1.5 items-center hover:bg-muted/50 cursor-grab active:cursor-grabbing group relative overflow-hidden after:absolute after:bottom-0 after:h-px after:content-[""] ${isSelected ? "after:left-0 after:right-0 after:bg-[#5A50FF]/35" : "after:left-6 after:right-6 after:sm:left-8 after:sm:right-8 after:bg-border/60"} ${isSelected && index > 0 && !isPrevSelected ? 'before:absolute before:top-0 before:left-0 before:right-0 before:h-px before:bg-[#5A50FF]/35 before:content-[""]' : ""}`}
@@ -1936,7 +1949,7 @@ const TaskRow = React.memo(function TaskRow({
         onEditTask(task);
       }}
     >
-      {children}
+      {isVisible ? children : null}
     </div>
   );
 });
@@ -2347,6 +2360,7 @@ export function KanbanListView({
   createTask,
   boardId,
   workspaceId,
+  scrollRootRef,
 }) {
   const { isReadOnly, isOwner } = useSubscriptionAccess();
   const readOnlyTooltip = isReadOnly
@@ -2904,6 +2918,7 @@ export function KanbanListView({
                               selectedTaskIds.has(tasks[taskIndex - 1].id)
                             }
                             popoverOpenRef={popoverOpenRef}
+                            scrollRootRef={scrollRootRef}
                           >
                             <TaskListRowContent
                               task={task}
