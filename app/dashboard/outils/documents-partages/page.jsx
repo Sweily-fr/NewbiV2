@@ -444,6 +444,12 @@ export default function DocumentsPartagesPage() {
   // Modals
   const [showNewFolderModal, setShowNewFolderModal] = useState(false);
   const [showMoveModal, setShowMoveModal] = useState(false);
+  // Documents ciblés par le déplacement, capturés à l'ouverture de la modale.
+  // Évite de dépendre de `selectedDocuments` au moment du clic sur le dossier :
+  // certains déclencheurs (menu "..." sur une ligne) voient leur sélection
+  // togglée juste après par le onClick de la ligne (batching React 18), ce qui
+  // vidait `selectedDocuments` et faisait échouer le déplacement ("0 déplacé").
+  const [moveDocIds, setMoveDocIds] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDeleteFolderModal, setShowDeleteFolderModal] = useState(false);
   const [folderToDelete, setFolderToDelete] = useState(null);
@@ -1079,10 +1085,23 @@ export default function DocumentsPartagesPage() {
     }
   };
 
+  // Ouvre la modale de déplacement en capturant tout de suite les documents
+  // ciblés, indépendamment des mutations ultérieures de `selectedDocuments`.
+  const openMoveModal = (ids) => {
+    setMoveDocIds(ids);
+    setShowMoveModal(true);
+  };
+
   const handleMoveDocuments = async (targetFolderId) => {
+    const idsToMove = moveDocIds.length > 0 ? moveDocIds : selectedDocuments;
+    if (idsToMove.length === 0) {
+      setShowMoveModal(false);
+      return;
+    }
     try {
-      await move(selectedDocuments, targetFolderId);
+      await move(idsToMove, targetFolderId);
       setSelectedDocuments([]);
+      setMoveDocIds([]);
       setShowMoveModal(false);
       refetchDocs();
       refetchAllDocs();
@@ -2495,7 +2514,9 @@ export default function DocumentsPartagesPage() {
                                     <Button
                                       variant="secondary"
                                       size="icon"
-                                      onClick={() => setShowMoveModal(true)}
+                                      onClick={() =>
+                                        openMoveModal(selectedDocuments)
+                                      }
                                     >
                                       <FolderInput
                                         className="h-4 w-4"
@@ -3510,9 +3531,9 @@ export default function DocumentsPartagesPage() {
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
-                                  onClick={() => {
-                                    setSelectedDocuments([doc.id]);
-                                    setShowMoveModal(true);
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openMoveModal([doc.id]);
                                   }}
                                 >
                                   <FolderInput className="h-4 w-4 mr-2" />
@@ -4755,7 +4776,7 @@ export default function DocumentsPartagesPage() {
                 <DropdownMenuItem
                   onClick={() => {
                     setContentContextMenu(null);
-                    setShowMoveModal(true);
+                    openMoveModal(selectedDocuments);
                   }}
                 >
                   <FolderInput className="size-4 mr-2" />
@@ -4921,7 +4942,7 @@ export default function DocumentsPartagesPage() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={() => setShowMoveModal(true)}
+                    onClick={() => openMoveModal(selectedDocuments)}
                   >
                     <FolderInput className="h-4 w-4" />
                   </Button>
