@@ -259,6 +259,7 @@ export default function FacturationSection({
             {trialCopy}
           </p>
           <Button
+            type="button"
             onClick={() => onTabChange?.("subscription")}
             className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"
           >
@@ -317,6 +318,7 @@ export default function FacturationSection({
               </div>
             </div>
             <Button
+              type="button"
               onClick={handleOpenBillingPortal}
               disabled={billingPortalLoading || !canManageSubscription}
               className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer shrink-0"
@@ -503,6 +505,7 @@ export default function FacturationSection({
               </div>
             </div>
             <Button
+              type="button"
               variant="outline"
               size="sm"
               onClick={() => onTabChange?.("subscription")}
@@ -624,6 +627,7 @@ export default function FacturationSection({
                 </p>
               </div>
               <Button
+                type="button"
                 variant="outline"
                 size="icon"
                 className="h-8 w-8 cursor-pointer"
@@ -687,6 +691,7 @@ export default function FacturationSection({
                 </p>
               </div>
               <Button
+                type="button"
                 variant="outline"
                 size="icon"
                 className="h-8 w-8 cursor-pointer"
@@ -706,6 +711,7 @@ export default function FacturationSection({
                 Vos moyens de paiement sont gérés directement par Stripe.
               </p>
               <Button
+                type="button"
                 variant="link"
                 size="sm"
                 className="text-[#5b50fe] cursor-pointer mt-1 h-auto p-0 text-xs"
@@ -724,6 +730,7 @@ export default function FacturationSection({
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium">Historique des factures</h3>
           <Button
+            type="button"
             variant="ghost"
             size="sm"
             onClick={refetchInvoices}
@@ -769,6 +776,7 @@ export default function FacturationSection({
               {invoicesError}
             </p>
             <Button
+              type="button"
               variant="outline"
               size="sm"
               onClick={refetchInvoices}
@@ -821,6 +829,7 @@ export default function FacturationSection({
                 </span>
                 <div>{getStatusBadge(facture.status)}</div>
                 <Button
+                  type="button"
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 cursor-pointer"
@@ -877,6 +886,7 @@ export default function FacturationSection({
                 </p>
               </div>
               <Button
+                type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => setShowCancelDialog(true)}
