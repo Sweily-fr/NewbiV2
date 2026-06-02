@@ -146,12 +146,39 @@ export default function QuoteTable({
   const [templateQuote, setTemplateQuote] = useState(null);
   const [signatureQuote, setSignatureQuote] = useState(null);
   const [selectedImportedQuote, setSelectedImportedQuote] = useState(null);
+  // File d'attente de validation après import (revue 1 par 1)
+  const [reviewQueue, setReviewQueue] = useState([]);
+  const [reviewIndex, setReviewIndex] = useState(0);
   // État pour la modal d'envoi par email - géré au niveau du tableau pour éviter les re-renders
   const [sendEmailQuote, setSendEmailQuote] = useState(null);
   // État pour la sidebar - gérée au niveau du tableau pour éviter les conflits z-index avec les modals
   const [sidebarQuote, setSidebarQuote] = useState(null);
   // État pour le fullscreen mobile - géré au niveau du tableau
   const [mobileFullscreenQuote, setMobileFullscreenQuote] = useState(null);
+
+  // Fusionner les devis natifs et les devis importés (lignes "À vérifier" / "Terminé")
+  const combinedQuotes = useMemo(() => {
+    const normalQuotes = (quotes || []).map((q) => ({
+      ...q,
+      _type: "normal",
+    }));
+    const imported = (importedQuotes || []).map((q) => ({
+      ...q,
+      _type: "imported",
+      // Mapper les champs pour compatibilité avec les colonnes du tableau
+      client: { name: q.client?.name || q.vendor?.name || "Client inconnu" },
+      issueDate: q.quoteDate,
+      validUntil: q.validUntil,
+      finalTotalHT: q.totalHT,
+      finalTotalVAT: q.totalVAT,
+      finalTotalTTC: q.totalTTC,
+    }));
+    return [...normalQuotes, ...imported].sort((a, b) => {
+      const dateA = new Date(a.issueDate || a.createdAt || 0);
+      const dateB = new Date(b.issueDate || b.createdAt || 0);
+      return dateB - dateA;
+    });
+  }, [quotes, importedQuotes]);
 
   const {
     table,
@@ -167,7 +194,7 @@ export default function QuoteTable({
     handleDeleteSelected,
     isDeleting,
   } = useQuoteTable({
-    data: quotes || [],
+    data: combinedQuotes,
     onRefetch: refetch,
     onSendEmail: (quote) => {
       // Fermer la sidebar avant d'ouvrir le modal d'envoi pour éviter les conflits z-index
@@ -213,7 +240,7 @@ export default function QuoteTable({
   // Compter les devis par statut
   const quoteCounts = useMemo(() => {
     const counts = {
-      all: (quotes || []).length,
+      all: combinedQuotes.length,
       draft: 0,
       sent: 0,
       accepted: 0,
@@ -224,7 +251,7 @@ export default function QuoteTable({
       else if (quote.status === "COMPLETED") counts.accepted++;
     });
     return counts;
-  }, [quotes]);
+  }, [quotes, combinedQuotes]);
 
   // --- Mobile responsive state ---
   const [isMobileScrolled, setIsMobileScrolled] = useState(false);
@@ -697,6 +724,11 @@ export default function QuoteTable({
                     ) {
                       return;
                     }
+                    // Devis importé : ouvrir la sidebar dédiée
+                    if (row.original._type === "imported") {
+                      setSelectedImportedQuote(row.original);
+                      return;
+                    }
                     // Déclencher l'ouverture de la sidebar via le bouton d'actions
                     const actionsButton =
                       e.currentTarget.querySelector("[data-view-quote]");
@@ -791,6 +823,10 @@ export default function QuoteTable({
                           e.target.closest('[role="menu"]')
                         )
                           return;
+                        if (row.original._type === "imported") {
+                          setSelectedImportedQuote(row.original);
+                          return;
+                        }
                         setMobileFullscreenQuote(row.original);
                       }}
                     >
@@ -1014,19 +1050,44 @@ export default function QuoteTable({
           if (!open) onImportTriggered?.();
         }}
         onImported={(quotes) => {
-          if (quotes && quotes.length > 0) {
-            setSelectedImportedQuote(quotes[quotes.length - 1]);
-          }
           refetchImported?.();
+          if (quotes && quotes.length > 0) {
+            setSelectedImportedQuote(null);
+            setReviewQueue(quotes);
+            setReviewIndex(0);
+          }
         }}
       />
 
-      {/* Sidebar pour les devis importés */}
+      {/* Sidebar pour les devis importés (revue 1 par 1 ou ouverture simple) */}
       <ImportedQuoteSidebar
-        quote={selectedImportedQuote}
-        open={!!selectedImportedQuote}
+        quote={
+          reviewQueue.length > 0
+            ? reviewQueue[reviewIndex]
+            : selectedImportedQuote
+        }
+        open={reviewQueue.length > 0 || !!selectedImportedQuote}
+        reviewInfo={
+          reviewQueue.length > 0
+            ? { current: reviewIndex + 1, total: reviewQueue.length }
+            : null
+        }
+        onValidated={() => {
+          refetchImported();
+          onBalancesRefetch?.();
+          if (reviewIndex + 1 < reviewQueue.length) {
+            setReviewIndex((i) => i + 1);
+          } else {
+            setReviewQueue([]);
+            setReviewIndex(0);
+          }
+        }}
         onOpenChange={(open) => {
-          if (!open) setSelectedImportedQuote(null);
+          if (!open) {
+            setSelectedImportedQuote(null);
+            setReviewQueue([]);
+            setReviewIndex(0);
+          }
         }}
         onUpdate={() => {
           refetchImported();

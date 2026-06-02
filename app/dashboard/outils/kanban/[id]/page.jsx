@@ -449,13 +449,28 @@ function InlineBoardTitle({ title, onSave }) {
   };
 
   return (
-    <div className="flex items-center gap-1 group/title">
-      <div className="relative h-6 flex items-center">
-        <h1
-          className={`text-base font-semibold leading-6 whitespace-nowrap ${isEditing ? "invisible" : ""}`}
-        >
-          {isEditing ? value : title}
-        </h1>
+    <div className="flex items-center gap-1 group/title min-w-0">
+      <div className="relative h-6 flex items-center min-w-0">
+        {isEditing ? (
+          <h1 className="text-base font-semibold leading-6 truncate min-w-0 flex-1 invisible">
+            {value}
+          </h1>
+        ) : (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <h1 className="text-base font-semibold leading-6 truncate min-w-0 flex-1 cursor-default">
+                {title}
+              </h1>
+            </TooltipTrigger>
+            <TooltipContent
+              side="bottom"
+              align="start"
+              className="max-w-[320px]"
+            >
+              <p className="text-xs whitespace-pre-wrap break-words">{title}</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
         {isEditing && (
           <input
             ref={inputRef}
@@ -482,7 +497,7 @@ function InlineBoardTitle({ title, onSave }) {
             setIsEditing(true);
             setTimeout(() => inputRef.current?.focus(), 0);
           }}
-          className="opacity-0 group-hover/title:opacity-100 transition-opacity cursor-pointer"
+          className="shrink-0 opacity-0 group-hover/title:opacity-100 transition-opacity cursor-pointer"
         >
           <Pencil className="h-3 w-3 text-muted-foreground/50 hover:text-muted-foreground" />
         </button>
@@ -1434,9 +1449,9 @@ function KanbanBoardPageContent({ params }) {
       >
         {/* Header - Fixe en haut */}
         <div className="flex-shrink-0 bg-background z-10">
-          <div className="flex items-center gap-3 pt-2 pb-2 px-4 sm:px-6">
+          <div className="flex items-center gap-3 pt-2 pb-2 px-4 sm:px-6 min-w-0">
             {/* Breadcrumb */}
-            <div className="flex items-center gap-1 text-xs text-muted-foreground/50">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground/50 shrink-0">
               <span
                 className="hover:text-foreground transition-colors cursor-pointer"
                 onClick={() => router.push("/dashboard/outils/kanban")}
@@ -1447,7 +1462,7 @@ function KanbanBoardPageContent({ params }) {
             </div>
 
             {/* Emoji + Titre */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 min-w-0">
               <EmojiPicker
                 boardEmoji={boardEmoji}
                 onSelect={handleEmojiSelect}
@@ -1463,7 +1478,7 @@ function KanbanBoardPageContent({ params }) {
             {board.description && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="text-xs text-muted-foreground/50 truncate max-w-[200px] cursor-default hidden sm:inline">
+                  <span className="text-xs text-muted-foreground/50 truncate max-w-[200px] shrink-0 cursor-default hidden sm:inline">
                     {board.description}
                   </span>
                 </TooltipTrigger>
@@ -1482,7 +1497,7 @@ function KanbanBoardPageContent({ params }) {
             {/* Favori */}
             <button
               onClick={toggleFavorite}
-              className="cursor-pointer transition-colors"
+              className="shrink-0 cursor-pointer transition-colors"
               title={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
             >
               <Star
@@ -1491,10 +1506,10 @@ function KanbanBoardPageContent({ params }) {
             </button>
 
             {/* Séparateur */}
-            <div className="h-4 w-px bg-border/60" />
+            <div className="h-4 w-px bg-border/60 shrink-0" />
 
             {/* Priorité / Date / Membres */}
-            <div className="flex items-center gap-1 bg-muted/50 rounded-md px-1 py-0.5">
+            <div className="flex items-center gap-1 bg-muted/50 rounded-md px-1 py-0.5 shrink-0">
               <Popover>
                 <PopoverTrigger asChild>
                   <button
@@ -1610,11 +1625,11 @@ function KanbanBoardPageContent({ params }) {
             </div>
 
             {/* Séparateur */}
-            <div className="h-4 w-px bg-border/60" />
+            <div className="h-4 w-px bg-border/60 shrink-0" />
 
             {/* Membres */}
             {board?.members?.length > 0 && (
-              <div className="flex items-center">
+              <div className="flex items-center shrink-0">
                 <div className="flex -space-x-1.5">
                   {board.members.slice(0, 4).map((member) => (
                     <UserAvatar
@@ -1635,10 +1650,10 @@ function KanbanBoardPageContent({ params }) {
             )}
 
             {/* Spacer */}
-            <div className="flex-1" />
+            <div className="flex-1 min-w-[1rem]" />
 
             {/* Sauv. modèle & Partager */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 shrink-0">
               <SaveTemplateDialog boardId={id} boardTitle={board.title} />
               <ShareBoardDialog
                 boardId={id}
@@ -1905,6 +1920,7 @@ function KanbanBoardPageContent({ params }) {
                 createTask={createTask}
                 boardId={id}
                 workspaceId={workspaceId}
+                scrollRootRef={listScrollRef}
               />
             </div>
           )}

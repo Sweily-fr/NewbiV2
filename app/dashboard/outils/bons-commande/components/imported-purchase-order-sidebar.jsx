@@ -40,6 +40,7 @@ import {
   ExternalLink,
   AlertTriangle,
   CheckCircle2,
+  ChevronRight,
   Loader2,
 } from "lucide-react";
 import { formatDateToFrench } from "@/src/utils/dateFormatter";
@@ -48,7 +49,7 @@ import {
   IMPORTED_PURCHASE_ORDER_STATUS_COLORS,
   useUpdateImportedPurchaseOrder,
   useDeleteImportedPurchaseOrder,
-  useConvertImportedPurchaseOrderToPurchaseOrder,
+  useValidateImportedPurchaseOrder,
 } from "@/src/graphql/importedPurchaseOrderQueries";
 import {
   EXPENSE_CATEGORY_LABELS,
@@ -61,6 +62,8 @@ export function ImportedPurchaseOrderSidebar({
   open,
   onOpenChange,
   onUpdate,
+  reviewInfo = null,
+  onValidated,
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
@@ -69,15 +72,17 @@ export function ImportedPurchaseOrderSidebar({
     useUpdateImportedPurchaseOrder();
   const { deleteImportedPurchaseOrder, loading: deleteLoading } =
     useDeleteImportedPurchaseOrder();
-  const {
-    convertImportedPurchaseOrderToPurchaseOrder,
-    loading: convertLoading,
-  } = useConvertImportedPurchaseOrderToPurchaseOrder();
+  const { validateImportedPurchaseOrder, loading: validateLoading } =
+    useValidateImportedPurchaseOrder();
 
-  const isLoading = updateLoading || deleteLoading || convertLoading;
-  const isAlreadyConverted = purchaseOrder?.status === "VALIDATED";
+  const isLoading = updateLoading || deleteLoading || validateLoading;
 
   if (!purchaseOrder) return null;
+
+  const needsValidation =
+    purchaseOrder.status === "PENDING_REVIEW" ||
+    purchaseOrder.status === "UPLOADED";
+  const isReviewMode = !!reviewInfo;
 
   const handleEdit = () => {
     setEditData({
@@ -113,24 +118,34 @@ export function ImportedPurchaseOrderSidebar({
     }
   };
 
-  const handleConvert = async () => {
+  const handleValidate = async () => {
     try {
-      const result = await convertImportedPurchaseOrderToPurchaseOrder({
+      if (isEditing) {
+        await updateImportedPurchaseOrder({
+          variables: { id: purchaseOrder.id, input: editData },
+        });
+        setIsEditing(false);
+      }
+      await validateImportedPurchaseOrder({
         variables: { id: purchaseOrder.id },
       });
-      const created = result.data?.convertImportedPurchaseOrderToPurchaseOrder;
-      toast.success(
-        created?.number
-          ? `Bon de commande ${created.prefix}${created.number} ajouté à votre tableau`
-          : "Bon de commande ajouté à votre tableau",
-      );
-      onOpenChange(false);
+      toast.success("Bon de commande validé");
       onUpdate?.();
+      if (isReviewMode) {
+        onValidated?.();
+      } else {
+        onOpenChange(false);
+      }
     } catch (error) {
       toast.error(
         error?.message || "Erreur lors de la validation du bon de commande",
       );
     }
+  };
+
+  const handleSkip = () => {
+    setIsEditing(false);
+    onValidated?.();
   };
 
   const handleDelete = async () => {
@@ -139,8 +154,12 @@ export function ImportedPurchaseOrderSidebar({
         variables: { id: purchaseOrder.id },
       });
       toast.success("Bon de commande supprimé");
-      onOpenChange(false);
       onUpdate?.();
+      if (isReviewMode) {
+        onValidated?.();
+      } else {
+        onOpenChange(false);
+      }
     } catch (error) {
       toast.error("Erreur lors de la suppression");
     }
@@ -163,6 +182,11 @@ export function ImportedPurchaseOrderSidebar({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-md md:max-w-lg p-0 flex flex-col h-full overflow-hidden">
         <SheetHeader className="px-6 py-4 border-b shrink-0">
+          {isReviewMode && (
+            <p className="text-xs font-medium text-muted-foreground mb-1">
+              Validation des imports · {reviewInfo.current}/{reviewInfo.total}
+            </p>
+          )}
           <div className="flex items-center gap-3">
             <SheetTitle className="text-base font-medium">
               Bon de commande importé
@@ -514,31 +538,33 @@ export function ImportedPurchaseOrderSidebar({
               </Button>
               <Button
                 className="flex-1"
-                onClick={handleSave}
+                onClick={isReviewMode ? handleValidate : handleSave}
                 disabled={isLoading}
               >
-                {updateLoading ? (
+                {updateLoading || validateLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : isReviewMode ? (
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
                 ) : (
                   <Save className="h-4 w-4 mr-2" />
                 )}
-                Enregistrer
+                {isReviewMode ? "Enregistrer et valider" : "Enregistrer"}
               </Button>
             </div>
           ) : (
             <div className="flex flex-col gap-2">
-              {!isAlreadyConverted && (
+              {needsValidation && (
                 <Button
                   className="w-full"
-                  onClick={handleConvert}
+                  onClick={handleValidate}
                   disabled={isLoading}
                 >
-                  {convertLoading ? (
+                  {validateLoading ? (
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   ) : (
                     <CheckCircle2 className="h-4 w-4 mr-2" />
                   )}
-                  Valider et créer le bon de commande
+                  Valider
                 </Button>
               )}
               <div className="flex gap-2">
@@ -584,6 +610,17 @@ export function ImportedPurchaseOrderSidebar({
                   </AlertDialogContent>
                 </AlertDialog>
               </div>
+              {isReviewMode && (
+                <Button
+                  variant="ghost"
+                  className="w-full text-muted-foreground"
+                  onClick={handleSkip}
+                  disabled={isLoading}
+                >
+                  Passer
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              )}
             </div>
           )}
         </div>

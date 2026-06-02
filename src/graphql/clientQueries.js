@@ -38,6 +38,11 @@ export const CLIENT_ACTIVITY_FRAGMENT = gql`
       eventId
       eventTitle
       eventDate
+      assignedMembers {
+        id
+        name
+        image
+      }
     }
     createdAt
   }

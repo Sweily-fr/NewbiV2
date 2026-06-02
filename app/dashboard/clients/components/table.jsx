@@ -122,6 +122,7 @@ import {
   useClients,
   useDeleteClient,
   useBlockClient,
+  useUnblockClient,
 } from "@/src/hooks/useClients";
 import {
   useClientListsByClient,
@@ -236,6 +237,15 @@ const columns = (
   {
     header: "Email",
     accessorKey: "email",
+    cell: ({ row }) => {
+      const email = row.getValue("email");
+      if (!email) return "-";
+      return (
+        <div className="max-w-[220px] truncate" title={email}>
+          {email}
+        </div>
+      );
+    },
     size: 220,
   },
   {
@@ -1354,6 +1364,7 @@ function RowActions({
   const [createListDialogOpen, setCreateListDialogOpen] = useState(false);
   const { deleteClient } = useDeleteClient();
   const { blockClient } = useBlockClient();
+  const { unblockClient } = useUnblockClient();
   const { addToLists } = useAddClientToLists();
   const { removeClient: removeClientFromList } = useRemoveClientFromList();
   const { lists } = useClientListsByClient(workspaceId || "", client.id);
@@ -1403,6 +1414,14 @@ function RowActions({
       // Error handled by hook
     }
   }, [blockClient, client.id, blockReason]);
+
+  const handleUnblock = useCallback(async () => {
+    try {
+      await unblockClient(client.id);
+    } catch (error) {
+      // Error handled by hook
+    }
+  }, [unblockClient, client.id]);
 
   const handleAssign = useCallback(() => {
     onAssignMembers?.(client);
@@ -1555,15 +1574,19 @@ function RowActions({
               <span>Assigner</span>
             </DropdownMenuItem>
 
-            {/* Bloquer */}
+            {/* Bloquer / Débloquer */}
             <DropdownMenuItem
               onSelect={(e) => {
                 e.preventDefault();
-                setShowBlockDialog(true);
+                if (client.isBlocked) {
+                  handleUnblock();
+                } else {
+                  setShowBlockDialog(true);
+                }
               }}
             >
               <ShieldOff className="w-3.5 h-3.5" />
-              <span>Bloquer</span>
+              <span>{client.isBlocked ? "Débloquer" : "Bloquer"}</span>
             </DropdownMenuItem>
           </DropdownMenuGroup>
 

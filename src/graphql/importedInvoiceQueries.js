@@ -308,7 +308,7 @@ export const PURCHASE_EXTRA_OCR_IMPORTS = gql`
 export const IMPORTED_INVOICE_STATUS_LABELS = {
   UPLOADED: "À vérifier",
   PENDING_REVIEW: "À vérifier",
-  VALIDATED: "Validée",
+  VALIDATED: "Terminée",
   COMPLETED: "Encaissée",
   REJECTED: "Rejetée",
   ARCHIVED: "Archivée",

@@ -18,6 +18,7 @@ import {
   CheckCheck,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { CmdEnterHint } from "./CmdEnterHint";
 import { Input } from "@/src/components/ui/input";
 import { UserAvatar } from "@/src/components/ui/user-avatar";
 import {
@@ -38,6 +39,34 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { TaskCard } from "./TaskCard";
 import { TaskCardSkeleton } from "./TaskCardSkeleton";
+import { useLazyVisible } from "../hooks/useLazyVisible";
+
+// Hauteur réservée pour une carte tant que son contenu n'est pas monté.
+const BOARD_CARD_MIN_HEIGHT = 92;
+
+/**
+ * Carte de tâche à montage paresseux : le conteneur (data-dnd-*) est toujours
+ * monté pour préserver le drag & drop ; le TaskCard lourd n'est rendu que
+ * lorsque la carte approche la zone visible de la colonne, puis au scroll.
+ */
+function LazyTaskCard({ task, index, column, scrollRootRef, ...cardProps }) {
+  const [ref, isVisible] = useLazyVisible({
+    rootRef: scrollRootRef,
+    rootMargin: "600px 0px",
+  });
+  return (
+    <div
+      ref={ref}
+      data-dnd-task={task.id}
+      data-dnd-column-id={column.id}
+      data-dnd-index={index}
+      style={isVisible ? undefined : { minHeight: BOARD_CARD_MIN_HEIGHT }}
+      className="cursor-grab active:cursor-grabbing mb-1.5 sm:mb-2 last:mb-0"
+    >
+      {isVisible ? <TaskCard task={task} {...cardProps} /> : null}
+    </div>
+  );
+}
 
 // Styles pour le scrollbar personnalisé
 const scrollbarStyles = `
@@ -88,6 +117,7 @@ function InlineNewTask({
   members,
   createTask,
   workspaceId,
+  tasks = [],
   onCancel,
   onEditTask,
 }) {
@@ -121,6 +151,10 @@ function InlineNewTask({
   const handleSave = async (openAfter = false) => {
     if (!title.trim() || saving) return;
     setSaving(true);
+    // Nouvelle tâche placée en dernier dans la colonne
+    const nextPosition = tasks.length
+      ? Math.max(...tasks.map((t) => t.position ?? 0)) + 1
+      : 0;
     try {
       const result = await createTask({
         variables: {
@@ -128,7 +162,7 @@ function InlineNewTask({
             title: title.trim(),
             columnId,
             boardId,
-            position: 0,
+            position: nextPosition,
             assignedMembers,
             dueDate: dueDate ? dueDate.toISOString() : null,
             priority: priority || "",
@@ -160,19 +194,26 @@ function InlineNewTask({
       ref={cardRef}
       className="relative bg-card rounded-xl border border-[#4840D9] shadow-sm p-3 mb-1.5 sm:mb-2 space-y-1.5"
     >
-      {/* Save button en haut à droite */}
-      <Button
-        size="sm"
-        className="absolute top-2 right-2 h-7 px-3 text-xs gap-1 text-white"
-        style={{ backgroundColor: "#4840D9" }}
-        onClick={handleSave}
-        disabled={!title.trim() || saving}
-      >
-        Créer <CornerDownLeft className="h-3 w-3" />
-      </Button>
+      {/* Actions en haut à droite */}
+      <div className="absolute top-2 right-2 flex items-center gap-1.5">
+        <CmdEnterHint
+          onClick={() => handleSave(true)}
+          disabled={!title.trim() || saving}
+          className="h-7"
+        />
+        <Button
+          size="sm"
+          className="h-7 px-3 text-xs gap-1 text-white"
+          style={{ backgroundColor: "#4840D9" }}
+          onClick={() => handleSave(false)}
+          disabled={!title.trim() || saving}
+        >
+          Créer <CornerDownLeft className="h-3 w-3" />
+        </Button>
+      </div>
 
       {/* Titre */}
-      <div className="pr-20">
+      <div className="pr-28">
         <input
           ref={inputRef}
           type="text"
@@ -613,6 +654,7 @@ function KanbanColumnSimpleInner({
                 members={members}
                 createTask={createTask}
                 workspaceId={workspaceId}
+                tasks={tasks}
                 onCancel={() => setShowInlineAdd(false)}
                 onEditTask={onEditTask}
               />
@@ -625,24 +667,20 @@ function KanbanColumnSimpleInner({
               </div>
             ) : (
               tasks.map((task, index) => (
-                <div
+                <LazyTaskCard
                   key={task.id}
-                  data-dnd-task={task.id}
-                  data-dnd-column-id={column.id}
-                  data-dnd-index={index}
-                  className="cursor-grab active:cursor-grabbing mb-1.5 sm:mb-2 last:mb-0"
-                >
-                  <TaskCard
-                    task={task}
-                    onEdit={onEditTask}
-                    onDelete={onDeleteTask}
-                    isDragging={false}
-                    updateTask={updateTask}
-                    workspaceId={workspaceId}
-                    allBoardTags={allBoardTags}
-                    members={members}
-                  />
-                </div>
+                  task={task}
+                  index={index}
+                  column={column}
+                  scrollRootRef={scrollContainerRef}
+                  onEdit={onEditTask}
+                  onDelete={onDeleteTask}
+                  isDragging={false}
+                  updateTask={updateTask}
+                  workspaceId={workspaceId}
+                  allBoardTags={allBoardTags}
+                  members={members}
+                />
               ))
             )}
 

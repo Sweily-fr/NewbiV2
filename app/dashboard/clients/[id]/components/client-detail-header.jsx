@@ -209,7 +209,7 @@ export default function ClientDetailHeader({
                   : "cursor-pointer gap-2 text-xs text-red-600 focus:text-red-600"
               }
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash2 className="w-3.5 h-3.5 text-red-600" />
               Supprimer définitivement
             </DropdownMenuItem>
           </DropdownMenuContent>

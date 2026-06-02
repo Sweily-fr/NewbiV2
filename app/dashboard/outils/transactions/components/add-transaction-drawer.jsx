@@ -130,6 +130,7 @@ export function AddTransactionDrawer({
       BANK_TRANSFER: "TRANSFER",
       CASH: "CASH",
       CHECK: "CHECK",
+      DIRECT_DEBIT: "DIRECT_DEBIT",
       PAYPAL: "TRANSFER",
       OTHER: "TRANSFER",
     };

@@ -565,7 +565,7 @@ export default function InvoiceSidebar({
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col items-start gap-1">
             <h2 className="text-base font-medium">
               Facture{" "}
               {invoice.prefix && invoice.number

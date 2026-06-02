@@ -94,6 +94,7 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
 
     let processedCount = 0;
     let successCount = 0;
+    const importedDocs = [];
 
     const PARALLEL_STREAMS = 5;
     const DELAY_BETWEEN_STARTS = 300;
@@ -152,6 +153,7 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
         const payload = importData?.importInvoiceDirect;
         if (payload?.success) {
           successCount++;
+          if (payload.invoice) importedDocs.push(payload.invoice);
         } else if (payload?.error) {
           console.error(`Import échoué pour ${file.name}:`, payload.error);
         }
@@ -222,7 +224,7 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
       } catch (e) {
         console.warn("refetchQueries échoué:", e.message);
       }
-      onImportSuccess?.();
+      onImportSuccess?.(importedDocs);
     }
   };
 

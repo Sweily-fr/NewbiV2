@@ -34,7 +34,7 @@ const PLAN_UI_EXTRA = {
     description: "Parfait pour les indépendants et freelances",
     features: {
       users: "1 utilisateur",
-      accountants: "1 comptable",
+      accountants: "1 accès comptable gratuit",
       extraUsers: false,
       invoicing: true,
       autoReminders: false,
@@ -55,7 +55,7 @@ const PLAN_UI_EXTRA = {
     description: "Idéal pour les petites et moyennes entreprises",
     features: {
       users: "Jusqu'à 10",
-      accountants: "3 comptables",
+      accountants: "3 accès comptables gratuits",
       extraUsers: "7,49 €/utilisateur",
       invoicing: true,
       autoReminders: true,
@@ -75,7 +75,7 @@ const PLAN_UI_EXTRA = {
     description: "Pour les grandes structures avec des besoins avancés",
     features: {
       users: "Jusqu'à 25",
-      accountants: "5 comptables",
+      accountants: "5 accès comptables gratuits",
       extraUsers: "5,99 €/utilisateur",
       invoicing: true,
       autoReminders: true,
@@ -104,7 +104,7 @@ const PLANS_CONFIG = PLANS_DISPLAY.map((p) => ({
 
 const COMPARISON_ROWS = [
   { key: "users", label: "Utilisateurs" },
-  { key: "accountants", label: "Comptable gratuit" },
+  { key: "accountants", label: "Accès comptables gratuits" },
   { key: "extraUsers", label: "Utilisateurs supplémentaires" },
   { key: "invoicing", label: "Facturation & Devis" },
   { key: "autoReminders", label: "Relances automatiques" },

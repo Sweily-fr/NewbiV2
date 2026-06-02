@@ -410,14 +410,6 @@ function BankBalanceCardInner(
                 {isConnecting ? "Connexion..." : "Connecter un compte"}
               </Button>
             )}
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs font-medium"
-              onClick={() => window.open("https://docs.newbi.fr", "_blank")}
-            >
-              Documentation
-            </Button>
           </div>
         </CardContent>
 

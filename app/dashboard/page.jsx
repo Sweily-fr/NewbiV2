@@ -974,7 +974,7 @@ function DashboardContent() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 text-xs text-muted-foreground font-normal"
+                    className="h-7 text-xs text-[#5b50FF] hover:text-[#5b50FF] font-normal"
                     asChild
                   >
                     <a href="/dashboard/outils/transactions">
@@ -1048,7 +1048,7 @@ function DashboardContent() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 text-xs text-muted-foreground font-normal"
+                    className="h-7 text-xs text-[#5b50FF] hover:text-[#5b50FF] font-normal"
                     asChild
                   >
                     <a href="/dashboard/outils/factures/new">
@@ -1131,7 +1131,7 @@ function DashboardContent() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 text-xs text-muted-foreground font-normal"
+                    className="h-7 text-xs text-[#5b50FF] hover:text-[#5b50FF] font-normal"
                     asChild
                   >
                     <a href="/dashboard/outils/kanban">Voir les tâches</a>
@@ -1232,7 +1232,7 @@ function DashboardContent() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-xs text-muted-foreground hover:text-foreground"
+                className="text-xs text-[#5b50FF] hover:text-[#5b50FF]"
                 asChild
               >
                 <a href="/dashboard/outils/factures">

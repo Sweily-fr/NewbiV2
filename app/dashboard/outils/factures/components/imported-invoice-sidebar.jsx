@@ -41,6 +41,8 @@ import {
   ExternalLink,
   AlertTriangle,
   Loader2,
+  CheckCircle2,
+  ChevronRight,
 } from "lucide-react";
 import { formatDateToFrench, formatLocalDate } from "@/src/utils/dateFormatter";
 import {
@@ -50,6 +52,7 @@ import {
   PAYMENT_METHOD_LABELS,
   useUpdateImportedInvoice,
   useDeleteImportedInvoice,
+  useValidateImportedInvoice,
 } from "@/src/graphql/importedInvoiceQueries";
 import { toast } from "sonner";
 
@@ -71,6 +74,8 @@ export function ImportedInvoiceSidebar({
   open,
   onOpenChange,
   onUpdate,
+  reviewInfo = null,
+  onValidated,
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
@@ -79,10 +84,16 @@ export function ImportedInvoiceSidebar({
     useUpdateImportedInvoice();
   const { deleteImportedInvoice, loading: deleteLoading } =
     useDeleteImportedInvoice();
+  const { validateImportedInvoice, loading: validateLoading } =
+    useValidateImportedInvoice();
 
-  const isLoading = updateLoading || deleteLoading;
+  const isLoading = updateLoading || deleteLoading || validateLoading;
 
   if (!invoice) return null;
+
+  const needsValidation =
+    invoice.status === "PENDING_REVIEW" || invoice.status === "UPLOADED";
+  const isReviewMode = !!reviewInfo;
 
   const handleEdit = () => {
     setEditData({
@@ -118,11 +129,42 @@ export function ImportedInvoiceSidebar({
     try {
       await deleteImportedInvoice({ variables: { id: invoice.id } });
       toast.success("Facture supprimée");
-      onOpenChange(false);
       onUpdate?.();
+      if (isReviewMode) {
+        onValidated?.();
+      } else {
+        onOpenChange(false);
+      }
     } catch (error) {
       toast.error("Erreur lors de la suppression");
     }
+  };
+
+  const handleValidate = async () => {
+    try {
+      // Sauvegarder d'abord les éventuelles modifications en cours
+      if (isEditing) {
+        await updateImportedInvoice({
+          variables: { id: invoice.id, input: editData },
+        });
+        setIsEditing(false);
+      }
+      await validateImportedInvoice({ variables: { id: invoice.id } });
+      toast.success("Facture validée");
+      onUpdate?.();
+      if (isReviewMode) {
+        onValidated?.();
+      } else {
+        onOpenChange(false);
+      }
+    } catch (error) {
+      toast.error("Erreur lors de la validation");
+    }
+  };
+
+  const handleSkip = () => {
+    setIsEditing(false);
+    onValidated?.();
   };
 
   const formatAmount = (amount) => {
@@ -142,6 +184,11 @@ export function ImportedInvoiceSidebar({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-md md:max-w-lg p-0 flex flex-col h-full overflow-hidden">
         <SheetHeader className="px-6 py-4 border-b shrink-0">
+          {isReviewMode && (
+            <p className="text-xs font-medium text-muted-foreground mb-1">
+              Validation des imports · {reviewInfo.current}/{reviewInfo.total}
+            </p>
+          )}
           <div className="flex items-center gap-3">
             <SheetTitle className="text-base font-medium">
               Facture importée
@@ -483,60 +530,89 @@ export function ImportedInvoiceSidebar({
               </Button>
               <Button
                 className="flex-1"
-                onClick={handleSave}
+                onClick={isReviewMode ? handleValidate : handleSave}
                 disabled={isLoading}
               >
-                {updateLoading ? (
+                {updateLoading || validateLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : isReviewMode ? (
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
                 ) : (
                   <Save className="h-4 w-4 mr-2" />
                 )}
-                Enregistrer
+                {isReviewMode ? "Enregistrer et valider" : "Enregistrer"}
               </Button>
             </div>
           ) : (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={handleEdit}
-                disabled={isLoading}
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Modifier
-              </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="destructive"
-                    className="flex-1"
-                    disabled={isLoading}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Supprimer
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      Supprimer cette facture ?
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Cette action est irréversible. La facture sera
-                      définitivement supprimée.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Annuler</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleDelete}
-                      className="bg-red-600 hover:bg-red-700"
+            <div className="flex flex-col gap-2">
+              {needsValidation && (
+                <Button
+                  className="w-full"
+                  onClick={handleValidate}
+                  disabled={isLoading}
+                >
+                  {validateLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                  )}
+                  Valider
+                </Button>
+              )}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={handleEdit}
+                  disabled={isLoading}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Modifier
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      className="flex-1"
+                      disabled={isLoading}
                     >
+                      <Trash2 className="h-4 w-4 mr-2" />
                       Supprimer
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Supprimer cette facture ?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Cette action est irréversible. La facture sera
+                        définitivement supprimée.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDelete}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        Supprimer
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+              {isReviewMode && (
+                <Button
+                  variant="ghost"
+                  className="w-full text-muted-foreground"
+                  onClick={handleSkip}
+                  disabled={isLoading}
+                >
+                  Passer
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              )}
             </div>
           )}
         </div>

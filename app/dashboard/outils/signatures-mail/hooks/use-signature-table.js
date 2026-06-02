@@ -331,10 +331,10 @@ const SET_DEFAULT_EMAIL_SIGNATURE = gql`
   }
 `;
 
-// Mutation pour créer une nouvelle signature (duplication)
-const CREATE_EMAIL_SIGNATURE = gql`
-  mutation CreateEmailSignature($input: EmailSignatureInput!) {
-    createEmailSignature(input: $input) {
+// Mutation pour dupliquer une signature (copie complète côté serveur)
+const DUPLICATE_EMAIL_SIGNATURE = gql`
+  mutation DuplicateEmailSignature($id: ID!) {
+    duplicateEmailSignature(id: $id) {
       id
       signatureName
       firstName
@@ -457,33 +457,9 @@ export const useSignatures = () => {
   };
 };
 
-const stripTypename = (value) => {
-  if (value === null || value === undefined) return value;
-  if (Array.isArray(value)) return value.map(stripTypename);
-  if (typeof value === "object") {
-    const result = {};
-    for (const [key, val] of Object.entries(value)) {
-      if (key === "__typename") continue;
-      result[key] = stripTypename(val);
-    }
-    return result;
-  }
-  return value;
-};
-
-const buildDuplicateName = (baseName, existingNames) => {
-  const taken = new Set(existingNames);
-  const root = `${baseName} - copie`;
-  if (!taken.has(root)) return root;
-  let i = 2;
-  while (taken.has(`${root} ${i}`)) i++;
-  return `${root} ${i}`;
-};
-
 // Hook pour les actions de signature
 export const useSignatureActions = () => {
   const router = useRouter();
-  const apolloClient = useApolloClient();
   // const { workspaceId } = useRequiredWorkspace();
 
   const [deleteSignature, { loading: deleting }] = useMutation(
@@ -557,8 +533,8 @@ export const useSignatureActions = () => {
 
   const [getSignatureForEdit] = useLazyQuery(GET_EMAIL_SIGNATURE);
 
-  const [createSignature, { loading: duplicating }] = useMutation(
-    CREATE_EMAIL_SIGNATURE,
+  const [duplicateSignatureMutation, { loading: duplicating }] = useMutation(
+    DUPLICATE_EMAIL_SIGNATURE,
     {
       refetchQueries: [GET_MY_EMAIL_SIGNATURES],
     },
@@ -610,42 +586,17 @@ export const useSignatureActions = () => {
   };
 
   const handleDuplicate = async (signature) => {
+    if (!signature?.id) {
+      toast.error("Erreur: identifiant de la signature introuvable");
+      return;
+    }
+
     try {
-      const { data } = await getSignatureForEdit({
+      // La duplication se fait entièrement côté serveur : tous les champs sont
+      // copiés (y compris bannière, structure de conteneurs, réseaux sociaux,
+      // séparateurs, etc.) et les images sont dupliquées en fichiers R2 dédiés.
+      await duplicateSignatureMutation({
         variables: { id: signature.id },
-      });
-      if (!data?.getEmailSignature) {
-        toast.error("Signature introuvable");
-        return;
-      }
-
-      const cleaned = stripTypename(data.getEmailSignature);
-      delete cleaned.id;
-      delete cleaned.isDefault;
-      delete cleaned.createdAt;
-      delete cleaned.updatedAt;
-
-      const existing =
-        apolloClient.cache.readQuery({ query: GET_MY_EMAIL_SIGNATURES })
-          ?.getMyEmailSignatures ?? [];
-
-      const duplicateData = {
-        ...cleaned,
-        signatureName: buildDuplicateName(
-          cleaned.signatureName,
-          existing.map((s) => s.signatureName),
-        ),
-        isDefault: false,
-      };
-
-      const filteredData = Object.fromEntries(
-        Object.entries(duplicateData).filter(
-          ([, value]) => value !== null && value !== undefined && value !== "",
-        ),
-      );
-
-      await createSignature({
-        variables: { input: filteredData },
       });
       toast.success("Signature dupliquée avec succès");
     } catch (error) {

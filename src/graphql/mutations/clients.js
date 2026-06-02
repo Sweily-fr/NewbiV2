@@ -168,6 +168,14 @@ export const UPDATE_CLIENT = gql`
           eventId
           eventTitle
           eventDate
+          blockReason
+          listId
+          listName
+          assignedMembers {
+            id
+            name
+            image
+          }
         }
       }
       createdAt
@@ -189,6 +197,36 @@ export const BLOCK_CLIENT = gql`
       isBlocked
       blockedAt
       blockedReason
+      activity {
+        id
+        type
+        description
+        field
+        oldValue
+        newValue
+        userId
+        userName
+        userImage
+        metadata {
+          documentType
+          documentId
+          documentNumber
+          status
+          originalInvoiceNumber
+          eventId
+          eventTitle
+          eventDate
+          blockReason
+          listId
+          listName
+          assignedMembers {
+            id
+            name
+            image
+          }
+        }
+        createdAt
+      }
     }
   }
 `;
@@ -200,6 +238,36 @@ export const UNBLOCK_CLIENT = gql`
       isBlocked
       blockedAt
       blockedReason
+      activity {
+        id
+        type
+        description
+        field
+        oldValue
+        newValue
+        userId
+        userName
+        userImage
+        metadata {
+          documentType
+          documentId
+          documentNumber
+          status
+          originalInvoiceNumber
+          eventId
+          eventTitle
+          eventDate
+          blockReason
+          listId
+          listName
+          assignedMembers {
+            id
+            name
+            image
+          }
+        }
+        createdAt
+      }
     }
   }
 `;
@@ -217,6 +285,25 @@ export const ASSIGN_CLIENT_MEMBERS = gql`
     ) {
       id
       assignedMembers
+      activity {
+        id
+        type
+        description
+        field
+        oldValue
+        newValue
+        userId
+        userName
+        userImage
+        createdAt
+        metadata {
+          assignedMembers {
+            id
+            name
+            image
+          }
+        }
+      }
     }
   }
 `;

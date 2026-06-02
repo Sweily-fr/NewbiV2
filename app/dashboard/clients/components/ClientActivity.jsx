@@ -299,10 +299,27 @@ const ClientActivity = ({
       document_email_sent: "📧",
       invoice_reminder_sent: "🔔",
       reminder_created: "🔔",
+      assigned: "👤",
+      blocked: "🚫",
+      unblocked: "✅",
+      added_to_list: "➕",
+      removed_from_list: "➖",
+      crm_email_sent: "📧",
     };
 
     let text = activity.description || "a effectué une action";
     let icon = icons[activity.type] || "📝";
+
+    // Pour une assignation, n'afficher que le verbe : le(s) membre(s) sont
+    // rendus en chip (avatar + nom). Repli sur la description si pas de metadata.
+    if (activity.type === "assigned") {
+      const members = activity.metadata?.assignedMembers || [];
+      if (members.length > 0) {
+        text = (activity.description || "").startsWith("a retiré")
+          ? "a retiré"
+          : "a assigné";
+      }
+    }
 
     return { icon, text, metadata: activity.metadata };
   };
@@ -331,8 +348,10 @@ const ClientActivity = ({
 
   const allActivity = useMemo(() => {
     return [
-      ...notes.map((n) => ({ ...n, type: "note" })),
-      ...activities.map((a) => ({ ...a, type: "activity" })),
+      // `kind` discrimine note vs activité sans écraser le vrai `type` de
+      // l'activité (ex. "assigned"), nécessaire pour l'affichage des membres.
+      ...notes.map((n) => ({ ...n, kind: "note" })),
+      ...activities.map((a) => ({ ...a, kind: "activity" })),
     ]
       .filter((item) => item.createdAt) // Filtrer les éléments sans date
       .sort((a, b) => {
@@ -377,15 +396,15 @@ const ClientActivity = ({
                 {(showAllActivities ? allActivity : allActivity.slice(-3)).map(
                   (item, index) => {
                     const display =
-                      item.type === "activity"
+                      item.kind === "activity"
                         ? getActivityDisplay(item)
                         : null;
                     return (
                       <div
-                        key={`${item.type}-${item.id || index}`}
+                        key={`${item.kind}-${item.id || index}`}
                         className="flex gap-3 w-full"
                       >
-                        {item.type === "note" ? (
+                        {item.kind === "note" ? (
                           <div className="bg-background rounded-lg p-3 flex-1 border border-border min-w-0">
                             <div className="flex gap-3 w-full">
                               <UserAvatar
@@ -554,6 +573,26 @@ const ClientActivity = ({
                                       <span className="text-xs text-muted-foreground">
                                         {display.text}
                                       </span>
+                                      {item.type === "assigned" &&
+                                        (
+                                          display.metadata?.assignedMembers ||
+                                          []
+                                        ).map((m) => (
+                                          <span
+                                            key={m.id}
+                                            className="inline-flex items-center gap-1 rounded-full bg-muted py-0.5 pl-0.5 pr-2 border border-border"
+                                          >
+                                            <UserAvatar
+                                              name={m.name}
+                                              src={m.image}
+                                              size="xs"
+                                              className="size-4"
+                                            />
+                                            <span className="text-xs font-medium">
+                                              {m.name}
+                                            </span>
+                                          </span>
+                                        ))}
                                     </div>
                                     <span className="text-xs text-muted-foreground whitespace-nowrap">
                                       {formatDate(item.createdAt)}
