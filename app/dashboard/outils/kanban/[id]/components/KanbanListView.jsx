@@ -37,6 +37,7 @@ import {
   Tag,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { CmdEnterHint } from "./CmdEnterHint";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1080,6 +1081,7 @@ function InlineAddTask({
   members,
   createTask,
   workspaceId,
+  tasks = [],
   onCancel,
   onEditTask,
 }) {
@@ -1114,6 +1116,10 @@ function InlineAddTask({
   const handleSave = async (openAfter = false) => {
     if (!title.trim() || saving) return;
     setSaving(true);
+    // Nouvelle tâche placée en dernier dans la colonne
+    const nextPosition = tasks.length
+      ? Math.max(...tasks.map((t) => t.position ?? 0)) + 1
+      : 0;
     try {
       const result = await createTask({
         variables: {
@@ -1121,6 +1127,7 @@ function InlineAddTask({
             title: title.trim(),
             columnId,
             boardId,
+            position: nextPosition,
             priority: priority || "",
             dueDate: dueDate ? dueDate.toISOString() : null,
             assignedMembers: assignedMembers
@@ -1303,10 +1310,15 @@ function InlineAddTask({
         >
           Annuler
         </Button>
+        <CmdEnterHint
+          onClick={() => handleSave(true)}
+          disabled={!title.trim() || saving}
+          className="h-6"
+        />
         <Button
           size="sm"
           className="h-6 px-2 rounded-sm text-[11px] bg-[#5A50FF] hover:bg-[#4a42d4] text-white"
-          onClick={handleSave}
+          onClick={() => handleSave(false)}
           disabled={!title.trim() || saving}
         >
           Créer ↵
@@ -1728,14 +1740,14 @@ function TagsTooltipGrid({ tags }) {
       {tags.map((tag) => (
         <span
           key={tag.name}
-          className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium"
+          className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium max-w-full break-words text-left"
           style={{
             backgroundColor: tag.bg,
             color: tag.text,
             border: `1px solid ${tag.border}`,
           }}
         >
-          {tag.name?.length > 20 ? tag.name.slice(0, 20) + "…" : tag.name}
+          {tag.name}
         </span>
       ))}
     </div>
@@ -1825,7 +1837,7 @@ function TaskTagsCell({ task, updateTask, workspaceId, allBoardTags }) {
   return (
     <div className="flex items-center gap-1 min-w-0">
       {allTags.length > 0 && (
-        <Tooltip>
+        <Tooltip delayDuration={0}>
           <TooltipTrigger asChild>
             <div
               ref={containerRef}
@@ -1871,7 +1883,7 @@ function TaskTagsCell({ task, updateTask, workspaceId, allBoardTags }) {
           </TooltipTrigger>
           <TooltipContent
             side="top"
-            className="tooltip-light p-2 border border-border shadow-md"
+            className="tooltip-light p-2 border border-border shadow-md duration-75"
           >
             <TagsTooltipGrid tags={allTags} />
           </TooltipContent>
@@ -2685,6 +2697,7 @@ export function KanbanListView({
                     members={members}
                     createTask={createTask}
                     workspaceId={workspaceId}
+                    tasks={getTasksByColumn(column.id)}
                     onCancel={() => setInlineAddColumnId(null)}
                     onEditTask={onEditTask}
                   />
@@ -3294,6 +3307,7 @@ export function KanbanListView({
                     members={members}
                     createTask={createTask}
                     workspaceId={workspaceId}
+                    tasks={getTasksByColumn(column.id)}
                     onCancel={() => setInlineAddColumnId(null)}
                     onEditTask={onEditTask}
                   />
