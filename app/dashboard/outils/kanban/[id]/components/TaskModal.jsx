@@ -55,6 +55,11 @@ import {
   TabsTrigger,
 } from "@/src/components/ui/tabs";
 import { UserAvatar } from "@/src/components/ui/user-avatar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Checklist } from "@/src/components/Checklist";
@@ -1229,20 +1234,25 @@ export function TaskModal({
                                   {taskForm.tags.map((tag, i) => {
                                     const color = getTagColor(tag.name);
                                     return (
-                                      <span
-                                        key={i}
-                                        title={tag.name}
-                                        className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium"
-                                        style={{
-                                          backgroundColor: color.bg,
-                                          color: color.text,
-                                          border: `1px solid ${color.border}`,
-                                        }}
-                                      >
-                                        {tag.name?.length > 15
-                                          ? tag.name.slice(0, 15) + "…"
-                                          : tag.name}
-                                      </span>
+                                      <Tooltip key={i} delayDuration={0}>
+                                        <TooltipTrigger asChild>
+                                          <span
+                                            className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium"
+                                            style={{
+                                              backgroundColor: color.bg,
+                                              color: color.text,
+                                              border: `1px solid ${color.border}`,
+                                            }}
+                                          >
+                                            {tag.name?.length > 25
+                                              ? tag.name.slice(0, 25) + "…"
+                                              : tag.name}
+                                          </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top">
+                                          {tag.name}
+                                        </TooltipContent>
+                                      </Tooltip>
                                     );
                                   })}
                                 </div>
@@ -1268,35 +1278,41 @@ export function TaskModal({
                                 {taskForm.tags.map((tag, i) => {
                                   const color = getTagColor(tag.name);
                                   return (
-                                    <span
-                                      key={i}
-                                      title={tag.name}
-                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium"
-                                      style={{
-                                        backgroundColor: color.bg,
-                                        color: color.text,
-                                        border: `1px solid ${color.border}`,
-                                      }}
-                                    >
-                                      {tag.name?.length > 15
-                                        ? tag.name.slice(0, 15) + "…"
-                                        : tag.name}
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          const newTags = taskForm.tags.filter(
-                                            (_, idx) => idx !== i,
-                                          );
-                                          setTaskForm({
-                                            ...taskForm,
-                                            tags: newTags,
-                                          });
-                                        }}
-                                        className="hover:opacity-70 cursor-pointer"
-                                      >
-                                        <X className="h-2.5 w-2.5" />
-                                      </button>
-                                    </span>
+                                    <Tooltip key={i} delayDuration={0}>
+                                      <TooltipTrigger asChild>
+                                        <span
+                                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium"
+                                          style={{
+                                            backgroundColor: color.bg,
+                                            color: color.text,
+                                            border: `1px solid ${color.border}`,
+                                          }}
+                                        >
+                                          {tag.name?.length > 25
+                                            ? tag.name.slice(0, 25) + "…"
+                                            : tag.name}
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              const newTags =
+                                                taskForm.tags.filter(
+                                                  (_, idx) => idx !== i,
+                                                );
+                                              setTaskForm({
+                                                ...taskForm,
+                                                tags: newTags,
+                                              });
+                                            }}
+                                            className="hover:opacity-70 cursor-pointer"
+                                          >
+                                            <X className="h-2.5 w-2.5" />
+                                          </button>
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top">
+                                        {tag.name}
+                                      </TooltipContent>
+                                    </Tooltip>
                                   );
                                 })}
                               </div>
@@ -2169,35 +2185,41 @@ export function TaskModal({
                               {taskForm.tags.map((tag, index) => {
                                 const color = getTagColor(tag.name);
                                 return (
-                                  <div
-                                    key={index}
-                                    title={tag.name}
-                                    className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border"
-                                    style={{
-                                      backgroundColor: color.bg,
-                                      borderColor: color.border,
-                                      color: color.text,
-                                    }}
-                                  >
-                                    {tag.name?.length > 15
-                                      ? tag.name.slice(0, 15) + "…"
-                                      : tag.name}
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const newTags = taskForm.tags.filter(
-                                          (_, i) => i !== index,
-                                        );
-                                        setTaskForm({
-                                          ...taskForm,
-                                          tags: newTags,
-                                        });
-                                      }}
-                                      className="ml-1.5 rounded-full outline-none hover:opacity-70 transition-opacity"
-                                    >
-                                      <X className="h-3 w-3" />
-                                    </button>
-                                  </div>
+                                  <Tooltip key={index} delayDuration={0}>
+                                    <TooltipTrigger asChild>
+                                      <div
+                                        className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border"
+                                        style={{
+                                          backgroundColor: color.bg,
+                                          borderColor: color.border,
+                                          color: color.text,
+                                        }}
+                                      >
+                                        {tag.name?.length > 25
+                                          ? tag.name.slice(0, 25) + "…"
+                                          : tag.name}
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const newTags =
+                                              taskForm.tags.filter(
+                                                (_, i) => i !== index,
+                                              );
+                                            setTaskForm({
+                                              ...taskForm,
+                                              tags: newTags,
+                                            });
+                                          }}
+                                          className="ml-1.5 rounded-full outline-none hover:opacity-70 transition-opacity"
+                                        >
+                                          <X className="h-3 w-3" />
+                                        </button>
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top">
+                                      {tag.name}
+                                    </TooltipContent>
+                                  </Tooltip>
                                 );
                               })}
                               {tagsInputFocused && (
