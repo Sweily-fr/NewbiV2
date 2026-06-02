@@ -89,6 +89,7 @@ export function useKanbanBoardsTable({
   formatDate,
   clientFilter = null,
   categoryFilter = null,
+  favoritesOnly = false,
   onToggleFavorite,
   onChangeStatus,
   workspaceId,
@@ -110,6 +111,9 @@ export function useKanbanBoardsTable({
     if (categoryFilter) {
       result = result.filter((board) => board.category === categoryFilter);
     }
+    if (favoritesOnly) {
+      result = result.filter((board) => board.isFavorite);
+    }
     // Favoris en premier, puis tri par date de dernière modification (récent d'abord)
     return [...result].sort((a, b) => {
       const aFav = a.isFavorite ? 1 : 0;
@@ -117,7 +121,7 @@ export function useKanbanBoardsTable({
       if (aFav !== bFav) return bFav - aFav;
       return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
     });
-  }, [data, clientFilter, categoryFilter]);
+  }, [data, clientFilter, categoryFilter, favoritesOnly]);
 
   // Extraire les clients uniques pour le filtre
   const uniqueClients = useMemo(() => {
