@@ -367,8 +367,12 @@ export default function ClientSelector({
       }
     }
 
-    // Validation du numéro de téléphone (optionnel mais doit être valide si renseigné)
-    if (newClientForm.phone && newClientForm.phone.trim() !== "") {
+    // Validation du numéro de téléphone (format FR uniquement pour les entreprises françaises)
+    if (
+      !newClientForm.isInternational &&
+      newClientForm.phone &&
+      newClientForm.phone.trim() !== ""
+    ) {
       const phoneRegex = /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/;
       if (!phoneRegex.test(newClientForm.phone.trim())) {
         errors.phone =
@@ -399,8 +403,12 @@ export default function ClientSelector({
       }
     }
 
-    // Validation du numéro de téléphone (si fourni)
-    if (newClientForm.phone && newClientForm.phone.trim() !== "") {
+    // Validation du numéro de téléphone (format FR uniquement pour les entreprises françaises)
+    if (
+      !newClientForm.isInternational &&
+      newClientForm.phone &&
+      newClientForm.phone.trim() !== ""
+    ) {
       const phoneRegex = /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/;
       if (!phoneRegex.test(newClientForm.phone.trim())) {
         errors.phone =
