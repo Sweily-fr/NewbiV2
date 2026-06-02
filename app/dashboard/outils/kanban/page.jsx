@@ -125,6 +125,7 @@ function KanbanPageContent() {
   const [clientFilter, setClientFilter] = React.useState(null);
   const [viewMode, setViewModeState] = React.useState("table"); // "table" | "grid"
   const [categoryFilter, setCategoryFilter] = React.useState(null);
+  const [favoritesOnly, setFavoritesOnly] = React.useState(false);
 
   // Restaure le mode d'affichage (table/grid) depuis localStorage avant le premier rendu visible
   React.useLayoutEffect(() => {
@@ -219,6 +220,7 @@ function KanbanPageContent() {
     formatDate,
     clientFilter,
     categoryFilter,
+    favoritesOnly,
     onToggleFavorite: handleToggleFavorite,
     onChangeStatus: handleChangeStatus,
     workspaceId,
@@ -649,15 +651,43 @@ function KanbanPageContent() {
               <Button variant="filter" className="cursor-pointer relative">
                 <Filter size={14} aria-hidden="true" />
                 Filtres
-                {(clientFilter || categoryFilter) && (
+                {(clientFilter || categoryFilter || favoritesOnly) && (
                   <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#5A50FF] text-[9px] font-bold text-white">
-                    {(clientFilter ? 1 : 0) + (categoryFilter ? 1 : 0)}
+                    {(clientFilter ? 1 : 0) +
+                      (categoryFilter ? 1 : 0) +
+                      (favoritesOnly ? 1 : 0)}
                   </span>
                 )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
+              {/* Favoris */}
+              <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                Affichage
+              </DropdownMenuLabel>
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  e.preventDefault();
+                  setFavoritesOnly((v) => !v);
+                }}
+                className={cn(
+                  "flex items-center gap-2 cursor-pointer",
+                  favoritesOnly && "bg-accent",
+                )}
+              >
+                <Star
+                  className={cn(
+                    "h-3.5 w-3.5",
+                    favoritesOnly && "text-yellow-400 fill-yellow-400",
+                  )}
+                />
+                <span className="flex-1 text-sm">Favoris uniquement</span>
+              </DropdownMenuItem>
+
               {/* Client */}
+              {uniqueClients.length > 0 && (
+                <div className="my-1 border-t border-border" />
+              )}
               {uniqueClients.length > 0 && (
                 <>
                   <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
@@ -719,13 +749,14 @@ function KanbanPageContent() {
               )}
 
               {/* Reset */}
-              {(clientFilter || categoryFilter) && (
+              {(clientFilter || categoryFilter || favoritesOnly) && (
                 <>
                   <div className="my-1 border-t border-border" />
                   <DropdownMenuItem
                     onClick={() => {
                       setClientFilter(null);
                       setCategoryFilter(null);
+                      setFavoritesOnly(false);
                     }}
                     className="text-xs text-muted-foreground cursor-pointer"
                   >
