@@ -105,15 +105,17 @@ export const useCreatePurchaseInvoice = () => {
       { query: GET_PURCHASE_INVOICE_STATS, variables: { workspaceId } },
     ],
     awaitRefetchQueries: false,
-    onCompleted: () => toast.success("Facture d'achat créée"),
     onError: (error) =>
       toast.error(error.message || "Erreur lors de la création"),
   });
 
-  const createInvoice = async (input) => {
+  // `silent` permet de couper le toast unitaire pour les flux groupés
+  // (ex. import OCR multi-factures) qui affichent leur propre récap.
+  const createInvoice = async (input, { silent = false } = {}) => {
     const result = await createMutation({
       variables: { input: { ...input, workspaceId } },
     });
+    if (!silent) toast.success("Facture d'achat créée");
     return result?.data?.createPurchaseInvoice;
   };
 
