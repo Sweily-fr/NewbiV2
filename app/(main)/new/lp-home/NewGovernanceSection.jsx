@@ -141,8 +141,11 @@ export default function NewGovernanceSection() {
           </h2>
           <p className="text-md font-normal tracking-tight text-gray-600 dark:text-gray-300 mx-auto mb-8 max-w-2xl">
             Centralisez toutes vos opérations financières et administratives sur
-            une seule plateforme intuitive. Prenez des <span className="text-[#5A50FF] font-medium">décisions éclairées</span> grâce
-            à une vue d'ensemble complète de votre activité.
+            une seule plateforme intuitive. Prenez des{" "}
+            <span className="text-[#5A50FF] font-medium">
+              décisions éclairées
+            </span>{" "}
+            grâce à une vue d'ensemble complète de votre activité.
           </p>
         </div>
 
@@ -244,7 +247,11 @@ function TresorerieCard() {
       </div>
       <div className="relative h-80 sm:h-60 flex flex-col md:h-80 overflow-hidden">
         <div className="flex-1 flex items-center justify-center px-2 sm:px-8">
-          <svg viewBox="0 0 400 200" className="w-full max-w-none sm:max-w-xl" fill="none">
+          <svg
+            viewBox="0 0 400 200"
+            className="w-full max-w-none sm:max-w-xl"
+            fill="none"
+          >
             {/* Durée totale du cycle: 6s (1s grille + 2s courbe + 1s pause + 2s fade out/reset) */}
 
             {/* Grille de fond - lignes apparaissent de bas en haut avec rebond */}
@@ -397,8 +404,24 @@ function TresorerieCard() {
                 dur="7s"
                 repeatCount="indefinite"
               />
-              <rect x="340" y="0" width="55" height="20" rx="4" fill="#202020" />
-              <text x="367" y="13" fontSize="9" fill="white" textAnchor="middle" fontWeight="600">+34%</text>
+              <rect
+                x="340"
+                y="0"
+                width="55"
+                height="20"
+                rx="4"
+                fill="#202020"
+              />
+              <text
+                x="367"
+                y="13"
+                fontSize="9"
+                fill="white"
+                textAnchor="middle"
+                fontWeight="600"
+              >
+                +34%
+              </text>
             </g>
 
             <defs>
@@ -422,7 +445,7 @@ function GridItem({ img, icon }) {
       >
         {img && (
           <img
-            alt="item"
+            alt="Logo d'un outil intégré à la plateforme de gestion Newbi"
             loading="lazy"
             width="120"
             height="120"
@@ -449,8 +472,8 @@ function RapportsCard() {
           Gérez l'ensemble de vos dépenses
         </h2>
         <p className="text-neutral-600 dark:text-neutral-400 mt-2 max-w-md text-balance">
-          Catégorisez automatiquement vos dépenses, scannez vos justificatifs
-          et gardez un oeil sur chaque euro dépensé.
+          Catégorisez automatiquement vos dépenses, scannez vos justificatifs et
+          gardez un oeil sur chaque euro dépensé.
         </p>
       </div>
       <div className="relative h-80 sm:h-60 flex flex-col md:h-80 overflow-hidden perspective-distant">
@@ -460,7 +483,9 @@ function RapportsCard() {
             <div className="flex items-center justify-between border-b border-neutral-100 py-2.5 px-4">
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 rounded bg-neutral-200 dark:bg-neutral-700" />
-                <p className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">Dépenses par catégorie</p>
+                <p className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+                  Dépenses par catégorie
+                </p>
               </div>
               <p className="text-[10px] text-neutral-400">Ce mois</p>
             </div>
@@ -468,20 +493,56 @@ function RapportsCard() {
             {/* Lignes de dépenses */}
             <div className="flex flex-col">
               {[
-                { label: "Logiciels", amount: "1 540 €", pct: "36%", color: "bg-indigo-500", barW: "w-[62%]" },
-                { label: "Abonnements", amount: "1 140 €", pct: "27%", color: "bg-blue-500", barW: "w-[46%]" },
-                { label: "Transport", amount: "880 €", pct: "21%", color: "bg-amber-500", barW: "w-[35%]" },
-                { label: "Repas", amount: "720 €", pct: "16%", color: "bg-emerald-500", barW: "w-[28%]" },
+                {
+                  label: "Logiciels",
+                  amount: "1 540 €",
+                  pct: "36%",
+                  color: "bg-indigo-500",
+                  barW: "w-[62%]",
+                },
+                {
+                  label: "Abonnements",
+                  amount: "1 140 €",
+                  pct: "27%",
+                  color: "bg-blue-500",
+                  barW: "w-[46%]",
+                },
+                {
+                  label: "Transport",
+                  amount: "880 €",
+                  pct: "21%",
+                  color: "bg-amber-500",
+                  barW: "w-[35%]",
+                },
+                {
+                  label: "Repas",
+                  amount: "720 €",
+                  pct: "16%",
+                  color: "bg-emerald-500",
+                  barW: "w-[28%]",
+                },
               ].map((item, i) => (
-                <div key={i} className="flex items-center gap-3 px-4 py-2.5 border-b border-neutral-50">
-                  <div className={`w-2 h-2 rounded-sm ${item.color} shrink-0`} />
-                  <p className="text-xs text-neutral-600 dark:text-neutral-400 w-20 shrink-0">{item.label}</p>
+                <div
+                  key={i}
+                  className="flex items-center gap-3 px-4 py-2.5 border-b border-neutral-50"
+                >
+                  <div
+                    className={`w-2 h-2 rounded-sm ${item.color} shrink-0`}
+                  />
+                  <p className="text-xs text-neutral-600 dark:text-neutral-400 w-20 shrink-0">
+                    {item.label}
+                  </p>
                   <div className="flex-1 h-2 bg-neutral-100 dark:bg-neutral-700 rounded-full overflow-hidden">
-                    <div className={`h-full ${item.color} rounded-full ${item.barW}`}
+                    <div
+                      className={`h-full ${item.color} rounded-full ${item.barW}`}
                     />
                   </div>
-                  <p className="text-[10px] text-neutral-400 w-8 text-right shrink-0">{item.pct}</p>
-                  <p className="text-xs font-medium text-neutral-800 dark:text-neutral-200 w-16 text-right shrink-0">{item.amount}</p>
+                  <p className="text-[10px] text-neutral-400 w-8 text-right shrink-0">
+                    {item.pct}
+                  </p>
+                  <p className="text-xs font-medium text-neutral-800 dark:text-neutral-200 w-16 text-right shrink-0">
+                    {item.amount}
+                  </p>
                 </div>
               ))}
             </div>
@@ -489,7 +550,9 @@ function RapportsCard() {
             {/* Total */}
             <div className="flex items-center justify-between px-4 py-3 mt-auto border-t border-neutral-200 dark:border-neutral-700">
               <p className="text-xs font-medium text-neutral-500">Total</p>
-              <p className="text-sm font-bold text-neutral-800 dark:text-neutral-200">4 280 €</p>
+              <p className="text-sm font-bold text-neutral-800 dark:text-neutral-200">
+                4 280 €
+              </p>
             </div>
           </div>
         </div>
@@ -506,8 +569,8 @@ function MultiCompteCard() {
           Vos paiements, sous contrôle
         </h2>
         <p className="text-neutral-600 dark:text-neutral-400 mt-2 max-w-md text-balance">
-          Synchronisez vos transactions et relancez
-          les retards en quelques clics.
+          Synchronisez vos transactions et relancez les retards en quelques
+          clics.
         </p>
       </div>
       <div className="relative h-80 sm:h-60 flex flex-col md:h-80 overflow-hidden perspective-distant">
@@ -515,30 +578,59 @@ function MultiCompteCard() {
           {/* Wrapper height animation — pousse cards 3+4 vers le bas */}
           <div style={{ animation: "insertCards 5s ease-out infinite" }}>
             {/* Card 1 - Virement bancaire */}
-            <div className="p-5 mb-2 shadow-black/10 border bg-white dark:bg-neutral-900 border-transparent ring-1 rounded-[20px] ring-black/10 flex items-center gap-3" style={{ animation: "slideCard1 5s ease-out infinite" }}>
+            <div
+              className="p-5 mb-2 shadow-black/10 border bg-white dark:bg-neutral-900 border-transparent ring-1 rounded-[20px] ring-black/10 flex items-center gap-3"
+              style={{ animation: "slideCard1 5s ease-out infinite" }}
+            >
               <div className="size-10 shrink-0 rounded-lg flex items-center justify-center bg-white border border-neutral-200 overflow-hidden">
-                <img src="/bnp-logo.png" alt="BNP Paribas" className="w-full h-full object-cover" />
+                <img
+                  src="/bnp-logo.png"
+                  alt="BNP Paribas"
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div className="flex-1 min-w-0 space-y-2.5">
-                <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">Virement reçu</p>
-                <p className="text-xs text-neutral-400">Reçu le 23 novembre 2025</p>
+                <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+                  Virement reçu
+                </p>
+                <p className="text-xs text-neutral-400">
+                  Reçu le 23 novembre 2025
+                </p>
               </div>
-              <p className="text-base font-medium text-green-600 shrink-0">2 880,00 €</p>
+              <p className="text-base font-medium text-green-600 shrink-0">
+                2 880,00 €
+              </p>
             </div>
 
             {/* Card 2 - Facture */}
-            <div className="p-5 shadow-black/10 border bg-white dark:bg-neutral-900 border-transparent ring-1 rounded-[20px] ring-black/10 flex items-center gap-3 relative z-0" style={{ animation: "slideCard2 5s ease-out infinite" }}>
+            <div
+              className="p-5 shadow-black/10 border bg-white dark:bg-neutral-900 border-transparent ring-1 rounded-[20px] ring-black/10 flex items-center gap-3 relative z-0"
+              style={{ animation: "slideCard2 5s ease-out infinite" }}
+            >
               <div className="size-10 shrink-0 rounded-lg flex items-center justify-center bg-white border border-neutral-200">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#525252" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#525252"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
                   <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
                 </svg>
               </div>
               <div className="flex-1 min-w-0 space-y-2.5">
-                <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">Facture F-0027</p>
+                <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+                  Facture F-0027
+                </p>
                 <p className="text-xs text-neutral-400">Julien Marchand</p>
               </div>
-              <p className="text-base font-medium text-neutral-800 shrink-0">2 880,00 €</p>
+              <p className="text-base font-medium text-neutral-800 shrink-0">
+                2 880,00 €
+              </p>
             </div>
           </div>
 
@@ -546,7 +638,10 @@ function MultiCompteCard() {
           <div className="absolute left-1/2 top-[72px] -translate-x-1/2 z-20">
             <div
               className="h-[64px] rounded-full bg-white flex items-center justify-center relative overflow-hidden"
-              style={{ animation: "outerPill 5s ease-out infinite", boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}
+              style={{
+                animation: "outerPill 5s ease-out infinite",
+                boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+              }}
             >
               <div
                 className="h-[52px] rounded-full bg-[#22c55e] absolute flex items-center px-3.5 gap-2.5"
@@ -556,7 +651,16 @@ function MultiCompteCard() {
                   className="size-8 shrink-0 rounded-full bg-white flex items-center justify-center"
                   style={{ animation: "checkIcon 5s ease-out infinite" }}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#22c55e"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M20 6L9 17l-5-5" />
                   </svg>
                 </div>
@@ -568,9 +672,19 @@ function MultiCompteCard() {
                 </span>
               </div>
               <svg
-                width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#525252" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#525252"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 className="absolute"
-                style={{ animation: "syncIcon 5s ease-out infinite, spinSync 1s linear infinite" }}
+                style={{
+                  animation:
+                    "syncIcon 5s ease-out infinite, spinSync 1s linear infinite",
+                }}
               >
                 <path d="M21 2v6h-6M3 12a9 9 0 0115.4-6.4L21 8M3 22v-6h6M21 12a9 9 0 01-15.4 6.4L3 16" />
               </svg>
@@ -580,41 +694,74 @@ function MultiCompteCard() {
           {/* Card 3 - Prélèvement (pushed down by wrapper) */}
           <div className="p-5 shadow-black/10 border bg-white dark:bg-neutral-900 border-transparent ring-1 rounded-[20px] ring-black/10 flex items-center gap-3 relative z-10">
             <div className="size-10 shrink-0 rounded-lg flex items-center justify-center bg-white overflow-hidden">
-              <img src="/urssaf-logo.png" alt="URSSAF" className="w-full h-full object-cover" />
+              <img
+                src="/urssaf-logo.png"
+                alt="URSSAF"
+                className="w-full h-full object-cover"
+              />
             </div>
             <div className="flex-1 min-w-0 space-y-2.5">
-              <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">Prélèvement URSSAF</p>
-              <p className="text-xs text-neutral-400">Débité le 15 décembre 2025</p>
+              <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+                Prélèvement URSSAF
+              </p>
+              <p className="text-xs text-neutral-400">
+                Débité le 15 décembre 2025
+              </p>
             </div>
-            <p className="text-base font-medium text-neutral-800 shrink-0">1 240,00 €</p>
+            <p className="text-base font-medium text-neutral-800 shrink-0">
+              1 240,00 €
+            </p>
           </div>
 
           {/* Card 4 - Devis (pushed down by wrapper) */}
           <div className="p-5 shadow-black/10 border bg-white dark:bg-neutral-900 border-transparent ring-1 rounded-[20px] ring-black/10 flex items-center gap-3 relative z-10">
             <div className="size-10 shrink-0 rounded-lg flex items-center justify-center bg-white border border-neutral-200">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#525252" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#525252"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
                 <rect x="9" y="3" width="6" height="4" rx="1" />
                 <path d="M9 14l2 2 4-4" />
               </svg>
             </div>
             <div className="flex-1 min-w-0 space-y-2.5">
-              <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">Devis D-0041</p>
+              <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+                Devis D-0041
+              </p>
               <p className="text-xs text-neutral-400">Sophie Lemaire</p>
             </div>
-            <p className="text-base font-medium text-green-600 shrink-0">4 500,00 €</p>
+            <p className="text-base font-medium text-green-600 shrink-0">
+              4 500,00 €
+            </p>
           </div>
 
           {/* Card 5 - Dépense Vercel */}
           <div className="p-5 shadow-black/10 border bg-white dark:bg-neutral-900 border-transparent ring-1 rounded-[20px] ring-black/10 flex items-center gap-3 relative z-10">
             <div className="size-10 shrink-0 rounded-lg flex items-center justify-center bg-white border border-neutral-200 overflow-hidden">
-              <img src="https://cdn.brandfetch.io/idxAg10C0L/theme/dark/logo.svg?c=1bxid64Mup7aczewSAYMX&t=1746435914582" alt="Stripe" className="w-6 h-6 object-contain" />
+              <img
+                src="https://cdn.brandfetch.io/idxAg10C0L/theme/dark/logo.svg?c=1bxid64Mup7aczewSAYMX&t=1746435914582"
+                alt="Stripe"
+                className="w-6 h-6 object-contain"
+              />
             </div>
             <div className="flex-1 min-w-0 space-y-2.5">
-              <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">Stripe - Commission</p>
-              <p className="text-xs text-neutral-400">Débité le 1er décembre 2025</p>
+              <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+                Stripe - Commission
+              </p>
+              <p className="text-xs text-neutral-400">
+                Débité le 1er décembre 2025
+              </p>
             </div>
-            <p className="text-base font-medium text-neutral-800 shrink-0">45,90 €</p>
+            <p className="text-base font-medium text-neutral-800 shrink-0">
+              45,90 €
+            </p>
           </div>
         </div>
       </div>
@@ -631,10 +778,10 @@ function FullWidthCard() {
           Des factures qui inspirent confiance
         </h2>
         <p className="text-neutral-600 dark:text-neutral-400 mt-2 max-w-lg text-balance">
-          Créez des factures élégantes et professionnelles
-          qui reflètent l'image de votre entreprise. Personnalisez vos modèles,
-          ajoutez votre logo et envoyez-les en un clic. Vos clients reçoivent
-          un document soigné qui renforce votre crédibilité.
+          Créez des factures élégantes et professionnelles qui reflètent l'image
+          de votre entreprise. Personnalisez vos modèles, ajoutez votre logo et
+          envoyez-les en un clic. Vos clients reçoivent un document soigné qui
+          renforce votre crédibilité.
         </p>
       </div>
       {/* Image droite */}
@@ -777,7 +924,16 @@ function SparklesIcon() {
 }
 function BankIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#3B82F6"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3" />
     </svg>
   );

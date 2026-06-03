@@ -14,12 +14,10 @@ const bankImages = [
 function GridItem({ img, icon, small }) {
   return (
     <div className="w-full justify-self-center aspect-square rounded-xl border border-dashed border-neutral-200 relative p-[1px]">
-      <div
-        className="flex items-center justify-center w-full h-full rounded-[12px] p-[1px] relative z-10"
-      >
+      <div className="flex items-center justify-center w-full h-full rounded-[12px] p-[1px] relative z-10">
         {img && (
           <img
-            alt="item"
+            alt="Logo de banque compatible avec la gestion de trésorerie Newbi"
             loading="lazy"
             width="120"
             height="120"
@@ -103,65 +101,120 @@ export default function TresorerieGovernanceSection() {
                 Rapprochez vos transactions
               </h2>
               <p className="text-neutral-600 mt-2 max-w-md text-balance">
-                Associez automatiquement vos factures à vos mouvements
-                bancaires pour un suivi comptable sans effort.
+                Associez automatiquement vos factures à vos mouvements bancaires
+                pour un suivi comptable sans effort.
               </p>
             </div>
             <div className="relative h-80 sm:h-60 flex flex-col md:h-80 overflow-hidden perspective-distant">
               <div className="flex-1 rounded-t-3xl gap-2 flex flex-col bg-neutral-100 border border-neutral-200 max-w-[20rem] lg:max-w-sm mx-auto w-full h-full absolute inset-x-0 inset-y-2 p-2 overflow-hidden">
                 <div className="p-5 shadow-black/10 border bg-white border-transparent ring-1 rounded-[20px] ring-black/10 flex items-center gap-3">
                   <div className="size-10 shrink-0 rounded-lg flex items-center justify-center bg-white border border-neutral-200 overflow-hidden">
-                    <img src="/bnp-logo.png" alt="BNP Paribas" className="w-full h-full object-cover" />
+                    <img
+                      src="/bnp-logo.png"
+                      alt="BNP Paribas"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <div className="flex-1 min-w-0 space-y-2.5">
-                    <p className="text-sm font-semibold text-neutral-800">Virement reçu</p>
-                    <p className="text-xs text-neutral-400">Reçu le 23 novembre 2025</p>
+                    <p className="text-sm font-semibold text-neutral-800">
+                      Virement reçu
+                    </p>
+                    <p className="text-xs text-neutral-400">
+                      Reçu le 23 novembre 2025
+                    </p>
                   </div>
-                  <p className="text-base font-medium text-green-600 shrink-0">2 880,00 €</p>
+                  <p className="text-base font-medium text-green-600 shrink-0">
+                    2 880,00 €
+                  </p>
                 </div>
                 <div className="absolute left-1/2 top-[82px] -translate-x-1/2 z-20">
                   <div className="size-10 rounded-full bg-white shadow-md flex items-center justify-center">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#525252" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#525252"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <path d="M21 2v6h-6M3 12a9 9 0 0115.4-6.4L21 8M3 22v-6h6M21 12a9 9 0 01-15.4 6.4L3 16" />
                     </svg>
                   </div>
                 </div>
                 <div className="p-5 shadow-black/10 border bg-white border-transparent ring-1 rounded-[20px] ring-black/10 flex items-center gap-3">
                   <div className="size-10 shrink-0 rounded-lg flex items-center justify-center bg-white border border-neutral-200">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#525252" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#525252"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
                       <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0 space-y-2.5">
-                    <p className="text-sm font-semibold text-neutral-800">Facture F-0027</p>
+                    <p className="text-sm font-semibold text-neutral-800">
+                      Facture F-0027
+                    </p>
                     <p className="text-xs text-neutral-400">Julien Marchand</p>
                   </div>
-                  <p className="text-base font-medium text-neutral-800 shrink-0">2 880,00 €</p>
+                  <p className="text-base font-medium text-neutral-800 shrink-0">
+                    2 880,00 €
+                  </p>
                 </div>
                 <div className="p-5 shadow-black/10 border bg-white border-transparent ring-1 rounded-[20px] ring-black/10 flex items-center gap-3">
                   <div className="size-10 shrink-0 rounded-lg flex items-center justify-center bg-white overflow-hidden">
-                    <img src="/urssaf-logo.png" alt="URSSAF" className="w-full h-full object-cover" />
+                    <img
+                      src="/urssaf-logo.png"
+                      alt="URSSAF"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <div className="flex-1 min-w-0 space-y-2.5">
-                    <p className="text-sm font-semibold text-neutral-800">Prélèvement URSSAF</p>
-                    <p className="text-xs text-neutral-400">Débité le 15 décembre 2025</p>
+                    <p className="text-sm font-semibold text-neutral-800">
+                      Prélèvement URSSAF
+                    </p>
+                    <p className="text-xs text-neutral-400">
+                      Débité le 15 décembre 2025
+                    </p>
                   </div>
-                  <p className="text-base font-medium text-neutral-800 shrink-0">1 240,00 €</p>
+                  <p className="text-base font-medium text-neutral-800 shrink-0">
+                    1 240,00 €
+                  </p>
                 </div>
                 <div className="p-5 shadow-black/10 border bg-white border-transparent ring-1 rounded-[20px] ring-black/10 flex items-center gap-3">
                   <div className="size-10 shrink-0 rounded-lg flex items-center justify-center bg-white border border-neutral-200">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#525252" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#525252"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
                       <rect x="9" y="3" width="6" height="4" rx="1" />
                       <path d="M9 14l2 2 4-4" />
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0 space-y-2.5">
-                    <p className="text-sm font-semibold text-neutral-800">Devis D-0041</p>
+                    <p className="text-sm font-semibold text-neutral-800">
+                      Devis D-0041
+                    </p>
                     <p className="text-xs text-neutral-400">Sophie Lemaire</p>
                   </div>
-                  <p className="text-base font-medium text-green-600 shrink-0">4 500,00 €</p>
+                  <p className="text-base font-medium text-green-600 shrink-0">
+                    4 500,00 €
+                  </p>
                 </div>
               </div>
             </div>
@@ -187,10 +240,16 @@ export default function TresorerieGovernanceSection() {
                     <Bell className="w-4 h-4 text-neutral-600" />
                   </div>
                   <div className="flex-1 min-w-0 space-y-2.5">
-                    <p className="text-sm font-semibold text-neutral-800">Échéance TVA dans 5 jours</p>
-                    <p className="text-xs text-neutral-400">Déclaration trimestrielle à effectuer</p>
+                    <p className="text-sm font-semibold text-neutral-800">
+                      Échéance TVA dans 5 jours
+                    </p>
+                    <p className="text-xs text-neutral-400">
+                      Déclaration trimestrielle à effectuer
+                    </p>
                   </div>
-                  <span className="text-[9px] font-medium px-2 py-1 rounded-md border shrink-0 bg-red-50 text-red-500 border-red-200">Urgent</span>
+                  <span className="text-[9px] font-medium px-2 py-1 rounded-md border shrink-0 bg-red-50 text-red-500 border-red-200">
+                    Urgent
+                  </span>
                 </div>
 
                 {/* Notif 2 - Facture */}
@@ -199,22 +258,38 @@ export default function TresorerieGovernanceSection() {
                     <FileText className="w-4 h-4 text-neutral-600" />
                   </div>
                   <div className="flex-1 min-w-0 space-y-2.5">
-                    <p className="text-sm font-semibold text-neutral-800">Facture F-0027 à relancer</p>
-                    <p className="text-xs text-neutral-400">Julien Marchand — 2 880,00 €</p>
+                    <p className="text-sm font-semibold text-neutral-800">
+                      Facture F-0027 à relancer
+                    </p>
+                    <p className="text-xs text-neutral-400">
+                      Julien Marchand — 2 880,00 €
+                    </p>
                   </div>
-                  <span className="text-[9px] font-medium px-2 py-1 rounded-md border shrink-0 bg-orange-50 text-orange-500 border-orange-200">En retard</span>
+                  <span className="text-[9px] font-medium px-2 py-1 rounded-md border shrink-0 bg-orange-50 text-orange-500 border-orange-200">
+                    En retard
+                  </span>
                 </div>
 
                 {/* Notif 3 - URSSAF */}
                 <div className="p-5 shadow-black/10 border bg-white border-transparent ring-1 rounded-[20px] ring-black/10 flex items-center gap-3">
                   <div className="size-10 shrink-0 rounded-lg flex items-center justify-center bg-white overflow-hidden">
-                    <img src="/urssaf-logo.png" alt="URSSAF" className="w-full h-full object-cover" />
+                    <img
+                      src="/urssaf-logo.png"
+                      alt="URSSAF"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <div className="flex-1 min-w-0 space-y-2.5">
-                    <p className="text-sm font-semibold text-neutral-800">Prélèvement URSSAF le 15</p>
-                    <p className="text-xs text-neutral-400">Cotisations sociales — 1 240,00 €</p>
+                    <p className="text-sm font-semibold text-neutral-800">
+                      Prélèvement URSSAF le 15
+                    </p>
+                    <p className="text-xs text-neutral-400">
+                      Cotisations sociales — 1 240,00 €
+                    </p>
                   </div>
-                  <span className="text-[9px] font-medium px-2 py-1 rounded-md border shrink-0 bg-blue-50 text-blue-500 border-blue-200">Dans 12j</span>
+                  <span className="text-[9px] font-medium px-2 py-1 rounded-md border shrink-0 bg-blue-50 text-blue-500 border-blue-200">
+                    Dans 12j
+                  </span>
                 </div>
 
                 {/* Notif 4 - Payé */}
@@ -223,10 +298,16 @@ export default function TresorerieGovernanceSection() {
                     <CheckCircle className="w-4 h-4 text-neutral-600" />
                   </div>
                   <div className="flex-1 min-w-0 space-y-2.5">
-                    <p className="text-sm font-semibold text-neutral-800">Loyer bureau payé</p>
-                    <p className="text-xs text-neutral-400">Paiement automatique effectué</p>
+                    <p className="text-sm font-semibold text-neutral-800">
+                      Loyer bureau payé
+                    </p>
+                    <p className="text-xs text-neutral-400">
+                      Paiement automatique effectué
+                    </p>
                   </div>
-                  <span className="text-[9px] font-medium px-2 py-1 rounded-md border shrink-0 bg-green-50 text-green-600 border-green-200">Payé</span>
+                  <span className="text-[9px] font-medium px-2 py-1 rounded-md border shrink-0 bg-green-50 text-green-600 border-green-200">
+                    Payé
+                  </span>
                 </div>
               </div>
             </div>
@@ -247,35 +328,115 @@ export default function TresorerieGovernanceSection() {
               <div className="flex items-center justify-center h-full px-6 gap-8">
                 <div className="relative shrink-0">
                   <svg width="220" height="220" viewBox="-5 -5 210 210">
-                    <circle cx="100" cy="100" r="88" fill="none" stroke="#f5f5f5" strokeWidth="24" />
-                    <circle cx="100" cy="100" r="88" fill="none" stroke="#A585DB" strokeWidth="24"
-                      strokeDasharray="228 325" strokeDashoffset="138"
-                      transform="rotate(-90 100 100)" />
-                    <circle cx="100" cy="100" r="88" fill="none" stroke="#7BC8A4" strokeWidth="24"
-                      strokeDasharray="151 402" strokeDashoffset="-94"
-                      transform="rotate(-90 100 100)" />
-                    <circle cx="100" cy="100" r="88" fill="none" stroke="#E8B87D" strokeWidth="24"
-                      strokeDasharray="96 457" strokeDashoffset="-249"
-                      transform="rotate(-90 100 100)" />
-                    <circle cx="100" cy="100" r="88" fill="none" stroke="#85B8E0" strokeWidth="24"
-                      strokeDasharray="62 491" strokeDashoffset="-349"
-                      transform="rotate(-90 100 100)" />
+                    <circle
+                      cx="100"
+                      cy="100"
+                      r="88"
+                      fill="none"
+                      stroke="#f5f5f5"
+                      strokeWidth="24"
+                    />
+                    <circle
+                      cx="100"
+                      cy="100"
+                      r="88"
+                      fill="none"
+                      stroke="#A585DB"
+                      strokeWidth="24"
+                      strokeDasharray="228 325"
+                      strokeDashoffset="138"
+                      transform="rotate(-90 100 100)"
+                    />
+                    <circle
+                      cx="100"
+                      cy="100"
+                      r="88"
+                      fill="none"
+                      stroke="#7BC8A4"
+                      strokeWidth="24"
+                      strokeDasharray="151 402"
+                      strokeDashoffset="-94"
+                      transform="rotate(-90 100 100)"
+                    />
+                    <circle
+                      cx="100"
+                      cy="100"
+                      r="88"
+                      fill="none"
+                      stroke="#E8B87D"
+                      strokeWidth="24"
+                      strokeDasharray="96 457"
+                      strokeDashoffset="-249"
+                      transform="rotate(-90 100 100)"
+                    />
+                    <circle
+                      cx="100"
+                      cy="100"
+                      r="88"
+                      fill="none"
+                      stroke="#85B8E0"
+                      strokeWidth="24"
+                      strokeDasharray="62 491"
+                      strokeDashoffset="-349"
+                      transform="rotate(-90 100 100)"
+                    />
                     <circle cx="100" cy="100" r="76" fill="white" />
-                    <text x="100" y="92" textAnchor="middle" style={{ fill: "#1a1a1a" }} fontSize="17" fontWeight="600" fontFamily="system-ui">42 580,00 €</text>
-                    <text x="100" y="112" textAnchor="middle" style={{ fill: "#a3a3a3" }} fontSize="9" fontFamily="system-ui">Du 1 janv. 2026</text>
-                    <text x="100" y="125" textAnchor="middle" style={{ fill: "#a3a3a3" }} fontSize="9" fontFamily="system-ui">au 3 avr. 2026</text>
+                    <text
+                      x="100"
+                      y="92"
+                      textAnchor="middle"
+                      style={{ fill: "#1a1a1a" }}
+                      fontSize="17"
+                      fontWeight="600"
+                      fontFamily="system-ui"
+                    >
+                      42 580,00 €
+                    </text>
+                    <text
+                      x="100"
+                      y="112"
+                      textAnchor="middle"
+                      style={{ fill: "#a3a3a3" }}
+                      fontSize="9"
+                      fontFamily="system-ui"
+                    >
+                      Du 1 janv. 2026
+                    </text>
+                    <text
+                      x="100"
+                      y="125"
+                      textAnchor="middle"
+                      style={{ fill: "#a3a3a3" }}
+                      fontSize="9"
+                      fontFamily="system-ui"
+                    >
+                      au 3 avr. 2026
+                    </text>
                   </svg>
                 </div>
                 <div className="flex flex-col gap-3">
                   {[
-                    { color: "#A585DB", label: "Prestations de service", pct: "42,0" },
-                    { color: "#7BC8A4", label: "Ventes de produits", pct: "28,0" },
+                    {
+                      color: "#A585DB",
+                      label: "Prestations de service",
+                      pct: "42,0",
+                    },
+                    {
+                      color: "#7BC8A4",
+                      label: "Ventes de produits",
+                      pct: "28,0",
+                    },
                     { color: "#E8B87D", label: "Consulting", pct: "18,0" },
                     { color: "#85B8E0", label: "Autres revenus", pct: "12,0" },
                   ].map((item, i) => (
                     <div key={i} className="flex items-center gap-2.5">
-                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                      <span className="text-xs font-normal text-neutral-800">{item.label} ({item.pct} %)</span>
+                      <div
+                        className="w-2 h-2 rounded-full shrink-0"
+                        style={{ backgroundColor: item.color }}
+                      />
+                      <span className="text-xs font-normal text-neutral-800">
+                        {item.label} ({item.pct} %)
+                      </span>
                     </div>
                   ))}
                 </div>

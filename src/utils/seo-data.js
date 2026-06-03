@@ -233,7 +233,8 @@ export const seoData = {
       name: "Newbi - Générateur de Signatures Mail",
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
-      description: "Générateur gratuit de signatures mail professionnelles compatible Gmail, Outlook et Apple Mail",
+      description:
+        "Générateur gratuit de signatures mail professionnelles compatible Gmail, Outlook et Apple Mail",
       url: `${baseUrl}/produits/signatures`,
       publisher: {
         "@type": "Organization",
@@ -621,6 +622,80 @@ export const seoData = {
 };
 
 /**
+ * Données structurées (JSON-LD) de la page d'accueil.
+ * Rendues côté serveur dans app/(main)/page.jsx pour être lues par les crawlers
+ * sans exécution de JavaScript : Organization, WebSite, SoftwareApplication et FAQPage.
+ */
+export const homeJsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Newbi",
+    url: baseUrl,
+    logo: `${baseUrl}/images/op-newbi.png`,
+    description:
+      "Logiciel de facturation et de gestion tout-en-un pour freelances, TPE et PME : devis, factures, trésorerie, signatures mail et gestion de projets.",
+    foundingDate: "2023",
+    address: {
+      "@type": "PostalAddress",
+      addressCountry: "FR",
+    },
+    contactPoint: {
+      "@type": "ContactPoint",
+      email: "contact@newbi.fr",
+      contactType: "customer service",
+      availableLanguage: ["French"],
+    },
+    sameAs: ["https://www.instagram.com/newbi_fr"],
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Newbi",
+    url: baseUrl,
+    inLanguage: "fr-FR",
+    publisher: {
+      "@type": "Organization",
+      name: "Newbi",
+      url: baseUrl,
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "Newbi",
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
+    url: baseUrl,
+    description:
+      "Logiciel de facturation et de gestion tout-en-un pour TPE, PME et freelances : devis, factures, facturation électronique, trésorerie, signatures mail, kanban et transfert de fichiers.",
+    publisher: {
+      "@type": "Organization",
+      name: "Newbi",
+    },
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "EUR",
+      description: "Essai gratuit de 30 jours",
+    },
+    featureList: [
+      "Facturation et devis professionnels",
+      "Facturation électronique (Factur-X)",
+      "Gestion de trésorerie et rapprochement bancaire",
+      "Générateur de signatures mail",
+      "Tableaux Kanban",
+      "Transfert de fichiers sécurisé",
+    ],
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: seoData.faq.jsonLd.mainEntity,
+  },
+];
+
+/**
  * Fonction utilitaire pour récupérer les données SEO d'une page
  * @param {string} pageKey - Clé de la page dans seoData
  * @returns {Object} - Données SEO de la page avec les valeurs par défaut
@@ -697,7 +772,7 @@ export function generateBreadcrumbsJsonLd(breadcrumbs) {
  */
 export function generateSitemap() {
   const pages = Object.keys(seoData).filter(
-    (key) => !seoData[key].robots?.includes("noindex")
+    (key) => !seoData[key].robots?.includes("noindex"),
   );
 
   const urls = pages
@@ -861,11 +936,11 @@ export function validateSEOData(pageKey) {
     errors.push("Titre manquant");
   } else if (seo.title.length > 60) {
     warnings.push(
-      `Titre trop long (${seo.title.length} caractères, recommandé: <60)`
+      `Titre trop long (${seo.title.length} caractères, recommandé: <60)`,
     );
   } else if (seo.title.length < 30) {
     warnings.push(
-      `Titre court (${seo.title.length} caractères, recommandé: 30-60)`
+      `Titre court (${seo.title.length} caractères, recommandé: 30-60)`,
     );
   }
 
@@ -874,11 +949,11 @@ export function validateSEOData(pageKey) {
     errors.push("Description manquante");
   } else if (seo.description.length > 160) {
     warnings.push(
-      `Description trop longue (${seo.description.length} caractères, recommandé: <160)`
+      `Description trop longue (${seo.description.length} caractères, recommandé: <160)`,
     );
   } else if (seo.description.length < 120) {
     warnings.push(
-      `Description courte (${seo.description.length} caractères, recommandé: 120-160)`
+      `Description courte (${seo.description.length} caractères, recommandé: 120-160)`,
     );
   }
 

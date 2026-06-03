@@ -11,8 +11,6 @@ import "@/src/utils/clearApolloCache"; // Nettoyage du cache Apollo
 export const viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: "cover",
 };
 
