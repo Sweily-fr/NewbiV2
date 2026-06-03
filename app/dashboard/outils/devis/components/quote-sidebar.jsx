@@ -328,9 +328,11 @@ export default function QuoteSidebar({
                       ? "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100"
                       : quote.status === "PENDING"
                         ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100"
-                        : quote.status === "COMPLETED"
-                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-                          : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
+                        : quote.status === "IMPORTED"
+                          ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100"
+                          : quote.status === "COMPLETED"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
+                            : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
                   }`}
                 >
                   {QUOTE_STATUS_LABELS[quote.status] || quote.status}
@@ -640,7 +642,8 @@ export default function QuoteSidebar({
               </Button>
             )}
 
-            {quote.status === QUOTE_STATUS.PENDING && (
+            {(quote.status === QUOTE_STATUS.PENDING ||
+              quote.status === QUOTE_STATUS.IMPORTED) && (
               <div className="flex flex-col space-y-2">
                 <Button
                   onClick={handleAccept}
@@ -657,7 +660,9 @@ export default function QuoteSidebar({
                   className="w-full"
                 >
                   <XCircle className="h-4 w-4 mr-2" />
-                  Annuler le devis
+                  {quote.status === QUOTE_STATUS.IMPORTED
+                    ? "Refuser le devis"
+                    : "Annuler le devis"}
                 </Button>
               </div>
             )}

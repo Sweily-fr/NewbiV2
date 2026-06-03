@@ -162,17 +162,21 @@ export default function QuoteTable({
       ...q,
       _type: "normal",
     }));
-    const imported = (importedQuotes || []).map((q) => ({
-      ...q,
-      _type: "imported",
-      // Mapper les champs pour compatibilité avec les colonnes du tableau
-      client: { name: q.client?.name || q.vendor?.name || "Client inconnu" },
-      issueDate: q.quoteDate,
-      validUntil: q.validUntil,
-      finalTotalHT: q.totalHT,
-      finalTotalVAT: q.totalVAT,
-      finalTotalTTC: q.totalTTC,
-    }));
+    const imported = (importedQuotes || [])
+      // Une fois converti (VALIDATED), l'import est représenté par le vrai
+      // devis « Devis importé » : on masque la ligne OCR pour éviter le doublon.
+      .filter((q) => q.status !== "VALIDATED")
+      .map((q) => ({
+        ...q,
+        _type: "imported",
+        // Mapper les champs pour compatibilité avec les colonnes du tableau
+        client: { name: q.client?.name || q.vendor?.name || "Client inconnu" },
+        issueDate: q.quoteDate,
+        validUntil: q.validUntil,
+        finalTotalHT: q.totalHT,
+        finalTotalVAT: q.totalVAT,
+        finalTotalTTC: q.totalTTC,
+      }));
     return [...normalQuotes, ...imported].sort((a, b) => {
       const dateA = new Date(a.issueDate || a.createdAt || 0);
       const dateB = new Date(b.issueDate || b.createdAt || 0);
