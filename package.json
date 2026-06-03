@@ -170,7 +170,7 @@
     "eslint-config-next": "15.3.4",
     "happy-dom": "^20.8.3",
     "husky": "^9.1.7",
-    "lint-staged": "^16.3.3",
+    "lint-staged": "^17.0.7",
     "mongodb": "^7.1.0",
     "msw": "^2.13.6",
     "playwright": "^1.59.1",
