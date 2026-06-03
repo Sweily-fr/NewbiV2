@@ -17,6 +17,11 @@ posthog.init(process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN, {
   // RGPD: pas de capture tant que l'user n'a pas donné son consentement
   // analytics dans le CookieManager. L'opt-in se fait via applyConsent() ci-dessous.
   opt_out_capturing_by_default: true,
+  loaded: (ph) => {
+    if (typeof window !== "undefined") {
+      window.posthog = ph;
+    }
+  },
 });
 
 // Super property: tagge tous les events avec l'environnement.
@@ -40,6 +45,7 @@ function applyConsent() {
     const parsed = JSON.parse(raw);
     if (parsed?.analytics === true) {
       posthog.opt_in_capturing();
+      posthog.startSessionRecording();
     } else {
       posthog.opt_out_capturing();
     }
