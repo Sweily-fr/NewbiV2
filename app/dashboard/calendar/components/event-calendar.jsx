@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   addDays,
   addMonths,
@@ -127,13 +127,17 @@ export function EventCalendar({
     setCurrentDate(new Date());
   };
 
-  const handleEventSelect = (event) => {
+  // Handlers stables (useCallback) : passés en props aux vues mémoïsées
+  // (MonthView/WeekView/DayView/AgendaView). Sans ça, chaque changement d'état
+  // de EventCalendar (ouverture du panneau, sélection…) recréait ces fonctions
+  // et forçait un re-render complet de la grille (recalcul des positions +
+  // remontage des ~672 cellules de drop) → latence visible.
+  const handleEventSelect = useCallback((event) => {
     setSelectedEvent(event);
     setIsEventDialogOpen(true);
-  };
+  }, []);
 
-  const handleEventCreate = (startTime) => {
-
+  const handleEventCreate = useCallback((startTime) => {
     // Snap to 15-minute intervals
     const minutes = startTime.getMinutes();
     const remainder = minutes % 15;
@@ -158,46 +162,63 @@ export function EventCalendar({
     };
     setSelectedEvent(newEvent);
     setIsEventDialogOpen(true);
-  };
+  }, []);
 
-  const handleEventSave = (event) => {
-    if (event.id) {
-      onEventUpdate?.(event);
-      // Show toast notification when an event is updated
-      toast.success(`Événement "${event.title}" modifié — ${format(new Date(event.start), "d MMM yyyy", { locale: fr })}`);
-    } else {
-      onEventAdd?.(event);
-      // Show toast notification when an event is added
-      toast.success(`Événement "${event.title}" ajouté — ${format(new Date(event.start), "d MMM yyyy", { locale: fr })}`);
-    }
-    setIsEventDialogOpen(false);
-    setSelectedEvent(null);
-  };
+  const handleEventSave = useCallback(
+    (event) => {
+      if (event.id) {
+        onEventUpdate?.(event);
+        // Show toast notification when an event is updated
+        toast.success(
+          `Événement "${event.title}" modifié — ${format(new Date(event.start), "d MMM yyyy", { locale: fr })}`,
+        );
+      } else {
+        onEventAdd?.(event);
+        // Show toast notification when an event is added
+        toast.success(
+          `Événement "${event.title}" ajouté — ${format(new Date(event.start), "d MMM yyyy", { locale: fr })}`,
+        );
+      }
+      setIsEventDialogOpen(false);
+      setSelectedEvent(null);
+    },
+    [onEventAdd, onEventUpdate],
+  );
 
-  const handleEventDelete = (eventId) => {
-    const deletedEvent = events.find((e) => e.id === eventId);
-    onEventDelete?.(eventId);
-    setIsEventDialogOpen(false);
-    setSelectedEvent(null);
+  const handleEventDelete = useCallback(
+    (eventId) => {
+      const deletedEvent = events.find((e) => e.id === eventId);
+      onEventDelete?.(eventId);
+      setIsEventDialogOpen(false);
+      setSelectedEvent(null);
 
-    // Show toast notification when an event is deleted
-    if (deletedEvent) {
-      toast.success(`Événement "${deletedEvent.title}" supprimé — ${format(new Date(deletedEvent.start), "d MMM yyyy", { locale: fr })}`);
-    }
-  };
+      // Show toast notification when an event is deleted
+      if (deletedEvent) {
+        toast.success(
+          `Événement "${deletedEvent.title}" supprimé — ${format(new Date(deletedEvent.start), "d MMM yyyy", { locale: fr })}`,
+        );
+      }
+    },
+    [events, onEventDelete],
+  );
 
-  const handleEventUpdate = (updatedEvent) => {
-    // Block drag-and-drop for read-only events
-    if (updatedEvent.isReadOnly) {
-      toast.info("Les événements externes ne peuvent pas être déplacés");
-      return;
-    }
+  const handleEventUpdate = useCallback(
+    (updatedEvent) => {
+      // Block drag-and-drop for read-only events
+      if (updatedEvent.isReadOnly) {
+        toast.info("Les événements externes ne peuvent pas être déplacés");
+        return;
+      }
 
-    onEventUpdate?.(updatedEvent);
+      onEventUpdate?.(updatedEvent);
 
-    // Show toast notification when an event is updated via drag and drop
-    toast.success(`Événement "${updatedEvent.title}" déplacé — ${format(new Date(updatedEvent.start), "d MMM yyyy", { locale: fr })}`);
-  };
+      // Show toast notification when an event is updated via drag and drop
+      toast.success(
+        `Événement "${updatedEvent.title}" déplacé — ${format(new Date(updatedEvent.start), "d MMM yyyy", { locale: fr })}`,
+      );
+    },
+    [onEventUpdate],
+  );
 
   const viewTitle = useMemo(() => {
     if (view === "mois") {
@@ -252,7 +273,7 @@ export function EventCalendar({
         <div
           className={cn(
             "flex flex-wrap items-center justify-between gap-2 p-2 sm:flex-nowrap sm:p-4",
-            className
+            className,
           )}
         >
           <div className="flex items-center gap-1 sm:gap-4">
@@ -290,13 +311,8 @@ export function EventCalendar({
             <CalendarConnectionsPanel />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="gap-1.5 font-normal"
-                >
-                  <span>
-                    {view.charAt(0).toUpperCase() + view.slice(1)}
-                  </span>
+                <Button variant="outline" className="gap-1.5 font-normal">
+                  <span>{view.charAt(0).toUpperCase() + view.slice(1)}</span>
                   <ChevronDownIcon
                     className="-me-1 opacity-60"
                     size={16}
