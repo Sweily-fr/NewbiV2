@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { CalendarDays as RiCalendarEventLine } from "lucide-react";
 import { addDays, format, isToday } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -14,11 +14,15 @@ import { AgendaDaysToShow, EventItem, getAgendaEventsForDay } from "./index";
  * @param {Function} onEventSelect
  */
 
-export function AgendaView({ currentDate, events, onEventSelect }) {
+export const AgendaView = memo(function AgendaView({
+  currentDate,
+  events,
+  onEventSelect,
+}) {
   // Show events for the next days based on constant
   const days = useMemo(() => {
     return Array.from({ length: AgendaDaysToShow }, (_, i) =>
-      addDays(new Date(currentDate), i)
+      addDays(new Date(currentDate), i),
     );
   }, [currentDate]);
 
@@ -29,7 +33,7 @@ export function AgendaView({ currentDate, events, onEventSelect }) {
 
   // Check if there are any days with events
   const hasEvents = days.some(
-    (day) => getAgendaEventsForDay(events, day).length > 0
+    (day) => getAgendaEventsForDay(events, day).length > 0,
   );
 
   return (
@@ -78,4 +82,4 @@ export function AgendaView({ currentDate, events, onEventSelect }) {
       )}
     </div>
   );
-}
+});
