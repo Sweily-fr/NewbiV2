@@ -2,7 +2,9 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/src/components/ui/button";
-import { Download, LoaderCircle, FileCheck } from "lucide-react";
+import { LoaderCircle, FileCheck } from "lucide-react";
+import { DownloadIcon } from "@/src/components/icons";
+import { cn } from "@/src/lib/utils";
 import { toast } from "@/src/components/ui/sonner";
 import { domToJpeg } from "modern-screenshot";
 import jsPDF from "jspdf";
@@ -1385,7 +1387,7 @@ const UniversalPDFDownloaderWithFacturX = ({
         disabled={isGenerating || disabled || !isReady}
         variant={variant}
         size={size}
-        className={`flex items-center gap-2 font-normal ${className || ""}`}
+        className={cn("flex items-center gap-2 font-normal", className)}
         {...props}
       >
         {isGenerating ? (
@@ -1401,11 +1403,11 @@ const UniversalPDFDownloaderWithFacturX = ({
         ) : (
           <>
             {canUseFacturX ? (
-              <Download className="h-4 w-4" />
+              <DownloadIcon className="h-4 w-4" />
             ) : (
-              <Download className="h-4 w-4" />
+              <DownloadIcon className="h-4 w-4" />
             )}
-            {children || "Télécharger le PDF"}
+            {children || "Télécharger PDF"}
           </>
         )}
       </Button>

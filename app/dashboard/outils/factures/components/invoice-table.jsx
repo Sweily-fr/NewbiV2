@@ -100,6 +100,7 @@ import InvoiceRowActions from "./invoice-row-actions";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import InvoiceFilters from "./invoice-filters";
 import InvoiceSidebar from "./invoice-sidebar";
+import { AnimatePresence } from "framer-motion";
 import InvoiceMobileFullscreen from "./invoice-mobile-fullscreen";
 import { SendDocumentModal } from "./send-document-modal";
 import { SaveInvoiceTemplateDialog } from "./SaveInvoiceTemplateDialog";
@@ -1187,17 +1188,19 @@ export default function InvoiceTable({
       </div>
 
       {/* Sidebar pour ouverture automatique */}
-      {invoiceToOpen && (
-        <InvoiceSidebar
-          invoice={invoiceToOpen}
-          isOpen={!!invoiceToOpen}
-          onClose={() => setInvoiceToOpen(null)}
-          onRefetch={() => {
-            refetch();
-            onBalancesRefetch?.();
-          }}
-        />
-      )}
+      <AnimatePresence>
+        {invoiceToOpen && (
+          <InvoiceSidebar
+            invoice={invoiceToOpen}
+            isOpen={!!invoiceToOpen}
+            onClose={() => setInvoiceToOpen(null)}
+            onRefetch={() => {
+              refetch();
+              onBalancesRefetch?.();
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Fullscreen mobile pour ouverture via clic sur ligne mobile */}
       {mobileFullscreenInvoice && (
