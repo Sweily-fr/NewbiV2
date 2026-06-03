@@ -41,6 +41,10 @@ import { useDeleteClient } from "@/src/hooks/useClients";
 import { useClientCustomFields } from "@/src/hooks/useClientCustomFields";
 import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
 import { toast } from "@/src/components/ui/sonner";
+import {
+  partitionDeletableClients,
+  buildBlockedDeletionMessage,
+} from "@/src/utils/clientDeletion";
 import ClientsTable from "./clients-table";
 import AddClientsToListDialog from "./add-clients-to-list-dialog";
 
@@ -98,6 +102,21 @@ export default function ListClientsView({
   const selectedIds = useMemo(
     () => Array.from(selectedClients),
     [selectedClients],
+  );
+
+  const clientsById = useMemo(() => {
+    const map = new Map();
+    (clients || []).forEach((c) => {
+      if (c?.id) map.set(c.id, c);
+    });
+    return map;
+  }, [clients]);
+
+  // Contacts sélectionnés liés à des documents (non supprimables)
+  const selectedBlockedCount = useMemo(
+    () =>
+      selectedIds.filter((id) => clientsById.get(id)?.hasDocuments).length,
+    [selectedIds, clientsById],
   );
 
   const otherLists = useMemo(
@@ -175,11 +194,27 @@ export default function ListClientsView({
 
   const handleBulkDelete = useCallback(async () => {
     if (selectedIds.length === 0) return;
+
+    const { deletableIds, blockedNames } = partitionDeletableClients(
+      selectedIds,
+      clientsById,
+    );
+
+    // Bloquer les contacts liés à des documents (factures, devis, BC)
+    if (blockedNames.length > 0) {
+      toast.error(buildBlockedDeletionMessage(blockedNames));
+    }
+
+    if (deletableIds.length === 0) {
+      setShowDeleteDialog(false);
+      return;
+    }
+
     setBulkLoading(true);
     try {
-      await Promise.all(selectedIds.map((id) => deleteClient(id)));
+      await Promise.all(deletableIds.map((id) => deleteClient(id)));
       toast.success(
-        `${selectedIds.length} contact${selectedIds.length > 1 ? "s" : ""} supprimé${selectedIds.length > 1 ? "s" : ""}`,
+        `${deletableIds.length} contact${deletableIds.length > 1 ? "s" : ""} supprimé${deletableIds.length > 1 ? "s" : ""}`,
       );
       setShowDeleteDialog(false);
       await refreshAfterBulk();
@@ -188,7 +223,7 @@ export default function ListClientsView({
     } finally {
       setBulkLoading(false);
     }
-  }, [deleteClient, selectedIds, refreshAfterBulk]);
+  }, [deleteClient, selectedIds, clientsById, refreshAfterBulk]);
 
   const handleSingleRemove = useCallback(
     async (clientId) => {
@@ -439,6 +474,17 @@ export default function ListClientsView({
                 {selectedCount > 1 ? "s" : ""} sera
                 {selectedCount > 1 ? "ont" : ""} supprimé
                 {selectedCount > 1 ? "s" : ""} définitivement.
+                {selectedBlockedCount > 0 && (
+                  <>
+                    {" "}
+                    {selectedBlockedCount} contact
+                    {selectedBlockedCount > 1 ? "s" : ""} lié
+                    {selectedBlockedCount > 1 ? "s" : ""} à des factures, devis
+                    ou bons de commande ne pourr
+                    {selectedBlockedCount > 1 ? "ont" : "a"} pas être supprimé
+                    {selectedBlockedCount > 1 ? "s" : ""}.
+                  </>
+                )}
               </AlertDialogDescription>
             </AlertDialogHeader>
           </div>

@@ -46,6 +46,10 @@ import { useDeleteClient, useBlockClient } from "@/src/hooks/useClients";
 import { useClientCustomFields } from "@/src/hooks/useClientCustomFields";
 import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
 import { toast } from "@/src/components/ui/sonner";
+import {
+  partitionDeletableClients,
+  buildBlockedDeletionMessage,
+} from "@/src/utils/clientDeletion";
 import ClientsTable from "./components/clients-table";
 import ClientsModal from "./components/clients-modal";
 import ClientFilters from "./components/client-filters";
@@ -77,6 +81,9 @@ function ClientsContent() {
   const [globalFilter, setGlobalFilter] = useState("");
   const [selectedTypes, setSelectedTypes] = useState([]);
   const [selectedClients, setSelectedClients] = useState(new Set());
+  // Lookup id -> contact (avec `hasDocuments`) remonté par le tableau, pour
+  // bloquer la suppression groupée des contacts liés à des documents.
+  const [clientsById, setClientsById] = useState({});
   const [editClientId, setEditClientId] = useState(null);
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
   const [blockReason, setBlockReason] = useState("");
@@ -175,17 +182,57 @@ function ClientsContent() {
     [handleAddToList],
   );
 
+  const handleClientsLoaded = useCallback((loaded) => {
+    setClientsById((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const c of loaded) {
+        if (!c?.id) continue;
+        const existing = next[c.id];
+        if (
+          !existing ||
+          existing.hasDocuments !== c.hasDocuments ||
+          existing.name !== c.name
+        ) {
+          next[c.id] = c;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, []);
+
+  // Contacts sélectionnés liés à des documents (non supprimables)
+  const selectedBlockedCount = useMemo(
+    () =>
+      Array.from(selectedClients).filter(
+        (id) => clientsById[id]?.hasDocuments,
+      ).length,
+    [selectedClients, clientsById],
+  );
+
   const handleDeleteSelected = useCallback(async () => {
+    const selectedIds = Array.from(selectedClients);
+    const { deletableIds, blockedNames } = partitionDeletableClients(
+      selectedIds,
+      clientsById,
+    );
+
+    // Bloquer les contacts liés à des documents (factures, devis, BC)
+    if (blockedNames.length > 0) {
+      toast.error(buildBlockedDeletionMessage(blockedNames));
+    }
+
+    if (deletableIds.length === 0) return;
+
     try {
-      await Promise.all(
-        Array.from(selectedClients).map((clientId) => deleteClient(clientId)),
-      );
+      await Promise.all(deletableIds.map((id) => deleteClient(id)));
       setSelectedClients(new Set());
       refetchLists?.();
     } catch (error) {
       // Error handled by hook
     }
-  }, [selectedClients, deleteClient, refetchLists]);
+  }, [selectedClients, clientsById, deleteClient, refetchLists]);
 
   const handleBlock = useCallback(async () => {
     if (selectedClients.size === 0) return;
@@ -442,6 +489,18 @@ function ClientsContent() {
                             {selectedClients.size > 1 ? "ont" : ""} supprimé
                             {selectedClients.size > 1 ? "s" : ""}{" "}
                             définitivement.
+                            {selectedBlockedCount > 0 && (
+                              <>
+                                {" "}
+                                {selectedBlockedCount} contact
+                                {selectedBlockedCount > 1 ? "s" : ""} lié
+                                {selectedBlockedCount > 1 ? "s" : ""} à des
+                                factures, devis ou bons de commande ne pourr
+                                {selectedBlockedCount > 1 ? "ont" : "a"} pas
+                                être supprimé
+                                {selectedBlockedCount > 1 ? "s" : ""}.
+                              </>
+                            )}
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                       </div>
@@ -474,6 +533,7 @@ function ClientsContent() {
           onSelectedClientsChange={setSelectedClients}
           columnVisibility={columnVisibility}
           onColumnVisibilityChange={setColumnVisibility}
+          onClientsLoaded={handleClientsLoaded}
         />
       </div>
 
@@ -539,6 +599,7 @@ function ClientsContent() {
           onSelectedClientsChange={setSelectedClients}
           columnVisibility={columnVisibility}
           onColumnVisibilityChange={setColumnVisibility}
+          onClientsLoaded={handleClientsLoaded}
         />
       </div>
 
