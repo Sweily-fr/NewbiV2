@@ -57,15 +57,22 @@ async function handler(request) {
       },
     });
   } catch (error) {
-    console.error("Erreur récupération customer Stripe:", error);
-
-    if (error.type === "StripeInvalidRequestError") {
-      return NextResponse.json(
-        { success: false, message: "Customer ID invalide" },
-        { status: 400 },
+    // Customer introuvable dans le mode Stripe courant (ex: customer créé en
+    // mode test alors que la prod tourne en live, customer migré ou supprimé).
+    // C'est un état récupérable : on renvoie "pas de données de facturation"
+    // plutôt qu'une erreur, pour ne pas casser l'historique côté UI.
+    if (
+      error.code === "resource_missing" ||
+      error.type === "StripeInvalidRequestError"
+    ) {
+      console.warn(
+        "Customer Stripe introuvable pour cette organisation:",
+        stripeCustomerId,
       );
+      return NextResponse.json({ success: true, customer: null });
     }
 
+    console.error("Erreur récupération customer Stripe:", error);
     return NextResponse.json(
       { success: false, message: "Erreur interne du serveur" },
       { status: 500 },

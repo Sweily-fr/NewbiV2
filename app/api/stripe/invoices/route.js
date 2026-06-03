@@ -84,6 +84,21 @@ async function handler(request) {
       customer_id: stripeCustomerId,
     });
   } catch (error) {
+    // Customer introuvable dans le mode Stripe courant (ex: customer créé en
+    // mode test alors que la prod tourne en live, customer migré ou supprimé).
+    // On renvoie un historique vide plutôt qu'une erreur : l'organisation n'a
+    // simplement aucune facture d'abonnement rattachée à ce compte Stripe.
+    if (
+      error.code === "resource_missing" ||
+      error.type === "StripeInvalidRequestError"
+    ) {
+      console.warn(
+        "Customer Stripe introuvable lors de la récupération des factures:",
+        error.param || error.message,
+      );
+      return NextResponse.json({ success: true, invoices: [], count: 0 });
+    }
+
     console.error("Erreur lors de la récupération des factures Stripe:", error);
 
     // Gestion des erreurs Stripe spécifiques
