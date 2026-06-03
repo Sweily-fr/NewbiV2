@@ -19,6 +19,7 @@ import { useTheme } from "@/src/components/theme-provider";
 import { cn } from "@/src/lib/utils";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import { toast } from "@/src/components/ui/sonner";
+import posthog from "posthog-js";
 
 const successSteps = ["welcome", "invite", "theme"];
 
@@ -156,6 +157,15 @@ function SuccessContent() {
           const data = await res.json();
 
           if (data.success) {
+            // Stripe webhook a confirmé le paiement (subscription créée
+            // côté backend). Note: pour une mesure 100% fiable (cas où l'user
+            // ferme l'onglet avant cette page), il faudra plus tard ajouter
+            // le même capture côté backend dans newbi-api sur l'event
+            // Stripe `customer.subscription.created`.
+            posthog.capture("subscription_paid", {
+              stripe_session_id: sessionId,
+            });
+
             // Refresh client session & set the newly created org as active.
             // The Stripe webhook updated sessions in DB but the client still
             // has the old (org-less) session in memory. Without this refresh,

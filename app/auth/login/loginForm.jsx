@@ -15,6 +15,7 @@ import {
 } from "../../../src/lib/apolloClient";
 import { TwoFactorModal } from "./components/TwoFactorModal";
 import { EmailVerificationDialog } from "./components/EmailVerificationDialog";
+import posthog from "posthog-js";
 
 // Fonction pour s'assurer qu'une organisation active est définie
 const ensureActiveOrganization = async () => {
@@ -241,6 +242,17 @@ const LoginForm = () => {
               ? "Une autre session a été déconnectée pour respecter votre limite"
               : `${n} autres sessions ont été déconnectées pour respecter votre limite`,
           );
+        }
+
+        // Identify user in PostHog and capture login event
+        if (session?.user) {
+          posthog.identify(session.user.id, {
+            email: session.user.email,
+            name: session.user.name,
+          });
+          posthog.capture("user_logged_in", {
+            email: session.user.email,
+          });
         }
 
         // Étape 2 : Si pas d'organisation active (rare: nouvel user sans org),

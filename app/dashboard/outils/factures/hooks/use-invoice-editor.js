@@ -20,6 +20,7 @@ import {
   updateOrganization,
   getActiveOrganization,
 } from "@/src/lib/organization-client";
+import posthog from "posthog-js";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
@@ -1888,6 +1889,11 @@ export function useInvoiceEditor({
           input = { ...input, sourceQuoteId: sourceQuoteIdRef.current };
         }
         await createInvoice(input);
+        posthog.capture("invoice_created", {
+          client_name: input.client?.name,
+          currency: input.currency,
+          status: input.status || "DRAFT",
+        });
         toast.success("Facture créée avec succès");
         router.push("/dashboard/outils/factures");
         return true;
@@ -2271,6 +2277,11 @@ export function useInvoiceEditor({
           input = { ...input, sourceQuoteId: sourceQuoteIdRef.current };
         }
         const result = await createInvoice(input);
+        posthog.capture("invoice_sent", {
+          client_name: input.client?.name,
+          currency: input.currency,
+          status: input.status,
+        });
         toast.success("Facture créée avec succès");
         // Retourner les données de la facture pour permettre l'envoi par email
         return {
