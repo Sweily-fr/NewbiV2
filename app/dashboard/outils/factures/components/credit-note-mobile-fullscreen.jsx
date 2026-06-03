@@ -59,16 +59,20 @@ export default function CreditNoteMobileFullscreen({
       <div className="fixed inset-0 z-[60] bg-background md:hidden overflow-hidden">
         {/* Header avec croix */}
         <div className="sticky top-0 z-10 bg-background border-b">
-          <div className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-3">
-              <h2 className="text-lg font-medium">Avoir {creditNote.number}</h2>
-              <Badge variant="default">Créé</Badge>
+          <div className="flex items-center justify-between gap-2 p-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <h2 className="text-lg font-medium truncate">
+                Avoir {creditNote.number}
+              </h2>
+              <Badge variant="default" className="shrink-0">
+                Créé
+              </Badge>
             </div>
             <Button
               variant="ghost"
               size="icon"
               onClick={onClose}
-              className="h-8 w-8"
+              className="h-8 w-8 shrink-0"
             >
               <X className="h-5 w-5" />
             </Button>
