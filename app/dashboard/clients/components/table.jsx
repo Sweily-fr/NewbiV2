@@ -443,6 +443,7 @@ export default function TableClients({
   allLists = [],
   currentList = null,
   onClientRemovedFromList,
+  onClientsLoaded,
 }) {
   const id = useId();
   const router = useRouter();
@@ -512,6 +513,12 @@ export default function TableClients({
 
   // Utiliser les clients passés en props si disponibles
   const rawClients = useProvidedClients ? clientsProp || [] : hookClients;
+
+  // Remonter les contacts chargés (avec `hasDocuments`) au parent pour qu'il
+  // puisse bloquer la suppression groupée des contacts liés à des documents.
+  useEffect(() => {
+    if (onClientsLoaded) onClientsLoaded(rawClients || []);
+  }, [rawClients, onClientsLoaded]);
 
   // Filtrer les clients par liste sélectionnée
   const clients = useMemo(() => {
