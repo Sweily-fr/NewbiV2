@@ -31,6 +31,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/src/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
 import { useRouter } from "next/navigation";
 import {
   useMarkInvoiceAsPaid,
@@ -52,6 +62,8 @@ import CreditNoteMobileFullscreen from "./credit-note-mobile-fullscreen";
 import { useReconciliationForSidebar } from "@/src/hooks/useReconciliation";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
+import { motion } from "framer-motion";
+import { ReceiptItemIcon } from "@/src/components/icons";
 
 export default function InvoiceSidebar({
   isOpen,
@@ -65,7 +77,10 @@ export default function InvoiceSidebar({
   const [isCreditNoteMobileFullscreen, setIsCreditNoteMobileFullscreen] =
     useState(false);
   const [showMobileDetails, setShowMobileDetails] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth < 768 : false,
+  );
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [previousSituationInvoices, setPreviousSituationInvoices] = useState(
     [],
   );
@@ -276,14 +291,7 @@ export default function InvoiceSidebar({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Réinitialiser showMobileDetails quand la sidebar se ferme
-  useEffect(() => {
-    if (!isOpen) {
-      setShowMobileDetails(false);
-    }
-  }, [isOpen]);
-
-  if (!isOpen || !initialInvoice) return null;
+  if (!initialInvoice) return null;
 
   // Utiliser les données complètes si disponibles, sinon les données initiales
   const invoice = fullInvoice || initialInvoice;
@@ -485,10 +493,15 @@ export default function InvoiceSidebar({
     }
   };
 
-  const handleCancel = async () => {
+  const handleCancel = () => {
+    setShowCancelDialog(true);
+  };
+
+  const handleConfirmCancel = async () => {
     try {
       await changeStatus(invoice.id, INVOICE_STATUS.CANCELED);
       toast.success("Facture annulée");
+      setShowCancelDialog(false);
       if (onRefetch) onRefetch();
     } catch (error) {
       toast.error("Erreur lors de l'annulation de la facture");
@@ -519,53 +532,73 @@ export default function InvoiceSidebar({
 
   return (
     <>
-      {/* Semi-transparent overlay */}
-      <div
-        className={`fixed inset-0 z-40 bg-black/30 transition-opacity duration-300 ${
-          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
+      {/* Semi-transparent overlay (dim léger sur toute la page) */}
+      <motion.div
+        className="fixed inset-0 z-40 bg-black/30"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0, transition: { duration: 0.1, ease: "easeOut" } }}
+        transition={{ duration: 0.15, ease: "easeOut" }}
         onClick={onClose}
       />
 
-      {/* PDF Preview Section */}
-      <div
-        className={`fixed inset-y-0 left-0 md:right-[40%] right-0 z-50 transition-transform duration-300 ease-out ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+      {/* Backdrop sombre sur la zone preview - fade in après la sidebar */}
+      <motion.div
+        className="fixed inset-y-0 left-0 md:right-[40%] right-0 z-40 bg-black/60"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0, transition: { duration: 0.1, ease: "easeOut" } }}
+        transition={{ duration: 0.2, delay: 0.2, ease: "easeOut" }}
+      />
+
+      {/* PDF Preview Section - slide depuis la gauche après le backdrop */}
+      <motion.div
+        className="fixed inset-y-0 left-0 md:right-[40%] right-0 z-50 pointer-events-none"
+        initial={{ x: "-100%" }}
+        animate={{ x: 0 }}
+        exit={{
+          x: "-100%",
+          transition: { duration: 0.3, ease: [0.32, 0.72, 0, 1] },
+        }}
+        transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
       >
-        <div className="absolute inset-0 bg-black/60 p-0 flex items-start justify-center overflow-y-auto py-4 md:py-12 px-2 md:px-24">
-          <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white">
-            <UniversalPreviewPDF
-              data={invoice}
-              type="invoice"
-              previousSituationInvoices={previousSituationInvoices}
-            />
-          </div>
+        <div className="absolute inset-0 p-0 flex items-start justify-center overflow-y-auto py-4 md:py-12 px-2 md:px-24">
+          {loadingFullInvoice && !fullInvoice ? (
+            <div className="flex items-center justify-center w-full min-h-[calc(100%-4rem)] pointer-events-auto">
+              <LoaderCircle className="h-8 w-8 animate-spin text-white/80" />
+            </div>
+          ) : (
+            <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">
+              <UniversalPreviewPDF
+                data={invoice}
+                type="invoice"
+                previousSituationInvoices={previousSituationInvoices}
+              />
+            </div>
+          )}
         </div>
 
         {/* Bouton flottant pour ouvrir les détails sur mobile */}
         <Button
           onClick={() => setShowMobileDetails(true)}
-          className="md:hidden fixed bottom-6 right-6 z-[60] rounded-full h-14 w-14 shadow-lg"
+          className="md:hidden fixed bottom-6 right-6 z-[60] rounded-full h-14 w-14 shadow-lg pointer-events-auto"
           size="icon"
         >
           <Eye className="h-5 w-5" />
         </Button>
-      </div>
+      </motion.div>
 
       {/* Main Sidebar - Hidden on mobile by default, shown in modal */}
-      <div
-        className={`fixed inset-y-0 right-0 z-50 md:w-[40%] w-full bg-background border-l shadow-lg flex flex-col transition-transform duration-300 ease-out ${
-          isOpen
-            ? showMobileDetails
-              ? "translate-x-0"
-              : "md:translate-x-0 translate-x-full"
-            : "translate-x-full"
-        }`}
+      <motion.div
+        className="fixed inset-y-0 right-0 z-50 md:w-[40%] w-full bg-background border-l shadow-lg flex flex-col"
+        initial={{ x: "100%" }}
+        animate={{ x: isMobile && !showMobileDetails ? "100%" : 0 }}
+        exit={{ x: "100%" }}
+        transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b">
-          <div className="flex flex-col items-start gap-1">
+        <div className="flex items-start justify-between gap-2 px-6 py-4 border-b">
+          <div className="flex flex-col items-start gap-1 min-w-0 flex-1">
             <h2 className="text-base font-medium">
               Facture{" "}
               {invoice.prefix && invoice.number
@@ -577,7 +610,7 @@ export default function InvoiceSidebar({
                 invoice.status === "DRAFT"
                   ? "bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400"
                   : invoice.status === "PENDING"
-                    ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
+                    ? "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
                     : invoice.status === "COMPLETED" ||
                         invoice.status === "PAID"
                       ? "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400"
@@ -589,13 +622,14 @@ export default function InvoiceSidebar({
               {INVOICE_STATUS_LABELS[invoice.status] || invoice.status}
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {/* Bouton PDF - masqué pour les brouillons */}
             {invoice.status !== INVOICE_STATUS.DRAFT && (
               <UniversalPDFDownloaderWithFacturX
                 data={invoice}
                 type="invoice"
-                variant="default"
+                variant="primary"
+                className="gap-1.5 font-medium"
                 enableFacturX={true}
                 previousSituationInvoices={previousSituationInvoices}
               />
@@ -613,7 +647,7 @@ export default function InvoiceSidebar({
                   onClose();
                 }
               }}
-              className="h-8 w-8"
+              className="h-8 w-8 bg-[rgba(0,0,0,0.04)] hover:bg-[rgba(0,0,0,0.08)] dark:bg-[rgba(255,255,255,0.06)] dark:hover:bg-[rgba(255,255,255,0.1)]"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -1014,7 +1048,7 @@ export default function InvoiceSidebar({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Receipt className="h-4 w-4 text-muted-foreground" />
+                <ReceiptItemIcon className="h-4 w-4 text-muted-foreground" />
                 <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
                   Avoirs
                 </p>
@@ -1323,6 +1357,7 @@ export default function InvoiceSidebar({
                 Annuler la facture
               </Button>
               <Button
+                variant="primary"
                 onClick={handleMarkAsPaid}
                 disabled={isLoading}
                 className="flex-1 font-normal"
@@ -1333,7 +1368,48 @@ export default function InvoiceSidebar({
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
+
+      {/* Modal de confirmation avant l'annulation de la facture */}
+      <AlertDialog
+        open={showCancelDialog}
+        onOpenChange={(open) => {
+          if (!changingStatus) setShowCancelDialog(open);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Annuler la facture&nbsp;?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. Une fois la facture annulée, son
+              statut ne pourra plus être modifié. Voulez-vous vraiment
+              l'annuler&nbsp;?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={changingStatus}>
+              Retour
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleConfirmCancel();
+              }}
+              disabled={changingStatus}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              {changingStatus ? (
+                <>
+                  <LoaderCircle className="h-4 w-4 animate-spin mr-2" />
+                  Annulation...
+                </>
+              ) : (
+                "Confirmer l'annulation"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Preview Dialog */}
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
@@ -1347,13 +1423,19 @@ export default function InvoiceSidebar({
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto bg-[#F9F9F9] dark:bg-[#1a1a1a] p-8">
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 max-w-4xl mx-auto">
-              <UniversalPreviewPDF
-                data={invoice}
-                type="invoice"
-                previousSituationInvoices={previousSituationInvoices}
-              />
-            </div>
+            {loadingFullInvoice && !fullInvoice ? (
+              <div className="flex items-center justify-center min-h-[60vh]">
+                <LoaderCircle className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 max-w-4xl mx-auto">
+                <UniversalPreviewPDF
+                  data={invoice}
+                  type="invoice"
+                  previousSituationInvoices={previousSituationInvoices}
+                />
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

@@ -251,8 +251,8 @@ export default function PurchaseOrderSidebar({
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b">
-            <div className="flex flex-col gap-2">
+          <div className="flex items-start justify-between gap-2 p-6 border-b">
+            <div className="flex flex-col gap-2 min-w-0 flex-1">
               <h2 className="font-normal text-lg">
                 Bon de commande{" "}
                 {purchaseOrder.prefix && purchaseOrder.number
@@ -285,7 +285,7 @@ export default function PurchaseOrderSidebar({
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               {/* Bouton PDF - masque pour les brouillons */}
               {purchaseOrder.status !== PURCHASE_ORDER_STATUS.DRAFT && (
                 <UniversalPDFDownloaderWithFacturX

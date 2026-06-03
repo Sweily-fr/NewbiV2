@@ -1061,14 +1061,14 @@ export function useInvoiceEditor({
     const formattedNumber = String(nextInvoiceNumber).padStart(4, "0");
     const currentNumber = getValues("number");
 
-    if (currentAutoNumbering || hasDocumentsForPrefix) {
-      // Auto-numbering activé ou préfixe existant → toujours forcer le numéro séquentiel
+    if (currentAutoNumbering) {
+      // Numérotation séquentielle automatique → toujours forcer le numéro (verrouillé)
       setValue("number", formattedNumber, {
         shouldValidate: false,
         shouldDirty: false,
       });
     } else if (!currentNumber || currentNumber.startsWith("DRAFT-")) {
-      // Nouveau préfixe et pas de numéro → proposer 0001
+      // Numérotation manuelle → proposer le prochain numéro sans écraser une saisie
       setValue("number", formattedNumber, {
         shouldValidate: false,
         shouldDirty: false,

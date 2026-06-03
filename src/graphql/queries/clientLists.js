@@ -79,6 +79,7 @@ export const GET_CLIENTS_IN_LIST = gql`
         }
         siret
         vatNumber
+        hasDocuments
       }
       totalItems
       currentPage

@@ -332,23 +332,26 @@ export function PurchaseInvoiceUploadDrawer({
     }
     try {
       const result = currentResult;
-      const invoice = await createInvoice({
-        supplierName: editableData.supplierName,
-        invoiceNumber: editableData.invoiceNumber || undefined,
-        issueDate:
-          normalizeDate(editableData.issueDate) ||
-          new Date().toLocaleDateString("sv-SE"),
-        dueDate: normalizeDate(editableData.dueDate) || undefined,
-        paymentDate: normalizeDate(editableData.paymentDate) || undefined,
-        amountHT: parseFloat(editableData.amountHT) || 0,
-        amountTVA: parseFloat(editableData.amountTVA) || 0,
-        vatRate: parseFloat(editableData.vatRate) || 20,
-        amountTTC: parseFloat(editableData.amountTTC),
-        category: editableData.category,
-        status: editableData.status,
-        paymentMethod: editableData.paymentMethod || undefined,
-        source: "OCR",
-      });
+      const invoice = await createInvoice(
+        {
+          supplierName: editableData.supplierName,
+          invoiceNumber: editableData.invoiceNumber || undefined,
+          issueDate:
+            normalizeDate(editableData.issueDate) ||
+            new Date().toLocaleDateString("sv-SE"),
+          dueDate: normalizeDate(editableData.dueDate) || undefined,
+          paymentDate: normalizeDate(editableData.paymentDate) || undefined,
+          amountHT: parseFloat(editableData.amountHT) || 0,
+          amountTVA: parseFloat(editableData.amountTVA) || 0,
+          vatRate: parseFloat(editableData.vatRate) || 20,
+          amountTTC: parseFloat(editableData.amountTTC),
+          category: editableData.category,
+          status: editableData.status,
+          paymentMethod: editableData.paymentMethod || undefined,
+          source: "OCR",
+        },
+        { silent: true },
+      );
       if (invoice?.id && result && !result.error && result.metadata) {
         const fileInput = result.metadata.documentUrl
           ? {
@@ -375,14 +378,11 @@ export function PurchaseInvoiceUploadDrawer({
       );
 
       if (nextIndex >= 0) {
-        // Move to next invoice
-        toast.success(
-          `Facture ${newCreatedCount}/${totalToReview} créée — suivante`,
-        );
+        // Move to next invoice (no intermediate toast — only a recap at the end)
         setCurrentReviewIndex(nextIndex);
         populateEditableDataFromResult(ocrResults[nextIndex]);
       } else {
-        // All done
+        // All done — pas de toast : l'écran "done" affiche déjà le récap
         setCurrentStep("done");
         setTimeout(() => {
           resetForm();
@@ -447,7 +447,25 @@ export function PurchaseInvoiceUploadDrawer({
   };
 
   const handleOpenChange = (v) => {
-    if (!v) resetForm();
+    if (!v) {
+      // Fermeture en pleine revue OCR : récap des factures créées / abandonnées
+      if (currentStep === "review" && createdCount > 0) {
+        const cancelled = Math.max(0, totalToReview - createdCount);
+        const createdLabel =
+          createdCount > 1
+            ? `${createdCount} factures d'achat créées`
+            : "1 facture d'achat créée";
+        const cancelledLabel =
+          cancelled > 1 ? `${cancelled} annulées` : "1 annulée";
+        toast.success(
+          cancelled > 0 ? `${createdLabel}, ${cancelledLabel}` : createdLabel,
+        );
+      }
+      // Rafraîchir le tableau dès qu'au moins une facture a été créée,
+      // même si on ferme avant la fin du flux (sinon elles n'apparaissent pas).
+      if (createdCount > 0) onUploaded?.();
+      resetForm();
+    }
     onOpenChange(v);
   };
 
@@ -835,18 +853,6 @@ export function PurchaseInvoiceUploadDrawer({
                             />
                           </PopoverContent>
                         </Popover>
-                        {editableData.paymentDate && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleEditChange("paymentDate", "")}
-                            type="button"
-                            title="Effacer la date"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </Button>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -1132,8 +1138,10 @@ export function PurchaseInvoiceUploadDrawer({
                 onClick={handleCreate}
                 disabled={!editableData.supplierName || !editableData.amountTTC}
               >
-                {totalToReview > 1 && createdCount + 1 < totalToReview
-                  ? "Valider et suivante"
+                {totalToReview > 1
+                  ? createdCount + 1 < totalToReview
+                    ? "Valider et suivante"
+                    : "Valider"
                   : "Créer la facture"}
               </Button>
             </div>
