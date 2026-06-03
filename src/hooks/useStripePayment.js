@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation } from "@apollo/client";
 import { CREATE_PAYMENT_SESSION_FOR_FILE_TRANSFER } from "@/src/graphql/mutations/stripe";
 import { toast } from "@/src/components/ui/sonner";
+import posthog from "posthog-js";
 
 export const useStripePayment = () => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -41,6 +42,10 @@ export const useStripePayment = () => {
     }
 
     setIsProcessing(true);
+    posthog.capture("payment_initiated", {
+      transfer_id: transferId,
+      has_access_key: !!accessKey,
+    });
 
     try {
       await createPaymentSession({

@@ -7,6 +7,7 @@ import {
   GENERATE_STRIPE_DASHBOARD_LINK,
   DISCONNECT_STRIPE_ACCOUNT,
 } from "@/src/graphql/mutations/stripe";
+import posthog from "posthog-js";
 
 export const useStripeConnect = (organizationId) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -83,6 +84,9 @@ export const useStripeConnect = (organizationId) => {
 
         // 3. Rediriger vers Stripe
         if (linkData.generateStripeOnboardingLink.url) {
+          posthog.capture("stripe_connect_started", {
+            account_id: accountId,
+          });
           console.log(
             "🚀 Redirection vers Stripe:",
             linkData.generateStripeOnboardingLink.url,

@@ -8,6 +8,7 @@ import {
   UNBLOCK_CLIENT,
   ASSIGN_CLIENT_MEMBERS,
 } from "../graphql/mutations/clients";
+import posthog from "posthog-js";
 import { GET_CLIENTS, GET_CLIENT } from "../graphql/queries/clients";
 import { GET_CLIENT_LISTS } from "../graphql/queries/clientLists";
 import { toast } from "@/src/components/ui/sonner";
@@ -147,7 +148,11 @@ export const useCreateClient = () => {
       },
       refetchQueries: [{ query: GET_CLIENT_LISTS, variables: { workspaceId } }],
       awaitRefetchQueries: false,
-      onCompleted: () => {
+      onCompleted: (data) => {
+        const newClient = data?.createClient;
+        posthog.capture("client_created", {
+          client_type: newClient?.type,
+        });
         toast.success("Client créé avec succès");
       },
       // Pas d'onError ici: la gestion d'erreur est faite par le composant appelant

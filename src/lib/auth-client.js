@@ -205,6 +205,15 @@ export async function performLogout({
       // Apollo peut ne pas être disponible (page auth)
     }
 
+    // 2bis. Reset PostHog: empêche que les events du prochain user soient
+    // fusionnés avec l'identité du user qui vient de se déconnecter
+    try {
+      const { default: posthog } = await import("posthog-js");
+      posthog.reset();
+    } catch {
+      // posthog peut ne pas être init (page sans consent analytics)
+    }
+
     // 3. SignOut Better Auth (supprime le cookie session)
     await authClient.signOut();
 
