@@ -229,10 +229,13 @@ export default function QuoteRowActions({
   const hasStatusActions =
     quote.status === QUOTE_STATUS.DRAFT || // Envoyer le devis
     quote.status === QUOTE_STATUS.PENDING || // Accepter/Rejeter
+    quote.status === QUOTE_STATUS.IMPORTED || // Accepter/Rejeter (devis importé)
     canConvertToInvoice ||
     canConvertToPO;
 
-  const hasDeleteAction = quote.status === QUOTE_STATUS.DRAFT;
+  const hasDeleteAction =
+    quote.status === QUOTE_STATUS.DRAFT ||
+    quote.status === QUOTE_STATUS.IMPORTED;
 
   return (
     <>
@@ -245,30 +248,31 @@ export default function QuoteRowActions({
           aria-hidden="true"
         />
         <ButtonGroup>
-          {/* Icône d'envoi par email - visible pour les devis non brouillon */}
-          {quote.status !== QUOTE_STATUS.DRAFT && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 p-0 cursor-pointer"
-                    disabled={isReadOnly}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSendEmail?.(quote);
-                    }}
-                  >
-                    <Mail className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Envoyer par email</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
+          {/* Icône d'envoi par email - visible pour les devis non brouillon (hors importés) */}
+          {quote.status !== QUOTE_STATUS.DRAFT &&
+            quote.status !== QUOTE_STATUS.IMPORTED && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8 p-0 cursor-pointer"
+                      disabled={isReadOnly}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSendEmail?.(quote);
+                      }}
+                    >
+                      <Mail className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Envoyer par email</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -317,7 +321,8 @@ export default function QuoteRowActions({
                 </DropdownMenuItem>
               )}
 
-              {quote.status === QUOTE_STATUS.PENDING && (
+              {(quote.status === QUOTE_STATUS.PENDING ||
+                quote.status === QUOTE_STATUS.IMPORTED) && (
                 <>
                   <DropdownMenuItem
                     onClick={handleAccept}
@@ -349,8 +354,9 @@ export default function QuoteRowActions({
                 </DropdownMenuItem>
               )}
 
-              {/* Faire signer - visible pour les devis non brouillon et sans signature en cours/terminée */}
+              {/* Faire signer - visible pour les devis non brouillon (hors importés) et sans signature en cours/terminée */}
               {quote.status !== QUOTE_STATUS.DRAFT &&
+                quote.status !== QUOTE_STATUS.IMPORTED &&
                 (!quote.signatureStatus ||
                   quote.signatureStatus === "ERROR" ||
                   quote.signatureStatus === "CANCELLED") && (
@@ -391,7 +397,8 @@ export default function QuoteRowActions({
                 )}
 
               {/* Rejeter le devis - en rouge */}
-              {quote.status === QUOTE_STATUS.PENDING && (
+              {(quote.status === QUOTE_STATUS.PENDING ||
+                quote.status === QUOTE_STATUS.IMPORTED) && (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem

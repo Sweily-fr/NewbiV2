@@ -39,10 +39,9 @@ export default function QuoteMobileFullscreen({
   const [showPreview, setShowPreview] = useState(false);
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
 
-  const {
-    quote: fullQuote,
-    loading: loadingFullQuote,
-  } = useQuote(initialQuote?.id);
+  const { quote: fullQuote, loading: loadingFullQuote } = useQuote(
+    initialQuote?.id,
+  );
 
   if (!isOpen || !initialQuote) return null;
 
@@ -109,28 +108,11 @@ export default function QuoteMobileFullscreen({
   };
 
   const handleConvertToInvoice = () => {
-    sessionStorage.setItem('quoteInvoiceData', JSON.stringify({
-      sourceQuoteId: quote.id,
-      purchaseOrderNumber: `${quote.prefix || ''}-${quote.number || ''}`,
-      client: quote.client,
-      items: quote.items,
-      discount: quote.discount,
-      discountType: quote.discountType,
-      customFields: quote.customFields,
-      shipping: quote.shipping,
-      isReverseCharge: quote.isReverseCharge,
-      retenueGarantie: quote.retenueGarantie,
-      escompte: quote.escompte,
-    }));
-    router.push('/dashboard/outils/factures/new');
-    onClose();
-  };
-
-  const handleConvertToPurchaseOrder = () => {
-    try {
-      sessionStorage.setItem('quotePurchaseOrderData', JSON.stringify({
+    sessionStorage.setItem(
+      "quoteInvoiceData",
+      JSON.stringify({
         sourceQuoteId: quote.id,
-        purchaseOrderNumber: `${quote.prefix || ''}-${quote.number || ''}`,
+        purchaseOrderNumber: `${quote.prefix || ""}-${quote.number || ""}`,
         client: quote.client,
         items: quote.items,
         discount: quote.discount,
@@ -140,8 +122,31 @@ export default function QuoteMobileFullscreen({
         isReverseCharge: quote.isReverseCharge,
         retenueGarantie: quote.retenueGarantie,
         escompte: quote.escompte,
-      }));
-      router.push('/dashboard/outils/bons-commande/new');
+      }),
+    );
+    router.push("/dashboard/outils/factures/new");
+    onClose();
+  };
+
+  const handleConvertToPurchaseOrder = () => {
+    try {
+      sessionStorage.setItem(
+        "quotePurchaseOrderData",
+        JSON.stringify({
+          sourceQuoteId: quote.id,
+          purchaseOrderNumber: `${quote.prefix || ""}-${quote.number || ""}`,
+          client: quote.client,
+          items: quote.items,
+          discount: quote.discount,
+          discountType: quote.discountType,
+          customFields: quote.customFields,
+          shipping: quote.shipping,
+          isReverseCharge: quote.isReverseCharge,
+          retenueGarantie: quote.retenueGarantie,
+          escompte: quote.escompte,
+        }),
+      );
+      router.push("/dashboard/outils/bons-commande/new");
       onClose();
     } catch (error) {
       toast.error("Erreur lors de la conversion en bon de commande");
@@ -162,7 +167,7 @@ export default function QuoteMobileFullscreen({
     const vatRate = 20;
     const unitPriceHT = amount / (1 + vatRate / 100);
     const remainingAmount = calculateRemainingAmount();
-    const quoteRef = `${quote.prefix || ''}-${quote.number || ''}`;
+    const quoteRef = `${quote.prefix || ""}-${quote.number || ""}`;
 
     let description;
     if (isDeposit) {
@@ -173,24 +178,29 @@ export default function QuoteMobileFullscreen({
       description = `Facture partielle sur devis ${quoteRef}`;
     }
 
-    sessionStorage.setItem('quoteLinkedInvoiceData', JSON.stringify({
-      sourceQuoteId: quoteId,
-      purchaseOrderNumber: quoteRef,
-      client: quote.client,
-      isDeposit,
-      items: [{
-        description,
-        quantity: 1,
-        unitPrice: unitPriceHT,
-        vatRate,
-        unit: "forfait",
-        discount: 0,
-        discountType: "FIXED",
-        details: "",
-        vatExemptionText: "",
-      }],
-    }));
-    router.push('/dashboard/outils/factures/new');
+    sessionStorage.setItem(
+      "quoteLinkedInvoiceData",
+      JSON.stringify({
+        sourceQuoteId: quoteId,
+        purchaseOrderNumber: quoteRef,
+        client: quote.client,
+        isDeposit,
+        items: [
+          {
+            description,
+            quantity: 1,
+            unitPrice: unitPriceHT,
+            vatRate,
+            unit: "forfait",
+            discount: 0,
+            discountType: "FIXED",
+            details: "",
+            vatExemptionText: "",
+          },
+        ],
+      }),
+    );
+    router.push("/dashboard/outils/factures/new");
     onClose();
   };
 
@@ -203,7 +213,7 @@ export default function QuoteMobileFullscreen({
     const validUntilDate = new Date(
       typeof quote.validUntil === "number"
         ? quote.validUntil
-        : parseInt(quote.validUntil)
+        : parseInt(quote.validUntil),
     );
     return validUntilDate < new Date();
   };
@@ -213,7 +223,10 @@ export default function QuoteMobileFullscreen({
       {/* Container des deux panneaux avec slide */}
       <div
         className="flex h-full transition-transform duration-300 ease-in-out"
-        style={{ width: "200%", transform: showPreview ? "translateX(-50%)" : "translateX(0)" }}
+        style={{
+          width: "200%",
+          transform: showPreview ? "translateX(-50%)" : "translateX(0)",
+        }}
       >
         {/* ===== PANNEAU 1 : Informations devis ===== */}
         <div className="w-1/2 h-full flex flex-col">
@@ -222,18 +235,21 @@ export default function QuoteMobileFullscreen({
             <div className="flex items-start justify-between p-4">
               <div className="flex flex-col gap-2">
                 <h2 className="text-lg font-normal">
-                  Devis {quote.prefix && quote.number ? `${quote.prefix}-${quote.number}` : quote.number || "Brouillon"}
+                  Devis{" "}
+                  {quote.prefix && quote.number
+                    ? `${quote.prefix}-${quote.number}`
+                    : quote.number || "Brouillon"}
                 </h2>
                 <div className="flex items-center gap-2">
                   <span
                     className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      quote.status === 'DRAFT'
-                        ? 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
-                        : quote.status === 'PENDING'
-                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
-                        : quote.status === 'COMPLETED'
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
-                        : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+                      quote.status === "DRAFT"
+                        ? "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100"
+                        : quote.status === "PENDING"
+                          ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100"
+                          : quote.status === "COMPLETED"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
+                            : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
                     }`}
                   >
                     {statusLabel}
@@ -280,65 +296,116 @@ export default function QuoteMobileFullscreen({
               <div className="p-4 space-y-6 pb-56">
                 {/* Client */}
                 <div className="space-y-2.5">
-                  <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Client</h3>
+                  <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Client
+                  </h3>
                   {quote.client ? (
                     <div className="space-y-1.5">
                       <div>
                         <p className="font-medium">{quote.client.name}</p>
                         {quote.client.email && (
-                          <p className="text-sm text-muted-foreground">{quote.client.email}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {quote.client.email}
+                          </p>
                         )}
                       </div>
                       {quote.client.address && (
                         <div className="text-sm text-muted-foreground">
-                          {quote.client.address.street && <p>{quote.client.address.street}</p>}
-                          {(quote.client.address.postalCode || quote.client.address.city) && (
+                          {quote.client.address.street && (
+                            <p>{quote.client.address.street}</p>
+                          )}
+                          {(quote.client.address.postalCode ||
+                            quote.client.address.city) && (
                             <p>
-                              {quote.client.address.postalCode}{quote.client.address.postalCode && quote.client.address.city && " "}{quote.client.address.city}
+                              {quote.client.address.postalCode}
+                              {quote.client.address.postalCode &&
+                                quote.client.address.city &&
+                                " "}
+                              {quote.client.address.city}
                             </p>
                           )}
-                          {quote.client.address.country && <p>{quote.client.address.country}</p>}
+                          {quote.client.address.country && (
+                            <p>{quote.client.address.country}</p>
+                          )}
                         </div>
                       )}
                     </div>
                   ) : (
-                    <p className="text-muted-foreground">Aucun client sélectionné</p>
+                    <p className="text-muted-foreground">
+                      Aucun client sélectionné
+                    </p>
                   )}
                 </div>
 
                 {/* Adresse de livraison */}
                 {(() => {
                   const shippingData = quote.shipping;
-                  if (shippingData?.shippingAddress && shippingData?.billShipping) {
+                  if (
+                    shippingData?.shippingAddress &&
+                    shippingData?.billShipping
+                  ) {
                     return (
                       <div className="space-y-2.5">
-                        <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Adresse de livraison</h3>
+                        <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          Adresse de livraison
+                        </h3>
                         <div className="text-sm text-muted-foreground">
                           {shippingData.shippingAddress.fullName && (
-                            <p className="font-medium text-foreground">{shippingData.shippingAddress.fullName}</p>
+                            <p className="font-medium text-foreground">
+                              {shippingData.shippingAddress.fullName}
+                            </p>
                           )}
-                          {shippingData.shippingAddress.street && <p>{shippingData.shippingAddress.street}</p>}
-                          {(shippingData.shippingAddress.postalCode || shippingData.shippingAddress.city) && (
-                            <p>{shippingData.shippingAddress.postalCode}{shippingData.shippingAddress.postalCode && shippingData.shippingAddress.city && " "}{shippingData.shippingAddress.city}</p>
+                          {shippingData.shippingAddress.street && (
+                            <p>{shippingData.shippingAddress.street}</p>
                           )}
-                          {shippingData.shippingAddress.country && <p>{shippingData.shippingAddress.country}</p>}
+                          {(shippingData.shippingAddress.postalCode ||
+                            shippingData.shippingAddress.city) && (
+                            <p>
+                              {shippingData.shippingAddress.postalCode}
+                              {shippingData.shippingAddress.postalCode &&
+                                shippingData.shippingAddress.city &&
+                                " "}
+                              {shippingData.shippingAddress.city}
+                            </p>
+                          )}
+                          {shippingData.shippingAddress.country && (
+                            <p>{shippingData.shippingAddress.country}</p>
+                          )}
                         </div>
                       </div>
                     );
                   }
-                  if (quote.client?.hasDifferentShippingAddress && quote.client?.shippingAddress) {
+                  if (
+                    quote.client?.hasDifferentShippingAddress &&
+                    quote.client?.shippingAddress
+                  ) {
                     return (
                       <div className="space-y-2.5">
-                        <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Adresse de livraison</h3>
+                        <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          Adresse de livraison
+                        </h3>
                         <div className="text-sm text-muted-foreground">
                           {quote.client.shippingAddress.fullName && (
-                            <p className="font-medium text-foreground">{quote.client.shippingAddress.fullName}</p>
+                            <p className="font-medium text-foreground">
+                              {quote.client.shippingAddress.fullName}
+                            </p>
                           )}
-                          {quote.client.shippingAddress.street && <p>{quote.client.shippingAddress.street}</p>}
-                          {(quote.client.shippingAddress.postalCode || quote.client.shippingAddress.city) && (
-                            <p>{quote.client.shippingAddress.postalCode}{quote.client.shippingAddress.postalCode && quote.client.shippingAddress.city && " "}{quote.client.shippingAddress.city}</p>
+                          {quote.client.shippingAddress.street && (
+                            <p>{quote.client.shippingAddress.street}</p>
                           )}
-                          {quote.client.shippingAddress.country && <p>{quote.client.shippingAddress.country}</p>}
+                          {(quote.client.shippingAddress.postalCode ||
+                            quote.client.shippingAddress.city) && (
+                            <p>
+                              {quote.client.shippingAddress.postalCode}
+                              {quote.client.shippingAddress.postalCode &&
+                                quote.client.shippingAddress.city &&
+                                " "}
+                              {quote.client.shippingAddress.city}
+                            </p>
+                          )}
+                          {quote.client.shippingAddress.country && (
+                            <p>{quote.client.shippingAddress.country}</p>
+                          )}
                         </div>
                       </div>
                     );
@@ -348,18 +415,32 @@ export default function QuoteMobileFullscreen({
 
                 {/* Dates */}
                 <div className="space-y-2.5">
-                  <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Dates</h3>
+                  <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Dates
+                  </h3>
                   <div className="space-y-1.5">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Date d'émission</span>
+                      <span className="text-muted-foreground">
+                        Date d'émission
+                      </span>
                       <span>{formatDate(quote.issueDate)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Valide jusqu'au</span>
-                      <span className={isValidUntilExpired() ? "text-red-600 font-medium" : ""}>
+                      <span className="text-muted-foreground">
+                        Valide jusqu'au
+                      </span>
+                      <span
+                        className={
+                          isValidUntilExpired()
+                            ? "text-red-600 font-medium"
+                            : ""
+                        }
+                      >
                         {formatDate(quote.validUntil)}
                         {isValidUntilExpired() && (
-                          <span className="text-xs block text-red-500">Expiré</span>
+                          <span className="text-xs block text-red-500">
+                            Expiré
+                          </span>
                         )}
                       </span>
                     </div>
@@ -368,7 +449,9 @@ export default function QuoteMobileFullscreen({
 
                 {/* Articles */}
                 <div className="space-y-2.5">
-                  <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Articles</h3>
+                  <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Articles
+                  </h3>
                   <div className="space-y-1.5">
                     {quote.items && quote.items.length > 0 ? (
                       quote.items.map((item, index) => (
@@ -377,7 +460,8 @@ export default function QuoteMobileFullscreen({
                             {item.description || "Article sans description"}
                           </div>
                           <div className="text-muted-foreground">
-                            {item.quantity || 0} × {formatCurrency(item.unitPrice || 0)}
+                            {item.quantity || 0} ×{" "}
+                            {formatCurrency(item.unitPrice || 0)}
                           </div>
                         </div>
                       ))
@@ -389,27 +473,35 @@ export default function QuoteMobileFullscreen({
 
                 {/* Totaux */}
                 <div className="space-y-2.5">
-                  <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Totaux</h3>
+                  <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Totaux
+                  </h3>
                   <div className="space-y-1.5">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Sous-total HT</span>
+                      <span className="text-muted-foreground">
+                        Sous-total HT
+                      </span>
                       <span>{formatCurrency(quote.totalHT || 0)}</span>
                     </div>
                     {quote.discountAmount > 0 && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Remise</span>
-                        <span>-{formatCurrency(quote.discountAmount || 0)}</span>
+                        <span>
+                          -{formatCurrency(quote.discountAmount || 0)}
+                        </span>
                       </div>
                     )}
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Total HT</span>
                       <span>
                         {formatCurrency(
-                          quote.finalTotalHT !== undefined && quote.finalTotalHT !== null
+                          quote.finalTotalHT !== undefined &&
+                            quote.finalTotalHT !== null
                             ? quote.finalTotalHT
-                            : quote.totalHT !== undefined && quote.totalHT !== null
+                            : quote.totalHT !== undefined &&
+                                quote.totalHT !== null
                               ? quote.totalHT
-                              : 0
+                              : 0,
                         )}
                       </span>
                     </div>
@@ -417,11 +509,13 @@ export default function QuoteMobileFullscreen({
                       <span className="text-muted-foreground">TVA</span>
                       <span>
                         {formatCurrency(
-                          quote.finalTotalVAT !== undefined && quote.finalTotalVAT !== null
+                          quote.finalTotalVAT !== undefined &&
+                            quote.finalTotalVAT !== null
                             ? quote.finalTotalVAT
-                            : quote.totalVAT !== undefined && quote.totalVAT !== null
+                            : quote.totalVAT !== undefined &&
+                                quote.totalVAT !== null
                               ? quote.totalVAT
-                              : 0
+                              : 0,
                         )}
                       </span>
                     </div>
@@ -429,11 +523,13 @@ export default function QuoteMobileFullscreen({
                       <span>Total TTC</span>
                       <span>
                         {formatCurrency(
-                          quote.finalTotalTTC !== undefined && quote.finalTotalTTC !== null
+                          quote.finalTotalTTC !== undefined &&
+                            quote.finalTotalTTC !== null
                             ? quote.finalTotalTTC
-                            : quote.totalTTC !== undefined && quote.totalTTC !== null
+                            : quote.totalTTC !== undefined &&
+                                quote.totalTTC !== null
                               ? quote.totalTTC
-                              : 0
+                              : 0,
                         )}
                       </span>
                     </div>
@@ -461,8 +557,14 @@ export default function QuoteMobileFullscreen({
           </div>
 
           {/* Footer avec actions */}
-          <div className="flex-shrink-0 bg-background border-t px-4 py-3 flex flex-col gap-1.5" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
-            {(quote.status === QUOTE_STATUS.DRAFT || quote.status === QUOTE_STATUS.PENDING) && (
+          <div
+            className="flex-shrink-0 bg-background border-t px-4 py-3 flex flex-col gap-1.5"
+            style={{
+              paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
+            }}
+          >
+            {(quote.status === QUOTE_STATUS.DRAFT ||
+              quote.status === QUOTE_STATUS.PENDING) && (
               <Button
                 variant="outline"
                 onClick={() => {
@@ -493,7 +595,8 @@ export default function QuoteMobileFullscreen({
               </Button>
             )}
 
-            {quote.status === QUOTE_STATUS.PENDING && (
+            {(quote.status === QUOTE_STATUS.PENDING ||
+              quote.status === QUOTE_STATUS.IMPORTED) && (
               <div className="grid grid-cols-2 gap-1.5">
                 <Button
                   onClick={handleAccept}
@@ -531,29 +634,39 @@ export default function QuoteMobileFullscreen({
                   />
                 )}
 
-                {quote.linkedInvoices && quote.linkedInvoices.length === 2 && (() => {
-                  const totalInvoiced = quote.linkedInvoices.reduce(
-                    (sum, invoice) => sum + (invoice.finalTotalTTC || 0), 0
-                  );
-                  const remainingAmount = (quote.finalTotalTTC || 0) - totalInvoiced;
-                  return remainingAmount > 0 && (
-                    <Button
-                      onClick={() => handleCreateLinkedInvoice({
-                        quoteId: quote.id,
-                        amount: remainingAmount,
-                        isDeposit: false,
-                      })}
-                      disabled={isLoading}
-                      size="sm"
-                      className="w-full font-normal"
-                    >
-                      <FileCheck className="mr-2 h-4 w-4" />
-                      Créer la facture finale ({formatCurrency(remainingAmount)})
-                    </Button>
-                  );
-                })()}
+                {quote.linkedInvoices &&
+                  quote.linkedInvoices.length === 2 &&
+                  (() => {
+                    const totalInvoiced = quote.linkedInvoices.reduce(
+                      (sum, invoice) => sum + (invoice.finalTotalTTC || 0),
+                      0,
+                    );
+                    const remainingAmount =
+                      (quote.finalTotalTTC || 0) - totalInvoiced;
+                    return (
+                      remainingAmount > 0 && (
+                        <Button
+                          onClick={() =>
+                            handleCreateLinkedInvoice({
+                              quoteId: quote.id,
+                              amount: remainingAmount,
+                              isDeposit: false,
+                            })
+                          }
+                          disabled={isLoading}
+                          size="sm"
+                          className="w-full font-normal"
+                        >
+                          <FileCheck className="mr-2 h-4 w-4" />
+                          Créer la facture finale (
+                          {formatCurrency(remainingAmount)})
+                        </Button>
+                      )
+                    );
+                  })()}
 
-                {(!quote.linkedInvoices || quote.linkedInvoices.length === 0) && (
+                {(!quote.linkedInvoices ||
+                  quote.linkedInvoices.length === 0) && (
                   <Button
                     variant="outline"
                     onClick={handleConvertToInvoice}
@@ -607,7 +720,9 @@ export default function QuoteMobileFullscreen({
                 <ArrowLeft className="h-4 w-4" />
                 Retour
               </Button>
-              <span className="text-sm font-medium text-muted-foreground">Aperçu</span>
+              <span className="text-sm font-medium text-muted-foreground">
+                Aperçu
+              </span>
               <div className="w-[72px]" />
             </div>
           </div>
