@@ -108,11 +108,10 @@ export default function InvoiceSettingsView({
     getFormattedNextNumber,
   } = activeHook;
 
-  // Champ numéro éditable uniquement si aucune facture finalisée n'existe pour ce préfixe
-  // En mode autoNumbering, le numéro est toujours verrouillé
-  const isFirstInvoice = autoNumbering
-    ? false
-    : !perPrefixHook.hasDocumentsForPrefix;
+  // Le numéro est éditable manuellement dès que la numérotation séquentielle
+  // automatique est désactivée, indépendamment du préfixe.
+  // En mode autoNumbering, le numéro est toujours verrouillé (séquence imposée).
+  const canEditNumber = !autoNumbering;
 
   // Auto-initialiser le préfixe si vide (au montage uniquement)
   useEffect(() => {
@@ -126,19 +125,14 @@ export default function InvoiceSettingsView({
     if (isLoadingInvoiceNumber || nextInvoiceNumber == null) return;
     const formattedNumber = String(nextInvoiceNumber).padStart(4, "0");
 
-    if (autoNumbering || perPrefixHook.hasDocumentsForPrefix) {
-      // Auto-numbering activé ou préfixe existant → forcer le numéro séquentiel
+    if (autoNumbering) {
+      // Numérotation automatique → forcer le numéro séquentiel (verrouillé)
       setValue("number", formattedNumber, { shouldValidate: false });
     } else if (!data.number) {
-      // Nouveau préfixe, pas de numéro → proposer 0001
+      // Numérotation manuelle → proposer une valeur par défaut sans écraser la saisie
       setValue("number", formattedNumber, { shouldValidate: false });
     }
-  }, [
-    nextInvoiceNumber,
-    isLoadingInvoiceNumber,
-    perPrefixHook.hasDocumentsForPrefix,
-    autoNumbering,
-  ]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [nextInvoiceNumber, isLoadingInvoiceNumber, autoNumbering]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Gérer le changement de préfixe avec auto-fill pour MM et AAAA
   const handlePrefixChange = (e) => {
@@ -599,14 +593,14 @@ export default function InvoiceSettingsView({
                     <Input
                       id="invoice-number"
                       value={data.number || ""}
-                      disabled={!isFirstInvoice}
-                      readOnly={!isFirstInvoice}
-                      tabIndex={isFirstInvoice ? 0 : -1}
+                      disabled={!canEditNumber}
+                      readOnly={!canEditNumber}
+                      tabIndex={canEditNumber ? 0 : -1}
                       onFocus={
-                        isFirstInvoice ? undefined : (e) => e.target.blur()
+                        canEditNumber ? undefined : (e) => e.target.blur()
                       }
                       onChange={
-                        isFirstInvoice
+                        canEditNumber
                           ? (e) => {
                               const val = e.target.value.replace(/[^0-9]/g, "");
                               setValue("number", val, {
@@ -618,7 +612,7 @@ export default function InvoiceSettingsView({
                           : () => {}
                       }
                       onBlur={
-                        isFirstInvoice
+                        canEditNumber
                           ? async (e) => {
                               if (
                                 validateInvoiceNumberExists &&
@@ -641,7 +635,7 @@ export default function InvoiceSettingsView({
                           : undefined
                       }
                       className={
-                        isFirstInvoice
+                        canEditNumber
                           ? numberDuplicateError
                             ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
                             : ""
@@ -656,9 +650,7 @@ export default function InvoiceSettingsView({
                     <p className="text-xs text-muted-foreground">
                       {autoNumbering
                         ? "Numéro attribué automatiquement — séquence continue indépendante du préfixe."
-                        : isFirstInvoice
-                          ? "Nouveau préfixe — vous pouvez choisir le numéro de départ."
-                          : "Numéro attribué automatiquement de manière séquentielle."}
+                        : "Numérotation manuelle — vous pouvez définir le numéro de votre choix."}
                     </p>
                   </div>
                 </div>
