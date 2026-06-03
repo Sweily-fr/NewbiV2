@@ -313,8 +313,8 @@ export default function QuoteSidebar({
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b">
-            <div className="flex flex-col gap-2">
+          <div className="flex items-start justify-between gap-2 p-6 border-b">
+            <div className="flex flex-col gap-2 min-w-0 flex-1">
               <h2 className="font-normal text-lg">
                 Devis{" "}
                 {quote.prefix && quote.number
@@ -345,7 +345,7 @@ export default function QuoteSidebar({
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               {/* Bouton PDF - masqué pour les brouillons */}
               {quote.status !== QUOTE_STATUS.DRAFT && (
                 <UniversalPDFDownloaderWithFacturX

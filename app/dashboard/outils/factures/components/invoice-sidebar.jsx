@@ -564,8 +564,8 @@ export default function InvoiceSidebar({
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b">
-          <div className="flex flex-col items-start gap-1">
+        <div className="flex items-start justify-between gap-2 px-6 py-4 border-b">
+          <div className="flex flex-col items-start gap-1 min-w-0 flex-1">
             <h2 className="text-base font-medium">
               Facture{" "}
               {invoice.prefix && invoice.number
@@ -589,7 +589,7 @@ export default function InvoiceSidebar({
               {INVOICE_STATUS_LABELS[invoice.status] || invoice.status}
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {/* Bouton PDF - masqué pour les brouillons */}
             {invoice.status !== INVOICE_STATUS.DRAFT && (
               <UniversalPDFDownloaderWithFacturX
