@@ -17,7 +17,7 @@ function GridItem({ img, small }) {
       <div className="flex items-center justify-center w-full h-full rounded-[12px] p-[1px] relative z-10">
         {img && (
           <img
-            alt="item"
+            alt="Logo de messagerie compatible avec le générateur de signature mail Newbi"
             loading="lazy"
             width="120"
             height="120"
@@ -58,79 +58,184 @@ export default function SignaturesGovernanceSection() {
                 Une identité cohérente pour toute l&apos;équipe
               </h2>
               <p className="text-neutral-600 mt-2 max-w-md text-balance">
-                Fini les signatures bricolées. Déployez un modèle unique
-                à toute votre équipe, uniforme et professionnel.
+                Fini les signatures bricolées. Déployez un modèle unique à toute
+                votre équipe, uniforme et professionnel.
               </p>
             </div>
             <div className="relative flex-1 min-h-[320px] overflow-hidden px-4 md:px-6 pb-4">
               <div className="flex flex-col gap-3">
                 {/* Signature 1 — Horizontal classique avec séparateur */}
                 <div className="bg-white rounded-xl border border-neutral-100 shadow-sm p-4 flex gap-3.5">
-                  <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="Sophie Martin" className="w-14 h-14 rounded-full object-cover shrink-0" />
+                  <img
+                    src="https://randomuser.me/api/portraits/women/44.jpg"
+                    alt="Sophie Martin"
+                    className="w-14 h-14 rounded-full object-cover shrink-0"
+                  />
                   <div className="w-px bg-[#1D6B4F]/20 shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-bold text-neutral-900 leading-tight">Sophie Martin</p>
-                    <p className="text-[10px] text-[#1D6B4F] font-medium leading-tight">Directrice Marketing</p>
-                    <p className="text-[8px] text-neutral-400 mt-0.5">Agence Verdure · agence-verdure.fr</p>
+                    <p className="text-[12px] font-bold text-neutral-900 leading-tight">
+                      Sophie Martin
+                    </p>
+                    <p className="text-[10px] text-[#1D6B4F] font-medium leading-tight">
+                      Directrice Marketing
+                    </p>
+                    <p className="text-[8px] text-neutral-400 mt-0.5">
+                      Agence Verdure · agence-verdure.fr
+                    </p>
                     <div className="mt-1.5 flex items-center gap-3">
-                      <span className="text-[8px] text-neutral-500">sophie@agence-verdure.fr</span>
-                      <span className="text-[8px] text-neutral-500">+33 6 12 34 56 78</span>
+                      <span className="text-[8px] text-neutral-500">
+                        sophie@agence-verdure.fr
+                      </span>
+                      <span className="text-[8px] text-neutral-500">
+                        +33 6 12 34 56 78
+                      </span>
                     </div>
                     <div className="flex gap-1.5 mt-2">
                       <div className="w-4 h-4 rounded-full bg-[#1D6B4F] flex items-center justify-center">
-                        <svg width="7" height="7" viewBox="0 0 24 24" fill="white"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-4 0v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z" /><circle cx="4" cy="4" r="2" /></svg>
+                        <svg
+                          width="7"
+                          height="7"
+                          viewBox="0 0 24 24"
+                          fill="white"
+                        >
+                          <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-4 0v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z" />
+                          <circle cx="4" cy="4" r="2" />
+                        </svg>
                       </div>
                       <div className="w-4 h-4 rounded-full bg-[#1D6B4F] flex items-center justify-center">
-                        <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" /><path d="M2 12h20" /></svg>
+                        <svg
+                          width="7"
+                          height="7"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="white"
+                          strokeWidth="2"
+                        >
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
+                          <path d="M2 12h20" />
+                        </svg>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Signature 2 — Centré avec bannière colorée */}
-                <div className="bg-white rounded-xl border border-neutral-100 shadow-sm overflow-hidden" style={{ transform: "translateX(6px)" }}>
+                <div
+                  className="bg-white rounded-xl border border-neutral-100 shadow-sm overflow-hidden"
+                  style={{ transform: "translateX(6px)" }}
+                >
                   <div className="h-2 bg-gradient-to-r from-[#5A50FF] to-[#8B7FFF]" />
                   <div className="p-4 flex gap-3.5 items-center">
-                    <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Thomas Leroy" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+                    <img
+                      src="https://randomuser.me/api/portraits/men/32.jpg"
+                      alt="Thomas Leroy"
+                      className="w-12 h-12 rounded-lg object-cover shrink-0"
+                    />
                     <div className="flex-1 min-w-0">
-                      <p className="text-[12px] font-bold text-neutral-900 leading-tight">Thomas Leroy</p>
-                      <p className="text-[10px] text-[#5A50FF] font-medium leading-tight">Lead Developer · Studio Pixel</p>
+                      <p className="text-[12px] font-bold text-neutral-900 leading-tight">
+                        Thomas Leroy
+                      </p>
+                      <p className="text-[10px] text-[#5A50FF] font-medium leading-tight">
+                        Lead Developer · Studio Pixel
+                      </p>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[8px] text-neutral-500">thomas@studio-pixel.io</span>
+                        <span className="text-[8px] text-neutral-500">
+                          thomas@studio-pixel.io
+                        </span>
                         <span className="text-[8px] text-neutral-400">·</span>
-                        <span className="text-[8px] text-neutral-500">+33 6 23 45 67 89</span>
+                        <span className="text-[8px] text-neutral-500">
+                          +33 6 23 45 67 89
+                        </span>
                       </div>
                     </div>
                     <div className="flex flex-col gap-1 shrink-0">
                       <div className="w-5 h-5 rounded-md bg-[#5A50FF]/10 flex items-center justify-center">
-                        <svg width="9" height="9" viewBox="0 0 24 24" fill="#5A50FF"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-4 0v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z" /><circle cx="4" cy="4" r="2" /></svg>
+                        <svg
+                          width="9"
+                          height="9"
+                          viewBox="0 0 24 24"
+                          fill="#5A50FF"
+                        >
+                          <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-4 0v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z" />
+                          <circle cx="4" cy="4" r="2" />
+                        </svg>
                       </div>
                       <div className="w-5 h-5 rounded-md bg-[#5A50FF]/10 flex items-center justify-center">
-                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#5A50FF" strokeWidth="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22" /></svg>
+                        <svg
+                          width="9"
+                          height="9"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="#5A50FF"
+                          strokeWidth="2"
+                        >
+                          <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22" />
+                        </svg>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Signature 3 — Dark compact avec sidebar accent */}
-                <div className="bg-[#1E1E1E] rounded-xl border border-neutral-800 shadow-sm p-4 flex gap-3" style={{ transform: "translateX(12px)" }}>
+                <div
+                  className="bg-[#1E1E1E] rounded-xl border border-neutral-800 shadow-sm p-4 flex gap-3"
+                  style={{ transform: "translateX(12px)" }}
+                >
                   <div className="w-1 rounded-full bg-[#F59E0B] shrink-0" />
                   <div className="flex items-center gap-3 flex-1">
-                    <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="Camille Dubois" className="w-11 h-11 rounded-full object-cover shrink-0 ring-2 ring-[#F59E0B]/30" />
+                    <img
+                      src="https://randomuser.me/api/portraits/women/68.jpg"
+                      alt="Camille Dubois"
+                      className="w-11 h-11 rounded-full object-cover shrink-0 ring-2 ring-[#F59E0B]/30"
+                    />
                     <div className="flex-1 min-w-0">
-                      <p className="text-[12px] font-bold text-white leading-tight">Camille Dubois</p>
-                      <p className="text-[10px] text-[#F59E0B] font-medium leading-tight">Designer UX/UI</p>
-                      <p className="text-[8px] text-neutral-500 mt-0.5">camille@atelier-nova.com · +33 6 34 56 78 90</p>
+                      <p className="text-[12px] font-bold text-white leading-tight">
+                        Camille Dubois
+                      </p>
+                      <p className="text-[10px] text-[#F59E0B] font-medium leading-tight">
+                        Designer UX/UI
+                      </p>
+                      <p className="text-[8px] text-neutral-500 mt-0.5">
+                        camille@atelier-nova.com · +33 6 34 56 78 90
+                      </p>
                     </div>
                     <div className="flex gap-1 shrink-0">
                       <div className="w-4 h-4 rounded-full bg-white/10 flex items-center justify-center">
-                        <svg width="7" height="7" viewBox="0 0 24 24" fill="#F59E0B"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-4 0v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z" /><circle cx="4" cy="4" r="2" /></svg>
+                        <svg
+                          width="7"
+                          height="7"
+                          viewBox="0 0 24 24"
+                          fill="#F59E0B"
+                        >
+                          <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-4 0v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z" />
+                          <circle cx="4" cy="4" r="2" />
+                        </svg>
                       </div>
                       <div className="w-4 h-4 rounded-full bg-white/10 flex items-center justify-center">
-                        <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5" /><circle cx="12" cy="12" r="5" /><circle cx="17.5" cy="6.5" r="1.5" /></svg>
+                        <svg
+                          width="7"
+                          height="7"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="#F59E0B"
+                          strokeWidth="2"
+                        >
+                          <rect x="2" y="2" width="20" height="20" rx="5" />
+                          <circle cx="12" cy="12" r="5" />
+                          <circle cx="17.5" cy="6.5" r="1.5" />
+                        </svg>
                       </div>
                       <div className="w-4 h-4 rounded-full bg-white/10 flex items-center justify-center">
-                        <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2"><path d="M4 4l11.733 16h4.267l-11.733-16zM4 20l6.768-6.768M17.5 4l-6.768 6.768" /></svg>
+                        <svg
+                          width="7"
+                          height="7"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="#F59E0B"
+                          strokeWidth="2"
+                        >
+                          <path d="M4 4l11.733 16h4.267l-11.733-16zM4 20l6.768-6.768M17.5 4l-6.768 6.768" />
+                        </svg>
                       </div>
                     </div>
                   </div>
@@ -183,9 +288,8 @@ export default function SignaturesGovernanceSection() {
                 Personnalisez à votre image
               </h2>
               <p className="text-neutral-600 mt-2 max-w-md text-balance">
-                Couleurs, polices, mise en page — adaptez chaque détail
-                pour que votre signature reflète parfaitement votre
-                identité visuelle.
+                Couleurs, polices, mise en page — adaptez chaque détail pour que
+                votre signature reflète parfaitement votre identité visuelle.
               </p>
             </div>
             <div className="relative flex-1 min-h-[320px] overflow-hidden">
@@ -206,39 +310,92 @@ export default function SignaturesGovernanceSection() {
                 Partagez en un clic
               </h2>
               <p className="text-neutral-600 mt-2 max-w-md text-balance">
-                Copiez votre signature et collez-la dans votre client email
-                en quelques secondes. Partagez-la avec toute votre équipe
-                pour une communication uniforme.
+                Copiez votre signature et collez-la dans votre client email en
+                quelques secondes. Partagez-la avec toute votre équipe pour une
+                communication uniforme.
               </p>
             </div>
             <div className="relative h-80 sm:h-60 md:h-80 overflow-hidden px-4 md:px-8 pb-4">
               <div className="flex flex-col gap-2.5">
                 {[
-                  { name: "Sophie Martin", role: "Directrice Marketing", avatar: "https://randomuser.me/api/portraits/women/44.jpg", status: "applied" },
-                  { name: "Thomas Leroy", role: "Lead Developer", avatar: "https://randomuser.me/api/portraits/men/32.jpg", status: "applied" },
-                  { name: "Camille Dubois", role: "Designer UX/UI", avatar: "https://randomuser.me/api/portraits/women/68.jpg", status: "applied" },
-                  { name: "Lucas Bernard", role: "Chef de Projet", avatar: "https://randomuser.me/api/portraits/men/75.jpg", status: "pending" },
+                  {
+                    name: "Sophie Martin",
+                    role: "Directrice Marketing",
+                    avatar: "https://randomuser.me/api/portraits/women/44.jpg",
+                    status: "applied",
+                  },
+                  {
+                    name: "Thomas Leroy",
+                    role: "Lead Developer",
+                    avatar: "https://randomuser.me/api/portraits/men/32.jpg",
+                    status: "applied",
+                  },
+                  {
+                    name: "Camille Dubois",
+                    role: "Designer UX/UI",
+                    avatar: "https://randomuser.me/api/portraits/women/68.jpg",
+                    status: "applied",
+                  },
+                  {
+                    name: "Lucas Bernard",
+                    role: "Chef de Projet",
+                    avatar: "https://randomuser.me/api/portraits/men/75.jpg",
+                    status: "pending",
+                  },
                 ].map((member, i) => (
-                  <div key={i} className="flex items-center gap-3.5 py-3 px-4 rounded-xl border border-neutral-100 bg-white shadow-sm">
-                    <img src={member.avatar} alt={member.name} className="w-9 h-9 rounded-full object-cover shrink-0" />
+                  <div
+                    key={i}
+                    className="flex items-center gap-3.5 py-3 px-4 rounded-xl border border-neutral-100 bg-white shadow-sm"
+                  >
+                    <img
+                      src={member.avatar}
+                      alt={member.name}
+                      className="w-9 h-9 rounded-full object-cover shrink-0"
+                    />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-neutral-800">{member.name}</p>
-                      <p className="text-[10px] text-neutral-400">{member.role}</p>
+                      <p className="text-sm font-medium text-neutral-800">
+                        {member.name}
+                      </p>
+                      <p className="text-[10px] text-neutral-400">
+                        {member.role}
+                      </p>
                     </div>
                     {member.status === "applied" ? (
                       <div className="flex items-center gap-1.5 shrink-0">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5A50FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="#5A50FF"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
                           <path d="M20 6L9 17l-5-5" />
                         </svg>
-                        <span className="text-[10px] font-medium text-[#5A50FF]">Appliquée</span>
+                        <span className="text-[10px] font-medium text-[#5A50FF]">
+                          Appliquée
+                        </span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-1.5 shrink-0">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="#F59E0B"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
                           <circle cx="12" cy="12" r="10" />
                           <path d="M12 6v6l4 2" />
                         </svg>
-                        <span className="text-[10px] font-medium text-[#F59E0B]">En attente</span>
+                        <span className="text-[10px] font-medium text-[#F59E0B]">
+                          En attente
+                        </span>
                       </div>
                     )}
                   </div>
@@ -249,11 +406,15 @@ export default function SignaturesGovernanceSection() {
               <div className="flex items-center gap-4 mt-3 pt-3 border-t border-neutral-100">
                 <div className="flex items-center gap-1.5">
                   <div className="w-2 h-2 rounded-full bg-[#5A50FF]" />
-                  <span className="text-[10px] text-neutral-500">3 appliquées</span>
+                  <span className="text-[10px] text-neutral-500">
+                    3 appliquées
+                  </span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-2 h-2 rounded-full bg-[#F59E0B]" />
-                  <span className="text-[10px] text-neutral-500">1 en attente</span>
+                  <span className="text-[10px] text-neutral-500">
+                    1 en attente
+                  </span>
                 </div>
               </div>
             </div>
