@@ -1,9 +1,16 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useRef } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+} from "react";
 import { useSession } from "@/src/lib/auth-client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { Loader2 } from "lucide-react";
+import posthog from "posthog-js";
 
 const SessionGateContext = createContext({ isReady: false });
 
@@ -57,6 +64,17 @@ export function SessionGateProvider({ children }) {
       }
     };
   }, [sessionPending, session?.user, workspaceLoading, workspaceId]);
+
+  // Identifier l'user PostHog quand la session est restaurée (reload, retour app)
+  // Si pas de consent analytics, opt_out_capturing_by_default empêche l'envoi.
+  useEffect(() => {
+    if (session?.user?.id) {
+      posthog.identify(session.user.id, {
+        email: session.user.email,
+        name: session.user.name,
+      });
+    }
+  }, [session?.user?.id]);
 
   if (!isReady) {
     return (

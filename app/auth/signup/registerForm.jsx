@@ -9,6 +9,7 @@ import { Label } from "@/src/components/ui/label";
 import { PasswordStrengthInput } from "@/src/components/ui/password-strength-input";
 import { registerUser, verifyEmail } from "../../../src/lib/auth/api";
 import { signUp } from "../../../src/lib/auth-client";
+import posthog from "posthog-js";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -127,6 +128,17 @@ const RegisterFormContent = ({ onSuccess: onSuccessProp }) => {
               }),
             );
           }
+
+          // Track signup event and identify user
+          posthog.identify(ctx.data?.user?.id || formData.email, {
+            email: formData.email,
+            referred_by: partnerCode || undefined,
+          });
+          posthog.capture("user_signed_up", {
+            email: formData.email,
+            via_invitation: !!(invitationId && invitationEmail),
+            partner_code: partnerCode || undefined,
+          });
 
           // Transition vers la création d'espace de travail
           // onboardingStep: "workspace" is already set by user.create hook in auth.js

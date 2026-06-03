@@ -18,6 +18,7 @@ import {
 } from "@/src/graphql/quoteQueries";
 import { useClient } from "@/src/graphql/clientQueries";
 import { useQuoteNumber } from "./use-quote-number";
+import posthog from "posthog-js";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
@@ -1566,6 +1567,11 @@ export function useQuoteEditor({
           result = await createQuote(input);
 
           if (result?.id) {
+            posthog.capture("quote_created", {
+              client_name: input.client?.name,
+              currency: input.currency,
+              status: "DRAFT",
+            });
             // Mettre à jour le numéro dans le formulaire avec celui retourné par le backend
             if (result.number) {
               setValue("number", result.number);
@@ -1893,6 +1899,11 @@ export function useQuoteEditor({
             setValue("number", result.number);
           }
 
+          posthog.capture("quote_sent", {
+            client_name: input.client?.name,
+            currency: input.currency,
+            is_new_quote: !existingQuote?.id,
+          });
           toast.success(
             existingQuote?.id
               ? "Devis mis à jour avec succès"

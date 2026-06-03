@@ -2,6 +2,7 @@ import { auth } from "@/src/lib/auth";
 import { headers } from "next/headers";
 import { mongoDb } from "@/src/lib/mongodb";
 import { ObjectId } from "mongodb";
+import { getPostHogClient } from "@/src/lib/posthog-server";
 
 export async function POST() {
   try {
@@ -21,8 +22,17 @@ export async function POST() {
           hasCompletedTutorial: true,
           tutorialCompletedAt: new Date(),
         },
-      }
+      },
     );
+
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: session.user.id,
+      event: "tutorial_completed",
+      properties: {
+        email: session.user.email,
+      },
+    });
 
     return Response.json({
       success: true,

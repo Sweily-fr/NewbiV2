@@ -10,6 +10,7 @@ import {
   CANCEL_SIGNATURE,
   RETRY_SIGNATURE,
 } from "@/src/graphql/esignatureQueries";
+import posthog from "posthog-js";
 
 /**
  * Hook pour récupérer le statut de signature d'un document
@@ -97,6 +98,10 @@ export function useRequestSignature() {
       });
 
       if (data?.requestDocumentSignature?.success) {
+        posthog.capture("esignature_requested", {
+          document_type: input.documentType,
+          document_id: input.documentId,
+        });
         toast.success("Demande de signature envoyée", {
           description:
             "Le signataire recevra un email avec le lien de signature.",

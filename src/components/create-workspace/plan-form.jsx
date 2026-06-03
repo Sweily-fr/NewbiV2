@@ -4,6 +4,7 @@ import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { cn } from "@/src/lib/utils";
 import { PLANS_DISPLAY, formatPrice } from "@/src/lib/plans-display";
+import posthog from "posthog-js";
 
 // Liste UI dérivée du module central. Les features/popular/description sont
 // spécifiques à cet écran ; les prix et le label viennent du central.
@@ -287,7 +288,15 @@ export function PlanForm({
             variant="primary"
             className="w-full"
             disabled={!selectedPlan}
-            onClick={onContinue}
+            onClick={() => {
+              if (selectedPlan) {
+                posthog.capture("plan_selected", {
+                  plan: selectedPlan,
+                  is_annual: isAnnual,
+                });
+              }
+              onContinue();
+            }}
           >
             Continuer
           </Button>
