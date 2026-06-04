@@ -4308,16 +4308,23 @@ export default function DocumentsPartagesPage() {
                   onRemove={(name) =>
                     setBulkTagsToAdd((prev) => prev.filter((t) => t !== name))
                   }
-                  // Ne proposer que les tags non assignés : on exclut les tags
-                  // déjà présents sur les documents sélectionnés, SAUF ceux
-                  // marqués pour suppression (qui redeviennent disponibles).
-                  excludeNames={[
-                    ...new Set(
-                      documents
-                        .filter((d) => selectedDocuments.includes(d.id))
-                        .flatMap((d) => d.tags || []),
-                    ),
-                  ].filter((tag) => !bulkTagsToRemove.includes(tag))}
+                  // On n'exclut un tag que s'il est présent sur TOUS les
+                  // documents sélectionnés (intersection) : un tag manquant sur
+                  // au moins un document reste proposable pour l'ajouter aux
+                  // autres. On exclut aussi ceux marqués pour suppression.
+                  excludeNames={(() => {
+                    const selDocs = documents.filter((d) =>
+                      selectedDocuments.includes(d.id),
+                    );
+                    if (selDocs.length === 0) return [];
+                    const [first, ...rest] = selDocs;
+                    const common = (first.tags || []).filter((tag) =>
+                      rest.every((d) => (d.tags || []).includes(tag)),
+                    );
+                    return common.filter(
+                      (tag) => !bulkTagsToRemove.includes(tag),
+                    );
+                  })()}
                   placeholder="Choisir ou créer un tag..."
                   size="sm"
                 />
