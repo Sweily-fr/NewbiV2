@@ -267,6 +267,76 @@ export const BULK_UPDATE_TAGS = gql`
   }
 `;
 
+// ==================== TAGS (registre réutilisable) ====================
+
+export const GET_DOCUMENT_TAGS = gql`
+  query GetDocumentTags($workspaceId: ID!) {
+    documentTags(workspaceId: $workspaceId) {
+      success
+      message
+      tags {
+        id
+        name
+        color
+        usageCount
+      }
+    }
+  }
+`;
+
+export const CREATE_DOCUMENT_TAG = gql`
+  mutation CreateDocumentTag(
+    $workspaceId: ID!
+    $name: String!
+    $color: String
+  ) {
+    createDocumentTag(workspaceId: $workspaceId, name: $name, color: $color) {
+      success
+      message
+      tag {
+        id
+        name
+        color
+        usageCount
+      }
+    }
+  }
+`;
+
+export const UPDATE_DOCUMENT_TAG = gql`
+  mutation UpdateDocumentTag(
+    $workspaceId: ID!
+    $id: ID!
+    $name: String
+    $color: String
+  ) {
+    updateDocumentTag(
+      workspaceId: $workspaceId
+      id: $id
+      name: $name
+      color: $color
+    ) {
+      success
+      message
+      tag {
+        id
+        name
+        color
+        usageCount
+      }
+    }
+  }
+`;
+
+export const DELETE_DOCUMENT_TAG = gql`
+  mutation DeleteDocumentTag($workspaceId: ID!, $id: ID!) {
+    deleteDocumentTag(workspaceId: $workspaceId, id: $id) {
+      success
+      message
+    }
+  }
+`;
+
 export const CREATE_SHARED_FOLDER = gql`
   mutation CreateSharedFolder(
     $workspaceId: ID!
@@ -414,6 +484,7 @@ export function useSharedDocuments(filter = {}) {
   const folderId = filter.folderId;
   const search = filter.search;
   const status = filter.status;
+  const tags = filter.tags;
   const sortBy = filter.sortBy || "createdAt";
   const sortOrder = filter.sortOrder || "desc";
   // Filtres avancés
@@ -432,6 +503,7 @@ export function useSharedDocuments(filter = {}) {
           folderId,
           search,
           status,
+          tags,
           fileType,
           dateFrom,
           dateTo,
@@ -653,6 +725,7 @@ export function useBulkUpdateTags() {
             query: GET_SHARED_DOCUMENTS,
             variables: { workspaceId, filter: {}, limit: 50, offset: 0 },
           },
+          { query: GET_DOCUMENT_TAGS, variables: { workspaceId } },
         ],
         awaitRefetchQueries: false,
       });
@@ -672,6 +745,125 @@ export function useBulkUpdateTags() {
   };
 
   return { bulkUpdateTags, loading };
+}
+
+// Hook pour récupérer le registre de tags du workspace (avec usage)
+export function useDocumentTags() {
+  const { workspaceId } = useWorkspace();
+
+  const { data, loading, error, refetch } = useQuery(GET_DOCUMENT_TAGS, {
+    variables: { workspaceId },
+    skip: !workspaceId,
+    // cache-first : la popup/les badges s'affichent instantanément depuis le
+    // cache ; le registre est rafraîchi par les mutations de tags (refetch).
+    fetchPolicy: "cache-first",
+  });
+
+  return {
+    tags: data?.documentTags?.tags || [],
+    loading,
+    error,
+    refetch,
+  };
+}
+
+// Hook pour créer un tag dans le registre
+export function useCreateDocumentTag() {
+  const { workspaceId } = useWorkspace();
+  const [createMutation, { loading }] = useMutation(CREATE_DOCUMENT_TAG);
+
+  const createTag = async (name, color) => {
+    try {
+      const result = await createMutation({
+        variables: { workspaceId, name, color },
+        refetchQueries: [
+          { query: GET_DOCUMENT_TAGS, variables: { workspaceId } },
+        ],
+      });
+
+      if (result.data?.createDocumentTag?.success) {
+        return result.data.createDocumentTag.tag;
+      }
+      throw new Error(
+        result.data?.createDocumentTag?.message || "Erreur création tag",
+      );
+    } catch (error) {
+      toast.error(error.message || "Erreur lors de la création du tag");
+      throw error;
+    }
+  };
+
+  return { createTag, loading };
+}
+
+// Hook pour renommer / recolorer un tag (propagé sur les documents)
+export function useUpdateDocumentTag() {
+  const { workspaceId } = useWorkspace();
+  const [updateMutation, { loading }] = useMutation(UPDATE_DOCUMENT_TAG);
+
+  const updateTag = async (id, { name, color } = {}) => {
+    try {
+      const result = await updateMutation({
+        variables: { workspaceId, id, name, color },
+        refetchQueries: [
+          { query: GET_DOCUMENT_TAGS, variables: { workspaceId } },
+          {
+            query: GET_SHARED_DOCUMENTS,
+            variables: { workspaceId, filter: {}, limit: 50, offset: 0 },
+          },
+        ],
+        awaitRefetchQueries: false,
+      });
+
+      if (result.data?.updateDocumentTag?.success) {
+        toast.success("Tag mis à jour");
+        return result.data.updateDocumentTag.tag;
+      }
+      throw new Error(
+        result.data?.updateDocumentTag?.message || "Erreur mise à jour tag",
+      );
+    } catch (error) {
+      toast.error(error.message || "Erreur lors de la mise à jour du tag");
+      throw error;
+    }
+  };
+
+  return { updateTag, loading };
+}
+
+// Hook pour supprimer un tag (retiré de tous les documents)
+export function useDeleteDocumentTag() {
+  const { workspaceId } = useWorkspace();
+  const [deleteMutation, { loading }] = useMutation(DELETE_DOCUMENT_TAG);
+
+  const deleteTag = async (id) => {
+    try {
+      const result = await deleteMutation({
+        variables: { workspaceId, id },
+        refetchQueries: [
+          { query: GET_DOCUMENT_TAGS, variables: { workspaceId } },
+          {
+            query: GET_SHARED_DOCUMENTS,
+            variables: { workspaceId, filter: {}, limit: 50, offset: 0 },
+          },
+        ],
+        awaitRefetchQueries: false,
+      });
+
+      if (result.data?.deleteDocumentTag?.success) {
+        toast.success("Tag supprimé");
+        return true;
+      }
+      throw new Error(
+        result.data?.deleteDocumentTag?.message || "Erreur suppression tag",
+      );
+    } catch (error) {
+      toast.error(error.message || "Erreur lors de la suppression du tag");
+      throw error;
+    }
+  };
+
+  return { deleteTag, loading };
 }
 
 // Hook pour supprimer des documents
@@ -992,12 +1184,17 @@ export function useUpdateSharedDocument() {
           workspaceId,
           input,
         },
-        refetchQueries: [
-          {
-            query: GET_SHARED_DOCUMENTS,
-            variables: { workspaceId, filter: {}, limit: 50, offset: 0 },
-          },
-        ],
+        // On ne refetch que le registre de tags si l'input touche aux tags ;
+        // la liste visible est rafraîchie par l'appelant (refetchDocs), évitant
+        // une requête superflue sur l'arbre complet.
+        refetchQueries: input?.tags
+          ? [{ query: GET_DOCUMENT_TAGS, variables: { workspaceId } }]
+          : [
+              {
+                query: GET_SHARED_DOCUMENTS,
+                variables: { workspaceId, filter: {}, limit: 50, offset: 0 },
+              },
+            ],
       });
 
       if (result.data?.updateSharedDocument?.success) {
