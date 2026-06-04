@@ -35,6 +35,7 @@ import {
   QUOTE_STATUS_COLORS,
 } from "@/src/graphql/quoteQueries";
 import { GET_CLIENT } from "@/src/graphql/clientQueries";
+import { getDraftEffectiveDates } from "@/src/utils/dateFormatter";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/components/ui/sonner";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
@@ -300,7 +301,7 @@ export default function QuoteSidebar({
       >
         <div className="absolute inset-0 bg-black/80 p-0 flex items-start justify-center overflow-y-auto py-12 px-24">
           <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white">
-            <UniversalPreviewPDF data={quote} type="quote" />
+            <UniversalPreviewPDF data={quote} type="quote" recalcDraftDates />
           </div>
         </div>
       </div>
@@ -496,23 +497,74 @@ export default function QuoteSidebar({
                 Dates
               </h3>
               <div className="space-y-1.5">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Date d'émission</span>
-                  <span>{formatDate(quote.issueDate)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Valide jusqu'au</span>
-                  <span
-                    className={
-                      isValidUntilExpired() ? "text-red-600 font-medium" : ""
-                    }
-                  >
-                    {formatDate(quote.validUntil)}
-                    {isValidUntilExpired() && (
-                      <span className="text-xs block text-red-500">Expiré</span>
-                    )}
-                  </span>
-                </div>
+                {/* Pour un brouillon repris plus tard, on affiche les dates
+                    recalées (jour J / validité) et l'ancienne date entre
+                    parenthèses, car elles seront mises à jour à la finalisation. */}
+                {(() => {
+                  const draftDates =
+                    quote.status === QUOTE_STATUS.DRAFT
+                      ? getDraftEffectiveDates(
+                          quote.issueDate,
+                          quote.validUntil,
+                        )
+                      : null;
+                  const refreshed = draftDates?.changed;
+                  return (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">
+                          Date d'émission
+                        </span>
+                        <span className="flex flex-col items-end">
+                          <span>
+                            {formatDate(
+                              refreshed
+                                ? draftDates.issue.effective
+                                : quote.issueDate,
+                            )}
+                          </span>
+                          {refreshed && draftDates.issue.original && (
+                            <span className="text-xs text-muted-foreground">
+                              (ancienne&nbsp;:{" "}
+                              {formatDate(draftDates.issue.original)})
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">
+                          Valide jusqu'au
+                        </span>
+                        <span
+                          className={`flex flex-col items-end ${
+                            !refreshed && isValidUntilExpired()
+                              ? "text-red-600 font-medium"
+                              : ""
+                          }`}
+                        >
+                          <span>
+                            {formatDate(
+                              refreshed
+                                ? draftDates.second.effective
+                                : quote.validUntil,
+                            )}
+                            {!refreshed && isValidUntilExpired() && (
+                              <span className="text-xs block text-red-500">
+                                Expiré
+                              </span>
+                            )}
+                          </span>
+                          {refreshed && draftDates.second.original && (
+                            <span className="text-xs text-muted-foreground">
+                              (ancienne&nbsp;:{" "}
+                              {formatDate(draftDates.second.original)})
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </div>
 

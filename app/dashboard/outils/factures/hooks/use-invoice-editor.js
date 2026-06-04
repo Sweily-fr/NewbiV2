@@ -15,7 +15,8 @@ import {
 import { useClient } from "@/src/graphql/clientQueries";
 import { useInvoiceNumber } from "./use-invoice-number";
 import { useUser } from "@/src/lib/auth/hooks";
-import { formatLocalDate } from "@/src/utils/dateFormatter";
+import { formatLocalDate, refreshDraftDates } from "@/src/utils/dateFormatter";
+import { refreshPrefixDate } from "@/src/utils/invoiceUtils";
 import {
   updateOrganization,
   getActiveOrganization,
@@ -71,8 +72,11 @@ export function useInvoiceEditor({
   const { client: freshClient } = useClient(clientIdForFresh);
 
   // Prefix state pour le filtrage du numéro par préfixe
+  // refreshPrefixDate : recale le mois/année du préfixe stocké sur la date du
+  // jour (le préfixe en base n'est pas mis à jour automatiquement au changement
+  // de mois), pour éviter une erreur de numérotation à la création.
   const [currentPrefix, setCurrentPrefix] = useState(
-    organization?.invoicePrefix || "",
+    refreshPrefixDate(organization?.invoicePrefix) || "",
   );
   // État local pour autoNumbering (synchronisé avec le form via watch)
   const [currentAutoNumbering, setCurrentAutoNumbering] = useState(
@@ -949,10 +953,26 @@ export function useInvoiceEditor({
         } else if (!draftNum || draftNum.startsWith("TEMP-")) {
           invoiceData.number = "";
         }
+        // Brouillon repris un mois/année plus tard : recaler le mois (et
+        // l'année) du préfixe sur la date du jour. Le préfixe ne se régénère
+        // pas tout seul, donc un brouillon de mars rouvert en mai garderait
+        // F-032026 sinon. refreshPrefixDate laisse intacts les préfixes
+        // personnalisés sans motif de date.
         // Mettre à jour le prefix immédiatement pour que useInvoiceNumber query le bon prefix
         if (invoiceData.prefix) {
+          invoiceData.prefix = refreshPrefixDate(invoiceData.prefix);
           setCurrentPrefix(invoiceData.prefix);
         }
+        // Recaler les dates : un brouillon repris plus tard a une date
+        // d'émission antérieure à aujourd'hui, ce qui bloque la finalisation.
+        // On ramène l'émission à aujourd'hui et on décale l'échéance d'autant
+        // (délai d'origine conservé). Une échéance absente reste absente.
+        const refreshedDates = refreshDraftDates(
+          invoiceData.issueDate,
+          invoiceData.dueDate,
+        );
+        invoiceData.issueDate = refreshedDates.issueDate;
+        invoiceData.dueDate = refreshedDates.secondDate;
       }
 
       reset(invoiceData);
@@ -1188,8 +1208,12 @@ export function useInvoiceEditor({
       );
 
       // Charger le préfixe et la numérotation automatique depuis l'organisation
+      // refreshPrefixDate recale le mois/année sur la date du jour au cas où le
+      // préfixe stocké date d'un mois précédent (il n'est pas régénéré tout seul).
       if (organization.invoicePrefix) {
-        setValue("prefix", organization.invoicePrefix, { shouldDirty: false });
+        setValue("prefix", refreshPrefixDate(organization.invoicePrefix), {
+          shouldDirty: false,
+        });
       }
       setValue("autoNumbering", organization.invoiceAutoNumbering || false, {
         shouldDirty: false,
@@ -2574,7 +2598,7 @@ function getInitialFormData(mode, initialData, session, organization) {
   };
 
   const defaultData = {
-    prefix: organization?.invoicePrefix || "",
+    prefix: refreshPrefixDate(organization?.invoicePrefix) || "",
     number: "",
     autoNumbering: organization?.invoiceAutoNumbering || false,
     issueDate: formatLocalDate(),

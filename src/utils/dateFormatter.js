@@ -18,6 +18,113 @@ export const formatLocalDate = (date = new Date()) => {
 };
 
 /**
+ * Recale les dates d'un brouillon repris ultérieurement.
+ *
+ * Un brouillon (devis / facture / bon de commande) créé un mois antérieur garde
+ * sa date d'émission d'origine, qui devient antérieure à aujourd'hui et bloque
+ * alors l'envoi ou la finalisation (validation `issueDate < today`). Si la date
+ * d'émission est dans le passé, on la ramène à aujourd'hui et on décale la
+ * seconde date (validité / échéance) du même délai, afin de conserver le délai
+ * de validité d'origine (30 jours par défaut). Les dates au présent ou au futur
+ * sont laissées telles quelles, et une seconde date absente n'est jamais
+ * inventée.
+ *
+ * @param {string} issueDate - Date d'émission au format YYYY-MM-DD
+ * @param {string} [secondDate] - validUntil / dueDate au format YYYY-MM-DD
+ * @returns {{ issueDate: string, secondDate: string, changed: boolean }}
+ */
+export const refreshDraftDates = (issueDate, secondDate) => {
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const parse = (s) =>
+    typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s)
+      ? new Date(`${s}T00:00:00`)
+      : null;
+
+  const prevIssue = parse(issueDate);
+  // Rien à faire si la date d'émission est absente ou déjà >= aujourd'hui.
+  if (!prevIssue || prevIssue.getTime() >= today.getTime()) {
+    return { issueDate, secondDate, changed: false };
+  }
+
+  const prevSecond = parse(secondDate);
+  // Conserver le délai d'origine entre émission et 2e date (sinon 30 jours).
+  const gapDays =
+    prevSecond && prevSecond > prevIssue
+      ? Math.round((prevSecond.getTime() - prevIssue.getTime()) / DAY_MS)
+      : 30;
+
+  const newIssue = formatLocalDate(today);
+  const newSecond = prevSecond
+    ? formatLocalDate(new Date(today.getTime() + gapDays * DAY_MS))
+    : secondDate;
+
+  return { issueDate: newIssue, secondDate: newSecond, changed: true };
+};
+
+/**
+ * Variante d'affichage de {@link refreshDraftDates} pour les vues en lecture
+ * seule (aperçu / sidebar). Accepte tout format de date (Date, timestamp en
+ * ms, ISO, YYYY-MM-DD) et renvoie, pour chaque date, la valeur « effective »
+ * (recalée si l'émission est passée) ET la valeur d'origine, afin d'afficher
+ * la date du jour avec l'ancienne date entre parenthèses.
+ *
+ * @param {*} issueDate - Date d'émission (tout format parsable)
+ * @param {*} [secondDate] - validUntil / dueDate (tout format parsable)
+ * @returns {{
+ *   changed: boolean,
+ *   issue: { effective: Date|null, original: Date|null },
+ *   second: { effective: Date|null, original: Date|null },
+ * }}
+ */
+export const getDraftEffectiveDates = (issueDate, secondDate) => {
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const toDate = (v) => {
+    if (v === null || v === undefined || v === "") return null;
+    let d;
+    if (v instanceof Date) d = v;
+    else if (typeof v === "number") d = new Date(v);
+    else if (typeof v === "string" && /^\d+$/.test(v))
+      d = new Date(parseInt(v, 10));
+    else d = new Date(v);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  const issueOrig = toDate(issueDate);
+  const secondOrig = toDate(secondDate);
+
+  // Pas de recalage si l'émission est absente ou déjà >= aujourd'hui.
+  if (!issueOrig || issueOrig.getTime() >= today.getTime()) {
+    return {
+      changed: false,
+      issue: { effective: issueOrig, original: issueOrig },
+      second: { effective: secondOrig, original: secondOrig },
+    };
+  }
+
+  const gapDays =
+    secondOrig && secondOrig > issueOrig
+      ? Math.round((secondOrig.getTime() - issueOrig.getTime()) / DAY_MS)
+      : 30;
+
+  return {
+    changed: true,
+    issue: { effective: today, original: issueOrig },
+    second: {
+      effective: secondOrig
+        ? new Date(today.getTime() + gapDays * DAY_MS)
+        : null,
+      original: secondOrig,
+    },
+  };
+};
+
+/**
  * Formate une date en format français court (jj/mm/aaaa)
  * @param {string|number|Date} dateValue - La date à formater
  * @returns {string} - Date formatée en français (ex: 15/01/2024)
