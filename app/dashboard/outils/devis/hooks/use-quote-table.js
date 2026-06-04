@@ -317,6 +317,11 @@ export function useQuoteTable({
           const client = row.original.client;
           const quote = row.original;
           const isImported = quote._type === "imported";
+          // Les vrais devis issus d'un import gardent un préfixe vide après
+          // conversion : on garde l'indicateur « importé » même une fois le
+          // devis accepté ou refusé (le statut change, l'origine reste).
+          const isImportedOrigin =
+            isImported || (!quote.prefix && Boolean(quote.number));
           const clientName = client?.name || "Non défini";
           return (
             <div className="min-h-[40px] flex items-center gap-2">
@@ -343,7 +348,7 @@ export function useQuoteTable({
                       )}
                 </div>
               </div>
-              {isImported && (
+              {isImportedOrigin && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span className="flex-shrink-0 inline-flex items-center justify-center w-5 h-5 rounded bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400 cursor-default">
