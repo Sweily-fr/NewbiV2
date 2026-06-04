@@ -12,6 +12,7 @@ import {
   getActiveOrganization,
 } from "@/src/lib/organization-client";
 import { generatePurchaseOrderPrefix } from "@/src/utils/quoteUtils";
+import { refreshPrefixDate } from "@/src/utils/invoiceUtils";
 import { usePurchaseOrderNumber } from "../hooks/use-purchase-order-number";
 
 // Données de démonstration pour la preview des bons de commande
@@ -164,7 +165,9 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
           // Préparer les valeurs initiales depuis l'organisation (champs PO-spécifiques avec fallback)
           const formValues = {
             // Numérotation - préfixe par défaut (le numéro sera auto-rempli par le hook usePurchaseOrderNumber)
-            prefix: org?.purchaseOrderPrefix || generatePurchaseOrderPrefix(),
+            prefix:
+              refreshPrefixDate(org?.purchaseOrderPrefix) ||
+              generatePurchaseOrderPrefix(),
             number: org?.purchaseOrderStartNumber || "",
             autoNumbering: org?.purchaseOrderAutoNumbering || false,
             // Informations de l'entreprise
