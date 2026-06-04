@@ -111,6 +111,79 @@ export const twoFactorPlugin = twoFactor({
 });
 
 // Configuration du plugin Stripe
+/**
+ * Autorise une action d'abonnement Better Auth au niveau organisation.
+ *
+ * Pour upgrade/cancel/restore, seul un membre "owner" de l'organisation
+ * référencée est autorisé. On interroge MongoDB directement : `auth.options.database`
+ * est la *factory* d'adaptateur Better Auth (une fonction), pas l'adaptateur résolu —
+ * et l'adaptateur Better Auth n'expose de toute façon pas de méthode `findFirst`
+ * (c'est `findOne`). L'ancien code retombait donc systématiquement sur le fallback
+ * "adapter not available" et renvoyait `false`, ce qui faisait échouer TOUTE
+ * résiliation / changement de plan.
+ *
+ * Exporté pour être testable de façon isolée.
+ */
+export async function authorizeSubscriptionReference({
+  user,
+  referenceId,
+  action,
+}) {
+  console.log(
+    "🔐 [AUTHORIZE] Action:",
+    action,
+    "User:",
+    user?.id,
+    "ReferenceId:",
+    referenceId,
+  );
+
+  // Vérifier si l'utilisateur a les permissions pour gérer les abonnements
+  if (
+    action === "upgrade-subscription" ||
+    action === "cancel-subscription" ||
+    action === "restore-subscription"
+  ) {
+    try {
+      const { mongoDb } = await import("./mongodb.js");
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { ObjectId } = require("mongodb");
+
+      const isObjectIdHex = (v) =>
+        typeof v === "string" && /^[0-9a-f]{24}$/.test(v);
+
+      // La collection `member` stocke userId/organizationId en ObjectId.
+      // On accepte aussi la forme string par robustesse (anciens enregistrements).
+      const orgIdValues = isObjectIdHex(referenceId)
+        ? [new ObjectId(referenceId), referenceId]
+        : [referenceId];
+      const userIdValues = isObjectIdHex(user.id)
+        ? [new ObjectId(user.id), user.id]
+        : [user.id];
+
+      const member = await mongoDb.collection("member").findOne({
+        organizationId: { $in: orgIdValues },
+        userId: { $in: userIdValues },
+      });
+
+      const isOwner = (member?.role || "").toLowerCase() === "owner";
+      console.log(
+        "🔐 [AUTHORIZE] Member found:",
+        member ? { id: member.id, role: member.role } : null,
+        "isOwner:",
+        isOwner,
+      );
+
+      return isOwner;
+    } catch (error) {
+      console.error("🔐 [AUTHORIZE] Error:", error);
+      return false;
+    }
+  }
+
+  return true;
+}
+
 export const stripePlugin = stripe({
   stripeClient: new Stripe(process.env.STRIPE_SECRET_KEY, {
     apiVersion: "2025-02-24.acacia",
@@ -125,57 +198,7 @@ export const stripePlugin = stripe({
       request,
     ) => {
       /* eslint-enable @typescript-eslint/no-unused-vars */
-      console.log(
-        "🔐 [AUTHORIZE] Action:",
-        action,
-        "User:",
-        user?.id,
-        "ReferenceId:",
-        referenceId,
-      );
-
-      // Vérifier si l'utilisateur a les permissions pour gérer les abonnements
-      if (
-        action === "upgrade-subscription" ||
-        action === "cancel-subscription" ||
-        action === "restore-subscription"
-      ) {
-        // Utiliser l'adapter Better Auth comme dans l'ancien code fonctionnel
-        // On importe auth depuis le fichier auth.js pour accéder à l'adapter
-        const { auth } = await import("./auth");
-        const adapter = auth.options.database;
-
-        if (adapter && typeof adapter.findFirst === "function") {
-          try {
-            const member = await adapter.findFirst({
-              model: "member",
-              where: {
-                organizationId: referenceId,
-                userId: user.id,
-              },
-            });
-
-            const isOwner = member?.role === "owner";
-            console.log(
-              "🔐 [AUTHORIZE] Member found:",
-              member,
-              "isOwner:",
-              isOwner,
-            );
-
-            return isOwner;
-          } catch (error) {
-            console.error("🔐 [AUTHORIZE] Error:", error);
-            return false;
-          }
-        }
-
-        // Fallback: refuser l'accès si l'adapter ne fonctionne pas
-        console.error("🔐 [AUTHORIZE] Adapter not available, denying access");
-        return false;
-      }
-
-      return true;
+      return authorizeSubscriptionReference({ user, referenceId, action });
     },
     plans: [
       {
