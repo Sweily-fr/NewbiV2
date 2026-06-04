@@ -8,6 +8,7 @@ import React, {
   useEffect,
   startTransition,
 } from "react";
+import { useSubscription } from "@apollo/client";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { useIsMobile } from "@/src/hooks/use-mobile";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
@@ -35,12 +36,20 @@ import {
   usePermanentlyDeleteDocuments,
   usePermanentlyDeleteFolders,
   useBulkUpdateTags,
+  useDocumentTags,
   useUpdateFolderVisibility,
+  SHARED_DOCUMENTS_CHANGED_SUBSCRIPTION,
 } from "@/src/hooks/useSharedDocuments";
 import { DraggableTree } from "./components/DraggableTree";
 import { MemberSelector } from "../kanban/[id]/components/MemberSelector";
 import DocumentAutomationsModal from "./components/document-automations-modal";
 import TransferFromDocsModal from "./components/transfer-from-docs-modal";
+import {
+  TagSelector,
+  resolveTagColor,
+  TagPills,
+} from "./components/tag-selector";
+import { TagManager } from "./components/tag-manager";
 import { QrCode } from "@ark-ui/react/qr-code";
 import { useDocumentAutomations } from "@/src/hooks/useDocumentAutomations";
 import { Button } from "@/src/components/ui/button";
@@ -416,6 +425,7 @@ export default function DocumentsPartagesPage() {
   const [filterMinSize, setFilterMinSize] = useState("");
   const [filterMaxSize, setFilterMaxSize] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+  const [filterTags, setFilterTags] = useState([]);
 
   // Vérifier si des filtres sont actifs
   const hasActiveFilters =
@@ -424,7 +434,8 @@ export default function DocumentsPartagesPage() {
     filterDateTo ||
     filterMinSize ||
     filterMaxSize ||
-    filterStatus;
+    filterStatus ||
+    filterTags.length > 0;
 
   // Fonction pour réinitialiser les filtres
   const clearFilters = () => {
@@ -434,6 +445,7 @@ export default function DocumentsPartagesPage() {
     setFilterMinSize("");
     setFilterMaxSize("");
     setFilterStatus("");
+    setFilterTags([]);
   };
 
   // Upload progress
@@ -521,6 +533,7 @@ export default function DocumentsPartagesPage() {
     minSize: filterMinSize ? parseInt(filterMinSize) * 1024 : undefined, // Convertir KB en bytes
     maxSize: filterMaxSize ? parseInt(filterMaxSize) * 1024 : undefined,
     status: filterStatus || undefined,
+    tags: filterTags.length > 0 ? filterTags : undefined,
   });
 
   // Tous les documents (pour le tree)
@@ -530,6 +543,20 @@ export default function DocumentsPartagesPage() {
     isInitialLoading: allDocsInitialLoading,
     refetch: refetchAllDocs,
   } = useSharedDocuments({});
+
+  // L'arbre de gauche (tous les fichiers) a des variables fixes : il ne se
+  // relance jamais tout seul. Les automatisations s'exécutant côté serveur
+  // (sans déclencheur frontend), un document fraîchement classé apparaît dans
+  // la vue dossier (qui se refetch au changement de folderId) mais pas dans
+  // l'arbre. On resynchronise l'arbre à chaque navigation de dossier.
+  const isFirstFolderNav = useRef(true);
+  useEffect(() => {
+    if (isFirstFolderNav.current) {
+      isFirstFolderNav.current = false;
+      return; // la requête initiale se charge déjà toute seule
+    }
+    refetchAllDocs();
+  }, [selectedFolder, refetchAllDocs]);
 
   const {
     folders,
@@ -596,6 +623,36 @@ export default function DocumentsPartagesPage() {
     loading: permanentDeleteFoldersLoading,
   } = usePermanentlyDeleteFolders();
   const { bulkUpdateTags, loading: bulkTagsLoading } = useBulkUpdateTags();
+  const { tags: workspaceTags } = useDocumentTags();
+
+  // Temps réel : un document/dossier du workspace a changé (upload, déplacement,
+  // suppression, ou classement automatique via une automatisation côté serveur).
+  // On rafraîchit toutes les listes — l'arbre de gauche ne se relançant jamais
+  // seul, c'est ce qui permet de voir le doc classé apparaître sans navigation.
+  // Debounce léger : une automatisation peut créer plusieurs docs (rafale d'events).
+  const sharedDocsRefreshTimer = useRef(null);
+  useEffect(() => {
+    return () => {
+      if (sharedDocsRefreshTimer.current) {
+        clearTimeout(sharedDocsRefreshTimer.current);
+      }
+    };
+  }, []);
+  useSubscription(SHARED_DOCUMENTS_CHANGED_SUBSCRIPTION, {
+    variables: { workspaceId },
+    skip: !workspaceId,
+    onData: () => {
+      if (sharedDocsRefreshTimer.current) {
+        clearTimeout(sharedDocsRefreshTimer.current);
+      }
+      sharedDocsRefreshTimer.current = setTimeout(() => {
+        refetchDocs();
+        refetchAllDocs();
+        refetchFolders();
+        refetchTrash();
+      }, 400);
+    },
+  });
 
   // Automatisations (pour le badge du bouton)
   const { automations: documentAutomations } =
@@ -607,7 +664,7 @@ export default function DocumentsPartagesPage() {
 
   // État pour la gestion des tags en masse
   const [showBulkTagsModal, setShowBulkTagsModal] = useState(false);
-  const [bulkTagsToAdd, setBulkTagsToAdd] = useState("");
+  const [bulkTagsToAdd, setBulkTagsToAdd] = useState([]);
   const [bulkTagsToRemove, setBulkTagsToRemove] = useState([]);
 
   // État pour la prévisualisation de documents
@@ -1424,28 +1481,29 @@ export default function DocumentsPartagesPage() {
     setShowDetailsPanel(true);
   };
 
-  // Add tag to document
-  const handleAddTag = async () => {
-    if (!newTag.trim() || !selectedDocumentDetails) return;
+  // Add tag to document (accepte un nom explicite, sinon l'état `newTag`)
+  const handleAddTag = async (tagName) => {
+    const tag = (typeof tagName === "string" ? tagName : newTag).trim();
+    if (!tag || !selectedDocumentDetails) return;
     const currentTags = selectedDocumentDetails.tags || [];
-    if (currentTags.includes(newTag.trim())) {
+    if (currentTags.includes(tag)) {
       toast.error("Ce tag existe déjà");
       return;
     }
+    const docId = selectedDocumentDetails.id;
+    const nextTags = [...currentTags, tag];
+    // Optimiste : afficher le badge immédiatement
+    setSelectedDocumentDetails((prev) => ({ ...prev, tags: nextTags }));
+    setNewTag("");
     try {
-      await updateDocument(selectedDocumentDetails.id, {
-        tags: [...currentTags, newTag.trim()],
-      });
-      // Update local state
-      setSelectedDocumentDetails({
-        ...selectedDocumentDetails,
-        tags: [...currentTags, newTag.trim()],
-      });
-      setNewTag("");
-      toast.success("Tag ajouté");
+      await updateDocument(docId, { tags: nextTags });
       refetchDocs();
-      refetchAllDocs();
     } catch (error) {
+      // Rollback en cas d'échec
+      setSelectedDocumentDetails((prev) => ({
+        ...prev,
+        tags: (prev.tags || []).filter((t) => t !== tag),
+      }));
       console.error("Erreur ajout tag:", error);
     }
   };
@@ -1453,20 +1511,20 @@ export default function DocumentsPartagesPage() {
   // Remove tag from document
   const handleRemoveTag = async (tagToRemove) => {
     if (!selectedDocumentDetails) return;
+    const docId = selectedDocumentDetails.id;
     const currentTags = selectedDocumentDetails.tags || [];
+    const nextTags = currentTags.filter((t) => t !== tagToRemove);
+    // Optimiste : retirer le badge immédiatement
+    setSelectedDocumentDetails((prev) => ({ ...prev, tags: nextTags }));
     try {
-      await updateDocument(selectedDocumentDetails.id, {
-        tags: currentTags.filter((t) => t !== tagToRemove),
-      });
-      // Update local state
-      setSelectedDocumentDetails({
-        ...selectedDocumentDetails,
-        tags: currentTags.filter((t) => t !== tagToRemove),
-      });
-      toast.success("Tag supprimé");
+      await updateDocument(docId, { tags: nextTags });
       refetchDocs();
-      refetchAllDocs();
     } catch (error) {
+      // Rollback en cas d'échec
+      setSelectedDocumentDetails((prev) => ({
+        ...prev,
+        tags: [...(prev.tags || []), tagToRemove],
+      }));
       console.error("Erreur suppression tag:", error);
     }
   };
@@ -2573,7 +2631,7 @@ export default function DocumentsPartagesPage() {
                                     side="bottom"
                                     className="bg-[#202020] text-white border-0"
                                   >
-                                    <p>Gérer les tags</p>
+                                    <p>Assigner des tags</p>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
@@ -2717,6 +2775,20 @@ export default function DocumentsPartagesPage() {
                         </Popover>
                       )}
 
+                      {/* Gérer les tags (registre du workspace) */}
+                      <TagManager
+                        trigger={
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 gap-1.5"
+                          >
+                            <Tag className="h-4 w-4" />
+                            <span className="hidden sm:inline">Tags</span>
+                          </Button>
+                        }
+                      />
+
                       {/* Filtres avancés */}
                       <Popover>
                         <PopoverTrigger asChild>
@@ -2742,6 +2814,7 @@ export default function DocumentsPartagesPage() {
                                     filterDateFrom || filterDateTo,
                                     filterMinSize || filterMaxSize,
                                     filterStatus,
+                                    filterTags.length > 0,
                                   ].filter(Boolean).length
                                 }
                               </Badge>
@@ -2824,6 +2897,55 @@ export default function DocumentsPartagesPage() {
                                 </SelectContent>
                               </Select>
                             </div>
+
+                            {/* Tags */}
+                            {workspaceTags.length > 0 && (
+                              <div className="space-y-2">
+                                <Label className="text-xs">Tags</Label>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {workspaceTags.map((t) => {
+                                    const active = filterTags.includes(t.name);
+                                    return (
+                                      <button
+                                        key={t.id}
+                                        type="button"
+                                        onClick={() =>
+                                          setFilterTags((prev) =>
+                                            active
+                                              ? prev.filter((x) => x !== t.name)
+                                              : [...prev, t.name],
+                                          )
+                                        }
+                                        className={cn(
+                                          "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition",
+                                          active
+                                            ? "text-white"
+                                            : "text-foreground hover:bg-muted",
+                                        )}
+                                        style={
+                                          active
+                                            ? {
+                                                backgroundColor: t.color,
+                                                borderColor: t.color,
+                                              }
+                                            : { borderColor: `${t.color}55` }
+                                        }
+                                      >
+                                        <span
+                                          className="h-1.5 w-1.5 rounded-full"
+                                          style={{
+                                            backgroundColor: active
+                                              ? "#fff"
+                                              : t.color,
+                                          }}
+                                        />
+                                        {t.name}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
 
                             {/* Date */}
                             <div className="space-y-2">
@@ -3436,20 +3558,13 @@ export default function DocumentsPartagesPage() {
                                   )}
                                   {/* Tags inline - hide on mobile */}
                                   {doc.tags && doc.tags.length > 0 && (
-                                    <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
-                                      {doc.tags.slice(0, 2).map((tag) => (
-                                        <span
-                                          key={tag}
-                                          className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20"
-                                        >
-                                          {tag}
-                                        </span>
-                                      ))}
-                                      {doc.tags.length > 2 && (
-                                        <span className="text-[10px] text-muted-foreground">
-                                          +{doc.tags.length - 2}
-                                        </span>
-                                      )}
+                                    <div className="hidden sm:flex flex-shrink-0">
+                                      <TagPills
+                                        tags={doc.tags}
+                                        registry={workspaceTags}
+                                        max={2}
+                                        variant="list"
+                                      />
                                     </div>
                                   )}
                                   {/* Comments indicator */}
@@ -3699,15 +3814,14 @@ export default function DocumentsPartagesPage() {
                               </p>
                               {/* Tags on grid */}
                               {doc.tags && doc.tags.length > 0 && (
-                                <div className="flex flex-wrap justify-center gap-1 mt-1.5">
-                                  {doc.tags.slice(0, 2).map((tag) => (
-                                    <span
-                                      key={tag}
-                                      className="inline-flex items-center px-1 py-0 rounded text-[9px] font-medium bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20"
-                                    >
-                                      {tag}
-                                    </span>
-                                  ))}
+                                <div className="flex justify-center mt-1.5">
+                                  <TagPills
+                                    tags={doc.tags}
+                                    registry={workspaceTags}
+                                    max={2}
+                                    variant="grid"
+                                    justify="justify-center"
+                                  />
                                 </div>
                               )}
                             </div>
@@ -4163,14 +4277,14 @@ export default function DocumentsPartagesPage() {
           onOpenChange={(open) => {
             setShowBulkTagsModal(open);
             if (!open) {
-              setBulkTagsToAdd("");
+              setBulkTagsToAdd([]);
               setBulkTagsToRemove([]);
             }
           }}
         >
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Gérer les tags</DialogTitle>
+              <DialogTitle>Assigner des tags</DialogTitle>
               <DialogDescription>
                 Ajoutez ou supprimez des tags pour {selectedDocuments.length}{" "}
                 document(s) sélectionné(s)
@@ -4180,14 +4294,42 @@ export default function DocumentsPartagesPage() {
               {/* Ajouter des tags */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Ajouter des tags</Label>
-                <Input
+                <TagSelector
                   value={bulkTagsToAdd}
-                  onChange={(e) => setBulkTagsToAdd(e.target.value)}
-                  placeholder="Entrez des tags séparés par des virgules"
-                  className="h-9"
+                  onAdd={(name) => {
+                    setBulkTagsToAdd((prev) =>
+                      prev.includes(name) ? prev : [...prev, name],
+                    );
+                    // Ré-assigner un tag annule sa suppression en attente
+                    setBulkTagsToRemove((prev) =>
+                      prev.filter((t) => t !== name),
+                    );
+                  }}
+                  onRemove={(name) =>
+                    setBulkTagsToAdd((prev) => prev.filter((t) => t !== name))
+                  }
+                  // On n'exclut un tag que s'il est présent sur TOUS les
+                  // documents sélectionnés (intersection) : un tag manquant sur
+                  // au moins un document reste proposable pour l'ajouter aux
+                  // autres. On exclut aussi ceux marqués pour suppression.
+                  excludeNames={(() => {
+                    const selDocs = documents.filter((d) =>
+                      selectedDocuments.includes(d.id),
+                    );
+                    if (selDocs.length === 0) return [];
+                    const [first, ...rest] = selDocs;
+                    const common = (first.tags || []).filter((tag) =>
+                      rest.every((d) => (d.tags || []).includes(tag)),
+                    );
+                    return common.filter(
+                      (tag) => !bulkTagsToRemove.includes(tag),
+                    );
+                  })()}
+                  placeholder="Choisir ou créer un tag..."
+                  size="sm"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Ex: facture, 2024, important
+                  Réutilisez un tag existant ou créez-en un nouveau
                 </p>
               </div>
 
@@ -4213,23 +4355,38 @@ export default function DocumentsPartagesPage() {
                       Supprimer des tags existants
                     </Label>
                     <div className="flex flex-wrap gap-2">
-                      {visibleTags.map((tag) => (
-                        <Badge key={tag} variant="secondary" className="gap-1">
-                          {tag}
-                          <button
-                            type="button"
-                            aria-label={`Supprimer le tag ${tag}`}
-                            className="ml-0.5 inline-flex items-center justify-center rounded-full hover:bg-muted-foreground/20 cursor-pointer"
-                            onClick={() =>
-                              setBulkTagsToRemove((prev) =>
-                                prev.includes(tag) ? prev : [...prev, tag],
-                              )
-                            }
+                      {visibleTags.map((tag) => {
+                        const c = resolveTagColor(tag, workspaceTags);
+                        return (
+                          <span
+                            key={tag}
+                            className="inline-flex items-center gap-1.5 rounded-full pl-2 pr-1 py-0.5 text-xs font-medium border"
+                            style={{
+                              backgroundColor: `${c}14`,
+                              color: c,
+                              borderColor: `${c}33`,
+                            }}
                           >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))}
+                            <span
+                              className="h-1.5 w-1.5 rounded-full"
+                              style={{ backgroundColor: c }}
+                            />
+                            {tag}
+                            <button
+                              type="button"
+                              aria-label={`Supprimer le tag ${tag}`}
+                              className="inline-flex items-center justify-center rounded-full h-4 w-4 hover:bg-black/10 cursor-pointer"
+                              onClick={() =>
+                                setBulkTagsToRemove((prev) =>
+                                  prev.includes(tag) ? prev : [...prev, tag],
+                                )
+                              }
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </span>
+                        );
+                      })}
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Cliquez sur la croix d'un tag pour le supprimer
@@ -4248,7 +4405,6 @@ export default function DocumentsPartagesPage() {
               <Button
                 onClick={async () => {
                   const addTags = bulkTagsToAdd
-                    .split(",")
                     .map((t) => t.trim())
                     .filter((t) => t.length > 0);
                   const removeTags = bulkTagsToRemove;
@@ -4267,7 +4423,7 @@ export default function DocumentsPartagesPage() {
                         removeTags.length > 0 ? removeTags : undefined,
                     });
                     setShowBulkTagsModal(false);
-                    setBulkTagsToAdd("");
+                    setBulkTagsToAdd([]);
                     setBulkTagsToRemove([]);
                     setSelectedDocuments([]);
                     refetchDocs();
@@ -4401,55 +4557,30 @@ export default function DocumentsPartagesPage() {
 
                 {/* Tags Section */}
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    <Tag className="h-4 w-4" />
-                    Tags
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {(selectedDocumentDetails.tags || []).length > 0 ? (
-                      (selectedDocumentDetails.tags || []).map((tag) => (
-                        <Badge
-                          key={tag}
-                          variant="secondary"
-                          className="gap-1 pr-1"
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <Tag className="h-4 w-4" />
+                      Tags
+                    </div>
+                    <TagManager
+                      trigger={
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs text-muted-foreground"
                         >
-                          {tag}
-                          <button
-                            onClick={() => handleRemoveTag(tag)}
-                            className="ml-1 hover:text-destructive transition-colors"
-                            disabled={updateDocLoading}
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))
-                    ) : (
-                      <span className="text-xs text-muted-foreground">
-                        Aucun tag
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex gap-2 min-w-0">
-                    <Input
-                      placeholder="Ajouter un tag..."
-                      value={newTag}
-                      onChange={(e) => setNewTag(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleAddTag()}
-                      className="h-8 text-sm flex-1 min-w-0"
+                          Gérer
+                        </Button>
+                      }
                     />
-                    <Button
-                      size="sm"
-                      onClick={handleAddTag}
-                      disabled={!newTag.trim() || updateDocLoading}
-                      className="h-8 shrink-0"
-                    >
-                      {updateDocLoading ? (
-                        <LoaderCircle className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <Plus className="h-3 w-3" />
-                      )}
-                    </Button>
                   </div>
+                  <TagSelector
+                    value={selectedDocumentDetails.tags || []}
+                    onAdd={handleAddTag}
+                    onRemove={handleRemoveTag}
+                    disabled={updateDocLoading}
+                    size="sm"
+                  />
                 </div>
 
                 <Separator />

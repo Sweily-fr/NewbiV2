@@ -45,6 +45,7 @@ import {
   Clock,
   ArrowRight,
   Mail,
+  Pencil,
 } from "lucide-react";
 import {
   useClientAutomations,
@@ -58,6 +59,7 @@ import { useWorkspace } from "@/src/hooks/useWorkspace";
 import {
   useCrmEmailAutomations,
   useCreateCrmEmailAutomation,
+  useUpdateCrmEmailAutomation,
   useDeleteCrmEmailAutomation,
   useToggleCrmEmailAutomation,
 } from "@/src/hooks/useCrmEmailAutomations";
@@ -153,7 +155,7 @@ function AutomationRow({ automation, lists, onUpdate, onDelete, onToggle }) {
         value={localData.triggerType}
         onValueChange={(value) => handleFieldChange("triggerType", value)}
       >
-        <SelectTrigger className="w-[160px]">
+        <SelectTrigger className="w-[200px]">
           <SelectValue />
         </SelectTrigger>
         <SelectContent className="z-[9999]">
@@ -171,7 +173,7 @@ function AutomationRow({ automation, lists, onUpdate, onDelete, onToggle }) {
         value={localData.actionType}
         onValueChange={(value) => handleFieldChange("actionType", value)}
       >
-        <SelectTrigger className="w-[130px]">
+        <SelectTrigger className="w-[150px]">
           <SelectValue />
         </SelectTrigger>
         <SelectContent className="z-[9999]">
@@ -272,7 +274,7 @@ function NewAutomationRow({ lists, onCreate, onCancel, isCreating }) {
             setFormData({ ...formData, triggerType: value })
           }
         >
-          <SelectTrigger className="w-[160px]">
+          <SelectTrigger className="w-[200px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="z-[9999]">
@@ -292,7 +294,7 @@ function NewAutomationRow({ lists, onCreate, onCancel, isCreating }) {
             setFormData({ ...formData, actionType: value })
           }
         >
-          <SelectTrigger className="w-[130px]">
+          <SelectTrigger className="w-[150px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="z-[9999]">
@@ -345,7 +347,7 @@ function NewAutomationRow({ lists, onCreate, onCancel, isCreating }) {
   );
 }
 
-function EmailAutomationRow({ automation, onDelete, onToggle }) {
+function EmailAutomationRow({ automation, onEdit, onDelete, onToggle }) {
   const [isActive, setIsActive] = useState(automation.isActive);
 
   const handleToggle = () => {
@@ -386,6 +388,18 @@ function EmailAutomationRow({ automation, onDelete, onToggle }) {
         size="icon"
         onClick={(e) => {
           e.stopPropagation();
+          onEdit(automation);
+        }}
+        className="h-8 w-8 text-muted-foreground hover:text-[#5b50ff] flex-shrink-0"
+      >
+        <Pencil className="h-4 w-4" />
+      </Button>
+
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={(e) => {
+          e.stopPropagation();
           onDelete(automation);
         }}
         className="h-8 w-8 text-muted-foreground hover:text-destructive flex-shrink-0"
@@ -396,15 +410,22 @@ function EmailAutomationRow({ automation, onDelete, onToggle }) {
   );
 }
 
-function NewEmailAutomationRow({ dateFields, onCreate, onCancel, isCreating }) {
+function EmailAutomationForm({
+  dateFields,
+  automation,
+  onSubmit,
+  onCancel,
+  isSubmitting,
+}) {
+  const isEditing = !!automation;
   const [formData, setFormData] = useState({
-    name: "",
-    triggerFieldId: "",
-    timing: "ON_DATE",
-    daysOffset: 1,
-    sendHour: 9,
-    subject: "",
-    body: "",
+    name: automation?.name || "",
+    triggerFieldId: automation?.customFieldId || "",
+    timing: automation?.timing?.type || "ON_DATE",
+    daysOffset: automation?.timing?.daysOffset || 1,
+    sendHour: automation?.timing?.sendHour ?? 9,
+    subject: automation?.email?.subject || "",
+    body: automation?.email?.body || "",
   });
 
   const selectedField = dateFields.find(
@@ -420,7 +441,7 @@ function NewEmailAutomationRow({ dateFields, onCreate, onCancel, isCreating }) {
     return `Email - ${timing?.label} ${formData.daysOffset}j ${selectedField.name}`;
   };
 
-  const handleCreate = () => {
+  const handleSubmit = () => {
     if (!formData.triggerFieldId) {
       toast.error("Veuillez sélectionner un champ date");
       return;
@@ -434,7 +455,7 @@ function NewEmailAutomationRow({ dateFields, onCreate, onCancel, isCreating }) {
       return;
     }
     // Structure conforme au schéma GraphQL
-    onCreate({
+    onSubmit({
       name: formData.name || generateName(),
       customFieldId: formData.triggerFieldId,
       timing: {
@@ -446,7 +467,7 @@ function NewEmailAutomationRow({ dateFields, onCreate, onCancel, isCreating }) {
         subject: formData.subject,
         body: formData.body,
       },
-      isActive: true,
+      isActive: automation?.isActive ?? true,
     });
   };
 
@@ -455,7 +476,9 @@ function NewEmailAutomationRow({ dateFields, onCreate, onCancel, isCreating }) {
       <div className="flex items-center gap-2">
         <Mail className="w-4 h-4 text-[#5b50ff] flex-shrink-0" />
         <span className="text-sm font-medium">
-          Nouvelle automatisation email
+          {isEditing
+            ? "Modifier l'automatisation email"
+            : "Nouvelle automatisation email"}
         </span>
       </div>
 
@@ -583,9 +606,9 @@ function NewEmailAutomationRow({ dateFields, onCreate, onCancel, isCreating }) {
         <Button variant="ghost" size="sm" onClick={onCancel}>
           Annuler
         </Button>
-        <Button size="sm" onClick={handleCreate} disabled={isCreating}>
-          {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Créer
+        <Button size="sm" onClick={handleSubmit} disabled={isSubmitting}>
+          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isEditing ? "Enregistrer" : "Créer"}
         </Button>
       </div>
     </div>
@@ -614,6 +637,8 @@ export default function AutomationsPopover({ trigger }) {
   const { toggleAutomation } = useToggleClientAutomation();
   const { createAutomation: createEmailAutomation, loading: creatingEmail } =
     useCreateCrmEmailAutomation();
+  const { updateAutomation: updateEmailAutomation, loading: updatingEmail } =
+    useUpdateCrmEmailAutomation();
   const { deleteAutomation: deleteEmailAutomation } =
     useDeleteCrmEmailAutomation();
   const { toggleAutomation: toggleEmailAutomation } =
@@ -622,6 +647,7 @@ export default function AutomationsPopover({ trigger }) {
   const [isOpen, setIsOpen] = useState(false);
   const [showNewForm, setShowNewForm] = useState(false);
   const [showNewEmailForm, setShowNewEmailForm] = useState(false);
+  const [editingEmailAutomation, setEditingEmailAutomation] = useState(null);
   const [deletingAutomation, setDeletingAutomation] = useState(null);
   const [deletingEmailAutomation, setDeletingEmailAutomation] = useState(null);
 
@@ -676,6 +702,19 @@ export default function AutomationsPopover({ trigger }) {
     }
   };
 
+  const handleUpdateEmail = async (input) => {
+    const id = editingEmailAutomation?.id;
+    if (!id) return;
+    try {
+      await updateEmailAutomation(workspaceId, id, input);
+      setEditingEmailAutomation(null);
+      refetchEmailAutomations();
+      toast.success("Automatisation email modifiée");
+    } catch (error) {
+      toast.error("Erreur lors de la modification");
+    }
+  };
+
   const handleDeleteEmail = async () => {
     setDeletingEmailAutomation(null);
     try {
@@ -726,7 +765,7 @@ export default function AutomationsPopover({ trigger }) {
             </Button>
           )}
         </PopoverTrigger>
-        <PopoverContent align="end" className="w-[650px] p-0">
+        <PopoverContent align="end" className="w-[720px] p-0">
           {!canUseClientAutomations ? (
             /* Freelance: no automations at all */
             <div className="p-6 text-center space-y-3">
@@ -869,23 +908,38 @@ export default function AutomationsPopover({ trigger }) {
                         </p>
                       ) : (
                         <>
-                          {emailAutomations.map((automation) => (
-                            <EmailAutomationRow
-                              key={automation.id}
-                              automation={automation}
-                              onDelete={setDeletingEmailAutomation}
-                              onToggle={handleToggleEmail}
-                            />
-                          ))}
+                          {emailAutomations.map((automation) =>
+                            editingEmailAutomation?.id === automation.id ? (
+                              <EmailAutomationForm
+                                key={automation.id}
+                                dateFields={dateFields}
+                                automation={editingEmailAutomation}
+                                onSubmit={handleUpdateEmail}
+                                onCancel={() => setEditingEmailAutomation(null)}
+                                isSubmitting={updatingEmail}
+                              />
+                            ) : (
+                              <EmailAutomationRow
+                                key={automation.id}
+                                automation={automation}
+                                onEdit={(a) => {
+                                  setShowNewEmailForm(false);
+                                  setEditingEmailAutomation(a);
+                                }}
+                                onDelete={setDeletingEmailAutomation}
+                                onToggle={handleToggleEmail}
+                              />
+                            ),
+                          )}
                         </>
                       )}
 
                       {showNewEmailForm && (
-                        <NewEmailAutomationRow
+                        <EmailAutomationForm
                           dateFields={dateFields}
-                          onCreate={handleCreateEmail}
+                          onSubmit={handleCreateEmail}
                           onCancel={() => setShowNewEmailForm(false)}
-                          isCreating={creatingEmail}
+                          isSubmitting={creatingEmail}
                         />
                       )}
                     </div>
@@ -895,7 +949,10 @@ export default function AutomationsPopover({ trigger }) {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setShowNewEmailForm(true)}
+                          onClick={() => {
+                            setEditingEmailAutomation(null);
+                            setShowNewEmailForm(true);
+                          }}
                           className="w-full justify-start text-muted-foreground"
                           disabled={dateFields.length === 0}
                         >

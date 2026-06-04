@@ -89,6 +89,7 @@ export default function PurchaseOrderTable({
   poIdToOpen,
   triggerImport,
   onImportTriggered,
+  onBalancesRefetch,
 }) {
   const inputRef = useRef(null);
   const { purchaseOrders, loading, error, refetch } = usePurchaseOrders();
@@ -846,6 +847,7 @@ export default function PurchaseOrderTable({
         }
         onValidated={() => {
           refetchImported();
+          onBalancesRefetch?.();
           if (reviewIndex + 1 < reviewQueue.length) {
             setReviewIndex((i) => i + 1);
           } else {
@@ -862,6 +864,7 @@ export default function PurchaseOrderTable({
         }}
         onUpdate={() => {
           refetchImported();
+          onBalancesRefetch?.();
         }}
       />
 
