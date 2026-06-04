@@ -92,7 +92,6 @@ import { cn } from "@/src/lib/utils";
 import ClientSelector from "./invoices-form-sections/client-selector";
 import CompanyImport, { QuickCompanyImport } from "./company-import";
 import { toast } from "@/src/components/ui/sonner";
-import { ValidationCallout } from "./validation-callout";
 
 // Composant de recherche de produits basé sur Origin UI
 function ProductSearchCombobox({
@@ -500,7 +499,48 @@ export default function EnhancedInvoiceForm({
     }).format(amount);
   };
 
+  // Trouve le premier champ en erreur et y scroll + focus
+  const scrollToFirstError = () => {
+    // Priorité aux erreurs d'articles (avec index + champ précis)
+    if (validationErrors?.items?.details?.[0]) {
+      const { index, fields } = validationErrors.items.details[0];
+      const field = fields?.[0] || "description";
+      const el = document.querySelector(`[name="items.${index}.${field}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(() => el.focus?.(), 300);
+        return;
+      }
+    }
+
+    // Sinon, première clé d'erreur top-level
+    const firstKey = Object.keys(validationErrors || {})[0];
+    if (firstKey) {
+      const el =
+        document.querySelector(`[name="${firstKey}"]`) ||
+        document.querySelector(`[name^="${firstKey}."]`) ||
+        document.querySelector(`[data-error-field="${firstKey}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(() => el.focus?.(), 300);
+        return;
+      }
+    }
+
+    // Fallback : scroll en haut du formulaire
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   const handleNextStep = () => {
+    if (!isStep1Valid()) {
+      if (!data.client?.id) {
+        toast.error("Veuillez sélectionner un client pour continuer");
+      }
+      scrollToFirstError();
+      return;
+    }
     if (currentStep < 2) {
       setCurrentStep(currentStep + 1);
       // Scroll vers le haut du conteneur
@@ -529,6 +569,10 @@ export default function EnhancedInvoiceForm({
   };
 
   const handleCreateInvoice = () => {
+    if (!isStep2Valid()) {
+      scrollToFirstError();
+      return;
+    }
     // Créer la facture finale
     setValue("status", "PENDING", { shouldDirty: true });
     if (onSubmit) {
@@ -590,17 +634,10 @@ export default function EnhancedInvoiceForm({
 
   return (
     <div className="flex flex-col h-full w-full">
-      {/* Validation Callout - Fixe en haut */}
-      {Object.keys(validationErrors).length > 0 && (
-        <div className="sticky top-0 z-10 mb-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <ValidationCallout errors={validationErrors} />
-        </div>
-      )}
-
       {/* Form Content */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 pb-20 lg:pb-0"
+        className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 pb-20 lg:pb-12"
       >
         <div className="space-y-6 px-2">
           {/* Étape 1: Détails de la facture */}
@@ -768,48 +805,46 @@ export default function EnhancedInvoiceForm({
               >
                 Annuler
               </Button>
+            </div>
 
+            <div className="flex gap-3">
+              {currentStep === 2 && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handlePreviousStep}
+                  disabled={!canEdit}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+              )}
               <Button
                 variant="outline"
                 onClick={handleSaveDraft}
                 disabled={!canEdit || saving}
               >
-                {saving ? "Sauvegarde..." : "Brouillon"}
+                {saving ? "Sauvegarde..." : "Enregistrer brouillon"}
               </Button>
-            </div>
-
-            <div className="flex gap-3">
               {currentStep === 1 && (
                 <Button
                   variant="primary"
                   onClick={handleNextStep}
-                  disabled={!isStep1Valid() || !canEdit}
+                  disabled={!canEdit}
                   className="px-6"
                 >
-                  <span className="hidden sm:inline">Suivant</span>
+                  <span className="hidden sm:inline">Continuer</span>
                   <ChevronRight className="h-4 w-4 sm:ml-2" />
                 </Button>
               )}
-
               {currentStep === 2 && (
-                <>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={handlePreviousStep}
-                    disabled={!canEdit}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="primary"
-                    onClick={handleCreateInvoice}
-                    disabled={!isStep2Valid() || !canEdit || saving}
-                    className="px-6"
-                  >
-                    {saving ? "Création..." : "Créer la facture"}
-                  </Button>
-                </>
+                <Button
+                  variant="primary"
+                  onClick={handleCreateInvoice}
+                  disabled={!canEdit || saving}
+                  className="px-6"
+                >
+                  {saving ? "Création..." : "Créer la facture"}
+                </Button>
               )}
             </div>
           </div>

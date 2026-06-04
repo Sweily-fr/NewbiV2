@@ -61,7 +61,10 @@ import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDF
 import CreditNoteMobileFullscreen from "./credit-note-mobile-fullscreen";
 import { useReconciliationForSidebar } from "@/src/hooks/useReconciliation";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
-import { formatLocalDate } from "@/src/utils/dateFormatter";
+import {
+  formatLocalDate,
+  getDraftEffectiveDates,
+} from "@/src/utils/dateFormatter";
 import { motion } from "framer-motion";
 import { ReceiptItemIcon } from "@/src/components/icons";
 
@@ -573,6 +576,7 @@ export default function InvoiceSidebar({
                 data={invoice}
                 type="invoice"
                 previousSituationInvoices={previousSituationInvoices}
+                recalcDraftDates
               />
             </div>
           )}
@@ -774,22 +778,60 @@ export default function InvoiceSidebar({
               Dates
             </p>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-normal text-muted-foreground">
-                  Date d'émission
-                </span>
-                <span className="text-sm font-normal">
-                  {formatDate(invoice.issueDate)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-normal text-muted-foreground">
-                  Date d'échéance
-                </span>
-                <span className="text-sm font-normal">
-                  {formatDate(invoice.dueDate)}
-                </span>
-              </div>
+              {/* Pour un brouillon repris plus tard, on affiche les dates
+                  recalées (jour J / échéance) et l'ancienne date entre
+                  parenthèses, car elles seront mises à jour à la finalisation. */}
+              {(() => {
+                const draftDates =
+                  invoice.status === "DRAFT"
+                    ? getDraftEffectiveDates(invoice.issueDate, invoice.dueDate)
+                    : null;
+                const refreshed = draftDates?.changed;
+                return (
+                  <>
+                    <div className="flex items-start justify-between">
+                      <span className="text-sm font-normal text-muted-foreground">
+                        Date d'émission
+                      </span>
+                      <span className="flex flex-col items-end text-sm font-normal">
+                        <span>
+                          {formatDate(
+                            refreshed
+                              ? draftDates.issue.effective
+                              : invoice.issueDate,
+                          )}
+                        </span>
+                        {refreshed && draftDates.issue.original && (
+                          <span className="text-xs text-muted-foreground">
+                            (ancienne&nbsp;:{" "}
+                            {formatDate(draftDates.issue.original)})
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex items-start justify-between">
+                      <span className="text-sm font-normal text-muted-foreground">
+                        Date d'échéance
+                      </span>
+                      <span className="flex flex-col items-end text-sm font-normal">
+                        <span>
+                          {formatDate(
+                            refreshed
+                              ? draftDates.second.effective
+                              : invoice.dueDate,
+                          )}
+                        </span>
+                        {refreshed && draftDates.second.original && (
+                          <span className="text-xs text-muted-foreground">
+                            (ancienne&nbsp;:{" "}
+                            {formatDate(draftDates.second.original)})
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  </>
+                );
+              })()}
               {invoice.paymentDate && (
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-normal text-muted-foreground">
@@ -1433,6 +1475,7 @@ export default function InvoiceSidebar({
                   data={invoice}
                   type="invoice"
                   previousSituationInvoices={previousSituationInvoices}
+                  recalcDraftDates
                 />
               </div>
             )}

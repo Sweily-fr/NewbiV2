@@ -350,7 +350,10 @@ export function SubscriptionSection({
         return;
       }
       const { data, error } = await authClient.subscription.cancel({
-        subscriptionId: subscription.id,
+        // Better Auth recherche l'abonnement par `stripeSubscriptionId` quand ce
+        // paramètre est fourni. La route API ne renvoie pas le champ `id` Better
+        // Auth, on transmet donc l'identifiant Stripe (sub_...) déjà validé ci-dessus.
+        subscriptionId: subscription.stripeSubscriptionId,
         referenceId: sessionData.session.activeOrganizationId,
         returnUrl: `${window.location.origin}/dashboard`,
       });
