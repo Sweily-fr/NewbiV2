@@ -16,6 +16,7 @@ import {
   ShoppingCart,
   BookTemplate,
   PenLine,
+  Ban,
 } from "lucide-react";
 import { ButtonGroup } from "@/src/components/ui/button-group";
 import {
@@ -37,6 +38,10 @@ import {
   QUOTE_STATUS,
   GET_QUOTE,
 } from "@/src/graphql/quoteQueries";
+import {
+  GET_DOCUMENT_SIGNATURE_STATUS,
+  CANCEL_SIGNATURE,
+} from "@/src/graphql/esignatureQueries";
 import { useApolloClient } from "@apollo/client";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
@@ -85,6 +90,7 @@ export default function QuoteRowActions({
 }) {
   const [isMobileFullscreenOpen, setIsMobileFullscreenOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isCancellingSignature, setIsCancellingSignature] = useState(false);
   const router = useRouter();
   const quote = row.original;
 
@@ -126,6 +132,48 @@ export default function QuoteRowActions({
       if (onRefetch) onRefetch();
     } catch (error) {
       toast.error("Erreur lors de la suppression du devis");
+    }
+  };
+
+  // Annuler une demande de signature en cours (récupère l'id à la volée)
+  const handleCancelSignature = async () => {
+    try {
+      setIsCancellingSignature(true);
+
+      const { data } = await apolloClient.query({
+        query: GET_DOCUMENT_SIGNATURE_STATUS,
+        variables: { documentType: "quote", documentId: quote.id },
+        fetchPolicy: "network-only",
+      });
+
+      const signatureId = data?.getDocumentSignatureStatus?.id;
+      if (!signatureId) {
+        toast.error("Aucune demande de signature à annuler");
+        return;
+      }
+
+      const { data: cancelData } = await apolloClient.mutate({
+        mutation: CANCEL_SIGNATURE,
+        variables: { signatureId },
+      });
+
+      if (cancelData?.cancelSignature?.success) {
+        toast.success("Signature annulée", {
+          description: "Vous pouvez relancer une demande de signature.",
+        });
+        if (onRefetch) onRefetch();
+      } else {
+        toast.error(
+          cancelData?.cancelSignature?.message ||
+            "Impossible d'annuler la signature",
+        );
+      }
+    } catch (error) {
+      toast.error("Erreur lors de l'annulation de la signature", {
+        description: error.message,
+      });
+    } finally {
+      setIsCancellingSignature(false);
     }
   };
 
@@ -233,9 +281,13 @@ export default function QuoteRowActions({
     canConvertToInvoice ||
     canConvertToPO;
 
+  // Origine import : préfixe vide (conservé après acceptation/refus). Un devis
+  // importé reste supprimable quel que soit son statut, comme l'indique le logo.
+  const isImportedOrigin = !quote.prefix && Boolean(quote.number);
   const hasDeleteAction =
     quote.status === QUOTE_STATUS.DRAFT ||
-    quote.status === QUOTE_STATUS.IMPORTED;
+    quote.status === QUOTE_STATUS.IMPORTED ||
+    isImportedOrigin;
 
   return (
     <>
@@ -395,6 +447,26 @@ export default function QuoteRowActions({
                     )}
                   </>
                 )}
+
+              {/* Annuler la signature - visible quand une demande est en cours */}
+              {[
+                "PENDING",
+                "WAIT_VALIDATION",
+                "WAIT_SIGN",
+                "WAIT_SIGNER",
+              ].includes(quote.signatureStatus) && (
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCancelSignature();
+                  }}
+                  disabled={isCancellingSignature || isReadOnly}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  <Ban className="mr-2 h-4 w-4 text-red-600" />
+                  Annuler la signature
+                </DropdownMenuItem>
+              )}
 
               {/* Rejeter le devis - en rouge */}
               {(quote.status === QUOTE_STATUS.PENDING ||
