@@ -392,6 +392,18 @@ export const PERMANENTLY_DELETE_FOLDERS = gql`
   }
 `;
 
+// Subscription temps réel : émise dès qu'un document/dossier du workspace
+// change (upload, déplacement, suppression, ou classement automatique).
+export const SHARED_DOCUMENTS_CHANGED_SUBSCRIPTION = gql`
+  subscription SharedDocumentsChanged($workspaceId: ID!) {
+    sharedDocumentsChanged(workspaceId: $workspaceId) {
+      type
+      documentId
+      workspaceId
+    }
+  }
+`;
+
 // Hook principal avec pagination
 const DOCUMENTS_PER_PAGE = 50;
 
