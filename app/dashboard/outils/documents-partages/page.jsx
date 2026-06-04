@@ -8,6 +8,7 @@ import React, {
   useEffect,
   startTransition,
 } from "react";
+import { useSubscription } from "@apollo/client";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { useIsMobile } from "@/src/hooks/use-mobile";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
@@ -36,6 +37,7 @@ import {
   usePermanentlyDeleteFolders,
   useBulkUpdateTags,
   useUpdateFolderVisibility,
+  SHARED_DOCUMENTS_CHANGED_SUBSCRIPTION,
 } from "@/src/hooks/useSharedDocuments";
 import { DraggableTree } from "./components/DraggableTree";
 import { MemberSelector } from "../kanban/[id]/components/MemberSelector";
@@ -531,6 +533,20 @@ export default function DocumentsPartagesPage() {
     refetch: refetchAllDocs,
   } = useSharedDocuments({});
 
+  // L'arbre de gauche (tous les fichiers) a des variables fixes : il ne se
+  // relance jamais tout seul. Les automatisations s'exécutant côté serveur
+  // (sans déclencheur frontend), un document fraîchement classé apparaît dans
+  // la vue dossier (qui se refetch au changement de folderId) mais pas dans
+  // l'arbre. On resynchronise l'arbre à chaque navigation de dossier.
+  const isFirstFolderNav = useRef(true);
+  useEffect(() => {
+    if (isFirstFolderNav.current) {
+      isFirstFolderNav.current = false;
+      return; // la requête initiale se charge déjà toute seule
+    }
+    refetchAllDocs();
+  }, [selectedFolder, refetchAllDocs]);
+
   const {
     folders,
     loading: foldersLoading,
@@ -596,6 +612,35 @@ export default function DocumentsPartagesPage() {
     loading: permanentDeleteFoldersLoading,
   } = usePermanentlyDeleteFolders();
   const { bulkUpdateTags, loading: bulkTagsLoading } = useBulkUpdateTags();
+
+  // Temps réel : un document/dossier du workspace a changé (upload, déplacement,
+  // suppression, ou classement automatique via une automatisation côté serveur).
+  // On rafraîchit toutes les listes — l'arbre de gauche ne se relançant jamais
+  // seul, c'est ce qui permet de voir le doc classé apparaître sans navigation.
+  // Debounce léger : une automatisation peut créer plusieurs docs (rafale d'events).
+  const sharedDocsRefreshTimer = useRef(null);
+  useEffect(() => {
+    return () => {
+      if (sharedDocsRefreshTimer.current) {
+        clearTimeout(sharedDocsRefreshTimer.current);
+      }
+    };
+  }, []);
+  useSubscription(SHARED_DOCUMENTS_CHANGED_SUBSCRIPTION, {
+    variables: { workspaceId },
+    skip: !workspaceId,
+    onData: () => {
+      if (sharedDocsRefreshTimer.current) {
+        clearTimeout(sharedDocsRefreshTimer.current);
+      }
+      sharedDocsRefreshTimer.current = setTimeout(() => {
+        refetchDocs();
+        refetchAllDocs();
+        refetchFolders();
+        refetchTrash();
+      }, 400);
+    },
+  });
 
   // Automatisations (pour le badge du bouton)
   const { automations: documentAutomations } =
