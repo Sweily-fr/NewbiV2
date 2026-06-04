@@ -155,7 +155,7 @@ function AutomationRow({ automation, lists, onUpdate, onDelete, onToggle }) {
         value={localData.triggerType}
         onValueChange={(value) => handleFieldChange("triggerType", value)}
       >
-        <SelectTrigger className="w-[160px]">
+        <SelectTrigger className="w-[200px]">
           <SelectValue />
         </SelectTrigger>
         <SelectContent className="z-[9999]">
@@ -173,7 +173,7 @@ function AutomationRow({ automation, lists, onUpdate, onDelete, onToggle }) {
         value={localData.actionType}
         onValueChange={(value) => handleFieldChange("actionType", value)}
       >
-        <SelectTrigger className="w-[130px]">
+        <SelectTrigger className="w-[150px]">
           <SelectValue />
         </SelectTrigger>
         <SelectContent className="z-[9999]">
@@ -274,7 +274,7 @@ function NewAutomationRow({ lists, onCreate, onCancel, isCreating }) {
             setFormData({ ...formData, triggerType: value })
           }
         >
-          <SelectTrigger className="w-[160px]">
+          <SelectTrigger className="w-[200px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="z-[9999]">
@@ -294,7 +294,7 @@ function NewAutomationRow({ lists, onCreate, onCancel, isCreating }) {
             setFormData({ ...formData, actionType: value })
           }
         >
-          <SelectTrigger className="w-[130px]">
+          <SelectTrigger className="w-[150px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="z-[9999]">
@@ -765,7 +765,7 @@ export default function AutomationsPopover({ trigger }) {
             </Button>
           )}
         </PopoverTrigger>
-        <PopoverContent align="end" className="w-[650px] p-0">
+        <PopoverContent align="end" className="w-[720px] p-0">
           {!canUseClientAutomations ? (
             /* Freelance: no automations at all */
             <div className="p-6 text-center space-y-3">
