@@ -17,7 +17,8 @@ import {
 } from "@/src/graphql/purchaseOrderQueries";
 import { useClient } from "@/src/graphql/clientQueries";
 import { usePurchaseOrderNumber } from "./use-purchase-order-number";
-import { formatLocalDate } from "@/src/utils/dateFormatter";
+import { formatLocalDate, refreshDraftDates } from "@/src/utils/dateFormatter";
+import { refreshPrefixDate } from "@/src/utils/invoiceUtils";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
@@ -63,8 +64,11 @@ export function usePurchaseOrderEditor({
   const { client: freshClient } = useClient(clientIdForFresh);
 
   // Prefix state pour le filtrage du numéro par préfixe
+  // refreshPrefixDate : recale le mois/année du préfixe stocké sur la date du
+  // jour (le préfixe en base n'est pas mis à jour automatiquement au changement
+  // de mois), pour éviter une erreur de numérotation à la création.
   const [currentPrefix, setCurrentPrefix] = useState(
-    organization?.purchaseOrderPrefix || "",
+    refreshPrefixDate(organization?.purchaseOrderPrefix) || "",
   );
   // État local pour autoNumbering (synchronisé avec le form via watch)
   const [currentAutoNumbering, setCurrentAutoNumbering] = useState(
@@ -832,8 +836,24 @@ export function usePurchaseOrderEditor({
       if (existingPurchaseOrder.status === "DRAFT") {
         orderData.number = "";
         if (orderData.prefix) {
+          // Brouillon repris un mois/année plus tard : recaler le mois (et
+          // l'année) du préfixe sur la date du jour. Le préfixe ne se régénère
+          // pas tout seul, donc un brouillon de mars rouvert en mai garderait
+          // BC-032026 sinon. refreshPrefixDate laisse intacts les préfixes
+          // personnalisés sans motif de date.
+          orderData.prefix = refreshPrefixDate(orderData.prefix);
           setCurrentPrefix(orderData.prefix);
         }
+        // Recaler les dates : un brouillon repris plus tard a une date
+        // d'émission antérieure à aujourd'hui, ce qui bloque la finalisation.
+        // On ramène l'émission à aujourd'hui et on décale la date de validité
+        // d'autant (délai d'origine conservé, 30 j par défaut).
+        const refreshedDates = refreshDraftDates(
+          orderData.issueDate,
+          orderData.validUntil,
+        );
+        orderData.issueDate = refreshedDates.issueDate;
+        orderData.validUntil = refreshedDates.secondDate;
       }
 
       reset(orderData);
@@ -864,11 +884,24 @@ export function usePurchaseOrderEditor({
     setValue("autoNumbering", orgAutoNumbering, { shouldDirty: false });
   }, [organization, mode, existingPurchaseOrder?.status, setValue]);
 
-  // Synchroniser les données client avec la collection Client (données à jour)
+  // Synchroniser les données client avec la collection Client (données à jour),
+  // UNE SEULE FOIS à l'ouverture du brouillon. On ne réécrase jamais ensuite :
+  // l'utilisateur peut modifier manuellement les coordonnées (email, adresse…)
+  // au niveau du document, et ces modifications doivent être conservées (un
+  // refetch Apollo de la fiche client ne doit pas écraser la saisie en cours).
+  const clientCrmSyncedRef = useRef(false);
   useEffect(() => {
     if (!isFormInitialized || !freshClient || mode === "create") return;
+    if (clientCrmSyncedRef.current) return;
     const currentClient = getValues("client");
     if (!currentClient?.id) return;
+
+    // Ne synchroniser que s'il s'agit bien du même client (pas un client
+    // re-sélectionné manuellement dans le formulaire).
+    const freshId = freshClient.id ?? freshClient._id;
+    if (freshId && String(currentClient.id) !== String(freshId)) return;
+
+    clientCrmSyncedRef.current = true;
 
     const needsUpdate =
       currentClient.email !== freshClient.email ||
@@ -1056,10 +1089,16 @@ export function usePurchaseOrderEditor({
       );
 
       // Charger le préfixe et la numérotation automatique depuis l'organisation
+      // refreshPrefixDate recale le mois/année sur la date du jour au cas où le
+      // préfixe stocké date d'un mois précédent (pas régénéré tout seul).
       if (organization.purchaseOrderPrefix) {
-        setValue("prefix", organization.purchaseOrderPrefix, {
-          shouldDirty: false,
-        });
+        setValue(
+          "prefix",
+          refreshPrefixDate(organization.purchaseOrderPrefix),
+          {
+            shouldDirty: false,
+          },
+        );
       }
       setValue(
         "autoNumbering",
@@ -2144,7 +2183,7 @@ function getInitialFormData(mode, initialData, session, organization) {
 
   const baseData = {
     // Informations du bon de commande
-    prefix: organization?.purchaseOrderPrefix || "",
+    prefix: refreshPrefixDate(organization?.purchaseOrderPrefix) || "",
     number: "",
     autoNumbering: organization?.purchaseOrderAutoNumbering || false,
     purchaseOrderNumber: "",
