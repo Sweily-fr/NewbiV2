@@ -23,6 +23,45 @@ const DOCUMENT_TYPE_LABELS = {
 };
 
 /**
+ * Normalise un numéro de mobile au format international E.164 (ex: +33612345678),
+ * requis par l'API eSignature OpenAPI (sinon erreur 825 "invalid signer 'mobile'").
+ * Accepte les formats français locaux (06.../07...) et internationaux (+33.../0033...).
+ * Retourne null si le numéro est vide ou inexploitable (-> authentification email seule).
+ */
+function normalizeMobile(raw) {
+  if (!raw) return null;
+
+  // Retirer espaces, points, tirets, parenthèses
+  let cleaned = raw.trim().replace(/[\s.()/-]/g, "");
+  if (!cleaned) return null;
+
+  // Préfixe international "00" -> "+"
+  if (cleaned.startsWith("00")) {
+    cleaned = "+" + cleaned.slice(2);
+  }
+
+  // Déjà au format international (+33...)
+  if (cleaned.startsWith("+")) {
+    const digits = cleaned.slice(1).replace(/\D/g, "");
+    return digits.length >= 8 ? "+" + digits : null;
+  }
+
+  const digits = cleaned.replace(/\D/g, "");
+
+  // Numéro français local "0X XX XX XX XX" (10 chiffres) -> +33X...
+  if (digits.length === 10 && digits.startsWith("0")) {
+    return "+33" + digits.slice(1);
+  }
+
+  // 9 chiffres sans le 0 initial (ex: 612345678) -> +33...
+  if (digits.length === 9) {
+    return "+33" + digits;
+  }
+
+  return null;
+}
+
+/**
  * Génère un PDF en base64 à partir d'un ref DOM
  */
 async function generatePdfBase64FromRef(componentRef) {
@@ -236,13 +275,16 @@ export function SignatureDialog({
         return;
       }
 
-      const formattedSigners = signers.map((s) => ({
-        name: s.name.trim(),
-        surname: s.surname.trim(),
-        email: s.email.trim(),
-        mobile: s.mobile?.trim() || null,
-        authentication: s.mobile?.trim() ? ["email", "sms"] : ["email"],
-      }));
+      const formattedSigners = signers.map((s) => {
+        const mobile = normalizeMobile(s.mobile);
+        return {
+          name: s.name.trim(),
+          surname: s.surname.trim(),
+          email: s.email.trim(),
+          mobile,
+          authentication: mobile ? ["email", "sms"] : ["email"],
+        };
+      });
 
       const result = await requestSignature({
         documentType,
