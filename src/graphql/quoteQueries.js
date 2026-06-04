@@ -733,9 +733,10 @@ export const useDeleteQuote = () => {
         variables: { id },
       });
 
-      // Invalider le cache
+      // Invalider le cache (liste, stats et soldes — sinon les montants
+      // "Total"/"Devis accepté" restent figés après suppression)
       client.refetchQueries({
-        include: [GET_QUOTES, GET_QUOTE_STATS],
+        include: [GET_QUOTES, GET_QUOTE_STATS, GET_QUOTE_BALANCES],
       });
 
       // Toast désactivé ici - géré dans les composants (quote-row-actions, etc.)

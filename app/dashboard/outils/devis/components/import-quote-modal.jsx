@@ -115,7 +115,6 @@ export function ImportQuoteModal({ open, onOpenChange, onImported }) {
     setUploadStatus({});
 
     let completed = 0;
-    let successCount = 0;
     const importedQuotes = [];
 
     for (let i = 0; i < files.length; i++) {
@@ -132,7 +131,6 @@ export function ImportQuoteModal({ open, onOpenChange, onImported }) {
         const payload = result.data?.importQuoteDirect;
         if (payload?.success) {
           setUploadStatus((prev) => ({ ...prev, [i]: "uploaded" }));
-          successCount++;
           if (payload.quote) importedQuotes.push(payload.quote);
         } else {
           setUploadStatus((prev) => ({ ...prev, [i]: "error" }));
@@ -148,9 +146,9 @@ export function ImportQuoteModal({ open, onOpenChange, onImported }) {
       setUploadProgress(Math.round((completed / files.length) * 100));
     }
 
-    if (successCount > 0) {
-      toast.success(`${successCount} devis importé(s) avec succès`);
-    }
+    // Pas de toast "X devis importé(s)" ici : à ce stade rien n'est encore un
+    // vrai devis, les fichiers sont seulement mis en file de vérification.
+    // L'utilisateur les valide ensuite un par un via la sidebar de revue.
 
     // Forcer la fermeture du modal AVANT d'ouvrir la sidebar côté parent,
     // sinon React bat les deux updates dans le même render et Radix peut

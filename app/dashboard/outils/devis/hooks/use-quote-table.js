@@ -877,11 +877,15 @@ export function useQuoteTable({
     // mutation dédiée deleteImportedQuotes, quel que soit leur statut.
     const importedRows = selectedRows.filter((q) => q._type === "imported");
 
-    // Devis réels supprimables : brouillons et devis importés (statut IMPORTED).
+    // Devis réels supprimables : brouillons, et devis issus d'un import
+    // (préfixe vide → logo « importé ») quel que soit leur statut, même une
+    // fois acceptés (COMPLETED) ou refusés (CANCELED).
     const deletableQuotes = selectedRows.filter(
       (q) =>
         q._type !== "imported" &&
-        (q.status === "DRAFT" || q.status === "IMPORTED"),
+        (q.status === "DRAFT" ||
+          q.status === "IMPORTED" ||
+          (!q.prefix && Boolean(q.number))),
     );
 
     const totalDeletable = importedRows.length + deletableQuotes.length;
