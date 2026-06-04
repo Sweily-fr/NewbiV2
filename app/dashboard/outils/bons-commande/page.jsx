@@ -81,7 +81,11 @@ function PurchaseOrdersContent() {
   };
 
   // Récupérer les BC pour les stats
-  const { purchaseOrders, loading: poLoading } = usePurchaseOrders();
+  const {
+    purchaseOrders,
+    loading: poLoading,
+    refetch: refetchPurchaseOrders,
+  } = usePurchaseOrders();
 
   // Calculer les statistiques
   const poStats = useMemo(() => {
@@ -242,6 +246,7 @@ function PurchaseOrdersContent() {
                 poIdToOpen={poIdToOpen}
                 triggerImport={triggerImport}
                 onImportTriggered={() => setTriggerImport(false)}
+                onBalancesRefetch={refetchPurchaseOrders}
               />
             </Suspense>
           </div>
