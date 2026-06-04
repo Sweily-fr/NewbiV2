@@ -74,8 +74,9 @@ export default function HeroSection() {
 
             {/* Titre principal H1 */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-medium tracking-tight text-black dark:text-white mb-6">
-              La plateforme tout-en-un pour <br className="hidden sm:block" />{" "}
-              piloter votre <span className="text-indigo-600">entreprise</span>
+              La plateforme de facturation et de gestion tout-en-un{" "}
+              <br className="hidden sm:block" /> pour piloter votre{" "}
+              <span className="text-indigo-600">entreprise</span>
             </h1>
 
             {/* Sous-titre */}
@@ -172,7 +173,8 @@ export default function HeroSection() {
                 <div
                   className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
                   style={{
-                    background: "linear-gradient(to top, #ffffff 0%, #ffffff 30%, transparent 100%)",
+                    background:
+                      "linear-gradient(to top, #ffffff 0%, #ffffff 30%, transparent 100%)",
                   }}
                 />
               </div>

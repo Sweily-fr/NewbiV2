@@ -1,12 +1,13 @@
-"use client"
+"use client";
 
 import {
   createContext,
   useContext,
   useId,
+  useMemo,
   useRef,
   useState,
-} from "react"
+} from "react";
 import {
   DndContext,
   DragOverlay,
@@ -15,14 +16,13 @@ import {
   TouchSensor,
   useSensor,
   useSensors,
+} from "@dnd-kit/core";
+import { addMinutes, differenceInMinutes } from "date-fns";
 
-} from "@dnd-kit/core"
-import { addMinutes, differenceInMinutes } from "date-fns"
-
-import { EventItem } from "./event-item"
+import { EventItem } from "./event-item";
 
 // Define CalendarEvent locally to avoid circular dependencies
-const CalendarEvent = {}
+const CalendarEvent = {};
 
 // Create the context
 const CalendarDndContext = createContext({
@@ -34,10 +34,10 @@ const CalendarDndContext = createContext({
   isMultiDay: false,
   multiDayWidth: null,
   dragHandlePosition: null,
-})
+});
 
 // Hook to use the context
-export const useCalendarDnd = () => useContext(CalendarDndContext)
+export const useCalendarDnd = () => useContext(CalendarDndContext);
 
 // Props for the provider - converted to JSDoc for JavaScript
 /**
@@ -46,13 +46,13 @@ export const useCalendarDnd = () => useContext(CalendarDndContext)
  */
 
 export function CalendarDndProvider({ children, onEventUpdate }) {
-  const [activeEvent, setActiveEvent] = useState(null)
-  const [activeId, setActiveId] = useState(null)
-  const [activeView, setActiveView] = useState(null)
-  const [currentTime, setCurrentTime] = useState(null)
-  const [eventHeight, setEventHeight] = useState(null)
-  const [isMultiDay, setIsMultiDay] = useState(false)
-  const [multiDayWidth, setMultiDayWidth] = useState(null)
+  const [activeEvent, setActiveEvent] = useState(null);
+  const [activeId, setActiveId] = useState(null);
+  const [activeView, setActiveView] = useState(null);
+  const [currentTime, setCurrentTime] = useState(null);
+  const [eventHeight, setEventHeight] = useState(null);
+  const [isMultiDay, setIsMultiDay] = useState(false);
+  const [multiDayWidth, setMultiDayWidth] = useState(null);
   const [dragHandlePosition, setDragHandlePosition] = useState({
     x: null,
     y: null,
@@ -60,10 +60,10 @@ export function CalendarDndProvider({ children, onEventUpdate }) {
       isFirstDay: false,
       isLastDay: false,
     },
-  })
+  });
 
   // Store original event dimensions
-  const eventDimensions = useRef({ height: 0 })
+  const eventDimensions = useRef({ height: 0 });
 
   // Configure sensors for better drag detection
   const sensors = useSensors(
@@ -85,19 +85,19 @@ export function CalendarDndProvider({ children, onEventUpdate }) {
       activationConstraint: {
         distance: 5,
       },
-    })
-  )
+    }),
+  );
 
   // Generate a stable ID for the DndContext
-  const dndContextId = useId()
+  const dndContextId = useId();
 
   const handleDragStart = (event) => {
-    const { active } = event
+    const { active } = event;
 
     // Add safety check for data.current
     if (!active.data.current) {
-      console.error("Missing data in drag start event", event)
-      return
+      console.error("Missing data in drag start event", event);
+      return;
     }
 
     const {
@@ -107,44 +107,44 @@ export function CalendarDndProvider({ children, onEventUpdate }) {
       isMultiDay: eventIsMultiDay,
       multiDayWidth: eventMultiDayWidth,
       dragHandlePosition: eventDragHandlePosition,
-    } = active.data.current
+    } = active.data.current;
 
     // Block drag on read-only events (external calendar events)
     if (calendarEvent?.isReadOnly) {
-      return
+      return;
     }
 
-    setActiveEvent(calendarEvent)
-    setActiveId(active.id)
-    setActiveView(view)
-    setCurrentTime(new Date(calendarEvent.start))
-    setIsMultiDay(eventIsMultiDay || false)
-    setMultiDayWidth(eventMultiDayWidth || null)
-    setDragHandlePosition(eventDragHandlePosition || null)
+    setActiveEvent(calendarEvent);
+    setActiveId(active.id);
+    setActiveView(view);
+    setCurrentTime(new Date(calendarEvent.start));
+    setIsMultiDay(eventIsMultiDay || false);
+    setMultiDayWidth(eventMultiDayWidth || null);
+    setDragHandlePosition(eventDragHandlePosition || null);
 
     // Store event height if provided
     if (height) {
-      eventDimensions.current.height = height
-      setEventHeight(height)
+      eventDimensions.current.height = height;
+      setEventHeight(height);
     }
-  }
+  };
 
   const handleDragOver = (event) => {
-    const { over } = event
+    const { over } = event;
 
     if (over && activeEvent && over.data.current) {
-      const { date, time } = over.data.current
+      const { date, time } = over.data.current;
 
       // Update time for week/day views
       if (time !== undefined && activeView !== "month") {
-        const newTime = new Date(date)
+        const newTime = new Date(date);
 
         // Calculate hours and minutes with 15-minute precision
-        const hours = Math.floor(time)
-        const fractionalMinutes = (time - hours) * 60
-        const minutes = Math.round(fractionalMinutes / 15) * 15
+        const hours = Math.floor(time);
+        const fractionalMinutes = (time - hours) * 60;
+        const minutes = Math.round(fractionalMinutes / 15) * 15;
 
-        newTime.setHours(hours, minutes, 0, 0)
+        newTime.setHours(hours, minutes, 0, 0);
 
         // Only update if time has changed
         if (
@@ -155,18 +155,18 @@ export function CalendarDndProvider({ children, onEventUpdate }) {
           newTime.getMonth() !== currentTime.getMonth() ||
           newTime.getFullYear() !== currentTime.getFullYear()
         ) {
-          setCurrentTime(newTime)
+          setCurrentTime(newTime);
         }
       } else if (activeView === "month") {
         // For month view, just update the date but preserve time
-        const newTime = new Date(date)
+        const newTime = new Date(date);
         if (currentTime) {
           newTime.setHours(
             currentTime.getHours(),
             currentTime.getMinutes(),
             currentTime.getSeconds(),
-            currentTime.getMilliseconds()
-          )
+            currentTime.getMilliseconds(),
+          );
         }
 
         // Only update if date has changed
@@ -176,72 +176,72 @@ export function CalendarDndProvider({ children, onEventUpdate }) {
           newTime.getMonth() !== currentTime.getMonth() ||
           newTime.getFullYear() !== currentTime.getFullYear()
         ) {
-          setCurrentTime(newTime)
+          setCurrentTime(newTime);
         }
       }
     }
-  }
+  };
 
   const handleDragEnd = (event) => {
-    const { active, over } = event
+    const { active, over } = event;
 
     // Add robust error checking
     if (!over || !activeEvent || !currentTime) {
       // Reset state and exit early
-      setActiveEvent(null)
-      setActiveId(null)
-      setActiveView(null)
-      setCurrentTime(null)
-      setEventHeight(null)
-      setIsMultiDay(false)
-      setMultiDayWidth(null)
-      setDragHandlePosition(null)
-      return
+      setActiveEvent(null);
+      setActiveId(null);
+      setActiveView(null);
+      setCurrentTime(null);
+      setEventHeight(null);
+      setIsMultiDay(false);
+      setMultiDayWidth(null);
+      setDragHandlePosition(null);
+      return;
     }
 
     try {
       // Safely access data with checks
       if (!active.data.current || !over.data.current) {
-        throw new Error("Missing data in drag event")
+        throw new Error("Missing data in drag event");
       }
 
-      const activeData = active.data.current
-      const overData = over.data.current
+      const activeData = active.data.current;
+      const overData = over.data.current;
 
       // Verify we have all required data
       if (!activeData.event || !overData.date) {
-        throw new Error("Missing required event data")
+        throw new Error("Missing required event data");
       }
 
-      const calendarEvent = activeData.event
-      const date = overData.date
-      const time = overData.time
+      const calendarEvent = activeData.event;
+      const date = overData.date;
+      const time = overData.time;
 
       // Calculate new start time
-      const newStart = new Date(date)
+      const newStart = new Date(date);
 
       // If time is provided (for week/day views), set the hours and minutes
       if (time !== undefined) {
-        const hours = Math.floor(time)
-        const fractionalMinutes = (time - hours) * 60
-        const minutes = Math.round(fractionalMinutes / 15) * 15
+        const hours = Math.floor(time);
+        const fractionalMinutes = (time - hours) * 60;
+        const minutes = Math.round(fractionalMinutes / 15) * 15;
 
-        newStart.setHours(hours, minutes, 0, 0)
+        newStart.setHours(hours, minutes, 0, 0);
       } else {
         // For month view, preserve the original time from currentTime
         newStart.setHours(
           currentTime.getHours(),
           currentTime.getMinutes(),
           currentTime.getSeconds(),
-          currentTime.getMilliseconds()
-        )
+          currentTime.getMilliseconds(),
+        );
       }
 
       // Calculate new end time based on the original duration
-      const originalStart = new Date(calendarEvent.start)
-      const originalEnd = new Date(calendarEvent.end)
-      const durationMinutes = differenceInMinutes(originalEnd, originalStart)
-      const newEnd = addMinutes(newStart, durationMinutes)
+      const originalStart = new Date(calendarEvent.start);
+      const originalEnd = new Date(calendarEvent.end);
+      const durationMinutes = differenceInMinutes(originalEnd, originalStart);
+      const newEnd = addMinutes(newStart, durationMinutes);
 
       // Only update if the start time has actually changed
       const hasStartTimeChanged =
@@ -249,7 +249,7 @@ export function CalendarDndProvider({ children, onEventUpdate }) {
         originalStart.getMonth() !== newStart.getMonth() ||
         originalStart.getDate() !== newStart.getDate() ||
         originalStart.getHours() !== newStart.getHours() ||
-        originalStart.getMinutes() !== newStart.getMinutes()
+        originalStart.getMinutes() !== newStart.getMinutes();
 
       if (hasStartTimeChanged) {
         // Update the event only if the time has changed
@@ -257,22 +257,49 @@ export function CalendarDndProvider({ children, onEventUpdate }) {
           ...calendarEvent,
           start: newStart,
           end: newEnd,
-        })
+        });
       }
     } catch (error) {
-      console.error("Error in drag end handler:", error)
+      console.error("Error in drag end handler:", error);
     } finally {
       // Always reset state
-      setActiveEvent(null)
-      setActiveId(null)
-      setActiveView(null)
-      setCurrentTime(null)
-      setEventHeight(null)
-      setIsMultiDay(false)
-      setMultiDayWidth(null)
-      setDragHandlePosition(null)
+      setActiveEvent(null);
+      setActiveId(null);
+      setActiveView(null);
+      setCurrentTime(null);
+      setEventHeight(null);
+      setIsMultiDay(false);
+      setMultiDayWidth(null);
+      setDragHandlePosition(null);
     }
-  }
+  };
+
+  // Valeur du contexte mémoïsée SANS currentTime : aucun consommateur du
+  // contexte (DroppableCell, DraggableEvent) ne lit currentTime — seul le
+  // DragOverlay ci-dessous l'utilise, directement via le state. Pendant un
+  // drag, handleDragOver appelle setCurrentTime à chaque mouvement ; en
+  // gardant cette valeur référentiellement stable, on évite de re-render les
+  // ~672 cellules de drop + tous les événements à chaque pixel parcouru.
+  const contextValue = useMemo(
+    () => ({
+      activeEvent,
+      activeId,
+      activeView,
+      eventHeight,
+      isMultiDay,
+      multiDayWidth,
+      dragHandlePosition,
+    }),
+    [
+      activeEvent,
+      activeId,
+      activeView,
+      eventHeight,
+      isMultiDay,
+      multiDayWidth,
+      dragHandlePosition,
+    ],
+  );
 
   return (
     <DndContext
@@ -282,18 +309,7 @@ export function CalendarDndProvider({ children, onEventUpdate }) {
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <CalendarDndContext.Provider
-        value={{
-          activeEvent,
-          activeId,
-          activeView,
-          currentTime,
-          eventHeight,
-          isMultiDay,
-          multiDayWidth,
-          dragHandlePosition,
-        }}
-      >
+      <CalendarDndContext.Provider value={contextValue}>
         {children}
 
         <DragOverlay adjustScale={false} dropAnimation={null}>
@@ -320,5 +336,5 @@ export function CalendarDndProvider({ children, onEventUpdate }) {
         </DragOverlay>
       </CalendarDndContext.Provider>
     </DndContext>
-  )
+  );
 }

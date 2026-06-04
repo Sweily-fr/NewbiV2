@@ -48,7 +48,7 @@ import { cn } from "@/src/lib/utils";
  * @param {number} zIndex
  */
 
-export function WeekView({
+export const WeekView = React.memo(function WeekView({
   currentDate,
   events,
   onEventSelect,
@@ -62,7 +62,7 @@ export function WeekView({
 
   const weekStart = useMemo(
     () => startOfWeek(currentDate, { weekStartsOn: 0 }),
-    [currentDate]
+    [currentDate],
   );
 
   const hours = useMemo(() => {
@@ -87,7 +87,7 @@ export function WeekView({
           (day) =>
             isSameDay(day, eventStart) ||
             isSameDay(day, eventEnd) ||
-            (day > eventStart && day < eventEnd)
+            (day > eventStart && day < eventEnd),
         );
       });
   }, [events, days]);
@@ -172,8 +172,8 @@ export function WeekView({
                 {
                   start: new Date(c.event.start),
                   end: new Date(c.event.end),
-                }
-              )
+                },
+              ),
             );
             if (!overlaps) {
               placed = true;
@@ -216,12 +216,12 @@ export function WeekView({
   const showAllDaySection = allDayEvents.length > 0;
   const { currentTimePosition, currentTimeVisible } = useCurrentTimeIndicator(
     currentDate,
-    "week"
+    "week",
   );
 
   return (
     <div data-slot="week-view" className="flex h-full flex-col">
-      <div className="bg-background/80 border-border/70 sticky top-0 z-30 grid grid-cols-8 border-b backdrop-blur-md">
+      <div className="bg-background border-border/70 sticky top-0 z-30 grid grid-cols-8 border-b">
         <div className="text-muted-foreground/70 py-2 text-center text-sm">
           <span className="max-[479px]:sr-only">{format(new Date(), "O")}</span>
         </div>
@@ -234,7 +234,9 @@ export function WeekView({
             <span className="sm:hidden" aria-hidden="true">
               {format(day, "E", { locale: fr })[0]} {format(day, "d")}
             </span>
-            <span className="max-sm:hidden">{format(day, "EEE dd", { locale: fr })}</span>
+            <span className="max-sm:hidden">
+              {format(day, "EEE dd", { locale: fr })}
+            </span>
           </div>
         ))}
       </div>
@@ -288,7 +290,7 @@ export function WeekView({
                         <div
                           className={cn(
                             "truncate",
-                            !shouldShowTitle && "invisible"
+                            !shouldShowTitle && "invisible",
                           )}
                           aria-hidden={!shouldShowTitle}
                         >
@@ -388,7 +390,7 @@ export function WeekView({
                           quarter === 2 &&
                             "top-[calc(var(--week-cells-height)/4*2)]",
                           quarter === 3 &&
-                            "top-[calc(var(--week-cells-height)/4*3)]"
+                            "top-[calc(var(--week-cells-height)/4*3)]",
                         )}
                         onClick={() => {
                           const startTime = new Date(day);
@@ -407,4 +409,4 @@ export function WeekView({
       </div>
     </div>
   );
-}
+});

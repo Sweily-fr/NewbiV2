@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 // Types removed for JavaScript compatibility
 import { differenceInMinutes, format, getMinutes, isPast } from "date-fns";
 
@@ -51,7 +51,7 @@ function EventWrapper({
   const displayEnd = currentTime
     ? new Date(
         new Date(currentTime).getTime() +
-          (new Date(event.end).getTime() - new Date(event.start).getTime())
+          (new Date(event.end).getTime() - new Date(event.start).getTime()),
       )
     : new Date(event.end);
 
@@ -60,9 +60,9 @@ function EventWrapper({
   return (
     <button
       className={cn(
-        "focus-visible:border-ring focus-visible:ring-ring/50 flex size-full overflow-hidden px-1 text-left font-medium backdrop-blur-md transition outline-none select-none focus-visible:ring-[3px] data-dragging:cursor-grabbing data-dragging:shadow-lg data-past-event:line-through sm:px-2",
+        "focus-visible:border-ring focus-visible:ring-ring/50 flex size-full overflow-hidden px-1 text-left font-medium transition outline-none select-none focus-visible:ring-[3px] data-dragging:cursor-grabbing data-dragging:shadow-lg data-past-event:line-through sm:px-2",
         getBorderRadiusClasses(isFirstDay, isLastDay),
-        className
+        className,
       )}
       style={getEventHexStyles(event.color)}
       data-dragging={isDragging || undefined}
@@ -96,7 +96,7 @@ function EventWrapper({
  * @param {Function} onTouchStart
  */
 
-export function EventItem({
+export const EventItem = memo(function EventItem({
   event,
   view,
   isDragging,
@@ -124,7 +124,7 @@ export function EventItem({
     return currentTime
       ? new Date(
           new Date(currentTime).getTime() +
-            (new Date(event.end).getTime() - new Date(event.start).getTime())
+            (new Date(event.end).getTime() - new Date(event.start).getTime()),
         )
       : new Date(event.end);
   }, [currentTime, event.start, event.end]);
@@ -156,7 +156,7 @@ export function EventItem({
         onClick={onClick}
         className={cn(
           "mt-[var(--event-gap)] h-[var(--event-height)] items-center text-[10px] sm:text-xs",
-          className
+          className,
         )}
         currentTime={currentTime}
         dndListeners={dndListeners}
@@ -174,7 +174,10 @@ export function EventItem({
               )}
               {event.title}
             </span>
-            <SyncBadge count={syncCount} className="hidden sm:inline-flex shrink-0" />
+            <SyncBadge
+              count={syncCount}
+              className="hidden sm:inline-flex shrink-0"
+            />
           </span>
         )}
       </EventWrapper>
@@ -193,7 +196,7 @@ export function EventItem({
           "py-1",
           durationMinutes < 45 ? "items-center" : "flex-col",
           view === "week" ? "text-[10px] sm:text-xs" : "text-xs",
-          className
+          className,
         )}
         currentTime={currentTime}
         dndListeners={dndListeners}
@@ -235,7 +238,7 @@ export function EventItem({
     <button
       className={cn(
         "focus-visible:border-ring focus-visible:ring-ring/50 flex w-full flex-col gap-1 rounded p-2 text-left transition outline-none focus-visible:ring-[3px] data-past-event:line-through data-past-event:opacity-90",
-        className
+        className,
       )}
       style={getEventHexStyles(eventColor)}
       data-past-event={isPast(new Date(event.end)) || undefined}
@@ -271,4 +274,4 @@ export function EventItem({
       )}
     </button>
   );
-}
+});

@@ -916,6 +916,7 @@ export const QUOTE_STATUS = {
   PENDING: "PENDING",
   COMPLETED: "COMPLETED",
   CANCELED: "CANCELED",
+  IMPORTED: "IMPORTED",
 };
 
 export const DISCOUNT_TYPE = {
@@ -934,6 +935,7 @@ export const QUOTE_STATUS_LABELS = {
   [QUOTE_STATUS.PENDING]: "En attente",
   [QUOTE_STATUS.COMPLETED]: "Accepté",
   [QUOTE_STATUS.CANCELED]: "Annulé",
+  [QUOTE_STATUS.IMPORTED]: "Importé",
 };
 
 export const DISCOUNT_TYPE_LABELS = {
@@ -1055,4 +1057,5 @@ export const QUOTE_STATUS_COLORS = {
   [QUOTE_STATUS.COMPLETED]:
     "bg-emerald-100 text-emerald-700 border-emerald-200",
   [QUOTE_STATUS.CANCELED]: "bg-red-100 text-red-700 border-red-200",
+  [QUOTE_STATUS.IMPORTED]: "bg-blue-100 text-blue-700 border-blue-200",
 };

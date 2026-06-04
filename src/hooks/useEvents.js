@@ -51,7 +51,11 @@ export const useEvents = (options = {}) => {
     variables: queryVariables,
     skip: skip || !finalWorkspaceId,
     errorPolicy: "all",
-    fetchPolicy: "cache-and-network",
+    // cache-first : on sert le cache immédiatement et on laisse la subscription
+    // calendarEventsChanged déclencher un refetch quand les données changent.
+    // Évite un appel réseau (500 events) + re-render complet à chaque
+    // navigation / refocus.
+    fetchPolicy: "cache-first",
   });
 
   // Real-time calendar sync via GraphQL subscription
@@ -124,7 +128,9 @@ export const useCreateEvent = () => {
 
   const [createEventMutation, { loading, error }] = useMutation(CREATE_EVENT, {
     refetchQueries: ["GetEvents"],
-    awaitRefetchQueries: true,
+    // Non bloquant : l'UI (fermeture du panneau, toast) ne doit pas attendre
+    // le refetch de la liste complète.
+    awaitRefetchQueries: false,
   });
 
   const createEvent = async (input, customWorkspaceId) => {
@@ -163,10 +169,10 @@ export const useCreateEvent = () => {
 export const useUpdateEvent = () => {
   const { workspaceId } = useWorkspace();
 
-  const [updateEventMutation, { loading, error }] = useMutation(UPDATE_EVENT, {
-    refetchQueries: ["GetEvents"],
-    awaitRefetchQueries: true,
-  });
+  // Pas de refetchQueries : la mutation renvoie l'event complet (id + champs),
+  // qu'Apollo fusionne automatiquement dans le cache normalisé. Le drag & drop
+  // repositionne donc l'événement dès la réponse, sans re-fetch des 500 events.
+  const [updateEventMutation, { loading, error }] = useMutation(UPDATE_EVENT);
 
   const updateEvent = async (input, customWorkspaceId) => {
     try {
@@ -206,7 +212,7 @@ export const useDeleteEvent = () => {
 
   const [deleteEventMutation, { loading, error }] = useMutation(DELETE_EVENT, {
     refetchQueries: ["GetEvents"],
-    awaitRefetchQueries: true,
+    awaitRefetchQueries: false,
   });
 
   const deleteEvent = async (id, customWorkspaceId) => {

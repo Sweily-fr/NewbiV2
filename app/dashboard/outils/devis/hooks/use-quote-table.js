@@ -28,6 +28,7 @@ import {
   QUOTE_STATUS_LABELS,
   useDeleteQuote,
 } from "@/src/graphql/quoteQueries";
+import { useDeleteImportedQuotes } from "@/src/graphql/importedQuoteQueries";
 import { formatDate, isDateExpired } from "../utils/date-utils";
 import QuoteRowActions from "../components/quote-row-actions";
 import { EmailTrackingStatus } from "@/src/components/email-tracking-status";
@@ -230,6 +231,7 @@ export function useQuoteTable({
 
   // Hook pour la suppression de devis
   const { deleteQuote, loading: isDeleting } = useDeleteQuote();
+  const { deleteImportedQuotes } = useDeleteImportedQuotes();
 
   // Define columns
   const columns = useMemo(
@@ -248,16 +250,13 @@ export function useQuoteTable({
             aria-label="Sélectionner tout"
           />
         ),
-        cell: ({ row }) =>
-          row.original._type === "imported" ? (
-            <span className="inline-block w-4" />
-          ) : (
-            <Checkbox
-              checked={row.getIsSelected()}
-              onCheckedChange={(value) => row.toggleSelected(!!value)}
-              aria-label="Sélectionner la ligne"
-            />
-          ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Sélectionner la ligne"
+          />
+        ),
         size: 40,
         enableSorting: false,
         enableHiding: false,
@@ -318,6 +317,11 @@ export function useQuoteTable({
           const client = row.original.client;
           const quote = row.original;
           const isImported = quote._type === "imported";
+          // Les vrais devis issus d'un import gardent un préfixe vide après
+          // conversion : on garde l'indicateur « importé » même une fois le
+          // devis accepté ou refusé (le statut change, l'origine reste).
+          const isImportedOrigin =
+            isImported || (!quote.prefix && Boolean(quote.number));
           const clientName = client?.name || "Non défini";
           return (
             <div className="min-h-[40px] flex items-center gap-2">
@@ -344,7 +348,7 @@ export function useQuoteTable({
                       )}
                 </div>
               </div>
-              {isImported && (
+              {isImportedOrigin && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span className="flex-shrink-0 inline-flex items-center justify-center w-5 h-5 rounded bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400 cursor-default">
@@ -592,6 +596,12 @@ export function useQuoteTable({
                   className:
                     "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400",
                 };
+              case "IMPORTED":
+                return {
+                  icon: <Upload className="w-3 h-3" />,
+                  className:
+                    "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400",
+                };
               default:
                 return {
                   icon: <FileText className="w-3 h-3" />,
@@ -606,7 +616,7 @@ export function useQuoteTable({
           return (
             <span
               className={cn(
-                "inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium",
+                "inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap",
                 config.className,
               )}
             >
@@ -863,25 +873,47 @@ export function useQuoteTable({
 
   // Handle bulk delete - optimized with batching
   const handleDeleteSelected = async () => {
-    const draftQuotes = selectedRows.filter(
-      (quote) => quote.status === "DRAFT",
+    // Lignes de devis importés (OCR, ImportedQuote) : suppression via la
+    // mutation dédiée deleteImportedQuotes, quel que soit leur statut.
+    const importedRows = selectedRows.filter((q) => q._type === "imported");
+
+    // Devis réels supprimables : brouillons et devis importés (statut IMPORTED).
+    const deletableQuotes = selectedRows.filter(
+      (q) =>
+        q._type !== "imported" &&
+        (q.status === "DRAFT" || q.status === "IMPORTED"),
     );
 
-    if (draftQuotes.length === 0) {
-      toast.error("Seuls les devis en brouillon peuvent être supprimés");
+    const totalDeletable = importedRows.length + deletableQuotes.length;
+
+    if (totalDeletable === 0) {
+      toast.error(
+        "Seuls les devis en brouillon ou importés peuvent être supprimés",
+      );
       return;
     }
 
-    if (draftQuotes.length < selectedRows.length) {
+    if (totalDeletable < selectedRows.length) {
       toast.warning(
-        `${selectedRows.length - draftQuotes.length} devis ignoré(s) (non brouillon)`,
+        `${selectedRows.length - totalDeletable} devis ignoré(s) (non supprimable)`,
       );
     }
 
-    // Process in chunks to avoid overwhelming the browser
+    // Suppression groupée des devis importés (OCR) en une seule mutation.
+    if (importedRows.length > 0) {
+      try {
+        await deleteImportedQuotes({
+          variables: { ids: importedRows.map((q) => q.id) },
+        });
+      } catch {
+        toast.error("Erreur lors de la suppression des devis importés");
+      }
+    }
+
+    // Suppression des devis réels par lots pour ne pas saturer le navigateur.
     const BATCH_SIZE = 5;
-    for (let i = 0; i < draftQuotes.length; i += BATCH_SIZE) {
-      const batch = draftQuotes.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < deletableQuotes.length; i += BATCH_SIZE) {
+      const batch = deletableQuotes.slice(i, i + BATCH_SIZE);
       try {
         // Les notifications individuelles sont désactivées dans le hook GraphQL
         await Promise.all(batch.map((quote) => deleteQuote(quote.id)));
@@ -893,7 +925,7 @@ export function useQuoteTable({
     }
 
     // Une seule notification à la fin
-    toast.success(`${draftQuotes.length} devis supprimé(s)`);
+    toast.success(`${totalDeletable} devis supprimé(s)`);
     table.resetRowSelection();
 
     // Actualiser la liste des devis

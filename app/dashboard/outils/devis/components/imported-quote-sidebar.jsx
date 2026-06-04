@@ -52,7 +52,7 @@ import {
   PAYMENT_METHOD_LABELS,
   useUpdateImportedQuote,
   useDeleteImportedQuote,
-  useValidateImportedQuote,
+  useConvertImportedQuoteToQuote,
 } from "@/src/graphql/importedQuoteQueries";
 import { toast } from "sonner";
 
@@ -71,8 +71,8 @@ export function ImportedQuoteSidebar({
     useUpdateImportedQuote();
   const { deleteImportedQuote, loading: deleteLoading } =
     useDeleteImportedQuote();
-  const { validateImportedQuote, loading: validateLoading } =
-    useValidateImportedQuote();
+  const { convertImportedQuoteToQuote, loading: validateLoading } =
+    useConvertImportedQuoteToQuote();
 
   const isLoading = updateLoading || deleteLoading || validateLoading;
 
@@ -120,8 +120,10 @@ export function ImportedQuoteSidebar({
         });
         setIsEditing(false);
       }
-      await validateImportedQuote({ variables: { id: quote.id } });
-      toast.success("Devis validé");
+      // La validation crée un vrai devis au statut « Devis importé »
+      // (référence d'origine conservée), non modifiable, à accepter/refuser.
+      await convertImportedQuoteToQuote({ variables: { id: quote.id } });
+      toast.success("Devis importé créé");
       onUpdate?.();
       if (isReviewMode) {
         onValidated?.();
