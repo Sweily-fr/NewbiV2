@@ -5,6 +5,7 @@ import { useSession } from "@/src/lib/auth-client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { generateDynamicFooter } from "@/src/utils/document-suggestions";
 import { stripHtml } from "@/src/utils/kanbanHelpers";
+import { getDraftEffectiveDates } from "@/src/utils/dateFormatter";
 
 // Fonction utilitaire pour calculer le total d'un article en prenant en compte la remise et l'avancement
 const calculateItemTotal = (
@@ -76,6 +77,10 @@ const UniversalPreviewPDF = ({
   isMobile = false,
   forPDF = false,
   previousSituationInvoices = [],
+  // Aperçu écran uniquement : recale les dates d'un brouillon repris plus tard
+  // (émission ramenée au jour J, échéance/validité décalée d'autant). N'est
+  // jamais activé par les générateurs PDF, donc le PDF généré reste inchangé.
+  recalcDraftDates = false,
 }) => {
   // Calculer le montant marché HT (total à 100% sans avancement) pour les factures de situation
   const calculateMontantMarcheHT = () => {
@@ -491,6 +496,22 @@ const UniversalPreviewPDF = ({
     return date.toLocaleDateString("fr-FR", options);
   };
 
+  // Brouillon repris ultérieurement, en aperçu écran : recaler les dates pour
+  // ne pas afficher une date d'émission antérieure à aujourd'hui. Désactivé
+  // par défaut (et donc pour toute génération PDF) — voir la prop recalcDraftDates.
+  const _secondDateRaw =
+    type === "quote" || isPurchaseOrder ? data?.validUntil : data?.dueDate;
+  const _previewDraftDates =
+    recalcDraftDates && data?.status === "DRAFT"
+      ? getDraftEffectiveDates(data?.issueDate || data?.date, _secondDateRaw)
+      : null;
+  const effectiveIssueDate = _previewDraftDates?.changed
+    ? _previewDraftDates.issue.effective
+    : data?.issueDate || data?.date;
+  const effectiveSecondDate = _previewDraftDates?.changed
+    ? _previewDraftDates.second.effective
+    : _secondDateRaw;
+
   // Formatage des adresses - gère à la fois les chaînes et les objets
   const formatAddress = (address) => {
     if (!address) return "";
@@ -665,8 +686,7 @@ const UniversalPreviewPDF = ({
                     Date d'émission:
                   </span>
                   <span className="dark:text-[#0A0A0A]">
-                    {formatDate(data.issueDate || data.date) ||
-                      formatDate(new Date())}
+                    {formatDate(effectiveIssueDate) || formatDate(new Date())}
                   </span>
                 </div>
                 {!isCreditNote && (
@@ -680,11 +700,7 @@ const UniversalPreviewPDF = ({
                         : "Date d'échéance:"}
                     </span>
                     <span className="dark:text-[#0A0A0A]">
-                      {formatDate(
-                        type === "quote" || isPurchaseOrder
-                          ? data.validUntil
-                          : data.dueDate,
-                      ) ||
+                      {formatDate(effectiveSecondDate) ||
                         formatDate(
                           new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
                         )}

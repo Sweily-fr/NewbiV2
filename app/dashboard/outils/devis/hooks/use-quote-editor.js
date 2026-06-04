@@ -19,7 +19,8 @@ import {
 import { useClient } from "@/src/graphql/clientQueries";
 import { useQuoteNumber } from "./use-quote-number";
 import posthog from "posthog-js";
-import { formatLocalDate } from "@/src/utils/dateFormatter";
+import { formatLocalDate, refreshDraftDates } from "@/src/utils/dateFormatter";
+import { refreshPrefixDate } from "@/src/utils/invoiceUtils";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
@@ -63,8 +64,11 @@ export function useQuoteEditor({
   const { client: freshClient } = useClient(clientIdForFresh);
 
   // Prefix state pour le filtrage du numéro par préfixe
+  // refreshPrefixDate : recale le mois/année du préfixe stocké sur la date du
+  // jour (le préfixe en base n'est pas mis à jour automatiquement au changement
+  // de mois), pour éviter une erreur de numérotation à la création.
   const [currentPrefix, setCurrentPrefix] = useState(
-    organization?.quotePrefix || "",
+    refreshPrefixDate(organization?.quotePrefix) || "",
   );
   // État local pour autoNumbering (synchronisé avec le form via watch)
   const [currentAutoNumbering, setCurrentAutoNumbering] = useState(
@@ -839,8 +843,24 @@ export function useQuoteEditor({
       if (existingQuote.status === "DRAFT") {
         quoteData.number = "";
         if (quoteData.prefix) {
+          // Brouillon repris un mois/année plus tard : recaler le mois (et
+          // l'année) du préfixe sur la date du jour. Le préfixe ne se régénère
+          // pas tout seul, donc un brouillon de mars rouvert en mai garderait
+          // D-032026 sinon. refreshPrefixDate laisse intacts les préfixes
+          // personnalisés sans motif de date.
+          quoteData.prefix = refreshPrefixDate(quoteData.prefix);
           setCurrentPrefix(quoteData.prefix);
         }
+        // Recaler les dates : un brouillon repris plus tard a une date
+        // d'émission antérieure à aujourd'hui, ce qui bloque l'envoi/la
+        // finalisation. On ramène l'émission à aujourd'hui et on décale la
+        // date de validité d'autant (délai d'origine conservé, 30 j par défaut).
+        const refreshedDates = refreshDraftDates(
+          quoteData.issueDate,
+          quoteData.validUntil,
+        );
+        quoteData.issueDate = refreshedDates.issueDate;
+        quoteData.validUntil = refreshedDates.secondDate;
       }
 
       reset(quoteData);
@@ -1046,8 +1066,10 @@ export function useQuoteEditor({
             );
 
             // Charger le préfixe et la numérotation automatique depuis l'organisation
+            // refreshPrefixDate recale le mois/année sur la date du jour au cas où
+            // le préfixe stocké date d'un mois précédent (pas régénéré tout seul).
             if (organization.quotePrefix) {
-              setValue("prefix", organization.quotePrefix, {
+              setValue("prefix", refreshPrefixDate(organization.quotePrefix), {
                 shouldDirty: false,
               });
             }
@@ -2080,7 +2102,7 @@ function getInitialFormData(mode, initialData, session, organization) {
 
   const baseData = {
     // Informations du devis
-    prefix: organization?.quotePrefix || "",
+    prefix: refreshPrefixDate(organization?.quotePrefix) || "",
     number: "",
     autoNumbering: organization?.quoteAutoNumbering || false,
     projectReference: "",
