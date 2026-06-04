@@ -20,7 +20,7 @@ import {
   CheckCircle2,
   XCircle,
   Download,
-  Settings2,
+  X,
 } from "lucide-react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import {
@@ -328,16 +328,24 @@ export default function ClientImportDialog({
               {/* Custom Fields Header */}
               <div className="px-5 pt-4 pb-3 border-b border-border/40 flex-shrink-0">
                 <DialogHeader>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setShowCustomFields(false)}
+                        className="flex items-center justify-center h-7 w-7 rounded-md hover:bg-accent transition-colors cursor-pointer"
+                      >
+                        <ArrowLeft className="h-4 w-4" />
+                      </button>
+                      <DialogTitle className="text-sm font-medium">
+                        Champs personnalisés clients
+                      </DialogTitle>
+                    </div>
                     <button
-                      onClick={() => setShowCustomFields(false)}
+                      onClick={handleClose}
                       className="flex items-center justify-center h-7 w-7 rounded-md hover:bg-accent transition-colors cursor-pointer"
                     >
-                      <ArrowLeft className="h-4 w-4" />
+                      <X className="h-4 w-4" />
                     </button>
-                    <DialogTitle className="text-sm font-medium">
-                      Champs personnalisés clients
-                    </DialogTitle>
                   </div>
                 </DialogHeader>
               </div>
@@ -366,14 +374,14 @@ export default function ClientImportDialog({
                       <Upload className="size-4" />
                       Importer des contacts
                     </DialogTitle>
-                    {!isImporting && !importFinished && (
+                    {!isImporting && (
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => setShowCustomFields(true)}
+                        onClick={handleClose}
                         className="h-7 w-7"
                       >
-                        <Settings2 className="h-3.5 w-3.5" />
+                        <X className="h-4 w-4" />
                       </Button>
                     )}
                   </div>
