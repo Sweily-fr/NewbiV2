@@ -11,7 +11,10 @@ import {
   updateOrganization,
   getActiveOrganization,
 } from "@/src/lib/organization-client";
-import { generateInvoicePrefix } from "@/src/utils/invoiceUtils";
+import {
+  generateInvoicePrefix,
+  refreshPrefixDate,
+} from "@/src/utils/invoiceUtils";
 import { useInvoiceNumber } from "../hooks/use-invoice-number";
 import { useSession } from "@/src/lib/auth-client";
 
@@ -178,7 +181,8 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
           // Préparer les valeurs initiales depuis l'organisation (même structure que l'éditeur)
           const formValues = {
             // Numérotation - préfixe par défaut (le numéro sera auto-rempli par le hook useInvoiceNumber)
-            prefix: org?.invoicePrefix || generateInvoicePrefix(),
+            prefix:
+              refreshPrefixDate(org?.invoicePrefix) || generateInvoicePrefix(),
             number: org?.invoiceStartNumber || "",
             autoNumbering: org?.invoiceAutoNumbering || false,
             // Informations de l'entreprise

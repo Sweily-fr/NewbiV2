@@ -12,6 +12,7 @@ import {
   getActiveOrganization,
 } from "@/src/lib/organization-client";
 import { generateQuotePrefix } from "@/src/utils/quoteUtils";
+import { refreshPrefixDate } from "@/src/utils/invoiceUtils";
 import { useQuoteNumber } from "../hooks/use-quote-number";
 
 // Données de démonstration pour la preview
@@ -169,7 +170,8 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
           // Préparer les valeurs initiales depuis l'organisation (même structure que l'éditeur)
           const formValues = {
             // Numérotation - préfixe par défaut (le numéro sera auto-rempli par le hook useQuoteNumber)
-            prefix: org?.quotePrefix || generateQuotePrefix(),
+            prefix:
+              refreshPrefixDate(org?.quotePrefix) || generateQuotePrefix(),
             number: org?.quoteStartNumber || "",
             autoNumbering: org?.quoteAutoNumbering || false,
             // Informations de l'entreprise
