@@ -121,7 +121,6 @@ export function ImportPurchaseOrderModal({ open, onOpenChange, onImported }) {
     setUploadStatus({});
 
     let completed = 0;
-    let successCount = 0;
     const importedPos = [];
 
     for (let i = 0; i < files.length; i++) {
@@ -138,7 +137,6 @@ export function ImportPurchaseOrderModal({ open, onOpenChange, onImported }) {
         const payload = result.data?.importPurchaseOrderDirect;
         if (payload?.success) {
           setUploadStatus((prev) => ({ ...prev, [i]: "uploaded" }));
-          successCount++;
           if (payload.purchaseOrder) importedPos.push(payload.purchaseOrder);
         } else {
           setUploadStatus((prev) => ({ ...prev, [i]: "error" }));
@@ -154,11 +152,10 @@ export function ImportPurchaseOrderModal({ open, onOpenChange, onImported }) {
       setUploadProgress(Math.round((completed / files.length) * 100));
     }
 
-    if (successCount > 0) {
-      toast.success(
-        `${successCount} bon(s) de commande importé(s) avec succès`,
-      );
-    }
+    // Pas de toast "X bon(s) de commande importé(s)" ici : à ce stade rien
+    // n'est encore un vrai bon de commande, les fichiers sont seulement mis en
+    // file de vérification. L'utilisateur les valide ensuite un par un via la
+    // sidebar de revue (même comportement que l'import des devis).
 
     // Forcer la fermeture du modal AVANT d'ouvrir la sidebar côté parent,
     // sinon React bat les deux updates dans le même render et Radix peut
