@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
   X,
   FileText,
@@ -15,7 +16,9 @@ import {
   Send,
   Download,
   ShoppingCart,
+  LoaderCircle,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
@@ -60,6 +63,18 @@ export default function QuoteSidebar({
     fetchPolicy: "network-only",
   });
 
+  const [showMobileDetails, setShowMobileDetails] = useState(false);
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth < 768 : false,
+  );
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   // Récupérer les données complètes du devis
   const {
     quote: fullQuote,
@@ -71,7 +86,7 @@ export default function QuoteSidebar({
   const { signatureRequest: signatureStatus, hasSignature } =
     useDocumentSignatureStatus("quote", initialQuote?.id);
 
-  if (!isOpen || !initialQuote) return null;
+  if (!initialQuote) return null;
 
   // Utiliser les données complètes si disponibles, sinon les données initiales
   const quote = fullQuote || initialQuote;
@@ -285,375 +300,402 @@ export default function QuoteSidebar({
 
   return (
     <>
-      {/* Semi-transparent overlay */}
-      <div
-        className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${
-          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
+      {/* Semi-transparent overlay (dim léger sur toute la page) */}
+      <motion.div
+        className="fixed inset-0 z-40 bg-black/30"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0, transition: { duration: 0.1, ease: "easeOut" } }}
+        transition={{ duration: 0.15, ease: "easeOut" }}
         onClick={onClose}
       />
 
-      {/* PDF Preview Panel */}
-      <div
-        className={`fixed inset-y-0 left-0 right-[35%] z-50 transform transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+      {/* Backdrop sombre sur la zone preview - fade in après la sidebar */}
+      <motion.div
+        className="fixed inset-y-0 left-0 md:right-[40%] right-0 z-40 bg-black/60"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0, transition: { duration: 0.1, ease: "easeOut" } }}
+        transition={{ duration: 0.2, delay: 0.2, ease: "easeOut" }}
+      />
+
+      {/* PDF Preview Section - slide depuis la gauche après le backdrop */}
+      <motion.div
+        className="fixed inset-y-0 left-0 md:right-[40%] right-0 z-50 pointer-events-none"
+        initial={{ x: "-100%" }}
+        animate={{ x: 0 }}
+        exit={{
+          x: "-100%",
+          transition: { duration: 0.3, ease: [0.32, 0.72, 0, 1] },
+        }}
+        transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
       >
-        <div className="absolute inset-0 bg-black/80 p-0 flex items-start justify-center overflow-y-auto py-12 px-24">
-          <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white">
-            <UniversalPreviewPDF data={quote} type="quote" recalcDraftDates />
+        <div className="absolute inset-0 p-0 flex items-start justify-center overflow-y-auto py-4 md:py-12 px-2 md:px-24">
+          {loadingFullQuote && !fullQuote ? (
+            <div className="flex items-center justify-center w-full min-h-[calc(100%-4rem)] pointer-events-auto">
+              <LoaderCircle className="h-8 w-8 animate-spin text-white/80" />
+            </div>
+          ) : (
+            <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">
+              <UniversalPreviewPDF data={quote} type="quote" recalcDraftDates />
+            </div>
+          )}
+        </div>
+
+        {/* Bouton flottant pour ouvrir les détails sur mobile */}
+        <Button
+          onClick={() => setShowMobileDetails(true)}
+          className="md:hidden fixed bottom-6 right-6 z-[60] rounded-full h-14 w-14 shadow-lg pointer-events-auto"
+          size="icon"
+        >
+          <Eye className="h-5 w-5" />
+        </Button>
+      </motion.div>
+
+      {/* Main Sidebar - Hidden on mobile by default, shown in modal */}
+      <motion.div
+        className="fixed inset-y-0 right-0 z-50 md:w-[40%] w-full bg-background border-l shadow-lg flex flex-col"
+        initial={{ x: "100%" }}
+        animate={{ x: isMobile && !showMobileDetails ? "100%" : 0 }}
+        exit={{ x: "100%" }}
+        transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between gap-2 px-6 py-4 border-b">
+          <div className="flex flex-col items-start gap-1 min-w-0 flex-1">
+            <h2 className="text-base font-medium">
+              Devis{" "}
+              {quote.prefix && quote.number
+                ? `${quote.prefix}-${quote.number}`
+                : quote.number || "Brouillon"}
+            </h2>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span
+                className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium ${
+                  quote.status === "DRAFT"
+                    ? "bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400"
+                    : quote.status === "PENDING" || quote.status === "IMPORTED"
+                      ? "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
+                      : quote.status === "COMPLETED"
+                        ? "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400"
+                        : "bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400"
+                }`}
+              >
+                {QUOTE_STATUS_LABELS[quote.status] || quote.status}
+              </span>
+              {hasSignature && (
+                <SignatureStatusBadge status={signatureStatus.status} />
+              )}
+              {isValidUntilExpired() && (
+                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400">
+                  Expiré
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Bouton PDF - masqué pour les brouillons */}
+            {quote.status !== QUOTE_STATUS.DRAFT && (
+              <UniversalPDFDownloaderWithFacturX
+                data={quote}
+                type="quote"
+                variant="primary"
+                className="gap-1.5 font-medium"
+                enableFacturX={false}
+              />
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                // Sur mobile, fermer d'abord les détails, puis la sidebar
+                if (window.innerWidth < 768 && showMobileDetails) {
+                  setShowMobileDetails(false);
+                } else {
+                  setShowMobileDetails(false);
+                  onClose();
+                }
+              }}
+              className="h-8 w-8 bg-[rgba(0,0,0,0.04)] hover:bg-[rgba(0,0,0,0.08)] dark:bg-[rgba(255,255,255,0.06)] dark:hover:bg-[rgba(255,255,255,0.1)]"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
         </div>
-      </div>
 
-      {/* Main Sidebar */}
-      <div
-        className={`fixed inset-y-0 right-0 z-50 w-[35%] bg-background border-l shadow-lg transform transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "translate-x-full"
-        }`}
-      >
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-start justify-between gap-2 p-6 border-b">
-            <div className="flex flex-col gap-2 min-w-0 flex-1">
-              <h2 className="font-normal text-lg">
-                Devis{" "}
-                {quote.prefix && quote.number
-                  ? `${quote.prefix}-${quote.number}`
-                  : quote.number || "Brouillon"}
-              </h2>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                    quote.status === "DRAFT"
-                      ? "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100"
-                      : quote.status === "PENDING"
-                        ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100"
-                        : quote.status === "IMPORTED"
-                          ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100"
-                          : quote.status === "COMPLETED"
-                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-                            : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
-                  }`}
-                >
-                  {QUOTE_STATUS_LABELS[quote.status] || quote.status}
-                </span>
-                {hasSignature && (
-                  <SignatureStatusBadge status={signatureStatus.status} />
-                )}
-                {isValidUntilExpired() && (
-                  <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100">
-                    Expiré
-                  </span>
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Client Info */}
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+              Client
+            </p>
+            {quote.client ? (
+              <div className="space-y-2">
+                <div>
+                  <p className="font-medium">{quote.client.name}</p>
+                  {quote.client.email && (
+                    <p className="text-sm text-muted-foreground">
+                      {quote.client.email}
+                    </p>
+                  )}
+                </div>
+                {quote.client.address && (
+                  <div className="text-sm text-muted-foreground">
+                    {quote.client.address.street && (
+                      <p>{quote.client.address.street}</p>
+                    )}
+                    {(quote.client.address.postalCode ||
+                      quote.client.address.city) && (
+                      <p>
+                        {quote.client.address.postalCode &&
+                          quote.client.address.postalCode}
+                        {quote.client.address.postalCode &&
+                          quote.client.address.city &&
+                          " "}
+                        {quote.client.address.city && quote.client.address.city}
+                      </p>
+                    )}
+                    {quote.client.address.country && (
+                      <p>{quote.client.address.country}</p>
+                    )}
+                  </div>
                 )}
               </div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {/* Bouton PDF - masqué pour les brouillons */}
-              {quote.status !== QUOTE_STATUS.DRAFT && (
-                <UniversalPDFDownloaderWithFacturX
-                  data={quote}
-                  type="quote"
-                  enableFacturX={false}
-                />
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onClose();
-                }}
-                className="h-8 w-8 p-0 relative z-50"
-              >
-                <X className="h-4 w-4" />
-              </Button>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Aucun client sélectionné
+              </p>
+            )}
+          </div>
+
+          <Separator />
+
+          {/* Adresse de livraison */}
+          {(() => {
+            const shippingData = quote.shipping;
+            const renderShipping = (addr) => (
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                  Adresse de livraison
+                </p>
+                <div className="text-sm text-muted-foreground">
+                  {addr.fullName && (
+                    <p className="font-medium text-foreground">
+                      {addr.fullName}
+                    </p>
+                  )}
+                  {addr.street && <p>{addr.street}</p>}
+                  {(addr.postalCode || addr.city) && (
+                    <p>
+                      {addr.postalCode}
+                      {addr.postalCode && addr.city && " "}
+                      {addr.city}
+                    </p>
+                  )}
+                  {addr.country && <p>{addr.country}</p>}
+                </div>
+              </div>
+            );
+            if (shippingData?.shippingAddress && shippingData?.billShipping) {
+              return (
+                <>
+                  {renderShipping(shippingData.shippingAddress)}
+                  <Separator />
+                </>
+              );
+            }
+            if (
+              quote.client?.hasDifferentShippingAddress &&
+              quote.client?.shippingAddress
+            ) {
+              return (
+                <>
+                  {renderShipping(quote.client.shippingAddress)}
+                  <Separator />
+                </>
+              );
+            }
+            return null;
+          })()}
+
+          {/* Dates */}
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+              Dates
+            </p>
+            <div className="space-y-2">
+              {/* Pour un brouillon repris plus tard, on affiche les dates
+                    recalées (jour J / validité) et l'ancienne date entre
+                    parenthèses, car elles seront mises à jour à la finalisation. */}
+              {(() => {
+                const draftDates =
+                  quote.status === QUOTE_STATUS.DRAFT
+                    ? getDraftEffectiveDates(quote.issueDate, quote.validUntil)
+                    : null;
+                const refreshed = draftDates?.changed;
+                return (
+                  <>
+                    <div className="flex items-start justify-between">
+                      <span className="text-sm font-normal text-muted-foreground">
+                        Date d'émission
+                      </span>
+                      <span className="flex flex-col items-end text-sm font-normal">
+                        <span>
+                          {formatDate(
+                            refreshed
+                              ? draftDates.issue.effective
+                              : quote.issueDate,
+                          )}
+                        </span>
+                        {refreshed && draftDates.issue.original && (
+                          <span className="text-xs text-muted-foreground">
+                            (ancienne&nbsp;:{" "}
+                            {formatDate(draftDates.issue.original)})
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex items-start justify-between">
+                      <span className="text-sm font-normal text-muted-foreground">
+                        Valide jusqu'au
+                      </span>
+                      <span
+                        className={`flex flex-col items-end text-sm font-normal ${
+                          !refreshed && isValidUntilExpired()
+                            ? "text-red-600 font-medium"
+                            : ""
+                        }`}
+                      >
+                        <span>
+                          {formatDate(
+                            refreshed
+                              ? draftDates.second.effective
+                              : quote.validUntil,
+                          )}
+                          {!refreshed && isValidUntilExpired() && (
+                            <span className="text-xs block text-red-500">
+                              Expiré
+                            </span>
+                          )}
+                        </span>
+                        {refreshed && draftDates.second.original && (
+                          <span className="text-xs text-muted-foreground">
+                            (ancienne&nbsp;:{" "}
+                            {formatDate(draftDates.second.original)})
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
 
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-8">
-            {/* Client Info */}
-            <div className="space-y-2.5">
-              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Client
-              </h3>
-              {quote.client ? (
-                <div className="space-y-1.5">
-                  <div>
-                    <p className="font-medium">{quote.client.name}</p>
-                    {quote.client.email && (
-                      <p className="text-sm text-muted-foreground">
-                        {quote.client.email}
-                      </p>
-                    )}
+          <Separator />
+
+          {/* Articles */}
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+              Articles
+            </p>
+            <div className="space-y-2">
+              {quote.items && quote.items.length > 0 ? (
+                quote.items.map((item, index) => (
+                  <div key={index} className="text-sm">
+                    <p className="font-normal">
+                      {item.description || "Article sans description"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.quantity || 0} ×{" "}
+                      {formatCurrency(item.unitPrice || 0)}
+                    </p>
                   </div>
-                  {quote.client.address && (
-                    <div className="text-sm text-muted-foreground">
-                      {quote.client.address.street && (
-                        <p>{quote.client.address.street}</p>
-                      )}
-                      {(quote.client.address.postalCode ||
-                        quote.client.address.city) && (
-                        <p>
-                          {quote.client.address.postalCode &&
-                            quote.client.address.postalCode}
-                          {quote.client.address.postalCode &&
-                            quote.client.address.city &&
-                            " "}
-                          {quote.client.address.city &&
-                            quote.client.address.city}
-                        </p>
-                      )}
-                      {quote.client.address.country && (
-                        <p>{quote.client.address.country}</p>
-                      )}
-                    </div>
-                  )}
-                </div>
+                ))
               ) : (
-                <p className="text-muted-foreground">
-                  Aucun client sélectionné
-                </p>
+                <p className="text-sm text-muted-foreground">Aucun article</p>
               )}
             </div>
+          </div>
 
-            {/* Adresse de livraison */}
-            {(() => {
-              const shippingData = quote.shipping;
-              if (shippingData?.shippingAddress && shippingData?.billShipping) {
-                return (
-                  <div className="space-y-2.5">
-                    <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Adresse de livraison
-                    </h3>
-                    <div className="text-sm text-muted-foreground">
-                      {shippingData.shippingAddress.fullName && (
-                        <p className="font-medium text-foreground">
-                          {shippingData.shippingAddress.fullName}
-                        </p>
-                      )}
-                      {shippingData.shippingAddress.street && (
-                        <p>{shippingData.shippingAddress.street}</p>
-                      )}
-                      {(shippingData.shippingAddress.postalCode ||
-                        shippingData.shippingAddress.city) && (
-                        <p>
-                          {shippingData.shippingAddress.postalCode}
-                          {shippingData.shippingAddress.postalCode &&
-                            shippingData.shippingAddress.city &&
-                            " "}
-                          {shippingData.shippingAddress.city}
-                        </p>
-                      )}
-                      {shippingData.shippingAddress.country && (
-                        <p>{shippingData.shippingAddress.country}</p>
-                      )}
-                    </div>
-                  </div>
-                );
-              }
-              if (
-                quote.client?.hasDifferentShippingAddress &&
-                quote.client?.shippingAddress
-              ) {
-                return (
-                  <div className="space-y-2.5">
-                    <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Adresse de livraison
-                    </h3>
-                    <div className="text-sm text-muted-foreground">
-                      {quote.client.shippingAddress.fullName && (
-                        <p className="font-medium text-foreground">
-                          {quote.client.shippingAddress.fullName}
-                        </p>
-                      )}
-                      {quote.client.shippingAddress.street && (
-                        <p>{quote.client.shippingAddress.street}</p>
-                      )}
-                      {(quote.client.shippingAddress.postalCode ||
-                        quote.client.shippingAddress.city) && (
-                        <p>
-                          {quote.client.shippingAddress.postalCode}
-                          {quote.client.shippingAddress.postalCode &&
-                            quote.client.shippingAddress.city &&
-                            " "}
-                          {quote.client.shippingAddress.city}
-                        </p>
-                      )}
-                      {quote.client.shippingAddress.country && (
-                        <p>{quote.client.shippingAddress.country}</p>
-                      )}
-                    </div>
-                  </div>
-                );
-              }
-              return null;
-            })()}
+          <Separator />
 
-            {/* Dates */}
-            <div className="space-y-2.5">
-              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Dates
-              </h3>
-              <div className="space-y-1.5">
-                {/* Pour un brouillon repris plus tard, on affiche les dates
-                    recalées (jour J / validité) et l'ancienne date entre
-                    parenthèses, car elles seront mises à jour à la finalisation. */}
-                {(() => {
-                  const draftDates =
-                    quote.status === QUOTE_STATUS.DRAFT
-                      ? getDraftEffectiveDates(
-                          quote.issueDate,
-                          quote.validUntil,
-                        )
-                      : null;
-                  const refreshed = draftDates?.changed;
-                  return (
-                    <>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          Date d'émission
-                        </span>
-                        <span className="flex flex-col items-end">
-                          <span>
-                            {formatDate(
-                              refreshed
-                                ? draftDates.issue.effective
-                                : quote.issueDate,
-                            )}
-                          </span>
-                          {refreshed && draftDates.issue.original && (
-                            <span className="text-xs text-muted-foreground">
-                              (ancienne&nbsp;:{" "}
-                              {formatDate(draftDates.issue.original)})
-                            </span>
-                          )}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          Valide jusqu'au
-                        </span>
-                        <span
-                          className={`flex flex-col items-end ${
-                            !refreshed && isValidUntilExpired()
-                              ? "text-red-600 font-medium"
-                              : ""
-                          }`}
-                        >
-                          <span>
-                            {formatDate(
-                              refreshed
-                                ? draftDates.second.effective
-                                : quote.validUntil,
-                            )}
-                            {!refreshed && isValidUntilExpired() && (
-                              <span className="text-xs block text-red-500">
-                                Expiré
-                              </span>
-                            )}
-                          </span>
-                          {refreshed && draftDates.second.original && (
-                            <span className="text-xs text-muted-foreground">
-                              (ancienne&nbsp;:{" "}
-                              {formatDate(draftDates.second.original)})
-                            </span>
-                          )}
-                        </span>
-                      </div>
-                    </>
-                  );
-                })()}
+          {/* Totals */}
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+              Totaux
+            </p>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-normal text-muted-foreground">
+                  Sous-total HT
+                </span>
+                <span className="text-sm font-normal">
+                  {formatCurrency(quote.totalHT || 0)}
+                </span>
               </div>
-            </div>
-
-            {/* Articles */}
-            <div className="space-y-2.5">
-              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Articles
-              </h3>
-              <div className="space-y-1.5">
-                {quote.items && quote.items.length > 0 ? (
-                  quote.items.map((item, index) => (
-                    <div key={index} className="text-sm">
-                      <div className="font-medium">
-                        {item.description || "Article sans description"}
-                      </div>
-                      <div className="text-muted-foreground">
-                        {item.quantity || 0} ×{" "}
-                        {formatCurrency(item.unitPrice || 0)}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-muted-foreground">Aucun article</p>
-                )}
-              </div>
-            </div>
-
-            {/* Totals */}
-            <div className="space-y-2.5">
-              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Totaux
-              </h3>
-              <div className="space-y-1.5">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Sous-total HT</span>
-                  <span>{formatCurrency(quote.totalHT || 0)}</span>
-                </div>
-                {quote.discountAmount > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Remise</span>
-                    <span>-{formatCurrency(quote.discountAmount || 0)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total HT</span>
-                  <span>
-                    {formatCurrency(
-                      quote.finalTotalHT !== undefined &&
-                        quote.finalTotalHT !== null
-                        ? quote.finalTotalHT
-                        : quote.totalHT !== undefined && quote.totalHT !== null
-                          ? quote.totalHT
-                          : 0,
-                    )}
+              {quote.discountAmount > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-normal text-muted-foreground">
+                    Remise
+                  </span>
+                  <span className="text-sm font-normal">
+                    -{formatCurrency(quote.discountAmount || 0)}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">TVA</span>
-                  <span>
-                    {formatCurrency(
-                      quote.finalTotalVAT !== undefined &&
-                        quote.finalTotalVAT !== null
-                        ? quote.finalTotalVAT
-                        : quote.totalVAT !== undefined &&
-                            quote.totalVAT !== null
-                          ? quote.totalVAT
-                          : 0,
-                    )}
-                  </span>
-                </div>
-                <div className="flex justify-between font-medium">
-                  <span>Total TTC</span>
-                  <span>
-                    {formatCurrency(
-                      quote.finalTotalTTC !== undefined &&
-                        quote.finalTotalTTC !== null
-                        ? quote.finalTotalTTC
-                        : quote.totalTTC !== undefined &&
-                            quote.totalTTC !== null
-                          ? quote.totalTTC
-                          : 0,
-                    )}
-                  </span>
-                </div>
+              )}
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-normal text-muted-foreground">
+                  Total HT
+                </span>
+                <span className="text-sm font-normal">
+                  {formatCurrency(
+                    quote.finalTotalHT !== undefined &&
+                      quote.finalTotalHT !== null
+                      ? quote.finalTotalHT
+                      : quote.totalHT !== undefined && quote.totalHT !== null
+                        ? quote.totalHT
+                        : 0,
+                  )}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-normal text-muted-foreground">
+                  TVA
+                </span>
+                <span className="text-sm font-normal">
+                  {formatCurrency(
+                    quote.finalTotalVAT !== undefined &&
+                      quote.finalTotalVAT !== null
+                      ? quote.finalTotalVAT
+                      : quote.totalVAT !== undefined && quote.totalVAT !== null
+                        ? quote.totalVAT
+                        : 0,
+                  )}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Total TTC</span>
+                <span className="text-sm font-medium">
+                  {formatCurrency(
+                    quote.finalTotalTTC !== undefined &&
+                      quote.finalTotalTTC !== null
+                      ? quote.finalTotalTTC
+                      : quote.totalTTC !== undefined && quote.totalTTC !== null
+                        ? quote.totalTTC
+                        : 0,
+                  )}
+                </span>
               </div>
             </div>
+          </div>
 
-            {/* Liste des factures liées */}
-            {quote.status === QUOTE_STATUS.COMPLETED && (
+          {/* Liste des factures liées */}
+          {quote.status === QUOTE_STATUS.COMPLETED && (
+            <>
+              <Separator />
               <div className="space-y-3">
                 <LinkedInvoicesList
                   quote={quote}
@@ -661,120 +703,117 @@ export default function QuoteSidebar({
                   isLoading={isLoading}
                 />
               </div>
-            )}
-          </div>
+            </>
+          )}
+        </div>
 
-          {/* Action Buttons */}
-          <div className="border-t p-6 space-y-3">
-            {/* Primary Actions */}
+        {/* Action Buttons */}
+        <div className="border-t px-6 py-4 space-y-3">
+          {/* Draft Actions */}
+          {quote.status === QUOTE_STATUS.DRAFT && (
             <div className="flex gap-2">
-              {(quote.status === QUOTE_STATUS.DRAFT ||
-                quote.status === QUOTE_STATUS.PENDING) && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleEdit}
-                  className="flex-1"
-                >
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Éditer
-                </Button>
-              )}
-            </div>
-
-            {/* Status Actions */}
-            {quote.status === QUOTE_STATUS.DRAFT && (
+              <Button
+                variant="outline"
+                onClick={handleEdit}
+                disabled={isLoading}
+                className="flex-1 font-normal"
+              >
+                <Pencil className="h-4 w-4 mr-2" />
+                Éditer
+              </Button>
               <Button
                 onClick={handleSendQuote}
                 disabled={isLoading}
-                className="w-full"
+                className="flex-1 font-normal"
               >
                 <Send className="h-4 w-4 mr-2" />
                 Envoyer le devis
               </Button>
-            )}
+            </div>
+          )}
 
-            {(quote.status === QUOTE_STATUS.PENDING ||
-              quote.status === QUOTE_STATUS.IMPORTED) && (
-              <div className="flex flex-col space-y-2">
-                <Button
-                  onClick={handleAccept}
-                  disabled={isLoading}
-                  className="w-full"
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Accepter le devis
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleCancel}
-                  disabled={isLoading}
-                  className="w-full"
-                >
-                  <XCircle className="h-4 w-4 mr-2" />
-                  {quote.status === QUOTE_STATUS.IMPORTED
-                    ? "Refuser le devis"
-                    : "Annuler le devis"}
-                </Button>
+          {/* Pending / Imported Actions */}
+          {(quote.status === QUOTE_STATUS.PENDING ||
+            quote.status === QUOTE_STATUS.IMPORTED) && (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={handleCancel}
+                disabled={isLoading}
+                className="flex-1 font-normal"
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                {quote.status === QUOTE_STATUS.IMPORTED
+                  ? "Refuser le devis"
+                  : "Annuler le devis"}
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleAccept}
+                disabled={isLoading}
+                className="flex-1 font-normal"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Accepter le devis
+              </Button>
+            </div>
+          )}
+
+          {/* Completed Actions */}
+          {quote.status === QUOTE_STATUS.COMPLETED && (
+            <div className="space-y-3">
+              {/* Boutons de création de factures liées */}
+              <div className="space-y-2">
+                {/* Afficher le popover seulement s'il y a moins de 2 factures liées */}
+                {(!quote.linkedInvoices || quote.linkedInvoices.length < 2) && (
+                  <CreateLinkedInvoicePopover
+                    quote={quote}
+                    onCreateLinkedInvoice={handleCreateLinkedInvoice}
+                    isLoading={isLoading}
+                  />
+                )}
+
+                {/* Bouton pour créer la facture finale quand il y a exactement 2 factures liées */}
+                {quote.linkedInvoices &&
+                  quote.linkedInvoices.length === 2 &&
+                  (() => {
+                    const totalInvoiced = quote.linkedInvoices.reduce(
+                      (sum, invoice) => sum + (invoice.finalTotalTTC || 0),
+                      0,
+                    );
+                    const remainingAmount =
+                      (quote.finalTotalTTC || 0) - totalInvoiced;
+                    return (
+                      remainingAmount > 0 && (
+                        <Button
+                          onClick={() =>
+                            handleCreateLinkedInvoice({
+                              quoteId: quote.id,
+                              amount: remainingAmount,
+                              isDeposit: false,
+                            })
+                          }
+                          disabled={isLoading}
+                          className="w-full font-normal"
+                        >
+                          <FileCheck className="h-4 w-4 mr-2" />
+                          Créer la facture finale (
+                          {formatCurrency(remainingAmount)})
+                        </Button>
+                      )
+                    );
+                  })()}
               </div>
-            )}
 
-            {(() => {
-              return quote.status === QUOTE_STATUS.COMPLETED;
-            })() && (
-              <div className="space-y-3">
-                {/* Boutons de création de factures liées */}
-                <div className="space-y-2">
-                  {/* Afficher le popover seulement s'il y a moins de 2 factures liées */}
-                  {(!quote.linkedInvoices ||
-                    quote.linkedInvoices.length < 2) && (
-                    <CreateLinkedInvoicePopover
-                      quote={quote}
-                      onCreateLinkedInvoice={handleCreateLinkedInvoice}
-                      isLoading={isLoading}
-                    />
-                  )}
-
-                  {/* Bouton pour créer la facture finale quand il y a exactement 2 factures liées */}
-                  {quote.linkedInvoices &&
-                    quote.linkedInvoices.length === 2 &&
-                    (() => {
-                      const totalInvoiced = quote.linkedInvoices.reduce(
-                        (sum, invoice) => sum + (invoice.finalTotalTTC || 0),
-                        0,
-                      );
-                      const remainingAmount =
-                        (quote.finalTotalTTC || 0) - totalInvoiced;
-                      return (
-                        remainingAmount > 0 && (
-                          <Button
-                            onClick={() =>
-                              handleCreateLinkedInvoice({
-                                quoteId: quote.id,
-                                amount: remainingAmount,
-                                isDeposit: false,
-                              })
-                            }
-                            disabled={isLoading}
-                            className="w-full"
-                          >
-                            <FileCheck className="h-4 w-4 mr-2" />
-                            Créer la facture finale (
-                            {formatCurrency(remainingAmount)})
-                          </Button>
-                        )
-                      );
-                    })()}
-                </div>
-
-                {/* Bouton de conversion complète - séparé et en dessous */}
+              <div className="flex gap-2">
+                {/* Bouton de conversion complète */}
                 {(!quote.linkedInvoices ||
                   quote.linkedInvoices.length === 0) && (
                   <Button
                     variant="outline"
                     onClick={handleConvertToInvoice}
                     disabled={isLoading}
-                    className="w-full font-normal text-sm"
+                    className="flex-1 font-normal"
                   >
                     <FileCheck className="h-4 w-4 mr-2" />
                     Conversion complète
@@ -786,16 +825,16 @@ export default function QuoteSidebar({
                   variant="outline"
                   onClick={handleConvertToPurchaseOrder}
                   disabled={isLoading}
-                  className="w-full font-normal text-sm"
+                  className="flex-1 font-normal"
                 >
                   <ShoppingCart className="h-4 w-4 mr-2" />
                   Convertir en bon de commande
                 </Button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
-      </div>
+      </motion.div>
     </>
   );
 }
