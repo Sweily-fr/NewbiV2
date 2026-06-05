@@ -682,7 +682,7 @@ export default function ItemsSection({
                                     onBlur={() =>
                                       unmarkFieldAsEditing?.(index, "details")
                                     }
-                                    className={`rounded-lg text-sm w-full ${
+                                    className={`rounded-lg text-sm w-full placeholder:text-[rgba(0,0,0,0.35)] dark:placeholder:text-[rgba(255,255,255,0.35)] placeholder:font-medium placeholder:tracking-[-0.01em] ${
                                       errors?.items?.[index]?.details ||
                                       hasFieldError(index, "details")
                                         ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
@@ -1490,7 +1490,7 @@ export default function ItemsSection({
                                               }}
                                               disabled={!canEdit}
                                             >
-                                              <SelectTrigger className="w-auto min-w-[60px] rounded-s-none border-s-0">
+                                              <SelectTrigger className="h-8 w-auto min-w-[60px] rounded-s-none rounded-e-[9px] border border-solid border-[#e6e7ea] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] [box-shadow:none] dark:[box-shadow:none] hover:bg-transparent active:bg-transparent dark:hover:bg-transparent dark:active:bg-transparent">
                                                 <SelectValue />
                                               </SelectTrigger>
                                               <SelectContent>
