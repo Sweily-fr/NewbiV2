@@ -160,8 +160,8 @@ export default function HeroSection() {
             <div className="lg:hidden mt-10 relative overflow-hidden">
               <div className="relative">
                 <img
-                  src="/mockup-mac-hero-section.png"
-                  alt="Dashboard Newbi sur Mac"
+                  src="/factures-hero-section.png"
+                  alt="Dashboard Newbi - Gestion des factures"
                   style={{
                     width: "120%",
                     maxWidth: "none",
@@ -197,8 +197,8 @@ export default function HeroSection() {
         <div className="hidden lg:block h-[500px]">
           {/* Mockup Mac - Position absolue à droite, en bas */}
           <img
-            src="/mockup-mac-hero-section.png"
-            alt="Dashboard Newbi sur Mac"
+            src="/factures-hero-section.png"
+            alt="Dashboard Newbi - Gestion des factures"
             className="absolute object-contain rounded-md"
             style={{
               bottom: "110px",

@@ -2,18 +2,33 @@ import React, { useState, useEffect } from "react";
 import { MinusIcon, PlusIcon } from "lucide-react";
 
 export const QuantityInput = React.forwardRef(
-  ({ value, onChange, onBlur, disabled = false, min = 1, max, name, step = 1, className, ...props }, ref) => {
-    const [displayValue, setDisplayValue] = useState('1');
+  (
+    {
+      value,
+      onChange,
+      onBlur,
+      disabled = false,
+      min = 1,
+      max,
+      name,
+      step = 1,
+      className,
+      ...props
+    },
+    ref,
+  ) => {
+    const [displayValue, setDisplayValue] = useState("1");
 
     useEffect(() => {
-      if (value !== undefined && value !== null && value !== '') {
+      if (value !== undefined && value !== null && value !== "") {
         setDisplayValue(String(value));
       } else {
-        setDisplayValue('1');
+        setDisplayValue("1");
       }
     }, [value]);
 
-    const currentValue = displayValue !== '' ? parseFloat(displayValue) || 1 : 1;
+    const currentValue =
+      displayValue !== "" ? parseFloat(displayValue) || 1 : 1;
 
     const handleDecrement = () => {
       const current = parseFloat(displayValue) || 1;
@@ -37,25 +52,41 @@ export const QuantityInput = React.forwardRef(
 
     const handleInputChange = (e) => {
       const inputValue = e.target.value;
-      if (inputValue === '' || /^\d*[.,]?\d*$/.test(inputValue)) {
-        const normalizedValue = inputValue.replace(',', '.');
-        const numValue = normalizedValue === '' ? 1 : parseFloat(normalizedValue);
-        if (numValue >= min || inputValue === '' || normalizedValue.endsWith('.')) {
-          setDisplayValue(normalizedValue === '' ? '1' : normalizedValue);
-          if (onChange && normalizedValue !== '' && !normalizedValue.endsWith('.')) {
-            onChange({ target: { name, value: normalizedValue === '' ? '1' : normalizedValue } });
+      if (inputValue === "" || /^\d*[.,]?\d*$/.test(inputValue)) {
+        const normalizedValue = inputValue.replace(",", ".");
+        const numValue =
+          normalizedValue === "" ? 1 : parseFloat(normalizedValue);
+        if (
+          numValue >= min ||
+          inputValue === "" ||
+          normalizedValue.endsWith(".")
+        ) {
+          setDisplayValue(normalizedValue === "" ? "1" : normalizedValue);
+          if (
+            onChange &&
+            normalizedValue !== "" &&
+            !normalizedValue.endsWith(".")
+          ) {
+            onChange({
+              target: {
+                name,
+                value: normalizedValue === "" ? "1" : normalizedValue,
+              },
+            });
           }
         }
       }
     };
 
     return (
-      <div className={`relative inline-flex h-8 w-full items-center overflow-hidden rounded-[9px] border border-[#e6e7ea] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] text-sm whitespace-nowrap transition-[border] duration-[80ms] ease-in-out ${disabled ? 'opacity-50 pointer-events-none' : ''} ${className || ''}`}>
+      <div
+        className={`relative inline-flex h-8 w-full items-center overflow-hidden rounded-[9px] border border-[#e6e7ea] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] text-sm whitespace-nowrap transition-[border] duration-[80ms] ease-in-out ${disabled ? "opacity-50 pointer-events-none" : ""} ${className || ""}`}
+      >
         <button
           type="button"
           onClick={handleDecrement}
           disabled={disabled || (parseFloat(displayValue) || min) <= min}
-          className="flex aspect-square h-full items-center justify-center border-r border-[#e6e7ea] dark:border-[#2E2E32] bg-transparent text-[rgba(0,0,0,0.45)] dark:text-[rgba(255,255,255,0.45)] transition-colors hover:bg-[rgba(0,0,0,0.04)] hover:text-[#242529] dark:hover:bg-[rgba(255,255,255,0.06)] dark:hover:text-white disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
+          className="flex aspect-square h-full items-center justify-center border-r border-[#e6e7ea] dark:border-[#2E2E32] bg-white dark:bg-[#171717] text-[rgba(0,0,0,0.45)] dark:text-[rgba(255,255,255,0.45)] transition-colors hover:bg-[rgba(0,0,0,0.04)] hover:text-[#242529] dark:hover:bg-[rgba(255,255,255,0.06)] dark:hover:text-white disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
         >
           <MinusIcon size={14} aria-hidden="true" />
         </button>
@@ -75,13 +106,13 @@ export const QuantityInput = React.forwardRef(
           type="button"
           onClick={handleIncrement}
           disabled={disabled || (max && (parseInt(displayValue) || 1) >= max)}
-          className="flex aspect-square h-full items-center justify-center border-l border-[#e6e7ea] dark:border-[#2E2E32] bg-transparent text-[rgba(0,0,0,0.45)] dark:text-[rgba(255,255,255,0.45)] transition-colors hover:bg-[rgba(0,0,0,0.04)] hover:text-[#242529] dark:hover:bg-[rgba(255,255,255,0.06)] dark:hover:text-white disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
+          className="flex aspect-square h-full items-center justify-center border-l border-[#e6e7ea] dark:border-[#2E2E32] bg-white dark:bg-[#171717] text-[rgba(0,0,0,0.45)] dark:text-[rgba(255,255,255,0.45)] transition-colors hover:bg-[rgba(0,0,0,0.04)] hover:text-[#242529] dark:hover:bg-[rgba(255,255,255,0.06)] dark:hover:text-white disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
         >
           <PlusIcon size={14} aria-hidden="true" />
         </button>
       </div>
     );
-  }
+  },
 );
 
 QuantityInput.displayName = "QuantityInput";

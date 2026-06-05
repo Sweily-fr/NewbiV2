@@ -122,5 +122,22 @@
       "crm-gestion-client-independant",
       "facture-en-ligne-vs-excel"
     ]
+  },
+  {
+    "date": "2026-05-25",
+    "articles": [
+      "quest-ce-que-delai-paiement-facture",
+      "conseils-reduire-delais-paiement",
+      "facturation-avocat-honoraires-guide",
+      "facturation-cabinet-avocat-gestion"
+    ]
+  },
+  {
+    "date": "2026-06-01",
+    "articles": [
+      "top-outils-gestion-projet-freelance",
+      "signature-mail-professionnelle-guide",
+      "conseils-ameliorer-signature-email"
+    ]
   }
 ]
