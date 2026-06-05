@@ -43,6 +43,8 @@ const EMPTY_COLLECTION_MONTH = {
   collectedTTC: 0,
   invoicedCount: 0,
   collectedCount: 0,
+  unpaidTTC: 0,
+  unpaidCount: 0,
 };
 
 /**

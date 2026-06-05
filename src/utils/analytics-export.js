@@ -3,14 +3,6 @@ import jsPDF from "jspdf";
 
 // --- Helpers ---
 
-const formatCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", {
-    style: "currency",
-    currency: "EUR",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value || 0);
-
 const STATUS_LABELS = {
   DRAFT: "Brouillon",
   PENDING: "En attente",
@@ -81,7 +73,10 @@ function buildSyntheseRows(data) {
     { Indicateur: "Avoirs HT", Valeur: kpi.creditNoteTotalHT },
     { Indicateur: "Nombre de clients", Valeur: kpi.activeClientCount },
     { Indicateur: "Conversion devis (%)", Valeur: kpi.quoteConversionRate },
-    { Indicateur: "Concentration top 3 (%)", Valeur: kpi.topClientConcentration },
+    {
+      Indicateur: "Concentration top 3 (%)",
+      Valeur: kpi.topClientConcentration,
+    },
   ];
 }
 
@@ -162,13 +157,21 @@ function buildOverdueRows(data) {
 
 function buildCollectionRows(data) {
   const collection = data.collection?.monthlyCollection || [];
-  return collection.map((m) => ({
-    Mois: m.month,
-    "Facture TTC": m.invoicedTTC,
-    "Encaisse TTC": m.collectedTTC,
-    "Nb facturees": m.invoicedCount,
-    "Nb encaissees": m.collectedCount,
-  }));
+  return collection.map((m) => {
+    const collected = m.collectedTTC || 0;
+    const unpaid = m.unpaidTTC || 0;
+    return {
+      Mois: m.month,
+      "Facture TTC": m.invoicedTTC,
+      "Encaisse TTC": collected,
+      "Impaye TTC": unpaid,
+      "Nb facturees": m.invoicedCount,
+      "Nb encaissees": m.collectedCount,
+      "Nb impayees": m.unpaidCount,
+      "Taux recouvrement (%)":
+        unpaid > 0 ? Math.round((collected / unpaid) * 100) : null,
+    };
+  });
 }
 
 function getSheets(data, tab) {
@@ -220,10 +223,11 @@ export function exportAnalyticsCSV(data, tab, period) {
         headers
           .map((h) => {
             const val = row[h];
-            if (typeof val === "number") return val.toString().replace(".", ",");
+            if (typeof val === "number")
+              return val.toString().replace(".", ",");
             return `"${(val || "").toString().replace(/"/g, '""')}"`;
           })
-          .join(";")
+          .join(";"),
       );
     }
   }
@@ -241,7 +245,9 @@ export function exportAnalyticsExcel(data, tab, period) {
   const wb = XLSX.utils.book_new();
 
   for (const [name, rows] of Object.entries(sheets)) {
-    const ws = XLSX.utils.json_to_sheet(rows.length > 0 ? rows : [{ Info: "Aucune donnee" }]);
+    const ws = XLSX.utils.json_to_sheet(
+      rows.length > 0 ? rows : [{ Info: "Aucune donnee" }],
+    );
     // Truncate sheet name to 31 chars (Excel limit)
     const sheetName = name.length > 31 ? name.substring(0, 31) : name;
     XLSX.utils.book_append_sheet(wb, ws, sheetName);
@@ -291,10 +297,7 @@ export function exportAnalyticsPDF(data, tab, period) {
 
     const headers = Object.keys(rows[0]);
     const colCount = headers.length;
-    const colWidth = Math.min(
-      (pageWidth - margin * 2) / colCount,
-      50
-    );
+    const colWidth = Math.min((pageWidth - margin * 2) / colCount, 50);
 
     // Header row
     pdf.setFontSize(8);
