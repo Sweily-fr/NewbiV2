@@ -8,7 +8,6 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { Badge } from "@/src/components/ui/badge";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   Tooltip,
@@ -21,11 +20,14 @@ import {
   Upload,
   Clock,
   CheckCircle,
+  FileText,
+  XCircle,
+  Play,
+  Truck,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
   PURCHASE_ORDER_STATUS_LABELS,
-  PURCHASE_ORDER_STATUS_COLORS,
   useDeletePurchaseOrder,
 } from "@/src/graphql/purchaseOrderQueries";
 import { formatDate, isDateExpired } from "../utils/date-utils";
@@ -441,23 +443,84 @@ export function usePurchaseOrderTable({
                 : "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400";
             const importedIcon =
               status === "VALIDATED" ? (
-                <CheckCircle className="w-3 h-3 mr-1" />
+                <CheckCircle className="w-3 h-3" />
               ) : (
-                <Clock className="w-3 h-3 mr-1" />
+                <Clock className="w-3 h-3" />
               );
             return (
-              <Badge className={cn("font-normal", importedClassName)}>
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium",
+                  importedClassName,
+                )}
+              >
                 {importedIcon}
                 {importedLabel}
-              </Badge>
+              </span>
             );
           }
 
           const label = PURCHASE_ORDER_STATUS_LABELS[status] || status;
-          const colorClass = PURCHASE_ORDER_STATUS_COLORS[status] || "";
+
+          const getStatusConfig = () => {
+            switch (status) {
+              case "DRAFT":
+                return {
+                  icon: <FileText className="w-3 h-3" />,
+                  className:
+                    "bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400",
+                };
+              case "CONFIRMED":
+                return {
+                  icon: <Clock className="w-3 h-3" />,
+                  className:
+                    "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400",
+                };
+              case "VALIDATED":
+                return {
+                  icon: <CheckCircle className="w-3 h-3" />,
+                  className:
+                    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400",
+                };
+              case "IN_PROGRESS":
+                return {
+                  icon: <Play className="w-3 h-3" />,
+                  className:
+                    "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400",
+                };
+              case "DELIVERED":
+                return {
+                  icon: <Truck className="w-3 h-3" />,
+                  className:
+                    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400",
+                };
+              case "CANCELED":
+                return {
+                  icon: <XCircle className="w-3 h-3" />,
+                  className:
+                    "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400",
+                };
+              default:
+                return {
+                  icon: <FileText className="w-3 h-3" />,
+                  className:
+                    "bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400",
+                };
+            }
+          };
+
+          const config = getStatusConfig();
 
           return (
-            <Badge className={cn("font-normal", colorClass)}>{label}</Badge>
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap",
+                config.className,
+              )}
+            >
+              {config.icon}
+              {label}
+            </span>
           );
         },
         size: 100,

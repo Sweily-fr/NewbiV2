@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { FormProvider } from "react-hook-form";
 import {
-  ArrowLeft,
   FileText,
   Send,
   Settings,
@@ -27,7 +26,6 @@ import {
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { ResourceNotFound } from "@/src/components/resource-not-found";
 import { useClient } from "@/src/graphql/clientQueries";
-import { ValidationCallout } from "@/app/dashboard/outils/factures/components/validation-callout";
 import ClientsModal from "@/app/dashboard/clients/components/clients-modal";
 import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/send-document-modal";
 import { SavePurchaseOrderTemplateDialog } from "./SavePurchaseOrderTemplateDialog";
@@ -130,6 +128,8 @@ export default function ModernPurchaseOrderEditor({
     error: purchaseOrderError,
     validationErrors,
     setValidationErrors,
+    markFieldAsEditing,
+    unmarkFieldAsEditing,
   } = usePurchaseOrderEditor({
     mode,
     purchaseOrderId,
@@ -494,6 +494,8 @@ export default function ModernPurchaseOrderEditor({
                       </>
                     )}
                   </h1>
+                  {/* Sous-texte "Modifications non sauvegardées" masqué à la demande */}
+                  {/*
                   {!showSettings && hasUserChanges && !isReadOnly && (
                     <p className="text-sm text-muted-foreground">
                       {saving
@@ -501,12 +503,14 @@ export default function ModernPurchaseOrderEditor({
                         : "Modifications non sauvegardées"}
                     </p>
                   )}
+                  */}
                 </div>
               </div>
 
               <div className="flex items-center gap-2 md:gap-6">
                 {!showSettings && (
                   <>
+                    {/* Croix pour fermer sur mobile */}
                     <Button
                       variant="ghost"
                       size="sm"
@@ -515,18 +519,6 @@ export default function ModernPurchaseOrderEditor({
                     >
                       <X className="h-4 w-4 text-muted-foreground" />
                     </Button>
-
-                    {currentStep === 2 && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setCurrentStep(1)}
-                        className="hidden md:flex gap-2 h-8 px-3"
-                      >
-                        <ArrowLeft className="h-4 w-4" />
-                        <span className="text-sm">Retour</span>
-                      </Button>
-                    )}
 
                     {/* Bouton Sauv. modèle */}
                     {!isCreating && purchaseOrderId && (
@@ -540,14 +532,14 @@ export default function ModernPurchaseOrderEditor({
                       </Button>
                     )}
 
+                    {/* Bouton Paramètres */}
                     {!isReadOnly && (
                       <Button
-                        variant="ghost"
-                        size="sm"
+                        variant="outline"
+                        size="icon"
                         onClick={handleSettingsClick}
-                        className="h-8 w-8 p-0"
                       >
-                        <Settings size={20} />
+                        <Settings className="w-4 h-4" />
                       </Button>
                     )}
                   </>
@@ -634,12 +626,6 @@ export default function ModernPurchaseOrderEditor({
 
             {/* Enhanced Form or Settings */}
             <div className="flex-1 min-h-0 flex flex-col">
-              {Object.keys(validationErrors || {}).length > 0 && (
-                <div className="flex-shrink-0 mb-4">
-                  <ValidationCallout errors={validationErrors} />
-                </div>
-              )}
-
               <div className="flex-1 min-h-0">
                 <FormProvider {...form}>
                   {showSettings ? (
@@ -682,6 +668,8 @@ export default function ModernPurchaseOrderEditor({
                       onStepChange={setCurrentStep}
                       onEditClient={() => setShowEditClient(true)}
                       documentType="purchaseOrder"
+                      markFieldAsEditing={markFieldAsEditing}
+                      unmarkFieldAsEditing={unmarkFieldAsEditing}
                     />
                   )}
                 </FormProvider>

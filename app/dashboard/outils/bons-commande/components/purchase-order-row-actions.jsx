@@ -39,6 +39,7 @@ import {
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/components/ui/sonner";
 import PurchaseOrderSidebar from "./purchase-order-sidebar";
+import { AnimatePresence } from "framer-motion";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
 // Fonction utilitaire pour formater les dates
@@ -378,12 +379,16 @@ export default function PurchaseOrderRowActions({
       </div>
 
       {/* Sidebar pour desktop */}
-      <PurchaseOrderSidebar
-        purchaseOrder={purchaseOrder}
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-        onRefetch={onRefetch}
-      />
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <PurchaseOrderSidebar
+            purchaseOrder={purchaseOrder}
+            isOpen={isSidebarOpen}
+            onClose={() => setIsSidebarOpen(false)}
+            onRefetch={onRefetch}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }

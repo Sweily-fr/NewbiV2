@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   X,
   FileText,
@@ -19,7 +19,9 @@ import {
   Truck,
   CalendarClock,
   RotateCcw,
+  LoaderCircle,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
@@ -55,6 +57,18 @@ export default function PurchaseOrderSidebar({
     useChangePurchaseOrderStatus();
   const { deletePurchaseOrder, loading: deleting } = useDeletePurchaseOrder();
 
+  const [showMobileDetails, setShowMobileDetails] = useState(false);
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth < 768 : false,
+  );
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   // Recuperer les donnees completes du bon de commande
   const {
     purchaseOrder: fullPurchaseOrder,
@@ -62,7 +76,7 @@ export default function PurchaseOrderSidebar({
     error: purchaseOrderError,
   } = usePurchaseOrder(initialPurchaseOrder?.id);
 
-  if (!isOpen || !initialPurchaseOrder) return null;
+  if (!initialPurchaseOrder) return null;
 
   // Utiliser les donnees completes si disponibles, sinon les donnees initiales
   const purchaseOrder = fullPurchaseOrder || initialPurchaseOrder;
@@ -223,307 +237,327 @@ export default function PurchaseOrderSidebar({
 
   return (
     <>
-      {/* Semi-transparent overlay */}
-      <div
-        className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${
-          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
+      {/* Semi-transparent overlay (dim léger sur toute la page) */}
+      <motion.div
+        className="fixed inset-0 z-40 bg-black/30"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0, transition: { duration: 0.1, ease: "easeOut" } }}
+        transition={{ duration: 0.15, ease: "easeOut" }}
         onClick={onClose}
       />
 
-      {/* PDF Preview Panel */}
-      <div
-        className={`fixed inset-y-0 left-0 right-[35%] z-50 transform transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+      {/* Backdrop sombre sur la zone preview - fade in après la sidebar */}
+      <motion.div
+        className="fixed inset-y-0 left-0 md:right-[40%] right-0 z-40 bg-black/60"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0, transition: { duration: 0.1, ease: "easeOut" } }}
+        transition={{ duration: 0.2, delay: 0.2, ease: "easeOut" }}
+      />
+
+      {/* PDF Preview Section - slide depuis la gauche après le backdrop */}
+      <motion.div
+        className="fixed inset-y-0 left-0 md:right-[40%] right-0 z-50 pointer-events-none"
+        initial={{ x: "-100%" }}
+        animate={{ x: 0 }}
+        exit={{
+          x: "-100%",
+          transition: { duration: 0.3, ease: [0.32, 0.72, 0, 1] },
+        }}
+        transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
       >
-        <div className="absolute inset-0 bg-black/80 p-0 flex items-start justify-center overflow-y-auto py-12 px-24">
-          <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white">
-            <UniversalPreviewPDF
-              data={purchaseOrder}
-              type="purchaseOrder"
-              recalcDraftDates
-            />
+        <div className="absolute inset-0 p-0 flex items-start justify-center overflow-y-auto py-4 md:py-12 px-2 md:px-24">
+          {loadingFullPurchaseOrder && !fullPurchaseOrder ? (
+            <div className="flex items-center justify-center w-full min-h-[calc(100%-4rem)] pointer-events-auto">
+              <LoaderCircle className="h-8 w-8 animate-spin text-white/80" />
+            </div>
+          ) : (
+            <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">
+              <UniversalPreviewPDF
+                data={purchaseOrder}
+                type="purchaseOrder"
+                recalcDraftDates
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Bouton flottant pour ouvrir les détails sur mobile */}
+        <Button
+          onClick={() => setShowMobileDetails(true)}
+          className="md:hidden fixed bottom-6 right-6 z-[60] rounded-full h-14 w-14 shadow-lg pointer-events-auto"
+          size="icon"
+        >
+          <Eye className="h-5 w-5" />
+        </Button>
+      </motion.div>
+
+      {/* Main Sidebar - Hidden on mobile by default, shown in modal */}
+      <motion.div
+        className="fixed inset-y-0 right-0 z-50 md:w-[40%] w-full bg-background border-l shadow-lg flex flex-col"
+        initial={{ x: "100%" }}
+        animate={{ x: isMobile && !showMobileDetails ? "100%" : 0 }}
+        exit={{ x: "100%" }}
+        transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between gap-2 px-6 py-4 border-b">
+          <div className="flex flex-col items-start gap-1 min-w-0 flex-1">
+            <h2 className="text-base font-medium">
+              Bon de commande{" "}
+              {purchaseOrder.prefix && purchaseOrder.number
+                ? `${purchaseOrder.prefix}-${purchaseOrder.number}`
+                : purchaseOrder.number || "Brouillon"}
+            </h2>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span
+                className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium ${
+                  purchaseOrder.status === "DRAFT"
+                    ? "bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400"
+                    : purchaseOrder.status === "CONFIRMED"
+                      ? "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
+                      : purchaseOrder.status === "VALIDATED"
+                        ? "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400"
+                        : purchaseOrder.status === "IN_PROGRESS"
+                          ? "bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400"
+                          : purchaseOrder.status === "DELIVERED"
+                            ? "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400"
+                            : "bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400"
+                }`}
+              >
+                {PURCHASE_ORDER_STATUS_LABELS[purchaseOrder.status] ||
+                  purchaseOrder.status}
+              </span>
+              {isValidUntilExpired() && (
+                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400">
+                  Expiré
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Bouton PDF - masque pour les brouillons */}
+            {purchaseOrder.status !== PURCHASE_ORDER_STATUS.DRAFT && (
+              <UniversalPDFDownloaderWithFacturX
+                data={purchaseOrder}
+                type="purchaseOrder"
+                variant="primary"
+                className="gap-1.5 font-medium"
+                enableFacturX={false}
+              />
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (window.innerWidth < 768 && showMobileDetails) {
+                  setShowMobileDetails(false);
+                } else {
+                  setShowMobileDetails(false);
+                  onClose();
+                }
+              }}
+              className="h-8 w-8 bg-[rgba(0,0,0,0.04)] hover:bg-[rgba(0,0,0,0.08)] dark:bg-[rgba(255,255,255,0.06)] dark:hover:bg-[rgba(255,255,255,0.1)]"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
         </div>
-      </div>
 
-      {/* Main Sidebar */}
-      <div
-        className={`fixed inset-y-0 right-0 z-50 w-[35%] bg-background border-l shadow-lg transform transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "translate-x-full"
-        }`}
-      >
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-start justify-between gap-2 p-6 border-b">
-            <div className="flex flex-col gap-2 min-w-0 flex-1">
-              <h2 className="font-normal text-lg">
-                Bon de commande{" "}
-                {purchaseOrder.prefix && purchaseOrder.number
-                  ? `${purchaseOrder.prefix}-${purchaseOrder.number}`
-                  : purchaseOrder.number || "Brouillon"}
-              </h2>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                    purchaseOrder.status === "DRAFT"
-                      ? "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100"
-                      : purchaseOrder.status === "CONFIRMED"
-                        ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100"
-                        : purchaseOrder.status === "VALIDATED"
-                          ? "bg-violet-100 text-violet-800 dark:bg-violet-900 dark:text-violet-100"
-                          : purchaseOrder.status === "IN_PROGRESS"
-                            ? "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100"
-                            : purchaseOrder.status === "DELIVERED"
-                              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-                              : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
-                  }`}
-                >
-                  {PURCHASE_ORDER_STATUS_LABELS[purchaseOrder.status] ||
-                    purchaseOrder.status}
-                </span>
-                {isValidUntilExpired() && (
-                  <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100">
-                    Expiré
-                  </span>
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Client Info */}
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+              Client
+            </p>
+            {purchaseOrder.client ? (
+              <div className="space-y-2">
+                <div>
+                  <p className="font-medium">{purchaseOrder.client.name}</p>
+                  {purchaseOrder.client.email && (
+                    <p className="text-sm text-muted-foreground">
+                      {purchaseOrder.client.email}
+                    </p>
+                  )}
+                </div>
+                {purchaseOrder.client.address && (
+                  <div className="text-sm text-muted-foreground">
+                    {purchaseOrder.client.address.street && (
+                      <p>{purchaseOrder.client.address.street}</p>
+                    )}
+                    {(purchaseOrder.client.address.postalCode ||
+                      purchaseOrder.client.address.city) && (
+                      <p>
+                        {purchaseOrder.client.address.postalCode &&
+                          purchaseOrder.client.address.postalCode}
+                        {purchaseOrder.client.address.postalCode &&
+                          purchaseOrder.client.address.city &&
+                          " "}
+                        {purchaseOrder.client.address.city &&
+                          purchaseOrder.client.address.city}
+                      </p>
+                    )}
+                    {purchaseOrder.client.address.country && (
+                      <p>{purchaseOrder.client.address.country}</p>
+                    )}
+                  </div>
                 )}
               </div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {/* Bouton PDF - masque pour les brouillons */}
-              {purchaseOrder.status !== PURCHASE_ORDER_STATUS.DRAFT && (
-                <UniversalPDFDownloaderWithFacturX
-                  data={purchaseOrder}
-                  type="purchaseOrder"
-                  enableFacturX={false}
-                />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Aucun client sélectionné
+              </p>
+            )}
+          </div>
+
+          <Separator />
+
+          {/* Adresse de livraison */}
+          {(() => {
+            const shippingData = purchaseOrder.shipping;
+            const renderShipping = (addr) => (
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                  Adresse de livraison
+                </p>
+                <div className="text-sm text-muted-foreground">
+                  {addr.fullName && (
+                    <p className="font-medium text-foreground">
+                      {addr.fullName}
+                    </p>
+                  )}
+                  {addr.street && <p>{addr.street}</p>}
+                  {(addr.postalCode || addr.city) && (
+                    <p>
+                      {addr.postalCode}
+                      {addr.postalCode && addr.city && " "}
+                      {addr.city}
+                    </p>
+                  )}
+                  {addr.country && <p>{addr.country}</p>}
+                </div>
+              </div>
+            );
+            if (shippingData?.shippingAddress && shippingData?.billShipping) {
+              return (
+                <>
+                  {renderShipping(shippingData.shippingAddress)}
+                  <Separator />
+                </>
+              );
+            }
+            if (
+              purchaseOrder.client?.hasDifferentShippingAddress &&
+              purchaseOrder.client?.shippingAddress
+            ) {
+              return (
+                <>
+                  {renderShipping(purchaseOrder.client.shippingAddress)}
+                  <Separator />
+                </>
+              );
+            }
+            return null;
+          })()}
+
+          {/* Dates */}
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+              Dates
+            </p>
+            <div className="space-y-2">
+              {/* Pour un brouillon repris plus tard, on affiche les dates
+                    recalées (jour J / validité) et l'ancienne date entre
+                    parenthèses, car elles seront mises à jour à la finalisation. */}
+              {(() => {
+                const draftDates = isDraft
+                  ? getDraftEffectiveDates(
+                      purchaseOrder.issueDate,
+                      purchaseOrder.validUntil,
+                    )
+                  : null;
+                const refreshed = draftDates?.changed;
+                return (
+                  <>
+                    <div className="flex items-start justify-between">
+                      <span className="text-sm font-normal text-muted-foreground">
+                        Date d'émission
+                      </span>
+                      <span className="flex flex-col items-end text-sm font-normal">
+                        <span>
+                          {formatDate(
+                            refreshed
+                              ? draftDates.issue.effective
+                              : purchaseOrder.issueDate,
+                          )}
+                        </span>
+                        {refreshed && draftDates.issue.original && (
+                          <span className="text-xs text-muted-foreground">
+                            (ancienne&nbsp;:{" "}
+                            {formatDate(draftDates.issue.original)})
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex items-start justify-between">
+                      <span className="text-sm font-normal text-muted-foreground">
+                        Valide jusqu'au
+                      </span>
+                      <span
+                        className={`flex flex-col items-end text-sm font-normal ${
+                          !refreshed && isValidUntilExpired()
+                            ? "text-red-600 font-medium"
+                            : ""
+                        }`}
+                      >
+                        <span>
+                          {formatDate(
+                            refreshed
+                              ? draftDates.second.effective
+                              : purchaseOrder.validUntil,
+                          )}
+                          {!refreshed && isValidUntilExpired() && (
+                            <span className="text-xs block text-red-500">
+                              Expiré
+                            </span>
+                          )}
+                        </span>
+                        {refreshed && draftDates.second.original && (
+                          <span className="text-xs text-muted-foreground">
+                            (ancienne&nbsp;:{" "}
+                            {formatDate(draftDates.second.original)})
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  </>
+                );
+              })()}
+              {purchaseOrder.deliveryDate && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-normal text-muted-foreground flex items-center gap-1.5">
+                    <CalendarClock className="h-3.5 w-3.5" />
+                    Date de livraison
+                  </span>
+                  <span className="text-sm font-normal">
+                    {formatDate(purchaseOrder.deliveryDate)}
+                  </span>
+                </div>
               )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onClose();
-                }}
-                className="h-8 w-8 p-0 relative z-50"
-              >
-                <X className="h-4 w-4" />
-              </Button>
             </div>
           </div>
 
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-8">
-            {/* Client Info */}
-            <div className="space-y-2.5">
-              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Client
-              </h3>
-              {purchaseOrder.client ? (
-                <div className="space-y-1.5">
-                  <div>
-                    <p className="font-medium">{purchaseOrder.client.name}</p>
-                    {purchaseOrder.client.email && (
-                      <p className="text-sm text-muted-foreground">
-                        {purchaseOrder.client.email}
-                      </p>
-                    )}
-                  </div>
-                  {purchaseOrder.client.address && (
-                    <div className="text-sm text-muted-foreground">
-                      {purchaseOrder.client.address.street && (
-                        <p>{purchaseOrder.client.address.street}</p>
-                      )}
-                      {(purchaseOrder.client.address.postalCode ||
-                        purchaseOrder.client.address.city) && (
-                        <p>
-                          {purchaseOrder.client.address.postalCode &&
-                            purchaseOrder.client.address.postalCode}
-                          {purchaseOrder.client.address.postalCode &&
-                            purchaseOrder.client.address.city &&
-                            " "}
-                          {purchaseOrder.client.address.city &&
-                            purchaseOrder.client.address.city}
-                        </p>
-                      )}
-                      {purchaseOrder.client.address.country && (
-                        <p>{purchaseOrder.client.address.country}</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <p className="text-muted-foreground">
-                  Aucun client sélectionné
-                </p>
-              )}
-            </div>
-
-            {/* Adresse de livraison */}
-            {(() => {
-              const shippingData = purchaseOrder.shipping;
-              if (shippingData?.shippingAddress && shippingData?.billShipping) {
-                return (
-                  <div className="space-y-2.5">
-                    <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Adresse de livraison
-                    </h3>
-                    <div className="text-sm text-muted-foreground">
-                      {shippingData.shippingAddress.fullName && (
-                        <p className="font-medium text-foreground">
-                          {shippingData.shippingAddress.fullName}
-                        </p>
-                      )}
-                      {shippingData.shippingAddress.street && (
-                        <p>{shippingData.shippingAddress.street}</p>
-                      )}
-                      {(shippingData.shippingAddress.postalCode ||
-                        shippingData.shippingAddress.city) && (
-                        <p>
-                          {shippingData.shippingAddress.postalCode}
-                          {shippingData.shippingAddress.postalCode &&
-                            shippingData.shippingAddress.city &&
-                            " "}
-                          {shippingData.shippingAddress.city}
-                        </p>
-                      )}
-                      {shippingData.shippingAddress.country && (
-                        <p>{shippingData.shippingAddress.country}</p>
-                      )}
-                    </div>
-                  </div>
-                );
-              }
-              if (
-                purchaseOrder.client?.hasDifferentShippingAddress &&
-                purchaseOrder.client?.shippingAddress
-              ) {
-                return (
-                  <div className="space-y-2.5">
-                    <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Adresse de livraison
-                    </h3>
-                    <div className="text-sm text-muted-foreground">
-                      {purchaseOrder.client.shippingAddress.fullName && (
-                        <p className="font-medium text-foreground">
-                          {purchaseOrder.client.shippingAddress.fullName}
-                        </p>
-                      )}
-                      {purchaseOrder.client.shippingAddress.street && (
-                        <p>{purchaseOrder.client.shippingAddress.street}</p>
-                      )}
-                      {(purchaseOrder.client.shippingAddress.postalCode ||
-                        purchaseOrder.client.shippingAddress.city) && (
-                        <p>
-                          {purchaseOrder.client.shippingAddress.postalCode}
-                          {purchaseOrder.client.shippingAddress.postalCode &&
-                            purchaseOrder.client.shippingAddress.city &&
-                            " "}
-                          {purchaseOrder.client.shippingAddress.city}
-                        </p>
-                      )}
-                      {purchaseOrder.client.shippingAddress.country && (
-                        <p>{purchaseOrder.client.shippingAddress.country}</p>
-                      )}
-                    </div>
-                  </div>
-                );
-              }
-              return null;
-            })()}
-
-            {/* Dates */}
-            <div className="space-y-2.5">
-              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Dates
-              </h3>
-              <div className="space-y-1.5">
-                {/* Pour un brouillon repris plus tard, on affiche les dates
-                    recalées (jour J / validité) et l'ancienne date entre
-                    parenthèses, car elles seront mises à jour à la finalisation. */}
-                {(() => {
-                  const draftDates = isDraft
-                    ? getDraftEffectiveDates(
-                        purchaseOrder.issueDate,
-                        purchaseOrder.validUntil,
-                      )
-                    : null;
-                  const refreshed = draftDates?.changed;
-                  return (
-                    <>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          Date d'émission
-                        </span>
-                        <span className="flex flex-col items-end">
-                          <span>
-                            {formatDate(
-                              refreshed
-                                ? draftDates.issue.effective
-                                : purchaseOrder.issueDate,
-                            )}
-                          </span>
-                          {refreshed && draftDates.issue.original && (
-                            <span className="text-xs text-muted-foreground">
-                              (ancienne&nbsp;:{" "}
-                              {formatDate(draftDates.issue.original)})
-                            </span>
-                          )}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          Valide jusqu'au
-                        </span>
-                        <span
-                          className={`flex flex-col items-end ${
-                            !refreshed && isValidUntilExpired()
-                              ? "text-red-600 font-medium"
-                              : ""
-                          }`}
-                        >
-                          <span>
-                            {formatDate(
-                              refreshed
-                                ? draftDates.second.effective
-                                : purchaseOrder.validUntil,
-                            )}
-                            {!refreshed && isValidUntilExpired() && (
-                              <span className="text-xs block text-red-500">
-                                Expiré
-                              </span>
-                            )}
-                          </span>
-                          {refreshed && draftDates.second.original && (
-                            <span className="text-xs text-muted-foreground">
-                              (ancienne&nbsp;:{" "}
-                              {formatDate(draftDates.second.original)})
-                            </span>
-                          )}
-                        </span>
-                      </div>
-                    </>
-                  );
-                })()}
-                {purchaseOrder.deliveryDate && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground flex items-center gap-1.5">
-                      <CalendarClock className="h-3.5 w-3.5" />
-                      Date de livraison
-                    </span>
-                    <span>{formatDate(purchaseOrder.deliveryDate)}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Source Quote */}
-            {purchaseOrder.sourceQuote && (
-              <div className="space-y-2.5">
-                <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {/* Source Quote */}
+          {purchaseOrder.sourceQuote && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
                   Devis source
-                </h3>
+                </p>
                 <div className="text-sm">
                   <span className="text-muted-foreground">
                     {purchaseOrder.sourceQuote.prefix}-
@@ -531,103 +565,120 @@ export default function PurchaseOrderSidebar({
                   </span>
                 </div>
               </div>
-            )}
+            </>
+          )}
 
-            {/* Articles */}
-            <div className="space-y-2.5">
-              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Articles
-              </h3>
-              <div className="space-y-1.5">
-                {purchaseOrder.items && purchaseOrder.items.length > 0 ? (
-                  purchaseOrder.items.map((item, index) => (
-                    <div key={index} className="text-sm">
-                      <div className="font-medium">
-                        {item.description || "Article sans description"}
-                      </div>
-                      <div className="text-muted-foreground">
-                        {item.quantity || 0} ×{" "}
-                        {formatCurrency(item.unitPrice || 0)}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-muted-foreground">Aucun article</p>
-                )}
-              </div>
-            </div>
+          <Separator />
 
-            {/* Totals */}
-            <div className="space-y-2.5">
-              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Totaux
-              </h3>
-              <div className="space-y-1.5">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Sous-total HT</span>
-                  <span>{formatCurrency(purchaseOrder.totalHT || 0)}</span>
-                </div>
-                {purchaseOrder.discountAmount > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Remise</span>
-                    <span>
-                      -{formatCurrency(purchaseOrder.discountAmount || 0)}
-                    </span>
+          {/* Articles */}
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+              Articles
+            </p>
+            <div className="space-y-2">
+              {purchaseOrder.items && purchaseOrder.items.length > 0 ? (
+                purchaseOrder.items.map((item, index) => (
+                  <div key={index} className="text-sm">
+                    <p className="font-normal">
+                      {item.description || "Article sans description"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.quantity || 0} ×{" "}
+                      {formatCurrency(item.unitPrice || 0)}
+                    </p>
                   </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total HT</span>
-                  <span>
-                    {formatCurrency(
-                      purchaseOrder.finalTotalHT !== undefined &&
-                        purchaseOrder.finalTotalHT !== null
-                        ? purchaseOrder.finalTotalHT
-                        : purchaseOrder.totalHT !== undefined &&
-                            purchaseOrder.totalHT !== null
-                          ? purchaseOrder.totalHT
-                          : 0,
-                    )}
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">Aucun article</p>
+              )}
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Totals */}
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+              Totaux
+            </p>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-normal text-muted-foreground">
+                  Sous-total HT
+                </span>
+                <span className="text-sm font-normal">
+                  {formatCurrency(purchaseOrder.totalHT || 0)}
+                </span>
+              </div>
+              {purchaseOrder.discountAmount > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-normal text-muted-foreground">
+                    Remise
+                  </span>
+                  <span className="text-sm font-normal">
+                    -{formatCurrency(purchaseOrder.discountAmount || 0)}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">TVA</span>
-                  <span>
-                    {formatCurrency(
-                      purchaseOrder.finalTotalVAT !== undefined &&
-                        purchaseOrder.finalTotalVAT !== null
-                        ? purchaseOrder.finalTotalVAT
-                        : purchaseOrder.totalVAT !== undefined &&
-                            purchaseOrder.totalVAT !== null
-                          ? purchaseOrder.totalVAT
-                          : 0,
-                    )}
-                  </span>
-                </div>
-                <div className="flex justify-between font-medium">
-                  <span>Total TTC</span>
-                  <span>
-                    {formatCurrency(
-                      purchaseOrder.finalTotalTTC !== undefined &&
-                        purchaseOrder.finalTotalTTC !== null
-                        ? purchaseOrder.finalTotalTTC
-                        : purchaseOrder.totalTTC !== undefined &&
-                            purchaseOrder.totalTTC !== null
-                          ? purchaseOrder.totalTTC
-                          : 0,
-                    )}
-                  </span>
-                </div>
+              )}
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-normal text-muted-foreground">
+                  Total HT
+                </span>
+                <span className="text-sm font-normal">
+                  {formatCurrency(
+                    purchaseOrder.finalTotalHT !== undefined &&
+                      purchaseOrder.finalTotalHT !== null
+                      ? purchaseOrder.finalTotalHT
+                      : purchaseOrder.totalHT !== undefined &&
+                          purchaseOrder.totalHT !== null
+                        ? purchaseOrder.totalHT
+                        : 0,
+                  )}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-normal text-muted-foreground">
+                  TVA
+                </span>
+                <span className="text-sm font-normal">
+                  {formatCurrency(
+                    purchaseOrder.finalTotalVAT !== undefined &&
+                      purchaseOrder.finalTotalVAT !== null
+                      ? purchaseOrder.finalTotalVAT
+                      : purchaseOrder.totalVAT !== undefined &&
+                          purchaseOrder.totalVAT !== null
+                        ? purchaseOrder.totalVAT
+                        : 0,
+                  )}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Total TTC</span>
+                <span className="text-sm font-medium">
+                  {formatCurrency(
+                    purchaseOrder.finalTotalTTC !== undefined &&
+                      purchaseOrder.finalTotalTTC !== null
+                      ? purchaseOrder.finalTotalTTC
+                      : purchaseOrder.totalTTC !== undefined &&
+                          purchaseOrder.totalTTC !== null
+                        ? purchaseOrder.totalTTC
+                        : 0,
+                  )}
+                </span>
               </div>
             </div>
+          </div>
 
-            {/* Linked Invoices */}
-            {purchaseOrder.linkedInvoices &&
-              purchaseOrder.linkedInvoices.length > 0 && (
-                <div className="space-y-2.5">
-                  <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {/* Linked Invoices */}
+          {purchaseOrder.linkedInvoices &&
+            purchaseOrder.linkedInvoices.length > 0 && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
                     Factures liées
-                  </h3>
-                  <div className="space-y-1.5">
+                  </p>
+                  <div className="space-y-2">
                     {purchaseOrder.linkedInvoices.map((invoice) => (
                       <div
                         key={invoice.id}
@@ -649,111 +700,113 @@ export default function PurchaseOrderSidebar({
                     ))}
                   </div>
                 </div>
-              )}
-          </div>
+              </>
+            )}
+        </div>
 
-          {/* Action Buttons */}
-          <div className="border-t p-6 space-y-3">
-            {/* Primary Actions */}
+        {/* Action Buttons */}
+        <div className="border-t px-6 py-4 space-y-3">
+          {/* DRAFT: Éditer + Confirmer (paire) */}
+          {isDraft && (
             <div className="flex gap-2">
-              {isDraft && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleEdit}
-                  className="flex-1"
-                >
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Éditer
-                </Button>
-              )}
-            </div>
-
-            {/* Status Actions - DRAFT: Confirm */}
-            {isDraft && (
               <Button
+                variant="outline"
+                onClick={handleEdit}
+                disabled={isLoading}
+                className="flex-1 font-normal"
+              >
+                <Pencil className="h-4 w-4 mr-2" />
+                Éditer
+              </Button>
+              <Button
+                variant="primary"
                 onClick={handleConfirm}
                 disabled={isLoading}
-                className="w-full"
+                className="flex-1 font-normal"
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
-                Confirmer le bon de commande
+                Confirmer
               </Button>
-            )}
+            </div>
+          )}
 
-            {/* Status Actions - CONFIRMED (En attente): Validate / Revert / Cancel */}
-            {isConfirmed && (
-              <div className="flex flex-col space-y-2">
-                <Button
-                  onClick={handleValidate}
-                  disabled={isLoading}
-                  className="w-full"
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Marquer comme validé par le client
-                </Button>
+          {/* CONFIRMED: Repasser brouillon / Valider (paire) + Annuler (full) */}
+          {isConfirmed && (
+            <>
+              <div className="flex gap-2">
                 <Button
                   variant="outline"
                   onClick={handleRevertToDraft}
                   disabled={isLoading}
-                  className="w-full"
+                  className="flex-1 font-normal"
                 >
                   <RotateCcw className="h-4 w-4 mr-2" />
-                  Repasser en brouillon
+                  Repasser brouillon
                 </Button>
-                {canCancel && (
-                  <Button
-                    variant="outline"
-                    onClick={handleCancel}
-                    disabled={isLoading}
-                    className="w-full"
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Annuler le bon de commande
-                  </Button>
-                )}
+                <Button
+                  variant="primary"
+                  onClick={handleValidate}
+                  disabled={isLoading}
+                  className="flex-1 font-normal"
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Valider
+                </Button>
               </div>
-            )}
+              {canCancel && (
+                <Button
+                  variant="outline"
+                  onClick={handleCancel}
+                  disabled={isLoading}
+                  className="w-full font-normal"
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Annuler le bon de commande
+                </Button>
+              )}
+            </>
+          )}
 
-            {/* Status Actions - VALIDATED: Start progress */}
-            {isValidated && (
-              <Button
-                onClick={handleStartProgress}
-                disabled={isLoading}
-                className="w-full"
-              >
-                <Play className="h-4 w-4 mr-2" />
-                Démarrer le traitement
-              </Button>
-            )}
+          {/* VALIDATED: Démarrer le traitement (single) */}
+          {isValidated && (
+            <Button
+              variant="primary"
+              onClick={handleStartProgress}
+              disabled={isLoading}
+              className="w-full font-normal"
+            >
+              <Play className="h-4 w-4 mr-2" />
+              Démarrer le traitement
+            </Button>
+          )}
 
-            {/* Status Actions - IN_PROGRESS: Deliver */}
-            {isInProgress && (
-              <Button
-                onClick={handleDeliver}
-                disabled={isLoading}
-                className="w-full"
-              >
-                <Truck className="h-4 w-4 mr-2" />
-                Marquer comme livré
-              </Button>
-            )}
+          {/* IN_PROGRESS: Marquer comme livré (single) */}
+          {isInProgress && (
+            <Button
+              variant="primary"
+              onClick={handleDeliver}
+              disabled={isLoading}
+              className="w-full font-normal"
+            >
+              <Truck className="h-4 w-4 mr-2" />
+              Marquer comme livré
+            </Button>
+          )}
 
-            {/* Convert to Invoice - available for CONFIRMED, IN_PROGRESS, DELIVERED */}
-            {canConvertToInvoice && (
-              <Button
-                variant="outline"
-                onClick={handleConvertToInvoice}
-                disabled={isLoading}
-                className="w-full font-normal text-sm"
-              >
-                <FileCheck className="h-4 w-4 mr-2" />
-                Convertir en facture
-              </Button>
-            )}
-          </div>
+          {/* Convertir en facture - disponible pour VALIDATED, IN_PROGRESS, DELIVERED sans facture liée */}
+          {canConvertToInvoice && (
+            <Button
+              variant="outline"
+              onClick={handleConvertToInvoice}
+              disabled={isLoading}
+              className="w-full font-normal"
+            >
+              <FileCheck className="h-4 w-4 mr-2" />
+              Convertir en facture
+            </Button>
+          )}
         </div>
-      </div>
+      </motion.div>
     </>
   );
 }
