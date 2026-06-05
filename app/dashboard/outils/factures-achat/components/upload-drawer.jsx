@@ -106,6 +106,9 @@ export function PurchaseInvoiceUploadDrawer({
   open,
   onOpenChange,
   onUploaded,
+  // When true, render only the content + footer (no Drawer shell / header),
+  // so this can be embedded inside another drawer (e.g. the tabbed create drawer).
+  embedded = false,
 }) {
   const { workspaceId } = useRequiredWorkspace();
   const fileInputRef = useRef(null);
@@ -469,38 +472,49 @@ export function PurchaseInvoiceUploadDrawer({
     onOpenChange(v);
   };
 
-  return (
-    <Drawer open={open} onOpenChange={handleOpenChange} direction="right">
-      <DrawerContent
-        className="w-full h-full md:w-[500px] md:max-w-[500px] md:min-w-[500px] md:h-auto"
-        style={{ width: "100vw", height: "100vh" }}
-      >
-        {/* Header */}
-        <DrawerHeader className="flex flex-row items-center justify-between px-6 py-4 border-b space-y-0">
-          <div className="flex items-center gap-2">
-            <DrawerTitle className="text-base font-medium">
-              {currentStep === "upload"
-                ? "Importer une facture"
-                : currentStep === "review"
-                  ? totalToReview > 1
-                    ? `Facture ${createdCount + 1} / ${totalToReview}`
-                    : "Vérifier les données"
-                  : createdCount > 1
-                    ? `${createdCount} factures créées !`
-                    : "Importation terminée"}
-            </DrawerTitle>
-            {currentStep === "review" && (
-              <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
-                OCR
-              </span>
-            )}
+  const header = (
+    <DrawerHeader className="flex flex-row items-center justify-between px-6 py-4 border-b space-y-0">
+      <div className="flex items-center gap-2">
+        <DrawerTitle className="text-base font-medium">
+          {currentStep === "upload"
+            ? "Importer une facture"
+            : currentStep === "review"
+              ? totalToReview > 1
+                ? `Facture ${createdCount + 1} / ${totalToReview}`
+                : "Vérifier les données"
+              : createdCount > 1
+                ? `${createdCount} factures créées !`
+                : "Importation terminée"}
+        </DrawerTitle>
+        {currentStep === "review" && (
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
+            OCR
+          </span>
+        )}
+      </div>
+      <DrawerClose asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8">
+          <X className="h-4 w-4" />
+        </Button>
+      </DrawerClose>
+    </DrawerHeader>
+  );
+
+  const body = (
+    <>
+        {/* Embedded step indicator (the tab label replaces the drawer title) */}
+        {embedded && currentStep === "review" && (
+          <div className="flex items-center gap-2 px-6 pt-4">
+            <span className="text-sm font-medium">
+              {totalToReview > 1
+                ? `Facture ${createdCount + 1} / ${totalToReview}`
+                : "Vérifier les données"}
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
+              OCR
+            </span>
           </div>
-          <DrawerClose asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <X className="h-4 w-4" />
-            </Button>
-          </DrawerClose>
-        </DrawerHeader>
+        )}
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
@@ -1155,6 +1169,21 @@ export function PurchaseInvoiceUploadDrawer({
             </Button>
           )}
         </DrawerFooter>
+    </>
+  );
+
+  if (embedded) {
+    return <div className="flex flex-col h-full">{body}</div>;
+  }
+
+  return (
+    <Drawer open={open} onOpenChange={handleOpenChange} direction="right">
+      <DrawerContent
+        className="w-full h-full md:w-[500px] md:max-w-[500px] md:min-w-[500px] md:h-auto"
+        style={{ width: "100vw", height: "100vh" }}
+      >
+        {header}
+        {body}
       </DrawerContent>
     </Drawer>
   );
