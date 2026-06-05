@@ -3,7 +3,7 @@ import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import PurchaseInvoiceTable from "./components/table";
 import { PurchaseInvoiceDetailDrawer } from "./components/detail-drawer";
-import { PurchaseInvoiceUploadDrawer } from "./components/upload-drawer";
+import { PurchaseInvoiceCreateDrawer } from "./components/create-drawer";
 import { ExportDialog } from "./components/export-dialog";
 import { GmailConnectionDialog } from "./components/gmail-connection";
 // GmailStatusBanner remplacé par un bouton inline dans la toolbar
@@ -122,7 +122,7 @@ function PurchaseInvoicesContent() {
   // Drawer state — managed here so only ONE set of drawers is rendered
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
   const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
-  const [isUploadDrawerOpen, setIsUploadDrawerOpen] = useState(false);
+  const [createInitialTab, setCreateInitialTab] = useState("manual");
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isGmailDialogOpen, setIsGmailDialogOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
@@ -142,6 +142,13 @@ function PurchaseInvoicesContent() {
       );
       window.history.replaceState({}, "", window.location.pathname);
     }
+    // Ouverture directe du drawer de création depuis le dashboard
+    // (lien "Ajouter une facture d'achat" → ?action=create).
+    if (searchParams.get("action") === "create") {
+      setCreateInitialTab("manual");
+      setIsCreateDrawerOpen(true);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
   }, [searchParams]);
 
   const handleRowClick = (invoice) => {
@@ -150,12 +157,13 @@ function PurchaseInvoicesContent() {
   };
 
   const handleAddManual = () => {
-    setSelectedInvoice(null);
+    setCreateInitialTab("manual");
     setIsCreateDrawerOpen(true);
   };
 
   const handleAddOcr = () => {
-    setIsUploadDrawerOpen(true);
+    setCreateInitialTab("ocr");
+    setIsCreateDrawerOpen(true);
   };
 
   const handleOpenGmailDialog = () => {
@@ -397,20 +405,19 @@ function PurchaseInvoicesContent() {
       </div>
 
       {/* Drawers — rendered ONCE at page level */}
+      {/* Consultation / édition d'une facture existante */}
       <PurchaseInvoiceDetailDrawer
-        open={isDetailDrawerOpen || isCreateDrawerOpen}
+        open={isDetailDrawerOpen}
         onOpenChange={(open) => {
           if (!open) {
             setIsDetailDrawerOpen(false);
-            setIsCreateDrawerOpen(false);
             setSelectedInvoice(null);
           }
         }}
         invoice={selectedInvoice}
-        mode={isCreateDrawerOpen ? "create" : "view"}
+        mode="view"
         onSaved={() => {
           setIsDetailDrawerOpen(false);
-          setIsCreateDrawerOpen(false);
           setSelectedInvoice(null);
           refetch?.();
         }}
@@ -421,12 +428,21 @@ function PurchaseInvoicesContent() {
           refetchStats?.();
         }}
       />
-      <PurchaseInvoiceUploadDrawer
-        open={isUploadDrawerOpen}
-        onOpenChange={setIsUploadDrawerOpen}
-        onUploaded={() => {
-          setIsUploadDrawerOpen(false);
+      {/* Création — drawer unifié (onglets Saisie manuelle / Import OCR) */}
+      <PurchaseInvoiceCreateDrawer
+        open={isCreateDrawerOpen}
+        initialTab={createInitialTab}
+        onOpenChange={(open) => {
+          setIsCreateDrawerOpen(open);
+          if (!open) {
+            refetch?.();
+            refetchStats?.();
+          }
+        }}
+        onCreated={() => {
+          setIsCreateDrawerOpen(false);
           refetch?.();
+          refetchStats?.();
         }}
       />
       <ExportDialog
