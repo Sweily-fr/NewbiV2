@@ -138,6 +138,12 @@ export const INVOICE_FRAGMENT = gql`
       emailClickedAt
       emailClickCount
     }
+    superPdpInvoiceId
+    eInvoiceStatus
+    eInvoiceLastCode
+    archivedPdfKey
+    archivedPdfStoredAt
+    archivedPdfSource
   }
 `;
 

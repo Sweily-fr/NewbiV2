@@ -21,6 +21,7 @@ import {
   DELETE_SUPPLIER,
   SYNC_PURCHASE_INVOICES_FROM_SUPERPDP,
   ACKNOWLEDGE_PURCHASE_INVOICE_EINVOICE,
+  REFUSE_PURCHASE_INVOICE_EINVOICE,
 } from "../graphql/mutations/purchaseInvoices";
 import { toast } from "@/src/components/ui/sonner";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
@@ -522,4 +523,23 @@ export const useAcknowledgePurchaseInvoiceEInvoice = () => {
   };
 
   return { acknowledge, loading };
+};
+
+export const useRefusePurchaseInvoiceEInvoice = () => {
+  const [refuseMutation, { loading }] = useMutation(
+    REFUSE_PURCHASE_INVOICE_EINVOICE,
+  );
+
+  const refuse = async (id, reason) => {
+    try {
+      const result = await refuseMutation({ variables: { id, reason } });
+      toast.success("Facture électronique refusée");
+      return result.data?.refusePurchaseInvoiceEInvoice;
+    } catch (error) {
+      toast.error(error.message || "Erreur");
+      return null;
+    }
+  };
+
+  return { refuse, loading };
 };

@@ -12,7 +12,11 @@ import { PDFDocument, PDFName, PDFString } from "pdf-lib";
  * @param {string} documentType - Type de document ('invoice' ou 'creditNote')
  * @returns {string} - XML Factur-X formaté
  */
-export function generateFacturXXML(invoiceData, documentType = "invoice") {
+export function generateFacturXXML(
+  invoiceData,
+  documentType = "invoice",
+  options = {},
+) {
   const {
     number,
     issueDate,
@@ -29,10 +33,37 @@ export function generateFacturXXML(invoiceData, documentType = "invoice") {
     footerNotes,
     purchaseOrderNumber,
     operationType,
+    isDeposit,
+    originalInvoiceNumber,
   } = invoiceData;
 
-  // Type de document : 380 = Facture, 381 = Avoir
-  const typeCode = documentType === "creditNote" ? "381" : "380";
+  // Factures de situation précédentes (chaînage des situations), optionnel
+  const previousSituationInvoices = options.previousSituationInvoices || [];
+
+  // Type de document (UNTDID 1001) :
+  // 380 = Facture, 381 = Avoir, 386 = Facture d'acompte
+  const typeCode =
+    documentType === "creditNote" ? "381" : isDeposit ? "386" : "380";
+
+  // Références à la/aux facture(s) précédente(s) (BG-3 / ram:InvoiceReferencedDocument)
+  // - Avoir : référence la facture d'origine (originalInvoiceNumber)
+  // - Facture de situation : référence les situations précédentes
+  const precedingReferences = [];
+  if (documentType === "creditNote" && originalInvoiceNumber) {
+    precedingReferences.push(String(originalInvoiceNumber));
+  }
+  for (const prev of previousSituationInvoices) {
+    const ref = `${prev?.prefix || ""}${prev?.number || ""}`.trim();
+    if (ref) precedingReferences.push(ref);
+  }
+  const invoiceReferencedDocumentXML = precedingReferences
+    .map(
+      (ref) =>
+        `\n      <ram:InvoiceReferencedDocument>
+        <ram:IssuerAssignedID>${escapeXML(ref)}</ram:IssuerAssignedID>
+      </ram:InvoiceReferencedDocument>`,
+    )
+    .join("");
 
   // Formater les dates au format YYYYMMDD
   const formatDateXML = (date) => {
@@ -406,7 +437,7 @@ export function generateFacturXXML(invoiceData, documentType = "invoice") {
         <ram:TaxTotalAmount currencyID="EUR">${(totalVAT || 0).toFixed(2)}</ram:TaxTotalAmount>
         <ram:GrandTotalAmount>${(finalTotalTTC || 0).toFixed(2)}</ram:GrandTotalAmount>
         <ram:DuePayableAmount>${(finalTotalTTC || 0).toFixed(2)}</ram:DuePayableAmount>
-      </ram:SpecifiedTradeSettlementHeaderMonetarySummation>
+      </ram:SpecifiedTradeSettlementHeaderMonetarySummation>${invoiceReferencedDocumentXML}
     </ram:ApplicableHeaderTradeSettlement>
   </rsm:SupplyChainTradeTransaction>
 </rsm:CrossIndustryInvoice>`;

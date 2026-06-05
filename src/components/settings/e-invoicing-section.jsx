@@ -24,6 +24,15 @@ import { useSuperPdp } from "@/src/hooks/useSuperPdp";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { useQuery, useMutation } from "@apollo/client";
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import {
+  EINVOICING_VERIFICATION,
+  EINVOICING_DIRECTORY_ENTRIES,
+  REGISTER_EINVOICING_DIRECTORY,
+  UPDATE_EINVOICING_VAT_REGIME,
+  EINVOICING_EREPORTINGS,
+} from "@/src/graphql/eInvoicingQueries";
 
 export function EInvoicingSection({ canManageOrgSettings }) {
   const {
@@ -41,6 +50,60 @@ export function EInvoicingSection({ canManageOrgSettings }) {
   } = useSuperPdp();
   const searchParams = useSearchParams();
   const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const { workspaceId } = useRequiredWorkspace();
+
+  // Vérification KYC/KYB + annuaire (uniquement si e-invoicing activé)
+  const skipEInvoicing = !workspaceId || !settings?.eInvoicingEnabled;
+  const { data: verificationData } = useQuery(EINVOICING_VERIFICATION, {
+    variables: { workspaceId },
+    skip: skipEInvoicing,
+    fetchPolicy: "cache-and-network",
+  });
+  const verification = verificationData?.eInvoicingVerification;
+
+  const { data: directoryData, refetch: refetchDirectory } = useQuery(
+    EINVOICING_DIRECTORY_ENTRIES,
+    {
+      variables: { workspaceId },
+      skip: skipEInvoicing,
+      fetchPolicy: "cache-and-network",
+    },
+  );
+  const directoryEntries = directoryData?.eInvoicingDirectoryEntries || [];
+
+  const { data: eReportingData } = useQuery(EINVOICING_EREPORTINGS, {
+    variables: { workspaceId },
+    skip: skipEInvoicing,
+    fetchPolicy: "cache-and-network",
+  });
+  const eReportings = eReportingData?.eInvoicingEReportings || [];
+
+  const [registerDirectory, { loading: registeringDirectory }] = useMutation(
+    REGISTER_EINVOICING_DIRECTORY,
+  );
+
+  const handleRegisterDirectory = async () => {
+    try {
+      await registerDirectory({ variables: { workspaceId } });
+      await refetchDirectory();
+      toast.success("Inscription à l'annuaire envoyée");
+    } catch (e) {
+      toast.error(e.message || "Échec de l'inscription à l'annuaire");
+    }
+  };
+
+  const [updateVatRegime, { loading: updatingVatRegime }] = useMutation(
+    UPDATE_EINVOICING_VAT_REGIME,
+  );
+
+  const handleVatRegimeChange = async (vatRegime) => {
+    try {
+      await updateVatRegime({ variables: { workspaceId, vatRegime } });
+      toast.success("Régime TVA mis à jour");
+    } catch (e) {
+      toast.error(e.message || "Échec de la mise à jour du régime TVA");
+    }
+  };
   const readOnlyTooltip = isReadOnly
     ? isOwner
       ? "Mode lecture seule · Renouvelez votre abonnement"
@@ -189,6 +252,177 @@ export function EInvoicingSection({ canManageOrgSettings }) {
                     <span className="text-muted-foreground ml-1">erreurs</span>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Entreprise connectée + statut de vérification KYC/KYB */}
+            {verification?.connected && (
+              <div className="mt-4 rounded-lg border border-[#eeeff1] dark:border-[#232323] p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">
+                      {verification.company?.formalName ||
+                        "Entreprise connectée"}
+                    </span>
+                    {verification.company?.number && (
+                      <span className="text-xs text-muted-foreground">
+                        SIREN {verification.company.number}
+                      </span>
+                    )}
+                  </div>
+                  {(() => {
+                    const v = verification.companyVerificationStatus;
+                    const cfg =
+                      v === "verified"
+                        ? {
+                            label: "Vérifiée",
+                            cls: "bg-green-50 text-green-600 dark:bg-green-900/20",
+                            Icon: CheckCircle2,
+                          }
+                        : v === "failed"
+                          ? {
+                              label: "Vérification refusée",
+                              cls: "bg-red-50 text-red-600 dark:bg-red-900/20",
+                              Icon: AlertCircle,
+                            }
+                          : {
+                              label: "Vérification en cours",
+                              cls: "bg-amber-50 text-amber-600 dark:bg-amber-900/20",
+                              Icon: Clock,
+                            };
+                    const Icon = cfg.Icon;
+                    return (
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium ${cfg.cls}`}
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                        {cfg.label}
+                      </span>
+                    );
+                  })()}
+                </div>
+                {verification.companyVerificationStatus !== "verified" && (
+                  <p className="text-xs text-amber-600">
+                    L'émission et la réception de factures électroniques seront
+                    actives une fois la vérification de votre entreprise validée
+                    par SuperPDP.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Recevoir des factures : inscription à l'annuaire (Peppol + PPF) */}
+            {verification?.connected && (
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">
+                      Recevoir des factures
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      Inscrivez votre entreprise aux annuaires Peppol et PPF
+                    </span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRegisterDirectory}
+                    disabled={!canManageOrgSettings || registeringDirectory}
+                  >
+                    {registeringDirectory ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <Send className="h-4 w-4 mr-2" />
+                    )}
+                    S'inscrire
+                  </Button>
+                </div>
+                {directoryEntries.length > 0 && (
+                  <div className="flex flex-col gap-1">
+                    {directoryEntries.map((entry) => (
+                      <div
+                        key={
+                          entry.id || `${entry.directory}-${entry.identifier}`
+                        }
+                        className="flex items-center justify-between text-xs"
+                      >
+                        <span className="uppercase text-muted-foreground">
+                          {entry.directory}
+                        </span>
+                        <span
+                          className={
+                            entry.status === "created"
+                              ? "text-green-600"
+                              : entry.status === "error"
+                                ? "text-red-600"
+                                : "text-amber-600"
+                          }
+                        >
+                          {entry.status === "created"
+                            ? "Inscrit"
+                            : entry.status === "error"
+                              ? entry.statusMessage || "Erreur"
+                              : "En cours"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Régime TVA (pilote le calendrier d'envoi e-reporting au PPF) */}
+            {verification?.connected && (
+              <div className="mt-4 flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">Régime de TVA</span>
+                  <span className="text-xs text-muted-foreground">
+                    Détermine la fréquence d'envoi des données e-reporting au
+                    PPF
+                  </span>
+                </div>
+                <select
+                  className="text-sm border border-[#eeeff1] dark:border-[#232323] rounded-md px-2 py-1 bg-transparent"
+                  value={verification?.company?.vatRegime || ""}
+                  disabled={!canManageOrgSettings || updatingVatRegime}
+                  onChange={(e) => handleVatRegimeChange(e.target.value)}
+                >
+                  <option value="" disabled>
+                    Sélectionner…
+                  </option>
+                  <option value="monthly">Mensuel</option>
+                  <option value="quarterly">Trimestriel</option>
+                  <option value="simplified">Réel simplifié</option>
+                  <option value="vat_exemption">Franchise en base</option>
+                </select>
+              </div>
+            )}
+
+            {/* Historique des déclarations e-reporting (PPF) */}
+            {verification?.connected && eReportings.length > 0 && (
+              <div className="mt-4 space-y-2">
+                <span className="text-sm font-medium">Déclarations PPF</span>
+                <div className="flex flex-col gap-1">
+                  {eReportings.slice(0, 8).map((r) => (
+                    <div
+                      key={r.id}
+                      className="flex items-center justify-between text-xs text-muted-foreground"
+                    >
+                      <span>
+                        {r.kind === "payment" ? "Paiements" : "Transactions"}
+                      </span>
+                      <span>
+                        {r.startPeriod
+                          ? new Date(r.startPeriod).toLocaleDateString("fr-FR")
+                          : "—"}
+                        {" → "}
+                        {r.endPeriod
+                          ? new Date(r.endPeriod).toLocaleDateString("fr-FR")
+                          : "—"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>

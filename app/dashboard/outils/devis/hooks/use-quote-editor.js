@@ -5,6 +5,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
 import { useErrorHandler } from "@/src/hooks/useErrorHandler";
+import { useArchiveDocumentPdf } from "@/src/hooks/useArchiveDocumentPdf";
 import {
   getActiveOrganization,
   updateOrganization,
@@ -86,6 +87,7 @@ export function useQuoteEditor({
 
   const { createQuote, loading: creating } = useCreateQuote();
   const { updateQuote, loading: updating } = useUpdateQuote();
+  const { archiveDocument } = useArchiveDocumentPdf("quote");
   const { checkQuoteNumber } = useCheckQuoteNumber();
 
   // Form state avec react-hook-form
@@ -1931,6 +1933,9 @@ export function useQuoteEditor({
               ? "Devis mis à jour avec succès"
               : "Devis créé avec succès",
           );
+
+          // Archivage du PDF du devis sur R2 (hors brouillon, non bloquant)
+          archiveDocument(result);
 
           // Retourner les données du devis pour permettre l'envoi par email
           return {

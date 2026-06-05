@@ -4,8 +4,7 @@ import * as React from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
-// DÉSACTIVÉ: SuperPDP API pas encore active
-// import { useEInvoicingSettings } from "@/src/hooks/useEInvoicing";
+import { useEInvoicingSettings } from "@/src/hooks/useEInvoicing";
 import {
   Crown,
   Settings2,
@@ -29,8 +28,7 @@ import {
 import { cn } from "@/src/lib/utils";
 import { useUser } from "@/src/lib/auth/hooks";
 import { SettingsModal } from "@/src/components/settings-modal";
-// DÉSACTIVÉ: SuperPDP API pas encore active
-// import { EInvoicingPromoModal } from "@/src/components/e-invoicing-promo-modal";
+import { EInvoicingPromoModal } from "@/src/components/e-invoicing-promo-modal";
 
 import {
   SidebarGroup,
@@ -231,24 +229,21 @@ function SettingsDropdownMenu() {
 export function NavSecondary({
   items,
   onCommunityClick,
-  onOpenEInvoicingPromo, // DÉSACTIVÉ: SuperPDP API pas encore active
+  onOpenEInvoicingPromo,
   onOpenNotifications,
   notificationCount = 0,
   ...props
 }) {
   const [open, setOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
-  // DÉSACTIVÉ: SuperPDP API pas encore active
-  // const [eInvoicingPromoOpen, setEInvoicingPromoOpen] = useState(false);
+  const [eInvoicingPromoOpen, setEInvoicingPromoOpen] = useState(false);
   const { isActive } = useSubscription();
-  // DÉSACTIVÉ: SuperPDP API pas encore active
-  // const { settings: eInvoicingSettings } = useEInvoicingSettings();
+  const { settings: eInvoicingSettings } = useEInvoicingSettings();
   const { isMobile, setOpenMobile, state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
-  // DÉSACTIVÉ: SuperPDP API pas encore active
   // Vérifier si la facturation électronique est activée
-  // const isEInvoicingEnabled = eInvoicingSettings?.eInvoicingEnabled;
+  const isEInvoicingEnabled = eInvoicingSettings?.eInvoicingEnabled;
 
   // Fonction pour fermer la sidebar sur mobile lors du clic
   const handleLinkClick = () => {
@@ -260,13 +255,12 @@ export function NavSecondary({
   return (
     <SidebarGroup {...props}>
       <SidebarGroupContent>
-        {/* DÉSACTIVÉ: SuperPDP API pas encore active */}
         {/* Bouton Facturation électronique (Sparkles) - visible uniquement pour les abonnés ET si non activée */}
-        {/* {isActive() && !isEInvoicingEnabled && (
+        {isActive() && !isEInvoicingEnabled && (
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
-                className="cursor-pointer"
+                className="mb-1 cursor-pointer bg-[#5b50FF]/10 text-[#5b50FF] [&>svg]:text-[#5b50FF] hover:bg-[#5b50FF]/15 hover:text-[#5b50FF] active:bg-[#5b50FF]/15 active:text-[#5b50FF] data-[hovered]:bg-[#5b50FF]/15! data-[hovered]:text-[#5b50FF]!"
                 tooltip="Facturation électronique"
                 onClick={() => {
                   if (onOpenEInvoicingPromo) {
@@ -277,12 +271,12 @@ export function NavSecondary({
                   handleLinkClick();
                 }}
               >
-                <Sparkles className="text-[#5b4eff]" />
+                <Sparkles />
                 <span>Facturation électronique</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
-        )} */}
+        )}
 
         {/* Notifications */}
         <SidebarMenu>
@@ -377,12 +371,11 @@ export function NavSecondary({
           })}
         </SidebarMenu>
 
-        {/* DÉSACTIVÉ: SuperPDP API pas encore active */}
         {/* Modal de promotion facturation électronique */}
-        {/* <EInvoicingPromoModal
+        <EInvoicingPromoModal
           open={eInvoicingPromoOpen}
           onOpenChange={setEInvoicingPromoOpen}
-        /> */}
+        />
       </SidebarGroupContent>
     </SidebarGroup>
   );

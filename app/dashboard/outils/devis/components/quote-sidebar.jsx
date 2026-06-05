@@ -26,13 +26,14 @@ import {
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import { useRouter } from "next/navigation";
-import { useLazyQuery } from "@apollo/client";
+import { useLazyQuery, useQuery } from "@apollo/client";
 import {
   useChangeQuoteStatus,
   useQuote,
   QUOTE_STATUS,
   QUOTE_STATUS_LABELS,
   QUOTE_STATUS_COLORS,
+  QUOTE_DOCUMENT_URL,
 } from "@/src/graphql/quoteQueries";
 import { GET_CLIENT } from "@/src/graphql/clientQueries";
 import { getDraftEffectiveDates } from "@/src/utils/dateFormatter";
@@ -56,6 +57,18 @@ export default function QuoteSidebar({
   const router = useRouter();
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
   const { workspaceId } = useRequiredWorkspace();
+
+  // URL du PDF archivé (R2) — uniquement hors brouillon
+  const { data: quoteDocData } = useQuery(QUOTE_DOCUMENT_URL, {
+    variables: { workspaceId, quoteId: initialQuote?.id },
+    skip:
+      !workspaceId ||
+      !initialQuote?.id ||
+      initialQuote?.status === QUOTE_STATUS.DRAFT,
+    fetchPolicy: "network-only",
+  });
+  const quoteDocumentUrl = quoteDocData?.quoteDocumentUrl || null;
+
   const [fetchClient] = useLazyQuery(GET_CLIENT, {
     fetchPolicy: "network-only",
   });
@@ -301,7 +314,15 @@ export default function QuoteSidebar({
       >
         <div className="absolute inset-0 bg-black/80 p-0 flex items-start justify-center overflow-y-auto py-12 px-24">
           <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white">
-            <UniversalPreviewPDF data={quote} type="quote" recalcDraftDates />
+            {quoteDocumentUrl && quote.status !== QUOTE_STATUS.DRAFT ? (
+              <iframe
+                src={`${quoteDocumentUrl}#toolbar=0&navpanes=0&view=FitH`}
+                title={`Devis ${quote.prefix || ""}${quote.number || ""}`}
+                className="w-full h-full min-h-[297mm] border-0"
+              />
+            ) : (
+              <UniversalPreviewPDF data={quote} type="quote" recalcDraftDates />
+            )}
           </div>
         </div>
       </div>

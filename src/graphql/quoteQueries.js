@@ -147,6 +147,24 @@ export const QUOTE_FRAGMENT = gql`
   }
 `;
 
+// Aperçu : URL de la route backend qui streame le PDF archivé (null si brouillon/non archivé)
+export const QUOTE_DOCUMENT_URL = gql`
+  query QuoteDocumentUrl($workspaceId: ID!, $quoteId: ID!) {
+    quoteDocumentUrl(workspaceId: $workspaceId, quoteId: $quoteId)
+  }
+`;
+
+// Archive le PDF du devis (généré côté frontend) sur R2
+export const ARCHIVE_QUOTE_PDF = gql`
+  mutation ArchiveQuotePdf($workspaceId: ID!, $quoteId: ID!, $file: Upload!) {
+    archiveQuotePdf(workspaceId: $workspaceId, quoteId: $quoteId, file: $file) {
+      id
+      archivedPdfKey
+      archivedPdfStoredAt
+    }
+  }
+`;
+
 export const QUOTE_LIST_FRAGMENT = gql`
   fragment QuoteListFragment on Quote {
     id

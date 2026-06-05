@@ -1253,7 +1253,9 @@ const UniversalPDFDownloaderWithFacturX = ({
             const pdfBase64 = btoa(pdf.output());
             const { generateFacturXXML } =
               await import("@/src/utils/facturx-generator");
-            const xmlString = generateFacturXXML(data, type);
+            const xmlString = generateFacturXXML(data, type, {
+              previousSituationInvoices,
+            });
 
             const response = await fetch("/api/generate-facturx", {
               method: "POST",

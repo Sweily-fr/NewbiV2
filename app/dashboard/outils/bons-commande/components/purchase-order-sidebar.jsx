@@ -30,6 +30,8 @@ import {
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@apollo/client";
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import {
   useChangePurchaseOrderStatus,
   usePurchaseOrder,
@@ -37,6 +39,7 @@ import {
   PURCHASE_ORDER_STATUS,
   PURCHASE_ORDER_STATUS_LABELS,
   PURCHASE_ORDER_STATUS_COLORS,
+  PURCHASE_ORDER_DOCUMENT_URL,
 } from "@/src/graphql/purchaseOrderQueries";
 import { getDraftEffectiveDates } from "@/src/utils/dateFormatter";
 import { toast } from "@/src/components/ui/sonner";
@@ -54,6 +57,18 @@ export default function PurchaseOrderSidebar({
   const { changeStatus, loading: changingStatus } =
     useChangePurchaseOrderStatus();
   const { deletePurchaseOrder, loading: deleting } = useDeletePurchaseOrder();
+  const { workspaceId } = useRequiredWorkspace();
+
+  // URL du PDF archivé (R2) — uniquement hors brouillon
+  const { data: poDocData } = useQuery(PURCHASE_ORDER_DOCUMENT_URL, {
+    variables: { workspaceId, purchaseOrderId: initialPurchaseOrder?.id },
+    skip:
+      !workspaceId ||
+      !initialPurchaseOrder?.id ||
+      initialPurchaseOrder?.status === PURCHASE_ORDER_STATUS.DRAFT,
+    fetchPolicy: "network-only",
+  });
+  const purchaseOrderDocumentUrl = poDocData?.purchaseOrderDocumentUrl || null;
 
   // Recuperer les donnees completes du bon de commande
   const {
@@ -239,11 +254,20 @@ export default function PurchaseOrderSidebar({
       >
         <div className="absolute inset-0 bg-black/80 p-0 flex items-start justify-center overflow-y-auto py-12 px-24">
           <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white">
-            <UniversalPreviewPDF
-              data={purchaseOrder}
-              type="purchaseOrder"
-              recalcDraftDates
-            />
+            {purchaseOrderDocumentUrl &&
+            purchaseOrder.status !== PURCHASE_ORDER_STATUS.DRAFT ? (
+              <iframe
+                src={`${purchaseOrderDocumentUrl}#toolbar=0&navpanes=0&view=FitH`}
+                title={`Bon de commande ${purchaseOrder.prefix || ""}${purchaseOrder.number || ""}`}
+                className="w-full h-full min-h-[297mm] border-0"
+              />
+            ) : (
+              <UniversalPreviewPDF
+                data={purchaseOrder}
+                type="purchaseOrder"
+                recalcDraftDates
+              />
+            )}
           </div>
         </div>
       </div>
