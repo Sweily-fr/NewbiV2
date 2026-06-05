@@ -5,6 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { useEInvoicingSettings } from "@/src/hooks/useEInvoicing";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import {
   Crown,
   Settings2,
@@ -238,6 +239,7 @@ export function NavSecondary({
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [eInvoicingPromoOpen, setEInvoicingPromoOpen] = useState(false);
   const { isActive } = useSubscription();
+  const { isInTrial } = useSubscriptionAccess();
   const { settings: eInvoicingSettings } = useEInvoicingSettings();
   const { isMobile, setOpenMobile, state } = useSidebar();
   const isCollapsed = state === "collapsed";
@@ -255,8 +257,9 @@ export function NavSecondary({
   return (
     <SidebarGroup {...props}>
       <SidebarGroupContent>
-        {/* Bouton Facturation électronique (Sparkles) - visible uniquement pour les abonnés ET si non activée */}
-        {isActive() && !isEInvoicingEnabled && (
+        {/* Bouton Facturation électronique (Sparkles) - réservé aux abonnés PAYANTS
+            (masqué en période d'essai) ET si non activée */}
+        {isActive() && !isInTrial && !isEInvoicingEnabled && (
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton

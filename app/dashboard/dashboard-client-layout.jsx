@@ -38,6 +38,7 @@ import {
   E_INVOICING_PROMO_SESSION_KEY,
 } from "@/src/components/e-invoicing-promo-modal";
 import { useEInvoicingSettings } from "@/src/hooks/useEInvoicing";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { TutorialProvider } from "@/src/contexts/tutorial-context";
 import { TutorialOverlay } from "@/src/components/tutorial/tutorial-overlay";
 import { SignatureSidebarRight } from "@/src/components/signature-sidebar-right";
@@ -227,6 +228,8 @@ function DashboardContent({ children }) {
     subscription,
     isLoading: subscriptionLoading,
   } = useDashboardLayoutContext();
+  // Réservé aux abonnés payants : on exclut la période d'essai
+  const { isInTrial } = useSubscriptionAccess();
 
   // Welcome animation (zoom-in after onboarding)
   const [welcomeAnim, setWelcomeAnim] = useState(false);
@@ -273,8 +276,9 @@ function DashboardContent({ children }) {
     // l'abonnement et les réglages finissent de charger).
     if (!isHydrated || isOnboardingOpen || eInvoicingSettingsLoading) return;
 
-    // Pas (encore) éligible → on attend que isActive() devienne vrai
-    if (!isActive() || isEInvoicingEnabled) return;
+    // Pas (encore) éligible → on attend que isActive() devienne vrai.
+    // Réservé aux abonnés PAYANTS : pas d'ouverture automatique en période d'essai.
+    if (!isActive() || isInTrial || isEInvoicingEnabled) return;
 
     // Éligible : on verrouille pour ne planifier qu'une seule fois
     promoScheduledRef.current = true;
@@ -299,6 +303,7 @@ function DashboardContent({ children }) {
     isEInvoicingEnabled,
     subscription,
     isActive,
+    isInTrial,
   ]);
 
   // Déterminer si on est sur une page d'outil qui nécessite la sidebar fermée
