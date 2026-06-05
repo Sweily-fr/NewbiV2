@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Clock } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
@@ -15,7 +14,7 @@ import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
  * Quand le feature flag ENABLE_APP_TRIAL est OFF, l'API ne marque jamais
  * `isTrialApp = true`, donc cette bannière reste invisible — aucune régression.
  */
-export function TrialBanner() {
+export function TrialBanner({ onSubscribe }) {
   const { isTrialApp, trialDaysRemaining, isOwner, loading } =
     useSubscriptionAccess();
   const pathname = usePathname();
@@ -59,8 +58,25 @@ export function TrialBanner() {
           </span>
         </div>
         {isOwner ? (
-          <Button asChild size="sm" variant="default" className="shrink-0">
-            <Link href="/dashboard/parametres/abonnement">Souscrire</Link>
+          <Button
+            size="sm"
+            variant="default"
+            className="shrink-0"
+            onClick={() => {
+              if (onSubscribe) {
+                onSubscribe();
+              } else {
+                // Fallback si le callback n'est pas fourni : ouvre le modal
+                // de paramètres sur l'onglet abonnement via l'event global.
+                window.dispatchEvent(
+                  new CustomEvent("openSettingsModal", {
+                    detail: { section: "subscription" },
+                  }),
+                );
+              }
+            }}
+          >
+            Souscrire
           </Button>
         ) : null}
       </div>

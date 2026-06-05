@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 
 vi.mock("@/src/hooks/useSubscriptionAccess", () => ({
   useSubscriptionAccess: vi.fn(),
@@ -79,18 +79,20 @@ describe("TrialBanner — decision #6 (J-3 visibility)", () => {
     expect(screen.getByText(/aujourd'hui/)).toBeInTheDocument();
   });
 
-  it("shows 'Souscrire' CTA for owner", () => {
+  it("shows 'Souscrire' CTA for owner and fires onSubscribe on click", () => {
     setHook({ isTrialApp: true, trialDaysRemaining: 2, isOwner: true });
-    render(<TrialBanner />);
-    expect(
-      screen.getByRole("link", { name: /souscrire/i }),
-    ).toBeInTheDocument();
+    const onSubscribe = vi.fn();
+    render(<TrialBanner onSubscribe={onSubscribe} />);
+    const cta = screen.getByRole("button", { name: /souscrire/i });
+    expect(cta).toBeInTheDocument();
+    fireEvent.click(cta);
+    expect(onSubscribe).toHaveBeenCalledTimes(1);
   });
 
   it("hides 'Souscrire' CTA for non-owner", () => {
     setHook({ isTrialApp: true, trialDaysRemaining: 2, isOwner: false });
     render(<TrialBanner />);
-    expect(screen.queryByRole("link", { name: /souscrire/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /souscrire/i })).toBeNull();
     expect(screen.getByText(/Demandez à l'administrateur/)).toBeInTheDocument();
   });
 });
