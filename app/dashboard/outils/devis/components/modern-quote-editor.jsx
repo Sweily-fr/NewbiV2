@@ -32,7 +32,6 @@ import {
 } from "@/src/lib/organization-client";
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { ResourceNotFound } from "@/src/components/resource-not-found";
-import { ValidationCallout } from "@/app/dashboard/outils/factures/components/validation-callout";
 import ClientsModal from "@/app/dashboard/clients/components/clients-modal";
 import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/send-document-modal";
 import { SaveQuoteTemplateDialog } from "./SaveQuoteTemplateDialog";
@@ -134,6 +133,8 @@ export default function ModernQuoteEditor({
     error: quoteError,
     validationErrors,
     setValidationErrors,
+    markFieldAsEditing,
+    unmarkFieldAsEditing,
   } = useQuoteEditor({
     mode,
     quoteId,
@@ -502,6 +503,8 @@ export default function ModernQuoteEditor({
                       </>
                     )}
                   </h1>
+                  {/* Sous-texte "Modifications non sauvegardées" masqué à la demande */}
+                  {/*
                   {!showSettings && hasUserChanges && !isReadOnly && (
                     <p className="text-sm text-muted-foreground">
                       {saving
@@ -509,6 +512,7 @@ export default function ModernQuoteEditor({
                         : "Modifications non sauvegardées"}
                     </p>
                   )}
+                  */}
                 </div>
               </div>
 
@@ -640,13 +644,6 @@ export default function ModernQuoteEditor({
 
             {/* Enhanced Form or Settings */}
             <div className="flex-1 min-h-0 flex flex-col">
-              {/* Bannière de validation globale */}
-              {Object.keys(validationErrors || {}).length > 0 && (
-                <div className="flex-shrink-0 mb-4">
-                  <ValidationCallout errors={validationErrors} />
-                </div>
-              )}
-
               <div className="flex-1 min-h-0">
                 <FormProvider {...form}>
                   {showSettings ? (
@@ -685,6 +682,8 @@ export default function ModernQuoteEditor({
                       currentStep={currentStep}
                       onStepChange={setCurrentStep}
                       onEditClient={() => setShowEditClient(true)}
+                      markFieldAsEditing={markFieldAsEditing}
+                      unmarkFieldAsEditing={unmarkFieldAsEditing}
                     />
                   )}
                 </FormProvider>

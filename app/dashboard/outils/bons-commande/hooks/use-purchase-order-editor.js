@@ -150,8 +150,32 @@ export function usePurchaseOrderEditor({
   }, [watch]);
 
   const [saving, setSaving] = useState(false);
+  const [editingFields, setEditingFields] = useState(new Set());
+  const [touchedFields, setTouchedFields] = useState(new Set());
   const [isFormInitialized, setIsFormInitialized] = useState(false); // Indique si le formulaire est complètement chargé
   const sourceQuoteIdRef = useRef(null);
+
+  // Marquer / démarquer un champ d'article comme en cours d'édition.
+  const markFieldAsEditing = (itemIndex, fieldName) => {
+    setEditingFields((prev) => {
+      const next = new Set(prev);
+      next.add(`${itemIndex}-${fieldName}`);
+      return next;
+    });
+  };
+
+  const unmarkFieldAsEditing = (itemIndex, fieldName) => {
+    setEditingFields((prev) => {
+      const next = new Set(prev);
+      next.delete(`${itemIndex}-${fieldName}`);
+      return next;
+    });
+    setTouchedFields((prev) => {
+      const next = new Set(prev);
+      next.add(`${itemIndex}-${fieldName}`);
+      return next;
+    });
+  };
 
   // Watch all form data for auto-save
   const formData = watch();
@@ -2114,6 +2138,10 @@ export function usePurchaseOrderEditor({
     validateStep2,
     validationErrors,
     setValidationErrors,
+    editingFields,
+    touchedFields,
+    markFieldAsEditing,
+    unmarkFieldAsEditing,
 
     // Actions
     onSave: (formData) => {

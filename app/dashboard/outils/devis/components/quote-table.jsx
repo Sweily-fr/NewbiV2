@@ -95,6 +95,7 @@ import { useQuoteTable } from "../hooks/use-quote-table";
 import QuoteRowActions from "./quote-row-actions";
 import QuoteFilters from "./quote-filters";
 import QuoteSidebar from "./quote-sidebar";
+import { AnimatePresence } from "framer-motion";
 import QuoteMobileFullscreen from "./quote-mobile-fullscreen";
 import { SendDocumentModal } from "../../factures/components/send-document-modal";
 import { SaveQuoteTemplateDialog } from "./SaveQuoteTemplateDialog";
@@ -1017,25 +1018,29 @@ export default function QuoteTable({
       </div>
 
       {/* Sidebar pour ouverture automatique */}
-      {quoteToOpen && (
-        <QuoteSidebar
-          quote={quoteToOpen}
-          isOpen={!!quoteToOpen}
-          onClose={() => setQuoteToOpen(null)}
-          onRefetch={refetch}
-        />
-      )}
+      <AnimatePresence>
+        {quoteToOpen && (
+          <QuoteSidebar
+            quote={quoteToOpen}
+            isOpen={!!quoteToOpen}
+            onClose={() => setQuoteToOpen(null)}
+            onRefetch={refetch}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Sidebar pour ouverture via row actions */}
-      {sidebarQuote && (
-        <QuoteSidebar
-          quote={sidebarQuote}
-          isOpen={!!sidebarQuote}
-          onClose={() => setSidebarQuote(null)}
-          onRefetch={refetch}
-          isViewMode={true}
-        />
-      )}
+      <AnimatePresence>
+        {sidebarQuote && (
+          <QuoteSidebar
+            quote={sidebarQuote}
+            isOpen={!!sidebarQuote}
+            onClose={() => setSidebarQuote(null)}
+            onRefetch={refetch}
+            isViewMode={true}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Fullscreen mobile pour ouverture via clic sur ligne mobile */}
       {mobileFullscreenQuote && (

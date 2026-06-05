@@ -74,6 +74,7 @@ import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { usePurchaseOrderTable } from "../hooks/use-purchase-order-table";
 import PurchaseOrderRowActions from "./purchase-order-row-actions";
 import PurchaseOrderSidebar from "./purchase-order-sidebar";
+import { AnimatePresence } from "framer-motion";
 import PurchaseOrderFilters from "./purchase-order-filters";
 import { SendDocumentModal } from "../../factures/components/send-document-modal";
 import { SavePurchaseOrderTemplateDialog } from "./SavePurchaseOrderTemplateDialog";
@@ -809,14 +810,16 @@ export default function PurchaseOrderTable({
       </div>
 
       {/* Sidebar pour ouverture automatique */}
-      {poToOpen && (
-        <PurchaseOrderSidebar
-          purchaseOrder={poToOpen}
-          isOpen={!!poToOpen}
-          onClose={() => setPoToOpen(null)}
-          onRefetch={refetch}
-        />
-      )}
+      <AnimatePresence>
+        {poToOpen && (
+          <PurchaseOrderSidebar
+            purchaseOrder={poToOpen}
+            isOpen={!!poToOpen}
+            onClose={() => setPoToOpen(null)}
+            onRefetch={refetch}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Modal d'import de bons de commande */}
       <ImportPurchaseOrderModal
