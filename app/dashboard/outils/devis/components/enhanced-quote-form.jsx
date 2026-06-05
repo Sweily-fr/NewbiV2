@@ -42,6 +42,7 @@ import {
 } from "@/src/components/ui/command";
 import { cn } from "@/src/lib/utils";
 import ClientSelector from "./quote-form-sections/client-selector";
+import { toast } from "@/src/components/ui/sonner";
 
 // Composant de recherche de produits basé sur Origin UI
 function ProductSearchCombobox({
@@ -230,6 +231,8 @@ export default function EnhancedQuoteForm({
   onEditClient,
   documentType = "quote",
   mode = "create",
+  markFieldAsEditing,
+  unmarkFieldAsEditing,
 }) {
   const { watch, setValue, getValues, control } = useFormContext();
   const data = watch();
@@ -322,60 +325,129 @@ export default function EnhancedQuoteForm({
     }).format(amount || 0);
   };
 
+  // Trouve le premier champ en erreur et y scroll + focus
+  const scrollToFirstError = () => {
+    // Priorité aux erreurs d'articles (avec index + champ précis)
+    if (validationErrors?.items?.details?.[0]) {
+      const { index, fields } = validationErrors.items.details[0];
+      const field = fields?.[0] || "description";
+      const el = document.querySelector(`[name="items.${index}.${field}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(() => el.focus?.(), 300);
+        return;
+      }
+    }
+
+    // Sinon, première clé d'erreur top-level
+    const firstKey = Object.keys(validationErrors || {})[0];
+    if (firstKey) {
+      const el =
+        document.querySelector(`[name="${firstKey}"]`) ||
+        document.querySelector(`[name^="${firstKey}."]`) ||
+        document.querySelector(`[data-error-field="${firstKey}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(() => el.focus?.(), 300);
+        return;
+      }
+    }
+
+    // Fallback : scroll en haut du formulaire
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   const handleNextStep = () => {
-    setCurrentStep(2);
+    if (!isStep1Valid()) {
+      if (!data.client?.id) {
+        toast.error("Veuillez sélectionner un client pour continuer");
+      }
+      scrollToFirstError();
+      return;
+    }
+    if (currentStep < 2) {
+      setCurrentStep(currentStep + 1);
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }
   };
 
   const handlePreviousStep = () => {
-    setCurrentStep(1);
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }
   };
 
-  useEffect(() => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTo({ top: 0, behavior: "auto" });
-    }
-  }, [currentStep]);
-
   const handleSaveDraft = () => {
+    setValue("status", "DRAFT", { shouldDirty: true });
     if (onSave) {
-      onSave({ ...data, status: "DRAFT" });
+      onSave();
     }
   };
 
   const handleCreateQuote = () => {
+    if (!isStep2Valid()) {
+      scrollToFirstError();
+      return;
+    }
+    setValue("status", "PENDING", { shouldDirty: true });
     if (onSubmit) {
-      onSubmit({ ...data, status: "PENDING" });
+      onSubmit();
     }
   };
 
   const isStep1Valid = () => {
-    // Bloquer si des erreurs de validation sont présentes
-    const hasValidationErrors =
-      validationErrors && Object.keys(validationErrors).length > 0;
-    if (hasValidationErrors) return false;
+    // Vérifier qu'il n'y a pas d'erreurs de validation pour l'étape 1
+    const hasClientError = validationErrors?.client;
+    const hasIssueDateError = validationErrors?.issueDate;
+    const hasValidUntilError = validationErrors?.validUntil;
+    const hasNumberError =
+      validationErrors?.number || validationErrors?.quoteNumber;
+    const hasPrefixError = validationErrors?.prefix;
 
-    // Vérifier que les champs obligatoires sont remplis
-    const hasClient = data.client && data.client.id;
+    // Seul un client + une date d'émission sont strictement requis pour
+    // passer à l'étape suivante. number / prefix / validUntil ont des
+    // valeurs par défaut (string vide ou +30 jours) et seront validés
+    // au moment de la création finale.
+    const hasClient = data.client?.id;
     const hasIssueDate = data.issueDate;
-    const hasValidUntil = data.validUntil;
-    const hasNumber = data.number && data.number.trim() !== "";
-    const hasPrefix = data.prefix !== undefined; // Le préfixe peut être vide mais doit exister
 
-    // Tous les champs obligatoires doivent être remplis
-    return hasClient && hasIssueDate && hasValidUntil && hasNumber && hasPrefix;
+    return (
+      hasClient &&
+      hasIssueDate &&
+      !hasClientError &&
+      !hasIssueDateError &&
+      !hasValidUntilError &&
+      !hasNumberError &&
+      !hasPrefixError
+    );
   };
 
   const isStep2Valid = () => {
-    return (
-      data.items &&
-      data.items.length > 0 &&
+    // Vérifier qu'il n'y a pas d'erreurs de validation pour l'étape 2
+    const hasItemsError = validationErrors?.items;
+    const hasShippingError = validationErrors?.shipping;
+    const hasDiscountError = validationErrors?.discount;
+
+    const hasItems = data.items && data.items.length > 0;
+    const itemsAreValid =
+      hasItems &&
       data.items.every(
         (item) =>
           item.description &&
           item.quantity &&
           item.unitPrice != null &&
           item.unitPrice !== "",
-      )
+      );
+
+    return (
+      itemsAreValid && !hasItemsError && !hasShippingError && !hasDiscountError
     );
   };
 
@@ -384,9 +456,9 @@ export default function EnhancedQuoteForm({
       {/* Form Content */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden min-h-0"
+        className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 pb-20 lg:pb-12"
       >
-        <div className="space-y-4 pb-20 px-2">
+        <div className="space-y-6 px-2">
           {/* Étape 1: Détails du document */}
           {currentStep === 1 && (
             <>
@@ -433,7 +505,9 @@ export default function EnhancedQuoteForm({
                 formatCurrency={formatCurrency}
                 canEdit={canEdit}
                 ProductSearchCombobox={ProductSearchCombobox}
-                validationErrors={validationErrors}
+                validationErrors={validationErrors?.items?.details || []}
+                markFieldAsEditing={markFieldAsEditing}
+                unmarkFieldAsEditing={unmarkFieldAsEditing}
               />
 
               {/* Section 2: Remises */}
@@ -543,58 +617,56 @@ export default function EnhancedQuoteForm({
               >
                 Annuler
               </Button>
+            </div>
 
+            <div className="flex gap-3">
+              {currentStep === 2 && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handlePreviousStep}
+                  disabled={!canEdit}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+              )}
               <Button
                 variant="outline"
                 onClick={handleSaveDraft}
                 disabled={!canEdit || saving}
               >
-                {saving ? "Sauvegarde..." : "Brouillon"}
+                {saving ? "Sauvegarde..." : "Enregistrer brouillon"}
               </Button>
-            </div>
-
-            <div className="flex gap-3">
               {currentStep === 1 && (
                 <Button
                   variant="primary"
                   onClick={handleNextStep}
-                  disabled={!isStep1Valid() || !canEdit}
+                  disabled={!canEdit}
                   className="px-6"
                 >
-                  <span className="hidden sm:inline">Suivant</span>
+                  <span className="hidden sm:inline">Continuer</span>
                   <ChevronRight className="h-4 w-4 sm:ml-2" />
                 </Button>
               )}
-
               {currentStep === 2 && (
-                <>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={handlePreviousStep}
-                    disabled={!canEdit}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="primary"
-                    onClick={handleCreateQuote}
-                    disabled={!isStep2Valid() || !canEdit || saving}
-                    className="px-6"
-                  >
-                    {saving
+                <Button
+                  variant="primary"
+                  onClick={handleCreateQuote}
+                  disabled={!canEdit || saving}
+                  className="px-6"
+                >
+                  {saving
+                    ? mode === "edit"
+                      ? "Mise à jour..."
+                      : "Création..."
+                    : documentType === "purchaseOrder"
                       ? mode === "edit"
-                        ? "Mise à jour..."
-                        : "Création..."
-                      : documentType === "purchaseOrder"
-                        ? mode === "edit"
-                          ? "Modifier le bon de commande"
-                          : "Créer le bon de commande"
-                        : mode === "edit"
-                          ? "Modifier le devis"
-                          : "Créer le devis"}
-                  </Button>
-                </>
+                        ? "Modifier le bon de commande"
+                        : "Créer le bon de commande"
+                      : mode === "edit"
+                        ? "Modifier le devis"
+                        : "Créer le devis"}
+                </Button>
               )}
             </div>
           </div>
