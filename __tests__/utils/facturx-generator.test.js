@@ -67,6 +67,56 @@ describe("generateFacturXXML — document type", () => {
     const xml = generateFacturXXML(buildInvoiceData());
     expect(xml).toMatch(/<ram:TypeCode>380<\/ram:TypeCode>/);
   });
+
+  it("uses TypeCode 386 for a deposit invoice (acompte)", () => {
+    const xml = generateFacturXXML(
+      buildInvoiceData({ isDeposit: true }),
+      "invoice",
+    );
+    expect(xml).toMatch(/<ram:TypeCode>386<\/ram:TypeCode>/);
+  });
+
+  it("prioritises 381 (credit note) over 386 when both creditNote and isDeposit", () => {
+    const xml = generateFacturXXML(
+      buildInvoiceData({ isDeposit: true }),
+      "creditNote",
+    );
+    expect(xml).toMatch(/<ram:TypeCode>381<\/ram:TypeCode>/);
+  });
+});
+
+describe("generateFacturXXML — InvoiceReferencedDocument (BG-3)", () => {
+  it("references the original invoice on a credit note", () => {
+    const xml = generateFacturXXML(
+      buildInvoiceData({ originalInvoiceNumber: "F-2026-0001" }),
+      "creditNote",
+    );
+    expect(xml).toMatch(/<ram:InvoiceReferencedDocument>/);
+    expect(xml).toMatch(
+      /<ram:IssuerAssignedID>F-2026-0001<\/ram:IssuerAssignedID>/,
+    );
+  });
+
+  it("references previous situation invoices (prefix+number)", () => {
+    const xml = generateFacturXXML(buildInvoiceData(), "invoice", {
+      previousSituationInvoices: [
+        { prefix: "F-", number: "0001" },
+        { prefix: "F-", number: "0002" },
+      ],
+    });
+    expect(xml).toMatch(/<ram:IssuerAssignedID>F-0001<\/ram:IssuerAssignedID>/);
+    expect(xml).toMatch(/<ram:IssuerAssignedID>F-0002<\/ram:IssuerAssignedID>/);
+  });
+
+  it("emits no InvoiceReferencedDocument for a plain invoice", () => {
+    const xml = generateFacturXXML(buildInvoiceData(), "invoice");
+    expect(xml).not.toMatch(/<ram:InvoiceReferencedDocument>/);
+  });
+
+  it("emits no reference on a credit note without originalInvoiceNumber", () => {
+    const xml = generateFacturXXML(buildInvoiceData(), "creditNote");
+    expect(xml).not.toMatch(/<ram:InvoiceReferencedDocument>/);
+  });
 });
 
 describe("generateFacturXXML — date formatting", () => {

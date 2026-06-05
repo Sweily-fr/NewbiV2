@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, Suspense } from "react";
+import React, { useEffect, useRef, useState, Suspense } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AppSidebar } from "@/src/components/app-sidebar";
 import { CommunitySidebar } from "@/src/components/community-sidebar";
@@ -32,8 +32,12 @@ import { SubscriptionBlockedDialog } from "@/src/components/subscription-blocked
 import { SubscriptionReadOnlyBanner } from "@/src/components/subscription-readonly-banner";
 import { TrialBanner } from "@/src/components/trial-banner";
 import { OAuthCallbackHandler } from "@/src/components/oauth-callback-handler";
-// DÉSACTIVÉ: SuperPDP API pas encore active
-// import { EInvoicingPromoModal } from "@/src/components/e-invoicing-promo-modal";
+import {
+  EInvoicingPromoModal,
+  E_INVOICING_PROMO_DISMISSED_KEY,
+  E_INVOICING_PROMO_SESSION_KEY,
+} from "@/src/components/e-invoicing-promo-modal";
+import { useEInvoicingSettings } from "@/src/hooks/useEInvoicing";
 import { TutorialProvider } from "@/src/contexts/tutorial-context";
 import { TutorialOverlay } from "@/src/components/tutorial/tutorial-overlay";
 import { SignatureSidebarRight } from "@/src/components/signature-sidebar-right";
@@ -203,8 +207,10 @@ function DashboardContent({ children }) {
   const [isCommunitySidebarOpen, setIsCommunitySidebarOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState("notifications");
-  // DÉSACTIVÉ: SuperPDP API pas encore active
-  // const [eInvoicingPromoOpen, setEInvoicingPromoOpen] = useState(false);
+  const [eInvoicingPromoOpen, setEInvoicingPromoOpen] = useState(false);
+  const { settings: eInvoicingSettings, loading: eInvoicingSettingsLoading } =
+    useEInvoicingSettings();
+  const isEInvoicingEnabled = eInvoicingSettings?.eInvoicingEnabled;
 
   // Hook pour gérer l'onboarding et les données du layout
   const {
@@ -252,25 +258,48 @@ function DashboardContent({ children }) {
     }
   }, [isHydrated]);
 
-  // DÉSACTIVÉ: SuperPDP API pas encore active
-  // Afficher le modal de facturation électronique automatiquement après connexion
-  // si l'utilisateur a un abonnement actif et n'a pas encore vu le modal
-  // useEffect(() => {
-  //   if (!isHydrated || !layoutInitialized) return;
+  // Afficher le modal de facturation électronique automatiquement à la connexion,
+  // tant que l'utilisateur a un abonnement actif, n'a PAS activé l'e-invoicing, et
+  // n'a pas coché « Ne plus voir ce message ».
+  // One-shot via une ref : on n'évalue qu'UNE fois (une fois les settings chargés),
+  // pour éviter que la ré-exécution de l'effet n'annule le setTimeout de 2s.
+  const promoScheduledRef = useRef(false);
+  useEffect(() => {
+    // Déjà planifié → ne rien refaire
+    if (promoScheduledRef.current) return;
 
-  //   const E_INVOICING_PROMO_KEY = "e_invoicing_promo_shown";
-  //   const hasSeenPromo = localStorage.getItem(E_INVOICING_PROMO_KEY);
+    // On NE verrouille PAS tant que les données ne sont pas prêtes : on réessaiera
+    // au prochain rendu (les deps subscription / isEInvoicingEnabled changent quand
+    // l'abonnement et les réglages finissent de charger).
+    if (!isHydrated || isOnboardingOpen || eInvoicingSettingsLoading) return;
 
-  //   if (isActive() && !hasSeenPromo && !isOnboardingOpen) {
-  //     // Attendre un peu pour ne pas surcharger l'utilisateur
-  //     const timer = setTimeout(() => {
-  //       setEInvoicingPromoOpen(true);
-  //       localStorage.setItem(E_INVOICING_PROMO_KEY, "true");
-  //     }, 2000);
+    // Pas (encore) éligible → on attend que isActive() devienne vrai
+    if (!isActive() || isEInvoicingEnabled) return;
 
-  //     return () => clearTimeout(timer);
-  //   }
-  // }, [isHydrated, layoutInitialized, isActive, isOnboardingOpen]);
+    // Éligible : on verrouille pour ne planifier qu'une seule fois
+    promoScheduledRef.current = true;
+
+    // « Ne plus voir » (permanent) → jamais d'ouverture automatique
+    const dismissed =
+      localStorage.getItem(E_INVOICING_PROMO_DISMISSED_KEY) === "true";
+    if (dismissed) return;
+
+    // Déjà affichée durant cette session (survit aux rechargements de page) → on n'ouvre pas
+    const shownThisSession =
+      sessionStorage.getItem(E_INVOICING_PROMO_SESSION_KEY) === "true";
+    if (shownThisSession) return;
+
+    // Marquer comme affichée pour cette session, puis ouvrir après un court délai
+    sessionStorage.setItem(E_INVOICING_PROMO_SESSION_KEY, "true");
+    setTimeout(() => setEInvoicingPromoOpen(true), 2000);
+  }, [
+    isHydrated,
+    isOnboardingOpen,
+    eInvoicingSettingsLoading,
+    isEInvoicingEnabled,
+    subscription,
+    isActive,
+  ]);
 
   // Déterminer si on est sur une page d'outil qui nécessite la sidebar fermée
   // Exception : la page de signature doit avoir la sidebar en mode rétréci (icon)
@@ -353,8 +382,7 @@ function DashboardContent({ children }) {
             setSettingsInitialTab("notifications");
             setSettingsModalOpen(true);
           }}
-          // DÉSACTIVÉ: SuperPDP API pas encore active
-          // onOpenEInvoicingPromo={() => setEInvoicingPromoOpen(true)}
+          onOpenEInvoicingPromo={() => setEInvoicingPromoOpen(true)}
         />
         <SidebarInset>
           <SiteHeader />
@@ -428,12 +456,11 @@ function DashboardContent({ children }) {
         {/* Dialog de blocage subscription — déclenché par Apollo errorLink */}
         <SubscriptionBlockedDialog />
 
-        {/* DÉSACTIVÉ: SuperPDP API pas encore active */}
         {/* Modal de promotion facturation électronique */}
-        {/* <EInvoicingPromoModal
-        open={eInvoicingPromoOpen}
-        onOpenChange={setEInvoicingPromoOpen}
-      /> */}
+        <EInvoicingPromoModal
+          open={eInvoicingPromoOpen}
+          onOpenChange={setEInvoicingPromoOpen}
+        />
 
         {/* Tutoriel interactif */}
         <TutorialOverlay />

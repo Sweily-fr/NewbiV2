@@ -59,8 +59,7 @@ import { MobileSettingsModal } from "./settings/mobile/mobile-settings-modal";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import { BankAccountsSection } from "./settings/bank-accounts-section";
 import { ApplicationsSection } from "./settings/applications-section";
-// DÉSACTIVÉ: SuperPDP API pas encore active
-// import { EInvoicingSection } from "./settings/e-invoicing-section";
+import { EInvoicingSection } from "./settings/e-invoicing-section";
 
 export function SettingsModal({
   open,
@@ -398,11 +397,10 @@ export function SettingsModal({
         return (
           <BankAccountsSection canManageOrgSettings={canManageOrgSettings} />
         );
-      // DÉSACTIVÉ: SuperPDP API pas encore active
-      // case "facturation-electronique":
-      //   return (
-      //     <EInvoicingSection canManageOrgSettings={canManageOrgSettings} />
-      //   );
+      case "facturation-electronique":
+        return (
+          <EInvoicingSection canManageOrgSettings={canManageOrgSettings} />
+        );
       case "applications":
         return <ApplicationsSection />;
       case "personnes":
@@ -472,6 +470,11 @@ export function SettingsModal({
       items: [
         { id: "subscription", label: "Abonnement", icon: Crown },
         { id: "facturation", label: "Facturation", icon: DollarSign },
+        {
+          id: "facturation-electronique",
+          label: "Facturation électronique",
+          icon: Zap,
+        },
       ],
     },
   ];

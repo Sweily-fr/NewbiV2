@@ -56,6 +56,8 @@ import {
   useMarkAsPaid,
   useReconciliationSuggestions,
   useReconcilePurchaseInvoice,
+  useAcknowledgePurchaseInvoiceEInvoice,
+  useRefusePurchaseInvoiceEInvoice,
 } from "@/src/hooks/usePurchaseInvoices";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
 import { format } from "date-fns";
@@ -188,6 +190,26 @@ export function PurchaseInvoiceDetailDrawer({
   const { deleteInvoice } = useDeletePurchaseInvoice();
   const { markAsPaid, loading: markLoading } = useMarkAsPaid();
   const { reconcile } = useReconcilePurchaseInvoice();
+  const { acknowledge, loading: ackLoading } =
+    useAcknowledgePurchaseInvoiceEInvoice();
+  const { refuse, loading: refuseLoading } = useRefusePurchaseInvoiceEInvoice();
+
+  // Actions cycle de vie e-facture reçue (visible si liée à SuperPDP et reçue)
+  const canActOnEInvoice =
+    !isCreate &&
+    invoice?.superPdpInvoiceId &&
+    invoice?.eInvoiceStatus === "RECEIVED";
+
+  const handleAcceptEInvoice = async () => {
+    if (!invoice?.id) return;
+    await acknowledge(invoice.id);
+  };
+
+  const handleRefuseEInvoice = async () => {
+    if (!invoice?.id) return;
+    const reason = window.prompt("Motif du refus (optionnel) :") || undefined;
+    await refuse(invoice.id, reason);
+  };
   const { suggestions } = useReconciliationSuggestions(
     !isCreate && invoice?.id && invoice?.status !== "PAID" ? invoice.id : null,
   );
@@ -1205,6 +1227,26 @@ export function PurchaseInvoiceDetailDrawer({
 
         {/* Footer */}
         <DrawerFooter className="border-t px-6 py-4">
+          {canActOnEInvoice && (
+            <div className="flex gap-2 mb-2">
+              <Button
+                variant="outline"
+                className="flex-1 font-normal text-green-700 hover:bg-green-50"
+                onClick={handleAcceptEInvoice}
+                disabled={ackLoading || refuseLoading}
+              >
+                {ackLoading ? "..." : "Approuver l'e-facture"}
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 font-normal text-red-600 hover:bg-red-50"
+                onClick={handleRefuseEInvoice}
+                disabled={ackLoading || refuseLoading}
+              >
+                {refuseLoading ? "..." : "Refuser"}
+              </Button>
+            </div>
+          )}
           {isCreate ? (
             <div className="flex gap-2">
               <Button

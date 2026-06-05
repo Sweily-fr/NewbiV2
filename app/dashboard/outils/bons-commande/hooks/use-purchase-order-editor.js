@@ -5,6 +5,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
 import { useErrorHandler } from "@/src/hooks/useErrorHandler";
+import { useArchiveDocumentPdf } from "@/src/hooks/useArchiveDocumentPdf";
 import {
   getActiveOrganization,
   updateOrganization,
@@ -88,6 +89,7 @@ export function usePurchaseOrderEditor({
 
   const { createPurchaseOrder, loading: creating } = useCreatePurchaseOrder();
   const { updatePurchaseOrder, loading: updating } = useUpdatePurchaseOrder();
+  const { archiveDocument } = useArchiveDocumentPdf("purchaseOrder");
 
   // Form state avec react-hook-form
   const form = useForm({
@@ -2000,6 +2002,9 @@ export function usePurchaseOrderEditor({
               ? "Bon de commande mis à jour avec succès"
               : "Bon de commande créé avec succès",
           );
+
+          // Archivage du PDF du bon de commande sur R2 (hors brouillon, non bloquant)
+          archiveDocument(result);
 
           // Retourner les données du bon de commande pour permettre l'envoi par email
           return {

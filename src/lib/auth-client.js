@@ -167,6 +167,10 @@ export function clearSessionStorage() {
         localStorage.removeItem(key);
       }
     });
+
+    // Réinitialiser le flag "modal e-invoicing déjà vue cette session"
+    // pour qu'elle se ré-affiche à la prochaine connexion.
+    sessionStorage.removeItem("e_invoicing_promo_session_shown");
   } catch (e) {
     console.warn("Erreur lors du nettoyage des caches localStorage:", e);
   }

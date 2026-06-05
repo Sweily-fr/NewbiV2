@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import {
   Dialog,
@@ -8,13 +9,21 @@ import {
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import { Button } from "@/src/components/ui/button";
+import { Checkbox } from "@/src/components/ui/checkbox";
 import { CheckCircle2, Loader2, ExternalLink, ArrowRight } from "lucide-react";
 import { useSuperPdp } from "@/src/hooks/useSuperPdp";
 import { useEInvoicingSettings } from "@/src/hooks/useEInvoicing";
 
+// Clé localStorage : l'utilisateur a demandé de ne plus voir la modal automatiquement (permanent)
+export const E_INVOICING_PROMO_DISMISSED_KEY = "e_invoicing_promo_dismissed";
+// Clé sessionStorage : la modal a déjà été ouverte automatiquement durant cette session
+// (évite la réouverture à chaque rechargement de page ; remise à zéro à la prochaine connexion)
+export const E_INVOICING_PROMO_SESSION_KEY = "e_invoicing_promo_session_shown";
+
 export function EInvoicingPromoModal({ open, onOpenChange }) {
   const { connect, loading: superPdpLoading } = useSuperPdp();
   const { settings, loading: settingsLoading } = useEInvoicingSettings();
+  const [dontShowAgain, setDontShowAgain] = useState(false);
 
   const isConnected = settings?.eInvoicingEnabled;
 
@@ -22,8 +31,19 @@ export function EInvoicingPromoModal({ open, onOpenChange }) {
     await connect();
   };
 
+  // Mémoriser le choix « ne plus voir » à la fermeture
+  const handleClose = () => {
+    if (dontShowAgain && typeof window !== "undefined") {
+      localStorage.setItem(E_INVOICING_PROMO_DISMISSED_KEY, "true");
+    }
+    onOpenChange(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => (v ? onOpenChange(true) : handleClose())}
+    >
       <DialogContent
         className="p-0 gap-0 overflow-hidden border-0 shadow-lg"
         style={{ maxWidth: "780px" }}
@@ -131,33 +151,48 @@ export function EInvoicingPromoModal({ open, onOpenChange }) {
         </div>
 
         {/* Actions */}
-        <div className="p-8 pt-4 flex justify-end gap-3">
-          <Button
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            Fermer
-          </Button>
-          {!isConnected && (
-            <Button
-              onClick={handleConnect}
-              disabled={superPdpLoading || settingsLoading}
-              className="bg-[#5b4eff] hover:bg-[#4a3ecc] text-white px-6"
-            >
-              {superPdpLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Connexion...
-                </>
-              ) : (
-                <>
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Activer la facturation électronique
-                </>
-              )}
-            </Button>
+        <div className="p-8 pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          {!isConnected ? (
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <Checkbox
+                checked={dontShowAgain}
+                onCheckedChange={(v) => setDontShowAgain(v === true)}
+              />
+              <span className="text-sm text-muted-foreground">
+                Ne plus voir ce message
+              </span>
+            </label>
+          ) : (
+            <span />
           )}
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="ghost"
+              onClick={handleClose}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              Fermer
+            </Button>
+            {!isConnected && (
+              <Button
+                onClick={handleConnect}
+                disabled={superPdpLoading || settingsLoading}
+                className="bg-[#5b4eff] hover:bg-[#4a3ecc] text-white px-6"
+              >
+                {superPdpLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Connexion...
+                  </>
+                ) : (
+                  <>
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Activer la facturation électronique
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

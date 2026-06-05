@@ -150,6 +150,35 @@ export const CREDIT_NOTE_FRAGMENT = gql`
   }
 `;
 
+// Aperçu : URL de la route backend qui streame le PDF Factur-X archivé de l'avoir
+export const CREDIT_NOTE_DOCUMENT_URL = gql`
+  query CreditNoteDocumentUrl($workspaceId: ID!, $creditNoteId: ID!) {
+    creditNoteDocumentUrl(
+      workspaceId: $workspaceId
+      creditNoteId: $creditNoteId
+    )
+  }
+`;
+
+// Archive le PDF Factur-X de l'avoir (généré côté frontend) sur R2
+export const ARCHIVE_CREDIT_NOTE_PDF = gql`
+  mutation ArchiveCreditNotePdf(
+    $workspaceId: ID!
+    $creditNoteId: ID!
+    $file: Upload!
+  ) {
+    archiveCreditNotePdf(
+      workspaceId: $workspaceId
+      creditNoteId: $creditNoteId
+      file: $file
+    ) {
+      id
+      archivedPdfKey
+      archivedPdfStoredAt
+    }
+  }
+`;
+
 // ==================== QUERIES ====================
 
 export const GET_CREDIT_NOTE = gql`

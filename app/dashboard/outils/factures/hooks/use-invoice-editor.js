@@ -21,6 +21,7 @@ import {
   updateOrganization,
   getActiveOrganization,
 } from "@/src/lib/organization-client";
+import { useArchiveInvoicePdf } from "@/src/hooks/useArchiveInvoicePdf";
 import posthog from "posthog-js";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
@@ -92,6 +93,7 @@ export function useInvoiceEditor({
 
   const { createInvoice, loading: creating } = useCreateInvoice();
   const { updateInvoice, loading: updating } = useUpdateInvoice();
+  const { archiveInvoicePdf } = useArchiveInvoicePdf();
   const { checkInvoiceNumber } = useCheckInvoiceNumber();
   const { latestIssueDate } = useLatestInvoiceIssueDate();
 
@@ -2306,6 +2308,10 @@ export function useInvoiceEditor({
           currency: input.currency,
           status: input.status,
         });
+        // Archivage du PDF Factur-X sur R2 (hors brouillon, non bloquant)
+        if (result && result.status !== "DRAFT") {
+          archiveInvoicePdf(result, "invoice");
+        }
         toast.success("Facture créée avec succès");
         // Retourner les données de la facture pour permettre l'envoi par email
         return {
@@ -2318,6 +2324,10 @@ export function useInvoiceEditor({
         const result = await updateInvoice(invoiceId, input);
         // Message différent selon si on passe de Draft à Pending ou si on met à jour une facture Pending
         const wasDraft = existingInvoice?.status === "DRAFT";
+        // Archivage du PDF Factur-X sur R2 lors de la finalisation (hors brouillon, non bloquant)
+        if (result && result.status !== "DRAFT") {
+          archiveInvoicePdf(result, "invoice");
+        }
         toast.success(
           wasDraft
             ? "Facture créée avec succès"

@@ -146,6 +146,35 @@ export const PURCHASE_ORDER_FRAGMENT = gql`
   }
 `;
 
+// Aperçu : URL de la route backend qui streame le PDF archivé du bon de commande
+export const PURCHASE_ORDER_DOCUMENT_URL = gql`
+  query PurchaseOrderDocumentUrl($workspaceId: ID!, $purchaseOrderId: ID!) {
+    purchaseOrderDocumentUrl(
+      workspaceId: $workspaceId
+      purchaseOrderId: $purchaseOrderId
+    )
+  }
+`;
+
+// Archive le PDF du bon de commande (généré côté frontend) sur R2
+export const ARCHIVE_PURCHASE_ORDER_PDF = gql`
+  mutation ArchivePurchaseOrderPdf(
+    $workspaceId: ID!
+    $purchaseOrderId: ID!
+    $file: Upload!
+  ) {
+    archivePurchaseOrderPdf(
+      workspaceId: $workspaceId
+      purchaseOrderId: $purchaseOrderId
+      file: $file
+    ) {
+      id
+      archivedPdfKey
+      archivedPdfStoredAt
+    }
+  }
+`;
+
 export const PURCHASE_ORDER_LIST_FRAGMENT = gql`
   fragment PurchaseOrderListFragment on PurchaseOrder {
     id

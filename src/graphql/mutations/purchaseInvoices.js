@@ -23,7 +23,10 @@ export const CREATE_PURCHASE_INVOICE = gql`
 `;
 
 export const UPDATE_PURCHASE_INVOICE = gql`
-  mutation UpdatePurchaseInvoice($id: ID!, $input: UpdatePurchaseInvoiceInput!) {
+  mutation UpdatePurchaseInvoice(
+    $id: ID!
+    $input: UpdatePurchaseInvoiceInput!
+  ) {
     updatePurchaseInvoice(id: $id, input: $input) {
       id
       supplierName
@@ -58,8 +61,14 @@ export const DELETE_PURCHASE_INVOICE = gql`
 `;
 
 export const ADD_PURCHASE_INVOICE_FILE = gql`
-  mutation AddPurchaseInvoiceFile($purchaseInvoiceId: ID!, $input: PurchaseInvoiceFileInput!) {
-    addPurchaseInvoiceFile(purchaseInvoiceId: $purchaseInvoiceId, input: $input) {
+  mutation AddPurchaseInvoiceFile(
+    $purchaseInvoiceId: ID!
+    $input: PurchaseInvoiceFileInput!
+  ) {
+    addPurchaseInvoiceFile(
+      purchaseInvoiceId: $purchaseInvoiceId
+      input: $input
+    ) {
       id
       files {
         id
@@ -88,7 +97,10 @@ export const ADD_PURCHASE_INVOICE_FILE = gql`
 
 export const REMOVE_PURCHASE_INVOICE_FILE = gql`
   mutation RemovePurchaseInvoiceFile($purchaseInvoiceId: ID!, $fileId: ID!) {
-    removePurchaseInvoiceFile(purchaseInvoiceId: $purchaseInvoiceId, fileId: $fileId) {
+    removePurchaseInvoiceFile(
+      purchaseInvoiceId: $purchaseInvoiceId
+      fileId: $fileId
+    ) {
       id
       files {
         id
@@ -106,7 +118,11 @@ export const MARK_PURCHASE_INVOICE_AS_PAID = gql`
     $paymentDate: String
     $paymentMethod: PurchaseInvoicePaymentMethod
   ) {
-    markPurchaseInvoiceAsPaid(id: $id, paymentDate: $paymentDate, paymentMethod: $paymentMethod) {
+    markPurchaseInvoiceAsPaid(
+      id: $id
+      paymentDate: $paymentDate
+      paymentMethod: $paymentMethod
+    ) {
       id
       status
       paymentDate
@@ -116,7 +132,10 @@ export const MARK_PURCHASE_INVOICE_AS_PAID = gql`
 `;
 
 export const BULK_UPDATE_PURCHASE_INVOICE_STATUS = gql`
-  mutation BulkUpdatePurchaseInvoiceStatus($ids: [ID!]!, $status: PurchaseInvoiceStatus!) {
+  mutation BulkUpdatePurchaseInvoiceStatus(
+    $ids: [ID!]!
+    $status: PurchaseInvoiceStatus!
+  ) {
     bulkUpdatePurchaseInvoiceStatus(ids: $ids, status: $status) {
       success
       updatedCount
@@ -136,7 +155,10 @@ export const BULK_DELETE_PURCHASE_INVOICES = gql`
 `;
 
 export const BULK_CATEGORIZE_PURCHASE_INVOICES = gql`
-  mutation BulkCategorizePurchaseInvoices($ids: [ID!]!, $category: PurchaseInvoiceCategory!) {
+  mutation BulkCategorizePurchaseInvoices(
+    $ids: [ID!]!
+    $category: PurchaseInvoiceCategory!
+  ) {
     bulkCategorizePurchaseInvoices(ids: $ids, category: $category) {
       success
       updatedCount
@@ -146,8 +168,14 @@ export const BULK_CATEGORIZE_PURCHASE_INVOICES = gql`
 `;
 
 export const RECONCILE_PURCHASE_INVOICE = gql`
-  mutation ReconcilePurchaseInvoice($purchaseInvoiceId: ID!, $transactionIds: [ID!]!) {
-    reconcilePurchaseInvoice(purchaseInvoiceId: $purchaseInvoiceId, transactionIds: $transactionIds) {
+  mutation ReconcilePurchaseInvoice(
+    $purchaseInvoiceId: ID!
+    $transactionIds: [ID!]!
+  ) {
+    reconcilePurchaseInvoice(
+      purchaseInvoiceId: $purchaseInvoiceId
+      transactionIds: $transactionIds
+    ) {
       id
       status
       linkedTransactionIds
@@ -240,6 +268,16 @@ export const SYNC_PURCHASE_INVOICES_FROM_SUPERPDP = gql`
 export const ACKNOWLEDGE_PURCHASE_INVOICE_EINVOICE = gql`
   mutation AcknowledgePurchaseInvoiceEInvoice($id: ID!) {
     acknowledgePurchaseInvoiceEInvoice(id: $id) {
+      id
+      eInvoiceStatus
+      status
+    }
+  }
+`;
+
+export const REFUSE_PURCHASE_INVOICE_EINVOICE = gql`
+  mutation RefusePurchaseInvoiceEInvoice($id: ID!, $reason: String) {
+    refusePurchaseInvoiceEInvoice(id: $id, reason: $reason) {
       id
       eInvoiceStatus
       status

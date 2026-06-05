@@ -1,63 +1,49 @@
 import { NextResponse } from "next/server";
+import {
+  requireSession,
+  requireOrgMembership,
+  apiError,
+  withErrorHandler,
+} from "@/src/lib/security";
 
-// DÉSACTIVÉ: SuperPDP API pas encore active
-export async function GET(request) {
-  return NextResponse.json(
-    {
-      success: false,
-      error: "La facturation électronique (SuperPDP) n'est pas encore disponible",
-      disabled: true,
-    },
-    { status: 503 }
-  );
-}
+/**
+ * GET /api/superpdp/authorize
+ *
+ * Authentifie la session, vérifie l'appartenance à l'organisation, puis proxifie
+ * vers le backend Express (sécurisé par x-internal-secret) qui génère l'URL OAuth.
+ */
+async function handler(request) {
+  const { searchParams } = new URL(request.url);
+  const organizationId = searchParams.get("organizationId");
 
-/* Code original commenté - à réactiver quand SuperPDP sera disponible:
-export async function GET(request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const organizationId = searchParams.get("organizationId");
-
-    if (!organizationId) {
-      return NextResponse.json(
-        { success: false, error: "organizationId est requis" },
-        { status: 400 }
-      );
-    }
-
-    const backendUrl = (
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
-    ).replace(/\/$/, "");
-
-    const response = await fetch(
-      `${backendUrl}/api/superpdp/authorize?organizationId=${organizationId}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: data.error || "Erreur lors de la génération de l'URL",
-        },
-        { status: response.status }
-      );
-    }
-
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error("Erreur API SuperPDP authorize:", error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+  if (!organizationId) {
+    return apiError(400, "organizationId est requis");
   }
+
+  const { user } = await requireSession(request);
+  await requireOrgMembership(user.id, organizationId);
+
+  const backendUrl = (
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+  ).replace(/\/$/, "");
+
+  const url = new URL(`${backendUrl}/api/superpdp/authorize`);
+  url.searchParams.set("organizationId", organizationId);
+  if (user.email) {
+    // Pré-remplit l'email côté SuperPDP (KYC/KYB)
+    url.searchParams.set("login_hint", user.email);
+  }
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "x-internal-secret": process.env.INTERNAL_API_SECRET || "",
+    },
+  });
+
+  const data = await response.json();
+  return NextResponse.json(data, { status: response.status });
 }
-*/
+
+export const GET = withErrorHandler(handler);

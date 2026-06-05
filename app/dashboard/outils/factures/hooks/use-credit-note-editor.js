@@ -12,6 +12,7 @@ import {
   REFUND_METHOD,
 } from "@/src/graphql/creditNoteQueries";
 import { useInvoice } from "@/src/graphql/invoiceQueries";
+import { useArchiveDocumentPdf } from "@/src/hooks/useArchiveDocumentPdf";
 import { useUser } from "@/src/lib/auth/hooks";
 import { useCreditNoteNumber } from "./use-credit-note-number";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
@@ -46,6 +47,7 @@ export function useCreditNoteEditor({
 
   const { createCreditNote, loading: creating } = useCreateCreditNote();
   const { updateCreditNote, loading: updating } = useUpdateCreditNote();
+  const { archiveDocument } = useArchiveDocumentPdf("creditNote");
 
   // Form state avec react-hook-form
   const form = useForm({
@@ -205,6 +207,9 @@ export function useCreditNoteEditor({
           result = await updateCreditNote(creditNoteId, submitData);
           toast.success("Avoir mis à jour avec succès");
         }
+
+        // Archivage du PDF Factur-X de l'avoir sur R2 (non bloquant)
+        if (result) archiveDocument(result);
 
         // Retourner les données de l'avoir pour permettre l'envoi par email
         return {
