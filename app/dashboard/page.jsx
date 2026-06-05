@@ -564,7 +564,8 @@ function DashboardContent() {
             disabled={isReadOnly}
             title={readOnlyTooltip}
             onClick={() =>
-              !isReadOnly && router.push("/dashboard/outils/factures-achat")
+              !isReadOnly &&
+              router.push("/dashboard/outils/factures-achat?action=create")
             }
           >
             <ClipboardImportIcon className="w-4 h-4" />

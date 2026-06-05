@@ -161,6 +161,9 @@ export function PurchaseInvoiceDetailDrawer({
   mode = "view",
   onSaved,
   onDeleted,
+  // When true, render only the content + footer (no Drawer shell / header),
+  // so this can be embedded inside another drawer (e.g. the tabbed create drawer).
+  embedded = false,
 }) {
   const isCreate = mode === "create";
   const [isEditMode, setIsEditMode] = useState(isCreate);
@@ -389,37 +392,34 @@ export function PurchaseInvoiceDetailDrawer({
     onOpenChange(false);
   };
 
-  return (
-    <Drawer open={open} onOpenChange={onOpenChange} direction="right">
-      <DrawerContent
-        className="w-full h-full md:w-[500px] md:max-w-[500px] md:min-w-[500px] md:h-auto"
-        style={{ width: "100vw", height: "100vh" }}
-      >
-        {/* Header */}
-        <DrawerHeader className="flex flex-row items-center justify-between px-6 py-4 border-b space-y-0">
-          <div className="flex items-center gap-2">
-            <DrawerTitle className="text-base font-medium">
-              {isCreate
-                ? "Nouvelle facture d'achat"
-                : isEditMode
-                  ? "Modifier la facture"
-                  : "Détail de la facture"}
-            </DrawerTitle>
-            {!isCreate && invoice?.status && (
-              <span
-                className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium ${STATUS_BADGE[invoice.status] || STATUS_BADGE.TO_PROCESS}`}
-              >
-                {statusLabels[invoice.status] || invoice.status}
-              </span>
-            )}
-          </div>
-          <DrawerClose asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <X className="h-4 w-4" />
-            </Button>
-          </DrawerClose>
-        </DrawerHeader>
+  const header = (
+    <DrawerHeader className="flex flex-row items-center justify-between px-6 py-4 border-b space-y-0">
+      <div className="flex items-center gap-2">
+        <DrawerTitle className="text-base font-medium">
+          {isCreate
+            ? "Nouvelle facture d'achat"
+            : isEditMode
+              ? "Modifier la facture"
+              : "Détail de la facture"}
+        </DrawerTitle>
+        {!isCreate && invoice?.status && (
+          <span
+            className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium ${STATUS_BADGE[invoice.status] || STATUS_BADGE.TO_PROCESS}`}
+          >
+            {statusLabels[invoice.status] || invoice.status}
+          </span>
+        )}
+      </div>
+      <DrawerClose asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8">
+          <X className="h-4 w-4" />
+        </Button>
+      </DrawerClose>
+    </DrawerHeader>
+  );
 
+  const body = (
+    <>
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-6 space-y-6">
@@ -1337,6 +1337,21 @@ export function PurchaseInvoiceDetailDrawer({
             </div>
           )}
         </DrawerFooter>
+    </>
+  );
+
+  if (embedded) {
+    return <div className="flex flex-col h-full">{body}</div>;
+  }
+
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange} direction="right">
+      <DrawerContent
+        className="w-full h-full md:w-[500px] md:max-w-[500px] md:min-w-[500px] md:h-auto"
+        style={{ width: "100vw", height: "100vh" }}
+      >
+        {header}
+        {body}
       </DrawerContent>
     </Drawer>
   );
