@@ -34,6 +34,19 @@ const EXCLUDED_ROUTES = [
  * (app/dashboard/layout.jsx) car le middleware Edge Runtime ne peut pas
  * faire d'appels fetch internes ni accéder à MongoDB directement.
  */
+/**
+ * Construit l'URL de redirection vers le login en conservant la destination
+ * d'origine (chemin + query) dans `callbackUrl`, afin que l'utilisateur soit
+ * renvoyé exactement là où il voulait aller après s'être connecté
+ * (ex: lien email "Choisir un plan" qui ouvre la modale d'abonnement).
+ */
+function loginRedirect(request) {
+  const { pathname, search } = request.nextUrl;
+  const loginUrl = new URL("/auth/login", request.url);
+  loginUrl.searchParams.set("callbackUrl", `${pathname}${search}`);
+  return NextResponse.redirect(loginUrl);
+}
+
 export async function subscriptionMiddleware(request) {
   const { pathname } = request.nextUrl;
 
@@ -77,7 +90,7 @@ export async function subscriptionMiddleware(request) {
         return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
       }
 
-      return NextResponse.redirect(new URL("/auth/login", request.url));
+      return loginRedirect(request);
     }
 
     // ✅ Utilisateur authentifié, laisser passer
@@ -113,7 +126,7 @@ export async function subscriptionMiddleware(request) {
       console.warn(
         "[Middleware] Pas de cookie de session, redirection vers /auth/login",
       );
-      return NextResponse.redirect(new URL("/auth/login", request.url));
+      return loginRedirect(request);
     }
 
     return NextResponse.next();
