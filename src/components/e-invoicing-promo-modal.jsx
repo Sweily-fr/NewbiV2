@@ -10,7 +10,12 @@ import {
 } from "@/src/components/ui/dialog";
 import { Button } from "@/src/components/ui/button";
 import { Checkbox } from "@/src/components/ui/checkbox";
-import { CheckCircle2, Loader2, ExternalLink, ArrowRight } from "lucide-react";
+import {
+  CheckCircle2,
+  LoaderCircle,
+  ArrowRight,
+  CornerDownLeft,
+} from "lucide-react";
 import { useSuperPdp } from "@/src/hooks/useSuperPdp";
 import { useEInvoicingSettings } from "@/src/hooks/useEInvoicing";
 
@@ -44,154 +49,147 @@ export function EInvoicingPromoModal({ open, onOpenChange }) {
       open={open}
       onOpenChange={(v) => (v ? onOpenChange(true) : handleClose())}
     >
-      <DialogContent
-        className="p-0 gap-0 overflow-hidden border-0 shadow-lg"
-        style={{ maxWidth: "780px" }}
-      >
-        <div className="p-8 pb-0">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-medium tracking-tight">
+      <DialogContent className="sm:max-w-[620px] p-1 gap-0 top-[40%] border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
+        <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
+          <DialogHeader className="px-6 pt-5 pb-4 border-b border-border/40">
+            <DialogTitle className="text-sm font-medium">
               Facturation électronique
             </DialogTitle>
           </DialogHeader>
-        </div>
 
-        <div className="p-8 pt-6">
-          {/* Contenu principal avec illustration */}
-          <div className="flex flex-col md:flex-row gap-8 items-start">
-            {/* Illustration */}
-            <div className="flex-shrink-0 w-full md:w-48">
-              <Image
-                src="/undraw_questions.svg"
-                alt="Facturation électronique"
-                width={202}
-                height={202}
-                className="w-full h-auto"
-              />
-            </div>
-
-            {/* Contenu explicatif */}
-            <div className="flex-1 space-y-6">
-              {/* Statut de connexion */}
-              {isConnected ? (
-                <div className="flex items-start gap-3 p-4 rounded-xl bg-green-50 dark:bg-green-900/20">
-                  <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-green-900 dark:text-green-100">
-                      Facturation électronique activée
-                    </p>
-                    <p className="text-sm text-green-600 dark:text-green-400 mt-1">
-                      Vos factures sont automatiquement converties au format
-                      Factur-X et transmises via SuperPDP.
-                    </p>
-                  </div>
+          <div className="space-y-5 px-6 pt-5 pb-0">
+            {isConnected ? (
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200/50 dark:border-green-900/30">
+                <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium text-green-900 dark:text-green-100">
+                    Facturation électronique activée
+                  </p>
+                  <p className="text-xs text-green-700 dark:text-green-400">
+                    Vos factures sont automatiquement converties au format
+                    Factur-X et transmises via SuperPDP.
+                  </p>
                 </div>
-              ) : (
-                <>
-                  {/* Introduction */}
-                  <div className="space-y-3">
-                    <p className="text-base text-muted-foreground leading-relaxed">
-                      À partir de{" "}
-                      <span className="font-medium text-foreground">
-                        septembre 2026
-                      </span>
-                      , toutes les entreprises françaises devront être en mesure
-                      de recevoir des factures électroniques.
-                    </p>
-                    <p className="text-base text-muted-foreground leading-relaxed">
-                      L'émission obligatoire pour les TPE/PME suivra en{" "}
-                      <span className="font-medium text-foreground">
-                        septembre 2027
-                      </span>
-                      .
-                    </p>
-                  </div>
+              </div>
+            ) : (
+              <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-center">
+                {/* Illustration */}
+                <div className="flex-shrink-0 w-full md:w-44">
+                  <Image
+                    src="/undraw_questions.svg"
+                    alt="Facturation électronique"
+                    width={176}
+                    height={176}
+                    className="w-full h-auto"
+                  />
+                </div>
 
-                  {/* Ce que Newbi fait pour vous */}
-                  <div className="space-y-3">
-                    <h3 className="text-sm font-semibold text-foreground">
+                {/* Contenu explicatif */}
+                <div className="flex-1 space-y-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    À partir de{" "}
+                    <span className="font-medium text-foreground">
+                      septembre 2026
+                    </span>
+                    , toutes les entreprises françaises devront être en mesure
+                    de recevoir des factures électroniques. L'émission
+                    obligatoire pour les TPE/PME suivra en{" "}
+                    <span className="font-medium text-foreground">
+                      septembre 2027
+                    </span>
+                    .
+                  </p>
+
+                  <div className="space-y-2.5">
+                    <p className="text-sm font-medium text-foreground">
                       Ce que Newbi fait pour vous
-                    </h3>
+                    </p>
                     <ul className="space-y-2">
-                      <li className="flex items-start gap-2.5">
-                        <ArrowRight className="h-4 w-4 text-[#5b4eff] mt-0.5 flex-shrink-0" />
+                      <li className="flex items-start gap-2">
+                        <ArrowRight className="h-3.5 w-3.5 text-[#5b4eff] mt-0.5 flex-shrink-0" />
                         <span className="text-sm text-muted-foreground">
-                          Conversion automatique de vos factures au format{" "}
+                          Conversion automatique au format{" "}
                           <span className="font-medium text-foreground">
                             Factur-X
                           </span>{" "}
-                          (norme européenne EN16931)
+                          (EN16931)
                         </span>
                       </li>
-                      <li className="flex items-start gap-2.5">
-                        <ArrowRight className="h-4 w-4 text-[#5b4eff] mt-0.5 flex-shrink-0" />
+                      <li className="flex items-start gap-2">
+                        <ArrowRight className="h-3.5 w-3.5 text-[#5b4eff] mt-0.5 flex-shrink-0" />
                         <span className="text-sm text-muted-foreground">
                           Transmission sécurisée via{" "}
                           <span className="font-medium text-foreground">
                             Chorus Pro
                           </span>{" "}
-                          ou le réseau{" "}
+                          ou{" "}
                           <span className="font-medium text-foreground">
                             PEPPOL
                           </span>
                         </span>
                       </li>
-                      <li className="flex items-start gap-2.5">
-                        <ArrowRight className="h-4 w-4 text-[#5b4eff] mt-0.5 flex-shrink-0" />
+                      <li className="flex items-start gap-2">
+                        <ArrowRight className="h-3.5 w-3.5 text-[#5b4eff] mt-0.5 flex-shrink-0" />
                         <span className="text-sm text-muted-foreground">
                           Suivi en temps réel du statut de vos factures
                         </span>
                       </li>
                     </ul>
                   </div>
-                </>
+                </div>
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="flex items-center justify-between gap-3 border-t border-border/40 mt-5 px-6 py-4 -mx-6">
+              {!isConnected ? (
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <Checkbox
+                    checked={dontShowAgain}
+                    onCheckedChange={(v) => setDontShowAgain(v === true)}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    Ne plus voir ce message
+                  </span>
+                </label>
+              ) : (
+                <span />
+              )}
+
+              {!isConnected ? (
+                <Button
+                  variant="primary"
+                  onClick={handleConnect}
+                  disabled={superPdpLoading || settingsLoading}
+                  className="gap-2"
+                >
+                  {superPdpLoading ? (
+                    <>
+                      <LoaderCircle className="size-4 animate-spin" />
+                      Connexion...
+                    </>
+                  ) : (
+                    <>
+                      Activer la facturation électronique
+                      <kbd className="inline-flex items-center justify-center size-5 rounded bg-white/20 ml-0.5">
+                        <CornerDownLeft className="size-3" />
+                      </kbd>
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  variant="primary"
+                  onClick={handleClose}
+                  className="gap-2"
+                >
+                  Fermer
+                  <kbd className="inline-flex items-center justify-center size-5 rounded bg-white/20 ml-0.5">
+                    <CornerDownLeft className="size-3" />
+                  </kbd>
+                </Button>
               )}
             </div>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="p-8 pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          {!isConnected ? (
-            <label className="flex items-center gap-2 cursor-pointer select-none">
-              <Checkbox
-                checked={dontShowAgain}
-                onCheckedChange={(v) => setDontShowAgain(v === true)}
-              />
-              <span className="text-sm text-muted-foreground">
-                Ne plus voir ce message
-              </span>
-            </label>
-          ) : (
-            <span />
-          )}
-          <div className="flex justify-end gap-3">
-            <Button
-              variant="ghost"
-              onClick={handleClose}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              Fermer
-            </Button>
-            {!isConnected && (
-              <Button
-                onClick={handleConnect}
-                disabled={superPdpLoading || settingsLoading}
-                className="bg-[#5b4eff] hover:bg-[#4a3ecc] text-white px-6"
-              >
-                {superPdpLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Connexion...
-                  </>
-                ) : (
-                  <>
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Activer la facturation électronique
-                  </>
-                )}
-              </Button>
-            )}
           </div>
         </div>
       </DialogContent>
