@@ -257,14 +257,37 @@ export function NavSecondary({
   return (
     <SidebarGroup {...props}>
       <SidebarGroupContent>
-        {/* Bouton Facturation électronique (Sparkles) - réservé aux abonnés PAYANTS
-            (masqué en période d'essai) ET si non activée */}
-        {isActive() && !isInTrial && !isEInvoicingEnabled && (
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                className="mb-1 cursor-pointer bg-[#5b50FF]/10 text-[#5b50FF] [&>svg]:text-[#5b50FF] hover:bg-[#5b50FF]/15 hover:text-[#5b50FF] active:bg-[#5b50FF]/15 active:text-[#5b50FF] data-[hovered]:bg-[#5b50FF]/15! data-[hovered]:text-[#5b50FF]!"
-                tooltip="Facturation électronique"
+        {/* Facturation électronique - réservée aux abonnés PAYANTS
+            (masqué en période d'essai) ET si non activée.
+            Sidebar expanded : card outline avec titre + sous-titre.
+            Sidebar collapsed : icône Sparkles avec tooltip. */}
+        {isActive() &&
+          !isInTrial &&
+          !isEInvoicingEnabled &&
+          (isCollapsed ? (
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  className="mb-3 cursor-pointer border border-[#5b50FF]/40 bg-[#5b50FF]/5 shadow-sm text-[#5b50FF] [&>svg]:text-[#5b50FF] hover:bg-[#5b50FF]/5 hover:text-[#5b50FF] active:bg-[#5b50FF]/5 active:text-[#5b50FF] data-[hovered]:bg-[#5b50FF]/5! data-[hovered]:text-[#5b50FF]!"
+                  tooltip="Facturation électronique"
+                  onClick={() => {
+                    if (onOpenEInvoicingPromo) {
+                      onOpenEInvoicingPromo();
+                    } else {
+                      setEInvoicingPromoOpen(true);
+                    }
+                    handleLinkClick();
+                  }}
+                >
+                  <Sparkles />
+                  <span>Facturation électronique</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          ) : (
+            <div className="px-2 mb-3 mt-1">
+              <button
+                type="button"
                 onClick={() => {
                   if (onOpenEInvoicingPromo) {
                     onOpenEInvoicingPromo();
@@ -273,13 +296,18 @@ export function NavSecondary({
                   }
                   handleLinkClick();
                 }}
+                className="w-full text-left border border-[#5b50FF]/40 bg-[#5b50FF]/5 rounded-lg px-3 py-2.5 shadow-sm cursor-pointer"
               >
-                <Sparkles />
-                <span>Facturation électronique</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        )}
+                <p className="text-sm font-medium text-foreground leading-tight">
+                  Facturation électronique
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
+                  Activez Factur-X et préparez-vous à l'obligation de septembre
+                  2026.
+                </p>
+              </button>
+            </div>
+          ))}
 
         {/* Notifications */}
         <SidebarMenu>
