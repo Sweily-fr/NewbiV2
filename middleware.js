@@ -24,8 +24,12 @@ export async function middleware(request) {
         cookieHeader.includes("__Secure-better-auth.session_token");
 
       if (!hasSessionCookie) {
-        // Pas de cookie de session → bloquer l'accès
-        return NextResponse.redirect(new URL("/auth/login", request.url));
+        // Pas de cookie de session → bloquer l'accès en conservant la
+        // destination d'origine (chemin + query) pour la redirection post-login.
+        const { search } = request.nextUrl;
+        const loginUrl = new URL("/auth/login", request.url);
+        loginUrl.searchParams.set("callbackUrl", `${pathname}${search}`);
+        return NextResponse.redirect(loginUrl);
       }
 
       // Cookie présent mais middleware a crashé → laisser passer,
