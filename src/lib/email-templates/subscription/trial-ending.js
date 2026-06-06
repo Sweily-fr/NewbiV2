@@ -84,7 +84,7 @@ export const trialEnding = ({ customerName, plan, trialEndDate, amount }) => `
           </ul>
 
           <!-- Bouton CTA - Style Qonto (noir, border-radius réduit) -->
-          <a href="${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://app.newbi.fr"}/dashboard/parametres/abonnement" style="display: block; background-color: #1a1a1a; color: #ffffff; text-decoration: none; padding: 16px 24px; border-radius: 6px; font-weight: 500; font-size: 15px; text-align: center;">
+          <a href="${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://www.newbi.fr"}/dashboard?openSettings=true&amp;settingsTab=subscription" style="display: block; background-color: #1a1a1a; color: #ffffff; text-decoration: none; padding: 16px 24px; border-radius: 6px; font-weight: 500; font-size: 15px; text-align: center;">
             Gérer mon abonnement
           </a>
         </div>
