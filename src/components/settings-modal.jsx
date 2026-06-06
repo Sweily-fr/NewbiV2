@@ -463,6 +463,11 @@ export function SettingsModal({
           label: "Comptes bancaires",
           icon: Landmark,
         },
+        {
+          id: "facturation-electronique",
+          label: "Facturation électronique",
+          icon: Zap,
+        },
       ],
     },
     {
@@ -470,11 +475,6 @@ export function SettingsModal({
       items: [
         { id: "subscription", label: "Abonnement", icon: Crown },
         { id: "facturation", label: "Facturation", icon: DollarSign },
-        {
-          id: "facturation-electronique",
-          label: "Facturation électronique",
-          icon: Zap,
-        },
       ],
     },
   ];

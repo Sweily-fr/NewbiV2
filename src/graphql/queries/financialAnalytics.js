@@ -162,6 +162,8 @@ export const GET_FINANCIAL_ANALYTICS = gql`
           collectedTTC
           invoicedCount
           collectedCount
+          unpaidTTC
+          unpaidCount
         }
       }
       alerts {

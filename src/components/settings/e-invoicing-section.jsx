@@ -49,7 +49,7 @@ export function EInvoicingSection({ canManageOrgSettings }) {
     status,
   } = useSuperPdp();
   const searchParams = useSearchParams();
-  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const { isReadOnly, isOwner, isInTrial } = useSubscriptionAccess();
   const { workspaceId } = useRequiredWorkspace();
 
   // Vérification KYC/KYB + annuaire (uniquement si e-invoicing activé)
@@ -182,8 +182,15 @@ export function EInvoicingSection({ canManageOrgSettings }) {
             </div>
             <Button
               onClick={handleConnect}
-              disabled={isReadOnly || !canManageOrgSettings || superPdpLoading}
-              title={readOnlyTooltip}
+              disabled={
+                isReadOnly ||
+                isInTrial ||
+                !canManageOrgSettings ||
+                superPdpLoading
+              }
+              title={
+                isInTrial ? "Réservé aux abonnements payants" : readOnlyTooltip
+              }
               className="bg-[#5b4eff] hover:bg-[#4a3ecc] text-white"
             >
               {superPdpLoading ? (
@@ -193,6 +200,12 @@ export function EInvoicingSection({ canManageOrgSettings }) {
               )}
               Activer la facturation électronique
             </Button>
+            {isInTrial && (
+              <p className="text-xs text-gray-400">
+                La facturation électronique est réservée aux abonnements
+                payants.
+              </p>
+            )}
           </div>
         ) : (
           <div className="space-y-2">
