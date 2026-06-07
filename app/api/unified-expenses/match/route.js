@@ -36,7 +36,8 @@ async function handler(request) {
           category
           provider
           status
-          receiptFile {
+          receiptFiles {
+            id
             url
           }
           metadata
@@ -84,7 +85,7 @@ async function handler(request) {
 
   for (const tx of transactions) {
     // Ignorer les transactions qui ont déjà un justificatif
-    if (tx.receiptFile?.url) continue;
+    if (Array.isArray(tx.receiptFiles) && tx.receiptFiles.length > 0) continue;
 
     let score = 0;
     const txAmount = Math.abs(tx.amount);

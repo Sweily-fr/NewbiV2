@@ -104,6 +104,7 @@ import {
   PaginationItem,
 } from "@/src/components/ui/pagination";
 import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
+import { AnimatePresence } from "framer-motion";
 import {
   Search,
   TrashIcon,
@@ -460,7 +461,7 @@ export default function TransactionTable({
             ? expense.files[0].url
             : null,
         files: expense.files || [],
-        receiptFile: expense.receiptFile || null,
+        receiptFiles: expense.receiptFiles || [],
         ocrMetadata: expense.ocrMetadata || null,
         createdAt: expense.createdAt,
         updatedAt: expense.updatedAt,
@@ -655,7 +656,7 @@ export default function TransactionTable({
   const handleCloseDetailDrawer = (isOpen) => {
     if (isOpen === false || isOpen === undefined) {
       setIsDetailDrawerOpen(false);
-      setSelectedTransaction(null);
+      // Ne pas reset selectedTransaction tout de suite : laisser l'exit anim jouer
     }
   };
 
@@ -746,14 +747,18 @@ export default function TransactionTable({
       const result = await createTransaction(transactionInput);
 
       if (result.success) {
-        // Upload du justificatif si un fichier a été sélectionné
-        if (transaction.receiptFile && result.transaction?.id) {
+        // Upload des justificatifs si des fichiers ont été sélectionnés
+        const filesToUpload =
+          (Array.isArray(transaction.receiptFiles) &&
+            transaction.receiptFiles) ||
+          (transaction.receiptFile ? [transaction.receiptFile] : null);
+        if (filesToUpload?.length && result.transaction?.id) {
           try {
             await uploadReceiptMutation({
               variables: {
                 transactionId: result.transaction.id,
                 workspaceId,
-                file: transaction.receiptFile,
+                files: filesToUpload,
               },
             });
           } catch (uploadError) {
@@ -789,19 +794,19 @@ export default function TransactionTable({
     }
   };
 
-  // Attacher un reçu à une transaction bancaire (upload via GraphQL)
-  const handleAttachReceipt = async (transaction, file) => {
+  // Attacher un (ou plusieurs) reçu(s) à une transaction bancaire (upload via GraphQL)
+  const handleAttachReceipt = async (transaction, fileOrFiles) => {
     try {
-      // Récupérer l'ID de la transaction originale (pour les transactions bancaires)
       const transactionId =
         transaction.originalTransaction?.id || transaction.id;
 
-      // Upload via mutation GraphQL
+      const files = Array.isArray(fileOrFiles) ? fileOrFiles : [fileOrFiles];
+
       const { data } = await uploadReceiptMutation({
         variables: {
           transactionId,
           workspaceId,
-          file,
+          files,
         },
       });
 
@@ -811,16 +816,20 @@ export default function TransactionTable({
         );
       }
 
-      // Mettre à jour selectedTransaction avec le receiptFile
+      // Mettre à jour selectedTransaction avec receiptFiles
       if (selectedTransaction) {
         setSelectedTransaction({
           ...selectedTransaction,
-          receiptFile: data.uploadTransactionReceipt.receiptFile,
+          receiptFiles: data.uploadTransactionReceipt.receiptFiles || [],
           receiptRequired: false,
         });
       }
 
-      toast.success("Justificatif ajouté avec succès");
+      toast.success(
+        files.length === 1
+          ? "Justificatif ajouté avec succès"
+          : `${files.length} justificatifs ajoutés avec succès`,
+      );
       refetch();
     } catch (error) {
       console.error("❌ [ATTACH RECEIPT] Error:", error);
@@ -886,9 +895,10 @@ export default function TransactionTable({
 
   const handleDownloadAttachment = async (transaction) => {
     try {
-      // Chercher l'URL du justificatif dans les différents champs possibles
+      // Chercher l'URL du 1er justificatif dans les différents champs possibles
+      const firstReceipt = transaction.receiptFiles?.[0];
       const receiptUrl =
-        transaction.receiptFile?.url ||
+        firstReceipt?.url ||
         transaction.attachment ||
         (transaction.files && transaction.files.length > 0
           ? transaction.files[0].url
@@ -900,7 +910,7 @@ export default function TransactionTable({
       }
 
       const filename =
-        transaction.receiptFile?.filename ||
+        firstReceipt?.filename ||
         transaction.files?.[0]?.filename ||
         `justificatif-${transaction.id}`;
 
@@ -1838,34 +1848,46 @@ export default function TransactionTable({
 
       {/* Drawers */}
       {/* Drawer unifié pour visualisation */}
-      <TransactionDetailDrawer
-        transaction={selectedTransaction}
-        open={isDetailDrawerOpen}
-        onOpenChange={handleCloseDetailDrawer}
-        onEdit={handleEditFromDrawer}
-        onDelete={handleDeleteFromDrawer}
-        onAttachReceipt={handleAttachReceipt}
-        onRefresh={refetch}
-        onSubmit={handleSaveTransaction}
-      />
+      <AnimatePresence onExitComplete={() => setSelectedTransaction(null)}>
+        {isDetailDrawerOpen && (
+          <TransactionDetailDrawer
+            transaction={selectedTransaction}
+            open={isDetailDrawerOpen}
+            onOpenChange={handleCloseDetailDrawer}
+            onEdit={handleEditFromDrawer}
+            onDelete={handleDeleteFromDrawer}
+            onAttachReceipt={handleAttachReceipt}
+            onRefresh={refetch}
+            onSubmit={handleSaveTransaction}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Drawer unifié pour création */}
-      <TransactionDetailDrawer
-        open={isAddTransactionDrawerOpen}
-        onOpenChange={setIsAddTransactionDrawerOpen}
-        onSubmit={handleAddTransaction}
-        onRefresh={refetch}
-        isCreating={true}
-      />
+      <AnimatePresence>
+        {isAddTransactionDrawerOpen && (
+          <TransactionDetailDrawer
+            open={isAddTransactionDrawerOpen}
+            onOpenChange={setIsAddTransactionDrawerOpen}
+            onSubmit={handleAddTransaction}
+            onRefresh={refetch}
+            isCreating={true}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Drawer unifié pour édition */}
-      <TransactionDetailDrawer
-        transaction={editingTransaction}
-        open={isEditModalOpen}
-        onOpenChange={setIsEditModalOpen}
-        onSubmit={handleSaveTransaction}
-        onRefresh={refetch}
-      />
+      <AnimatePresence>
+        {isEditModalOpen && (
+          <TransactionDetailDrawer
+            transaction={editingTransaction}
+            open={isEditModalOpen}
+            onOpenChange={setIsEditModalOpen}
+            onSubmit={handleSaveTransaction}
+            onRefresh={refetch}
+          />
+        )}
+      </AnimatePresence>
 
       <ReceiptUploadDrawer
         open={isReceiptUploadDrawerOpen}

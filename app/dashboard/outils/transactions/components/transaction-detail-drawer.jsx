@@ -9,17 +9,9 @@ import {
   Dialog,
   Group,
 } from "react-aria-components";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/src/components/ui/drawer";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
-import { Separator } from "@/src/components/ui/separator";
 import { Textarea } from "@/src/components/ui/textarea";
 import { Popover as RACPopover } from "react-aria-components";
 import {
@@ -37,6 +29,9 @@ import {
   Building2,
   Landmark,
   FileText,
+  // Note : pour les icônes Source / paiements (CARD, TRANSFER, CHECK) on
+  // utilise des SVG Vuesax custom importés depuis @/src/components/icons
+  // (voir BankIcon / CardIcon / RoutingIcon / NoteIcon ci-dessous).
   Download,
   Edit,
   Trash2,
@@ -47,7 +42,6 @@ import {
   AlertCircle,
   CheckCircle2,
   Loader2,
-  Save,
   Plus,
   Link2,
   Unlink,
@@ -56,7 +50,18 @@ import {
   ZoomOut,
   RotateCw,
   Maximize2,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
+import {
+  BankIcon as BankVuesax,
+  BankCardIcon as CardVuesax,
+  NotepadIcon as NoteVuesax,
+  RoutingIcon as RoutingVuesax,
+  ReceiptItemIcon as ReceiptVuesax,
+  DownloadIcon as DownloadVuesax,
+  Save2Icon as SaveVuesax,
+} from "@/src/components/icons";
 import {
   formatDateToFrench,
   formatDateTimeToFrench,
@@ -65,7 +70,10 @@ import {
 import { findMerchant } from "@/lib/merchants-config";
 import { getCategoryConfig } from "@/lib/category-icons-config";
 import { toast } from "@/src/components/ui/sonner";
-import { UPDATE_TRANSACTION } from "@/src/graphql/queries/banking";
+import {
+  UPDATE_TRANSACTION,
+  REMOVE_TRANSACTION_RECEIPT_FILE,
+} from "@/src/graphql/queries/banking";
 import { Calendar } from "@/src/components/ui/calendar-rac";
 import { DateInput } from "@/src/components/ui/datefield-rac";
 import {
@@ -80,13 +88,14 @@ import { useRouter } from "next/navigation";
 import { PreviewImage } from "@/src/components/ui/preview-image";
 import { getAllPCGAccounts, PCG_ACCOUNTS } from "@/lib/pcg-mapping";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
 const paymentMethodIcons = {
-  CARD: CreditCard,
-  CREDIT_CARD: CreditCard,
+  CARD: CardVuesax,
+  CREDIT_CARD: CardVuesax,
   CASH: Banknote,
-  TRANSFER: Building2,
-  CHECK: FileText,
+  TRANSFER: RoutingVuesax,
+  CHECK: NoteVuesax,
 };
 
 const paymentMethodLabels = {
@@ -360,6 +369,7 @@ export function TransactionDetailDrawer({
 }) {
   const router = useRouter();
   const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const { workspaceId } = useRequiredWorkspace();
   const readOnlyTooltip = isReadOnly
     ? isOwner
       ? "Mode lecture seule · Renouvelez votre abonnement"
@@ -368,8 +378,10 @@ export function TransactionDetailDrawer({
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState(null);
-  const [selectedFile, setSelectedFile] = useState(null);
+  // Fichiers en attente d'upload (mode création) — array de { file, previewUrl }
+  const [pendingFiles, setPendingFiles] = useState([]);
+  // Index du justificatif actif dans le pane preview gauche (navigation prev/next)
+  const [activeReceiptIndex, setActiveReceiptIndex] = useState(0);
   const [isUnlinking, setIsUnlinking] = useState(false);
   const [calendarContainer, setCalendarContainer] = useState(null);
   const [receiptViewerOpen, setReceiptViewerOpen] = useState(false);
@@ -377,8 +389,40 @@ export function TransactionDetailDrawer({
   const [receiptViewerMime, setReceiptViewerMime] = useState(null);
   const [receiptZoom, setReceiptZoom] = useState(1);
   const [receiptRotation, setReceiptRotation] = useState(0);
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth < 768 : false,
+  );
+  const [showMobileDetails, setShowMobileDetails] = useState(false);
   const prevOpenRef = useRef(false);
   const fileInputRef = useRef(null);
+
+  // Détecter mobile pour la sidebar
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Fermer avec Escape + lock scroll body
+  useEffect(() => {
+    if (!open) return;
+    const handleEscape = (e) => {
+      if (e.key === "Escape") onOpenChange(false);
+    };
+    document.addEventListener("keydown", handleEscape);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open, onOpenChange]);
+
+  // Reset mobile details quand on ferme
+  useEffect(() => {
+    if (!open) setShowMobileDetails(false);
+  }, [open]);
 
   // Hook pour délier une transaction d'une facture
   const { unlinkTransaction } = useUnlinkTransactionFromInvoice();
@@ -425,8 +469,8 @@ export function TransactionDetailDrawer({
         pcgAccountNumero: "",
       });
       setIsEditMode(true);
-      setPreviewUrl(null);
-      setSelectedFile(null);
+      setPendingFiles([]);
+      setActiveReceiptIndex(0);
     } else if (transaction) {
       // Mode visualisation/édition: pré-remplir avec les données
       let formattedDate = formatLocalDate();
@@ -514,9 +558,8 @@ export function TransactionDetailDrawer({
         transaction.source === "BANK_TRANSACTION" ||
         transaction.type === "BANK_TRANSACTION";
       setIsEditMode(txIsBankTransaction);
-      setPreviewUrl(
-        transaction.receiptFile?.url || transaction.receiptImage || null,
-      );
+      setPendingFiles([]);
+      setActiveReceiptIndex(0);
     }
   }, [open, transaction, isCreateMode]);
 
@@ -592,7 +635,7 @@ export function TransactionDetailDrawer({
         ...formData,
         category: formData.category || "OTHER",
         amount: parseFloat(formData.amount) || 0,
-        receiptFile: selectedFile || null,
+        receiptFiles: pendingFiles.map((p) => p.file),
       };
       onSubmit?.(submissionData);
       onOpenChange(false);
@@ -613,9 +656,10 @@ export function TransactionDetailDrawer({
     }
   };
 
-  // Gérer l'upload de fichier
-  const handleFileUpload = async (file) => {
-    if (!file) return;
+  // Gérer l'upload d'un ou plusieurs fichiers
+  const handleFilesUpload = async (fileList) => {
+    const files = Array.from(fileList || []).filter(Boolean);
+    if (files.length === 0) return;
 
     const allowedTypes = [
       "image/jpeg",
@@ -623,25 +667,43 @@ export function TransactionDetailDrawer({
       "image/webp",
       "application/pdf",
     ];
-    if (!allowedTypes.includes(file.type)) {
-      toast.error("Format non supporté. Utilisez JPG, PNG, WebP ou PDF.");
-      return;
+
+    const validFiles = [];
+    for (const file of files) {
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(
+          `Format non supporté (${file.name}). JPG, PNG, WebP ou PDF.`,
+        );
+        continue;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`Fichier trop volumineux (${file.name}). Max 10 Mo.`);
+        continue;
+      }
+      validFiles.push(file);
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("Fichier trop volumineux. Maximum 10 Mo.");
-      return;
-    }
+    if (validFiles.length === 0) return;
 
-    setSelectedFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => setPreviewUrl(reader.result);
-    reader.readAsDataURL(file);
-
-    if (!isCreateMode && onAttachReceipt) {
+    if (isCreateMode) {
+      // Mode création — stocker en pending, ils seront uploadés au submit
+      const newPending = await Promise.all(
+        validFiles.map(
+          (file) =>
+            new Promise((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () =>
+                resolve({ file, previewUrl: reader.result });
+              reader.readAsDataURL(file);
+            }),
+        ),
+      );
+      setPendingFiles((prev) => [...prev, ...newPending]);
+    } else if (onAttachReceipt) {
+      // Mode visualisation/édition — upload immédiat via parent
       setIsUploading(true);
       try {
-        await onAttachReceipt(transaction, file);
+        await onAttachReceipt(transaction, validFiles);
         onRefresh?.();
       } catch (error) {
         console.error("Erreur upload:", error);
@@ -665,9 +727,44 @@ export function TransactionDetailDrawer({
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFileUpload(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFilesUpload(e.dataTransfer.files);
     }
+  };
+
+  // Mutation pour supprimer un justificatif individuel
+  const [removeReceiptMutation] = useMutation(REMOVE_TRANSACTION_RECEIPT_FILE, {
+    onCompleted: (data) => {
+      if (data?.removeTransactionReceiptFile?.success) {
+        toast.success("Justificatif supprimé");
+        onRefresh?.();
+      } else {
+        toast.error(
+          data?.removeTransactionReceiptFile?.message || "Erreur suppression",
+        );
+      }
+    },
+    onError: (err) => {
+      console.error("Erreur suppression justificatif:", err);
+      toast.error("Erreur lors de la suppression");
+    },
+  });
+
+  const handleRemoveReceiptFile = async (file) => {
+    // Mode création : retirer du pending
+    if (isCreateMode || !file?.id) {
+      setPendingFiles((prev) => prev.filter((p) => p.file !== file?.file));
+      return;
+    }
+    const txId = transaction?.originalTransaction?.id || transaction?.id;
+    if (!txId) return;
+    await removeReceiptMutation({
+      variables: {
+        transactionId: txId,
+        workspaceId,
+        fileId: file.id,
+      },
+    });
   };
 
   // Délier la transaction de la facture
@@ -710,12 +807,72 @@ export function TransactionDetailDrawer({
     }
   };
 
-  // Utilitaires
-  const hasReceipt =
-    transaction?.hasReceipt ||
-    (transaction?.files && transaction.files.length > 0) ||
-    !!transaction?.receiptFile?.url ||
-    !!previewUrl;
+  // Liste complète des justificatifs (existants + pending) — passe par le pane preview gauche
+  const allReceipts = (() => {
+    const list = [];
+    // Existants venant du backend
+    const existing = transaction?.receiptFiles || [];
+    for (const r of existing) {
+      list.push({
+        id: r.id,
+        url: r.url,
+        mimetype: r.mimetype || "",
+        filename: r.filename || "Justificatif",
+        size: r.size,
+        isPending: false,
+      });
+    }
+    // Legacy `files[]` fallback (anciens formats)
+    if (
+      list.length === 0 &&
+      Array.isArray(transaction?.files) &&
+      transaction.files.length > 0
+    ) {
+      for (const f of transaction.files) {
+        list.push({
+          id: f.id,
+          url: f.url,
+          mimetype: f.mimetype || "",
+          filename: f.originalFilename || f.filename || "Justificatif",
+          size: f.size,
+          isPending: false,
+        });
+      }
+    }
+    // Pending (mode création)
+    for (const p of pendingFiles) {
+      list.push({
+        url: p.previewUrl,
+        mimetype: p.file?.type || "",
+        filename: p.file?.name || "Justificatif",
+        size: p.file?.size,
+        isPending: true,
+        file: p.file,
+      });
+    }
+    return list;
+  })();
+
+  const hasReceipt = transaction?.hasReceipt || allReceipts.length > 0;
+  const activeReceipt =
+    allReceipts.length > 0
+      ? allReceipts[Math.min(activeReceiptIndex, allReceipts.length - 1)]
+      : null;
+  // Détection PDF/image : mimetype d'abord, fallback sur l'extension de l'URL/nom
+  const inferReceiptKind = (r) => {
+    if (!r) return { isPdf: false, isImage: false };
+    const mt = (r.mimetype || "").toLowerCase();
+    if (mt === "application/pdf") return { isPdf: true, isImage: false };
+    if (mt.startsWith("image/")) return { isPdf: false, isImage: true };
+    const source = `${r.filename || ""} ${r.url || ""}`.toLowerCase();
+    const cleanSource = source.split("?")[0];
+    if (/\.pdf(\b|$)/.test(cleanSource)) return { isPdf: true, isImage: false };
+    if (/\.(jpe?g|png|webp|gif|bmp|avif|svg)(\b|$)/.test(cleanSource))
+      return { isPdf: false, isImage: true };
+    return { isPdf: false, isImage: false };
+  };
+  const { isPdf: activeReceiptIsPdf, isImage: activeReceiptIsImage } =
+    inferReceiptKind(activeReceipt);
 
   const formatDate = (dateInput, includeTime = false) => {
     if (!dateInput) return "Non spécifiée";
@@ -771,7 +928,7 @@ export function TransactionDetailDrawer({
   const PaymentIcon =
     paymentMethodIcons[
       isEditingForm ? formData.paymentMethod : transaction?.paymentMethod
-    ] || CreditCard;
+    ] || CardVuesax;
   const merchant = !isCreateMode
     ? findMerchant(
         transaction?.vendor || transaction?.description || transaction?.title,
@@ -780,217 +937,375 @@ export function TransactionDetailDrawer({
 
   return (
     <>
-      <Drawer open={open} onOpenChange={onOpenChange} direction="right">
-        <DrawerContent
-          className="w-full h-full md:w-[500px] md:max-w-[500px] md:min-w-[500px] md:h-auto"
-          style={{ width: "100vw", height: "100vh" }}
-        >
-          {/* Portal container for calendar popover (must render inside drawer to avoid vaul dismiss layer) */}
-          <div ref={setCalendarContainer} />
+      {/* Semi-transparent overlay (dim léger sur toute la page) */}
+      <motion.div
+        className="fixed inset-0 z-40 bg-black/30"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0, transition: { duration: 0.1, ease: "easeOut" } }}
+        transition={{ duration: 0.15, ease: "easeOut" }}
+        onClick={() => onOpenChange(false)}
+      />
 
-          {/* Header */}
-          <DrawerHeader className="flex flex-row items-center justify-between px-6 py-4 border-b space-y-0">
-            <div className="flex items-center gap-2">
-              <DrawerTitle className="text-base font-medium">
-                {getDrawerTitle()}
-              </DrawerTitle>
-              {!isCreateMode && isBankTransaction && (
-                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
-                  Bancaire
-                </span>
-              )}
-              {isCreateMode && (
-                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
-                  <Plus className="w-3 h-3" />
-                  Nouvelle
-                </span>
+      {/* Backdrop sombre + preview à gauche — uniquement si un justificatif est attaché ou en upload */}
+      {(activeReceipt?.url || isUploading) && (
+        <>
+          <motion.div
+            className="fixed inset-y-0 left-0 md:right-[500px] right-0 z-40 bg-black/60"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{
+              opacity: 0,
+              transition: { duration: 0.1, ease: "easeOut" },
+            }}
+            transition={{ duration: 0.2, delay: 0.2, ease: "easeOut" }}
+          />
+
+          <motion.div
+            className="fixed inset-y-0 left-0 md:right-[500px] right-0 z-50 pointer-events-none"
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{
+              x: "-100%",
+              transition: { duration: 0.3, ease: [0.32, 0.72, 0, 1] },
+            }}
+            transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+          >
+            <div className="absolute inset-0 flex items-start justify-center overflow-y-auto py-4 md:py-12 px-2 md:px-24">
+              {isUploading ? (
+                <div className="flex items-center justify-center w-full min-h-[calc(100%-4rem)] pointer-events-auto">
+                  <Loader2 className="h-10 w-10 animate-spin text-white/80" />
+                </div>
+              ) : (
+                <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto overflow-hidden shadow-2xl">
+                  {activeReceiptIsPdf ? (
+                    <iframe
+                      src={`${activeReceipt.url}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                      title={activeReceipt.filename || "Justificatif"}
+                      className="w-full h-full min-h-[297mm] border-0 block"
+                    />
+                  ) : activeReceiptIsImage ? (
+                    <PreviewImage
+                      src={activeReceipt.url}
+                      alt={activeReceipt.filename || "Justificatif"}
+                      className="w-full h-auto object-contain"
+                      containerClassName="w-full"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-muted-foreground p-12 min-h-[calc(100vh-6rem)]">
+                      <FileText className="h-16 w-16 mb-4 opacity-50" />
+                      <p className="text-sm mb-4">Aperçu non disponible</p>
+                      <Button
+                        variant="outline"
+                        onClick={() => window.open(activeReceipt.url, "_blank")}
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Ouvrir le fichier
+                      </Button>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
-            <DrawerClose asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <X className="h-4 w-4" />
+
+            {/* Navigation prev/next + indicateur N/total — seulement si > 1 justificatif */}
+            {allReceipts.length > 1 && !isUploading && (
+              <div className="fixed bottom-6 left-1/2 -translate-x-1/2 md:left-[calc((100%-500px)/2)] md:translate-x-[-50%] z-[60] flex items-center gap-2 px-3 py-2 rounded-full bg-black/70 backdrop-blur-sm text-white text-sm font-medium pointer-events-auto shadow-lg">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-white hover:bg-white/15 hover:text-white rounded-full"
+                  disabled={activeReceiptIndex === 0}
+                  onClick={() =>
+                    setActiveReceiptIndex((i) => Math.max(0, i - 1))
+                  }
+                  title="Précédent"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="tabular-nums select-none">
+                  {activeReceiptIndex + 1} / {allReceipts.length}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-white hover:bg-white/15 hover:text-white rounded-full"
+                  disabled={activeReceiptIndex >= allReceipts.length - 1}
+                  onClick={() =>
+                    setActiveReceiptIndex((i) =>
+                      Math.min(allReceipts.length - 1, i + 1),
+                    )
+                  }
+                  title="Suivant"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+
+            {/* Bouton flottant pour ouvrir les détails sur mobile */}
+            <Button
+              onClick={() => setShowMobileDetails(true)}
+              className="md:hidden fixed bottom-6 right-6 z-[60] rounded-full h-14 w-14 shadow-lg pointer-events-auto"
+              size="icon"
+            >
+              <Edit className="h-5 w-5" />
+            </Button>
+          </motion.div>
+        </>
+      )}
+
+      {/* Main Sidebar - slide depuis la droite */}
+      <motion.div
+        className="fixed inset-y-0 right-0 z-50 md:w-[500px] w-full bg-background border-l shadow-lg flex flex-col"
+        initial={{ x: "100%" }}
+        animate={{ x: isMobile && !showMobileDetails ? "100%" : 0 }}
+        exit={{ x: "100%" }}
+        transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+      >
+        {/* Portal container for calendar popover */}
+        <div ref={setCalendarContainer} />
+
+        {/* Header */}
+        <div className="flex items-center justify-between gap-2 px-6 py-4 border-b shrink-0">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <h2 className="text-base font-medium truncate">
+              {getDrawerTitle()}
+            </h2>
+            {!isCreateMode && isBankTransaction && (
+              <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400 shrink-0">
+                Bancaire
+              </span>
+            )}
+            {isCreateMode && (
+              <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400 shrink-0">
+                <Plus className="w-3 h-3" />
+                Nouvelle
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {activeReceipt?.url && (
+              <Button
+                variant="primary"
+                className="gap-1.5 font-medium"
+                onClick={() => {
+                  const link = document.createElement("a");
+                  link.href = activeReceipt.url;
+                  link.download = activeReceipt.filename || "justificatif";
+                  link.target = "_blank";
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
+              >
+                <DownloadVuesax className="h-4 w-4" />
+                Télécharger
               </Button>
-            </DrawerClose>
-          </DrawerHeader>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (window.innerWidth < 768 && showMobileDetails) {
+                  setShowMobileDetails(false);
+                } else {
+                  setShowMobileDetails(false);
+                  onOpenChange(false);
+                }
+              }}
+              className="h-8 w-8 bg-[rgba(0,0,0,0.04)] hover:bg-[rgba(0,0,0,0.08)] dark:bg-[rgba(255,255,255,0.06)] dark:hover:bg-[rgba(255,255,255,0.1)]"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
 
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="p-6 space-y-6">
-              {/* Mode création ou édition manuelle: Type de transaction */}
-              {isEditingForm && (
-                <>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-normal text-muted-foreground">
-                      Type
-                    </span>
-                    <Tabs
-                      value={formData.type}
-                      onValueChange={handleChange("type")}
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-6 space-y-6">
+            {/* Mode création ou édition manuelle: Type de transaction
+                  (tabs style de la table transactions, sans label "Type") */}
+            {isEditingForm && (
+              <div className="border-b border-[#eeeff1] dark:border-[#232323] pt-2 pb-[9px] transaction-tabs">
+                <style>{`
+                    .transaction-tabs [data-slot="tabs-trigger"][data-state="active"] {
+                      text-shadow: 0.015em 0 currentColor, -0.015em 0 currentColor;
+                    }
+                  `}</style>
+                <Tabs
+                  value={formData.type}
+                  onValueChange={handleChange("type")}
+                >
+                  <TabsList className="h-auto rounded-none bg-transparent p-0 w-full justify-start gap-1.5">
+                    <TabsTrigger
+                      value="EXPENSE"
+                      className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
                     >
-                      <TabsList>
-                        <TabsTrigger value="EXPENSE">Dépense</TabsTrigger>
-                        <TabsTrigger value="INCOME">Revenu</TabsTrigger>
-                      </TabsList>
-                    </Tabs>
-                  </div>
-                  <Separator />
-                </>
+                      Dépense
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="INCOME"
+                      className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+                    >
+                      Revenu
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+            )}
+
+            {/* Montant principal */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div
+                  className="h-10 w-10 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: `${categoryConfig.color}15` }}
+                >
+                  <CategoryIcon
+                    className="h-5 w-5"
+                    style={{ color: categoryConfig.color }}
+                  />
+                </div>
+                <div className="flex-1">
+                  {/* Catégorie */}
+                  {isEditingForm ? (
+                    <div className="mb-1">
+                      <CategorySearchSelect
+                        value={formData.category}
+                        onValueChange={handleChange("category")}
+                        type={formData.type}
+                      />
+                    </div>
+                  ) : (
+                    <div className="mb-1">
+                      <CategorySearchSelect
+                        value={viewCategoryForm}
+                        onValueChange={handleViewCategoryChange}
+                        type={transaction?.amount > 0 ? "INCOME" : "EXPENSE"}
+                      />
+                    </div>
+                  )}
+
+                  {/* Montant — input bg gris sans border/shadow, € à droite */}
+                  {isEditingForm ? (
+                    <div className="inline-flex items-baseline gap-2 px-3 py-1.5 rounded-lg bg-muted/60 w-fit">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={formData.amount}
+                        onChange={(e) => handleChange("amount")(e.target.value)}
+                        className="text-2xl font-medium h-auto py-0 px-0 bg-transparent border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 hover:border-0 field-sizing-content min-w-[2ch] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        placeholder="0.00"
+                      />
+                      <span className="text-2xl font-medium text-muted-foreground">
+                        €
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-2xl font-medium">
+                      {formatAmount(transaction?.amount)}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Compte PCG */}
+            <div className="space-y-2">
+              <p className="text-sm font-normal text-muted-foreground">
+                Compte PCG
+              </p>
+              {isEditingForm ? (
+                <PCGInlineSelect
+                  value={formData.pcgAccountNumero}
+                  onChange={handleChange("pcgAccountNumero")}
+                />
+              ) : (
+                <div className="px-3 py-2 rounded-lg bg-muted/40 hover:bg-muted/60 transition-colors duration-[120ms] text-sm">
+                  {transaction?.pcgAccount?.numero ? (
+                    <span>
+                      <code className="font-mono font-semibold bg-background border border-border/60 px-1.5 py-0.5 rounded text-xs">
+                        {transaction.pcgAccount.numero}
+                      </code>{" "}
+                      <span className="text-muted-foreground">
+                        {transaction.pcgAccount.intitule}
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">Non affecte</span>
+                  )}
+                </div>
               )}
+            </div>
 
-              {/* Montant principal */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="h-10 w-10 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: `${categoryConfig.color}15` }}
-                  >
-                    <CategoryIcon
-                      className="h-5 w-5"
-                      style={{ color: categoryConfig.color }}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    {/* Catégorie */}
-                    {isEditingForm ? (
-                      <div className="mb-1">
-                        <CategorySearchSelect
-                          value={formData.category}
-                          onValueChange={handleChange("category")}
-                          type={formData.type}
-                        />
-                      </div>
-                    ) : (
-                      <div className="mb-1">
-                        <CategorySearchSelect
-                          value={viewCategoryForm}
-                          onValueChange={handleViewCategoryChange}
-                          type={transaction?.amount > 0 ? "INCOME" : "EXPENSE"}
-                        />
-                      </div>
-                    )}
-
-                    {/* Montant */}
-                    {isEditingForm ? (
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={formData.amount}
-                          onChange={(e) =>
-                            handleChange("amount")(e.target.value)
-                          }
-                          className="text-2xl font-medium h-auto py-1 w-32"
-                          placeholder="0.00"
-                        />
-                        <span className="text-2xl font-medium text-muted-foreground">
-                          €
-                        </span>
-                      </div>
-                    ) : (
-                      <p className="text-2xl font-medium">
-                        {formatAmount(transaction?.amount)}
+            {/* Fournisseur */}
+            <div className="space-y-3">
+              <p className="text-sm font-normal text-muted-foreground">
+                {formData.type === "INCOME"
+                  ? "Source du revenu"
+                  : "Fournisseur"}
+              </p>
+              {isEditingForm ? (
+                <Input
+                  value={formData.vendor}
+                  onChange={(e) => handleChange("vendor")(e.target.value)}
+                  placeholder={
+                    formData.type === "INCOME"
+                      ? "Client / Source"
+                      : "Nom du fournisseur"
+                  }
+                  className="w-full"
+                />
+              ) : (
+                <div className="flex items-center gap-3">
+                  {merchant?.logo ? (
+                    <div className="h-10 w-10 rounded-full overflow-hidden border bg-white flex-shrink-0">
+                      <img
+                        src={merchant.logo}
+                        alt={merchant.name}
+                        className="h-full w-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                          e.target.parentElement.innerHTML = `<div class="h-full w-full flex items-center justify-center bg-muted"><span class="text-xs font-medium text-muted-foreground">${merchant.name.charAt(0)}</span></div>`;
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                      <Building2 className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {transaction?.vendor ||
+                        merchant?.name ||
+                        transaction?.title ||
+                        "Fournisseur non spécifié"}
+                    </p>
+                    {transaction?.description && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        {transaction.description}
                       </p>
                     )}
                   </div>
                 </div>
-              </div>
+              )}
+            </div>
 
-              {/* Compte PCG */}
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                  Compte PCG
-                </p>
-                {isEditingForm ? (
-                  <PCGInlineSelect
-                    value={formData.pcgAccountNumero}
-                    onChange={handleChange("pcgAccountNumero")}
-                  />
-                ) : (
-                  <div className="text-sm">
-                    {transaction?.pcgAccount?.numero ? (
-                      <span>
-                        <code className="font-mono font-semibold bg-muted px-1.5 py-0.5 rounded text-xs">
-                          {transaction.pcgAccount.numero}
-                        </code>{" "}
-                        <span className="text-muted-foreground">
-                          {transaction.pcgAccount.intitule}
-                        </span>
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">Non affecte</span>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <Separator />
-
-              {/* Fournisseur */}
-              <div className="space-y-3">
-                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                  {formData.type === "INCOME"
-                    ? "Source du revenu"
-                    : "Fournisseur"}
-                </p>
-                {isEditingForm ? (
-                  <Input
-                    value={formData.vendor}
-                    onChange={(e) => handleChange("vendor")(e.target.value)}
-                    placeholder={
-                      formData.type === "INCOME"
-                        ? "Client / Source"
-                        : "Nom du fournisseur"
-                    }
-                    className="w-full"
-                  />
-                ) : (
-                  <div className="flex items-center gap-3">
-                    {merchant?.logo ? (
-                      <div className="h-10 w-10 rounded-full overflow-hidden border bg-white flex-shrink-0">
-                        <img
-                          src={merchant.logo}
-                          alt={merchant.name}
-                          className="h-full w-full object-cover"
-                          onError={(e) => {
-                            e.target.style.display = "none";
-                            e.target.parentElement.innerHTML = `<div class="h-full w-full flex items-center justify-center bg-muted"><span class="text-xs font-medium text-muted-foreground">${merchant.name.charAt(0)}</span></div>`;
-                          }}
-                        />
-                      </div>
-                    ) : (
-                      <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                        <Building2 className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {transaction?.vendor ||
-                          merchant?.name ||
-                          transaction?.title ||
-                          "Fournisseur non spécifié"}
-                      </p>
-                      {transaction?.description && (
-                        <p className="text-xs text-muted-foreground truncate">
-                          {transaction.description}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <Separator />
-
-              {/* Informations */}
-              <div className="space-y-4">
-                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                  Informations
-                </p>
-
+            {/* Informations — style Attio (cards compactes, icône carrée) */}
+            <div className="space-y-3">
+              <p className="text-sm font-normal text-muted-foreground">
+                Informations
+              </p>
+              <div className="divide-y divide-border/50">
                 {/* Date */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                <div className="flex items-center justify-between gap-3 py-2.5">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="size-8 rounded-md bg-muted flex items-center justify-center shrink-0">
+                      <CalendarIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                    </div>
                     <span className="text-sm font-normal text-muted-foreground">
                       Date
                     </span>
@@ -1005,10 +1320,10 @@ export function TransactionDetailDrawer({
                     >
                       <div className="flex">
                         <Group className="w-full pointer-events-none">
-                          <DateInput className="pe-9 text-sm" />
+                          <DateInput className="h-8 rounded-[9px] pe-9 ps-2.5 py-0 text-sm border-none shadow-none bg-transparent hover:bg-[rgba(0,0,0,0.04)] dark:bg-[#171717] dark:hover:bg-[#222] [box-shadow:rgba(255,255,255,0)_0_0_0_1px_inset,rgba(28,40,64,0.18)_0_0_2px_0,rgba(24,41,75,0.04)_0_1px_3px_0] dark:[box-shadow:rgba(255,255,255,0.08)_0_0_0_1px_inset,rgba(255,255,255,0.1)_0_0_2px_0,rgba(0,0,0,0.2)_0_1px_3px_0] data-focus-within:ring-0 data-focus-within:border-none" />
                         </Group>
-                        <RACButton className="z-10 -ms-9 -me-px flex w-9 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground pointer-events-auto">
-                          <CalendarIcon size={16} />
+                        <RACButton className="z-10 -ms-8 -me-px flex w-8 h-8 items-center justify-center rounded-e-[9px] text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground pointer-events-auto">
+                          <CalendarIcon size={14} />
                         </RACButton>
                       </div>
                       <RACPopover
@@ -1022,16 +1337,18 @@ export function TransactionDetailDrawer({
                       </RACPopover>
                     </DatePicker>
                   ) : (
-                    <span className="text-sm font-normal">
+                    <span className="text-sm font-medium text-foreground">
                       {formatDate(transaction?.date)}
                     </span>
                   )}
                 </div>
 
                 {/* Moyen de paiement */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <PaymentIcon className="h-4 w-4 text-muted-foreground" />
+                <div className="flex items-center justify-between gap-3 py-2.5">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="size-8 rounded-md bg-muted flex items-center justify-center shrink-0">
+                      <PaymentIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                    </div>
                     <span className="text-sm font-normal text-muted-foreground">
                       Paiement
                     </span>
@@ -1055,7 +1372,7 @@ export function TransactionDetailDrawer({
                       </SelectContent>
                     </Select>
                   ) : (
-                    <span className="text-sm font-normal">
+                    <span className="text-sm font-medium text-foreground">
                       {paymentMethodLabels[transaction?.paymentMethod] ||
                         "Non spécifié"}
                     </span>
@@ -1064,25 +1381,27 @@ export function TransactionDetailDrawer({
 
                 {/* Statut (seulement en mode visualisation pour les transactions bancaires) */}
                 {!isCreateMode && isBankTransaction && (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Receipt className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex items-center justify-between gap-3 py-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="size-8 rounded-md bg-muted flex items-center justify-center shrink-0">
+                        <Receipt className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                      </div>
                       <span className="text-sm font-normal text-muted-foreground">
                         Statut
                       </span>
                     </div>
                     {transaction?.status === "PAID" ? (
-                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
+                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
                         <CheckCircle2 className="w-3 h-3" />
                         {statusLabels[transaction.status] || "Payée"}
                       </span>
                     ) : transaction?.status === "PENDING" ? (
-                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20">
+                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
                         <AlertCircle className="w-3 h-3" />
                         {statusLabels[transaction.status] || "En attente"}
                       </span>
                     ) : transaction?.status === "CANCELLED" ? (
-                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400">
+                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
                         <AlertCircle className="w-3 h-3" />
                         {statusLabels[transaction.status] || "Annulée"}
                       </span>
@@ -1097,15 +1416,17 @@ export function TransactionDetailDrawer({
 
                 {/* Source (Banque) */}
                 {!isCreateMode && isBankTransaction && (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Landmark className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex items-center justify-between gap-3 py-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="size-8 rounded-md bg-muted flex items-center justify-center shrink-0">
+                        <BankVuesax className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                      </div>
                       <span className="text-sm font-normal text-muted-foreground">
                         Source
                       </span>
                     </div>
-                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
-                      <Landmark className="w-3 h-3" />
+                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
+                      <BankVuesax className="w-3 h-3" />
                       Banque
                     </span>
                   </div>
@@ -1113,14 +1434,16 @@ export function TransactionDetailDrawer({
 
                 {/* Utilisateur créateur */}
                 {!isCreateMode && transaction?.createdBy && (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex items-center justify-between gap-3 py-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="size-8 rounded-md bg-muted flex items-center justify-center shrink-0">
+                        <User className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                      </div>
                       <span className="text-sm font-normal text-muted-foreground">
                         Créé par
                       </span>
                     </div>
-                    <span className="text-sm font-medium">
+                    <span className="text-sm font-medium text-foreground">
                       {transaction.createdBy.name ||
                         transaction.createdBy.email ||
                         "Utilisateur"}
@@ -1128,603 +1451,370 @@ export function TransactionDetailDrawer({
                   </div>
                 )}
               </div>
+            </div>
 
-              {/* Description (mode création/édition) */}
-              {isEditingForm && (
-                <>
-                  <Separator />
-                  <div className="space-y-3">
-                    <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                      Description
-                    </p>
-                    <Textarea
-                      value={formData.description}
-                      onChange={(e) =>
-                        handleChange("description")(e.target.value)
-                      }
-                      placeholder="Description de la transaction"
-                      rows={3}
-                    />
-                  </div>
-                </>
-              )}
-
-              {/* Section Justificatif */}
-              <Separator />
+            {/* Description (mode création/édition) */}
+            {isEditingForm && (
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                <p className="text-sm font-normal text-muted-foreground">
+                  Description
+                </p>
+                <Textarea
+                  value={formData.description}
+                  onChange={(e) => handleChange("description")(e.target.value)}
+                  placeholder="Description de la transaction"
+                  rows={3}
+                  className="rounded-xl"
+                />
+              </div>
+            )}
+
+            {/* Section Justificatif */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ReceiptVuesax className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-sm font-normal text-muted-foreground">
                     Justificatif
                   </p>
-                  {!isCreateMode &&
-                    (hasReceipt ? (
-                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
-                        <CheckCircle2 className="w-3 h-3" />
-                        Attaché
-                      </span>
+                </div>
+                {!isCreateMode &&
+                  (hasReceipt ? (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Attaché
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
+                      <AlertCircle className="w-3 h-3" />
+                      Manquant
+                    </span>
+                  ))}
+              </div>
+
+              {/* Zone d'upload — large card dashed, toujours visible pour ajouter plusieurs justificatifs */}
+              {(isCreateMode || !isReadOnly) && (
+                <div
+                  className={`relative flex flex-col items-center justify-center gap-3 px-6 py-8 rounded-lg cursor-pointer border border-dashed text-center transition-colors duration-[120ms] ${
+                    dragActive
+                      ? "border-[#5A50FF]/60 bg-[#5A50FF]/10"
+                      : "border-border bg-transparent hover:bg-muted/40"
+                  }`}
+                  onDragEnter={handleDrag}
+                  onDragLeave={handleDrag}
+                  onDragOver={handleDrag}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/jpeg,image/png,image/webp,application/pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        handleFilesUpload(e.target.files);
+                        e.target.value = "";
+                      }
+                    }}
+                    disabled={isUploading}
+                  />
+                  <div className="size-12 rounded-full bg-muted flex items-center justify-center shrink-0">
+                    {isUploading ? (
+                      <Loader2 className="h-6 w-6 text-[#5A50FF] animate-spin" />
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400">
-                        <AlertCircle className="w-3 h-3" />
-                        Manquant
-                      </span>
-                    ))}
+                      <Upload className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground">
+                      {isUploading
+                        ? "Upload en cours..."
+                        : allReceipts.length > 0
+                          ? "Ajouter d'autres justificatifs"
+                          : "Glissez vos justificatifs ici"}
+                    </p>
+                    {!isUploading && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {allReceipts.length > 0
+                          ? "Glissez ou cliquez pour ajouter · JPG, PNG, PDF · max 10 Mo"
+                          : "ou cliquez pour en sélectionner plusieurs · JPG, PNG, PDF · max 10 Mo par fichier"}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Liste des justificatifs attachés — clic pour activer dans le preview à gauche */}
+              {allReceipts.length > 0 && (
+                <div className="space-y-1.5">
+                  {allReceipts.map((rcpt, idx) => {
+                    const isImg = (rcpt.mimetype || "").startsWith("image/");
+                    const formatFileSize = (bytes) => {
+                      if (!bytes) return "";
+                      if (bytes < 1024) return `${bytes} B`;
+                      if (bytes < 1024 * 1024)
+                        return `${Math.round(bytes / 1024)} KB`;
+                      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+                    };
+                    const isActive = idx === activeReceiptIndex;
+                    return (
+                      <div
+                        key={rcpt.id || `pending-${idx}`}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors duration-[120ms] ${
+                          isActive
+                            ? "bg-muted/70 ring-1 ring-border"
+                            : "bg-muted/40 hover:bg-muted/60"
+                        }`}
+                        onClick={() => setActiveReceiptIndex(idx)}
+                      >
+                        <div className="size-8 rounded-md bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                          {isImg ? (
+                            <PreviewImage
+                              src={rcpt.url}
+                              alt=""
+                              className="h-full w-full object-cover rounded-md"
+                              containerClassName="h-full w-full"
+                            />
+                          ) : (
+                            <FileText className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">
+                            {rcpt.filename}
+                          </p>
+                          {rcpt.size && (
+                            <p className="text-xs text-muted-foreground">
+                              {formatFileSize(rcpt.size)}
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveReceiptFile(rcpt);
+                            setActiveReceiptIndex(0);
+                          }}
+                          title="Retirer"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Notes (seulement en visualisation) */}
+            {!isCreateMode &&
+              transaction?.notes &&
+              transaction.notes !== "[EXPENSE]" && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <NoteVuesax className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-sm font-normal text-muted-foreground">
+                      Notes
+                    </p>
+                  </div>
+                  <p className="text-sm font-normal text-foreground">
+                    {transaction.notes}
+                  </p>
+                </div>
+              )}
+
+            {/* Section Facture liée (seulement si une facture est liée) */}
+            {!isCreateMode && transaction?.linkedInvoice && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-sm font-normal text-muted-foreground">
+                      Facture liée
+                    </p>
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
+                    <Link2 className="w-3 h-3" />
+                    Rapprochée
+                  </span>
                 </div>
 
-                {/* Zone d'upload */}
-                {(isCreateMode || !hasReceipt) && (
-                  <div
-                    className={`relative border-1 border-dashed rounded-lg p-6 transition-colors cursor-pointer ${
-                      dragActive
-                        ? "border-[#5A50FF] bg-[#5A50FF]/5"
-                        : "border-muted-foreground/25 hover:border-[#5A50FF]/50 hover:bg-muted/30"
-                    }`}
-                    onDragEnter={handleDrag}
-                    onDragLeave={handleDrag}
-                    onDragOver={handleDrag}
-                    onDrop={handleDrop}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp,application/pdf"
-                      className="hidden"
-                      onChange={(e) =>
-                        e.target.files?.[0] &&
-                        handleFileUpload(e.target.files[0])
-                      }
-                      disabled={isUploading}
-                    />
-                    <div className="flex flex-col items-center gap-2 text-center">
-                      {isUploading ? (
-                        <>
-                          <Loader2 className="h-8 w-8 text-[#5A50FF] animate-spin" />
-                          <p className="text-sm font-normal text-muted-foreground">
-                            Upload en cours...
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-                            <Upload className="h-6 w-6 text-muted-foreground" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">
-                              Glissez votre reçu ici
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              ou cliquez pour sélectionner (JPG, PNG, PDF - max
-                              10 Mo)
-                            </p>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Preview du fichier uploadé (mode création) */}
-                {isCreateMode && previewUrl && (
-                  <div className="space-y-2">
-                    <div
-                      className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors group cursor-pointer"
-                      onClick={() =>
-                        openReceiptViewer(previewUrl, selectedFile?.type)
-                      }
-                    >
-                      <div className="w-10 h-10 rounded overflow-hidden bg-gray-100">
-                        {selectedFile?.type === "application/pdf" ? (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <FileText className="h-5 w-5 text-gray-600" />
-                          </div>
-                        ) : (
-                          <PreviewImage
-                            src={previewUrl}
-                            alt="Preview"
-                            className="w-full h-full object-cover"
-                            containerClassName="w-full h-full"
-                          />
+                <div className="p-3 border rounded-lg bg-muted/30">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-medium">
+                          Facture {transaction.linkedInvoice.number || "N/A"}
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
+                          {transaction.linkedInvoice.status === "COMPLETED" && (
+                            <CheckCircle2 className="w-3 h-3" />
+                          )}
+                          {transaction.linkedInvoice.status === "PENDING" && (
+                            <AlertCircle className="w-3 h-3" />
+                          )}
+                          {transaction.linkedInvoice.status === "COMPLETED"
+                            ? "Payée"
+                            : transaction.linkedInvoice.status === "PENDING"
+                              ? "En attente"
+                              : transaction.linkedInvoice.status}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {transaction.linkedInvoice.clientName}
+                      </p>
+                      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                        <span>
+                          {formatAmount(transaction.linkedInvoice.totalTTC)}
+                        </span>
+                        {transaction.linkedInvoice.dueDate && (
+                          <>
+                            <span>•</span>
+                            <span>
+                              Échéance:{" "}
+                              {formatDate(transaction.linkedInvoice.dueDate)}
+                            </span>
+                          </>
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-normal truncate">
-                          {selectedFile?.name || "Justificatif"}
-                        </p>
-                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
                       <Button
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPreviewUrl(null);
-                          setSelectedFile(null);
-                        }}
+                        onClick={handleViewLinkedInvoice}
+                        title="Voir la facture"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={handleUnlinkInvoice}
+                        disabled={isReadOnly || isUnlinking}
+                        title={readOnlyTooltip || "Détacher la facture"}
+                      >
+                        {isUnlinking ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Unlink className="h-4 w-4" />
+                        )}
                       </Button>
                     </div>
                   </div>
+                </div>
+
+                {/* Date de rapprochement */}
+                {transaction.reconciliationDate && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    Rapprochée le {formatDate(transaction.reconciliationDate)}
+                  </p>
                 )}
+              </div>
+            )}
 
-                {/* Afficher le receiptFile existant */}
-                {!isCreateMode && transaction?.receiptFile?.url && (
-                  <div className="space-y-2">
-                    {(() => {
-                      const file = transaction.receiptFile;
-                      const isImage = file.mimetype?.startsWith("image/");
-                      const isPdf = file.mimetype === "application/pdf";
-
-                      const formatFileSize = (bytes) => {
-                        if (!bytes) return "";
-                        if (bytes < 1024) return `${bytes} B`;
-                        if (bytes < 1024 * 1024)
-                          return `${Math.round(bytes / 1024)} KB`;
-                        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-                      };
-
-                      return (
-                        <>
-                          {/* Preview large du justificatif */}
-                          <div
-                            className="relative flex h-48 w-full items-center justify-center overflow-hidden rounded-lg border bg-muted/30 cursor-pointer hover:border-primary transition-colors group"
-                            onClick={() =>
-                              openReceiptViewer(file.url, file.mimetype)
-                            }
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault();
-                                openReceiptViewer(file.url, file.mimetype);
-                              }
-                            }}
-                          >
-                            {isPdf ? (
-                              <iframe
-                                src={file.url}
-                                className="h-full w-full pointer-events-none"
-                                title="Preview du justificatif"
-                              />
-                            ) : isImage ? (
-                              <PreviewImage
-                                src={file.url}
-                                alt={file.filename || "Justificatif"}
-                                className="h-full w-full object-contain"
-                                containerClassName="h-full w-full"
-                              />
-                            ) : (
-                              <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                                <FileText className="h-10 w-10" />
-                                <span className="text-sm">
-                                  {file.filename || "Justificatif"}
-                                </span>
-                              </div>
-                            )}
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                              <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-background rounded-full p-2 shadow-lg border">
-                                <Maximize2 className="h-5 w-5 text-foreground" />
-                              </div>
-                            </div>
-                          </div>
-                          {/* Info fichier + téléchargement */}
-                          <div className="flex items-center gap-3 px-1">
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-normal truncate">
-                                {file.filename || "Justificatif"}
-                              </p>
-                              <span className="text-xs text-muted-foreground">
-                                {formatFileSize(file.size)}
-                              </span>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              title="Télécharger"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const link = document.createElement("a");
-                                link.href = file.url;
-                                link.download = file.filename || "justificatif";
-                                link.target = "_blank";
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
-                              }}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </>
-                      );
-                    })()}
+            {/* Indicateur de statut de rapprochement (si pas de facture liée mais statut pertinent) */}
+            {!isCreateMode &&
+              !transaction?.linkedInvoice &&
+              transaction?.reconciliationStatus &&
+              transaction.reconciliationStatus !== "UNMATCHED" && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-sm font-normal text-muted-foreground">
+                      Rapprochement
+                    </p>
                   </div>
-                )}
+                  <div className="flex items-center gap-2">
+                    {transaction.reconciliationStatus === "SUGGESTED" && (
+                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
+                        <AlertCircle className="w-3 h-3" />
+                        Suggestion en attente
+                      </span>
+                    )}
+                    {transaction.reconciliationStatus === "IGNORED" && (
+                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
+                        Ignorée
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
 
-                {/* Fichiers existants (ancien système) */}
-                {!isCreateMode &&
-                  transaction?.files &&
-                  transaction.files.length > 0 &&
-                  !transaction?.receiptFile?.url && (
-                    <div className="space-y-2">
-                      {transaction.files.map((file, index) => {
-                        const isImage = file.mimetype?.startsWith("image/");
-                        const isPdf = file.mimetype === "application/pdf";
-                        const formatFileSize = (bytes) => {
-                          if (!bytes) return "";
-                          if (bytes < 1024) return `${bytes} B`;
-                          if (bytes < 1024 * 1024)
-                            return `${Math.round(bytes / 1024)} KB`;
-                          return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-                        };
-
-                        return (
-                          <div key={file.id || index} className="space-y-2">
-                            {/* Preview large */}
-                            {(isImage || isPdf) && (
-                              <div
-                                className="relative flex h-48 w-full items-center justify-center overflow-hidden rounded-lg border bg-muted/30 cursor-pointer hover:border-primary transition-colors group"
-                                onClick={() =>
-                                  openReceiptViewer(file.url, file.mimetype)
-                                }
-                                role="button"
-                                tabIndex={0}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter" || e.key === " ") {
-                                    e.preventDefault();
-                                    openReceiptViewer(file.url, file.mimetype);
-                                  }
-                                }}
-                              >
-                                {isPdf ? (
-                                  <iframe
-                                    src={file.url}
-                                    className="h-full w-full pointer-events-none"
-                                    title="Preview du justificatif"
-                                  />
-                                ) : (
-                                  <PreviewImage
-                                    src={file.url}
-                                    alt={
-                                      file.originalFilename || "Justificatif"
-                                    }
-                                    className="h-full w-full object-contain"
-                                    containerClassName="h-full w-full"
-                                  />
-                                )}
-                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                                  <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-background rounded-full p-2 shadow-lg border">
-                                    <Maximize2 className="h-5 w-5 text-foreground" />
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                            {/* Info fichier */}
-                            <div className="flex items-center gap-3 px-1">
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-normal truncate">
-                                  {file.originalFilename ||
-                                    file.filename ||
-                                    `Fichier ${index + 1}`}
-                                </p>
-                                <span className="text-xs text-muted-foreground">
-                                  {formatFileSize(file.size)}
-                                </span>
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                title="Télécharger"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const link = document.createElement("a");
-                                  link.href = file.url;
-                                  link.download =
-                                    file.originalFilename ||
-                                    file.filename ||
-                                    `fichier-${index + 1}`;
-                                  link.target = "_blank";
-                                  document.body.appendChild(link);
-                                  link.click();
-                                  document.body.removeChild(link);
-                                }}
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        );
-                      })}
+            {/* Dates de création/modification */}
+            {!isCreateMode && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-normal text-muted-foreground">
+                    Créée le
+                  </span>
+                  <span className="text-xs font-normal">
+                    {formatDate(transaction?.createdAt, true)}
+                  </span>
+                </div>
+                {transaction?.updatedAt &&
+                  transaction.updatedAt !== transaction.createdAt && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-normal text-muted-foreground">
+                        Modifiée le
+                      </span>
+                      <span className="text-xs font-normal">
+                        {formatDate(transaction.updatedAt, true)}
+                      </span>
                     </div>
                   )}
               </div>
-
-              {/* Notes (seulement en visualisation) */}
-              {!isCreateMode &&
-                transaction?.notes &&
-                transaction.notes !== "[EXPENSE]" && (
-                  <>
-                    <Separator />
-                    <div className="space-y-2">
-                      <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                        Notes
-                      </p>
-                      <p className="text-sm font-normal text-foreground">
-                        {transaction.notes}
-                      </p>
-                    </div>
-                  </>
-                )}
-
-              {/* Section Facture liée (seulement si une facture est liée) */}
-              {!isCreateMode && transaction?.linkedInvoice && (
-                <>
-                  <Separator />
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                        <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                          Facture liée
-                        </p>
-                      </div>
-                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
-                        <Link2 className="w-3 h-3" />
-                        Rapprochée
-                      </span>
-                    </div>
-
-                    <div className="p-3 border rounded-lg bg-muted/30">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm font-medium">
-                              Facture{" "}
-                              {transaction.linkedInvoice.number || "N/A"}
-                            </span>
-                            <span
-                              className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium ${
-                                transaction.linkedInvoice.status === "COMPLETED"
-                                  ? "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400"
-                                  : transaction.linkedInvoice.status ===
-                                      "PENDING"
-                                    ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
-                                    : "bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400"
-                              }`}
-                            >
-                              {transaction.linkedInvoice.status ===
-                                "COMPLETED" && (
-                                <CheckCircle2 className="w-3 h-3" />
-                              )}
-                              {transaction.linkedInvoice.status ===
-                                "PENDING" && (
-                                <AlertCircle className="w-3 h-3" />
-                              )}
-                              {transaction.linkedInvoice.status === "COMPLETED"
-                                ? "Payée"
-                                : transaction.linkedInvoice.status === "PENDING"
-                                  ? "En attente"
-                                  : transaction.linkedInvoice.status}
-                            </span>
-                          </div>
-                          <p className="text-sm text-muted-foreground truncate">
-                            {transaction.linkedInvoice.clientName}
-                          </p>
-                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                            <span>
-                              {formatAmount(transaction.linkedInvoice.totalTTC)}
-                            </span>
-                            {transaction.linkedInvoice.dueDate && (
-                              <>
-                                <span>•</span>
-                                <span>
-                                  Échéance:{" "}
-                                  {formatDate(
-                                    transaction.linkedInvoice.dueDate,
-                                  )}
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={handleViewLinkedInvoice}
-                            title="Voir la facture"
-                          >
-                            <ExternalLink className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                            onClick={handleUnlinkInvoice}
-                            disabled={isReadOnly || isUnlinking}
-                            title={readOnlyTooltip || "Détacher la facture"}
-                          >
-                            {isUnlinking ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Unlink className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Date de rapprochement */}
-                    {transaction.reconciliationDate && (
-                      <p className="text-xs text-muted-foreground text-center">
-                        Rapprochée le{" "}
-                        {formatDate(transaction.reconciliationDate)}
-                      </p>
-                    )}
-                  </div>
-                </>
-              )}
-
-              {/* Indicateur de statut de rapprochement (si pas de facture liée mais statut pertinent) */}
-              {!isCreateMode &&
-                !transaction?.linkedInvoice &&
-                transaction?.reconciliationStatus &&
-                transaction.reconciliationStatus !== "UNMATCHED" && (
-                  <>
-                    <Separator />
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                        <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                          Rapprochement
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {transaction.reconciliationStatus === "SUGGESTED" && (
-                          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400">
-                            <AlertCircle className="w-3 h-3" />
-                            Suggestion en attente
-                          </span>
-                        )}
-                        {transaction.reconciliationStatus === "IGNORED" && (
-                          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
-                            Ignorée
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </>
-                )}
-
-              {/* Dates de création/modification */}
-              {!isCreateMode && (
-                <>
-                  <Separator />
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-normal text-muted-foreground">
-                        Créée le
-                      </span>
-                      <span className="text-xs font-normal">
-                        {formatDate(transaction?.createdAt, true)}
-                      </span>
-                    </div>
-                    {transaction?.updatedAt &&
-                      transaction.updatedAt !== transaction.createdAt && (
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-normal text-muted-foreground">
-                            Modifiée le
-                          </span>
-                          <span className="text-xs font-normal">
-                            {formatDate(transaction.updatedAt, true)}
-                          </span>
-                        </div>
-                      )}
-                  </div>
-                </>
-              )}
-            </div>
+            )}
           </div>
+        </div>
 
-          {/* Footer */}
-          <DrawerFooter className="border-t px-6 py-4">
-            {isCreateMode ? (
+        {/* Footer */}
+        <div className="border-t px-6 py-4 shrink-0">
+          {(() => {
+            const handleAnnuler = () => {
+              if (isEditMode && isManualTransaction && !isCreateMode) {
+                setIsEditMode(false);
+              } else {
+                onOpenChange(false);
+              }
+            };
+            return (
               <div className="flex gap-2">
                 <Button
                   variant="outline"
                   className="flex-1 font-normal"
-                  onClick={() => onOpenChange(false)}
+                  onClick={handleAnnuler}
                 >
                   Annuler
                 </Button>
-                <Button
-                  className="flex-1 font-normal bg-primary hover:bg-primary/90"
-                  onClick={handleSubmit}
-                  disabled={isReadOnly}
-                  title={readOnlyTooltip}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Ajouter
-                </Button>
-              </div>
-            ) : isEditMode ? (
-              <div className="flex gap-2">
-                {isManualTransaction && (
+                {(isCreateMode || isEditMode) && (
                   <Button
-                    variant="outline"
-                    className="flex-1 font-normal"
-                    onClick={() => setIsEditMode(false)}
+                    variant="primary"
+                    className="flex-1 font-normal gap-1.5"
+                    onClick={handleSubmit}
+                    disabled={isReadOnly}
+                    title={readOnlyTooltip}
                   >
-                    Annuler
+                    {isCreateMode ? (
+                      <Plus className="h-4 w-4" />
+                    ) : (
+                      <SaveVuesax className="h-4 w-4" />
+                    )}
+                    {isCreateMode ? "Ajouter" : "Enregistrer"}
                   </Button>
                 )}
-                <Button
-                  className="flex-1 font-normal bg-primary hover:bg-primary/90"
-                  onClick={handleSubmit}
-                  disabled={isReadOnly}
-                  title={readOnlyTooltip}
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  Enregistrer
-                </Button>
               </div>
-            ) : (
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  className="flex-1 font-normal"
-                  disabled={isReadOnly}
-                  title={readOnlyTooltip}
-                  onClick={() => {
-                    // Synchroniser formData.category avec la catégorie actuelle en mode vue
-                    setFormData((prev) => ({
-                      ...prev,
-                      category: viewCategoryForm || prev.category,
-                    }));
-                    setIsEditMode(true);
-                  }}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Modifier
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 font-normal text-red-600 hover:text-red-700 hover:bg-red-50"
-                  onClick={() => onDelete?.(transaction)}
-                  disabled={isReadOnly}
-                  title={readOnlyTooltip}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Supprimer
-                </Button>
-              </div>
-            )}
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
+            );
+          })()}
+        </div>
+      </motion.div>
 
       {/* Viewer plein écran pour le justificatif */}
       <RadixDialog open={receiptViewerOpen} onOpenChange={setReceiptViewerOpen}>

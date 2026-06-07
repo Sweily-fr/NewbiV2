@@ -57,11 +57,12 @@ async function handler(request) {
 
     const operations = JSON.stringify({
       query: `
-          mutation UploadTransactionReceipt($transactionId: ID!, $workspaceId: ID!, $file: Upload!) {
-            uploadTransactionReceipt(transactionId: $transactionId, workspaceId: $workspaceId, file: $file) {
+          mutation UploadTransactionReceipt($transactionId: ID!, $workspaceId: ID!, $files: [Upload!]!) {
+            uploadTransactionReceipt(transactionId: $transactionId, workspaceId: $workspaceId, files: $files) {
               success
               message
-              receiptFile {
+              receiptFiles {
+                id
                 url
                 key
                 filename
@@ -71,7 +72,8 @@ async function handler(request) {
               }
               transaction {
                 id
-                receiptFile {
+                receiptFiles {
+                  id
                   url
                   filename
                 }
@@ -83,12 +85,12 @@ async function handler(request) {
       variables: {
         transactionId,
         workspaceId,
-        file: null,
+        files: [null],
       },
     });
 
     uploadFormData.append("operations", operations);
-    uploadFormData.append("map", JSON.stringify({ 0: ["variables.file"] }));
+    uploadFormData.append("map", JSON.stringify({ 0: ["variables.files.0"] }));
     uploadFormData.append("0", file);
 
     const response = await fetch(graphqlUrl, {
@@ -186,11 +188,12 @@ async function handler(request) {
 
       const operations = JSON.stringify({
         query: `
-            mutation UploadTransactionReceipt($transactionId: ID!, $workspaceId: ID!, $file: Upload!) {
-              uploadTransactionReceipt(transactionId: $transactionId, workspaceId: $workspaceId, file: $file) {
+            mutation UploadTransactionReceipt($transactionId: ID!, $workspaceId: ID!, $files: [Upload!]!) {
+              uploadTransactionReceipt(transactionId: $transactionId, workspaceId: $workspaceId, files: $files) {
                 success
                 message
-                receiptFile {
+                receiptFiles {
+                  id
                   url
                   key
                   filename
@@ -201,12 +204,15 @@ async function handler(request) {
         variables: {
           transactionId: createdTransaction.id,
           workspaceId,
-          file: null,
+          files: [null],
         },
       });
 
       uploadFormData.append("operations", operations);
-      uploadFormData.append("map", JSON.stringify({ 0: ["variables.file"] }));
+      uploadFormData.append(
+        "map",
+        JSON.stringify({ 0: ["variables.files.0"] }),
+      );
       uploadFormData.append("0", file);
 
       await fetch(graphqlUrl, {

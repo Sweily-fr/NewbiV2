@@ -111,7 +111,8 @@ export const GET_TRANSACTIONS = gql`
         provider
       }
       metadata
-      receiptFile {
+      receiptFiles {
+        id
         url
         key
         filename
@@ -173,7 +174,8 @@ export const GET_TRANSACTION = gql`
         provider
       }
       metadata
-      receiptFile {
+      receiptFiles {
+        id
         url
         key
         filename
@@ -278,22 +280,23 @@ export const SYNC_TRANSACTION_HISTORY = gql`
 `;
 
 /**
- * Upload de justificatif pour une transaction
+ * Upload de justificatifs (multi-fichiers) pour une transaction
  */
 export const UPLOAD_TRANSACTION_RECEIPT = gql`
   mutation UploadTransactionReceipt(
     $transactionId: ID!
     $workspaceId: ID!
-    $file: Upload!
+    $files: [Upload!]!
   ) {
     uploadTransactionReceipt(
       transactionId: $transactionId
       workspaceId: $workspaceId
-      file: $file
+      files: $files
     ) {
       success
       message
-      receiptFile {
+      receiptFiles {
+        id
         url
         key
         filename
@@ -303,7 +306,46 @@ export const UPLOAD_TRANSACTION_RECEIPT = gql`
       }
       transaction {
         id
-        receiptFile {
+        receiptFiles {
+          id
+          url
+          filename
+        }
+        receiptRequired
+      }
+    }
+  }
+`;
+
+/**
+ * Suppression d'un justificatif d'une transaction
+ */
+export const REMOVE_TRANSACTION_RECEIPT_FILE = gql`
+  mutation RemoveTransactionReceiptFile(
+    $transactionId: ID!
+    $workspaceId: ID!
+    $fileId: ID!
+  ) {
+    removeTransactionReceiptFile(
+      transactionId: $transactionId
+      workspaceId: $workspaceId
+      fileId: $fileId
+    ) {
+      success
+      message
+      receiptFiles {
+        id
+        url
+        key
+        filename
+        mimetype
+        size
+        uploadedAt
+      }
+      transaction {
+        id
+        receiptFiles {
+          id
           url
           filename
         }
