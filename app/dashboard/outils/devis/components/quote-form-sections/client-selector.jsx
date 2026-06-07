@@ -14,6 +14,10 @@ import {
   Globe,
   AlertCircle,
 } from "lucide-react";
+import {
+  BuildingIcon as BuildingVuesax,
+  ProfileIcon as ProfileVuesax,
+} from "@/src/components/icons";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/src/components/ui/card";
 import { Label } from "@/src/components/ui/label";
@@ -38,6 +42,7 @@ import {
   PopoverTrigger,
 } from "@/src/components/ui/popover";
 import { Input } from "@/src/components/ui/input";
+import { CountrySearchSelect } from "@/src/components/ui/country-search-select";
 import {
   Dialog,
   DialogContent,
@@ -46,6 +51,14 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/src/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/src/components/ui/sheet";
 import { cn } from "@/src/lib/utils";
 import { toast } from "@/src/components/ui/sonner";
 
@@ -233,7 +246,7 @@ export default function ClientSelector({
   };
 
   const getClientIcon = (type) => {
-    return type === "COMPANY" ? Building : User;
+    return type === "COMPANY" ? BuildingVuesax : ProfileVuesax;
   };
 
   // Nettoyer les erreurs quand on quitte le formulaire de nouveau client
@@ -783,18 +796,19 @@ export default function ClientSelector({
 
                   {selectedClient && (
                     <div className="space-y-3 mt-3">
-                      {/* Client card — Attio style */}
+                      {/* Client card — fond style "article" */}
                       <div
-                        className="flex items-center justify-between w-full rounded-xl bg-white dark:bg-[#1a1a1e] shadow-[inset_0_0_0_1px_#EEEFF1] dark:shadow-[inset_0_0_0_1px_#2E2E32] hover:bg-[#FAFAFA] dark:hover:bg-[#1e1e22] transition-colors duration-[140ms] cursor-pointer py-2 pr-4 pl-2 gap-2.5"
+                        className="flex items-center justify-between w-full rounded-xl border bg-[#F5F5F5] dark:bg-neutral-900 hover:bg-[#EFEFEF] dark:hover:bg-neutral-800 transition-colors duration-[140ms] cursor-pointer py-2 pr-4 pl-2 gap-2.5"
                         onClick={() => onEditClient?.(selectedClient)}
                       >
                         {/* Left: icon + text */}
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="flex items-center justify-center size-9 rounded-lg bg-[#5a50ff]/10 dark:bg-[#5a50ff]/20 shrink-0">
+                          <div className="flex items-center justify-center size-9 rounded-lg bg-gray-200 dark:bg-neutral-800 shrink-0">
                             {React.createElement(
                               getClientIcon(selectedClient.type),
                               {
-                                className: "size-4 text-[#5a50ff]",
+                                className:
+                                  "size-4 text-gray-600 dark:text-gray-400",
                               },
                             )}
                           </div>
@@ -802,9 +816,23 @@ export default function ClientSelector({
                             <div className="text-sm font-medium leading-5 -tracking-[0.01em] text-[#242529] dark:text-white truncate">
                               {selectedClient.name}
                             </div>
-                            <div className="text-xs leading-4 text-black/45 dark:text-white/45 truncate">
-                              {CLIENT_TYPE_LABELS[selectedClient.type]}
-                            </div>
+                            {(() => {
+                              // Construction de l'adresse à partir des champs
+                              // disponibles : rue, code postal + ville.
+                              const addr = selectedClient.address || {};
+                              const parts = [];
+                              if (addr.street) parts.push(addr.street);
+                              const cityLine = [addr.postalCode, addr.city]
+                                .filter(Boolean)
+                                .join(" ");
+                              if (cityLine) parts.push(cityLine);
+                              const addressStr = parts.join(", ");
+                              return (
+                                <div className="text-xs leading-4 text-black/45 dark:text-white/45 truncate">
+                                  {addressStr || "Adresse non renseignée"}
+                                </div>
+                              );
+                            })()}
                           </div>
                         </div>
 
@@ -979,7 +1007,7 @@ export default function ClientSelector({
                 <div className="pt-4 border-t border-[#e6e7ea] dark:border-[#232323]">
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="default"
                     onClick={handleShowManualForm}
                     className="w-full"
                     disabled={disabled}
@@ -994,26 +1022,30 @@ export default function ClientSelector({
         </TabsNew>
       </Card>
 
-      {/* ─── Dialog de création de client ─── */}
-      <Dialog
+      {/* ─── Drawer de création de client (slide depuis la droite) ─── */}
+      <Sheet
         open={createDialogOpen}
         onOpenChange={(open) => {
           if (!open) handleCloseDialog();
         }}
       >
-        <DialogContent className="sm:max-w-[640px] max-h-[85vh] flex flex-col overflow-hidden p-0">
-          <DialogHeader className="px-6 pt-6 pb-0 shrink-0">
-            <DialogTitle className="text-base font-medium -tracking-[0.01em]">
-              Nouveau client
-            </DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground">
-              Remplissez les informations pour créer un nouveau client.
-            </DialogDescription>
-          </DialogHeader>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-[560px] p-0 gap-0 flex flex-col"
+        >
+          <SheetHeader className="px-5 pt-5 pb-4 border-b border-border/40 shrink-0 space-y-1.5">
+            <SheetTitle className="text-lg font-medium -tracking-[0.01em]">
+              Ajoutez un nouveau client
+            </SheetTitle>
+            <SheetDescription className="text-sm text-muted-foreground leading-snug">
+              Ces informations seront automatiquement reprises sur tous les
+              documents que vous créerez pour ce client.
+            </SheetDescription>
+          </SheetHeader>
 
-          <div className="flex-1 overflow-y-auto px-6 py-5">
+          <div className="flex-1 overflow-y-auto px-5 py-4 min-h-0">
             {createError && (
-              <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-950/50 p-3 mb-5">
+              <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-950/50 p-3 mb-4">
                 <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
                 <p className="text-sm text-red-700 dark:text-red-300">
                   {createError}
@@ -1022,28 +1054,23 @@ export default function ClientSelector({
             )}
             <div className="space-y-5">
               {/* Type de client */}
-              <div className="space-y-2">
-                <Label
-                  htmlFor="client-type"
-                  className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-                >
-                  Type de client
-                </Label>
-                <Select
-                  value={newClientForm.type}
-                  onValueChange={(value) =>
-                    setNewClientForm((prev) => ({ ...prev, type: value }))
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Sélectionner le type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="INDIVIDUAL">Particulier</SelectItem>
-                    <SelectItem value="COMPANY">Entreprise</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <TabsNew
+                value={newClientForm.type}
+                onValueChange={(value) =>
+                  setNewClientForm((prev) => ({ ...prev, type: value }))
+                }
+              >
+                <TabsNewList className="px-0 sm:px-0">
+                  <TabsNewTrigger value="INDIVIDUAL">
+                    <ProfileVuesax className="h-3.5 w-3.5" />
+                    Particulier
+                  </TabsNewTrigger>
+                  <TabsNewTrigger value="COMPANY">
+                    <BuildingVuesax className="h-3.5 w-3.5" />
+                    Entreprise
+                  </TabsNewTrigger>
+                </TabsNewList>
+              </TabsNew>
 
               {/* Localisation - entreprises uniquement */}
               {newClientForm.type === "COMPANY" && (
@@ -1091,6 +1118,11 @@ export default function ClientSelector({
                   )}
                 </div>
               )}
+
+              {/* ─── Informations ─── */}
+              <h3 className="text-base font-medium text-[#202020] dark:text-white -tracking-[0.01em]">
+                Informations
+              </h3>
 
               {/* Nom (entreprise) ou Prénom/Nom (particulier) */}
               {newClientForm.type === "COMPANY" ? (
@@ -1274,7 +1306,7 @@ export default function ClientSelector({
                           "border-red-500 hover:border-red-500",
                       )}
                     />
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground mt-1.5">
                       {newClientForm.isInternational
                         ? "N° d'identification fiscale ou équivalent local"
                         : "SIREN (9 chiffres) ou SIRET (14 chiffres)"}
@@ -1313,13 +1345,9 @@ export default function ClientSelector({
 
               {/* ─── Adresse de facturation ─── */}
               <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <div className="h-px bg-border flex-1" />
-                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    Adresse de facturation
-                  </span>
-                  <div className="h-px bg-border flex-1" />
-                </div>
+                <h3 className="text-base font-medium text-[#202020] dark:text-white -tracking-[0.01em]">
+                  Adresse de facturation
+                </h3>
 
                 <div className="space-y-2">
                   <Label
@@ -1442,16 +1470,15 @@ export default function ClientSelector({
                   >
                     Pays
                   </Label>
-                  <Input
+                  <CountrySearchSelect
                     id="client-country"
                     value={newClientForm.address?.country || "France"}
-                    onChange={(e) =>
+                    onChange={(name) =>
                       setNewClientForm((prev) => ({
                         ...prev,
-                        address: { ...prev.address, country: e.target.value },
+                        address: { ...prev.address, country: name },
                       }))
                     }
-                    placeholder="France"
                   />
                 </div>
               </div>
@@ -1480,8 +1507,11 @@ export default function ClientSelector({
                 />
               </div>
 
-              {/* Adresse de livraison */}
-              <div className="space-y-2">
+              {/* ─── Adresse de livraison ─── */}
+              <div className="space-y-3">
+                <h3 className="text-base font-medium text-[#202020] dark:text-white -tracking-[0.01em]">
+                  Adresse de livraison
+                </h3>
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="different-shipping-address"
@@ -1654,21 +1684,20 @@ export default function ClientSelector({
                       >
                         Pays
                       </Label>
-                      <Input
+                      <CountrySearchSelect
                         id="shipping-country"
                         value={
                           newClientForm.shippingAddress?.country || "France"
                         }
-                        onChange={(e) =>
+                        onChange={(name) =>
                           setNewClientForm((prev) => ({
                             ...prev,
                             shippingAddress: {
                               ...prev.shippingAddress,
-                              country: e.target.value,
+                              country: name,
                             },
                           }))
                         }
-                        placeholder="France"
                       />
                     </div>
                   </div>
@@ -1703,7 +1732,7 @@ export default function ClientSelector({
             </div>
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-2 px-6 py-4 shrink-0 border-t border-[#e6e7ea] dark:border-[#232323]">
+          <SheetFooter className="flex-row sm:justify-end gap-2 px-5 py-3 shrink-0 border-t border-border/40 mt-0">
             <Button
               type="button"
               variant="outline"
@@ -1734,6 +1763,7 @@ export default function ClientSelector({
             </Button>
             <Button
               type="button"
+              variant="primary"
               onClick={() => handleCreateClient(true)}
               disabled={
                 createLoading ||
@@ -1751,9 +1781,9 @@ export default function ClientSelector({
                 "Créer et appliquer"
               )}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
