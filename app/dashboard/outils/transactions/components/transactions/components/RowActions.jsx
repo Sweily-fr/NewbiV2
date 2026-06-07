@@ -91,7 +91,8 @@ export function RowActions({ row, onEdit, onRefresh, onDownloadAttachment }) {
               <span>Copier description</span>
               <DropdownMenuShortcut>⌘C</DropdownMenuShortcut>
             </DropdownMenuItem>
-            {(transaction.receiptFile?.url ||
+            {((Array.isArray(transaction.receiptFiles) &&
+              transaction.receiptFiles.length > 0) ||
               transaction.attachment ||
               (transaction.files && transaction.files.length > 0)) && (
               <DropdownMenuItem

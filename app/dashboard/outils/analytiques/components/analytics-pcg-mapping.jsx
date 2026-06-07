@@ -115,8 +115,10 @@ export function AnalyticsPCGMapping() {
       source: tx.provider === "manual" ? "MANUAL" : "BANK",
       provider: tx.provider,
       status: tx.status === "completed" ? "PAID" : tx.status?.toUpperCase(),
-      receiptFile: tx.receiptFile,
-      hasReceipt: !!tx.receiptFile?.url || !!tx.linkedInvoice?.id,
+      receiptFiles: tx.receiptFiles || [],
+      hasReceipt:
+        (Array.isArray(tx.receiptFiles) && tx.receiptFiles.length > 0) ||
+        !!tx.linkedInvoice?.id,
       pcgAccount: tx.pcgAccount || null,
       metadata: tx.metadata || {},
       linkedInvoice: tx.linkedInvoice || null,

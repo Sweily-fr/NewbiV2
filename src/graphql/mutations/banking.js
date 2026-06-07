@@ -18,7 +18,8 @@ export const CREATE_TRANSACTION = gql`
       expenseCategory
       date
       metadata
-      receiptFile {
+      receiptFiles {
+        id
         url
         key
         filename
@@ -53,7 +54,8 @@ export const UPDATE_TRANSACTION = gql`
       date
       status
       metadata
-      receiptFile {
+      receiptFiles {
+        id
         url
         key
         filename
