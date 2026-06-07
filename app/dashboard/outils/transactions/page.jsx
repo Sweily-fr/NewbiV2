@@ -258,10 +258,14 @@ function GestionDepensesContent() {
       date: tx.processedAt || tx.date || tx.createdAt,
       category: getSmartCategory(tx),
       vendor: tx.metadata?.vendor || null,
-      hasReceipt: !!tx.receiptFile?.url || !!tx.linkedInvoice?.id,
-      receiptFile: tx.receiptFile,
+      hasReceipt:
+        (Array.isArray(tx.receiptFiles) && tx.receiptFiles.length > 0) ||
+        !!tx.linkedInvoice?.id,
+      receiptFiles: tx.receiptFiles || [],
       receiptRequired:
-        tx.amount < 0 && !tx.receiptFile?.url && !tx.linkedInvoice?.id,
+        tx.amount < 0 &&
+        !(Array.isArray(tx.receiptFiles) && tx.receiptFiles.length > 0) &&
+        !tx.linkedInvoice?.id,
       status: tx.status === "completed" ? "PAID" : tx.status?.toUpperCase(),
       paymentMethod:
         tx.metadata?.paymentMethod ||

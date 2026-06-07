@@ -296,19 +296,19 @@ export const columns = [
     },
     cell: ({ row, table }) => {
       const files = row.original.files || [];
-      const receiptFile = row.original.receiptFile;
+      const receiptFiles = row.original.receiptFiles || [];
       const linkedInvoice = row.original.linkedInvoice;
       const hasLinkedInvoice = !!linkedInvoice?.id;
       const reconciliationStatus =
         row.original.reconciliationStatus?.toLowerCase();
       const hasSuggestion = reconciliationStatus === "suggested";
       const hasReceipt =
-        row.original.hasReceipt || files.length > 0 || !!receiptFile?.url;
+        row.original.hasReceipt || files.length > 0 || receiptFiles.length > 0;
       const filesCount =
-        files.length > 0
-          ? files.length
-          : receiptFile?.url
-            ? 1
+        receiptFiles.length > 0
+          ? receiptFiles.length
+          : files.length > 0
+            ? files.length
             : hasReceipt
               ? 1
               : 0;
