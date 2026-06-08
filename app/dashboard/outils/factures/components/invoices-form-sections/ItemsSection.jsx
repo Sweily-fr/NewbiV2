@@ -18,6 +18,10 @@ import {
   verticalListSortingStrategy,
   useSortable,
 } from "@dnd-kit/sortable";
+import {
+  restrictToVerticalAxis,
+  restrictToParentElement,
+} from "@dnd-kit/modifiers";
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/src/components/ui/button";
 import { Checkbox } from "@/src/components/ui/checkbox";
@@ -393,6 +397,7 @@ export default function ItemsSection({
                 sensors={sensors}
                 collisionDetection={closestCenter}
                 onDragEnd={handleDragEnd}
+                modifiers={[restrictToVerticalAxis, restrictToParentElement]}
               >
                 <SortableContext
                   items={items.map((f) => f.id)}
