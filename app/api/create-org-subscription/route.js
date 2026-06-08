@@ -44,11 +44,50 @@ async function handler(request) {
   // - /create-workspace (additional org) reaches this with flag ON → decision
   //   #16: no trial, payment immediate (trial_period_days: 0).
   // - Flag OFF preserves the legacy 30-day Stripe trial for the entire flow.
+  //
+  // EXCEPTION (Pattern A — "convert trial at trial_end") : si on est dans un
+  // upgrade d'org existante AVEC trial maison encore actif, on garde la date
+  // de fin du trial maison comme date de première facturation Stripe. Les
+  // features payantes seront débloquées immédiatement via le webhook (cf.
+  // auth-plugins.js handler `customer.subscription.created`).
   const trialDays = isAppTrialEnabled() ? 0 : 30;
   if (isAppTrialEnabled()) {
     console.log(
       `🚫 [CREATE-SUB] App-trial flag ON — Stripe trial_period_days forced to 0`,
     );
+  }
+
+  // Pattern A : détecter "conversion du trial maison" pour cet upgrade
+  let convertedTrialEndUnix = null;
+  let originalAppTrialEndDate = null;
+  if (
+    isAppTrialEnabled() &&
+    organizationData.type === "existing" &&
+    session.session?.activeOrganizationId
+  ) {
+    try {
+      const { mongoDb: db } = await import("@/src/lib/mongodb");
+      const { ObjectId } = await import("mongodb");
+      const org = await db.collection("organization").findOne({
+        _id: new ObjectId(session.session.activeOrganizationId),
+      });
+      const trialEndDate = org?.trialEndDate
+        ? new Date(org.trialEndDate)
+        : null;
+      const now = new Date();
+      if (org?.isTrialActive === true && trialEndDate && trialEndDate > now) {
+        convertedTrialEndUnix = Math.floor(trialEndDate.getTime() / 1000);
+        originalAppTrialEndDate = trialEndDate.toISOString();
+        console.log(
+          `🎁 [CREATE-SUB] Trial maison actif (jusqu'au ${originalAppTrialEndDate}) → conversion en trial Stripe avec trial_end identique. Aucune facturation avant cette date.`,
+        );
+      }
+    } catch (err) {
+      console.warn(
+        `⚠️ [CREATE-SUB] Échec lecture trial maison (fallback immédiat):`,
+        err.message,
+      );
+    }
   }
 
   try {
@@ -232,7 +271,16 @@ async function handler(request) {
         // "no trial" the field must be OMITTED entirely. We spread it
         // conditionally so flag OFF / decision #16 (additional org) keeps the
         // historical Stripe trial, and flag ON paths go straight to billing.
-        ...(trialDays > 0 ? { trial_period_days: trialDays } : {}),
+        //
+        // PATTERN A : si l'org est en trial maison actif, on prend la priorité
+        // sur `trial_period_days` et on passe `trial_end` (timestamp Unix) à
+        // Stripe = date de fin du trial maison. Stripe place la sub en
+        // `trialing` jusqu'à cette date, puis facture automatiquement.
+        ...(convertedTrialEndUnix
+          ? { trial_end: convertedTrialEndUnix }
+          : trialDays > 0
+            ? { trial_period_days: trialDays }
+            : {}),
         metadata: {
           userId: session.user.id,
           isNewOrganization: isNewOrganization ? "true" : "false",
@@ -243,15 +291,21 @@ async function handler(request) {
           isAnnual: isAnnual ? "true" : "false",
           organizationId: session.session?.activeOrganizationId || "",
           employeeCount: organizationData.employeeCount || "",
-          hasTrial: trialDays > 0 ? "true" : "false",
+          hasTrial: convertedTrialEndUnix || trialDays > 0 ? "true" : "false",
           trialDays: String(trialDays),
+          // Flag Pattern A : utilisé par le webhook pour désactiver le trial
+          // maison dès la création de la sub (features payantes débloquées
+          // immédiatement, facturation différée).
+          convertedFromAppTrial: convertedTrialEndUnix ? "true" : "false",
+          appTrialEndDate: originalAppTrialEndDate || "",
         },
       },
       // Message personnalisé — adapté au trial period choisi
       custom_text: {
         submit: {
-          message:
-            trialDays > 0
+          message: convertedTrialEndUnix
+            ? `Aucun prélèvement avant la fin de votre essai (${new Date(convertedTrialEndUnix * 1000).toLocaleDateString("fr-FR")}). Toutes les fonctionnalités du plan ${planName.toUpperCase()} sont accessibles immédiatement.`
+            : trialDays > 0
               ? isOnboarding
                 ? `Essai gratuit ${trialDays} jours - Aucun prélèvement avant la fin de l'essai`
                 : `Souscription au plan ${planName.toUpperCase()} - ${trialDays} jours d'essai gratuit`
