@@ -1,6 +1,5 @@
 "use client";
 
-import { Building2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -23,11 +22,11 @@ import {
 } from "@/src/lib/validation";
 
 const COUNTRIES = [
-  { value: "France", label: "France" },
-  { value: "Belgique", label: "Belgique" },
-  { value: "Suisse", label: "Suisse" },
-  { value: "Canada", label: "Canada" },
-  { value: "Luxembourg", label: "Luxembourg" },
+  { value: "France", label: "France", flag: "🇫🇷" },
+  { value: "Belgique", label: "Belgique", flag: "🇧🇪" },
+  { value: "Suisse", label: "Suisse", flag: "🇨🇭" },
+  { value: "Canada", label: "Canada", flag: "🇨🇦" },
+  { value: "Luxembourg", label: "Luxembourg", flag: "🇱🇺" },
 ];
 
 export default function CompanyInfoSettingsSection() {
@@ -41,20 +40,22 @@ export default function CompanyInfoSettingsSection() {
   const country = watch("addressCountry");
 
   return (
-    <Card className="shadow-none border-none bg-transparent">
+    <Card className="shadow-none border-none bg-transparent p-0">
       <CardHeader className="p-0">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 font-normal text-lg">
-            <Building2 className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 font-medium text-lg">
             Informations de l'entreprise
           </CardTitle>
         </div>
       </CardHeader>
-      <CardContent className="p-0 mt-3">
+      <CardContent className="p-0">
         <div className="space-y-4">
           {/* Nom de l'entreprise */}
           <div className="space-y-1.5">
-            <Label htmlFor="company-name" className="text-sm font-light">
+            <Label
+              htmlFor="company-name"
+              className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+            >
               Nom de l'entreprise
             </Label>
             <Input
@@ -85,7 +86,10 @@ export default function CompanyInfoSettingsSection() {
           {/* Email & Téléphone */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="company-email" className="text-sm font-light">
+              <Label
+                htmlFor="company-email"
+                className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+              >
                 Email professionnel
               </Label>
               <Input
@@ -113,7 +117,10 @@ export default function CompanyInfoSettingsSection() {
               )}
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="company-phone" className="text-sm font-light">
+              <Label
+                htmlFor="company-phone"
+                className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+              >
                 Téléphone
               </Label>
               <Input
@@ -143,7 +150,10 @@ export default function CompanyInfoSettingsSection() {
 
           {/* Site web */}
           <div className="space-y-1.5">
-            <Label htmlFor="company-website" className="text-sm font-light">
+            <Label
+              htmlFor="company-website"
+              className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+            >
               Site web
             </Label>
             <Input
@@ -172,7 +182,10 @@ export default function CompanyInfoSettingsSection() {
 
           {/* Adresse */}
           <div className="space-y-1.5">
-            <Label htmlFor="company-street" className="text-sm font-light">
+            <Label
+              htmlFor="company-street"
+              className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+            >
               Adresse
             </Label>
             <Input
@@ -201,7 +214,10 @@ export default function CompanyInfoSettingsSection() {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="company-city" className="text-sm font-light">
+              <Label
+                htmlFor="company-city"
+                className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+              >
                 Ville
               </Label>
               <Input
@@ -230,7 +246,7 @@ export default function CompanyInfoSettingsSection() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="company-postalCode"
-                className="text-sm font-light"
+                className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
               >
                 Code postal
               </Label>
@@ -258,22 +274,45 @@ export default function CompanyInfoSettingsSection() {
               )}
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="company-country" className="text-sm font-light">
+              <Label
+                htmlFor="company-country"
+                className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+              >
                 Pays
               </Label>
               <Select
                 value={country || "France"}
                 onValueChange={(value) =>
-                  setValue("addressCountry", value, { shouldValidate: true, shouldDirty: true })
+                  setValue("addressCountry", value, {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  })
                 }
               >
                 <SelectTrigger id="company-country">
-                  <SelectValue placeholder="Sélectionner" />
+                  <SelectValue placeholder="Sélectionner">
+                    {(() => {
+                      const selected = COUNTRIES.find(
+                        (c) => c.value === (country || "France"),
+                      );
+                      return selected ? (
+                        <span className="inline-flex items-center gap-2">
+                          <span className="text-base leading-none">
+                            {selected.flag}
+                          </span>
+                          {selected.label}
+                        </span>
+                      ) : null;
+                    })()}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {COUNTRIES.map((c) => (
                     <SelectItem key={c.value} value={c.value}>
-                      {c.label}
+                      <span className="inline-flex items-center gap-2">
+                        <span className="text-base leading-none">{c.flag}</span>
+                        {c.label}
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>

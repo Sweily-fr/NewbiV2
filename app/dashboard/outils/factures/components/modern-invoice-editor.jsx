@@ -561,7 +561,7 @@ export default function ModernInvoiceEditor({
         <div className="px-4 pt-6 pb-4 md:px-6 md:pt-6 flex flex-col h-full overflow-hidden">
           <div className="max-w-2xl mx-auto flex flex-col w-full h-full">
             {/* Header */}
-            <div className="flex items-center justify-between mb-4 pb-4 md:mb-6 md:pb-6 border-b">
+            <div className="flex items-center justify-between pb-4 md:pb-6 border-b">
               <div className="flex items-center gap-2">
                 {/* <Button
                   variant="ghost"
