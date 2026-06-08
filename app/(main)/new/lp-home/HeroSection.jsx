@@ -74,8 +74,8 @@ export default function HeroSection() {
 
             {/* Titre principal H1 */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-medium tracking-tight text-black dark:text-white mb-6">
-              La plateforme de facturation et de gestion tout-en-un{" "}
-              <br className="hidden sm:block" /> pour piloter votre{" "}
+              La solution tout-en-un de facturation et gestion{" "}
+              <br className="hidden sm:block" /> pour votre{" "}
               <span className="text-indigo-600">entreprise</span>
             </h1>
 
@@ -197,8 +197,8 @@ export default function HeroSection() {
         <div className="hidden lg:block h-[500px]">
           {/* Mockup Mac - Position absolue à droite, en bas */}
           <img
-            src="/factures-hero-section.png"
-            alt="Dashboard Newbi - Gestion des factures"
+            src="/transactions-hero-section.png"
+            alt="Dashboard Newbi — Transactions"
             className="absolute object-contain rounded-md"
             style={{
               bottom: "110px",
@@ -213,7 +213,7 @@ export default function HeroSection() {
               bottom: "110px",
               right: "-35%",
               width: "60%",
-              height: "190px",
+              height: "260px",
               background:
                 "linear-gradient(to top, #FDFDFD 0%, #FDFDFD 60%, transparent 100%)",
             }}
@@ -221,11 +221,11 @@ export default function HeroSection() {
 
           {/* Mockup iPhone - Position absolue à gauche, en bas */}
           <img
-            src="/mockup-iphone-hero.png"
-            alt="Application mobile Newbi"
+            src="/mockup-iphone-factures-clients.png"
+            alt="Application mobile Newbi — Factures clients"
             className="absolute object-contain rounded-md"
             style={{
-              bottom: "40px",
+              bottom: "30px",
               left: "-2.5%",
               width: "21%",
             }}
@@ -234,10 +234,10 @@ export default function HeroSection() {
           <div
             className="absolute pointer-events-none"
             style={{
-              bottom: "40px",
+              bottom: "30px",
               left: "-2.5%",
               width: "21%",
-              height: "300px",
+              height: "360px",
               background:
                 "linear-gradient(to top, #FDFDFD 0%, #FDFDFD 60%, transparent 100%)",
             }}
