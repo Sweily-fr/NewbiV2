@@ -338,7 +338,7 @@ export default function ItemsSection({
 
         {/* Bouton ajouter article - Masqué pour les factures de situation liées à un devis */}
         {!(isLinkedToQuote && invoiceType === "situation") && (
-          <div className="flex flex-col md:flex-row gap-3 md:items-center">
+          <div className="flex flex-col md:flex-row gap-3 items-stretch">
             {ProductSearchCombobox ? (
               <>
                 <div className="flex-1 min-w-0">

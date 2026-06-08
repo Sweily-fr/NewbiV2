@@ -2,14 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useFormContext } from "react-hook-form";
-import {
-  AlignLeft,
-  AlignRight,
-  Check,
-  Info,
-  Tag,
-  Settings,
-} from "lucide-react";
+import { Check, Info, Settings, Minus } from "lucide-react";
 import { documentSuggestions } from "@/src/utils/document-suggestions";
 import { SuggestionDropdown } from "@/src/components/ui/suggestion-dropdown";
 import {
@@ -35,7 +28,6 @@ import {
 } from "@/src/utils/quoteUtils";
 import { useQuoteNumber } from "../hooks/use-quote-number";
 import { usePurchaseOrderNumber } from "@/app/dashboard/outils/bons-commande/hooks/use-purchase-order-number";
-import { Separator } from "@/src/components/ui/separator";
 import { Alert, AlertDescription } from "@/src/components/ui/alert";
 import { Button } from "@/src/components/ui/button";
 import { ColorPicker } from "@/src/components/ui/color-picker";
@@ -405,7 +397,7 @@ export default function QuoteSettingsView({
     <div className="h-full flex flex-col">
       {/* Contenu scrollable */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-2xl mx-auto pl-2 pr-2 space-y-6">
+        <div className="max-w-2xl mx-auto pl-2 pr-2 space-y-8 pt-4 md:pt-6">
           {/* Bannière d'erreur globale */}
           {Object.keys(errors).length > 0 && (
             <Alert variant="destructive">
@@ -436,10 +428,9 @@ export default function QuoteSettingsView({
 
           {/* Section Informations de l'entreprise */}
           <CompanyInfoSettingsSection />
-          <Separator />
 
           {/* Section Numérotation */}
-          <Card className="shadow-none border-none bg-transparent">
+          <Card className="shadow-none border-none bg-transparent p-0">
             <CardHeader className="p-0">
               <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 Numérotation
@@ -447,7 +438,7 @@ export default function QuoteSettingsView({
             </CardHeader>
             <CardContent className="space-y-4 p-0">
               {/* Toggle numérotation automatique */}
-              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-muted">
+              <div className="flex items-center justify-between p-3 rounded-xl border bg-[#F5F5F5] dark:bg-neutral-900">
                 <div className="space-y-0.5">
                   <Label className="text-sm font-medium">
                     Numérotation séquentielle continue
@@ -474,7 +465,7 @@ export default function QuoteSettingsView({
                   <div className="flex items-center gap-2">
                     <Label
                       htmlFor="quote-prefix"
-                      className="text-sm font-light"
+                      className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
                     >
                       Préfixe de {documentLabel}
                     </Label>
@@ -535,7 +526,7 @@ export default function QuoteSettingsView({
                   <div className="flex items-center gap-2">
                     <Label
                       htmlFor="quote-number"
-                      className="text-sm font-light"
+                      className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
                     >
                       Numéro de {documentLabel}
                     </Label>
@@ -609,7 +600,7 @@ export default function QuoteSettingsView({
                         {numberDuplicateError}
                       </p>
                     )}
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground mt-2">
                       {autoNumbering
                         ? "Numéro attribué automatiquement — séquence continue indépendante du préfixe."
                         : isFirstDocument
@@ -627,7 +618,7 @@ export default function QuoteSettingsView({
               </div>
 
               {/* Note explicative sur la numérotation */}
-              <div className="mt-4 p-3 bg-muted/30 rounded-lg border border-muted">
+              <div className="mt-4 p-3 rounded-xl border bg-[#F5F5F5] dark:bg-neutral-900">
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   <span className="font-medium">Note :</span> La numérotation
                   des {documentLabelPlural} doit être séquentielle et continue
@@ -640,10 +631,9 @@ export default function QuoteSettingsView({
               </div>
             </CardContent>
           </Card>
-          <Separator />
 
           {/* Coordonnées bancaires */}
-          <Card className="shadow-none border-none bg-transparent">
+          <Card className="shadow-none border-none bg-transparent p-0">
             <CardHeader className="p-0">
               <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 Coordonnées bancaires
@@ -668,7 +658,7 @@ export default function QuoteSettingsView({
                   <div className="grid gap-1.5 leading-none">
                     <Label
                       htmlFor="show-bank-details"
-                      className="text-sm font-light leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55 peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
                       Afficher les coordonnées bancaires
                     </Label>
@@ -679,7 +669,7 @@ export default function QuoteSettingsView({
                   </div>
                 </div>
               ) : (
-                <div className="text-sm text-muted-foreground p-3 bg-muted/30 rounded-md">
+                <div className="text-sm text-muted-foreground p-3 rounded-xl border bg-[#F5F5F5] dark:bg-neutral-900">
                   <p className="mb-2">
                     Aucune coordonnée bancaire n&apos;est configurée pour votre
                     entreprise.
@@ -687,7 +677,7 @@ export default function QuoteSettingsView({
                   <Button
                     type="button"
                     variant="link"
-                    className="p-0 h-auto font-medium flex items-center gap-1"
+                    className="p-0 h-auto font-medium flex items-center gap-1 underline"
                     onClick={() => setShowBankDetailsDialog(true)}
                   >
                     <Settings className="h-4 w-4" />
@@ -701,10 +691,12 @@ export default function QuoteSettingsView({
                 (data.userBankDetails?.iban ||
                   data.userBankDetails?.bic ||
                   data.userBankDetails?.bankName) && (
-                  <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                  <div className="space-y-4 p-4 rounded-xl border bg-[#F5F5F5] dark:bg-neutral-900">
                     {/* Nom de la banque */}
                     <div>
-                      <Label className="font-light">Nom de la banque</Label>
+                      <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                        Nom de la banque
+                      </Label>
                       <div className="mt-2 p-2 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
                         <p className="text-sm">
                           {data.bankDetails?.bankName || "Non spécifié"}
@@ -714,7 +706,9 @@ export default function QuoteSettingsView({
 
                     {/* IBAN */}
                     <div>
-                      <Label className="font-normal">IBAN</Label>
+                      <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                        IBAN
+                      </Label>
                       <div className="mt-2 p-2 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
                         <p className="text-sm font-mono">
                           {formatIban(data.bankDetails?.iban) || "Non spécifié"}
@@ -724,7 +718,9 @@ export default function QuoteSettingsView({
 
                     {/* BIC/SWIFT */}
                     <div>
-                      <Label className="font-normal">BIC/SWIFT</Label>
+                      <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                        BIC/SWIFT
+                      </Label>
                       <div className="mt-2 p-2 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
                         <p className="text-sm font-mono">
                           {data.bankDetails?.bic || "Non spécifié"}
@@ -743,7 +739,7 @@ export default function QuoteSettingsView({
                         <div className="grid gap-1.5 leading-none">
                           <Label
                             htmlFor="beneficiary-name-type"
-                            className="text-sm font-light leading-none"
+                            className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
                           >
                             Nom du bénéficiaire
                           </Label>
@@ -786,10 +782,9 @@ export default function QuoteSettingsView({
                 )}
             </CardContent>
           </Card>
-          <Separator />
 
           {/* Section Apparence */}
-          <Card className="shadow-none border-none bg-transparent">
+          <Card className="shadow-none border-none bg-transparent p-0">
             <CardHeader className="p-0">
               <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 Apparence
@@ -800,7 +795,10 @@ export default function QuoteSettingsView({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Couleur du texte */}
                 <div className="space-y-2">
-                  <Label htmlFor="text-color" className="font-light">
+                  <Label
+                    htmlFor="text-color"
+                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                  >
                     Couleur du texte
                   </Label>
                   <ColorPicker
@@ -817,7 +815,10 @@ export default function QuoteSettingsView({
 
                 {/* Couleur des titres du header */}
                 <div className="space-y-2">
-                  <Label htmlFor="header-text-color" className="font-light">
+                  <Label
+                    htmlFor="header-text-color"
+                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                  >
                     Couleur des titres du tableau
                   </Label>
                   <ColorPicker
@@ -835,7 +836,10 @@ export default function QuoteSettingsView({
 
               {/* Couleur de fond du header */}
               <div className="space-y-2">
-                <Label htmlFor="header-bg-color" className="font-light">
+                <Label
+                  htmlFor="header-bg-color"
+                  className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                >
                   Couleur de fond du tableau
                 </Label>
                 <ColorPicker
@@ -851,10 +855,9 @@ export default function QuoteSettingsView({
               </div>
             </CardContent>
           </Card>
-          <Separator />
 
           {/* Position du client */}
-          <Card className="shadow-none border-none bg-transparent">
+          <Card className="shadow-none border-none bg-transparent p-0">
             <CardHeader className="p-0">
               <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 Position du client dans le PDF
@@ -865,8 +868,8 @@ export default function QuoteSettingsView({
                 Choisissez où afficher les informations du client dans vos{" "}
                 {documentLabelPlural}
               </p>
-              <div className="grid grid-cols-2 gap-3">
-                {/* Option Centre */}
+              <div className="flex gap-3">
+                {/* Option Centre — preview wireframe avec bloc client centré */}
                 <button
                   type="button"
                   onClick={() =>
@@ -875,82 +878,72 @@ export default function QuoteSettingsView({
                     })
                   }
                   disabled={!canEdit}
-                  className={`
-                    relative flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all
-                    ${
-                      !data.clientPositionRight
-                        ? "border-primary bg-primary/5 shadow-sm"
-                        : "border-border bg-background hover:border-primary/50"
-                    }
-                    ${!canEdit ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
-                  `}
+                  className={`group ${!canEdit ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
                 >
-                  <AlignLeft
-                    className={`h-6 w-6 ${!data.clientPositionRight ? "text-primary" : "text-muted-foreground"}`}
-                  />
-                  <div className="text-center">
-                    <div
-                      className={`text-sm font-medium ${!data.clientPositionRight ? "text-primary" : "text-foreground"}`}
-                    >
-                      Au centre
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
-                      Position standard
-                    </div>
+                  <div
+                    className={`w-[110px] overflow-hidden rounded-md border shadow-xs transition-[color,box-shadow] ${
+                      !data.clientPositionRight
+                        ? "border-ring bg-accent"
+                        : "border-input"
+                    }`}
+                  >
+                    <ClientPositionPreview position="center" />
                   </div>
-                  {!data.clientPositionRight && (
-                    <div className="absolute top-2 right-2">
-                      <Check className="h-4 w-4 text-primary" />
-                    </div>
-                  )}
+                  <span
+                    className={`mt-2 flex items-center gap-1 ${
+                      !data.clientPositionRight
+                        ? ""
+                        : "text-muted-foreground/70"
+                    }`}
+                  >
+                    {!data.clientPositionRight ? (
+                      <Check size={16} aria-hidden="true" />
+                    ) : (
+                      <Minus size={16} aria-hidden="true" />
+                    )}
+                    <span className="text-xs font-medium">Au centre</span>
+                  </span>
                 </button>
 
-                {/* Option Droite */}
+                {/* Option Droite — preview wireframe avec bloc client à droite */}
                 <button
                   type="button"
                   onClick={() =>
                     setValue("clientPositionRight", true, { shouldDirty: true })
                   }
                   disabled={!canEdit}
-                  className={`
-                    relative flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all
-                    ${
-                      data.clientPositionRight
-                        ? "border-primary bg-primary/5 shadow-sm"
-                        : "border-border bg-background hover:border-primary/50"
-                    }
-                    ${!canEdit ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
-                  `}
+                  className={`group ${!canEdit ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
                 >
-                  <AlignRight
-                    className={`h-6 w-6 ${data.clientPositionRight ? "text-primary" : "text-muted-foreground"}`}
-                  />
-                  <div className="text-center">
-                    <div
-                      className={`text-sm font-medium ${data.clientPositionRight ? "text-primary" : "text-foreground"}`}
-                    >
-                      À droite
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
-                      Aligné à droite
-                    </div>
+                  <div
+                    className={`w-[110px] overflow-hidden rounded-md border shadow-xs transition-[color,box-shadow] ${
+                      data.clientPositionRight
+                        ? "border-ring bg-accent"
+                        : "border-input"
+                    }`}
+                  >
+                    <ClientPositionPreview position="right" />
                   </div>
-                  {data.clientPositionRight && (
-                    <div className="absolute top-2 right-2">
-                      <Check className="h-4 w-4 text-primary" />
-                    </div>
-                  )}
+                  <span
+                    className={`mt-2 flex items-center gap-1 ${
+                      data.clientPositionRight ? "" : "text-muted-foreground/70"
+                    }`}
+                  >
+                    {data.clientPositionRight ? (
+                      <Check size={16} aria-hidden="true" />
+                    ) : (
+                      <Minus size={16} aria-hidden="true" />
+                    )}
+                    <span className="text-xs font-medium">À droite</span>
+                  </span>
                 </button>
               </div>
             </CardContent>
           </Card>
-          <Separator />
 
           {/* Notes et bas de page */}
-          <Card className="shadow-none border-none bg-transparent">
+          <Card className="shadow-none border-none bg-transparent p-0">
             <CardHeader className="p-0">
               <CardTitle className="flex items-center gap-2 font-medium text-lg">
-                <Tag className="h-5 w-5" />
                 Notes et bas de page
               </CardTitle>
             </CardHeader>
@@ -958,7 +951,10 @@ export default function QuoteSettingsView({
               {/* Notes d'en-tête */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <Label htmlFor="header-notes" className="font-light">
+                  <Label
+                    htmlFor="header-notes"
+                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                  >
                     Notes d'en-tête
                   </Label>
                   <SuggestionDropdown
@@ -997,7 +993,10 @@ export default function QuoteSettingsView({
                 /* Conditions générales */
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <Label htmlFor="terms-conditions" className="font-light">
+                    <Label
+                      htmlFor="terms-conditions"
+                      className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                    >
                       Conditions générales
                     </Label>
                     <SuggestionDropdown
@@ -1038,7 +1037,10 @@ export default function QuoteSettingsView({
               {/* Notes de bas de page */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <Label htmlFor="footer-notes" className="font-light">
+                  <Label
+                    htmlFor="footer-notes"
+                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                  >
                     Notes de bas de page
                   </Label>
                   <SuggestionDropdown
@@ -1077,7 +1079,10 @@ export default function QuoteSettingsView({
                 /* Conditions générales */
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <Label htmlFor="terms-conditions" className="font-light">
+                    <Label
+                      htmlFor="terms-conditions"
+                      className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                    >
                       Conditions générales
                     </Label>
                     <SuggestionDropdown
@@ -1170,6 +1175,50 @@ export default function QuoteSettingsView({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+// Mini wireframe placeholder pour visualiser la position du bloc client
+function ClientPositionPreview({ position }) {
+  const isCenter = position === "center";
+  const ClientBlock = (
+    <div className="flex flex-col gap-[2px] w-[22px]">
+      <div className="h-[2px] w-full rounded-full bg-neutral-300" />
+      <div className="h-[2px] w-[80%] rounded-full bg-neutral-300" />
+      <div className="h-[2px] w-[90%] rounded-full bg-neutral-300" />
+      <div className="h-[2px] w-[70%] rounded-full bg-neutral-300" />
+    </div>
+  );
+  return (
+    <div className="w-full aspect-[88/70] bg-white dark:bg-neutral-100 rounded p-2 flex flex-col gap-1.5 overflow-hidden">
+      {/* Header : expéditeur (gauche) + titre (droite) */}
+      <div className="flex justify-between items-start">
+        <div className="flex flex-col gap-[2px] w-[22px]">
+          <div className="h-[2px] w-full rounded-full bg-neutral-400" />
+          <div className="h-[2px] w-[70%] rounded-full bg-neutral-300" />
+          <div className="h-[2px] w-[85%] rounded-full bg-neutral-300" />
+        </div>
+        <div className="flex flex-col items-end gap-[2px] w-[18px]">
+          <div className="h-[3px] w-full rounded-full bg-neutral-500" />
+          <div className="h-[2px] w-[70%] rounded-full bg-neutral-300" />
+        </div>
+      </div>
+
+      {/* Bloc client — centré OU à droite */}
+      <div
+        className={`mt-0.5 flex ${isCenter ? "justify-center" : "justify-end"}`}
+      >
+        {ClientBlock}
+      </div>
+
+      {/* Espace flexible + lignes articles */}
+      <div className="flex-1" />
+      <div className="space-y-[2px]">
+        <div className="h-[2px] w-full rounded-full bg-neutral-200" />
+        <div className="h-[2px] w-full rounded-full bg-neutral-200" />
+        <div className="h-[2px] w-full rounded-full bg-neutral-200" />
+      </div>
     </div>
   );
 }
