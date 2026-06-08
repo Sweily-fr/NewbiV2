@@ -23,11 +23,10 @@ import {
 export const metadata = {
   // `absolute` court-circuite le template "%s | Newbi" du layout racine
   title: {
-    absolute:
-      "Newbi — Logiciel de facturation et gestion tout-en-un pour TPE et freelances",
+    absolute: "Newbi | Plateforme tout-en-un de gestion d'entreprise",
   },
   description:
-    "Newbi, le logiciel de facturation et de gestion tout-en-un pour TPE, PME et freelances : devis, factures, trésorerie, signatures mail, kanban et transfert de fichiers. Essai gratuit de 30 jours.",
+    "Newbi, la plateforme tout-en-un pour gérer votre entreprise : facturation, devis, trésorerie, gestion de projets, signatures mail. Essai gratuit 30 jours.",
   keywords: [
     "logiciel de facturation",
     "logiciel devis facture",
@@ -40,10 +39,9 @@ export const metadata = {
     canonical: "/",
   },
   openGraph: {
-    title:
-      "Newbi — Logiciel de facturation et gestion tout-en-un pour TPE et freelances",
+    title: "Newbi | Plateforme tout-en-un de gestion d'entreprise",
     description:
-      "Le logiciel tout-en-un pour piloter votre activité : devis, factures, trésorerie, signatures mail, kanban et transfert de fichiers. Essai gratuit de 30 jours.",
+      "Newbi, la plateforme tout-en-un pour gérer votre entreprise : facturation, devis, trésorerie, gestion de projets, signatures mail. Essai gratuit 30 jours.",
     url: "/",
     type: "website",
     images: ["/images/op-newbi.png"],

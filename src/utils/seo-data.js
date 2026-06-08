@@ -622,9 +622,55 @@ export const seoData = {
 };
 
 /**
+ * Liste ordonnée des landing pages "Produits" affichées dans le dropdown de la navbar.
+ * L'ordre est crucial : Google s'appuie sur les SiteNavigationElement et le hasPart
+ * du WebSite pour proposer les sitelinks dans les SERP. Cet ordre doit refléter
+ * exactement le dropdown Produits de la navbar (NewHeroNavbar.jsx) pour pousser
+ * Google à afficher ces LP en premier plutôt que FAQ/CGV/Politique.
+ */
+const productPages = [
+  {
+    name: "Facturation et devis",
+    description: "Automatisez et suivez facilement votre facturation",
+    path: "/produits/factures",
+  },
+  {
+    name: "Suivi de trésorerie",
+    description: "Gardez le contrôle de vos flux financiers",
+    path: "/produits/tresorerie",
+  },
+  {
+    name: "Gestion des achats",
+    description: "Gérez vos achats simplement, contrôlez vos dépenses",
+    path: "/produits/gestion-des-achats",
+  },
+  {
+    name: "Facturation électronique",
+    description: "Conformité 2026 garantie avec l'e-invoicing",
+    path: "/produits/facturation-electronique",
+  },
+  {
+    name: "Gestion de projets",
+    description: "Organisez vos projets avec des tableaux Kanban",
+    path: "/produits/kanban",
+  },
+  {
+    name: "Transfert de fichiers",
+    description: "Envoyez vos fichiers en toute sécurité",
+    path: "/produits/transfers",
+  },
+  {
+    name: "Signature de mail",
+    description: "Créez des signatures professionnelles pour vos emails",
+    path: "/produits/signatures",
+  },
+];
+
+/**
  * Données structurées (JSON-LD) de la page d'accueil.
  * Rendues côté serveur dans app/(main)/page.jsx pour être lues par les crawlers
- * sans exécution de JavaScript : Organization, WebSite, SoftwareApplication et FAQPage.
+ * sans exécution de JavaScript : Organization, WebSite (avec hasPart ordonné),
+ * ItemList des Produits (SiteNavigationElement), SoftwareApplication et FAQPage.
  */
 export const homeJsonLd = [
   {
@@ -659,6 +705,39 @@ export const homeJsonLd = [
       name: "Newbi",
       url: baseUrl,
     },
+    // hasPart liste les pages principales pour que Google priorise ces sitelinks
+    // (ordre = ordre du dropdown Produits de la navbar)
+    hasPart: productPages.map((p) => ({
+      "@type": "WebPage",
+      "@id": `${baseUrl}${p.path}`,
+      url: `${baseUrl}${p.path}`,
+      name: p.name,
+      description: p.description,
+      inLanguage: "fr-FR",
+      isPartOf: { "@type": "WebSite", "@id": baseUrl },
+    })),
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${baseUrl}/?q={search_term_string}`,
+      "query-input": "required name=search_term_string",
+    },
+  },
+  // ItemList ordonnée de SiteNavigationElement : signal explicite pour les sitelinks
+  {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "Produits Newbi",
+    description:
+      "Liste des produits et outils Newbi accessibles depuis la navigation principale",
+    itemListOrder: "https://schema.org/ItemListOrderAscending",
+    numberOfItems: productPages.length,
+    itemListElement: productPages.map((p, idx) => ({
+      "@type": "SiteNavigationElement",
+      position: idx + 1,
+      name: p.name,
+      description: p.description,
+      url: `${baseUrl}${p.path}`,
+    })),
   },
   {
     "@context": "https://schema.org",
