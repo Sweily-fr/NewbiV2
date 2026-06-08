@@ -242,7 +242,7 @@ export default function QuoteInfoSection({
   return (
     <>
       {/* Section Informations du document */}
-      <Card className="shadow-none p-0 border-none bg-transparent mt-8">
+      <Card className="shadow-none p-0 border-none bg-transparent">
         <CardHeader className="p-0">
           <CardTitle className="flex items-center gap-2 font-medium text-lg">
             Informations du {documentLabel}
@@ -274,7 +274,7 @@ export default function QuoteInfoSection({
             {/* Date d'émission */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Label className="text-sm font-light">
+                <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
                   Date d'émission <span className="text-red-500">*</span>
                 </Label>
                 <Tooltip>
@@ -357,7 +357,7 @@ export default function QuoteInfoSection({
 
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Label className="text-sm font-light">
+                <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
                   Valide jusqu'au <span className="text-red-500">*</span>
                 </Label>
                 <Tooltip>
@@ -377,7 +377,7 @@ export default function QuoteInfoSection({
                   </TooltipContent>
                 </Tooltip>
               </div>
-              <div className="grid grid-cols-2 gap-2 w-full">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 w-full">
                 <input
                   type="hidden"
                   {...register("validUntil", {
@@ -612,7 +612,7 @@ export default function QuoteInfoSection({
               <div className="flex items-center gap-2">
                 <Label
                   htmlFor="project-reference"
-                  className="text-sm font-light"
+                  className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
                 >
                   Référence
                 </Label>
@@ -651,7 +651,7 @@ export default function QuoteInfoSection({
                 <div className="flex items-center gap-2">
                   <Label
                     htmlFor="quote-reference"
-                    className="text-sm font-light"
+                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
                   >
                     Référence devis
                   </Label>

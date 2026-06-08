@@ -703,7 +703,7 @@ export default function ItemsSection({
 
                               {/* Prix unitaire et Taux de TVA - Taux de TVA masqué en auto-liquidation */}
                               <div
-                                className={`grid gap-4 ${
+                                className={`grid gap-3 md:gap-4 ${
                                   watch("isReverseCharge")
                                     ? "grid-cols-1"
                                     : "grid-cols-1 md:grid-cols-2"

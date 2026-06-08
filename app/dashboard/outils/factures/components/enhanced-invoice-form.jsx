@@ -639,7 +639,7 @@ export default function EnhancedInvoiceForm({
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 pb-20 lg:pb-12"
       >
-        <div className="space-y-6 px-2">
+        <div className="space-y-6 px-2 pt-4 md:pt-6">
           {/* Étape 1: Détails de la facture */}
           {currentStep === 1 && (
             <>
