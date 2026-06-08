@@ -112,8 +112,17 @@ export function useFeatureAccess(featureName) {
           subscription?.periodEnd &&
           new Date(subscription.periodEnd) > new Date();
 
+        // PATTERN A : trial maison converti vers sub payante. La sub Stripe
+        // reste `trialing` jusqu'à la fin du trial maison original (= date
+        // de première facturation), mais l'utilisateur a déjà engagé un
+        // paiement. On débloque les features payantes immédiatement.
+        const isConvertedTrial =
+          subscription?.status === "trialing" && trial?.isTrialActive === false;
+
         const isPaidSubscription =
-          subscription?.status === "active" || hasCanceledButValidSubscription;
+          subscription?.status === "active" ||
+          hasCanceledButValidSubscription ||
+          isConvertedTrial;
 
         if (!isPaidSubscription) {
           return {

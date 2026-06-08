@@ -613,38 +613,82 @@ export const stripePlugin = stripe({
                       event.data.object?.metadata?.isOnboarding === "true");
 
                   if (subscription.status === "trialing") {
-                    // Abonnement en période d'essai - Activer le trial Stripe sur l'organisation
-                    const trialEnd = subscription.trial_end
-                      ? new Date(subscription.trial_end * 1000)
-                      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 jours par défaut
+                    // PATTERN A : si cette sub est une conversion du trial
+                    // maison, on désactive le trial maison immédiatement
+                    // pour débloquer les features payantes. La sub reste en
+                    // `trialing` côté Stripe jusqu'à `trial_end` (date de
+                    // fin du trial maison) — aucune facturation avant.
+                    const isConvertedFromAppTrial =
+                      subscription.metadata?.convertedFromAppTrial === "true";
 
-                    const updateData = {
-                      isTrialActive: true,
-                      trialStartDate: new Date().toISOString(),
-                      trialEndDate: trialEnd.toISOString(),
-                      stripeTrialActive: true, // Marquer que c'est un trial Stripe
-                      updatedAt: new Date(),
-                    };
+                    if (isConvertedFromAppTrial) {
+                      const billingStartsAt = subscription.trial_end
+                        ? new Date(subscription.trial_end * 1000)
+                        : null;
 
-                    // ✅ CORRECTION: Marquer onboardingCompleted si c'est un flux onboarding
-                    if (isOnboarding) {
-                      updateData.onboardingCompleted = true;
-                    }
+                      const updateData = {
+                        isTrialActive: false,
+                        hasUsedTrial: true,
+                        stripeTrialActive: false,
+                        // Marqueur pour le safety net dans subscription.deleted :
+                        // si l'utilisateur annule avant cette date, on restaure
+                        // le trial maison.
+                        convertedTrialBillingStartsAt: billingStartsAt
+                          ? billingStartsAt.toISOString()
+                          : null,
+                        updatedAt: new Date(),
+                      };
 
-                    const orgUpdateResult = await mongoDb
-                      .collection("organization")
-                      .updateOne(
-                        { _id: new ObjectId(referenceId) },
-                        { $set: updateData },
-                      );
-                    if (orgUpdateResult.modifiedCount > 0) {
-                      console.log(
-                        `✅ [STRIPE WEBHOOK] Trial Stripe activé pour l'organisation ${referenceId} jusqu'au ${trialEnd.toLocaleDateString("fr-FR")}`,
-                      );
                       if (isOnboarding) {
-                        console.log(
-                          `✅ [STRIPE WEBHOOK] onboardingCompleted défini à true pour org: ${referenceId}`,
+                        updateData.onboardingCompleted = true;
+                      }
+
+                      const orgUpdateResult = await mongoDb
+                        .collection("organization")
+                        .updateOne(
+                          { _id: new ObjectId(referenceId) },
+                          { $set: updateData },
                         );
+                      if (orgUpdateResult.modifiedCount > 0) {
+                        console.log(
+                          `✅ [STRIPE WEBHOOK] Pattern A — Trial maison converti pour ${referenceId}. Features payantes débloquées. Première facturation: ${billingStartsAt ? billingStartsAt.toLocaleDateString("fr-FR") : "inconnue"}`,
+                        );
+                      }
+                    } else {
+                      // Comportement legacy : trial Stripe natif → activer
+                      // le trial maison pour cohérence d'UI/gating.
+                      const trialEnd = subscription.trial_end
+                        ? new Date(subscription.trial_end * 1000)
+                        : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 jours par défaut
+
+                      const updateData = {
+                        isTrialActive: true,
+                        trialStartDate: new Date().toISOString(),
+                        trialEndDate: trialEnd.toISOString(),
+                        stripeTrialActive: true, // Marquer que c'est un trial Stripe
+                        updatedAt: new Date(),
+                      };
+
+                      // ✅ CORRECTION: Marquer onboardingCompleted si c'est un flux onboarding
+                      if (isOnboarding) {
+                        updateData.onboardingCompleted = true;
+                      }
+
+                      const orgUpdateResult = await mongoDb
+                        .collection("organization")
+                        .updateOne(
+                          { _id: new ObjectId(referenceId) },
+                          { $set: updateData },
+                        );
+                      if (orgUpdateResult.modifiedCount > 0) {
+                        console.log(
+                          `✅ [STRIPE WEBHOOK] Trial Stripe activé pour l'organisation ${referenceId} jusqu'au ${trialEnd.toLocaleDateString("fr-FR")}`,
+                        );
+                        if (isOnboarding) {
+                          console.log(
+                            `✅ [STRIPE WEBHOOK] onboardingCompleted défini à true pour org: ${referenceId}`,
+                          );
+                        }
                       }
                     }
                   } else if (subscription.status === "active") {
@@ -920,6 +964,51 @@ export const stripePlugin = stripe({
               },
             );
             console.log(`✅ [STRIPE WEBHOOK] Abonnement annulé avec succès`);
+
+            // PATTERN A — Safety net : si l'utilisateur annule une sub qui
+            // était une conversion du trial maison ET avant la fin du trial
+            // d'origine, on restaure le trial maison pour qu'il puisse
+            // continuer à utiliser le produit jusqu'à `trial_end`.
+            try {
+              const wasConverted =
+                deletedSub.metadata?.convertedFromAppTrial === "true";
+              const trialEndMs = deletedSub.trial_end
+                ? deletedSub.trial_end * 1000
+                : null;
+              if (wasConverted && trialEndMs && trialEndMs > Date.now()) {
+                const orgId =
+                  deletedSub.metadata?.organizationId ||
+                  (
+                    await mongoDbDelete
+                      .collection("subscription")
+                      .findOne({ stripeSubscriptionId: deletedSub.id })
+                  )?.referenceId;
+                if (orgId) {
+                  // eslint-disable-next-line @typescript-eslint/no-require-imports
+                  const { ObjectId } = require("mongodb");
+                  await mongoDbDelete.collection("organization").updateOne(
+                    { _id: new ObjectId(orgId) },
+                    {
+                      $set: {
+                        isTrialActive: true,
+                        trialEndDate: new Date(trialEndMs).toISOString(),
+                        stripeTrialActive: false,
+                        updatedAt: new Date(),
+                      },
+                      $unset: { convertedTrialBillingStartsAt: "" },
+                    },
+                  );
+                  console.log(
+                    `✅ [STRIPE WEBHOOK] Pattern A — Trial maison restauré pour ${orgId} (annulation avant facturation). Trial actif jusqu'au ${new Date(trialEndMs).toLocaleDateString("fr-FR")}`,
+                  );
+                }
+              }
+            } catch (restoreError) {
+              console.warn(
+                `⚠️ [STRIPE WEBHOOK] Pattern A — Échec restauration trial maison:`,
+                restoreError.message,
+              );
+            }
 
             // Envoyer l'email de confirmation d'annulation
             try {
