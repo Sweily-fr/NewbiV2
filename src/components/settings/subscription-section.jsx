@@ -626,8 +626,10 @@ export function SubscriptionSection({
         </div>
       )}
 
-      {/* Comparison Table */}
-      <div className="rounded-xl border border-gray-200 dark:border-[#2c2c2c] relative">
+      {/* Comparison Table — wrapper relative pour que l'overlay violet
+          (avec son box-shadow externe) ne soit pas clippé. Le clipping
+          des colonnes grises se fait sur le `div` interne `overflow-hidden`. */}
+      <div className="relative">
         {/* Purple column border overlay for current plan */}
         {currentPlanIndex >= 0 && (
           <div
@@ -639,195 +641,198 @@ export function SubscriptionSection({
             }}
           />
         )}
-        {/* Table Grid - Header */}
-        <div className="grid grid-cols-[1.2fr_1fr_1fr_1fr]">
-          {/* Left column header */}
-          <div className="p-4 space-y-4 bg-[#FBFBFB] dark:bg-[#111111] border-r border-gray-200 dark:border-[#2c2c2c]">
-            <div>
-              <p className="text-sm font-semibold">Comparer les plans</p>
-              <p className="text-xs text-muted-foreground">
-                Trouvez le plan adapté
-              </p>
-            </div>
-            {/* Toggle */}
-            <div className="inline-flex items-center rounded-lg border border-gray-200 dark:border-[#2c2c2c] p-0.5 text-xs">
-              <button
-                type="button"
-                onClick={() => setIsAnnual(true)}
-                className={cn(
-                  "px-2.5 py-1 rounded-md cursor-pointer transition-colors flex items-center gap-1.5",
-                  isAnnual
-                    ? "bg-white dark:bg-[#2c2c2c] font-medium"
-                    : "text-muted-foreground",
-                )}
-              >
-                Annuel
-                <span className="text-[10px] text-[#5b50fe] bg-[#5b50fe]/10 rounded px-1 py-0.5 font-medium">
-                  -10%
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsAnnual(false)}
-                className={cn(
-                  "px-2.5 py-1 rounded-md cursor-pointer transition-colors",
-                  !isAnnual
-                    ? "bg-white dark:bg-[#2c2c2c] font-medium"
-                    : "text-muted-foreground",
-                )}
-              >
-                Mensuel
-              </button>
-            </div>
-          </div>
-
-          {/* Plan columns header */}
-          {PLANS_CONFIG.map((plan) => {
-            const isCurrentPlan = subscription?.plan === plan.key;
-            const price = isAnnual ? plan.annualPrice : plan.monthlyPrice;
-
-            return (
-              <div
-                key={plan.key}
-                className={cn(
-                  "p-4",
-                  isCurrentPlan && "bg-[#5b50fe]/[0.02] dark:bg-[#5b50fe]/5",
-                )}
-              >
-                {/* Name row - fixed height for alignment */}
-                <div className="h-10 flex flex-col justify-center">
-                  <p className="text-sm font-semibold">{plan.name}</p>
-                  {plan.popular ? (
-                    <p className="text-xs text-[#5b50fe] font-medium">
-                      Populaire
-                    </p>
-                  ) : (
-                    <p className="text-xs text-transparent select-none">
-                      &nbsp;
-                    </p>
-                  )}
-                </div>
-
-                {/* Price */}
-                <div className="mt-3">
-                  <div className="flex items-baseline">
-                    <span className="text-2xl font-semibold tabular-nums">
-                      €{formatPrice(price)}
-                    </span>
-                    <span className="text-xs text-muted-foreground ml-1">
-                      /mois
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">
-                    {isAnnual
-                      ? "facturé annuellement"
-                      : "facturé mensuellement"}
-                  </p>
-                </div>
-
-                {/* Button */}
-                <div className="mt-3">
-                  {isCurrentPlan ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full cursor-default text-xs"
-                      disabled
-                    >
-                      Plan actuel
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full cursor-pointer text-xs"
-                      onClick={() => openPlanChangeModal(plan.key)}
-                      disabled={
-                        loadingPlan === plan.key || !canManageSubscription
-                      }
-                    >
-                      {loadingPlan === plan.key ? (
-                        <LoaderCircle className="h-3 w-3 animate-spin" />
-                      ) : subscription?.plan ? (
-                        PLANS_CONFIG.findIndex(
-                          (p) => p.key === subscription.plan,
-                        ) >
-                        PLANS_CONFIG.findIndex((p) => p.key === plan.key) ? (
-                          "Downgrade"
-                        ) : (
-                          "Choisir"
-                        )
-                      ) : (
-                        "Choisir"
-                      )}
-                    </Button>
-                  )}
-                </div>
+        <div className="rounded-xl border border-gray-200 dark:border-[#2c2c2c] overflow-hidden">
+          {/* Table Grid - Header */}
+          <div className="grid grid-cols-[1.2fr_1fr_1fr_1fr]">
+            {/* Left column header */}
+            <div className="p-4 space-y-4 bg-[#FBFBFB] dark:bg-[#111111] border-r border-gray-200 dark:border-[#2c2c2c]">
+              <div>
+                <p className="text-sm font-semibold">Comparer les plans</p>
+                <p className="text-xs text-muted-foreground">
+                  Trouvez le plan adapté
+                </p>
               </div>
-            );
-          })}
-        </div>
-
-        {/* Comparison Rows */}
-        <div className="relative before:content-[''] before:absolute before:top-0 before:left-4 before:right-4 before:h-px before:bg-gray-200 dark:before:bg-[#2c2c2c]">
-          {/* Section title */}
-          <div className="grid grid-cols-[1.2fr_1fr_1fr_1fr] relative after:content-[''] after:absolute after:bottom-0 after:left-4 after:right-4 after:h-px after:bg-gray-200 dark:after:bg-[#2c2c2c]">
-            <div className="px-4 py-2 bg-[#FBFBFB] dark:bg-[#111111] border-r border-gray-200 dark:border-[#2c2c2c]">
-              <p className="text-xs font-semibold">Fonctionnalités</p>
+              {/* Toggle */}
+              <div className="inline-flex items-center rounded-lg border border-gray-200 dark:border-[#2c2c2c] p-0.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setIsAnnual(true)}
+                  className={cn(
+                    "px-2.5 py-1 rounded-md cursor-pointer transition-colors flex items-center gap-1.5",
+                    isAnnual
+                      ? "bg-white dark:bg-[#2c2c2c] font-medium"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  Annuel
+                  <span className="text-[10px] text-[#5b50fe] bg-[#5b50fe]/10 rounded px-1 py-0.5 font-medium">
+                    -10%
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsAnnual(false)}
+                  className={cn(
+                    "px-2.5 py-1 rounded-md cursor-pointer transition-colors",
+                    !isAnnual
+                      ? "bg-white dark:bg-[#2c2c2c] font-medium"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  Mensuel
+                </button>
+              </div>
             </div>
+
+            {/* Plan columns header */}
             {PLANS_CONFIG.map((plan) => {
               const isCurrentPlan = subscription?.plan === plan.key;
+              const price = isAnnual ? plan.annualPrice : plan.monthlyPrice;
+
               return (
                 <div
                   key={plan.key}
                   className={cn(
-                    "px-4 py-2",
+                    "p-4",
                     isCurrentPlan && "bg-[#5b50fe]/[0.02] dark:bg-[#5b50fe]/5",
                   )}
-                />
+                >
+                  {/* Name row - fixed height for alignment */}
+                  <div className="h-10 flex flex-col justify-center">
+                    <p className="text-sm font-semibold">{plan.name}</p>
+                    {plan.popular ? (
+                      <p className="text-xs text-[#5b50fe] font-medium">
+                        Populaire
+                      </p>
+                    ) : (
+                      <p className="text-xs text-transparent select-none">
+                        &nbsp;
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Price */}
+                  <div className="mt-3">
+                    <div className="flex items-baseline">
+                      <span className="text-2xl font-semibold tabular-nums">
+                        €{formatPrice(price)}
+                      </span>
+                      <span className="text-xs text-muted-foreground ml-1">
+                        /mois
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      {isAnnual
+                        ? "facturé annuellement"
+                        : "facturé mensuellement"}
+                    </p>
+                  </div>
+
+                  {/* Button */}
+                  <div className="mt-3">
+                    {isCurrentPlan ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full cursor-default text-xs"
+                        disabled
+                      >
+                        Plan actuel
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full cursor-pointer text-xs"
+                        onClick={() => openPlanChangeModal(plan.key)}
+                        disabled={
+                          loadingPlan === plan.key || !canManageSubscription
+                        }
+                      >
+                        {loadingPlan === plan.key ? (
+                          <LoaderCircle className="h-3 w-3 animate-spin" />
+                        ) : subscription?.plan ? (
+                          PLANS_CONFIG.findIndex(
+                            (p) => p.key === subscription.plan,
+                          ) >
+                          PLANS_CONFIG.findIndex((p) => p.key === plan.key) ? (
+                            "Downgrade"
+                          ) : (
+                            "Choisir"
+                          )
+                        ) : (
+                          "Choisir"
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </div>
               );
             })}
           </div>
 
-          {/* Feature rows */}
-          {COMPARISON_ROWS.map((row, index) => (
-            <div
-              key={row.key}
-              className={cn(
-                "grid grid-cols-[1.2fr_1fr_1fr_1fr]",
-                index < COMPARISON_ROWS.length - 1 &&
-                  "relative after:content-[''] after:absolute after:bottom-0 after:left-4 after:right-4 after:h-px after:bg-gray-100 dark:after:bg-[#2c2c2c]",
-              )}
-            >
-              <div className="px-4 py-2.5 bg-[#FBFBFB] dark:bg-[#111111] border-r border-gray-200 dark:border-[#2c2c2c]">
-                <span className="text-xs text-muted-foreground">
-                  {row.label}
-                </span>
+          {/* Comparison Rows */}
+          <div className="relative before:content-[''] before:absolute before:top-0 before:left-4 before:right-4 before:h-px before:bg-gray-200 dark:before:bg-[#2c2c2c]">
+            {/* Section title */}
+            <div className="grid grid-cols-[1.2fr_1fr_1fr_1fr] relative after:content-[''] after:absolute after:bottom-0 after:left-4 after:right-4 after:h-px after:bg-gray-200 dark:after:bg-[#2c2c2c]">
+              <div className="px-4 py-2 bg-[#FBFBFB] dark:bg-[#111111] border-r border-gray-200 dark:border-[#2c2c2c]">
+                <p className="text-xs font-semibold">Fonctionnalités</p>
               </div>
               {PLANS_CONFIG.map((plan) => {
                 const isCurrentPlan = subscription?.plan === plan.key;
-                const value = plan.features[row.key];
                 return (
                   <div
                     key={plan.key}
                     className={cn(
-                      "px-4 py-2.5 flex items-center",
+                      "px-4 py-2",
                       isCurrentPlan &&
                         "bg-[#5b50fe]/[0.02] dark:bg-[#5b50fe]/5",
                     )}
-                  >
-                    {value === true ? (
-                      <Check className="h-3.5 w-3.5 text-[#5b50fe]" />
-                    ) : value === false ? (
-                      <X className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600" />
-                    ) : (
-                      <span className="text-xs font-medium">{value}</span>
-                    )}
-                  </div>
+                  />
                 );
               })}
             </div>
-          ))}
+
+            {/* Feature rows */}
+            {COMPARISON_ROWS.map((row, index) => (
+              <div
+                key={row.key}
+                className={cn(
+                  "grid grid-cols-[1.2fr_1fr_1fr_1fr]",
+                  index < COMPARISON_ROWS.length - 1 &&
+                    "relative after:content-[''] after:absolute after:bottom-0 after:left-4 after:right-4 after:h-px after:bg-gray-100 dark:after:bg-[#2c2c2c]",
+                )}
+              >
+                <div className="px-4 py-2.5 bg-[#FBFBFB] dark:bg-[#111111] border-r border-gray-200 dark:border-[#2c2c2c]">
+                  <span className="text-xs text-muted-foreground">
+                    {row.label}
+                  </span>
+                </div>
+                {PLANS_CONFIG.map((plan) => {
+                  const isCurrentPlan = subscription?.plan === plan.key;
+                  const value = plan.features[row.key];
+                  return (
+                    <div
+                      key={plan.key}
+                      className={cn(
+                        "px-4 py-2.5 flex items-center",
+                        isCurrentPlan &&
+                          "bg-[#5b50fe]/[0.02] dark:bg-[#5b50fe]/5",
+                      )}
+                    >
+                      {value === true ? (
+                        <Check className="h-3.5 w-3.5 text-[#5b50fe]" />
+                      ) : value === false ? (
+                        <X className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600" />
+                      ) : (
+                        <span className="text-xs font-medium">{value}</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

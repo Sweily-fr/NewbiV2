@@ -113,6 +113,9 @@ export function GeneraleSection({
       {/* Titre */}
       <div>
         <h2 className="text-lg font-medium mb-1 hidden md:block">Générale</h2>
+        <p className="text-sm text-muted-foreground mb-4 hidden md:block">
+          Informations générales de votre entreprise.
+        </p>
         <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
 
         {/* Message d'information si pas de permissions */}

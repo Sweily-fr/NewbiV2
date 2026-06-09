@@ -16,7 +16,16 @@ import {
   Eye,
   AlertCircle,
   ExternalLink,
+  CheckCircle,
+  Clock,
+  XCircle,
 } from "lucide-react";
+import {
+  TrendUpIcon,
+  BankCardIcon,
+  DocumentText2Icon,
+  DownloadIcon,
+} from "@/src/components/icons";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
@@ -64,13 +73,16 @@ export default function FacturationSection({
   // TODO: réactiver la gestion des sièges plus tard
   // const [seatsInfo, setSeatsInfo] = useState(null);
   const [billingPortalLoading, setBillingPortalLoading] = useState(false);
+  // Identifie quel bouton est en cours de chargement (loader ciblé)
+  // Valeurs possibles : null | "address" | "payment" | "subscription" | "cancel"
+  const [billingPortalLoadingTarget, setBillingPortalLoadingTarget] =
+    useState(null);
 
   const {
     invoices,
     loading: invoicesLoading,
     error: invoicesError,
     refetch: refetchInvoices,
-    viewInvoice,
     downloadInvoice,
   } = useStripeInvoices();
   const { subscription, isActive, loading: subLoading } = useSubscription();
@@ -127,13 +139,14 @@ export default function FacturationSection({
   const planConfig = PLANS_CONFIG[subscription?.plan] || PLANS_CONFIG.freelance;
   const planLimits = PLAN_LIMITS[subscription?.plan] || PLAN_LIMITS.freelance;
 
-  // Billing portal
-  const handleOpenBillingPortal = async () => {
+  // Billing portal — `target` identifie le bouton appelant (pour loader ciblé)
+  const handleOpenBillingPortal = async (target = null) => {
     if (!subscription?.stripeCustomerId) {
       toast.error("Aucun identifiant client Stripe trouvé");
       return;
     }
     setBillingPortalLoading(true);
+    setBillingPortalLoadingTarget(target);
     try {
       const response = await fetch("/api/stripe/billing-portal", {
         method: "POST",
@@ -150,6 +163,7 @@ export default function FacturationSection({
       toast.error("Erreur lors de l'ouverture du portail de facturation");
     } finally {
       setBillingPortalLoading(false);
+      setBillingPortalLoadingTarget(null);
     }
   };
 
@@ -186,40 +200,55 @@ export default function FacturationSection({
     }
   };
 
-  // Status badges for invoices
+  // Status badges for invoices — pattern strictement identique au tableau
+  // factures (use-invoice-table.js : <span> custom avec icône + bg-XXX-100
+  // text-XXX-700 + dark variants -900/20 et -400, pas le composant <Badge>)
   const getStatusBadge = (status) => {
     const configs = {
       paid: {
         label: "Payée",
+        icon: <CheckCircle className="w-3 h-3" />,
         className:
-          "bg-green-50 text-green-600 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800",
+          "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400",
       },
       open: {
         label: "En attente",
+        icon: <Clock className="w-3 h-3" />,
         className:
-          "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/30 dark:text-orange-400 dark:border-orange-800",
+          "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400",
       },
       void: {
         label: "Annulée",
+        icon: <XCircle className="w-3 h-3" />,
         className:
-          "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800",
+          "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400",
       },
       draft: {
         label: "Brouillon",
+        icon: <FileText className="w-3 h-3" />,
         className:
-          "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700",
+          "bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400",
       },
       uncollectible: {
         label: "Irrécupérable",
+        icon: <XCircle className="w-3 h-3" />,
         className:
-          "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800",
+          "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400",
       },
     };
-    const config = configs[status] || { label: status, className: "" };
+    const config = configs[status] || {
+      label: status,
+      icon: <FileText className="w-3 h-3" />,
+      className:
+        "bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400",
+    };
     return (
-      <Badge variant="secondary" className={`text-xs ${config.className}`}>
+      <span
+        className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap ${config.className}`}
+      >
+        {config.icon}
         {config.label}
-      </Badge>
+      </span>
     );
   };
 
@@ -505,12 +534,13 @@ export default function FacturationSection({
             </div>
             <Button
               type="button"
-              variant="outline"
+              variant="primary"
               size="sm"
               onClick={() => onTabChange?.("subscription")}
-              className="cursor-pointer"
+              className="cursor-pointer gap-1.5"
             >
               Changer de plan
+              <TrendUpIcon className="h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -568,8 +598,8 @@ export default function FacturationSection({
           <div className="rounded-xl border border-gray-200 dark:border-[#2c2c2c] p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-green-100 dark:bg-green-950/30">
-                  <ScanLine className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-[#5b50fe]/10 dark:bg-[#5b50fe]/20">
+                  <ScanLine className="h-3.5 w-3.5 text-[#5b50fe] dark:text-[#8b7fff]" />
                 </div>
                 <span className="text-sm font-medium">Crédits OCR</span>
               </div>
@@ -590,7 +620,7 @@ export default function FacturationSection({
                     )
                   : 0
               }
-              className="h-1 bg-green-100 dark:bg-green-950/30 [&>[data-slot=progress-indicator]]:bg-green-500"
+              className="h-1 bg-[#5b50fe]/10 dark:bg-[#5b50fe]/20 [&>[data-slot=progress-indicator]]:bg-[#5b50fe]"
             />
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">
@@ -630,10 +660,10 @@ export default function FacturationSection({
                 variant="outline"
                 size="icon"
                 className="h-8 w-8 cursor-pointer"
-                onClick={handleOpenBillingPortal}
+                onClick={() => handleOpenBillingPortal("address")}
                 disabled={billingPortalLoading || !canManageSubscription}
               >
-                {billingPortalLoading ? (
+                {billingPortalLoadingTarget === "address" ? (
                   <LoaderCircle className="h-4 w-4 animate-spin" />
                 ) : (
                   <Pencil className="h-4 w-4" />
@@ -651,6 +681,12 @@ export default function FacturationSection({
                 <span className="text-muted-foreground">Entreprise</span>
                 <span className="text-right truncate ml-2">
                   {stripeCustomerLoading ? "..." : stripeCustomer?.name || "–"}
+                </span>
+              </div>
+              <div className="flex justify-between py-3">
+                <span className="text-muted-foreground">Téléphone</span>
+                <span className="text-right truncate ml-2">
+                  {stripeCustomerLoading ? "..." : stripeCustomer?.phone || "–"}
                 </span>
               </div>
               <div className="flex justify-between py-3">
@@ -694,179 +730,213 @@ export default function FacturationSection({
                 variant="outline"
                 size="icon"
                 className="h-8 w-8 cursor-pointer"
-                onClick={handleOpenBillingPortal}
+                onClick={() => handleOpenBillingPortal("payment")}
                 disabled={billingPortalLoading || !canManageSubscription}
               >
-                {billingPortalLoading ? (
+                {billingPortalLoadingTarget === "payment" ? (
                   <LoaderCircle className="h-4 w-4 animate-spin" />
                 ) : (
                   <Plus className="h-4 w-4" />
                 )}
               </Button>
             </div>
-            <div className="flex flex-col items-center justify-center py-4 text-center">
-              <ExternalLink className="h-8 w-8 text-muted-foreground/40 mb-2" />
-              <p className="text-xs text-muted-foreground">
-                Vos moyens de paiement sont gérés directement par Stripe.
+            <TableEmptyState
+              icon={BankCardIcon}
+              title="Aucun moyen de paiement"
+              description="Vos moyens de paiement sont gérés directement par Stripe."
+              size="xs"
+              action={
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  className="text-[#5b50fe] cursor-pointer h-auto p-0 text-xs"
+                  onClick={handleOpenBillingPortal}
+                  disabled={billingPortalLoading || !canManageSubscription}
+                >
+                  Ouvrir le portail de paiement
+                </Button>
+              }
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Invoice History — réservé aux membres autorisés à gérer la sub */}
+      {canManageSubscription && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-medium">Historique des factures</h3>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={refetchInvoices}
+              disabled={invoicesLoading}
+              className="cursor-pointer h-8 text-xs"
+            >
+              {invoicesLoading ? (
+                <LoaderCircle className="h-3 w-3 animate-spin mr-1" />
+              ) : null}
+              Actualiser
+            </Button>
+          </div>
+
+          {/* Loading state */}
+          {invoicesLoading && (
+            <div className="rounded-xl border border-gray-200 dark:border-[#2c2c2c] overflow-hidden">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between p-4 border-b last:border-b-0 border-gray-100 dark:border-[#2c2c2c]"
+                >
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="h-4 bg-gray-200 dark:bg-[#292929] rounded animate-pulse w-24" />
+                    <div className="h-4 bg-gray-200 dark:bg-[#292929] rounded animate-pulse w-16" />
+                    <div className="h-5 bg-gray-200 dark:bg-[#292929] rounded-full animate-pulse w-14" />
+                  </div>
+                  <div className="h-8 bg-gray-200 dark:bg-[#292929] rounded animate-pulse w-8" />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Error state */}
+          {invoicesError && !invoicesLoading && (
+            <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertCircle className="h-4 w-4 text-red-500" />
+                <span className="text-sm font-medium text-red-700 dark:text-red-400">
+                  Erreur
+                </span>
+              </div>
+              <p className="text-sm text-red-600 dark:text-red-400 mb-3">
+                {invoicesError}
               </p>
               <Button
                 type="button"
-                variant="link"
+                variant="outline"
                 size="sm"
-                className="text-[#5b50fe] cursor-pointer mt-1 h-auto p-0 text-xs"
-                onClick={handleOpenBillingPortal}
-                disabled={billingPortalLoading || !canManageSubscription}
+                onClick={refetchInvoices}
+                className="text-red-700 border-red-300 hover:bg-red-50 cursor-pointer"
               >
-                Ouvrir le portail de paiement
+                Réessayer
               </Button>
             </div>
-          </div>
-        </div>
-      </div>
+          )}
 
-      {/* Invoice History */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium">Historique des factures</h3>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={refetchInvoices}
-            disabled={invoicesLoading}
-            className="cursor-pointer h-8 text-xs"
-          >
-            {invoicesLoading ? (
-              <LoaderCircle className="h-3 w-3 animate-spin mr-1" />
-            ) : null}
-            Actualiser
-          </Button>
-        </div>
-
-        {/* Loading state */}
-        {invoicesLoading && (
-          <div className="rounded-xl border border-gray-200 dark:border-[#2c2c2c] overflow-hidden">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between p-4 border-b last:border-b-0 border-gray-100 dark:border-[#2c2c2c]"
-              >
-                <div className="flex items-center gap-4 flex-1">
-                  <div className="h-4 bg-gray-200 dark:bg-[#292929] rounded animate-pulse w-24" />
-                  <div className="h-4 bg-gray-200 dark:bg-[#292929] rounded animate-pulse w-16" />
-                  <div className="h-5 bg-gray-200 dark:bg-[#292929] rounded-full animate-pulse w-14" />
-                </div>
-                <div className="h-8 bg-gray-200 dark:bg-[#292929] rounded animate-pulse w-8" />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Error state */}
-        {invoicesError && !invoicesLoading && (
-          <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20 p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertCircle className="h-4 w-4 text-red-500" />
-              <span className="text-sm font-medium text-red-700 dark:text-red-400">
-                Erreur
-              </span>
-            </div>
-            <p className="text-sm text-red-600 dark:text-red-400 mb-3">
-              {invoicesError}
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={refetchInvoices}
-              className="text-red-700 border-red-300 hover:bg-red-50 cursor-pointer"
-            >
-              Réessayer
-            </Button>
-          </div>
-        )}
-
-        {/* Invoice table */}
-        {!invoicesLoading && !invoicesError && invoices.length > 0 && (
-          <div className="rounded-xl border border-gray-200 dark:border-[#2c2c2c] overflow-hidden">
-            {/* Table Header */}
-            <div className="hidden md:grid grid-cols-[1fr_100px_120px_80px_48px] gap-4 px-4 py-2.5 bg-gray-50 dark:bg-[#141414] border-b border-gray-200 dark:border-[#2c2c2c]">
-              <span className="text-xs font-medium text-muted-foreground">
-                Référence
-              </span>
-              <span className="text-xs font-medium text-muted-foreground">
-                Total TTC
-              </span>
-              <span className="text-xs font-medium text-muted-foreground">
-                Date
-              </span>
-              <span className="text-xs font-medium text-muted-foreground">
-                Statut
-              </span>
-              <span className="text-xs font-medium text-muted-foreground" />
-            </div>
-
-            {/* Table Rows (max 5) */}
-            {invoices.slice(0, 3).map((facture, index, arr) => (
-              <div
-                key={facture.id}
-                className={`grid grid-cols-1 md:grid-cols-[1fr_100px_120px_80px_48px] gap-2 md:gap-4 px-4 py-3 items-center ${
-                  index < arr.length - 1
-                    ? "border-b border-gray-100 dark:border-[#2c2c2c]"
-                    : ""
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-muted-foreground shrink-0 hidden md:block" />
-                  <span className="text-sm truncate">
-                    {facture.number || facture.description || `Facture`}
-                  </span>
-                </div>
-                <span className="text-sm font-medium">{facture.amount}</span>
-                <span className="text-sm text-muted-foreground">
-                  {facture.date}
+          {/* Invoice table */}
+          {!invoicesLoading && !invoicesError && invoices.length > 0 && (
+            <div className="rounded-xl border border-gray-200 dark:border-[#2c2c2c] overflow-hidden">
+              {/* Table Header */}
+              <div className="hidden md:grid grid-cols-[1fr_100px_120px_80px_48px] gap-4 px-4 py-2.5 bg-gray-50 dark:bg-[#141414] border-b border-gray-200 dark:border-[#2c2c2c]">
+                <span className="text-xs font-medium text-muted-foreground">
+                  Référence
                 </span>
-                <div>{getStatusBadge(facture.status)}</div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 cursor-pointer"
-                  onClick={() => downloadInvoice(facture.stripeInvoiceId)}
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
+                <span className="text-xs font-medium text-muted-foreground">
+                  Total TTC
+                </span>
+                <span className="text-xs font-medium text-muted-foreground">
+                  Date
+                </span>
+                <span className="text-xs font-medium text-muted-foreground">
+                  Statut
+                </span>
+                <span className="text-xs font-medium text-muted-foreground" />
               </div>
-            ))}
 
-            {/* Voir plus */}
-            {invoices.length > 3 && (
-              <div className="px-4 py-2.5 border-t border-gray-100 dark:border-[#2c2c2c] text-center">
-                <button
-                  type="button"
-                  onClick={handleOpenBillingPortal}
-                  className="text-xs text-[#5b50fe] hover:underline cursor-pointer"
+              {/* Table Rows (max 5) */}
+              {invoices.slice(0, 5).map((facture, index, arr) => (
+                <div
+                  key={facture.id}
+                  className={`grid grid-cols-1 md:grid-cols-[1fr_100px_120px_80px_48px] gap-2 md:gap-4 px-4 py-3 md:items-center ${
+                    index < arr.length - 1
+                      ? "border-b border-gray-100 dark:border-[#2c2c2c]"
+                      : ""
+                  }`}
                 >
-                  Voir les {invoices.length - 3} autres factures
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+                  {/* Référence */}
+                  <div className="flex items-center gap-2">
+                    <DocumentText2Icon className="h-4 w-4 text-muted-foreground shrink-0 hidden md:block" />
+                    <span className="text-sm truncate">
+                      {facture.number || facture.description || `Facture`}
+                    </span>
+                  </div>
+                  {/* Total TTC */}
+                  <div className="flex md:block items-center justify-between">
+                    <span className="md:hidden text-xs text-muted-foreground">
+                      Total TTC
+                    </span>
+                    <span className="text-sm font-medium">
+                      {facture.amount}
+                    </span>
+                  </div>
+                  {/* Date */}
+                  <div className="flex md:block items-center justify-between">
+                    <span className="md:hidden text-xs text-muted-foreground">
+                      Date
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      {facture.date}
+                    </span>
+                  </div>
+                  {/* Statut */}
+                  <div className="flex md:block items-center justify-between">
+                    <span className="md:hidden text-xs text-muted-foreground">
+                      Statut
+                    </span>
+                    <div>{getStatusBadge(facture.status)}</div>
+                  </div>
+                  {/* Action */}
+                  <div className="flex md:block items-center justify-between">
+                    <span className="md:hidden text-xs text-muted-foreground">
+                      Télécharger
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 cursor-pointer"
+                      onClick={() => downloadInvoice(facture.stripeInvoiceId)}
+                    >
+                      <DownloadIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
 
-        {/* Empty state */}
-        {!invoicesLoading && !invoicesError && invoices.length === 0 && (
-          <div className="rounded-xl border border-gray-200 dark:border-[#2c2c2c] p-8 text-center">
-            <FileText className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
-            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
-              Aucune facture
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Vos factures apparaîtront ici une fois générées.
-            </p>
-          </div>
-        )}
-      </div>
+              {/* Voir plus */}
+              {invoices.length > 5 && (
+                <div className="px-4 py-2.5 border-t border-gray-100 dark:border-[#2c2c2c] text-center">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenBillingPortal("viewMore")}
+                    disabled={billingPortalLoading}
+                    className="text-xs text-[#5b50fe] hover:underline cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {billingPortalLoadingTarget === "viewMore" && (
+                      <LoaderCircle className="h-3 w-3 animate-spin" />
+                    )}
+                    Voir les {invoices.length - 5} autres factures
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Empty state */}
+          {!invoicesLoading && !invoicesError && invoices.length === 0 && (
+            <div className="rounded-xl border border-gray-200 dark:border-[#2c2c2c] overflow-hidden">
+              <TableEmptyState
+                icon={DocumentText2Icon}
+                title="Aucune facture"
+                description="Vos factures apparaîtront ici une fois générées."
+                size="compact"
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Cancel Subscription */}
       {isActive() &&
