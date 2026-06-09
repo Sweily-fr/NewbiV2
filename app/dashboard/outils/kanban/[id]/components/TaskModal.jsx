@@ -23,6 +23,7 @@ import {
   Paperclip,
   Play,
   Square,
+  Euro,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -70,6 +71,11 @@ const TaskActivity = lazy(() =>
 );
 import { TimerControls } from "./TimerControls";
 import { LocalTimerControls } from "./LocalTimerControls";
+import {
+  calculateTaskAmount,
+  formatTaskAmount,
+  getEffectiveSeconds,
+} from "./taskAmount";
 import { TaskImageUpload } from "./TaskImageUpload";
 import { useTaskImageUpload } from "../hooks/useTaskImageUpload";
 import { useDebouncedMemberFlush } from "../hooks/useMemberToggle";
@@ -83,6 +89,55 @@ import { PendingCommentsView } from "./task-modal/PendingCommentsView";
 import { DescriptionEditor } from "./task-modal/DescriptionEditor";
 import { TaskModalHeader } from "./task-modal/TaskModalHeader";
 import { computeAutoSaveSignature } from "../hooks/taskFormSignature";
+
+/**
+ * Affiche le temps suivi avec les secondes, et défile en direct (1 s) quand le
+ * timer est en cours. Utilisé comme déclencheur du popover de contrôle du timer.
+ */
+function TaskTimeLabel({ timeTracking }) {
+  const isRunning = !!timeTracking?.isRunning;
+  // Re-render chaque seconde uniquement quand le timer tourne.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (!isRunning) return;
+    const id = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [isRunning]);
+
+  const totalSeconds = getEffectiveSeconds(timeTracking);
+
+  if (totalSeconds <= 0 && !isRunning) {
+    return (
+      <>
+        <Play className="h-3 w-3" style={{ color: "#8D8D8D" }} />
+        <span className="text-sm" style={{ color: "#8D8D8D" }}>
+          Start
+        </span>
+      </>
+    );
+  }
+
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  const formatted =
+    h > 0 ? `${h}h ${m}m ${s}s` : m > 0 ? `${m}m ${s}s` : `${s}s`;
+
+  if (isRunning) {
+    return (
+      <>
+        <Square className="h-3 w-3 fill-red-500 text-red-500" />
+        <span className="text-sm text-red-500 font-medium tabular-nums">
+          {formatted}
+        </span>
+      </>
+    );
+  }
+
+  return (
+    <span className="text-sm text-foreground/70 tabular-nums">{formatted}</span>
+  );
+}
 
 function TaskActivityFallback() {
   return (
@@ -779,18 +834,33 @@ export function TaskModal({
                 )}
 
                 <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 h-0 min-h-0">
-                  {/* Titre — gros, hover gris, focus border */}
-                  <input
-                    value={taskForm.title}
-                    onChange={handleTitleChange}
-                    onFocus={(e) => {
-                      e.target.setSelectionRange(0, 0);
-                      handleTextInputFocus();
-                    }}
-                    onBlur={handleTextInputBlur}
-                    className="w-full text-2xl font-semibold text-foreground bg-transparent outline-none caret-[#5A50FF] px-2 py-1 -mx-2 rounded-md border border-transparent hover:bg-muted/40 focus:bg-transparent focus:border-border/60 transition-all placeholder:text-muted-foreground/30"
-                    placeholder="Titre de la tâche"
-                  />
+                  {/* Titre — gros, hover gris, focus border + montant à droite */}
+                  <div className="flex items-center gap-3">
+                    <input
+                      value={taskForm.title}
+                      onChange={handleTitleChange}
+                      onFocus={(e) => {
+                        e.target.setSelectionRange(0, 0);
+                        handleTextInputFocus();
+                      }}
+                      onBlur={handleTextInputBlur}
+                      className="flex-1 min-w-0 text-2xl font-semibold text-foreground bg-transparent outline-none caret-[#5A50FF] px-2 py-1 -mx-2 rounded-md border border-transparent hover:bg-muted/40 focus:bg-transparent focus:border-border/60 transition-all placeholder:text-muted-foreground/30"
+                      placeholder="Titre de la tâche"
+                    />
+                    {(() => {
+                      const amount = calculateTaskAmount(taskForm.timeTracking);
+                      if (amount == null) return null;
+                      return (
+                        <Badge
+                          variant="outline"
+                          className="flex-shrink-0 inline-flex items-center gap-1 py-1 px-2.5 text-sm font-medium rounded-md text-foreground/80 tabular-nums"
+                        >
+                          <Euro className="h-3.5 w-3.5" />
+                          <span>{formatTaskAmount(amount)}</span>
+                        </Badge>
+                      );
+                    })()}
+                  </div>
 
                   {/* Grille 2 colonnes : Status à Tags */}
                   <div className="grid grid-cols-2 gap-x-8 gap-y-0">
@@ -1469,31 +1539,9 @@ export function TaskModal({
                         <Popover modal={false}>
                           <PopoverTrigger asChild>
                             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md hover:bg-muted/60 transition-colors cursor-pointer">
-                              {taskForm.timeTracking?.isRunning ? (
-                                <>
-                                  <Square className="h-3 w-3 fill-red-500 text-red-500" />
-                                  <span className="text-sm text-red-500 font-medium">
-                                    En cours...
-                                  </span>
-                                </>
-                              ) : taskForm.timeTracking?.totalSeconds > 0 ? (
-                                <span className="text-sm text-foreground/70">
-                                  {`${Math.floor(taskForm.timeTracking.totalSeconds / 3600)}h ${Math.floor((taskForm.timeTracking.totalSeconds % 3600) / 60)}m`}
-                                </span>
-                              ) : (
-                                <>
-                                  <Play
-                                    className="h-3 w-3"
-                                    style={{ color: "#8D8D8D" }}
-                                  />
-                                  <span
-                                    className="text-sm"
-                                    style={{ color: "#8D8D8D" }}
-                                  >
-                                    Start
-                                  </span>
-                                </>
-                              )}
+                              <TaskTimeLabel
+                                timeTracking={taskForm.timeTracking}
+                              />
                             </div>
                           </PopoverTrigger>
                           <PopoverContent
@@ -1703,12 +1751,29 @@ export function TaskModal({
                   {/* Contenu du formulaire (même que desktop) */}
                   {/* Titre */}
                   <div className="space-y-2">
-                    <Label
-                      htmlFor="task-title-mobile"
-                      className="text-sm font-normal"
-                    >
-                      Titre <span className="text-red-500">*</span>
-                    </Label>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label
+                        htmlFor="task-title-mobile"
+                        className="text-sm font-normal"
+                      >
+                        Titre <span className="text-red-500">*</span>
+                      </Label>
+                      {(() => {
+                        const amount = calculateTaskAmount(
+                          taskForm.timeTracking,
+                        );
+                        if (amount == null) return null;
+                        return (
+                          <Badge
+                            variant="outline"
+                            className="flex-shrink-0 inline-flex items-center gap-1 py-0.5 px-2 text-xs font-medium rounded-md text-foreground/80 tabular-nums"
+                          >
+                            <Euro className="h-3.5 w-3.5" />
+                            <span>{formatTaskAmount(amount)}</span>
+                          </Badge>
+                        );
+                      })()}
+                    </div>
                     <Input
                       id="task-title-mobile"
                       value={taskForm.title}

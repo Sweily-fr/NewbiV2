@@ -68,6 +68,7 @@ import { MemberSelector } from "./MemberSelector";
 import { useTaskMembers } from "../hooks/useMemberToggle";
 import { useLazyVisible } from "../hooks/useLazyVisible";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { calculateTaskAmount, formatTaskAmount } from "./taskAmount";
 import { toast } from "sonner";
 
 function formatDate(dateString) {
@@ -1155,7 +1156,7 @@ function InlineAddTask({
       className="grid px-4 sm:px-6 py-1.5 items-center bg-muted/30 relative overflow-hidden after:absolute after:bottom-0 after:left-6 after:right-6 after:sm:left-8 after:sm:right-8 after:h-px after:bg-border/60 after:content-['']"
       style={{
         gridTemplateColumns:
-          "minmax(0, 4.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.6fr) 80px",
+          "minmax(0, 4fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.6fr) minmax(0, 0.8fr) 80px",
         gap: "1rem",
       }}
     >
@@ -1327,6 +1328,7 @@ function InlineAddTask({
       </div>
 
       {/* Colonnes restantes vides pour garder la grille */}
+      <div />
       <div />
       <div />
       <div />
@@ -1932,7 +1934,7 @@ const TaskRow = React.memo(function TaskRow({
       data-dnd-list-index={index}
       style={{
         gridTemplateColumns:
-          "minmax(0, 4.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.6fr) 80px",
+          "minmax(0, 4fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.6fr) minmax(0, 0.8fr) 80px",
         gap: "1rem",
         minHeight: LIST_ROW_MIN_HEIGHT,
         ...(isSelected ? { backgroundColor: "#5A50FF0D" } : {}),
@@ -2301,6 +2303,20 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
             </PopoverContent>
           </Popover>
         )}
+      </div>
+
+      {/* Montant */}
+      <div className="flex items-center min-w-0 text-xs">
+        {(() => {
+          const amount = calculateTaskAmount(task.timeTracking);
+          return amount != null ? (
+            <span className="truncate font-medium text-foreground/80 tabular-nums">
+              {formatTaskAmount(amount)}
+            </span>
+          ) : (
+            <span className="text-muted-foreground/70">—</span>
+          );
+        })()}
       </div>
 
       {/* Actions */}
@@ -2876,7 +2892,7 @@ export function KanbanListView({
                     className="grid px-4 sm:px-6 py-2 text-xs font-medium text-muted-foreground/70 tracking-wide relative after:absolute after:bottom-0 after:left-6 after:right-6 sm:after:left-8 sm:after:right-8 after:h-px after:bg-border/60 after:content-['']"
                     style={{
                       gridTemplateColumns:
-                        "minmax(0, 4.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.6fr) 80px",
+                        "minmax(0, 4fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.6fr) minmax(0, 0.8fr) 80px",
                       gap: "1rem",
                     }}
                   >
@@ -2886,6 +2902,7 @@ export function KanbanListView({
                     <div className="flex items-center">Status</div>
                     <div className="flex items-center">Priorité</div>
                     <div className="flex items-center">Échéance</div>
+                    <div className="flex items-center">Montant</div>
                     <div className="flex items-center justify-center">
                       Actions
                     </div>
