@@ -38,14 +38,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/src/components/ui/dropdown-menu";
-import {
-  Empty,
-  EmptyMedia,
-  EmptyHeader,
-  EmptyTitle,
-  EmptyDescription,
-  EmptyContent,
-} from "@/src/components/ui/empty";
+import { TableEmptyState } from "@/src/components/ui/table-empty-state";
+import { MicroscopeIcon } from "@/src/components/icons";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { getPlanLimits } from "@/src/lib/plan-limits";
@@ -58,7 +52,6 @@ import {
   useClientsInSegment,
 } from "@/src/hooks/useClientSegments";
 import {
-  Filter,
   Plus,
   MoreHorizontal,
   Pencil,
@@ -73,7 +66,6 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Search,
-  Lock,
 } from "lucide-react";
 
 // Field definitions for the rule builder
@@ -577,16 +569,20 @@ function SegmentDetailView({ segment, onBack }) {
           ))}
         </div>
       ) : clients.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <Users className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">
-              {search
-                ? "Aucun contact trouvé pour cette recherche"
-                : "Aucun contact ne correspond à ce segment"}
-            </p>
-          </div>
-        </div>
+        <TableEmptyState
+          icon={MicroscopeIcon}
+          title={
+            search
+              ? "Aucun contact trouvé"
+              : "Aucun contact ne correspond à ce segment"
+          }
+          description={
+            search
+              ? "Aucun contact ne correspond à votre recherche."
+              : "Affinez les critères du segment pour voir apparaître des contacts."
+          }
+          className="flex-1"
+        />
       ) : (
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
@@ -766,21 +762,12 @@ function SegmentsContent() {
             Créez des segments dynamiques pour cibler vos contacts.
           </p>
         </div>
-        <div className="flex-1 flex items-center justify-center min-h-[400px]">
-          <Empty>
-            <EmptyMedia variant="icon">
-              <Lock />
-            </EmptyMedia>
-            <EmptyHeader>
-              <EmptyTitle>Fonctionnalité réservée au plan PME</EmptyTitle>
-              <EmptyDescription>
-                Les segments dynamiques vous permettent de cibler
-                automatiquement vos contacts selon des critères avancés. Passez
-                au plan PME ou Entreprise pour y accéder.
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        </div>
+        <TableEmptyState
+          icon={MicroscopeIcon}
+          title="Fonctionnalité réservée au plan PME"
+          description="Les segments dynamiques vous permettent de cibler automatiquement vos contacts selon des critères avancés. Passez au plan PME ou Entreprise pour y accéder."
+          className="flex-1 min-h-[400px]"
+        />
       </div>
     );
   }
@@ -821,31 +808,20 @@ function SegmentsContent() {
             ))}
           </div>
         ) : segments.length === 0 ? (
-          <div className="flex-1 flex items-start justify-center pt-20">
-            <Empty>
-              <EmptyMedia variant="icon">
-                <Filter />
-              </EmptyMedia>
-              <EmptyHeader>
-                <EmptyTitle>Aucun segment</EmptyTitle>
-                <EmptyDescription>
-                  Les segments filtrent automatiquement vos contacts selon des
-                  critères dynamiques. Créez votre premier segment pour
-                  commencer.
-                </EmptyDescription>
-              </EmptyHeader>
-              <EmptyContent>
-                <Button
-                  variant="primary"
-                  onClick={() => setDialogOpen(true)}
-                  className="font-normal"
-                >
-                  <Plus size={14} className="mr-1" />
-                  Créer un segment
-                </Button>
-              </EmptyContent>
-            </Empty>
-          </div>
+          <TableEmptyState
+            icon={MicroscopeIcon}
+            title="Aucun segment"
+            description="Les segments filtrent automatiquement vos contacts selon des critères dynamiques. Créez votre premier segment pour commencer."
+            action={
+              <Button
+                onClick={() => setDialogOpen(true)}
+                className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"
+              >
+                <Plus size={14} className="mr-2" />
+                Créer un segment
+              </Button>
+            }
+          />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {segments.map((segment) => (

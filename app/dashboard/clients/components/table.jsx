@@ -42,7 +42,6 @@ import {
   ShieldOff,
   TrashIcon,
   UserCheck,
-  Users,
 } from "lucide-react";
 
 import { useRouter } from "next/navigation";
@@ -108,14 +107,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/src/components/ui/table";
-import {
-  Empty,
-  EmptyMedia,
-  EmptyHeader,
-  EmptyTitle,
-  EmptyDescription,
-  EmptyContent,
-} from "@/src/components/ui/empty";
+import { TableEmptyState } from "@/src/components/ui/table-empty-state";
+import { UserEditIcon } from "@/src/components/icons";
 import { Skeleton } from "@/src/components/ui/skeleton";
 // Le composant est exporté par défaut, pas en named export
 import {
@@ -973,30 +966,20 @@ export default function TableClients({
               ) : (
                 <tr>
                   <td colSpan={8} className="p-0">
-                    <div className="flex items-start justify-center pt-20">
-                      <Empty>
-                        <EmptyMedia variant="icon">
-                          <Users />
-                        </EmptyMedia>
-                        <EmptyHeader>
-                          <EmptyTitle>Aucun contact</EmptyTitle>
-                          <EmptyDescription>
-                            Créez votre premier contact pour commencer à gérer
-                            votre base de données clients.
-                          </EmptyDescription>
-                        </EmptyHeader>
-                        <EmptyContent>
-                          <Button
-                            variant="primary"
-                            onClick={handleAddUser}
-                            className="font-normal"
-                          >
-                            <PlusIcon size={14} className="mr-1" />
-                            Nouveau contact
-                          </Button>
-                        </EmptyContent>
-                      </Empty>
-                    </div>
+                    <TableEmptyState
+                      icon={UserEditIcon}
+                      title="Aucun contact"
+                      description="Créez votre premier contact pour commencer à gérer votre base de données clients."
+                      action={
+                        <Button
+                          onClick={handleAddUser}
+                          className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"
+                        >
+                          <PlusIcon size={14} className="mr-2" />
+                          Nouveau contact
+                        </Button>
+                      }
+                    />
                   </td>
                 </tr>
               )}
@@ -1321,8 +1304,13 @@ export default function TableClients({
                 </TableRow>
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
-                    Aucun contact trouvé.
+                  <TableCell colSpan={4} className="p-0">
+                    <TableEmptyState
+                      icon={UserEditIcon}
+                      title="Aucun contact trouvé"
+                      description="Aucun contact ne correspond à vos critères."
+                      size="compact"
+                    />
                   </TableCell>
                 </TableRow>
               )}

@@ -11,13 +11,18 @@ import {
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { CheckCircle2, Receipt } from "lucide-react";
 import BankingConnectButton from "@/src/components/banking/BankingConnectButton";
+import { TableEmptyState } from "@/src/components/ui/table-empty-state";
+import { ChartIcon } from "@/src/components/icons";
 
 const BATCH_SIZE = 20;
 
 function SkeletonRows({ count = 3, headers }) {
   if (!headers || headers.length === 0) return null;
   return Array.from({ length: count }).map((_, i) => (
-    <TableRow key={`skeleton-${i}`} className="border-b border-gray-50 dark:border-gray-800">
+    <TableRow
+      key={`skeleton-${i}`}
+      className="border-b border-gray-50 dark:border-gray-800"
+    >
       {headers.map((header) => (
         <TableCell
           key={header.id}
@@ -33,20 +38,33 @@ function SkeletonRows({ count = 3, headers }) {
 
 const emptyStates = {
   all: {
-    message: "Aucune transaction trouvée.",
+    icon: ChartIcon,
+    title: "Aucune transaction trouvée",
+    description:
+      "Connectez votre banque pour importer automatiquement vos transactions.",
     showConnect: true,
   },
   last_month: {
     icon: CheckCircle2,
-    message: "Aucune dépense ce dernier mois.",
+    title: "Aucune dépense ce dernier mois",
+    description: "Vos prochaines dépenses bancaires apparaîtront ici.",
   },
   missing_receipt: {
     icon: Receipt,
-    message: "Tous vos justificatifs sont en ordre.",
+    title: "Tous vos justificatifs sont en ordre",
+    description: "Aucune transaction n'attend de justificatif.",
   },
 };
 
-export function MobileTable({ table, columns, error, loading, onRowClick, onScrollChange, activeTab }) {
+export function MobileTable({
+  table,
+  columns,
+  error,
+  loading,
+  onRowClick,
+  onScrollChange,
+  activeTab,
+}) {
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -106,7 +124,7 @@ export function MobileTable({ table, columns, error, loading, onRowClick, onScro
           loadMore();
         }
       },
-      { rootMargin: "200px" }
+      { rootMargin: "200px" },
     );
 
     observer.observe(sentinel);
@@ -114,12 +132,14 @@ export function MobileTable({ table, columns, error, loading, onRowClick, onScro
   }, [loadMore]);
 
   // Detect scroll for shadow
-  const handleScroll = useCallback((e) => {
-    onScrollChange?.(e.target.scrollTop > 0);
-  }, [onScrollChange]);
+  const handleScroll = useCallback(
+    (e) => {
+      onScrollChange?.(e.target.scrollTop > 0);
+    },
+    [onScrollChange],
+  );
 
   const emptyState = emptyStates[activeTab] || emptyStates.all;
-  const EmptyIcon = emptyState.icon;
 
   return (
     <div
@@ -147,7 +167,7 @@ export function MobileTable({ table, columns, error, loading, onRowClick, onScro
                       ? null
                       : flexRender(
                           header.column.columnDef.header,
-                          header.getContext()
+                          header.getContext(),
                         )}
                   </TableHead>
                 ))}
@@ -166,7 +186,10 @@ export function MobileTable({ table, columns, error, loading, onRowClick, onScro
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id} className="py-3 px-4 text-sm">
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
                       </TableCell>
                     ))}
                   </TableRow>
@@ -193,16 +216,16 @@ export function MobileTable({ table, columns, error, loading, onRowClick, onScro
               <SkeletonRows count={6} headers={headers} />
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-40 text-center">
-                  <div className="flex flex-col items-center gap-2">
-                    {EmptyIcon && (
-                      <EmptyIcon className="h-8 w-8 text-muted-foreground/40" />
-                    )}
-                    <p className="text-sm text-muted-foreground">
-                      {emptyState.message}
-                    </p>
-                    {emptyState.showConnect && <BankingConnectButton />}
-                  </div>
+                <TableCell colSpan={columns.length} className="p-0">
+                  <TableEmptyState
+                    icon={emptyState.icon}
+                    title={emptyState.title}
+                    description={emptyState.description}
+                    size="compact"
+                    action={
+                      emptyState.showConnect ? <BankingConnectButton /> : null
+                    }
+                  />
                 </TableCell>
               </TableRow>
             )}

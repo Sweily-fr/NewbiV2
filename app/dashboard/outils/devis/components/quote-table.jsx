@@ -103,6 +103,8 @@ import { ImportQuoteModal } from "./import-quote-modal";
 import { ImportedQuoteSidebar } from "./imported-quote-sidebar";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
+import { TableEmptyState } from "@/src/components/ui/table-empty-state";
+import { ClipboardTickIcon } from "@/src/components/icons";
 import { SignatureDialog } from "@/src/components/esignature/signature-dialog";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { useEmailTrackingSubscription } from "@/src/graphql/documentEmailQueries";
@@ -758,11 +760,12 @@ export default function QuoteTable({
               ))
             ) : (
               <tr>
-                <td
-                  colSpan={table.getAllColumns().length}
-                  className="h-24 text-center p-2"
-                >
-                  Aucun devis trouvé.
+                <td colSpan={table.getAllColumns().length} className="p-0">
+                  <TableEmptyState
+                    icon={ClipboardTickIcon}
+                    title="Aucun devis trouvé"
+                    description="Aucun devis ne correspond à vos critères. Créez-en un nouveau pour commencer."
+                  />
                 </td>
               </tr>
             )}
@@ -913,12 +916,13 @@ export default function QuoteTable({
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-40 text-center">
-                    <div className="flex flex-col items-center gap-2">
-                      <p className="text-sm text-muted-foreground">
-                        Aucun devis trouvé.
-                      </p>
-                    </div>
+                  <TableCell colSpan={4} className="p-0">
+                    <TableEmptyState
+                      icon={ClipboardTickIcon}
+                      title="Aucun devis trouvé"
+                      description="Aucun devis ne correspond à vos critères. Créez-en un nouveau pour commencer."
+                      size="compact"
+                    />
                   </TableCell>
                 </TableRow>
               )}

@@ -47,6 +47,8 @@ import { multiColumnFilterFn } from "./filters/multiColumnFilterFn";
 import { mapCategoryToEnum, mapPaymentMethodToEnum } from "./utils/mappers";
 import { MobileToolbar } from "./components/MobileToolbar";
 import { MobileTable } from "./components/MobileTable";
+import { TableEmptyState } from "@/src/components/ui/table-empty-state";
+import { ChartIcon } from "@/src/components/icons";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
 import { PCGSelectDialog } from "../pcg-select-dialog";
 
@@ -1708,9 +1710,13 @@ export default function TransactionTable({
                 <tr>
                   <td
                     colSpan={tableWithFilteredData.getAllColumns().length}
-                    className="h-24 text-center p-2"
+                    className="p-0"
                   >
-                    Aucune transaction trouvée.
+                    <TableEmptyState
+                      icon={ChartIcon}
+                      title="Aucune transaction trouvée"
+                      description="Aucune transaction ne correspond à vos critères."
+                    />
                   </td>
                 </tr>
               )}

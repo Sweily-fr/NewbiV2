@@ -101,7 +101,9 @@ import {
   CardCoinIcon,
   ReceiptSearchIcon,
   NotificationIcon,
+  BankIcon,
 } from "@/src/components/icons";
+import { TableEmptyState } from "@/src/components/ui/table-empty-state";
 import { useInvoiceBalances } from "@/src/graphql/invoiceQueries";
 import { usePurchaseInvoiceStats } from "@/src/hooks/usePurchaseInvoices";
 import { useQuoteBalances } from "@/src/graphql/quoteQueries";
@@ -732,42 +734,37 @@ function DashboardContent() {
             <>
               <Card className="shadow-xs">
                 {(filteredBankAccounts || []).length === 0 ? (
-                  <CardContent className="flex flex-col items-center justify-center py-6">
-                    <div className="relative w-36 mb-4">
-                      <img
-                        src="/images/bank-cards-empty.png"
-                        alt="Aucun compte bancaire"
-                        className="w-full h-auto"
-                      />
-                      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-card via-card/60 to-transparent" />
-                    </div>
-                    <p className="text-sm text-muted-foreground text-center mb-4 max-w-[280px]">
-                      Connectez votre compte bancaire pour suivre votre solde et
-                      vos transactions en temps réel.
-                    </p>
-                    <div className="flex items-center gap-3">
-                      <Button
-                        size="sm"
-                        className="text-xs font-medium bg-foreground text-background hover:bg-foreground/90"
-                        disabled={isReadOnly}
-                        title={readOnlyTooltip}
-                        onClick={() =>
-                          bankBalanceRef.current?.openConnectModal()
-                        }
-                      >
-                        Connecter un compte
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs font-medium"
-                        onClick={() =>
-                          window.open("https://docs.newbi.fr", "_blank")
-                        }
-                      >
-                        Documentation
-                      </Button>
-                    </div>
+                  <CardContent className="p-0">
+                    <TableEmptyState
+                      icon={BankIcon}
+                      title="Aucun compte bancaire"
+                      description="Connectez votre compte bancaire pour suivre votre solde et vos transactions en temps réel."
+                      size="compact"
+                      action={
+                        <div className="flex items-center gap-2">
+                          <Button
+                            onClick={() =>
+                              bankBalanceRef.current?.openConnectModal()
+                            }
+                            disabled={isReadOnly}
+                            title={readOnlyTooltip}
+                            className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"
+                          >
+                            <BankIcon className="h-4 w-4 mr-2" />
+                            Connecter un compte
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() =>
+                              window.open("https://docs.newbi.fr", "_blank")
+                            }
+                            className="cursor-pointer"
+                          >
+                            Documentation
+                          </Button>
+                        </div>
+                      }
+                    />
                   </CardContent>
                 ) : (
                   <CardHeader>
@@ -855,27 +852,24 @@ function DashboardContent() {
               </Card>
               <Card className="shadow-xs">
                 {(filteredBankAccounts || []).length === 0 ? (
-                  <CardContent className="flex flex-col items-center justify-center py-6">
-                    <div className="relative w-36 mb-4">
-                      <img
-                        src="/images/bank-cards-empty.png"
-                        alt="Aucun compte bancaire"
-                        className="w-full h-auto"
-                      />
-                      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-card via-card/60 to-transparent" />
-                    </div>
-                    <p className="text-sm text-muted-foreground text-center mb-4 max-w-[280px]">
-                      Connectez un compte bancaire pour voir vos données de
-                      facturation.
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-xs font-medium"
-                      asChild
-                    >
-                      <a href="/dashboard/outils/factures">Voir les factures</a>
-                    </Button>
+                  <CardContent className="p-0">
+                    <TableEmptyState
+                      icon={DocumentText2Icon}
+                      title="Aucune donnée de facturation"
+                      description="Connectez un compte bancaire pour voir vos données de facturation."
+                      size="compact"
+                      action={
+                        <Button
+                          asChild
+                          className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"
+                        >
+                          <a href="/dashboard/outils/factures/new">
+                            <DocumentText2Icon className="h-4 w-4 mr-2" />
+                            Créer une facture
+                          </a>
+                        </Button>
+                      }
+                    />
                   </CardContent>
                 ) : (
                   <CardHeader>
@@ -1259,12 +1253,13 @@ function DashboardContent() {
                   ))}
                 </div>
               ) : invoices.length === 0 ? (
-                <div className="flex flex-col items-center justify-center flex-1 py-8">
-                  <DocumentText2Icon className="w-8 h-8 text-muted-foreground/40 mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    Aucune facture de vente
-                  </p>
-                </div>
+                <TableEmptyState
+                  icon={DocumentText2Icon}
+                  title="Aucune facture de vente"
+                  description="Vos factures de vente apparaîtront ici une fois créées."
+                  size="compact"
+                  className="flex-1"
+                />
               ) : (
                 <div className="space-y-4 flex-1">
                   {invoices

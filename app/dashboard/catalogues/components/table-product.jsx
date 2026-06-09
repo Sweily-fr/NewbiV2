@@ -96,6 +96,8 @@ import ProductModal from "./product-modal";
 import ProductExportButton from "./product-export-button";
 import ProductImportDialog from "./product-import-dialog";
 import ProductFilters from "./product-filters";
+import { TableEmptyState } from "@/src/components/ui/table-empty-state";
+import { MenuBoardIcon } from "@/src/components/icons";
 
 // Custom filter function for multi-column searching
 const multiColumnFilterFn = (row, columnId, filterValue) => {
@@ -697,8 +699,12 @@ export default function TableProduct({
                 </tr>
               ) : (
                 <tr>
-                  <td colSpan={columns.length} className="h-24 text-center p-2">
-                    Aucun produit trouvé.
+                  <td colSpan={columns.length} className="p-0">
+                    <TableEmptyState
+                      icon={MenuBoardIcon}
+                      title="Aucun produit trouvé"
+                      description="Ajoutez votre premier produit ou service au catalogue."
+                    />
                   </td>
                 </tr>
               )}
@@ -958,8 +964,13 @@ export default function TableProduct({
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
-                    Aucun produit trouvé.
+                  <TableCell colSpan={4} className="p-0">
+                    <TableEmptyState
+                      icon={MenuBoardIcon}
+                      title="Aucun produit trouvé"
+                      description="Ajoutez votre premier produit ou service au catalogue."
+                      size="compact"
+                    />
                   </TableCell>
                 </TableRow>
               )}
