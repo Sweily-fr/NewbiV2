@@ -93,6 +93,8 @@ import {
 import { useClients, useDeleteClient } from "@/src/hooks/useClients";
 import { toast } from "@/src/components/ui/sonner";
 import ClientsModal from "./clients-modal";
+import { TableEmptyState } from "@/src/components/ui/table-empty-state";
+import { MenuBoardIcon } from "@/src/components/icons";
 // Custom filter function for multi-column searching
 const multiColumnFilterFn = (row, columnId, filterValue) => {
   const searchableRowContent =
@@ -159,7 +161,7 @@ const columns = [
         className={cn(
           "font-normal bg-blue-100 border-blue-300 text-blue-800",
           row.getValue("type") === "COMPANY" &&
-            "bg-purple-100 border-purple-300 text-purple-800"
+            "bg-purple-100 border-purple-300 text-purple-800",
         )}
       >
         {row.getValue("type") === "INDIVIDUAL" ? "Particulier" : "Entreprise"}
@@ -230,7 +232,11 @@ export default function TableClients({ handleAddUser }) {
     loading,
     error,
     refetch,
-  } = useClients(pagination.pageIndex + 1, pagination.pageSize, debouncedGlobalFilter);
+  } = useClients(
+    pagination.pageIndex + 1,
+    pagination.pageSize,
+    debouncedGlobalFilter,
+  );
 
   const { deleteClient } = useDeleteClient();
 
@@ -245,7 +251,7 @@ export default function TableClients({ handleAddUser }) {
     const selectedRows = table.getSelectedRowModel().rows;
     try {
       await Promise.all(
-        selectedRows.map((row) => deleteClient(row.original.id))
+        selectedRows.map((row) => deleteClient(row.original.id)),
       );
       table.resetRowSelection();
       await refetch();
@@ -356,7 +362,7 @@ export default function TableClients({ handleAddUser }) {
               ref={inputRef}
               className={cn(
                 "peer min-w-60 ps-9",
-                Boolean(table.getColumn("name")?.getFilterValue()) && "pe-9"
+                Boolean(table.getColumn("name")?.getFilterValue()) && "pe-9",
               )}
               value={globalFilter}
               onChange={(e) => {
@@ -550,7 +556,7 @@ export default function TableClients({ handleAddUser }) {
                         <div
                           className={cn(
                             header.column.getCanSort() &&
-                              "flex h-full cursor-pointer items-center justify-between gap-2 select-none"
+                              "flex h-full cursor-pointer items-center justify-between gap-2 select-none",
                           )}
                           onClick={header.column.getToggleSortingHandler()}
                           onKeyDown={(e) => {
@@ -566,7 +572,7 @@ export default function TableClients({ handleAddUser }) {
                         >
                           {flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                           {{
                             asc: (
@@ -588,7 +594,7 @@ export default function TableClients({ handleAddUser }) {
                       ) : (
                         flexRender(
                           header.column.columnDef.header,
-                          header.getContext()
+                          header.getContext(),
                         )
                       )}
                     </th>
@@ -613,7 +619,9 @@ export default function TableClients({ handleAddUser }) {
                       if (e.target.closest("[data-actions-cell]")) {
                         return;
                       }
-                      router.push(`/dashboard/catalogues/clients/${row.original.id}`);
+                      router.push(
+                        `/dashboard/catalogues/clients/${row.original.id}`,
+                      );
                     }}
                   >
                     {row.getVisibleCells().map((cell, index, arr) => (
@@ -624,7 +632,7 @@ export default function TableClients({ handleAddUser }) {
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </td>
                     ))}
@@ -649,11 +657,12 @@ export default function TableClients({ handleAddUser }) {
                 </tr>
               ) : (
                 <tr>
-                  <td
-                    colSpan={columns.length}
-                    className="h-24 text-center p-2"
-                  >
-                    Aucun client trouvé.
+                  <td colSpan={columns.length} className="p-0">
+                    <TableEmptyState
+                      icon={MenuBoardIcon}
+                      title="Aucun client trouvé"
+                      description="Ajoutez votre premier client pour commencer à le facturer."
+                    />
                   </td>
                 </tr>
               )}
@@ -680,7 +689,9 @@ export default function TableClients({ handleAddUser }) {
               }}
             >
               <SelectTrigger className="h-7 w-[70px] text-xs">
-                <SelectValue placeholder={table.getState().pagination.pageSize} />
+                <SelectValue
+                  placeholder={table.getState().pagination.pageSize}
+                />
               </SelectTrigger>
               <SelectContent side="top">
                 {[10, 20, 30, 40, 50].map((pageSize) => (

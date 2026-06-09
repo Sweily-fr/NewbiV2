@@ -112,6 +112,8 @@ import { useEmailTrackingSubscription } from "@/src/graphql/documentEmailQueries
 import { useCreditNotes } from "@/src/graphql/creditNoteQueries";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
+import { TableEmptyState } from "@/src/components/ui/table-empty-state";
+import { DocumentText2Icon } from "@/src/components/icons";
 
 export default function InvoiceTable({
   handleNewInvoice,
@@ -763,11 +765,12 @@ export default function InvoiceTable({
               ))
             ) : (
               <tr>
-                <td
-                  colSpan={table.getAllColumns().length}
-                  className="h-24 text-center p-2"
-                >
-                  Aucune facture trouvée.
+                <td colSpan={table.getAllColumns().length} className="p-0">
+                  <TableEmptyState
+                    icon={DocumentText2Icon}
+                    title="Aucune facture trouvée"
+                    description="Aucune facture ne correspond à vos critères. Créez-en une nouvelle pour commencer."
+                  />
                 </td>
               </tr>
             )}
@@ -1067,12 +1070,13 @@ export default function InvoiceTable({
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-40 text-center">
-                    <div className="flex flex-col items-center gap-2">
-                      <p className="text-sm text-muted-foreground">
-                        Aucune facture trouvée.
-                      </p>
-                    </div>
+                  <TableCell colSpan={4} className="p-0">
+                    <TableEmptyState
+                      icon={DocumentText2Icon}
+                      title="Aucune facture trouvée"
+                      description="Aucune facture ne correspond à vos critères. Créez-en une nouvelle pour commencer."
+                      size="compact"
+                    />
                   </TableCell>
                 </TableRow>
               )}

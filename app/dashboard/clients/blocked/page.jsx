@@ -28,14 +28,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/src/components/ui/alert-dialog";
-import {
-  Empty,
-  EmptyMedia,
-  EmptyHeader,
-  EmptyTitle,
-  EmptyDescription,
-  EmptyContent,
-} from "@/src/components/ui/empty";
+import { TableEmptyState } from "@/src/components/ui/table-empty-state";
+import { SlashIcon } from "@/src/components/icons";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { useClients, useUnblockClient } from "@/src/hooks/useClients";
@@ -281,29 +275,20 @@ function BlockedContent() {
           </div>
         </div>
       ) : blockedClients.length === 0 ? (
-        <div className="flex-1 flex items-start justify-center pt-20">
-          <Empty>
-            <EmptyMedia variant="icon">
-              <ShieldCheck />
-            </EmptyMedia>
-            <EmptyHeader>
-              <EmptyTitle>Aucun contact bloqué</EmptyTitle>
-              <EmptyDescription>
-                Vous n&apos;avez bloqué aucun contact. Les contacts bloqués sont
-                exclus de la création de documents et des communications.
-              </EmptyDescription>
-            </EmptyHeader>
-            <EmptyContent>
-              <Button
-                variant="primary"
-                onClick={() => router.push("/dashboard/clients")}
-                className="font-normal"
-              >
-                Retour aux contacts
-              </Button>
-            </EmptyContent>
-          </Empty>
-        </div>
+        <TableEmptyState
+          icon={SlashIcon}
+          title="Aucun contact bloqué"
+          description="Vous n'avez bloqué aucun contact. Les contacts bloqués sont exclus de la création de documents et des communications."
+          className="flex-1"
+          action={
+            <Button
+              onClick={() => router.push("/dashboard/clients")}
+              className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"
+            >
+              Retour aux contacts
+            </Button>
+          }
+        />
       ) : (
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           {/* Table header */}

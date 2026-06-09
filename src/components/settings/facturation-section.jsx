@@ -43,6 +43,7 @@ import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/components/ui/sonner";
 import { PLAN_LIMITS } from "@/src/lib/plan-limits";
 import { PLANS_DISPLAY } from "@/src/lib/plans-display";
+import { TableEmptyState } from "@/src/components/ui/table-empty-state";
 
 // Map dérivée du module central — garantit nom (TPE pour pme) + prix
 // alignés avec landing/pricing-modal/settings/signup/workspace.
@@ -250,23 +251,21 @@ export default function FacturationSection({
           </p>
           <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
         </div>
-        <div className="text-center py-12">
-          <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-            {trialTitle}
-          </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            {trialCopy}
-          </p>
-          <Button
-            type="button"
-            onClick={() => onTabChange?.("subscription")}
-            className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"
-          >
-            <Crown className="h-4 w-4 mr-2" />
-            {isTrialAppWithoutStripe ? "Souscrire" : "Voir les plans"}
-          </Button>
-        </div>
+        <TableEmptyState
+          icon={Crown}
+          title={trialTitle}
+          description={trialCopy}
+          action={
+            <Button
+              type="button"
+              onClick={() => onTabChange?.("subscription")}
+              className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"
+            >
+              <Crown className="h-4 w-4 mr-2" />
+              {isTrialAppWithoutStripe ? "Souscrire" : "Voir les plans"}
+            </Button>
+          }
+        />
       </div>
     );
   }

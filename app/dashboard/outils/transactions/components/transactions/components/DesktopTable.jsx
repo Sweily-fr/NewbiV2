@@ -10,6 +10,8 @@ import {
 } from "@/src/components/ui/table";
 import { cn } from "@/src/lib/utils";
 import BankingConnectButton from "@/src/components/banking/BankingConnectButton";
+import { TableEmptyState } from "@/src/components/ui/table-empty-state";
+import { ChartIcon } from "@/src/components/icons";
 
 export function DesktopTable({
   table,
@@ -35,7 +37,7 @@ export function DesktopTable({
                       <div
                         className={cn(
                           header.column.getCanSort() &&
-                            "flex h-full cursor-pointer items-center justify-between gap-2 select-none"
+                            "flex h-full cursor-pointer items-center justify-between gap-2 select-none",
                         )}
                         onClick={header.column.getToggleSortingHandler()}
                         onKeyDown={(e) => {
@@ -51,7 +53,7 @@ export function DesktopTable({
                       >
                         {flexRender(
                           header.column.columnDef.header,
-                          header.getContext()
+                          header.getContext(),
                         )}
                         {{
                           asc: (
@@ -73,7 +75,7 @@ export function DesktopTable({
                     ) : (
                       flexRender(
                         header.column.columnDef.header,
-                        header.getContext()
+                        header.getContext(),
                       )
                     )}
                   </TableHead>
@@ -117,13 +119,13 @@ export function DesktopTable({
             </TableRow>
           ) : (
             <TableRow>
-              <TableCell colSpan={columns.length} className="h-32 text-center">
-                <div className="flex flex-col items-center gap-3">
-                  <p className="text-muted-foreground">
-                    Aucune transaction trouvée.
-                  </p>
-                  <BankingConnectButton />
-                </div>
+              <TableCell colSpan={columns.length} className="p-0">
+                <TableEmptyState
+                  icon={ChartIcon}
+                  title="Aucune transaction trouvée"
+                  description="Connectez votre banque pour importer automatiquement vos transactions."
+                  action={<BankingConnectButton />}
+                />
               </TableCell>
             </TableRow>
           )}

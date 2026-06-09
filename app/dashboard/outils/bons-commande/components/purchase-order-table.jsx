@@ -83,6 +83,8 @@ import { ImportedPurchaseOrderSidebar } from "./imported-purchase-order-sidebar"
 import { useImportedPurchaseOrders } from "@/src/graphql/importedPurchaseOrderQueries";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
+import { TableEmptyState } from "@/src/components/ui/table-empty-state";
+import { ClipboardImportIcon } from "@/src/components/icons";
 import { useEmailTrackingSubscription } from "@/src/graphql/documentEmailQueries";
 
 export default function PurchaseOrderTable({
@@ -599,11 +601,12 @@ export default function PurchaseOrderTable({
               ))
             ) : (
               <tr>
-                <td
-                  colSpan={table.getAllColumns().length}
-                  className="h-24 text-center p-2"
-                >
-                  Aucun bon de commande trouvé.
+                <td colSpan={table.getAllColumns().length} className="p-0">
+                  <TableEmptyState
+                    icon={ClipboardImportIcon}
+                    title="Aucun bon de commande trouvé"
+                    description="Créez votre premier bon de commande pour vos achats fournisseurs."
+                  />
                 </td>
               </tr>
             )}
@@ -707,11 +710,13 @@ export default function PurchaseOrderTable({
               ))
             ) : (
               <TableRow>
-                <TableCell
-                  colSpan={4}
-                  className="h-24 text-center text-gray-500 dark:text-gray-400"
-                >
-                  Aucun bon de commande trouvé.
+                <TableCell colSpan={4} className="p-0">
+                  <TableEmptyState
+                    icon={ClipboardImportIcon}
+                    title="Aucun bon de commande trouvé"
+                    description="Créez votre premier bon de commande pour vos achats fournisseurs."
+                    size="compact"
+                  />
                 </TableCell>
               </TableRow>
             )}

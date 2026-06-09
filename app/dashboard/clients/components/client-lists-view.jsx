@@ -14,18 +14,11 @@ import {
   ChevronLastIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  List,
   Plus,
   UserPlus,
 } from "lucide-react";
-import {
-  Empty,
-  EmptyMedia,
-  EmptyHeader,
-  EmptyTitle,
-  EmptyDescription,
-  EmptyContent,
-} from "@/src/components/ui/empty";
+import { TableEmptyState } from "@/src/components/ui/table-empty-state";
+import { TaskIcon } from "@/src/components/icons";
 import {
   Tooltip,
   TooltipContent,
@@ -293,30 +286,21 @@ export default function ClientListsView({
     <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden">
       {/* Table */}
       {lists?.length === 0 && !globalFilter ? (
-        <div className="flex-1 flex items-start justify-center pt-20">
-          <Empty>
-            <EmptyMedia variant="icon">
-              <List />
-            </EmptyMedia>
-            <EmptyHeader>
-              <EmptyTitle>Aucune liste</EmptyTitle>
-              <EmptyDescription>
-                Créez votre première liste pour organiser vos contacts par
-                catégories ou segments.
-              </EmptyDescription>
-            </EmptyHeader>
-            <EmptyContent>
-              <Button
-                variant="primary"
-                onClick={onCreateList}
-                className="font-normal"
-              >
-                <Plus size={14} className="mr-1" />
-                Créer une liste
-              </Button>
-            </EmptyContent>
-          </Empty>
-        </div>
+        <TableEmptyState
+          icon={TaskIcon}
+          title="Aucune liste"
+          description="Créez votre première liste pour organiser vos contacts par catégories ou segments."
+          className="flex-1"
+          action={
+            <Button
+              onClick={onCreateList}
+              className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"
+            >
+              <Plus size={14} className="mr-2" />
+              Créer une liste
+            </Button>
+          }
+        />
       ) : (
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           {/* Table Header */}
@@ -400,13 +384,21 @@ export default function ClientListsView({
                   ))
                 ) : (
                   <tr>
-                    <td
-                      colSpan={table.getAllColumns().length}
-                      className="h-24 text-center p-2"
-                    >
-                      {globalFilter
-                        ? "Aucune liste trouvée."
-                        : "Aucune liste créée."}
+                    <td colSpan={table.getAllColumns().length} className="p-0">
+                      <TableEmptyState
+                        icon={TaskIcon}
+                        title={
+                          globalFilter
+                            ? "Aucune liste trouvée"
+                            : "Aucune liste créée"
+                        }
+                        description={
+                          globalFilter
+                            ? "Aucune liste ne correspond à votre recherche."
+                            : "Créez votre première liste pour organiser vos contacts."
+                        }
+                        size="compact"
+                      />
                     </td>
                   </tr>
                 )}

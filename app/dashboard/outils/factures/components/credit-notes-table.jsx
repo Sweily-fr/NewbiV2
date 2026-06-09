@@ -27,6 +27,8 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { TableEmptyState } from "@/src/components/ui/table-empty-state";
+import { DocumentText2Icon } from "@/src/components/icons";
 
 import { useCreditNotes } from "@/src/graphql/creditNoteQueries";
 
@@ -403,8 +405,12 @@ export default function CreditNotesTable({
               })
             ) : (
               <tr>
-                <td colSpan={COLUMNS.length} className="h-24 text-center p-2">
-                  Aucun avoir trouvé.
+                <td colSpan={COLUMNS.length} className="p-0">
+                  <TableEmptyState
+                    icon={DocumentText2Icon}
+                    title="Aucun avoir trouvé"
+                    description="Aucun avoir n'a été créé pour le moment."
+                  />
                 </td>
               </tr>
             )}
@@ -499,10 +505,13 @@ export default function CreditNotesTable({
               })
             ) : (
               <tr>
-                <td colSpan={3} className="h-40 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    Aucun avoir trouvé.
-                  </p>
+                <td colSpan={3} className="p-0">
+                  <TableEmptyState
+                    icon={DocumentText2Icon}
+                    title="Aucun avoir trouvé"
+                    description="Aucun avoir n'a été créé pour le moment."
+                    size="compact"
+                  />
                 </td>
               </tr>
             )}

@@ -8,7 +8,8 @@ import {
 } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import { ArrowUpRight, ArrowDownLeft, ExternalLink } from "lucide-react";
-import { ReceiptItemIcon } from "@/src/components/icons";
+import { ChartIcon } from "@/src/components/icons";
+import { TableEmptyState } from "@/src/components/ui/table-empty-state";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@apollo/client";
 import { GET_TRANSACTIONS } from "@/src/graphql/queries/banking";
@@ -106,12 +107,13 @@ export default function RecentTransactionsCard({
       </CardHeader>
       <CardContent className="flex flex-col flex-1">
         {recentTransactions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center flex-1 py-8 text-center">
-            <ReceiptItemIcon className="w-8 h-8 text-muted-foreground/40 mb-2" />
-            <p className="text-sm text-muted-foreground">
-              Aucune transaction récente
-            </p>
-          </div>
+          <TableEmptyState
+            icon={ChartIcon}
+            title="Aucune transaction récente"
+            description="Vos dernières transactions bancaires apparaîtront ici."
+            size="compact"
+            className="flex-1"
+          />
         ) : (
           <div className="space-y-4 flex-1">
             {recentTransactions.map((transaction, index) => {

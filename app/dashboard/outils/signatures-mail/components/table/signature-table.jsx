@@ -52,6 +52,8 @@ import {
 import SignatureRowActions from "./signature-row-actions";
 import SignaturePreviewModal from "../preview/signature-preview-modal";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { TableEmptyState } from "@/src/components/ui/table-empty-state";
+import { BrushIcon } from "@/src/components/icons";
 import { Label } from "@/src/components/ui/label";
 import { useRouter } from "next/navigation";
 
@@ -221,13 +223,20 @@ export default function SignatureTable() {
                 ))
               ) : (
                 <tr>
-                  <td
-                    colSpan={table.getAllColumns().length}
-                    className="h-24 text-center p-2"
-                  >
-                    {globalFilter
-                      ? "Aucune signature trouvée."
-                      : "Aucune signature créée."}
+                  <td colSpan={table.getAllColumns().length} className="p-0">
+                    <TableEmptyState
+                      icon={BrushIcon}
+                      title={
+                        globalFilter
+                          ? "Aucune signature trouvée"
+                          : "Aucune signature créée"
+                      }
+                      description={
+                        globalFilter
+                          ? "Aucune signature ne correspond à votre recherche."
+                          : "Créez votre première signature pour personnaliser vos emails."
+                      }
+                    />
                   </td>
                 </tr>
               )}

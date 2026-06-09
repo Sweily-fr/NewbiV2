@@ -93,6 +93,8 @@ import { useFileTransfer } from "../hooks/useFileTransfer";
 import { useUser } from "@/src/lib/auth/hooks";
 import { TransferDetailDrawer } from "./transfer-detail-drawer";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { TableEmptyState } from "@/src/components/ui/table-empty-state";
+import { DocumentTextIcon } from "@/src/components/icons";
 
 // Fonction pour obtenir l'extension du fichier
 function getFileExtension(filename) {
@@ -743,11 +745,12 @@ export default function TransferTable({
                 ))
               ) : (
                 <tr>
-                  <td
-                    colSpan={table.getAllColumns().length}
-                    className="h-24 text-center p-2"
-                  >
-                    Aucun transfert trouvé.
+                  <td colSpan={table.getAllColumns().length} className="p-0">
+                    <TableEmptyState
+                      icon={DocumentTextIcon}
+                      title="Aucun transfert trouvé"
+                      description="Aucun transfert ne correspond à vos critères. Créez-en un nouveau pour commencer."
+                    />
                   </td>
                 </tr>
               )}
@@ -891,11 +894,13 @@ export default function TransferTable({
               ))
             ) : (
               <TableRow>
-                <TableCell
-                  colSpan={4}
-                  className="h-24 text-center text-gray-500 dark:text-gray-400"
-                >
-                  Aucun transfert trouvé.
+                <TableCell colSpan={4} className="p-0">
+                  <TableEmptyState
+                    icon={DocumentTextIcon}
+                    title="Aucun transfert trouvé"
+                    description="Aucun transfert ne correspond à vos critères."
+                    size="compact"
+                  />
                 </TableCell>
               </TableRow>
             )}

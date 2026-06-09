@@ -23,13 +23,8 @@ import { getColumns } from "./columns";
 
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
-import {
-  Empty,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-  EmptyDescription,
-} from "@/src/components/ui/empty";
+import { TableEmptyState } from "@/src/components/ui/table-empty-state";
+import { ShopIcon } from "@/src/components/icons";
 // Native <table> elements used to match Transactions page layout
 import {
   Select,
@@ -66,7 +61,6 @@ import {
   CheckCircle2,
   Archive,
   Tag,
-  FileText,
   Mail,
   XCircle,
   Loader2,
@@ -734,18 +728,12 @@ export default function PurchaseInvoiceTable({
                     </tbody>
                   </table>
                 ) : (
-                  <Empty className="flex-1">
-                    <EmptyHeader>
-                      <EmptyMedia variant="icon">
-                        <FileText />
-                      </EmptyMedia>
-                      <EmptyTitle>Aucune facture d&apos;achat</EmptyTitle>
-                      <EmptyDescription>
-                        Importez vos factures fournisseurs ou créez-en une
-                        manuellement pour commencer.
-                      </EmptyDescription>
-                    </EmptyHeader>
-                  </Empty>
+                  <TableEmptyState
+                    icon={ShopIcon}
+                    title="Aucune facture d'achat"
+                    description="Importez vos factures fournisseurs ou créez-en une manuellement pour commencer."
+                    className="flex-1"
+                  />
                 )}
               </div>
             </div>
@@ -943,17 +931,12 @@ export default function PurchaseInvoiceTable({
                 ))}
               </div>
             ) : filteredInvoices.length === 0 ? (
-              <Empty>
-                <EmptyHeader>
-                  <EmptyMedia variant="icon">
-                    <FileText />
-                  </EmptyMedia>
-                  <EmptyTitle>Aucune facture</EmptyTitle>
-                  <EmptyDescription>
-                    Importez vos factures fournisseurs pour commencer.
-                  </EmptyDescription>
-                </EmptyHeader>
-              </Empty>
+              <TableEmptyState
+                icon={ShopIcon}
+                title="Aucune facture"
+                description="Importez vos factures fournisseurs pour commencer."
+                size="compact"
+              />
             ) : (
               filteredInvoices
                 .filter((inv) => {
@@ -1130,17 +1113,12 @@ function ImportedInvoicesPanel({
 
   if (importedInvoices.length === 0) {
     return (
-      <Empty className="flex-1">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <Mail />
-          </EmptyMedia>
-          <EmptyTitle>Aucune facture importée en attente</EmptyTitle>
-          <EmptyDescription>
-            Les factures détectées par Gmail apparaîtront ici pour validation.
-          </EmptyDescription>
-        </EmptyHeader>
-      </Empty>
+      <TableEmptyState
+        icon={ShopIcon}
+        title="Aucune facture importée en attente"
+        description="Les factures détectées par Gmail apparaîtront ici pour validation."
+        className="flex-1"
+      />
     );
   }
 
