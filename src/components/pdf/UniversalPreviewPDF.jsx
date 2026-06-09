@@ -582,7 +582,7 @@ const UniversalPreviewPDF = ({
       <div
         ref={documentRef}
         data-pdf-content
-        className={`w-full bg-white shadow-lg relative flex flex-col ${isMobile ? "min-h-0" : forPDF ? "min-h-[1123px]" : "min-h-screen"}`}
+        className={`w-full bg-white relative flex flex-col ${forPDF ? "" : "shadow-lg"} ${isMobile ? "min-h-0" : forPDF ? "min-h-[1123px]" : "min-h-screen"}`}
         style={{
           color: data.appearance?.textColor || "#000000",
           fontSize: isMobile ? "6px" : "10px",
