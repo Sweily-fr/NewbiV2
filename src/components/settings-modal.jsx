@@ -399,7 +399,11 @@ export function SettingsModal({
         );
       case "facturation-electronique":
         return (
-          <EInvoicingSection canManageOrgSettings={canManageOrgSettings} />
+          <EInvoicingSection
+            canManageOrgSettings={canManageOrgSettings}
+            organization={organization}
+            onNavigateToTab={handleTabChange}
+          />
         );
       case "applications":
         return <ApplicationsSection />;

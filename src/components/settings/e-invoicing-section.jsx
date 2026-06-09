@@ -34,7 +34,76 @@ import {
   EINVOICING_EREPORTINGS,
 } from "@/src/graphql/eInvoicingQueries";
 
-export function EInvoicingSection({ canManageOrgSettings }) {
+// Libellés des régimes TVA SuperPDP (pilotent le calendrier e-reporting au PPF)
+const VAT_REGIME_LABELS = {
+  monthly: "Mensuel",
+  quarterly: "Trimestriel",
+  simplified: "Réel simplifié",
+  vat_exemption: "Franchise en base",
+};
+
+/**
+ * Déduit le régime TVA SuperPDP à partir des informations légales de
+ * l'organisation (onglet « Informations légales »).
+ * Renvoie null si l'information n'est pas renseignée → l'activation de la
+ * facturation électronique doit alors être bloquée.
+ */
+function deriveVatRegime(org) {
+  if (!org) return null;
+  // Non assujetti à la TVA → franchise en base
+  if (org.isVatSubject === false) return "vat_exemption";
+  if (org.isVatSubject !== true) return null; // information non renseignée
+
+  switch (org.vatRegime) {
+    case "reel-simplifie":
+      return "simplified";
+    case "reel-normal":
+      if (org.vatFrequency === "mensuel") return "monthly";
+      if (org.vatFrequency === "trimestriel") return "quarterly";
+      return null; // fréquence non renseignée
+    default:
+      return null; // régime de TVA non renseigné
+  }
+}
+
+/**
+ * Formate la date d'activation de façon défensive : ne renvoie jamais
+ * « Invalid Date » si la valeur est absente ou non parsable.
+ */
+function formatActivatedDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString("fr-FR");
+}
+
+/**
+ * Interprète l'état d'une entrée d'annuaire (Peppol/PPF). Le PPF renvoie un 422
+ * « ligne d'annuaire déjà active » lorsque l'entreprise est déjà inscrite : on
+ * traite ce cas comme une inscription valide plutôt que d'afficher l'erreur brute.
+ */
+function getDirectoryEntryDisplay(entry) {
+  if (entry.status === "created") {
+    return { label: "Inscrit", className: "text-green-600" };
+  }
+  const msg = entry.statusMessage || "";
+  if (
+    entry.status === "error" &&
+    /d[eè]j[aà] active|already active|ligne-annuaire/i.test(msg)
+  ) {
+    return { label: "Déjà inscrit", className: "text-green-600" };
+  }
+  if (entry.status === "error") {
+    return { label: "Échec de l'inscription", className: "text-red-600" };
+  }
+  return { label: "En cours", className: "text-amber-600" };
+}
+
+export function EInvoicingSection({
+  canManageOrgSettings,
+  organization,
+  onNavigateToTab,
+}) {
   const {
     settings,
     loading: settingsLoading,
@@ -92,18 +161,28 @@ export function EInvoicingSection({ canManageOrgSettings }) {
     }
   };
 
-  const [updateVatRegime, { loading: updatingVatRegime }] = useMutation(
-    UPDATE_EINVOICING_VAT_REGIME,
-  );
+  const [updateVatRegime] = useMutation(UPDATE_EINVOICING_VAT_REGIME);
 
-  const handleVatRegimeChange = async (vatRegime) => {
-    try {
-      await updateVatRegime({ variables: { workspaceId, vatRegime } });
-      toast.success("Régime TVA mis à jour");
-    } catch (e) {
-      toast.error(e.message || "Échec de la mise à jour du régime TVA");
-    }
-  };
+  // Le régime TVA est déduit des « Informations légales » (source de vérité).
+  // Null = information non renseignée → activation de l'e-invoicing bloquée.
+  const derivedVatRegime = deriveVatRegime(organization);
+
+  // Synchronise le régime TVA déduit vers SuperPDP quand il diffère de la valeur
+  // enregistrée côté plateforme (pilote le calendrier e-reporting au PPF).
+  const syncedVatRegimeRef = React.useRef(null);
+  useEffect(() => {
+    if (!verification?.connected || !derivedVatRegime) return;
+    if (verification?.company?.vatRegime === derivedVatRegime) return;
+    if (syncedVatRegimeRef.current === derivedVatRegime) return;
+    syncedVatRegimeRef.current = derivedVatRegime;
+    updateVatRegime({
+      variables: { workspaceId, vatRegime: derivedVatRegime },
+    }).catch(() => {
+      syncedVatRegimeRef.current = null;
+    });
+  }, [verification, derivedVatRegime, workspaceId, updateVatRegime]);
+
+  const goToLegalInfo = () => onNavigateToTab?.("informations-legales");
   const readOnlyTooltip = isReadOnly
     ? isOwner
       ? "Mode lecture seule · Renouvelez votre abonnement"
@@ -180,16 +259,38 @@ export function EInvoicingSection({ canManageOrgSettings }) {
                 de vos factures électroniques
               </p>
             </div>
+            {!derivedVatRegime && (
+              <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-900/20 p-3">
+                <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div className="text-xs text-amber-700 dark:text-amber-400">
+                  Renseignez votre{" "}
+                  <button
+                    type="button"
+                    onClick={goToLegalInfo}
+                    className="underline font-medium hover:text-amber-800"
+                  >
+                    régime de TVA
+                  </button>{" "}
+                  dans les informations légales avant d'activer la facturation
+                  électronique.
+                </div>
+              </div>
+            )}
             <Button
               onClick={handleConnect}
               disabled={
                 isReadOnly ||
                 isInTrial ||
                 !canManageOrgSettings ||
-                superPdpLoading
+                superPdpLoading ||
+                !derivedVatRegime
               }
               title={
-                isInTrial ? "Réservé aux abonnements payants" : readOnlyTooltip
+                isInTrial
+                  ? "Réservé aux abonnements payants"
+                  : !derivedVatRegime
+                    ? "Renseignez votre régime de TVA dans les informations légales"
+                    : readOnlyTooltip
               }
               className="bg-[#5b4eff] hover:bg-[#4a3ecc] text-white"
             >
@@ -214,12 +315,10 @@ export function EInvoicingSection({ canManageOrgSettings }) {
               <div className="flex items-center gap-2">
                 {/* <CheckCircle2 className="h-4 w-4 text-emerald-500" /> */}
                 <span className="text-sm font-medium">Connecté à SuperPDP</span>
-                {settings.eInvoicingActivatedAt && (
+                {formatActivatedDate(settings.eInvoicingActivatedAt) && (
                   <span className="text-xs text-muted-foreground">
                     • Activé le{" "}
-                    {new Date(
-                      settings.eInvoicingActivatedAt,
-                    ).toLocaleDateString("fr-FR")}
+                    {formatActivatedDate(settings.eInvoicingActivatedAt)}
                   </span>
                 )}
               </div>
@@ -352,62 +451,59 @@ export function EInvoicingSection({ canManageOrgSettings }) {
                 </div>
                 {directoryEntries.length > 0 && (
                   <div className="flex flex-col gap-1">
-                    {directoryEntries.map((entry) => (
-                      <div
-                        key={
-                          entry.id || `${entry.directory}-${entry.identifier}`
-                        }
-                        className="flex items-center justify-between text-xs"
-                      >
-                        <span className="uppercase text-muted-foreground">
-                          {entry.directory}
-                        </span>
-                        <span
-                          className={
-                            entry.status === "created"
-                              ? "text-green-600"
-                              : entry.status === "error"
-                                ? "text-red-600"
-                                : "text-amber-600"
+                    {directoryEntries.map((entry) => {
+                      const display = getDirectoryEntryDisplay(entry);
+                      return (
+                        <div
+                          key={
+                            entry.id || `${entry.directory}-${entry.identifier}`
                           }
+                          className="flex items-center justify-between text-xs"
                         >
-                          {entry.status === "created"
-                            ? "Inscrit"
-                            : entry.status === "error"
-                              ? entry.statusMessage || "Erreur"
-                              : "En cours"}
-                        </span>
-                      </div>
-                    ))}
+                          <span className="uppercase text-muted-foreground">
+                            {entry.directory}
+                          </span>
+                          <span className={display.className}>
+                            {display.label}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
             )}
 
-            {/* Régime TVA (pilote le calendrier d'envoi e-reporting au PPF) */}
+            {/* Régime TVA — déduit des « Informations légales » (lecture seule). */}
             {verification?.connected && (
               <div className="mt-4 flex items-center justify-between">
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">Régime de TVA</span>
                   <span className="text-xs text-muted-foreground">
-                    Détermine la fréquence d'envoi des données e-reporting au
-                    PPF
+                    Issu de vos{" "}
+                    <button
+                      type="button"
+                      onClick={goToLegalInfo}
+                      className="underline hover:text-foreground"
+                    >
+                      informations légales
+                    </button>{" "}
+                    · pilote la fréquence d'envoi e-reporting au PPF
                   </span>
                 </div>
-                <select
-                  className="text-sm border border-[#eeeff1] dark:border-[#232323] rounded-md px-2 py-1 bg-transparent"
-                  value={verification?.company?.vatRegime || ""}
-                  disabled={!canManageOrgSettings || updatingVatRegime}
-                  onChange={(e) => handleVatRegimeChange(e.target.value)}
-                >
-                  <option value="" disabled>
-                    Sélectionner…
-                  </option>
-                  <option value="monthly">Mensuel</option>
-                  <option value="quarterly">Trimestriel</option>
-                  <option value="simplified">Réel simplifié</option>
-                  <option value="vat_exemption">Franchise en base</option>
-                </select>
+                {derivedVatRegime ? (
+                  <span className="text-sm font-medium">
+                    {VAT_REGIME_LABELS[derivedVatRegime]}
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={goToLegalInfo}
+                    className="text-sm text-amber-600 underline"
+                  >
+                    À renseigner
+                  </button>
+                )}
               </div>
             )}
 
