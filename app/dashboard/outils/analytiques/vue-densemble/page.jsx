@@ -54,6 +54,24 @@ function getCaPeriodRange(period) {
   }
 }
 
+// T1 — libellé concret de la période sélectionnée (ex. « juin 2026 », « T2 2026 », « 2026 »)
+// pour lever l'ambiguïté sur la période couverte par le CA.
+function getCaPeriodLabel(period) {
+  const now = new Date();
+  switch (period) {
+    case "month":
+      return now.toLocaleDateString("fr-FR", {
+        month: "long",
+        year: "numeric",
+      });
+    case "quarter":
+      return `T${Math.floor(now.getMonth() / 3) + 1} ${now.getFullYear()}`;
+    case "year":
+    default:
+      return `${now.getFullYear()}`;
+  }
+}
+
 export default function VueDensemblePage() {
   const { workspaceId } = useRequiredWorkspace();
   const { remap } = useChartColors();
@@ -117,6 +135,9 @@ export default function VueDensemblePage() {
       })
       .reduce((s, i) => s + (i.finalTotalHT || 0), 0);
   }, [invoices, caPeriod]);
+
+  // T1 — libellé concret de la période affichée (recalculé à chaque changement de filtre)
+  const caPeriodLabel = useMemo(() => getCaPeriodLabel(caPeriod), [caPeriod]);
 
   // T3 — Encours clients = factures à émettre (DRAFT) + en retard (OVERDUE)
   // + en attente (PENDING, échéance future). Exclut COMPLETED et CANCELED.
@@ -208,6 +229,9 @@ export default function VueDensemblePage() {
                   <span className="text-xs font-normal text-muted-foreground">
                     HT
                   </span>
+                </span>
+                <span className="text-xs font-normal text-muted-foreground capitalize">
+                  {caPeriodLabel}
                 </span>
               </CardHeader>
             </Card>
