@@ -359,7 +359,7 @@ export function ImportQuoteModal({ open, onOpenChange, onImported }) {
             </ScrollArea>
 
             <p className="text-xs text-center text-muted-foreground">
-              Le modal se fermera automatiquement après l'upload
+              La fenêtre se fermera automatiquement après le téléchargement
             </p>
           </div>
         )}

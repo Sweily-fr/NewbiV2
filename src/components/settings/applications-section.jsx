@@ -1617,7 +1617,7 @@ export function ApplicationsSection() {
         <h2 className="text-lg font-medium mb-1 hidden md:block">
           Applications
         </h2>
-        <p className="text-sm text-gray-400 mb-3 hidden md:block">
+        <p className="text-sm text-muted-foreground mb-4 hidden md:block">
           Gérez et découvrez les applications connectées à votre espace.
         </p>
         <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
