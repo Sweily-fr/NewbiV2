@@ -29,19 +29,25 @@ export function TableEmptyState({
   const reactId = useId();
   const dotsId = `tes-dots-${reactId.replace(/[^a-zA-Z0-9]/g, "")}`;
   const isCompact = size === "compact";
+  const isXs = size === "xs";
 
   return (
     <div
       className={cn(
         "flex flex-col items-center justify-center text-center w-full",
-        isCompact ? "py-8 px-4" : "py-16 px-4",
+        isXs ? "py-6 px-4" : isCompact ? "py-8 px-4" : "py-16 px-4",
         className,
       )}
     >
       <div
         className={cn(
-          "relative mb-6",
-          isCompact ? "w-[110px] h-[110px]" : "w-[138px] h-[138px]",
+          "relative",
+          isXs ? "mb-4" : "mb-6",
+          isXs
+            ? "w-[80px] h-[80px]"
+            : isCompact
+              ? "w-[110px] h-[110px]"
+              : "w-[138px] h-[138px]",
         )}
       >
         <svg
@@ -82,7 +88,7 @@ export function TableEmptyState({
           <Icon
             className={cn(
               "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-gray-900 dark:text-gray-100",
-              isCompact ? "h-14 w-14" : "h-20 w-20",
+              isXs ? "h-10 w-10" : isCompact ? "h-14 w-14" : "h-20 w-20",
             )}
             strokeWidth={1.25}
             style={{ opacity: 0.2 }}

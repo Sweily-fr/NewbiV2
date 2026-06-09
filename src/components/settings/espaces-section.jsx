@@ -459,10 +459,13 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
           )}
         >
           {/* Header */}
-          <div className="flex flex-col gap-1 mb-0 md:mb-6">
-            <h3 className="text-lg font-medium hidden md:block">
+          <div className="flex flex-col mb-0 md:mb-6">
+            <h2 className="text-lg font-medium mb-1 hidden md:block">
               Gestion des espaces
-            </h3>
+            </h2>
+            <p className="text-sm text-muted-foreground mb-4 hidden md:block">
+              Créez et organisez vos espaces de travail.
+            </p>
             <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
           </div>
 

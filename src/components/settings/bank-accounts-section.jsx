@@ -37,6 +37,7 @@ import {
   MailWarning,
 } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
+import { TableEmptyState } from "@/src/components/ui/table-empty-state";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { findBank, getBankLogo } from "@/lib/banks-config";
@@ -436,7 +437,7 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
         <h2 className="text-lg font-medium mb-1 hidden md:block">
           Comptes bancaires
         </h2>
-        <p className="text-sm text-gray-400 mb-3 hidden md:block">
+        <p className="text-sm text-muted-foreground mb-4 hidden md:block">
           Gérez vos connexions bancaires et synchronisez vos transactions.
         </p>
         <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
@@ -466,26 +467,23 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
           <LoaderCircle className="h-5 w-5 animate-spin text-gray-400" />
         </div>
       ) : accounts.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-10 px-6">
-          <div className="w-10 h-10 rounded-xl bg-[#fbfbfb] dark:bg-[#1a1a1a] border border-[#eeeff1] dark:border-[#232323] flex items-center justify-center mb-4">
-            <Landmark className="h-5 w-5 text-gray-400" />
-          </div>
-          <h3 className="text-sm font-medium mb-1">Aucun compte connecté</h3>
-          <p className="text-xs text-gray-400 mb-4 text-center max-w-xs">
-            Connectez votre banque pour synchroniser automatiquement vos
-            transactions.
-          </p>
-          <Button
-            size="sm"
-            onClick={handleOpenModal}
-            disabled={isReadOnly || !canManageOrgSettings || !isEmailVerified}
-            title={readOnlyTooltip}
-            className="bg-[#5b4eff] hover:bg-[#4a3ecc] text-white cursor-pointer"
-          >
-            <Plus className="h-3.5 w-3.5 mr-1.5" />
-            Connecter une banque
-          </Button>
-        </div>
+        <TableEmptyState
+          icon={Landmark}
+          title="Aucun compte connecté"
+          description="Connectez votre banque pour synchroniser automatiquement vos transactions."
+          action={
+            <Button
+              size="sm"
+              onClick={handleOpenModal}
+              disabled={isReadOnly || !canManageOrgSettings || !isEmailVerified}
+              title={readOnlyTooltip}
+              className="bg-[#5b4eff] hover:bg-[#4a3ecc] text-white cursor-pointer"
+            >
+              <Plus className="h-3.5 w-3.5 mr-1.5" />
+              Connecter une banque
+            </Button>
+          }
+        />
       ) : (
         <div className="space-y-6">
           {/* Section comptes — même style que le bloc "Installées" des apps */}

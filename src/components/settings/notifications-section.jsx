@@ -35,6 +35,7 @@ import { toast } from "@/src/components/ui/sonner";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import { useNotificationPreferences } from "@/src/hooks/useNotificationPreferences";
 import { useActivityNotifications } from "@/src/hooks/useActivityNotifications";
+import { TableEmptyState } from "@/src/components/ui/table-empty-state";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -491,6 +492,9 @@ export function NotificationsSection({ onClose }) {
       {/* Titre */}
       <div className="hidden md:block">
         <h2 className="text-lg font-medium mb-1">Notifications</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Gérez vos préférences de notifications par email.
+        </p>
         <Separator className="bg-[#eeeff1] dark:bg-[#232323]" />
       </div>
 
@@ -557,15 +561,12 @@ export function NotificationsSection({ onClose }) {
               <LoaderCircle className="h-5 w-5 animate-spin text-gray-400" />
             </div>
           ) : pendingInvitations.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10">
-              <div className="w-10 h-10 rounded-xl bg-[#fbfbfb] dark:bg-[#1a1a1a] border border-[#eeeff1] dark:border-[#232323] flex items-center justify-center mb-3">
-                <Mail className="h-5 w-5 text-gray-400" />
-              </div>
-              <p className="text-sm font-medium mb-0.5">Aucune invitation</p>
-              <p className="text-xs text-gray-400">
-                Vous n'avez pas d'invitation en attente.
-              </p>
-            </div>
+            <TableEmptyState
+              icon={Mail}
+              title="Aucune invitation"
+              description="Vous n'avez pas d'invitation en attente."
+              size="compact"
+            />
           ) : (
             <div>
               {pendingInvitations.map((invitation, index) => {
@@ -693,15 +694,12 @@ export function NotificationsSection({ onClose }) {
               <LoaderCircle className="h-5 w-5 animate-spin text-gray-400" />
             </div>
           ) : activityNotifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10">
-              <div className="w-10 h-10 rounded-xl bg-[#fbfbfb] dark:bg-[#1a1a1a] border border-[#eeeff1] dark:border-[#232323] flex items-center justify-center mb-3">
-                <Activity className="h-5 w-5 text-gray-400" />
-              </div>
-              <p className="text-sm font-medium mb-0.5">Aucune activité</p>
-              <p className="text-xs text-gray-400">
-                Les assignations et mentions apparaîtront ici.
-              </p>
-            </div>
+            <TableEmptyState
+              icon={Activity}
+              title="Aucune activité"
+              description="Les assignations et mentions apparaîtront ici."
+              size="compact"
+            />
           ) : (
             <div>
               {activityNotifications.map((notification, index) => {

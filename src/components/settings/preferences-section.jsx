@@ -71,6 +71,9 @@ export function PreferencesSection({ onClose }) {
         <h2 className="text-lg font-medium mb-1 hidden md:block">
           Préférences
         </h2>
+        <p className="text-sm text-muted-foreground mb-4 hidden md:block">
+          Personnalisez votre expérience Newbi.
+        </p>
         <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
         {/* Dark Mode Component */}
         <div className="mb-8 mt-4 md:mt-12">

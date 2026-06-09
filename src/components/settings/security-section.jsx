@@ -487,6 +487,9 @@ export function SecuritySection({
     <div className="space-y-20">
       <div>
         <h2 className="text-lg font-medium mb-1 hidden md:block">Sécurité</h2>
+        <p className="text-sm text-muted-foreground mb-4 hidden md:block">
+          Protégez votre compte avec une authentification renforcée.
+        </p>
         <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
         {!canManageOrgSettings && (
           <div className="mt-4">
