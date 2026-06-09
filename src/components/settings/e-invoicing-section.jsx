@@ -84,19 +84,43 @@ function formatActivatedDate(value) {
  */
 function getDirectoryEntryDisplay(entry) {
   if (entry.status === "created") {
-    return { label: "Inscrit", className: "text-green-600" };
+    return { label: "Inscrit", className: "text-green-600", rank: 3 };
   }
   const msg = entry.statusMessage || "";
   if (
     entry.status === "error" &&
     /d[eè]j[aà] active|already active|ligne-annuaire/i.test(msg)
   ) {
-    return { label: "Déjà inscrit", className: "text-green-600" };
+    return { label: "Déjà inscrit", className: "text-green-600", rank: 3 };
   }
   if (entry.status === "error") {
-    return { label: "Échec de l'inscription", className: "text-red-600" };
+    return {
+      label: "Échec de l'inscription",
+      className: "text-red-600",
+      rank: 0,
+    };
   }
-  return { label: "En cours", className: "text-amber-600" };
+  return { label: "En cours", className: "text-amber-600", rank: 1 };
+}
+
+/**
+ * Chaque inscription crée une nouvelle entrée côté SuperPDP : on peut donc avoir
+ * plusieurs entrées pour un même annuaire (ex. un « En cours » + un « Inscrit »).
+ * On n'en garde qu'une par annuaire, celle au statut le plus avancé.
+ */
+function dedupeDirectoryEntries(entries) {
+  const byDirectory = new Map();
+  for (const entry of entries) {
+    const current = byDirectory.get(entry.directory);
+    if (
+      !current ||
+      getDirectoryEntryDisplay(entry).rank >
+        getDirectoryEntryDisplay(current).rank
+    ) {
+      byDirectory.set(entry.directory, entry);
+    }
+  }
+  return Array.from(byDirectory.values());
 }
 
 export function EInvoicingSection({
@@ -138,7 +162,24 @@ export function EInvoicingSection({
       fetchPolicy: "cache-and-network",
     },
   );
-  const directoryEntries = directoryData?.eInvoicingDirectoryEntries || [];
+  const directoryEntries = dedupeDirectoryEntries(
+    directoryData?.eInvoicingDirectoryEntries || [],
+  );
+
+  // L'entreprise peut RECEVOIR des factures une fois inscrite aux deux annuaires
+  // (Peppol + PPF). On masque alors le bouton « S'inscrire ».
+  const REQUIRED_DIRECTORIES = ["peppol", "ppf"];
+  const registeredDirectories = new Set(
+    directoryEntries
+      .filter((e) => getDirectoryEntryDisplay(e).rank === 3)
+      .map((e) => e.directory),
+  );
+  const allDirectoriesRegistered = REQUIRED_DIRECTORIES.every((d) =>
+    registeredDirectories.has(d),
+  );
+  const directoryRegistrationPending = directoryEntries.some(
+    (e) => getDirectoryEntryDisplay(e).rank === 1,
+  );
 
   const { data: eReportingData } = useQuery(EINVOICING_EREPORTINGS, {
     variables: { workspaceId },
@@ -432,22 +473,37 @@ export function EInvoicingSection({
                       Recevoir des factures
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      Inscrivez votre entreprise aux annuaires Peppol et PPF
+                      {allDirectoriesRegistered
+                        ? "Votre entreprise est inscrite aux annuaires Peppol et PPF"
+                        : "Inscrivez votre entreprise aux annuaires Peppol et PPF"}
                     </span>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleRegisterDirectory}
-                    disabled={!canManageOrgSettings || registeringDirectory}
-                  >
-                    {registeringDirectory ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <Send className="h-4 w-4 mr-2" />
-                    )}
-                    S'inscrire
-                  </Button>
+                  {allDirectoriesRegistered ? (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      Inscrit
+                    </span>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRegisterDirectory}
+                      disabled={
+                        !canManageOrgSettings ||
+                        registeringDirectory ||
+                        directoryRegistrationPending
+                      }
+                    >
+                      {registeringDirectory || directoryRegistrationPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Send className="h-4 w-4 mr-2" />
+                      )}
+                      {directoryRegistrationPending
+                        ? "En cours…"
+                        : "S'inscrire"}
+                    </Button>
+                  )}
                 </div>
                 {directoryEntries.length > 0 && (
                   <div className="flex flex-col gap-1">
