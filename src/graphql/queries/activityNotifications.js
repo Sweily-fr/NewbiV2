@@ -30,6 +30,9 @@ export const GET_NOTIFICATIONS = gql`
           actorName
           actorImage
           url
+          purchaseInvoiceId
+          supplierName
+          amountTTC
         }
         read
         readAt
@@ -94,6 +97,9 @@ export const NOTIFICATION_RECEIVED_SUBSCRIPTION = gql`
         actorName
         actorImage
         url
+        purchaseInvoiceId
+        supplierName
+        amountTTC
       }
       read
       readAt

@@ -284,3 +284,21 @@ export const REFUSE_PURCHASE_INVOICE_EINVOICE = gql`
     }
   }
 `;
+
+export const SUBMIT_PURCHASE_INVOICE_EINVOICE_EVENT = gql`
+  mutation SubmitPurchaseInvoiceEInvoiceEvent(
+    $id: ID!
+    $statusCode: String!
+    $reason: String
+  ) {
+    submitPurchaseInvoiceEInvoiceEvent(
+      id: $id
+      statusCode: $statusCode
+      reason: $reason
+    ) {
+      id
+      eInvoiceStatus
+      status
+    }
+  }
+`;

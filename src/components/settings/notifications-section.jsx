@@ -703,8 +703,11 @@ export function NotificationsSection({ onClose }) {
           ) : (
             <div>
               {activityNotifications.map((notification, index) => {
-                const initial = notification.data?.actorName
-                  ? notification.data.actorName.charAt(0).toUpperCase()
+                const initialSource =
+                  notification.data?.actorName ||
+                  notification.data?.supplierName;
+                const initial = initialSource
+                  ? initialSource.charAt(0).toUpperCase()
                   : "?";
                 const isLast = index === activityNotifications.length - 1;
 
@@ -747,61 +750,74 @@ export function NotificationsSection({ onClose }) {
 
                     {/* Contenu */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm truncate max-w-[600px]">
-                        <span className="font-medium">
-                          {notification.data?.actorName || "Quelqu'un"}
-                        </span>{" "}
-                        <span className="font-normal text-gray-500 dark:text-gray-400">
-                          {notification.type === "MENTION"
-                            ? "vous a mentionné sur"
-                            : "vous a assigné à"}
-                        </span>{" "}
-                        <span className="font-medium">
-                          {notification.data?.taskTitle || "une tâche"}
-                        </span>
-                      </p>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span
-                          className="text-xs text-gray-400 truncate max-w-[220px] inline-block align-bottom"
-                          title={notification.data?.boardName || "Tableau"}
-                        >
-                          {notification.data?.boardName || "Tableau"}
-                        </span>
-                        {notification.data?.columnName && (
-                          <>
-                            <span className="text-[10px] text-gray-300 dark:text-gray-600">
-                              •
+                      {notification.type === "PURCHASE_INVOICE_RECEIVED" ? (
+                        <>
+                          <p className="text-sm truncate max-w-[600px] font-medium">
+                            {notification.title || "Nouvelle facture reçue"}
+                          </p>
+                          <p className="text-xs text-gray-400 truncate max-w-[600px] mt-0.5">
+                            {notification.message}
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm truncate max-w-[600px]">
+                            <span className="font-medium">
+                              {notification.data?.actorName || "Quelqu'un"}
+                            </span>{" "}
+                            <span className="font-normal text-gray-500 dark:text-gray-400">
+                              {notification.type === "MENTION"
+                                ? "vous a mentionné sur"
+                                : "vous a assigné à"}
+                            </span>{" "}
+                            <span className="font-medium">
+                              {notification.data?.taskTitle || "une tâche"}
                             </span>
-                            <span className="text-xs text-gray-400">
-                              {notification.data?.columnName}
-                            </span>
-                          </>
-                        )}
-                        {notification.data?.taskDescription && (
-                          <>
-                            <span className="text-[10px] text-gray-300 dark:text-gray-600">
-                              •
-                            </span>
-                            <button
-                              type="button"
-                              className="flex items-center gap-1 text-xs text-[#5b4fff] hover:text-[#4a3fe0] transition-colors"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setDescriptionModal({
-                                  open: true,
-                                  title:
-                                    notification.data?.taskTitle || "Tâche",
-                                  description:
-                                    notification.data.taskDescription,
-                                });
-                              }}
+                          </p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span
+                              className="text-xs text-gray-400 truncate max-w-[220px] inline-block align-bottom"
+                              title={notification.data?.boardName || "Tableau"}
                             >
-                              <FileTextIcon className="w-3 h-3" />
-                              Description
-                            </button>
-                          </>
-                        )}
-                      </div>
+                              {notification.data?.boardName || "Tableau"}
+                            </span>
+                            {notification.data?.columnName && (
+                              <>
+                                <span className="text-[10px] text-gray-300 dark:text-gray-600">
+                                  •
+                                </span>
+                                <span className="text-xs text-gray-400">
+                                  {notification.data?.columnName}
+                                </span>
+                              </>
+                            )}
+                            {notification.data?.taskDescription && (
+                              <>
+                                <span className="text-[10px] text-gray-300 dark:text-gray-600">
+                                  •
+                                </span>
+                                <button
+                                  type="button"
+                                  className="flex items-center gap-1 text-xs text-[#5b4fff] hover:text-[#4a3fe0] transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDescriptionModal({
+                                      open: true,
+                                      title:
+                                        notification.data?.taskTitle || "Tâche",
+                                      description:
+                                        notification.data.taskDescription,
+                                    });
+                                  }}
+                                >
+                                  <FileTextIcon className="w-3 h-3" />
+                                  Description
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </>
+                      )}
                     </div>
 
                     {/* Date + action */}

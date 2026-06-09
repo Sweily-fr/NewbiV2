@@ -22,6 +22,7 @@ import {
   SYNC_PURCHASE_INVOICES_FROM_SUPERPDP,
   ACKNOWLEDGE_PURCHASE_INVOICE_EINVOICE,
   REFUSE_PURCHASE_INVOICE_EINVOICE,
+  SUBMIT_PURCHASE_INVOICE_EINVOICE_EVENT,
 } from "../graphql/mutations/purchaseInvoices";
 import { toast } from "@/src/components/ui/sonner";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
@@ -542,4 +543,25 @@ export const useRefusePurchaseInvoiceEInvoice = () => {
   };
 
   return { refuse, loading };
+};
+
+export const useSubmitPurchaseInvoiceEInvoiceEvent = () => {
+  const [submitMutation, { loading }] = useMutation(
+    SUBMIT_PURCHASE_INVOICE_EINVOICE_EVENT,
+  );
+
+  const submitEvent = async (id, statusCode, reason) => {
+    try {
+      const result = await submitMutation({
+        variables: { id, statusCode, reason },
+      });
+      toast.success("Statut e-facture mis à jour");
+      return result.data?.submitPurchaseInvoiceEInvoiceEvent;
+    } catch (error) {
+      toast.error(error.message || "Erreur");
+      return null;
+    }
+  };
+
+  return { submitEvent, loading };
 };

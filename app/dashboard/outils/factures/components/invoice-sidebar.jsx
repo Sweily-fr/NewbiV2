@@ -55,6 +55,10 @@ import { useLazyQuery, useQuery } from "@apollo/client";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { INVOICE_DOCUMENT_URL } from "@/src/graphql/eInvoicingQueries";
 import {
+  EInvoiceStatusBadge,
+  EReportingErrorBadge,
+} from "./einvoice-status-badge";
+import {
   useCreditNotesByInvoice,
   CREDIT_NOTE_DOCUMENT_URL,
 } from "@/src/graphql/creditNoteQueries";
@@ -655,6 +659,17 @@ export default function InvoiceSidebar({
             >
               {INVOICE_STATUS_LABELS[invoice.status] || invoice.status}
             </span>
+            {/* Statut du cycle de vie e-invoicing (SuperPDP) — masqué hors e-invoicing */}
+            <EInvoiceStatusBadge
+              status={invoice.eInvoiceStatus}
+              lastCode={invoice.eInvoiceLastCode}
+            />
+            {/* Alerte e-reporting en erreur (B2C / international) — relancé par cron */}
+            <EReportingErrorBadge
+              status={invoice.eReportingStatus}
+              paymentStatus={invoice.eReportingPaymentStatus}
+              error={invoice.eReportingError}
+            />
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {/* Bouton PDF - masqué pour les brouillons */}
