@@ -32,6 +32,10 @@ import { Button } from "@/src/components/ui/button";
 import { getCategoryConfig } from "@/lib/category-icons-config";
 import { findMerchant } from "@/lib/merchants-config";
 import { MerchantLogo } from "@/app/dashboard/outils/transactions/components/merchant-logo";
+import {
+  PurchaseEInvoiceStatusBadge,
+  PurchaseEInvoicePaymentErrorBadge,
+} from "./einvoice-status-badge";
 
 const STATUS_CONFIG = {
   TO_PROCESS: {
@@ -368,11 +372,18 @@ export const getColumns = ({ onViewInvoice, onDeleteInvoice } = {}) => [
       const status = row.getValue("status");
       const config = STATUS_CONFIG[status] || STATUS_CONFIG.TO_PROCESS;
       return (
-        <span
-          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${config.className}`}
-        >
-          {config.label}
-        </span>
+        <div className="flex flex-col items-start gap-1">
+          <span
+            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${config.className}`}
+          >
+            {config.label}
+          </span>
+          {/* Cycle de vie e-facture reçue (SuperPDP) — masqué si non électronique */}
+          <PurchaseEInvoiceStatusBadge status={row.original.eInvoiceStatus} />
+          <PurchaseEInvoicePaymentErrorBadge
+            status={row.original.eInvoicePaymentReportStatus}
+          />
+        </div>
       );
     },
   },

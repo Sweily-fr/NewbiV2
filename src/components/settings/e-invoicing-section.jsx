@@ -49,9 +49,9 @@ function deriveVatRegime(org) {
     case "reel-simplifie":
       return "simplified";
     case "reel-normal":
-      if (org.vatFrequency === "mensuel") return "monthly";
       if (org.vatFrequency === "trimestriel") return "quarterly";
-      return null;
+      // Réel normal sans fréquence explicite = déclaration mensuelle (défaut CGI).
+      return "monthly";
     default:
       return null;
   }

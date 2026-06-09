@@ -31,6 +31,10 @@ import { useRouter } from "next/navigation";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDFDownloaderWithFacturX";
+import {
+  EInvoiceStatusBadge,
+  EReportingErrorBadge,
+} from "./einvoice-status-badge";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
 
 export default function InvoiceMobileFullscreen({
@@ -42,7 +46,9 @@ export default function InvoiceMobileFullscreen({
   const router = useRouter();
   const { canCreate } = usePermissions();
   const [canCreateCreditNote, setCanCreateCreditNote] = useState(false);
-  const [previousSituationInvoices, setPreviousSituationInvoices] = useState([]);
+  const [previousSituationInvoices, setPreviousSituationInvoices] = useState(
+    [],
+  );
   const [showPreview, setShowPreview] = useState(false);
   const { markAsPaid, loading: markingAsPaid } = useMarkInvoiceAsPaid();
   const { changeStatus, loading: changingStatus } = useChangeInvoiceStatus();
@@ -319,7 +325,10 @@ export default function InvoiceMobileFullscreen({
       {/* Container des deux panneaux avec slide */}
       <div
         className="flex h-full transition-transform duration-300 ease-in-out"
-        style={{ width: "200%", transform: showPreview ? "translateX(-50%)" : "translateX(0)" }}
+        style={{
+          width: "200%",
+          transform: showPreview ? "translateX(-50%)" : "translateX(0)",
+        }}
       >
         {/* ===== PANNEAU 1 : Informations facture ===== */}
         <div className="w-1/2 h-full flex flex-col">
@@ -328,7 +337,10 @@ export default function InvoiceMobileFullscreen({
             <div className="flex items-start justify-between p-4">
               <div className="flex flex-col gap-2">
                 <h2 className="text-lg font-normal">
-                  Facture {invoice.prefix && invoice.number ? `${invoice.prefix}-${invoice.number}` : invoice.number || "Brouillon"}
+                  Facture{" "}
+                  {invoice.prefix && invoice.number
+                    ? `${invoice.prefix}-${invoice.number}`
+                    : invoice.number || "Brouillon"}
                 </h2>
                 <span
                   className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium w-fit ${
@@ -336,7 +348,8 @@ export default function InvoiceMobileFullscreen({
                       ? "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100"
                       : invoice.status === "PENDING"
                         ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100"
-                        : invoice.status === "PAID" || invoice.status === "COMPLETED"
+                        : invoice.status === "PAID" ||
+                            invoice.status === "COMPLETED"
                           ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
                           : invoice.status === "OVERDUE"
                             ? "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100"
@@ -345,6 +358,17 @@ export default function InvoiceMobileFullscreen({
                 >
                   {statusLabel}
                 </span>
+                {/* Statut du cycle de vie e-invoicing (SuperPDP) — masqué hors e-invoicing */}
+                <EInvoiceStatusBadge
+                  status={invoice.eInvoiceStatus}
+                  lastCode={invoice.eInvoiceLastCode}
+                />
+                {/* Alerte e-reporting en erreur (B2C / international) — relancé par cron */}
+                <EReportingErrorBadge
+                  status={invoice.eReportingStatus}
+                  paymentStatus={invoice.eReportingPaymentStatus}
+                  error={invoice.eReportingError}
+                />
               </div>
               <div className="flex items-center gap-2">
                 {invoice.status !== INVOICE_STATUS.DRAFT && (
@@ -382,7 +406,9 @@ export default function InvoiceMobileFullscreen({
               <div className="p-4 space-y-6 pb-56">
                 {/* Client */}
                 <div className="space-y-2.5">
-                  <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Client</h3>
+                  <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Client
+                  </h3>
                   {invoice.client ? (
                     <div className="space-y-1.5">
                       <div>
@@ -393,61 +419,110 @@ export default function InvoiceMobileFullscreen({
                               String(invoice.client?.name || "")}
                         </p>
                         {invoice.client.email && (
-                          <p className="text-sm text-muted-foreground">{String(invoice.client.email)}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {String(invoice.client.email)}
+                          </p>
                         )}
                       </div>
                       {invoice.client.address && (
                         <div className="text-sm text-muted-foreground">
-                          {invoice.client.address.street && <p>{String(invoice.client.address.street)}</p>}
-                          {(invoice.client.address.postalCode || invoice.client.address.city) && (
+                          {invoice.client.address.street && (
+                            <p>{String(invoice.client.address.street)}</p>
+                          )}
+                          {(invoice.client.address.postalCode ||
+                            invoice.client.address.city) && (
                             <p>
-                              {invoice.client.address.postalCode && String(invoice.client.address.postalCode)}
-                              {invoice.client.address.postalCode && invoice.client.address.city && " "}
-                              {invoice.client.address.city && String(invoice.client.address.city)}
+                              {invoice.client.address.postalCode &&
+                                String(invoice.client.address.postalCode)}
+                              {invoice.client.address.postalCode &&
+                                invoice.client.address.city &&
+                                " "}
+                              {invoice.client.address.city &&
+                                String(invoice.client.address.city)}
                             </p>
                           )}
-                          {invoice.client.address.country && <p>{String(invoice.client.address.country)}</p>}
+                          {invoice.client.address.country && (
+                            <p>{String(invoice.client.address.country)}</p>
+                          )}
                         </div>
                       )}
                     </div>
                   ) : (
-                    <p className="text-muted-foreground">Aucun client sélectionné</p>
+                    <p className="text-muted-foreground">
+                      Aucun client sélectionné
+                    </p>
                   )}
                 </div>
 
                 {/* Adresse de livraison */}
                 {(() => {
                   const shippingData = invoice.shipping;
-                  if (shippingData?.shippingAddress && shippingData?.billShipping) {
+                  if (
+                    shippingData?.shippingAddress &&
+                    shippingData?.billShipping
+                  ) {
                     return (
                       <div className="space-y-2.5">
-                        <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Adresse de livraison</h3>
+                        <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          Adresse de livraison
+                        </h3>
                         <div className="text-sm text-muted-foreground">
                           {shippingData.shippingAddress.fullName && (
-                            <p className="font-medium text-foreground">{shippingData.shippingAddress.fullName}</p>
+                            <p className="font-medium text-foreground">
+                              {shippingData.shippingAddress.fullName}
+                            </p>
                           )}
-                          {shippingData.shippingAddress.street && <p>{shippingData.shippingAddress.street}</p>}
-                          {(shippingData.shippingAddress.postalCode || shippingData.shippingAddress.city) && (
-                            <p>{shippingData.shippingAddress.postalCode}{shippingData.shippingAddress.postalCode && shippingData.shippingAddress.city && " "}{shippingData.shippingAddress.city}</p>
+                          {shippingData.shippingAddress.street && (
+                            <p>{shippingData.shippingAddress.street}</p>
                           )}
-                          {shippingData.shippingAddress.country && <p>{shippingData.shippingAddress.country}</p>}
+                          {(shippingData.shippingAddress.postalCode ||
+                            shippingData.shippingAddress.city) && (
+                            <p>
+                              {shippingData.shippingAddress.postalCode}
+                              {shippingData.shippingAddress.postalCode &&
+                                shippingData.shippingAddress.city &&
+                                " "}
+                              {shippingData.shippingAddress.city}
+                            </p>
+                          )}
+                          {shippingData.shippingAddress.country && (
+                            <p>{shippingData.shippingAddress.country}</p>
+                          )}
                         </div>
                       </div>
                     );
                   }
-                  if (invoice.client?.hasDifferentShippingAddress && invoice.client?.shippingAddress) {
+                  if (
+                    invoice.client?.hasDifferentShippingAddress &&
+                    invoice.client?.shippingAddress
+                  ) {
                     return (
                       <div className="space-y-2.5">
-                        <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Adresse de livraison</h3>
+                        <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          Adresse de livraison
+                        </h3>
                         <div className="text-sm text-muted-foreground">
                           {invoice.client.shippingAddress.fullName && (
-                            <p className="font-medium text-foreground">{invoice.client.shippingAddress.fullName}</p>
+                            <p className="font-medium text-foreground">
+                              {invoice.client.shippingAddress.fullName}
+                            </p>
                           )}
-                          {invoice.client.shippingAddress.street && <p>{invoice.client.shippingAddress.street}</p>}
-                          {(invoice.client.shippingAddress.postalCode || invoice.client.shippingAddress.city) && (
-                            <p>{invoice.client.shippingAddress.postalCode}{invoice.client.shippingAddress.postalCode && invoice.client.shippingAddress.city && " "}{invoice.client.shippingAddress.city}</p>
+                          {invoice.client.shippingAddress.street && (
+                            <p>{invoice.client.shippingAddress.street}</p>
                           )}
-                          {invoice.client.shippingAddress.country && <p>{invoice.client.shippingAddress.country}</p>}
+                          {(invoice.client.shippingAddress.postalCode ||
+                            invoice.client.shippingAddress.city) && (
+                            <p>
+                              {invoice.client.shippingAddress.postalCode}
+                              {invoice.client.shippingAddress.postalCode &&
+                                invoice.client.shippingAddress.city &&
+                                " "}
+                              {invoice.client.shippingAddress.city}
+                            </p>
+                          )}
+                          {invoice.client.shippingAddress.country && (
+                            <p>{invoice.client.shippingAddress.country}</p>
+                          )}
                         </div>
                       </div>
                     );
@@ -457,19 +532,27 @@ export default function InvoiceMobileFullscreen({
 
                 {/* Dates */}
                 <div className="space-y-2.5">
-                  <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Dates</h3>
+                  <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Dates
+                  </h3>
                   <div className="space-y-1.5">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Date d'émission</span>
+                      <span className="text-muted-foreground">
+                        Date d'émission
+                      </span>
                       <span>{formatDate(invoice.issueDate)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Date d'échéance</span>
+                      <span className="text-muted-foreground">
+                        Date d'échéance
+                      </span>
                       <span>{formatDate(invoice.dueDate)}</span>
                     </div>
                     {invoice.paymentDate && (
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Date de paiement</span>
+                        <span className="text-muted-foreground">
+                          Date de paiement
+                        </span>
                         <span>{formatDate(invoice.paymentDate)}</span>
                       </div>
                     )}
@@ -478,7 +561,9 @@ export default function InvoiceMobileFullscreen({
 
                 {/* Articles */}
                 <div className="space-y-2.5">
-                  <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Articles</h3>
+                  <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Articles
+                  </h3>
                   <div className="space-y-1.5">
                     {invoice.items && invoice.items.length > 0 ? (
                       invoice.items.map((item, index) => {
@@ -492,7 +577,8 @@ export default function InvoiceMobileFullscreen({
                               {item.description || "Article sans description"}
                             </div>
                             <div className="text-muted-foreground">
-                              {item.quantity || 0} × {formatCurrency(item.unitPrice || 0)}
+                              {item.quantity || 0} ×{" "}
+                              {formatCurrency(item.unitPrice || 0)}
                               {progressPercentage < 100 && (
                                 <span className="text-[#5b50ff] ml-2">
                                   ({progressPercentage}% avancement)
@@ -510,16 +596,22 @@ export default function InvoiceMobileFullscreen({
 
                 {/* Totaux */}
                 <div className="space-y-2.5">
-                  <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Totaux</h3>
+                  <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Totaux
+                  </h3>
                   <div className="space-y-1.5">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Sous-total HT</span>
+                      <span className="text-muted-foreground">
+                        Sous-total HT
+                      </span>
                       <span>{formatCurrency(calculatedTotals.subtotalHT)}</span>
                     </div>
                     {calculatedTotals.discountAmount > 0 && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Remise</span>
-                        <span>-{formatCurrency(calculatedTotals.discountAmount)}</span>
+                        <span>
+                          -{formatCurrency(calculatedTotals.discountAmount)}
+                        </span>
                       </div>
                     )}
                     <div className="flex justify-between">
@@ -543,10 +635,13 @@ export default function InvoiceMobileFullscreen({
                     {(() => {
                       const escompteValue = parseFloat(invoice.escompte) || 0;
                       if (escompteValue <= 0) return null;
-                      const escompteAmount = (calculatedTotals.totalHT * escompteValue) / 100;
+                      const escompteAmount =
+                        (calculatedTotals.totalHT * escompteValue) / 100;
                       return (
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Escompte sur HT ({escompteValue}%)</span>
+                          <span className="text-muted-foreground">
+                            Escompte sur HT ({escompteValue}%)
+                          </span>
                           <span>-{formatCurrency(escompteAmount)}</span>
                         </div>
                       );
@@ -555,15 +650,22 @@ export default function InvoiceMobileFullscreen({
                     {/* TVA après escompte */}
                     {(() => {
                       const escompteValue = parseFloat(invoice.escompte) || 0;
-                      if (escompteValue <= 0 || invoice.isReverseCharge) return null;
-                      const escompteAmount = (calculatedTotals.totalHT * escompteValue) / 100;
-                      const htAfterEscompte = calculatedTotals.totalHT - escompteAmount;
-                      const tvaAfterEscompte = calculatedTotals.totalHT > 0
-                        ? (htAfterEscompte / calculatedTotals.totalHT) * calculatedTotals.totalVAT
-                        : 0;
+                      if (escompteValue <= 0 || invoice.isReverseCharge)
+                        return null;
+                      const escompteAmount =
+                        (calculatedTotals.totalHT * escompteValue) / 100;
+                      const htAfterEscompte =
+                        calculatedTotals.totalHT - escompteAmount;
+                      const tvaAfterEscompte =
+                        calculatedTotals.totalHT > 0
+                          ? (htAfterEscompte / calculatedTotals.totalHT) *
+                            calculatedTotals.totalVAT
+                          : 0;
                       return (
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">TVA après escompte</span>
+                          <span className="text-muted-foreground">
+                            TVA après escompte
+                          </span>
                           <span>{formatCurrency(tvaAfterEscompte)}</span>
                         </div>
                       );
@@ -573,16 +675,22 @@ export default function InvoiceMobileFullscreen({
                       <span>Total TTC</span>
                       <span>
                         {(() => {
-                          const escompteValue = parseFloat(invoice.escompte) || 0;
+                          const escompteValue =
+                            parseFloat(invoice.escompte) || 0;
                           if (escompteValue > 0) {
-                            const escompteAmount = (calculatedTotals.totalHT * escompteValue) / 100;
-                            const htAfterEscompte = calculatedTotals.totalHT - escompteAmount;
+                            const escompteAmount =
+                              (calculatedTotals.totalHT * escompteValue) / 100;
+                            const htAfterEscompte =
+                              calculatedTotals.totalHT - escompteAmount;
                             const tvaAfterEscompte = invoice.isReverseCharge
                               ? 0
                               : calculatedTotals.totalHT > 0
-                                ? (htAfterEscompte / calculatedTotals.totalHT) * calculatedTotals.totalVAT
+                                ? (htAfterEscompte / calculatedTotals.totalHT) *
+                                  calculatedTotals.totalVAT
                                 : 0;
-                            return formatCurrency(htAfterEscompte + tvaAfterEscompte);
+                            return formatCurrency(
+                              htAfterEscompte + tvaAfterEscompte,
+                            );
                           }
                           return formatCurrency(calculatedTotals.totalTTC);
                         })()}
@@ -591,24 +699,30 @@ export default function InvoiceMobileFullscreen({
 
                     {/* Retenue de garantie */}
                     {(() => {
-                      const retenueValue = parseFloat(invoice.retenueGarantie) || 0;
+                      const retenueValue =
+                        parseFloat(invoice.retenueGarantie) || 0;
                       if (retenueValue <= 0) return null;
                       const escompteValue = parseFloat(invoice.escompte) || 0;
                       let baseAmount = calculatedTotals.totalTTC;
                       if (escompteValue > 0) {
-                        const escompteAmount = (calculatedTotals.totalHT * escompteValue) / 100;
-                        const htAfterEscompte = calculatedTotals.totalHT - escompteAmount;
+                        const escompteAmount =
+                          (calculatedTotals.totalHT * escompteValue) / 100;
+                        const htAfterEscompte =
+                          calculatedTotals.totalHT - escompteAmount;
                         const tvaAfterEscompte = invoice.isReverseCharge
                           ? 0
                           : calculatedTotals.totalHT > 0
-                            ? (htAfterEscompte / calculatedTotals.totalHT) * calculatedTotals.totalVAT
+                            ? (htAfterEscompte / calculatedTotals.totalHT) *
+                              calculatedTotals.totalVAT
                             : 0;
                         baseAmount = htAfterEscompte + tvaAfterEscompte;
                       }
                       const retenueAmount = (baseAmount * retenueValue) / 100;
                       return (
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Retenue de garantie ({retenueValue}%)</span>
+                          <span className="text-muted-foreground">
+                            Retenue de garantie ({retenueValue}%)
+                          </span>
                           <span>-{formatCurrency(retenueAmount)}</span>
                         </div>
                       );
@@ -616,22 +730,27 @@ export default function InvoiceMobileFullscreen({
 
                     {/* Net à payer */}
                     {(() => {
-                      const retenueValue = parseFloat(invoice.retenueGarantie) || 0;
+                      const retenueValue =
+                        parseFloat(invoice.retenueGarantie) || 0;
                       const escompteValue = parseFloat(invoice.escompte) || 0;
                       if (retenueValue <= 0 && escompteValue <= 0) return null;
                       let finalAmount = calculatedTotals.totalTTC;
                       if (escompteValue > 0) {
-                        const escompteAmount = (calculatedTotals.totalHT * escompteValue) / 100;
-                        const htAfterEscompte = calculatedTotals.totalHT - escompteAmount;
+                        const escompteAmount =
+                          (calculatedTotals.totalHT * escompteValue) / 100;
+                        const htAfterEscompte =
+                          calculatedTotals.totalHT - escompteAmount;
                         const tvaAfterEscompte = invoice.isReverseCharge
                           ? 0
                           : calculatedTotals.totalHT > 0
-                            ? (htAfterEscompte / calculatedTotals.totalHT) * calculatedTotals.totalVAT
+                            ? (htAfterEscompte / calculatedTotals.totalHT) *
+                              calculatedTotals.totalVAT
                             : 0;
                         finalAmount = htAfterEscompte + tvaAfterEscompte;
                       }
                       if (retenueValue > 0) {
-                        const retenueAmount = (finalAmount * retenueValue) / 100;
+                        const retenueAmount =
+                          (finalAmount * retenueValue) / 100;
                         finalAmount = finalAmount - retenueAmount;
                       }
                       return (
@@ -695,7 +814,9 @@ export default function InvoiceMobileFullscreen({
           {/* Footer avec actions */}
           <div
             className="flex-shrink-0 bg-background border-t px-4 py-3 flex flex-col gap-1.5"
-            style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+            style={{
+              paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
+            }}
           >
             {invoice.status === INVOICE_STATUS.DRAFT && (
               <>
@@ -703,7 +824,9 @@ export default function InvoiceMobileFullscreen({
                   <Button
                     variant="outline"
                     onClick={() => {
-                      router.push(`/dashboard/outils/factures/${invoice.id}/editer`);
+                      router.push(
+                        `/dashboard/outils/factures/${invoice.id}/editer`,
+                      );
                       onClose();
                     }}
                     size="sm"
@@ -811,7 +934,9 @@ export default function InvoiceMobileFullscreen({
                 <ArrowLeft className="h-4 w-4" />
                 Retour
               </Button>
-              <span className="text-sm font-medium text-muted-foreground">Aperçu</span>
+              <span className="text-sm font-medium text-muted-foreground">
+                Aperçu
+              </span>
               <div className="w-[72px]" />
             </div>
           </div>

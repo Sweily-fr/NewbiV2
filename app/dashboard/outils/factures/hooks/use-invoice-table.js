@@ -35,6 +35,10 @@ import {
   useDeleteImportedInvoice,
 } from "@/src/graphql/importedInvoiceQueries";
 import InvoiceRowActions from "../components/invoice-row-actions";
+import {
+  EInvoiceStatusBadge,
+  EReportingErrorBadge,
+} from "../components/einvoice-status-badge";
 import { EmailTrackingStatus } from "@/src/components/email-tracking-status";
 import { toast } from "@/src/components/ui/sonner";
 import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
@@ -810,15 +814,31 @@ export function useInvoiceTable({
           const config = getStatusConfig();
 
           return (
-            <span
-              className={cn(
-                "inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap",
-                config.className,
+            <div className="flex flex-col items-start gap-1">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap",
+                  config.className,
+                )}
+              >
+                {config.icon}
+                {label}
+              </span>
+              {/* Statut du cycle de vie e-invoicing (SuperPDP) — masqué hors e-invoicing */}
+              {!isImported && (
+                <>
+                  <EInvoiceStatusBadge
+                    status={row.original.eInvoiceStatus}
+                    lastCode={row.original.eInvoiceLastCode}
+                  />
+                  <EReportingErrorBadge
+                    status={row.original.eReportingStatus}
+                    paymentStatus={row.original.eReportingPaymentStatus}
+                    error={row.original.eReportingError}
+                  />
+                </>
               )}
-            >
-              {config.icon}
-              {label}
-            </span>
+            </div>
           );
         },
         size: 120,

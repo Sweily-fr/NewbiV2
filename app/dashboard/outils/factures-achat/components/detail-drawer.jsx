@@ -58,6 +58,7 @@ import {
   useReconcilePurchaseInvoice,
   useAcknowledgePurchaseInvoiceEInvoice,
   useRefusePurchaseInvoiceEInvoice,
+  useSubmitPurchaseInvoiceEInvoiceEvent,
 } from "@/src/hooks/usePurchaseInvoices";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
 import { format } from "date-fns";
@@ -196,12 +197,16 @@ export function PurchaseInvoiceDetailDrawer({
   const { acknowledge, loading: ackLoading } =
     useAcknowledgePurchaseInvoiceEInvoice();
   const { refuse, loading: refuseLoading } = useRefusePurchaseInvoiceEInvoice();
+  const { submitEvent, loading: eventLoading } =
+    useSubmitPurchaseInvoiceEInvoiceEvent();
 
   // Actions cycle de vie e-facture reçue (visible si liée à SuperPDP et reçue)
   const canActOnEInvoice =
     !isCreate &&
     invoice?.superPdpInvoiceId &&
     invoice?.eInvoiceStatus === "RECEIVED";
+
+  const eInvoiceActionLoading = ackLoading || refuseLoading || eventLoading;
 
   const handleAcceptEInvoice = async () => {
     if (!invoice?.id) return;
@@ -212,6 +217,17 @@ export function PurchaseInvoiceDetailDrawer({
     if (!invoice?.id) return;
     const reason = window.prompt("Motif du refus (optionnel) :") || undefined;
     await refuse(invoice.id, reason);
+  };
+
+  const handleAcknowledgeReceipt = async () => {
+    if (!invoice?.id) return;
+    await submitEvent(invoice.id, "fr:204");
+  };
+
+  const handleDisputeEInvoice = async () => {
+    if (!invoice?.id) return;
+    const reason = window.prompt("Motif du litige (optionnel) :") || undefined;
+    await submitEvent(invoice.id, "fr:207", reason);
   };
   const { suggestions } = useReconciliationSuggestions(
     !isCreate && invoice?.id && invoice?.status !== "PAID" ? invoice.id : null,
@@ -420,118 +436,516 @@ export function PurchaseInvoiceDetailDrawer({
 
   const body = (
     <>
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-6 space-y-6">
-            {/* Amount Section */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                  <Building2 className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs text-muted-foreground">
-                    {form.supplierName || "Fournisseur"}
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-6 space-y-6">
+          {/* Amount Section */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                <Building2 className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs text-muted-foreground">
+                  {form.supplierName || "Fournisseur"}
+                </p>
+                {isEditMode ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={form.amountTTC}
+                      onChange={(e) =>
+                        handleChange("amountTTC", e.target.value)
+                      }
+                      className="text-2xl font-medium h-auto py-1 w-32 border-none shadow-none px-0 focus-visible:ring-0"
+                      placeholder="0.00"
+                    />
+                    <span className="text-2xl font-medium text-muted-foreground">
+                      €
+                    </span>
+                  </div>
+                ) : (
+                  <p className="text-2xl font-medium">
+                    {formatAmount(invoice?.amountTTC)} €
                   </p>
-                  {isEditMode ? (
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={form.amountTTC}
-                        onChange={(e) =>
-                          handleChange("amountTTC", e.target.value)
-                        }
-                        className="text-2xl font-medium h-auto py-1 w-32 border-none shadow-none px-0 focus-visible:ring-0"
-                        placeholder="0.00"
-                      />
-                      <span className="text-2xl font-medium text-muted-foreground">
-                        €
-                      </span>
-                    </div>
-                  ) : (
-                    <p className="text-2xl font-medium">
-                      {formatAmount(invoice?.amountTTC)} €
-                    </p>
-                  )}
-                </div>
+                )}
               </div>
             </div>
+          </div>
 
-            <Separator />
+          <Separator />
 
-            {/* Fournisseur (view mode) */}
-            {!isEditMode && (
-              <>
-                <div className="space-y-3">
-                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                    Fournisseur
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                      <Building2 className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {invoice?.supplierName || "Non spécifié"}
+          {/* Fournisseur (view mode) */}
+          {!isEditMode && (
+            <>
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                  Fournisseur
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                    <Building2 className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {invoice?.supplierName || "Non spécifié"}
+                    </p>
+                    {invoice?.invoiceNumber && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        N° {invoice.invoiceNumber}
                       </p>
-                      {invoice?.invoiceNumber && (
-                        <p className="text-xs text-muted-foreground truncate">
-                          N° {invoice.invoiceNumber}
-                        </p>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </div>
-                <Separator />
-              </>
+              </div>
+              <Separator />
+            </>
+          )}
+
+          {/* Informations */}
+          <div className="space-y-4">
+            <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+              Informations
+            </p>
+
+            {isEditMode ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-normal text-muted-foreground">
+                      Fournisseur *
+                    </span>
+                  </div>
+                  <Input
+                    value={form.supplierName}
+                    onChange={(e) =>
+                      handleChange("supplierName", e.target.value)
+                    }
+                    placeholder="Nom du fournisseur"
+                    className="w-44 h-8 text-sm text-right"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Hash className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-normal text-muted-foreground">
+                      N° Facture
+                    </span>
+                  </div>
+                  <Input
+                    value={form.invoiceNumber}
+                    onChange={(e) =>
+                      handleChange("invoiceNumber", e.target.value)
+                    }
+                    placeholder="F-20260001"
+                    className="w-40 h-8 text-sm text-right"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-normal text-muted-foreground">
+                      Date d'émission
+                    </span>
+                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-40 h-8 justify-start text-left font-normal text-sm",
+                          !form.issueDate && "text-muted-foreground",
+                        )}
+                        type="button"
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {form.issueDate ? (
+                          (() => {
+                            try {
+                              const date = new Date(
+                                form.issueDate + "T00:00:00",
+                              );
+                              if (isNaN(date.getTime()))
+                                return <span>Date invalide</span>;
+                              return format(date, "PPP", { locale: fr });
+                            } catch {
+                              return <span>Date invalide</span>;
+                            }
+                          })()
+                        ) : (
+                          <span>Choisir une date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                      <Calendar
+                        mode="single"
+                        selected={
+                          form.issueDate
+                            ? new Date(form.issueDate + "T00:00:00")
+                            : undefined
+                        }
+                        onSelect={(date) => {
+                          if (date) {
+                            handleChange(
+                              "issueDate",
+                              format(date, "yyyy-MM-dd"),
+                            );
+                          }
+                        }}
+                        initialFocus
+                        locale={fr}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-normal text-muted-foreground">
+                      Date d&apos;échéance
+                    </span>
+                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-40 h-8 justify-start text-left font-normal text-sm",
+                          !form.dueDate && "text-muted-foreground",
+                        )}
+                        type="button"
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {form.dueDate ? (
+                          (() => {
+                            try {
+                              const date = new Date(form.dueDate + "T00:00:00");
+                              if (isNaN(date.getTime()))
+                                return <span>Date invalide</span>;
+                              return format(date, "PPP", { locale: fr });
+                            } catch {
+                              return <span>Date invalide</span>;
+                            }
+                          })()
+                        ) : (
+                          <span>Choisir une date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                      <Calendar
+                        mode="single"
+                        selected={
+                          form.dueDate
+                            ? new Date(form.dueDate + "T00:00:00")
+                            : undefined
+                        }
+                        disabled={
+                          form.issueDate
+                            ? {
+                                before: new Date(form.issueDate + "T00:00:00"),
+                              }
+                            : undefined
+                        }
+                        onSelect={(date) => {
+                          if (date) {
+                            handleChange("dueDate", format(date, "yyyy-MM-dd"));
+                          }
+                        }}
+                        initialFocus
+                        locale={fr}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-normal text-muted-foreground">
+                      Référence
+                    </span>
+                  </div>
+                  <Input
+                    value={form.internalReference}
+                    onChange={(e) =>
+                      handleChange("internalReference", e.target.value)
+                    }
+                    placeholder="Optionnel"
+                    className="w-40 h-8 text-sm text-right"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Hash className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-normal text-muted-foreground">
+                      N° Facture
+                    </span>
+                  </div>
+                  <span className="text-sm font-normal">
+                    {invoice?.invoiceNumber || "—"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-normal text-muted-foreground">
+                      Date d&apos;émission
+                    </span>
+                  </div>
+                  <span className="text-sm font-normal">
+                    {formatDate(invoice?.issueDate)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-normal text-muted-foreground">
+                      Date d&apos;échéance
+                    </span>
+                  </div>
+                  <span className="text-sm font-normal">
+                    {formatDate(invoice?.dueDate)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-normal text-muted-foreground">
+                      Référence
+                    </span>
+                  </div>
+                  <span className="text-sm font-normal">
+                    {invoice?.internalReference || "—"}
+                  </span>
+                </div>
+              </div>
             )}
+          </div>
 
-            {/* Informations */}
-            <div className="space-y-4">
-              <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                Informations
-              </p>
-
-              {isEditMode ? (
+          {/* Montants (edit mode) */}
+          {isEditMode && (
+            <>
+              <Separator />
+              <div className="space-y-4">
+                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                  Montants
+                </p>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Building2 className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-normal text-muted-foreground">
-                        Fournisseur *
-                      </span>
-                    </div>
+                    <span className="text-sm font-normal text-muted-foreground">
+                      Montant HT
+                    </span>
                     <Input
-                      value={form.supplierName}
-                      onChange={(e) =>
-                        handleChange("supplierName", e.target.value)
-                      }
-                      placeholder="Nom du fournisseur"
-                      className="w-44 h-8 text-sm text-right"
+                      type="number"
+                      step="0.01"
+                      value={form.amountHT}
+                      onChange={(e) => handleChange("amountHT", e.target.value)}
+                      placeholder="0.00"
+                      className="w-32 h-8 text-sm text-right"
                     />
                   </div>
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Hash className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-normal text-muted-foreground">
-                        N° Facture
-                      </span>
-                    </div>
-                    <Input
-                      value={form.invoiceNumber}
-                      onChange={(e) =>
-                        handleChange("invoiceNumber", e.target.value)
-                      }
-                      placeholder="F-20260001"
-                      className="w-40 h-8 text-sm text-right"
+                    <span className="text-sm font-normal text-muted-foreground">
+                      Taux TVA
+                    </span>
+                    <VatRateSelect
+                      value={form.vatRate}
+                      onChange={(v) => handleChange("vatRate", String(v))}
+                      className="w-44 h-8 text-sm [&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:block"
                     />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-normal text-muted-foreground">
+                      TVA
+                    </span>
+                    <span className="text-sm font-normal">
+                      {formatAmount(form.amountTVA)} €
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Montants (view mode) */}
+          {!isEditMode && !isCreate && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                  Montants
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-normal text-muted-foreground">
+                    HT
+                  </span>
+                  <span className="text-sm font-normal">
+                    {formatAmount(invoice?.amountHT)} €
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-normal text-muted-foreground">
+                    TVA ({invoice?.vatRate || 20}%)
+                  </span>
+                  <span className="text-sm font-normal">
+                    {formatAmount(invoice?.amountTVA)} €
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">TTC</span>
+                  <span className="text-sm font-medium">
+                    {formatAmount(invoice?.amountTTC)} €
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Catégorisation (view mode) */}
+          {!isEditMode && !isCreate && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                  Catégorisation
+                </p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-normal text-muted-foreground">
+                      Catégorie
+                    </span>
+                  </div>
+                  <span className="text-sm font-normal">
+                    {categoryLabels[invoice?.category] || "Autre"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Receipt className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-normal text-muted-foreground">
+                      Statut
+                    </span>
+                  </div>
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium ${STATUS_BADGE[invoice?.status] || STATUS_BADGE.TO_PROCESS}`}
+                  >
+                    {invoice?.status === "PAID" && (
+                      <CheckCircle2 className="w-3 h-3" />
+                    )}
+                    {invoice?.status === "OVERDUE" && (
+                      <AlertCircle className="w-3 h-3" />
+                    )}
+                    {statusLabels[invoice?.status] || "À traiter"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-normal text-muted-foreground">
+                      Mode de paiement
+                    </span>
+                  </div>
+                  <span className="text-sm font-normal">
+                    {paymentMethodLabels[invoice?.paymentMethod] ||
+                      "Non spécifié"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-normal text-muted-foreground">
+                      Date de paiement
+                    </span>
+                  </div>
+                  <span className="text-sm font-normal">
+                    {formatDate(invoice?.paymentDate)}
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Catégorisation (edit mode) */}
+          {isEditMode && (
+            <>
+              <Separator />
+              <div className="space-y-4">
+                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                  Catégorisation
+                </p>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-normal text-muted-foreground">
+                      Catégorie
+                    </span>
+                    <Select
+                      value={form.category}
+                      onValueChange={(v) => handleChange("category", v)}
+                    >
+                      <SelectTrigger className="w-40 h-8 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CATEGORY_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-normal text-muted-foreground">
+                      Statut
+                    </span>
+                    <Select
+                      value={form.status}
+                      onValueChange={(v) => handleChange("status", v)}
+                    >
+                      <SelectTrigger className="w-40 h-8 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {STATUS_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-normal text-muted-foreground">
+                      Mode de paiement
+                    </span>
+                    <Select
+                      value={form.paymentMethod}
+                      onValueChange={(v) => handleChange("paymentMethod", v)}
+                    >
+                      <SelectTrigger className="w-40 h-8 text-sm">
+                        <SelectValue placeholder="Sélectionner..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PAYMENT_METHOD_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-normal text-muted-foreground">
-                        Date d'émission
+                        Date de paiement
                       </span>
                     </div>
                     <Popover>
@@ -540,16 +954,16 @@ export function PurchaseInvoiceDetailDrawer({
                           variant="outline"
                           className={cn(
                             "w-40 h-8 justify-start text-left font-normal text-sm",
-                            !form.issueDate && "text-muted-foreground",
+                            !form.paymentDate && "text-muted-foreground",
                           )}
                           type="button"
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {form.issueDate ? (
+                          {form.paymentDate ? (
                             (() => {
                               try {
                                 const date = new Date(
-                                  form.issueDate + "T00:00:00",
+                                  form.paymentDate + "T00:00:00",
                                 );
                                 if (isNaN(date.getTime()))
                                   return <span>Date invalide</span>;
@@ -567,66 +981,8 @@ export function PurchaseInvoiceDetailDrawer({
                         <Calendar
                           mode="single"
                           selected={
-                            form.issueDate
-                              ? new Date(form.issueDate + "T00:00:00")
-                              : undefined
-                          }
-                          onSelect={(date) => {
-                            if (date) {
-                              handleChange(
-                                "issueDate",
-                                format(date, "yyyy-MM-dd"),
-                              );
-                            }
-                          }}
-                          initialFocus
-                          locale={fr}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-normal text-muted-foreground">
-                        Date d&apos;échéance
-                      </span>
-                    </div>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-40 h-8 justify-start text-left font-normal text-sm",
-                            !form.dueDate && "text-muted-foreground",
-                          )}
-                          type="button"
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {form.dueDate ? (
-                            (() => {
-                              try {
-                                const date = new Date(
-                                  form.dueDate + "T00:00:00",
-                                );
-                                if (isNaN(date.getTime()))
-                                  return <span>Date invalide</span>;
-                                return format(date, "PPP", { locale: fr });
-                              } catch {
-                                return <span>Date invalide</span>;
-                              }
-                            })()
-                          ) : (
-                            <span>Choisir une date</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="end">
-                        <Calendar
-                          mode="single"
-                          selected={
-                            form.dueDate
-                              ? new Date(form.dueDate + "T00:00:00")
+                            form.paymentDate
+                              ? new Date(form.paymentDate + "T00:00:00")
                               : undefined
                           }
                           disabled={
@@ -641,7 +997,7 @@ export function PurchaseInvoiceDetailDrawer({
                           onSelect={(date) => {
                             if (date) {
                               handleChange(
-                                "dueDate",
+                                "paymentDate",
                                 format(date, "yyyy-MM-dd"),
                               );
                             }
@@ -652,588 +1008,247 @@ export function PurchaseInvoiceDetailDrawer({
                       </PopoverContent>
                     </Popover>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-normal text-muted-foreground">
-                        Référence
-                      </span>
-                    </div>
-                    <Input
-                      value={form.internalReference}
-                      onChange={(e) =>
-                        handleChange("internalReference", e.target.value)
-                      }
-                      placeholder="Optionnel"
-                      className="w-40 h-8 text-sm text-right"
-                    />
-                  </div>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Hash className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-normal text-muted-foreground">
-                        N° Facture
-                      </span>
-                    </div>
-                    <span className="text-sm font-normal">
-                      {invoice?.invoiceNumber || "—"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-normal text-muted-foreground">
-                        Date d&apos;émission
-                      </span>
-                    </div>
-                    <span className="text-sm font-normal">
-                      {formatDate(invoice?.issueDate)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-normal text-muted-foreground">
-                        Date d&apos;échéance
-                      </span>
-                    </div>
-                    <span className="text-sm font-normal">
-                      {formatDate(invoice?.dueDate)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-normal text-muted-foreground">
-                        Référence
-                      </span>
-                    </div>
-                    <span className="text-sm font-normal">
-                      {invoice?.internalReference || "—"}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
+              </div>
+            </>
+          )}
 
-            {/* Montants (edit mode) */}
-            {isEditMode && (
-              <>
-                <Separator />
-                <div className="space-y-4">
+          {/* Justificatif */}
+          {!isCreate && invoice?.files?.length > 0 && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
                   <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                    Montants
+                    Justificatif
                   </p>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-normal text-muted-foreground">
-                        Montant HT
-                      </span>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={form.amountHT}
-                        onChange={(e) =>
-                          handleChange("amountHT", e.target.value)
-                        }
-                        placeholder="0.00"
-                        className="w-32 h-8 text-sm text-right"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-normal text-muted-foreground">
-                        Taux TVA
-                      </span>
-                      <VatRateSelect
-                        value={form.vatRate}
-                        onChange={(v) => handleChange("vatRate", String(v))}
-                        className="w-44 h-8 text-sm [&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:block"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-normal text-muted-foreground">
-                        TVA
-                      </span>
-                      <span className="text-sm font-normal">
-                        {formatAmount(form.amountTVA)} €
-                      </span>
-                    </div>
-                  </div>
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Attaché
+                  </span>
                 </div>
-              </>
-            )}
-
-            {/* Montants (view mode) */}
-            {!isEditMode && !isCreate && (
-              <>
-                <Separator />
-                <div className="space-y-3">
-                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                    Montants
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-normal text-muted-foreground">
-                      HT
-                    </span>
-                    <span className="text-sm font-normal">
-                      {formatAmount(invoice?.amountHT)} €
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-normal text-muted-foreground">
-                      TVA ({invoice?.vatRate || 20}%)
-                    </span>
-                    <span className="text-sm font-normal">
-                      {formatAmount(invoice?.amountTVA)} €
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">TTC</span>
-                    <span className="text-sm font-medium">
-                      {formatAmount(invoice?.amountTTC)} €
-                    </span>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* Catégorisation (view mode) */}
-            {!isEditMode && !isCreate && (
-              <>
-                <Separator />
-                <div className="space-y-3">
-                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                    Catégorisation
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Tag className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-normal text-muted-foreground">
-                        Catégorie
-                      </span>
-                    </div>
-                    <span className="text-sm font-normal">
-                      {categoryLabels[invoice?.category] || "Autre"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Receipt className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-normal text-muted-foreground">
-                        Statut
-                      </span>
-                    </div>
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium ${STATUS_BADGE[invoice?.status] || STATUS_BADGE.TO_PROCESS}`}
+                {invoice.files.map((file) => {
+                  const isImage = file.mimetype?.startsWith("image/");
+                  const isPdf =
+                    file.mimetype === "application/pdf" ||
+                    file.originalFilename?.endsWith(".pdf");
+                  return (
+                    <div
+                      key={file.id}
+                      className="relative group cursor-pointer rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:border-gray-400 dark:hover:border-gray-500 hover:shadow-sm transition-all"
+                      onClick={() => window.open(file.url, "_blank")}
                     >
-                      {invoice?.status === "PAID" && (
-                        <CheckCircle2 className="w-3 h-3" />
-                      )}
-                      {invoice?.status === "OVERDUE" && (
-                        <AlertCircle className="w-3 h-3" />
-                      )}
-                      {statusLabels[invoice?.status] || "À traiter"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-normal text-muted-foreground">
-                        Mode de paiement
-                      </span>
-                    </div>
-                    <span className="text-sm font-normal">
-                      {paymentMethodLabels[invoice?.paymentMethod] ||
-                        "Non spécifié"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-normal text-muted-foreground">
-                        Date de paiement
-                      </span>
-                    </div>
-                    <span className="text-sm font-normal">
-                      {formatDate(invoice?.paymentDate)}
-                    </span>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* Catégorisation (edit mode) */}
-            {isEditMode && (
-              <>
-                <Separator />
-                <div className="space-y-4">
-                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                    Catégorisation
-                  </p>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-normal text-muted-foreground">
-                        Catégorie
-                      </span>
-                      <Select
-                        value={form.category}
-                        onValueChange={(v) => handleChange("category", v)}
-                      >
-                        <SelectTrigger className="w-40 h-8 text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {CATEGORY_OPTIONS.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-normal text-muted-foreground">
-                        Statut
-                      </span>
-                      <Select
-                        value={form.status}
-                        onValueChange={(v) => handleChange("status", v)}
-                      >
-                        <SelectTrigger className="w-40 h-8 text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {STATUS_OPTIONS.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-normal text-muted-foreground">
-                        Mode de paiement
-                      </span>
-                      <Select
-                        value={form.paymentMethod}
-                        onValueChange={(v) => handleChange("paymentMethod", v)}
-                      >
-                        <SelectTrigger className="w-40 h-8 text-sm">
-                          <SelectValue placeholder="Sélectionner..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {PAYMENT_METHOD_OPTIONS.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-normal text-muted-foreground">
-                          Date de paiement
-                        </span>
-                      </div>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-40 h-8 justify-start text-left font-normal text-sm",
-                              !form.paymentDate && "text-muted-foreground",
-                            )}
-                            type="button"
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {form.paymentDate ? (
-                              (() => {
-                                try {
-                                  const date = new Date(
-                                    form.paymentDate + "T00:00:00",
-                                  );
-                                  if (isNaN(date.getTime()))
-                                    return <span>Date invalide</span>;
-                                  return format(date, "PPP", { locale: fr });
-                                } catch {
-                                  return <span>Date invalide</span>;
-                                }
-                              })()
-                            ) : (
-                              <span>Choisir une date</span>
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="end">
-                          <Calendar
-                            mode="single"
-                            selected={
-                              form.paymentDate
-                                ? new Date(form.paymentDate + "T00:00:00")
-                                : undefined
-                            }
-                            disabled={
-                              form.issueDate
-                                ? {
-                                    before: new Date(
-                                      form.issueDate + "T00:00:00",
-                                    ),
-                                  }
-                                : undefined
-                            }
-                            onSelect={(date) => {
-                              if (date) {
-                                handleChange(
-                                  "paymentDate",
-                                  format(date, "yyyy-MM-dd"),
-                                );
-                              }
+                      <div className="w-full h-52 bg-gray-50 dark:bg-gray-900 flex items-center justify-center overflow-hidden">
+                        {isImage && file.url ? (
+                          <img
+                            src={file.url}
+                            alt={file.originalFilename}
+                            className="w-full h-full object-contain"
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                              e.target.parentElement.querySelector(
+                                ".preview-fallback",
+                              ).style.display = "flex";
                             }}
-                            initialFocus
-                            locale={fr}
                           />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* Justificatif */}
-            {!isCreate && invoice?.files?.length > 0 && (
-              <>
-                <Separator />
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                      Justificatif
-                    </p>
-                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
-                      <CheckCircle2 className="w-3 h-3" />
-                      Attaché
-                    </span>
-                  </div>
-                  {invoice.files.map((file) => {
-                    const isImage = file.mimetype?.startsWith("image/");
-                    const isPdf =
-                      file.mimetype === "application/pdf" ||
-                      file.originalFilename?.endsWith(".pdf");
-                    return (
-                      <div
-                        key={file.id}
-                        className="relative group cursor-pointer rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:border-gray-400 dark:hover:border-gray-500 hover:shadow-sm transition-all"
-                        onClick={() => window.open(file.url, "_blank")}
-                      >
-                        <div className="w-full h-52 bg-gray-50 dark:bg-gray-900 flex items-center justify-center overflow-hidden">
-                          {isImage && file.url ? (
-                            <img
-                              src={file.url}
-                              alt={file.originalFilename}
-                              className="w-full h-full object-contain"
-                              onError={(e) => {
-                                e.target.style.display = "none";
-                                e.target.parentElement.querySelector(
-                                  ".preview-fallback",
-                                ).style.display = "flex";
-                              }}
-                            />
-                          ) : null}
-                          {isPdf && file.url ? (
-                            <iframe
-                              src={`${file.url}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
-                              title={file.originalFilename}
-                              className="w-full h-full border-0 pointer-events-none"
-                            />
-                          ) : null}
-                          <div
-                            className={`preview-fallback items-center justify-center ${isImage || isPdf ? "hidden" : "flex"}`}
-                          >
-                            <FileText className="h-10 w-10 text-red-400" />
-                          </div>
+                        ) : null}
+                        {isPdf && file.url ? (
+                          <iframe
+                            src={`${file.url}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                            title={file.originalFilename}
+                            className="w-full h-full border-0 pointer-events-none"
+                          />
+                        ) : null}
+                        <div
+                          className={`preview-fallback items-center justify-center ${isImage || isPdf ? "hidden" : "flex"}`}
+                        >
+                          <FileText className="h-10 w-10 text-red-400" />
                         </div>
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                          <div className="w-10 h-10 rounded-full bg-white/90 items-center justify-center shadow-lg hidden group-hover:flex transition-all">
-                            <Eye className="w-5 h-5 text-gray-700" />
-                          </div>
+                      </div>
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-full bg-white/90 items-center justify-center shadow-lg hidden group-hover:flex transition-all">
+                          <Eye className="w-5 h-5 text-gray-700" />
                         </div>
-                        <div className="flex items-center gap-2 px-3 py-2 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-                          <div className="w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
-                            {isPdf ? (
-                              <FileText className="h-4 w-4 text-red-500" />
-                            ) : (
-                              <FileText className="h-4 w-4 text-blue-500" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-normal truncate text-foreground">
-                              {file.originalFilename}
+                      </div>
+                      <div className="flex items-center gap-2 px-3 py-2 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+                        <div className="w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+                          {isPdf ? (
+                            <FileText className="h-4 w-4 text-red-500" />
+                          ) : (
+                            <FileText className="h-4 w-4 text-blue-500" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-normal truncate text-foreground">
+                            {file.originalFilename}
+                          </p>
+                          {file.size && (
+                            <p className="text-[10px] text-muted-foreground">
+                              {(file.size / 1024).toFixed(0)} Ko
                             </p>
-                            {file.size && (
-                              <p className="text-[10px] text-muted-foreground">
-                                {(file.size / 1024).toFixed(0)} Ko
-                              </p>
-                            )}
-                          </div>
+                          )}
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-
-            {/* Rapprochement bancaire */}
-            {!isCreate && suggestions?.length > 0 && (
-              <>
-                <Separator />
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                        Rapprochement bancaire
-                      </p>
                     </div>
-                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400">
-                      <AlertCircle className="w-3 h-3" />
-                      Suggestions
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    {suggestions.map((s) => (
-                      <div
-                        key={s.transactionId}
-                        className="p-3 border rounded-lg bg-muted/30"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <span className="text-sm font-medium">
-                              {formatAmount(s.amount)} €
-                            </span>
-                            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                              {s.description && <span>{s.description}</span>}
-                              <span>{formatDate(s.date)}</span>
-                              <span>
-                                Confiance: {Math.round(s.confidence * 100)}%
-                              </span>
-                            </div>
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-green-600 border-green-200 hover:bg-green-50"
-                            onClick={() => handleReconcile(s.transactionId)}
-                          >
-                            <LinkIcon className="h-3.5 w-3.5 mr-1" />
-                            Rapprocher
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
+                  );
+                })}
+              </div>
+            </>
+          )}
 
-            {invoice?.isReconciled && (
-              <>
-                <Separator />
-                <div className="space-y-2">
+          {/* Rapprochement bancaire */}
+          {!isCreate && suggestions?.length > 0 && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4 text-muted-foreground" />
                     <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                      Rapprochement
+                      Rapprochement bancaire
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
-                      <CheckCircle2 className="w-3 h-3" />
-                      Rapprochée avec{" "}
-                      {invoice.linkedTransactionIds?.length || 0} transaction(s)
-                    </span>
-                  </div>
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400">
+                    <AlertCircle className="w-3 h-3" />
+                    Suggestions
+                  </span>
                 </div>
-              </>
-            )}
+                <div className="space-y-2">
+                  {suggestions.map((s) => (
+                    <div
+                      key={s.transactionId}
+                      className="p-3 border rounded-lg bg-muted/30"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-medium">
+                            {formatAmount(s.amount)} €
+                          </span>
+                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                            {s.description && <span>{s.description}</span>}
+                            <span>{formatDate(s.date)}</span>
+                            <span>
+                              Confiance: {Math.round(s.confidence * 100)}%
+                            </span>
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-green-600 border-green-200 hover:bg-green-50"
+                          onClick={() => handleReconcile(s.transactionId)}
+                        >
+                          <LinkIcon className="h-3.5 w-3.5 mr-1" />
+                          Rapprocher
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
 
-            {/* Notes */}
-            {isEditMode ? (
-              <>
-                <Separator />
-                <div className="space-y-3">
+          {invoice?.isReconciled && (
+            <>
+              <Separator />
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
                   <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                    Notes
+                    Rapprochement
                   </p>
-                  <Textarea
-                    value={form.notes}
-                    onChange={(e) => handleChange("notes", e.target.value)}
-                    placeholder="Commentaires internes..."
-                    rows={3}
-                  />
                 </div>
-              </>
-            ) : (
-              !isCreate && (
-                <>
-                  <Separator />
-                  <div className="space-y-2">
-                    <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                      Notes
-                    </p>
-                    <p className="text-sm font-normal text-foreground">
-                      {invoice?.notes || "—"}
-                    </p>
-                  </div>
-                </>
-              )
-            )}
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Rapprochée avec {invoice.linkedTransactionIds?.length ||
+                      0}{" "}
+                    transaction(s)
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
 
-            {/* Timestamps */}
-            {!isCreate && (
+          {/* Notes */}
+          {isEditMode ? (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                  Notes
+                </p>
+                <Textarea
+                  value={form.notes}
+                  onChange={(e) => handleChange("notes", e.target.value)}
+                  placeholder="Commentaires internes..."
+                  rows={3}
+                />
+              </div>
+            </>
+          ) : (
+            !isCreate && (
               <>
                 <Separator />
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-normal text-muted-foreground">
-                      Créée le
-                    </span>
-                    <span className="text-xs font-normal">
-                      {formatDate(invoice?.createdAt, true)}
-                    </span>
-                  </div>
-                  {invoice?.updatedAt &&
-                    invoice.updatedAt !== invoice.createdAt && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-normal text-muted-foreground">
-                          Modifiée le
-                        </span>
-                        <span className="text-xs font-normal">
-                          {formatDate(invoice.updatedAt, true)}
-                        </span>
-                      </div>
-                    )}
+                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                    Notes
+                  </p>
+                  <p className="text-sm font-normal text-foreground">
+                    {invoice?.notes || "—"}
+                  </p>
                 </div>
               </>
-            )}
-          </div>
-        </div>
+            )
+          )}
 
-        {/* Footer */}
-        <DrawerFooter className="border-t px-6 py-4">
-          {canActOnEInvoice && (
-            <div className="flex gap-2 mb-2">
+          {/* Timestamps */}
+          {!isCreate && (
+            <>
+              <Separator />
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-normal text-muted-foreground">
+                    Créée le
+                  </span>
+                  <span className="text-xs font-normal">
+                    {formatDate(invoice?.createdAt, true)}
+                  </span>
+                </div>
+                {invoice?.updatedAt &&
+                  invoice.updatedAt !== invoice.createdAt && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-normal text-muted-foreground">
+                        Modifiée le
+                      </span>
+                      <span className="text-xs font-normal">
+                        {formatDate(invoice.updatedAt, true)}
+                      </span>
+                    </div>
+                  )}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <DrawerFooter className="border-t px-6 py-4">
+        {!isCreate && invoice?.eInvoicePaymentReportStatus === "ERROR" && (
+          <div className="mb-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-400">
+            Paiement non signalé à la plateforme (SuperPDP) — relance
+            automatique en cours.
+          </div>
+        )}
+        {canActOnEInvoice && (
+          <div className="flex flex-col gap-2 mb-2">
+            <div className="flex gap-2">
               <Button
                 variant="outline"
                 className="flex-1 font-normal text-green-700 hover:bg-green-50"
                 onClick={handleAcceptEInvoice}
-                disabled={ackLoading || refuseLoading}
+                disabled={eInvoiceActionLoading}
               >
                 {ackLoading ? "..." : "Approuver l'e-facture"}
               </Button>
@@ -1241,102 +1256,119 @@ export function PurchaseInvoiceDetailDrawer({
                 variant="outline"
                 className="flex-1 font-normal text-red-600 hover:bg-red-50"
                 onClick={handleRefuseEInvoice}
-                disabled={ackLoading || refuseLoading}
+                disabled={eInvoiceActionLoading}
               >
                 {refuseLoading ? "..." : "Refuser"}
               </Button>
             </div>
-          )}
-          {isCreate ? (
             <div className="flex gap-2">
               <Button
                 variant="outline"
                 className="flex-1 font-normal"
-                onClick={handleClose}
+                onClick={handleAcknowledgeReceipt}
+                disabled={eInvoiceActionLoading}
               >
-                Annuler
+                {eventLoading ? "..." : "Accuser réception"}
               </Button>
               <Button
-                className="flex-1 font-normal bg-primary hover:bg-primary/90"
-                onClick={handleSave}
-                disabled={saving || !form.supplierName || !form.amountTTC}
+                variant="outline"
+                className="flex-1 font-normal text-amber-700 hover:bg-amber-50"
+                onClick={handleDisputeEInvoice}
+                disabled={eInvoiceActionLoading}
               >
-                <Plus className="h-4 w-4 mr-2" />
-                {saving ? "Création..." : "Créer"}
+                {eventLoading ? "..." : "Signaler un litige"}
               </Button>
             </div>
-          ) : isEditMode ? (
-            <div className="flex gap-2">
+          </div>
+        )}
+        {isCreate ? (
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="flex-1 font-normal"
+              onClick={handleClose}
+            >
+              Annuler
+            </Button>
+            <Button
+              className="flex-1 font-normal bg-primary hover:bg-primary/90"
+              onClick={handleSave}
+              disabled={saving || !form.supplierName || !form.amountTTC}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {saving ? "Création..." : "Créer"}
+            </Button>
+          </div>
+        ) : isEditMode ? (
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="flex-1 font-normal"
+              onClick={() => setIsEditMode(false)}
+            >
+              Annuler
+            </Button>
+            <Button
+              className="flex-1 font-normal bg-primary hover:bg-primary/90"
+              onClick={handleSave}
+              disabled={saving || !form.supplierName || !form.amountTTC}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {saving ? "Enregistrement..." : "Enregistrer"}
+            </Button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="flex-1 font-normal"
+              onClick={() => setIsEditMode(true)}
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Modifier
+            </Button>
+            {invoice?.status !== "PAID" && (
               <Button
                 variant="outline"
-                className="flex-1 font-normal"
-                onClick={() => setIsEditMode(false)}
+                className="flex-1 font-normal text-green-600 hover:text-green-700 hover:bg-green-50"
+                onClick={handleMarkAsPaid}
+                disabled={markLoading}
               >
-                Annuler
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                Payée
               </Button>
-              <Button
-                className="flex-1 font-normal bg-primary hover:bg-primary/90"
-                onClick={handleSave}
-                disabled={saving || !form.supplierName || !form.amountTTC}
-              >
-                <Save className="h-4 w-4 mr-2" />
-                {saving ? "Enregistrement..." : "Enregistrer"}
-              </Button>
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1 font-normal"
-                onClick={() => setIsEditMode(true)}
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Modifier
-              </Button>
-              {invoice?.status !== "PAID" && (
+            )}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
                 <Button
                   variant="outline"
-                  className="flex-1 font-normal text-green-600 hover:text-green-700 hover:bg-green-50"
-                  onClick={handleMarkAsPaid}
-                  disabled={markLoading}
+                  size="icon"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
                 >
-                  <CheckCircle2 className="h-4 w-4 mr-2" />
-                  Payée
+                  <Trash2 className="h-4 w-4" />
                 </Button>
-              )}
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Supprimer cette facture ?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Cette action est irréversible.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDelete}
+                    className="bg-destructive text-white hover:bg-destructive/90"
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      Supprimer cette facture ?
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Cette action est irréversible.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Annuler</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleDelete}
-                      className="bg-destructive text-white hover:bg-destructive/90"
-                    >
-                      Supprimer
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          )}
-        </DrawerFooter>
+                    Supprimer
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )}
+      </DrawerFooter>
     </>
   );
 

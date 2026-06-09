@@ -85,6 +85,9 @@ export const GET_PURCHASE_INVOICES = gql`
         linkedTransactionIds
         isReconciled
         source
+        superPdpInvoiceId
+        eInvoiceStatus
+        eInvoicePaymentReportStatus
         createdAt
         updatedAt
       }
@@ -158,6 +161,10 @@ export const GET_PURCHASE_INVOICE = gql`
       linkedTransactionIds
       isReconciled
       source
+      superPdpInvoiceId
+      eInvoiceStatus
+      eInvoiceReceivedAt
+      eInvoicePaymentReportStatus
       createdAt
       updatedAt
     }
@@ -181,7 +188,9 @@ export const GET_PURCHASE_INVOICE_STATS = gql`
 
 export const GET_PURCHASE_INVOICE_RECONCILIATION_MATCHES = gql`
   query GetPurchaseInvoiceReconciliationMatches($purchaseInvoiceId: ID!) {
-    purchaseInvoiceReconciliationMatches(purchaseInvoiceId: $purchaseInvoiceId) {
+    purchaseInvoiceReconciliationMatches(
+      purchaseInvoiceId: $purchaseInvoiceId
+    ) {
       transactionId
       amount
       date

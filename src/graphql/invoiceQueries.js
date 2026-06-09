@@ -141,6 +141,9 @@ export const INVOICE_FRAGMENT = gql`
     superPdpInvoiceId
     eInvoiceStatus
     eInvoiceLastCode
+    eReportingStatus
+    eReportingPaymentStatus
+    eReportingError
     archivedPdfKey
     archivedPdfStoredAt
     archivedPdfSource
@@ -157,6 +160,11 @@ export const INVOICE_LIST_FRAGMENT = gql`
     invoiceType
     situationNumber
     status
+    eInvoiceStatus
+    eInvoiceLastCode
+    eReportingStatus
+    eReportingPaymentStatus
+    eReportingError
     issueDate
     dueDate
     paymentDate
@@ -1431,6 +1439,24 @@ export const INVOICE_STATUS_LABELS = {
   [INVOICE_STATUS.PENDING]: "En attente",
   [INVOICE_STATUS.COMPLETED]: "Terminée",
   [INVOICE_STATUS.CANCELED]: "Annulée",
+};
+
+// Libellés FR du cycle de vie e-invoicing (statuts dérivés des événements SuperPDP).
+export const EINVOICE_STATUS_LABELS = {
+  NOT_SENT: "Non envoyée",
+  PENDING_VALIDATION: "En cours de validation",
+  VALIDATED: "Validée",
+  SENT_TO_RECIPIENT: "Transmise",
+  RECEIVED: "Reçue",
+  ACCEPTED: "Acceptée",
+  PARTIALLY_ACCEPTED: "Acceptée partiellement",
+  DISPUTED: "En litige",
+  ON_HOLD: "Suspendue",
+  REFUSED: "Refusée",
+  PAYMENT_SENT: "Paiement transmis",
+  REJECTED: "Rejetée",
+  PAID: "Payée",
+  ERROR: "Erreur de transmission",
 };
 
 export const PAYMENT_METHOD_LABELS = {
