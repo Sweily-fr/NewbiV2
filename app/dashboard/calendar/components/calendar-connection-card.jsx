@@ -259,7 +259,7 @@ export function CalendarConnectionCard({ connection, onRefresh }) {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowCalendarSelector(true)}>
                   <Settings className="h-3.5 w-3.5 mr-2" />
-                  Gerer les calendriers
+                  Gérer les calendriers
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -267,8 +267,8 @@ export function CalendarConnectionCard({ connection, onRefresh }) {
                   disabled={disconnecting}
                   className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
                 >
-                  <Trash2 className="h-3.5 w-3.5 mr-2" />
-                  Deconnecter
+                  <Trash2 className="h-3.5 w-3.5 mr-2 text-red-600" />
+                  Déconnecter
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
