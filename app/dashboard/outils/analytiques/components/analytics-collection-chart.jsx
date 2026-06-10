@@ -79,7 +79,7 @@ function CustomTooltip({ active, payload, colors }) {
           <span>Taux recouvrement</span>
           <span>
             {data.recoveryRate != null
-              ? `${data.recoveryRate.toFixed(0)}%`
+              ? `${data.recoveryRate.toFixed(2)}%`
               : "—"}
           </span>
         </div>
