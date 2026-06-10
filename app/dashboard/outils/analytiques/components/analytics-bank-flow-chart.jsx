@@ -118,10 +118,8 @@ export function AnalyticsBankFlowChart({
 
     const validMonths = new Set(baseMonths.map((m) => m.month));
 
-    // Agréger les transactions entrantes par mois.
-    // T14.4 : inclure aussi les transactions "revenu" hors compte bancaire (ex : espèces).
-    // On considère qu'une transaction sans `fromAccount` / `accountId` est hors compte
-    // et fait quand même partie des encaissements.
+    // Agréger les encaissements bancaires par mois.
+    // On EXCLUT les espèces : ce ne sont pas des encaissements bancaires.
     const bankByMonth = {};
     (bankTransactions || []).forEach((t) => {
       if (t.amount <= 0) return;
@@ -131,6 +129,11 @@ export function AnalyticsBankFlowChart({
       const status = (t.status || "").toLowerCase();
       if (t.status && !["completed", "pending", "paid"].includes(status))
         return;
+      // Exclure les espèces (paiement en CASH) : hors compte bancaire.
+      const paymentMethod = String(
+        t.metadata?.paymentMethod || t.paymentMethod || "",
+      ).toUpperCase();
+      if (paymentMethod === "CASH") return;
       const rawDate = t.date || t.processedAt || t.createdAt;
       if (!rawDate) return;
       const d = new Date(rawDate);
