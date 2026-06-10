@@ -555,20 +555,9 @@ function SignUpPageContent() {
       <SEOHead {...seoData} />
       <JsonLd jsonLd={seoData.jsonLd} />
       <main
-        className={`relative flex min-h-[100dvh] flex-col items-center px-4 md:px-6 overflow-x-hidden ${view === "plan" ? "justify-start py-16 md:justify-center md:py-0" : "justify-center"}`}
+        className={`relative flex min-h-[100dvh] flex-col items-center px-4 md:px-6 overflow-x-hidden ${view === "plan" ? "justify-start py-16 md:justify-center md:py-0" : "justify-center py-12"}`}
         style={{ backgroundColor: "rgb(251, 251, 252)" }}
       >
-        {/* Logo — hidden on workspace/plan views */}
-        {view !== "workspace" && view !== "plan" && view !== "recap" && (
-          <div className="absolute top-0 left-0 right-0 flex justify-center pt-20 md:pt-46">
-            <img
-              src="/newbi-icon.png"
-              alt="Newbi"
-              className="h-10 w-10 rounded-xl"
-            />
-          </div>
-        )}
-
         {/* Header: logout + email (workspace & plan views) */}
         {(view === "workspace" || view === "plan" || view === "recap") && (
           <>
@@ -599,6 +588,15 @@ function SignUpPageContent() {
             transform: isAnimating ? "scale(0.97)" : "scale(1)",
           }}
         >
+          {/* Logo — hidden on workspace/plan/recap views */}
+          {view !== "workspace" && view !== "plan" && view !== "recap" && (
+            <img
+              src="/newbi-icon.png"
+              alt="Newbi"
+              className="h-10 w-10 rounded-xl mb-6"
+            />
+          )}
+
           {/* Title */}
           <h1
             className={`font-medium text-center ${view === "recap" ? "text-2xl md:text-3xl mb-3" : "text-lg md:text-xl mb-1"}`}
