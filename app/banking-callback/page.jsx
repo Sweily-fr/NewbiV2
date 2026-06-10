@@ -1,3 +1,5 @@
+import RedirectToApp from "./redirect-to-app";
+
 export const metadata = {
   title: "Connexion bancaire — Newbi",
   robots: "noindex,nofollow",
@@ -18,6 +20,8 @@ export default function BankingCallbackPage() {
         color: "#1A1A1A",
       }}
     >
+      {/* Rebond automatique vers l'app mobile (ferme la session d'auth Bridge). */}
+      <RedirectToApp />
       <img
         src="/newbi-icon.png"
         alt="Newbi"
