@@ -53,7 +53,6 @@ import { AnalyticsOverdueTable } from "./components/analytics-overdue-table";
 import { AnalyticsAgingChart } from "./components/analytics-aging-chart";
 import { AnalyticsCollectionChart } from "./components/analytics-collection-chart";
 import { AnalyticsTreasuryForecastChart } from "./components/analytics-treasury-forecast-chart";
-import { AnalyticsBankFlowChart } from "./components/analytics-bank-flow-chart";
 import { AnalyticsPCGMapping } from "./components/analytics-pcg-mapping";
 import BankBalanceCard from "@/src/components/banking/BankBalanceCard";
 import RecentTransactionsCard from "@/src/components/banking/RecentTransactionsCard";
@@ -239,8 +238,9 @@ const TRESORERIE_KPI = [
   {
     key: "collectionRate",
     label: "Taux recouvrement",
-    format: formatPercent,
-    tooltip: "Factures payées / Total factures émises",
+    format: (v) => `${(v || 0).toFixed(2)}%`,
+    tooltip:
+      "Montant encaissé / Montant impayé (factures échues sans avoir, Newbi + importées) × 100",
   },
 ];
 
@@ -570,14 +570,8 @@ export default function AnalytiquesPage() {
               />
             </div>
 
-            {/* Bank Flow + Collection side by side */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-4 sm:px-6">
-              <AnalyticsBankFlowChart
-                monthlyRevenue={analyticsData?.monthlyRevenue}
-                monthlyCollection={analyticsData?.collection?.monthlyCollection}
-                bankTransactions={bankTransactions}
-                loading={loading || bankLoading}
-              />
+            {/* Recouvrement mensuel : encaissé vs impayé */}
+            <div className="px-4 sm:px-6">
               <AnalyticsCollectionChart
                 monthlyCollection={analyticsData?.collection?.monthlyCollection}
                 loading={loading}
