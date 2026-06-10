@@ -878,6 +878,11 @@ export default function TransactionTable({
         notes: updatedTransaction.description,
       };
 
+      // Statut (si modifié dans le drawer) — enum GraphQL en majuscules
+      if (updatedTransaction.status) {
+        updateInput.status = updatedTransaction.status;
+      }
+
       // Ajouter le compte PCG si renseigné
       if (updatedTransaction.pcgAccountNumero) {
         updateInput.pcgAccountNumero = updatedTransaction.pcgAccountNumero;
