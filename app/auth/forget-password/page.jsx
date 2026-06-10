@@ -7,20 +7,16 @@ import Link from "next/link";
 export default function ForgetPassWordPage() {
   return (
     <main
-      className="relative flex min-h-[100dvh] flex-col items-center justify-center px-6"
+      className="relative flex min-h-[100dvh] flex-col items-center justify-center px-6 py-12"
       style={{ backgroundColor: "rgb(251, 251, 252)" }}
     >
-      {/* Logo */}
-      <div className="absolute top-0 left-0 right-0 flex justify-center pt-46">
+      {/* Content */}
+      <div className="flex flex-col items-center w-full">
         <img
           src="/newbi-icon.png"
           alt="Newbi"
-          className="h-10 w-10 rounded-xl"
+          className="h-10 w-10 rounded-xl mb-6"
         />
-      </div>
-
-      {/* Content */}
-      <div className="flex flex-col items-center w-full">
         <h1 className="text-xl font-medium mb-2" style={{ color: "#2f2f31" }}>
           Mot de passe oublié
         </h1>
