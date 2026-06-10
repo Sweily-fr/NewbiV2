@@ -58,6 +58,7 @@ import { useAddClientNote } from "@/src/graphql/clientQueries";
 import { useQuery } from "@apollo/client";
 import { GET_CLIENT } from "@/src/graphql/queries/clients";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useClientCustomFields } from "@/src/hooks/useClientCustomFields";
 
 // Import API Gouv utilities
 import { searchCompanies, convertCompanyToClient } from "@/src/utils/api-gouv";
@@ -178,12 +179,45 @@ export default function ClientsModal({
     }
   }, [fullClient]);
 
+  // Définitions des champs personnalisés (pour valider les champs obligatoires)
+  const { fields: customFieldDefinitions } =
+    useClientCustomFields(finalWorkspaceId);
+
   // Handler pour les changements de champs personnalisés
   const handleCustomFieldChange = (fieldId, value) => {
     setCustomFieldValues((prev) => ({
       ...prev,
       [fieldId]: value,
     }));
+    // Effacer l'erreur "obligatoire" dès que l'utilisateur saisit une valeur
+    setCustomErrors((prev) => {
+      if (!prev[fieldId]) return prev;
+      const { [fieldId]: _removed, ...rest } = prev;
+      return rest;
+    });
+  };
+
+  // Détermine si la valeur d'un champ personnalisé est vide
+  const isCustomFieldEmpty = (value) => {
+    if (value === undefined || value === null || value === "") return true;
+    if (Array.isArray(value)) return value.length === 0;
+    // Une case à cocher obligatoire doit être cochée
+    if (value === false) return true;
+    return false;
+  };
+
+  // Valide les champs personnalisés obligatoires et peuple customErrors
+  const validateCustomFields = () => {
+    const errors = {};
+    (customFieldDefinitions || [])
+      .filter((field) => field.isActive && field.isRequired)
+      .forEach((field) => {
+        if (isCustomFieldEmpty(customFieldValues[field.id])) {
+          errors[field.id] = "Ce champ est requis";
+        }
+      });
+    setCustomErrors(errors);
+    return Object.keys(errors).length > 0;
   };
 
   // Mettre à jour currentClient quand fullClient change
@@ -524,7 +558,7 @@ export default function ClientsModal({
     try {
       // Validation finale avant soumission
       const hasFormErrors = Object.keys(errors).length > 0;
-      const hasCustomErrors = Object.keys(customErrors).length > 0;
+      const hasCustomErrors = validateCustomFields();
       const hasContactErrors =
         clientType === "COMPANY" && validateAllContacts();
 
@@ -1440,7 +1474,7 @@ export default function ClientsModal({
                     <CustomFieldsForm
                       values={customFieldValues}
                       onChange={handleCustomFieldChange}
-                      errors={{}}
+                      errors={customErrors}
                     />
                   </div>
                 </div>
@@ -2264,7 +2298,7 @@ export default function ClientsModal({
                     <CustomFieldsForm
                       values={customFieldValues}
                       onChange={handleCustomFieldChange}
-                      errors={{}}
+                      errors={customErrors}
                     />
                   </div>
                 </div>
