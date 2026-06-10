@@ -5,7 +5,6 @@ import {
   Bar,
   CartesianGrid,
   ComposedChart,
-  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -18,6 +17,8 @@ import {
   CardTitle,
 } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { useChartColors } from "@/src/hooks/useChartColors";
+
 const formatCurrency = (value) =>
   new Intl.NumberFormat("fr-FR", {
     style: "currency",
@@ -36,7 +37,7 @@ const formatMonthLabel = (monthStr) => {
     .toUpperCase();
 };
 
-function CustomTooltip({ active, payload }) {
+function CustomTooltip({ active, payload, colors }) {
   if (!active || !payload?.length) return null;
   const data = payload[0]?.payload;
   if (!data) return null;
@@ -56,7 +57,7 @@ function CustomTooltip({ active, payload }) {
           <span className="flex items-center gap-2">
             <span
               className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: COLLECTED_TABLE_COLOR }}
+              style={{ backgroundColor: colors.success }}
             />
             Encaissé TTC
           </span>
@@ -68,7 +69,7 @@ function CustomTooltip({ active, payload }) {
           <span className="flex items-center gap-2">
             <span
               className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: INVOICED_TABLE_COLOR }}
+              style={{ backgroundColor: colors.danger }}
             />
             Impayé TTC
           </span>
@@ -78,7 +79,7 @@ function CustomTooltip({ active, payload }) {
           <span>Taux recouvrement</span>
           <span>
             {data.recoveryRate != null
-              ? `${data.recoveryRate.toFixed(0)}%`
+              ? `${data.recoveryRate.toFixed(2)}%`
               : "—"}
           </span>
         </div>
@@ -87,35 +88,37 @@ function CustomTooltip({ active, payload }) {
   );
 }
 
-// Couleurs fixes pour bien différencier les séries (T15)
-const INVOICED_TABLE_COLOR = "#5b50ff"; // violet
-const COLLECTED_TABLE_COLOR = "#10b981"; // vert
-
 export function AnalyticsCollectionChart({ monthlyCollection, loading }) {
-  // Pas de remap : on veut des couleurs distinctes coûte que coûte
-  const chartConfig = {
-    invoicedTTC: {
-      label: "Facture TTC encaissée",
-      color: COLLECTED_TABLE_COLOR,
-    },
-    collectedTTC: {
-      label: "Facture TTC impayée",
-      color: INVOICED_TABLE_COLOR,
-    },
-  };
+  const colors = useChartColors();
+  // Encaissé = couleur "succès", Impayé = couleur "danger".
+  // Ces deux couleurs restent distinctes en mode standard (vert / rouge)
+  // ET en mode daltonien (bleu brand / noir) — cf. useChartColors.
+  const COLLECTED_COLOR = colors.success;
+  const UNPAID_COLOR = colors.danger;
+
+  const chartConfig = useMemo(
+    () => ({
+      collectedTTC: { label: "Facture TTC encaissée", color: COLLECTED_COLOR },
+      unpaidTTC: { label: "Facture TTC impayée", color: UNPAID_COLOR },
+    }),
+    [COLLECTED_COLOR, UNPAID_COLOR],
+  );
+
   const chartData = useMemo(() => {
     if (!monthlyCollection?.length) return [];
     return monthlyCollection.map((m) => {
       const collected = m.collectedTTC || 0;
-      // unpaidTTC = factures émises non encore encaissées sur le mois
-      const unpaid = Math.max(0, (m.invoicedTTC || 0) - collected);
+      // unpaidTTC vient du backend : factures échues (échéance dépassée),
+      // sans avoir, Newbi + importées, regroupées par mois d'échéance.
+      const unpaid = m.unpaidTTC || 0;
       return {
         ...m,
         monthLabel: formatMonthLabel(m.month),
-        // T15.3 : Taux de recouvrement = encaissé / impayé × 100
-        // (Si impayé == 0, on retourne null pour éviter division par zéro)
-        recoveryRate: unpaid > 0 ? (collected / unpaid) * 100 : null,
+        collectedTTC: collected,
         unpaidTTC: unpaid,
+        // Taux de recouvrement = encaissé / impayé × 100
+        // (si impayé == 0, null pour éviter la division par zéro)
+        recoveryRate: unpaid > 0 ? (collected / unpaid) * 100 : null,
       };
     });
   }, [monthlyCollection]);
@@ -188,11 +191,11 @@ export function AnalyticsCollectionChart({ monthlyCollection, loading }) {
               axisLine={false}
               width={35}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<CustomTooltip colors={colors} />} />
             <Bar
               dataKey="collectedTTC"
               name="Facture TTC encaissée"
-              fill={COLLECTED_TABLE_COLOR}
+              fill={COLLECTED_COLOR}
               fillOpacity={0.85}
               radius={[4, 4, 0, 0]}
               barSize={20}
@@ -200,7 +203,7 @@ export function AnalyticsCollectionChart({ monthlyCollection, loading }) {
             <Bar
               dataKey="unpaidTTC"
               name="Facture TTC impayée"
-              fill={INVOICED_TABLE_COLOR}
+              fill={UNPAID_COLOR}
               fillOpacity={0.85}
               radius={[4, 4, 0, 0]}
               barSize={20}
