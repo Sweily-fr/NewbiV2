@@ -53,6 +53,7 @@ import { AnalyticsOverdueTable } from "./components/analytics-overdue-table";
 import { AnalyticsAgingChart } from "./components/analytics-aging-chart";
 import { AnalyticsCollectionChart } from "./components/analytics-collection-chart";
 import { AnalyticsTreasuryForecastChart } from "./components/analytics-treasury-forecast-chart";
+import { AnalyticsBankFlowChart } from "./components/analytics-bank-flow-chart";
 import { AnalyticsPCGMapping } from "./components/analytics-pcg-mapping";
 import BankBalanceCard from "@/src/components/banking/BankBalanceCard";
 import RecentTransactionsCard from "@/src/components/banking/RecentTransactionsCard";
@@ -570,8 +571,14 @@ export default function AnalytiquesPage() {
               />
             </div>
 
-            {/* Recouvrement mensuel : encaissé vs impayé */}
-            <div className="px-4 sm:px-6">
+            {/* Facturé vs Encaissé + Recouvrement mensuel côte à côte */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-4 sm:px-6">
+              <AnalyticsBankFlowChart
+                monthlyRevenue={analyticsData?.monthlyRevenue}
+                monthlyCollection={analyticsData?.collection?.monthlyCollection}
+                bankTransactions={bankTransactions}
+                loading={loading || bankLoading}
+              />
               <AnalyticsCollectionChart
                 monthlyCollection={analyticsData?.collection?.monthlyCollection}
                 loading={loading}

@@ -125,9 +125,12 @@ const transactionTypeLabels = {
 
 const statusLabels = {
   PAID: "Payée",
+  COMPLETED: "Encaissée",
   PENDING: "En attente",
   DRAFT: "Brouillon",
   CANCELLED: "Annulée",
+  FAILED: "Échouée",
+  REFUNDED: "Remboursée",
 };
 
 // Mapping des catégories form vers API (étendu pour couvrir toutes les catégories du CategorySearchSelect)
@@ -551,6 +554,7 @@ export function TransactionDetailDrawer({
         vendor: transaction.vendor || "",
         receiptImage: transaction.receiptImage || null,
         pcgAccountNumero: transaction.pcgAccount?.numero || "",
+        status: (transaction.status || "COMPLETED").toUpperCase(),
       });
       // Les transactions bancaires s'ouvrent directement en mode édition
       const txIsBankTransaction =
@@ -1390,10 +1394,29 @@ export function TransactionDetailDrawer({
                         Statut
                       </span>
                     </div>
-                    {transaction?.status === "PAID" ? (
+                    {isEditingForm ? (
+                      <Select
+                        value={formData.status}
+                        onValueChange={handleChange("status")}
+                      >
+                        <SelectTrigger className="w-40">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="COMPLETED">
+                            {formData.type === "INCOME" ? "Encaissée" : "Payée"}
+                          </SelectItem>
+                          <SelectItem value="PENDING">En attente</SelectItem>
+                          <SelectItem value="CANCELLED">Annulée</SelectItem>
+                          <SelectItem value="REFUNDED">Remboursée</SelectItem>
+                          <SelectItem value="FAILED">Échouée</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : transaction?.status === "PAID" ||
+                      transaction?.status === "COMPLETED" ? (
                       <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
                         <CheckCircle2 className="w-3 h-3" />
-                        {statusLabels[transaction.status] || "Payée"}
+                        {transaction?.amount > 0 ? "Encaissée" : "Payée"}
                       </span>
                     ) : transaction?.status === "PENDING" ? (
                       <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">

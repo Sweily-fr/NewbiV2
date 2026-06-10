@@ -125,8 +125,11 @@ export function AnalyticsBankFlowChart({
     const bankByMonth = {};
     (bankTransactions || []).forEach((t) => {
       if (t.amount <= 0) return;
-      // Garder pending et completed ; ignorer cancelled/draft
-      if (t.status && !["completed", "pending", "PAID"].includes(t.status))
+      // Garder pending et completed ; ignorer cancelled/draft.
+      // Comparaison en minuscules : les statuts peuvent être stockés en
+      // "COMPLETED" (majuscules) comme en "completed".
+      const status = (t.status || "").toLowerCase();
+      if (t.status && !["completed", "pending", "paid"].includes(status))
         return;
       const rawDate = t.date || t.processedAt || t.createdAt;
       if (!rawDate) return;
