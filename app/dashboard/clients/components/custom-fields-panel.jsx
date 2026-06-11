@@ -432,7 +432,15 @@ export default function CustomFieldsPanel({
 
   const handleToggle = async (field) => {
     try {
-      await onUpdateField(field.id, { isActive: !field.isActive });
+      // ClientCustomFieldInput exige name et fieldType ; nettoyer __typename des options
+      const cleanedOptions =
+        field.options?.map(({ __typename, ...opt }) => opt) || [];
+      await onUpdateField(field.id, {
+        name: field.name,
+        fieldType: field.fieldType,
+        options: cleanedOptions,
+        isActive: !field.isActive,
+      });
     } catch {
       // Error handled by hook
     }
