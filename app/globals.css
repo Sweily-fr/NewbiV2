@@ -72,6 +72,17 @@
   background-color: rgb(107 114 128);
 }
 
+/* Sidebar repliée (mode icône) : le scroll vertical reste possible
+   mais la scrollbar est masquée (sinon elle occupe la moitié du rail sur Windows) */
+[data-collapsible="icon"] [data-sidebar="content"] {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+}
+
+[data-collapsible="icon"] [data-sidebar="content"]::-webkit-scrollbar {
+  display: none; /* Safari et Chrome */
+}
+
 /* Hide scrollbar completely */
 .scrollbar-hide {
   scrollbar-width: none; /* Firefox */
