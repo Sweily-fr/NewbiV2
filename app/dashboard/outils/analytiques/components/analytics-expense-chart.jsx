@@ -1,20 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  Legend,
-  Label,
-  Line,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  ComposedChart,
-} from "recharts";
+import { PieChart, Pie, Cell, Tooltip, Legend, Label } from "recharts";
 import { ChartContainer } from "@/src/components/ui/chart";
 import {
   Card,
@@ -135,16 +122,6 @@ const formatCurrency = (value) =>
     maximumFractionDigits: 0,
   }).format(value || 0);
 
-const formatMonthLabel = (monthStr) => {
-  if (!monthStr) return "";
-  const [year, month] = monthStr.split("-");
-  const date = new Date(parseInt(year), parseInt(month) - 1);
-  return date
-    .toLocaleDateString("fr-FR", { month: "short" })
-    .replace(".", "")
-    .toUpperCase();
-};
-
 function CategoryTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;
   const data = payload[0]?.payload;
@@ -159,66 +136,6 @@ function CategoryTooltip({ active, payload }) {
       <div className="flex items-center justify-between gap-4">
         <span>Nombre</span>
         <span className="font-medium">{data.count}</span>
-      </div>
-    </div>
-  );
-}
-
-function MonthlyTooltip({ active, payload, colors, remap }) {
-  if (!active || !payload?.length) return null;
-  const data = payload[0]?.payload;
-  if (!data) return null;
-
-  const [year, month] = (data.month || "").split("-");
-  const monthDate = new Date(parseInt(year), parseInt(month) - 1);
-  const label = monthDate.toLocaleDateString("fr-FR", {
-    month: "long",
-    year: "numeric",
-  });
-
-  return (
-    <div className="rounded-lg border bg-background p-3 shadow-sm text-sm">
-      <p className="font-medium mb-2 capitalize">{label}</p>
-      <div className="space-y-1">
-        <div className="flex items-center justify-between gap-6">
-          <span className="flex items-center gap-2">
-            <span
-              className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: remap("#5b50ff") }}
-            />
-            Revenus HT
-          </span>
-          <span className="font-medium">{formatCurrency(data.revenueHT)}</span>
-        </div>
-        <div className="flex items-center justify-between gap-6">
-          <span className="flex items-center gap-2">
-            <span
-              className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: remap("#000000") }}
-            />
-            Dépenses HT
-          </span>
-          <span className="font-medium">
-            {formatCurrency(data.expenseAmount)}
-          </span>
-        </div>
-        <div className="flex items-center justify-between gap-6 border-t pt-1 mt-1">
-          <span className="flex items-center gap-2">
-            <span
-              className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: remap("#5b50ff") }}
-            />
-            Marge brute
-          </span>
-          <span
-            className="font-medium"
-            style={{
-              color: data.grossMargin >= 0 ? colors.success : colors.danger,
-            }}
-          >
-            {formatCurrency(data.grossMargin)}
-          </span>
-        </div>
       </div>
     </div>
   );
@@ -441,151 +358,6 @@ export function AnalyticsExpenseCategoryChart({
             )}
           </div>
         </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-export function AnalyticsRevenueVsExpenseChart({
-  monthlyRevenue,
-  bankTransactions,
-  loading,
-}) {
-  const chartColors = useChartColors();
-  const { remap } = chartColors;
-  const chartData = useMemo(() => {
-    if (!monthlyRevenue?.length) return [];
-
-    // Aggregate negative bank transactions by month as expenses
-    const bankExpenseByMonth = {};
-    (bankTransactions || []).forEach((t) => {
-      if (t.amount >= 0) return;
-      const rawDate = t.date || t.processedAt || t.createdAt;
-      if (!rawDate) return;
-      const d = new Date(rawDate);
-      if (isNaN(d.getTime())) return;
-      const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      bankExpenseByMonth[monthKey] =
-        (bankExpenseByMonth[monthKey] || 0) + Math.abs(t.amount);
-    });
-
-    return monthlyRevenue.map((m) => {
-      const expenseFromModel = m.expenseAmountHT || 0;
-      const expenseFromBank = bankExpenseByMonth[m.month] || 0;
-      const expense = expenseFromModel > 0 ? expenseFromModel : expenseFromBank;
-      return {
-        ...m,
-        monthLabel: formatMonthLabel(m.month),
-        expenseAmount: expense,
-        grossMargin: m.grossMargin ?? (m.revenueHT || 0) - expense,
-      };
-    });
-  }, [monthlyRevenue, bankTransactions]);
-
-  const chartConfig = {
-    revenueHT: { label: "Revenus HT", color: remap("#5b50ff") },
-    expenseAmount: { label: "Dépenses", color: remap("#000000") },
-    grossMargin: { label: "Marge brute", color: remap("#5b50ff") },
-  };
-
-  if (loading) {
-    return (
-      <Card className="shadow-xs flex flex-col min-h-0 py-4">
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">
-            Revenus vs Dépenses
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
-          <Skeleton className="min-h-[200px] w-full" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!chartData.length) {
-    return (
-      <Card className="shadow-xs flex flex-col min-h-0 py-4">
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">
-            Revenus vs Dépenses
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 flex items-center justify-center flex-1 min-h-[200px] text-muted-foreground">
-          Aucune donnée
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card className="shadow-xs flex flex-col min-h-0 py-4">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">
-          Revenus vs Dépenses
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
-        <ChartContainer
-          config={chartConfig}
-          className="flex-1 min-h-[350px] w-full"
-        >
-          <ComposedChart
-            data={chartData}
-            margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis
-              dataKey="monthLabel"
-              tick={{ fontSize: 11 }}
-              tickLine={false}
-              axisLine={false}
-              interval={0}
-            />
-            <YAxis
-              tick={({ y, payload }) => (
-                <text
-                  x={0}
-                  y={y}
-                  textAnchor="start"
-                  dominantBaseline="middle"
-                  fontSize={11}
-                  className="fill-muted-foreground"
-                >
-                  {`${(payload.value / 1000).toFixed(0)}k`}
-                </text>
-              )}
-              tickLine={false}
-              axisLine={false}
-              width={35}
-            />
-            <Tooltip
-              content={<MonthlyTooltip colors={chartColors} remap={remap} />}
-            />
-            <Bar
-              dataKey="revenueHT"
-              fill={remap("#5b50ff")}
-              fillOpacity={0.8}
-              radius={[4, 4, 0, 0]}
-              barSize={20}
-            />
-            <Bar
-              dataKey="expenseAmount"
-              fill={remap("#000000")}
-              fillOpacity={0.7}
-              radius={[4, 4, 0, 0]}
-              barSize={20}
-            />
-            <Line
-              type="bump"
-              dataKey="grossMargin"
-              stroke={remap("#5b50ff")}
-              strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 5 }}
-            />
-          </ComposedChart>
-        </ChartContainer>
       </CardContent>
     </Card>
   );
