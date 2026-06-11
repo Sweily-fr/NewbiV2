@@ -10,6 +10,7 @@ import { ForecastPaymentsCard } from "./components/forecast-payments-card";
 import { ForecastExportDialog } from "./components/forecast-export-dialog";
 import { ExportIcon } from "@/src/components/icons";
 import { DetectedRecurrencesList } from "./components/detected-recurrences-list";
+import { ManualEntriesList } from "./components/manual-entries-list";
 import { ScenarioSelector } from "./components/scenario-selector";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -382,6 +383,11 @@ export default function PrevisionPage() {
           loading={loading}
           onCellClick={handleCellClick}
         />
+      </div>
+
+      {/* ─── Manual entries (edit / delete) ─── */}
+      <div className="px-4 sm:px-6 pb-6">
+        <ManualEntriesList />
       </div>
 
       {/* ─── Auto-detected recurrences ─── */}

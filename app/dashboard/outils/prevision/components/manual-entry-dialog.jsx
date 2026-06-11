@@ -16,6 +16,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/src/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 import { cn } from "@/src/lib/utils";
 import {
   useUpsertManualCashflowEntry,
@@ -31,12 +38,54 @@ import {
 } from "lucide-react";
 
 const FREQUENCIES = [
-  { value: "WEEKLY", label: "Hebdo" },
-  { value: "MONTHLY", label: "Mensuel" },
-  { value: "QUARTERLY", label: "Trim." },
-  { value: "SEMIANNUAL", label: "Sem." },
-  { value: "ANNUAL", label: "Annuel" },
+  { value: "WEEKLY", label: "Toutes les semaines" },
+  { value: "MONTHLY", label: "Tous les mois" },
+  { value: "QUARTERLY", label: "Tous les trimestres" },
+  { value: "SEMIANNUAL", label: "Tous les semestres" },
+  { value: "ANNUAL", label: "Tous les ans" },
 ];
+
+const INCOME_CATEGORIES = [
+  { value: "SALES", label: "Ventes" },
+  { value: "REFUNDS_RECEIVED", label: "Remboursements" },
+  { value: "OTHER_INCOME", label: "Autres revenus" },
+];
+
+const EXPENSE_CATEGORIES = [
+  { value: "RENT", label: "Loyer" },
+  { value: "SUBSCRIPTIONS", label: "Abonnements" },
+  { value: "OFFICE_SUPPLIES", label: "Fournitures" },
+  { value: "SERVICES", label: "Services" },
+  { value: "TRANSPORT", label: "Transport" },
+  { value: "MEALS", label: "Repas" },
+  { value: "TELECOMMUNICATIONS", label: "Télécom" },
+  { value: "INSURANCE", label: "Assurance" },
+  { value: "ENERGY", label: "Énergie" },
+  { value: "SOFTWARE", label: "Logiciels" },
+  { value: "HARDWARE", label: "Matériel" },
+  { value: "MARKETING", label: "Marketing" },
+  { value: "TRAINING", label: "Formation" },
+  { value: "MAINTENANCE", label: "Maintenance" },
+  { value: "TAXES", label: "Impôts & taxes" },
+  { value: "UTILITIES", label: "Charges" },
+  { value: "SALARIES", label: "Salaires" },
+  { value: "OTHER_EXPENSE", label: "Autres dépenses" },
+];
+
+// La détection stocke des catégories de transactions bancaires qui ne sont
+// pas toutes dans l'enum ForecastCategory — on les rabat sur l'équivalent.
+const CATEGORY_ALIAS = {
+  TRAVEL: "TRANSPORT",
+  ACCOMMODATION: "OTHER_EXPENSE",
+  OTHER: "OTHER_EXPENSE",
+};
+
+const normalizeCategory = (cat, type) => {
+  if (!cat) return "";
+  const c = CATEGORY_ALIAS[cat] || cat;
+  const list = type === "INCOME" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+  return list.some((o) => o.value === c) ? c : "";
+};
 
 const toDateInput = (iso) => {
   if (!iso) return "";
@@ -70,6 +119,9 @@ export function ManualEntryDialog({ open, onOpenChange, entry, defaults }) {
   const [type, setType] = useState("EXPENSE");
   const [amount, setAmount] = useState("");
   const [name, setName] = useState("");
+  const [category, setCategory] = useState("");
+  const [amountDelta, setAmountDelta] = useState("");
+  const [amountDeltaType, setAmountDeltaType] = useState("AMOUNT");
   const [startDate, setStartDate] = useState(todayInput());
   const [endDate, setEndDate] = useState("");
   const [hasFrequency, setHasFrequency] = useState(false);
@@ -82,6 +134,9 @@ export function ManualEntryDialog({ open, onOpenChange, entry, defaults }) {
       setType(entry.type || "EXPENSE");
       setAmount(entry.amount != null ? String(entry.amount) : "");
       setName(entry.name || "");
+      setCategory(normalizeCategory(entry.category, entry.type || "EXPENSE"));
+      setAmountDelta(entry.amountDelta ? String(entry.amountDelta) : "");
+      setAmountDeltaType(entry.amountDeltaType || "AMOUNT");
       setStartDate(toDateInput(entry.startDate) || todayInput());
       setEndDate(toDateInput(entry.endDate));
       setHasFrequency(entry.frequency && entry.frequency !== "ONCE");
@@ -99,6 +154,11 @@ export function ManualEntryDialog({ open, onOpenChange, entry, defaults }) {
           : "",
       );
       setName(defaults?.name || "");
+      setCategory(
+        normalizeCategory(defaults?.category, defaults?.type || "EXPENSE"),
+      );
+      setAmountDelta("");
+      setAmountDeltaType("AMOUNT");
       // If defaults has a month (YYYY-MM), set startDate to first of that month
       if (defaults?.month) {
         setStartDate(`${defaults.month}-01`);
@@ -113,13 +173,22 @@ export function ManualEntryDialog({ open, onOpenChange, entry, defaults }) {
     }
   }, [open, entry, defaults]);
 
+  const handleTypeChange = (next) => {
+    setType(next);
+    // Une catégorie de dépense n'est pas valide pour une entrée (et vice-versa)
+    setCategory((prev) => normalizeCategory(prev, next));
+  };
+
   const parsedAmount = parseFloat(amount);
   const canSubmit =
     !Number.isNaN(parsedAmount) &&
     parsedAmount > 0 &&
     name.trim().length > 0 &&
     startDate &&
-    (!endDate || endDate >= startDate);
+    (!endDate || endDate >= startDate) &&
+    (!hasFrequency ||
+      amountDelta.trim() === "" ||
+      !Number.isNaN(parseFloat(amountDelta)));
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -127,10 +196,13 @@ export function ManualEntryDialog({ open, onOpenChange, entry, defaults }) {
       id: entry?.id,
       name: name.trim(),
       type,
+      category: category || null,
       amount: parsedAmount,
       startDate: new Date(startDate).toISOString(),
       endDate: endDate ? new Date(endDate).toISOString() : null,
       frequency: hasFrequency ? frequency : "ONCE",
+      amountDelta: hasFrequency ? parseFloat(amountDelta) || 0 : 0,
+      amountDeltaType,
       notes: notes.trim() || null,
     });
     if (result.success) onOpenChange(false);
@@ -162,7 +234,7 @@ export function ManualEntryDialog({ open, onOpenChange, entry, defaults }) {
             <div className="flex gap-1.5 p-1 bg-muted/50 rounded-lg w-fit">
               <button
                 type="button"
-                onClick={() => setType("EXPENSE")}
+                onClick={() => handleTypeChange("EXPENSE")}
                 className={cn(
                   "px-3.5 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer",
                   type === "EXPENSE"
@@ -174,7 +246,7 @@ export function ManualEntryDialog({ open, onOpenChange, entry, defaults }) {
               </button>
               <button
                 type="button"
-                onClick={() => setType("INCOME")}
+                onClick={() => handleTypeChange("INCOME")}
                 className={cn(
                   "px-3.5 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer",
                   type === "INCOME"
@@ -198,7 +270,9 @@ export function ManualEntryDialog({ open, onOpenChange, entry, defaults }) {
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm text-muted-foreground">Montant</label>
+                <label className="text-sm text-muted-foreground">
+                  Montant prévu
+                </label>
                 <div className="relative">
                   <Input
                     type="number"
@@ -215,6 +289,32 @@ export function ManualEntryDialog({ open, onOpenChange, entry, defaults }) {
                   </span>
                 </div>
               </div>
+            </div>
+
+            {/* Category */}
+            <div className="space-y-1.5">
+              <label className="text-sm text-muted-foreground">
+                Catégorie
+                <span className="text-muted-foreground/50 ml-1">optionnel</span>
+              </label>
+              <Select
+                value={category}
+                onValueChange={(value) => setCategory(value)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Sélectionner une catégorie" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(type === "INCOME"
+                    ? INCOME_CATEGORIES
+                    : EXPENSE_CATEGORIES
+                  ).map((cat) => (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Date */}
@@ -252,7 +352,7 @@ export function ManualEntryDialog({ open, onOpenChange, entry, defaults }) {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <label className="text-sm text-muted-foreground">
-                  Récurrent
+                  Configurer une prévision récurrente
                 </label>
                 <Switch
                   checked={hasFrequency}
@@ -261,61 +361,100 @@ export function ManualEntryDialog({ open, onOpenChange, entry, defaults }) {
               </div>
               {hasFrequency && (
                 <div className="space-y-3">
-                  <div className="flex gap-1.5">
-                    {FREQUENCIES.map((f) => (
-                      <button
-                        key={f.value}
-                        type="button"
-                        onClick={() => setFrequency(f.value)}
-                        className={cn(
-                          "px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer",
-                          frequency === f.value
-                            ? "bg-background text-foreground shadow-sm ring-1 ring-black/[0.07] dark:ring-white/[0.1]"
-                            : "text-muted-foreground hover:text-foreground bg-muted/50",
-                        )}
-                      >
-                        {f.label}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex flex-col gap-1.5">
+                  {/* Augmenter ou diminuer de (style Qonto) */}
+                  <div className="space-y-1.5">
                     <label className="text-sm text-muted-foreground">
-                      Fin de récurrence
-                      <span className="text-muted-foreground/50 ml-1">
-                        optionnel
-                      </span>
+                      Augmenter ou diminuer de
                     </label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-fit justify-start text-left font-normal",
-                            !endDate && "text-muted-foreground",
-                          )}
-                        >
-                          <CalendarIcon className="size-3.5 text-muted-foreground" />
-                          {formatDateLabel(endDate) || "Aucune"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={parseDate(endDate)}
-                          onSelect={(date) => {
-                            if (date)
-                              setEndDate(toDateInput(date.toISOString()));
-                          }}
-                          disabled={(date) => {
-                            const start = parseDate(startDate);
-                            return start ? date < start : false;
-                          }}
-                          defaultMonth={
-                            parseDate(endDate) || parseDate(startDate)
-                          }
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        step="0.01"
+                        value={amountDelta}
+                        onChange={(e) => setAmountDelta(e.target.value)}
+                        placeholder="0"
+                        className="flex-1"
+                      />
+                      <Select
+                        value={amountDeltaType}
+                        onValueChange={(value) => setAmountDeltaType(value)}
+                      >
+                        <SelectTrigger className="w-24 shrink-0">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="AMOUNT">EUR</SelectItem>
+                          <SelectItem value="PERCENT">%</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <p className="text-xs text-muted-foreground/60">
+                      Ajoutez un «&nbsp;-&nbsp;» pour diminuer
+                    </p>
+                  </div>
+
+                  {/* Récurrence + Répéter jusqu'en */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-sm text-muted-foreground">
+                        Récurrence
+                      </label>
+                      <Select
+                        value={frequency}
+                        onValueChange={(value) => setFrequency(value)}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {FREQUENCIES.map((f) => (
+                            <SelectItem key={f.value} value={f.value}>
+                              {f.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-sm text-muted-foreground">
+                        Répéter jusqu'en
+                        <span className="text-muted-foreground/50 ml-1">
+                          optionnel
+                        </span>
+                      </label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !endDate && "text-muted-foreground",
+                            )}
+                          >
+                            <CalendarIcon className="size-3.5 text-muted-foreground" />
+                            {formatDateLabel(endDate) || "Aucune"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={parseDate(endDate)}
+                            onSelect={(date) => {
+                              if (date)
+                                setEndDate(toDateInput(date.toISOString()));
+                            }}
+                            disabled={(date) => {
+                              const start = parseDate(startDate);
+                              return start ? date < start : false;
+                            }}
+                            defaultMonth={
+                              parseDate(endDate) || parseDate(startDate)
+                            }
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                   </div>
                 </div>
               )}

@@ -111,6 +111,11 @@ export function ManualEntriesList() {
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {formatDateRange(entry)}
+                    {entry.amountDelta
+                      ? ` · ${entry.amountDelta > 0 ? "+" : ""}${entry.amountDelta}${
+                          entry.amountDeltaType === "PERCENT" ? " %" : " €"
+                        } par échéance`
+                      : ""}
                   </p>
                 </div>
               </div>
