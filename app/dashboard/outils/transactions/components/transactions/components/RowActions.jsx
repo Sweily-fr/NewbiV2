@@ -30,7 +30,15 @@ export function RowActions({ row, onEdit, onRefresh, onDownloadAttachment }) {
   const { deleteTransaction, loading: deleteLoading } = useDeleteTransaction();
   const { isReadOnly, isOwner } = useSubscriptionAccess();
 
+  const isPurchaseInvoice = transaction.sourceKind === "PURCHASE_INVOICE";
+
   const handleEdit = () => {
+    if (isPurchaseInvoice) {
+      toast.error(
+        "Modifiez cette facture d'achat depuis la page Factures d'achat",
+      );
+      return;
+    }
     if (onEdit) {
       onEdit(transaction);
     }
@@ -40,6 +48,14 @@ export function RowActions({ row, onEdit, onRefresh, onDownloadAttachment }) {
     if (transaction.source === "invoice") {
       toast.error(
         "Les factures ne peuvent pas être supprimées depuis cette interface",
+      );
+      setShowDeleteDialog(false);
+      return;
+    }
+
+    if (isPurchaseInvoice) {
+      toast.error(
+        "Supprimez cette facture d'achat depuis la page Factures d'achat",
       );
       setShowDeleteDialog(false);
       return;
@@ -82,7 +98,11 @@ export function RowActions({ row, onEdit, onRefresh, onDownloadAttachment }) {
           <DropdownMenuGroup>
             <DropdownMenuItem
               onClick={handleEdit}
-              disabled={transaction.source === "invoice" || isReadOnly}
+              disabled={
+                transaction.source === "invoice" ||
+                isPurchaseInvoice ||
+                isReadOnly
+              }
             >
               <span>Modifier</span>
               <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
@@ -111,7 +131,10 @@ export function RowActions({ row, onEdit, onRefresh, onDownloadAttachment }) {
             onClick={() => setShowDeleteDialog(true)}
             variant="destructive"
             disabled={
-              deleteLoading || transaction.source === "invoice" || isReadOnly
+              deleteLoading ||
+              transaction.source === "invoice" ||
+              isPurchaseInvoice ||
+              isReadOnly
             }
           >
             <span>{deleteLoading ? "Suppression..." : "Supprimer"}</span>

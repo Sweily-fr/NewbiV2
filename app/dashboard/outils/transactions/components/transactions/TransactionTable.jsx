@@ -19,6 +19,7 @@ import {
 } from "@tanstack/react-table";
 import { toast } from "@/src/components/ui/sonner";
 import { TransactionDetailDrawer } from "../transaction-detail-drawer";
+import { PurchaseInvoiceDetailDrawer } from "../../../factures-achat/components/detail-drawer";
 import { ReceiptUploadDrawer } from "../receipt-upload-drawer";
 import { ExportDialog } from "../export-dialog";
 import {
@@ -159,6 +160,10 @@ export default function TransactionTable({
   const [expenseTypeFilter, setExpenseTypeFilter] = useState(null);
   const [assignedMemberFilter, setAssignedMemberFilter] = useState(null);
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
+  // Affichage unifié : drawer de détail d'une facture d'achat ouverte depuis
+  // la liste des transactions (lignes sourceKind === "PURCHASE_INVOICE").
+  const [selectedPurchaseInvoice, setSelectedPurchaseInvoice] = useState(null);
+  const [isPIDrawerOpen, setIsPIDrawerOpen] = useState(false);
   const [isAddTransactionDrawerOpen, setIsAddTransactionDrawerOpen] =
     useState(false);
   const [isReceiptUploadDrawerOpen, setIsReceiptUploadDrawerOpen] =
@@ -480,6 +485,9 @@ export default function TransactionTable({
         assignedMember: expense.assignedMember || null,
         // Données originales de la transaction bancaire si disponibles
         originalTransaction: expense.originalTransaction || null,
+        // Affichage unifié : ligne issue d'une facture d'achat (sourceKind)
+        sourceKind: expense.sourceKind || null,
+        originalPurchaseInvoice: expense.originalPurchaseInvoice || null,
         // Champs de rapprochement bancaire
         linkedInvoiceId: expense.linkedInvoiceId || null,
         linkedInvoice: expense.linkedInvoice || null,
@@ -590,12 +598,17 @@ export default function TransactionTable({
       return;
     }
 
-    // Filtrer les factures (non supprimables depuis cette interface)
+    // Filtrer les factures (non supprimables depuis cette interface) ainsi que
+    // les factures d'achat affichées en lecture (sourceKind === PURCHASE_INVOICE)
     const deletableRows = selectedRows.filter(
-      (row) => row.original.source !== "invoice",
+      (row) =>
+        row.original.source !== "invoice" &&
+        row.original.sourceKind !== "PURCHASE_INVOICE",
     );
     const invoiceRows = selectedRows.filter(
-      (row) => row.original.source === "invoice",
+      (row) =>
+        row.original.source === "invoice" ||
+        row.original.sourceKind === "PURCHASE_INVOICE",
     );
 
     if (invoiceRows.length > 0) {
@@ -651,6 +664,14 @@ export default function TransactionTable({
   };
 
   const handleViewTransaction = (transaction) => {
+    // Ligne issue d'une facture d'achat : ouvrir le drawer facture d'achat en place
+    if (transaction?.sourceKind === "PURCHASE_INVOICE") {
+      setSelectedPurchaseInvoice(
+        transaction.originalPurchaseInvoice || transaction,
+      );
+      setIsPIDrawerOpen(true);
+      return;
+    }
     setSelectedTransaction(transaction);
     setIsDetailDrawerOpen(true);
   };
@@ -673,6 +694,13 @@ export default function TransactionTable({
     if (transaction.source === "invoice") {
       toast.error(
         "Les factures ne peuvent pas être supprimées depuis cette interface",
+      );
+      return;
+    }
+
+    if (transaction.sourceKind === "PURCHASE_INVOICE") {
+      toast.error(
+        "Supprimez cette facture d'achat depuis la page Factures d'achat",
       );
       return;
     }
@@ -946,6 +974,8 @@ export default function TransactionTable({
     onSortingChange: setSorting,
     enableSortingRemoval: false,
     manualPagination: false,
+    // Lignes facture d'achat (affichage unifié) : non sélectionnables
+    enableRowSelection: (row) => row.original.sourceKind !== "PURCHASE_INVOICE",
     onPaginationChange: setPagination,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
@@ -1125,6 +1155,8 @@ export default function TransactionTable({
     onSortingChange: setSorting,
     enableSortingRemoval: false,
     manualPagination: false,
+    // Lignes facture d'achat (affichage unifié) : non sélectionnables
+    enableRowSelection: (row) => row.original.sourceKind !== "PURCHASE_INVOICE",
     onPaginationChange: setPagination,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
@@ -1899,6 +1931,27 @@ export default function TransactionTable({
           />
         )}
       </AnimatePresence>
+
+      {/* Drawer facture d'achat (affichage unifié) — lignes sourceKind PURCHASE_INVOICE */}
+      <PurchaseInvoiceDetailDrawer
+        open={isPIDrawerOpen}
+        onOpenChange={(open) => {
+          setIsPIDrawerOpen(open);
+          if (!open) setSelectedPurchaseInvoice(null);
+        }}
+        invoice={selectedPurchaseInvoice}
+        mode="view"
+        onSaved={() => {
+          setIsPIDrawerOpen(false);
+          setSelectedPurchaseInvoice(null);
+          refetch();
+        }}
+        onDeleted={() => {
+          setIsPIDrawerOpen(false);
+          setSelectedPurchaseInvoice(null);
+          refetch();
+        }}
+      />
 
       <ReceiptUploadDrawer
         open={isReceiptUploadDrawerOpen}

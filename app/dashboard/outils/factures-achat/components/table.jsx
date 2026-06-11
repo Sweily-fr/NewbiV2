@@ -322,7 +322,10 @@ export default function PurchaseInvoiceTable({
     getSortedRowModel: getSortedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
     globalFilterFn: multiColumnFilterFn,
-    enableRowSelection: true,
+    // Les lignes "dépense" (transactions) ne sont pas sélectionnables : les
+    // actions groupées (statut, catégorie, suppression) ne s'appliquent qu'aux
+    // factures d'achat réelles.
+    enableRowSelection: (row) => row.original.sourceKind !== "TRANSACTION",
     getRowId: (row) => row.id,
   });
 
@@ -956,8 +959,15 @@ export default function PurchaseInvoiceTable({
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm truncate">
-                          {inv.supplierName}
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-medium text-sm truncate">
+                            {inv.supplierName}
+                          </span>
+                          {inv.sourceKind === "TRANSACTION" && (
+                            <span className="inline-flex items-center rounded-md border border-violet-200 dark:border-violet-800 px-1 py-0.5 text-[10px] font-medium bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300 shrink-0">
+                              Dépense
+                            </span>
+                          )}
                         </div>
                         <div className="text-xs text-muted-foreground mt-0.5">
                           {inv.invoiceNumber && `${inv.invoiceNumber} · `}
