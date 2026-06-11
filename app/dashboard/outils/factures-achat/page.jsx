@@ -1,9 +1,20 @@
 "use client";
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
+import { useQuery, useMutation } from "@apollo/client";
 import PurchaseInvoiceTable from "./components/table";
 import { PurchaseInvoiceDetailDrawer } from "./components/detail-drawer";
 import { PurchaseInvoiceCreateDrawer } from "./components/create-drawer";
+import { TransactionDetailDrawer } from "../transactions/components/transaction-detail-drawer";
+import { mapPaymentMethodToEnum } from "../transactions/components/transactions/utils/mappers";
+import {
+  GET_TRANSACTIONS,
+  UPLOAD_TRANSACTION_RECEIPT,
+} from "@/src/graphql/queries/banking";
+import {
+  useUpdateTransaction,
+  useDeleteTransaction,
+} from "@/src/hooks/useTransactions";
 import { ExportDialog } from "./components/export-dialog";
 import { GmailConnectionDialog } from "./components/gmail-connection";
 // GmailStatusBanner remplacé par un bouton inline dans la toolbar
@@ -114,6 +125,149 @@ function PurchaseInvoicesContent() {
     filters: { status: "PENDING_REVIEW" },
   });
 
+  // ── Affichage unifié : dépenses (page Transactions) ────────────────────
+  // On récupère toutes les transactions de type dépense (montant < 0, manuelles
+  // ET bancaires) et on les affiche aussi dans la liste des factures d'achat,
+  // sauf celles déjà rapprochées à une facture (présentes dans linkedTransactionIds).
+  const { updateTransaction } = useUpdateTransaction();
+  const { deleteTransaction } = useDeleteTransaction();
+  const [uploadReceiptMutation] = useMutation(UPLOAD_TRANSACTION_RECEIPT);
+  const { data: txData, refetch: refetchTransactions } = useQuery(
+    GET_TRANSACTIONS,
+    {
+      variables: { workspaceId, limit: 0 },
+      skip: !workspaceId,
+      fetchPolicy: "cache-and-network",
+    },
+  );
+
+  const expenseTransactionRows = useMemo(() => {
+    const linkedIds = new Set();
+    (invoices || []).forEach((pi) => {
+      (pi.linkedTransactionIds || []).forEach((tid) =>
+        linkedIds.add(String(tid)),
+      );
+    });
+    return (txData?.transactions || [])
+      .filter((tx) => tx.amount < 0 && !linkedIds.has(String(tx.id)))
+      .map((tx) => ({
+        id: `tx-${tx.id}`,
+        sourceKind: "TRANSACTION",
+        supplierName: tx.metadata?.vendor || tx.description || "Dépense",
+        invoiceNumber: null,
+        issueDate: tx.date || tx.createdAt,
+        dueDate: null,
+        amountHT: null,
+        amountTVA: null,
+        amountTTC: Math.abs(tx.amount || 0),
+        currency: tx.currency || "EUR",
+        status: tx.status === "completed" ? "PAID" : "PENDING",
+        category: tx.expenseCategory || null,
+        files: (tx.receiptFiles || []).map((f) => ({
+          id: f.id,
+          url: f.url,
+          originalFilename: f.filename,
+        })),
+        linkedTransactionIds: [],
+        originalTransaction: tx,
+        createdAt: tx.createdAt,
+        updatedAt: tx.updatedAt,
+      }));
+  }, [txData, invoices]);
+
+  const mergedInvoices = useMemo(
+    () => [...(invoices || []), ...expenseTransactionRows],
+    [invoices, expenseTransactionRows],
+  );
+
+  const refetchAll = () => {
+    refetch?.();
+    refetchStats?.();
+    refetchTransactions?.();
+  };
+
+  // Mappe une transaction brute vers la shape attendue par TransactionDetailDrawer
+  const mapTransactionToDrawer = (tx) => ({
+    id: tx.id,
+    type: tx.amount > 0 ? "INCOME" : "EXPENSE",
+    source: tx.provider === "manual" ? "MANUAL" : "BANK",
+    title: tx.description,
+    description: tx.description,
+    amount: tx.amount,
+    currency: tx.currency || "EUR",
+    date: tx.processedAt || tx.date || tx.createdAt,
+    category: tx.category || tx.expenseCategory || "OTHER",
+    vendor: tx.metadata?.vendor || null,
+    hasReceipt: Array.isArray(tx.receiptFiles) && tx.receiptFiles.length > 0,
+    receiptFiles: tx.receiptFiles || [],
+    files: tx.receiptFiles || [],
+    status: tx.status === "completed" ? "PAID" : tx.status?.toUpperCase(),
+    paymentMethod: tx.metadata?.paymentMethod || null,
+    provider: tx.provider,
+    originalTransaction: {
+      id: tx.id,
+      externalId: tx.externalId,
+      provider: tx.provider,
+      fromAccount: tx.fromAccount,
+    },
+    pcgAccount: tx.pcgAccount || null,
+    metadata: tx.metadata || {},
+    createdAt: tx.createdAt,
+    updatedAt: tx.updatedAt,
+  });
+
+  const handleSaveExpenseTransaction = async (updated) => {
+    const txId =
+      updated.id ||
+      selectedExpenseTx?.originalTransaction?.id ||
+      selectedExpenseTx?.id;
+    if (!txId) return;
+    const isIncome = updated.type === "INCOME";
+    const amount = isIncome
+      ? Math.abs(parseFloat(updated.amount))
+      : -Math.abs(parseFloat(updated.amount));
+    const input = {
+      description: updated.description || "Transaction modifiée",
+      amount,
+      currency: "EUR",
+      category: updated.category || "OTHER",
+      date: updated.date,
+      type: isIncome ? "CREDIT" : "DEBIT",
+      vendor: updated.vendor,
+      paymentMethod: mapPaymentMethodToEnum(updated.paymentMethod),
+      notes: updated.description,
+    };
+    if (updated.status) input.status = updated.status;
+    if (updated.pcgAccountNumero)
+      input.pcgAccountNumero = updated.pcgAccountNumero;
+    const result = await updateTransaction(txId, input);
+    if (result?.success) {
+      setIsTxDrawerOpen(false);
+      refetchAll();
+    }
+  };
+
+  const handleDeleteExpenseTransaction = async (tx) => {
+    setIsTxDrawerOpen(false);
+    const txId = tx.originalTransaction?.id || tx.id;
+    const result = await deleteTransaction(txId);
+    if (result?.success) refetchAll();
+  };
+
+  const handleAttachReceiptToTransaction = async (tx, files) => {
+    const transactionId = tx.originalTransaction?.id || tx.id;
+    const { data } = await uploadReceiptMutation({
+      variables: { transactionId, workspaceId, files },
+    });
+    if (!data?.uploadTransactionReceipt?.success) {
+      throw new Error(
+        data?.uploadTransactionReceipt?.message || "Erreur lors de l'upload",
+      );
+    }
+    toast.success("Justificatif ajouté avec succès");
+    refetchAll();
+  };
+
   const handleImportedConverted = () => {
     refetch?.();
     refetchImported?.();
@@ -126,6 +280,9 @@ function PurchaseInvoicesContent() {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isGmailDialogOpen, setIsGmailDialogOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+  // Affichage unifié : drawer transaction (dépense saisie dans Transactions)
+  const [isTxDrawerOpen, setIsTxDrawerOpen] = useState(false);
+  const [selectedExpenseTx, setSelectedExpenseTx] = useState(null);
 
   // Handle OAuth callback query params
   useEffect(() => {
@@ -152,6 +309,12 @@ function PurchaseInvoicesContent() {
   }, [searchParams]);
 
   const handleRowClick = (invoice) => {
+    // Ligne issue d'une transaction (dépense) : ouvrir le drawer transaction en place
+    if (invoice?.sourceKind === "TRANSACTION") {
+      setSelectedExpenseTx(mapTransactionToDrawer(invoice.originalTransaction));
+      setIsTxDrawerOpen(true);
+      return;
+    }
     setSelectedInvoice(invoice);
     setIsDetailDrawerOpen(true);
   };
@@ -309,7 +472,7 @@ function PurchaseInvoicesContent() {
         {/* Table */}
         <Suspense fallback={<TableSkeleton />}>
           <PurchaseInvoiceTable
-            invoices={invoices}
+            invoices={mergedInvoices}
             loading={loading}
             refetch={refetch}
             refetchStats={refetchStats}
@@ -390,7 +553,7 @@ function PurchaseInvoicesContent() {
         {/* Table */}
         <Suspense fallback={<TableSkeleton />}>
           <PurchaseInvoiceTable
-            invoices={invoices}
+            invoices={mergedInvoices}
             loading={loading}
             refetch={refetch}
             refetchStats={refetchStats}
@@ -448,8 +611,23 @@ function PurchaseInvoicesContent() {
       <ExportDialog
         open={isExportOpen}
         onOpenChange={setIsExportOpen}
-        invoices={invoices}
+        invoices={mergedInvoices}
       />
+      {/* Drawer transaction (affichage unifié) — dépense saisie dans Transactions */}
+      {isTxDrawerOpen && (
+        <TransactionDetailDrawer
+          transaction={selectedExpenseTx}
+          open={isTxDrawerOpen}
+          onOpenChange={(open) => {
+            setIsTxDrawerOpen(open);
+            if (!open) setSelectedExpenseTx(null);
+          }}
+          onDelete={handleDeleteExpenseTransaction}
+          onAttachReceipt={handleAttachReceiptToTransaction}
+          onSubmit={handleSaveExpenseTransaction}
+          onRefresh={refetchAll}
+        />
+      )}
       <GmailConnectionDialog
         open={isGmailDialogOpen}
         onOpenChange={setIsGmailDialogOpen}

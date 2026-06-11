@@ -5,6 +5,7 @@ import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useSearchParams } from "next/navigation";
 import { useDashboardData } from "@/src/hooks/useDashboardData";
+import { usePurchaseInvoices } from "@/src/hooks/usePurchaseInvoices";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import {
@@ -207,6 +208,13 @@ function GestionDepensesContent() {
     refreshData,
   } = useDashboardData();
 
+  // Factures d'achat non rapprochées — affichées dans la liste des transactions
+  // (affichage unifié). Une facture déjà rapprochée à une transaction
+  // (linkedTransactionIds non vide) est déjà représentée par cette transaction :
+  // on ne l'ajoute donc pas pour éviter le double comptage.
+  const { invoices: purchaseInvoices, refetch: refetchPurchaseInvoices } =
+    usePurchaseInvoices({ limit: 200 });
+
   // Solde affiché selon le compte sélectionné
   const displayedBalance = useMemo(() => {
     if (selectedAccountId === "all") return bankBalance || 0;
@@ -247,7 +255,7 @@ function GestionDepensesContent() {
       }
     }
 
-    return txList.map((tx) => ({
+    const txRows = txList.map((tx) => ({
       id: tx.id,
       type: tx.amount > 0 ? "INCOME" : "BANK_TRANSACTION",
       source: tx.provider === "manual" ? "MANUAL" : "BANK",
@@ -287,11 +295,59 @@ function GestionDepensesContent() {
       createdAt: tx.createdAt,
       updatedAt: tx.updatedAt,
     }));
-  }, [transactions, selectedAccountId, bankAccounts]);
+
+    // Affichage unifié : ajouter les factures d'achat non rapprochées comme
+    // lignes "dépense" virtuelles (sourceKind = PURCHASE_INVOICE). On les
+    // exclut quand un compte précis est sélectionné (elles n'ont pas de compte
+    // bancaire) et quand elles sont déjà liées à une transaction.
+    const piRows =
+      selectedAccountId === "all"
+        ? (purchaseInvoices || [])
+            .filter(
+              (pi) =>
+                !pi.linkedTransactionIds ||
+                pi.linkedTransactionIds.length === 0,
+            )
+            .map((pi) => ({
+              id: `pi-${pi.id}`,
+              type: "BANK_TRANSACTION",
+              source: "PURCHASE_INVOICE",
+              sourceKind: "PURCHASE_INVOICE",
+              title: pi.supplierName || "Facture d'achat",
+              description: pi.invoiceNumber
+                ? `${pi.supplierName || "Facture d'achat"} · ${pi.invoiceNumber}`
+                : pi.supplierName || "Facture d'achat",
+              amount: -Math.abs(pi.amountTTC || 0),
+              currency: pi.currency || "EUR",
+              date: pi.issueDate || pi.createdAt,
+              category: pi.category || "OTHER",
+              vendor: pi.supplierName || null,
+              hasReceipt: Array.isArray(pi.files) && pi.files.length > 0,
+              receiptFiles: [],
+              files: pi.files || [],
+              receiptRequired: false,
+              status: pi.status === "PAID" ? "PAID" : "PENDING",
+              paymentMethod: pi.paymentMethod || null,
+              provider: "purchase_invoice",
+              originalPurchaseInvoice: pi,
+              pcgAccount: null,
+              metadata: {},
+              createdAt: pi.createdAt,
+              updatedAt: pi.updatedAt,
+            }))
+        : [];
+
+    return [...txRows, ...piRows];
+  }, [transactions, selectedAccountId, bankAccounts, purchaseInvoices]);
 
   const loading = bankLoading;
   const error = null;
-  const refetchExpenses = refreshData;
+  const refetchExpenses = useMemo(
+    () => async () => {
+      await Promise.all([refreshData?.(), refetchPurchaseInvoices?.()]);
+    },
+    [refreshData, refetchPurchaseInvoices],
+  );
 
   // Export Excel
   const exportToExcel = () => {
