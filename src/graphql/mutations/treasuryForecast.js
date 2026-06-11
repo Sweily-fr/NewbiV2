@@ -33,6 +33,8 @@ const MANUAL_CASHFLOW_ENTRY_FIELDS = gql`
     type
     category
     amount
+    amountDelta
+    amountDeltaType
     startDate
     endDate
     frequency

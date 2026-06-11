@@ -33,6 +33,16 @@ const CATEGORY_LABELS = {
   UTILITIES: "Charges",
   SALARIES: "Salaires",
   OTHER_EXPENSE: "Autres dépenses",
+  // Catégories spécifiques aux transactions bancaires
+  OTHER: "Autres dépenses",
+  TRAVEL: "Déplacements",
+  ACCOMMODATION: "Hébergement",
+};
+
+const SOURCE_LABELS = {
+  PURCHASE_INVOICE: "factures d'achat",
+  INVOICE: "factures client",
+  TRANSACTION: "transactions bancaires",
 };
 
 const formatCurrency = (value) =>
@@ -90,7 +100,9 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
 
       {recurrences.length === 0 ? (
         <p className="text-xs text-muted-foreground py-6 text-center">
-          Aucune récurrence détectée sur les 3 derniers mois.
+          Aucune récurrence détectée. Cliquez sur «&nbsp;Analyser&nbsp;» pour
+          rechercher les abonnements et factures qui reviennent au moins 3 mois
+          de suite dans vos transactions bancaires et vos factures.
         </p>
       ) : (
         <>
@@ -124,6 +136,9 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
                     <p className="text-[11px] text-muted-foreground/60 mt-0.5">
                       {CATEGORY_LABELS[rec.category] || rec.category || "—"} · ~
                       {formatCurrency(rec.averageAmount)}/mois
+                      {SOURCE_LABELS[rec.source]
+                        ? ` · via ${SOURCE_LABELS[rec.source]}`
+                        : ""}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
