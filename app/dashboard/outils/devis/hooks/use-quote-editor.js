@@ -969,8 +969,14 @@ export function useQuoteEditor({
         shouldDirty: false,
       });
     } else if (!currentNumber || currentNumber.startsWith("DRAFT-")) {
-      // Nouveau préfixe et pas de numéro → proposer 0001
-      setValue("number", formattedNumber, {
+      // Nouveau préfixe et pas de numéro → proposer le numéro de départ
+      // global (quoteStartNumber) s'il est défini, sinon 0001
+      const startNumber = parseInt(organization?.quoteStartNumber, 10);
+      const proposedNumber =
+        startNumber > 0
+          ? String(startNumber).padStart(4, "0")
+          : formattedNumber;
+      setValue("number", proposedNumber, {
         shouldValidate: false,
         shouldDirty: false,
       });
@@ -983,6 +989,7 @@ export function useQuoteEditor({
     hasDocumentsForPrefix,
     existingQuote?.status,
     currentAutoNumbering,
+    organization?.quoteStartNumber,
   ]);
 
   // Effet pour charger les données d'organisation au démarrage

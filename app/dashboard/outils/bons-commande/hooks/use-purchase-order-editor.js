@@ -995,8 +995,14 @@ export function usePurchaseOrderEditor({
         shouldDirty: false,
       });
     } else if (!currentNumber || currentNumber.startsWith("DRAFT-")) {
-      // Nouveau préfixe et pas de numéro → proposer 0001
-      setValue("number", formattedNumber, {
+      // Nouveau préfixe et pas de numéro → proposer le numéro de départ
+      // global (purchaseOrderStartNumber) s'il est défini, sinon 0001
+      const startNumber = parseInt(organization?.purchaseOrderStartNumber, 10);
+      const proposedNumber =
+        startNumber > 0
+          ? String(startNumber).padStart(4, "0")
+          : formattedNumber;
+      setValue("number", proposedNumber, {
         shouldValidate: false,
         shouldDirty: false,
       });
@@ -1009,6 +1015,7 @@ export function usePurchaseOrderEditor({
     hasDocumentsForPrefix,
     existingPurchaseOrder?.status,
     currentAutoNumbering,
+    organization?.purchaseOrderStartNumber,
   ]);
 
   // Mettre à jour companyInfo quand organization est chargée
