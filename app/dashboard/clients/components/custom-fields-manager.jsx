@@ -422,7 +422,15 @@ export default function CustomFieldsManager({ open, onOpenChange }) {
 
   const handleToggle = async (field) => {
     try {
-      await updateField(workspaceId, field.id, { isActive: !field.isActive });
+      // ClientCustomFieldInput exige name et fieldType ; nettoyer __typename des options
+      const cleanedOptions =
+        field.options?.map(({ __typename, ...opt }) => opt) || [];
+      await updateField(workspaceId, field.id, {
+        name: field.name,
+        fieldType: field.fieldType,
+        options: cleanedOptions,
+        isActive: !field.isActive,
+      });
       refetch();
     } catch (error) {
       // Error handled by hook
