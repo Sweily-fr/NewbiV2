@@ -285,7 +285,7 @@ export function BoardMembersPopover({
               type="button"
               onClick={handleResetToAll}
               disabled={saving}
-              className="mt-2 w-full flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors py-1 rounded-md hover:bg-muted/40 disabled:opacity-40"
+              className="mt-2 w-full flex items-center justify-center gap-1.5 text-[11px] text-[#5b50FF] hover:text-[#5b50FF]/80 transition-colors py-1 rounded-md hover:bg-muted/40 disabled:opacity-40"
             >
               <RotateCcw className="h-3 w-3" />
               Repasser sur "tout le workspace"

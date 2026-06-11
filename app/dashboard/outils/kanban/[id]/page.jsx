@@ -356,7 +356,7 @@ function BoardAccessPopover({ board, workspaceId, onChange }) {
             <button
               type="button"
               onClick={() => onChange([])}
-              className="mt-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+              className="mt-1.5 text-[11px] text-[#5b50FF] hover:text-[#5b50FF]/80 transition-colors"
             >
               Repasser sur "tout le workspace"
             </button>
