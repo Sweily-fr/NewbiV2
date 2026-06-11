@@ -64,11 +64,20 @@ function CustomTooltip({ active, payload, colors, remap }) {
           </span>
           <span
             className="font-medium"
-            style={{
-              color: data.grossMarginRate >= 0 ? colors.success : colors.danger,
-            }}
+            style={
+              data.grossMarginRate != null
+                ? {
+                    color:
+                      data.grossMarginRate >= 0
+                        ? colors.success
+                        : colors.danger,
+                  }
+                : undefined
+            }
           >
-            {data.grossMarginRate.toFixed(1)}%
+            {data.grossMarginRate != null
+              ? `${data.grossMarginRate.toFixed(1)}%`
+              : "—"}
           </span>
         </div>
         <div className="flex items-center justify-between gap-6 text-muted-foreground">
@@ -102,8 +111,9 @@ export function AnalyticsMarginChart({ monthlyRevenue, loading }) {
     return monthlyRevenue.map((m) => ({
       ...m,
       monthLabel: formatMonthLabel(m.month),
-      // Use grossMarginRate from backend instead of computing client-side
-      grossMarginRate: m.grossMarginRate ?? 0,
+      // Taux calculé côté backend ; null = pas de CA encaissé sur le mois
+      // (le point n'est pas tracé, connectNulls relie les mois avec CA)
+      grossMarginRate: m.grossMarginRate ?? null,
     }));
   }, [monthlyRevenue]);
 

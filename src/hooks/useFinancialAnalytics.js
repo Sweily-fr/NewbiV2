@@ -35,7 +35,8 @@ const EMPTY_MONTH = {
   creditNoteHT: 0,
   netRevenueHT: 0,
   grossMargin: 0,
-  grossMarginRate: 0,
+  // null = taux non défini (pas de CA encaissé sur le mois)
+  grossMarginRate: null,
 };
 
 const EMPTY_COLLECTION_MONTH = {
