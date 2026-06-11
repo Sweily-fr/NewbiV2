@@ -535,7 +535,8 @@ export default function AnalytiquesPage() {
               />
               <AnalyticsRevenuePieChart
                 monthlyRevenue={analyticsData?.monthlyRevenue}
-                loading={loading}
+                bankTransactions={filteredBankTransactions}
+                loading={loading || bankLoading}
               />
             </div>
 
