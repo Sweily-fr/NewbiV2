@@ -2175,6 +2175,8 @@ export function usePurchaseOrderEditor({
     // Organization settings
     saveSettingsToOrganization,
 
+    getSourceQuoteId: () => sourceQuoteIdRef.current,
+
     // Resource existence
     purchaseOrder: existingPurchaseOrder,
     error: loadingPurchaseOrder
