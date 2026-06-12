@@ -184,6 +184,34 @@ export default function TransferPage() {
         throw new Error("URL de téléchargement non trouvée");
       }
 
+      // Détecter si on est sur mobile
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+      if (isMobile) {
+        // Marquer le téléchargement comme terminé AVANT la redirection :
+        // la navigation annule les fetch en cours sur mobile (keepalive pour
+        // que la requête survive au changement de page)
+        if (downloadInfo.downloadEventId) {
+          fetch(
+            `${apiUrl}api/transfers/download-event/${downloadInfo.downloadEventId}/complete`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              keepalive: true,
+              body: JSON.stringify({
+                duration: Date.now() - startTime,
+                isLastFile: true,
+              }),
+            },
+          ).catch(() => {}); // Fire and forget
+        }
+
+        // Laisser le navigateur mobile gérer le téléchargement nativement
+        window.location.href = downloadInfo.downloadUrl;
+        toast.info("Téléchargement en cours...");
+        return;
+      }
+
       // Téléchargement avec streaming et progression
       const response = await fetch(downloadInfo.downloadUrl, {
         signal: downloadAbortRef.current.signal,
@@ -196,11 +224,8 @@ export default function TransferPage() {
       const contentLength = response.headers.get("content-length");
       const totalSize = contentLength ? parseInt(contentLength, 10) : fileSize;
 
-      // Détecter si on est sur mobile
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-      // Si on peut streamer avec progression (desktop uniquement pour éviter "load failed" sur mobile)
-      if (totalSize && response.body && !isMobile) {
+      // Si on peut streamer avec progression
+      if (totalSize && response.body) {
         const reader = response.body.getReader();
         const chunks = [];
         let receivedLength = 0;
@@ -230,7 +255,7 @@ export default function TransferPage() {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } else {
-        // Mobile ou fallback: rediriger vers l'URL de téléchargement
+        // Fallback: rediriger vers l'URL de téléchargement
         window.location.href = downloadInfo.downloadUrl;
       }
 
@@ -241,6 +266,7 @@ export default function TransferPage() {
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
+            keepalive: true,
             body: JSON.stringify({
               duration: Date.now() - startTime,
               isLastFile: true,
@@ -352,6 +378,27 @@ export default function TransferPage() {
           const fileIds = filteredDownloads.map((d) => d.fileId).join(",");
           downloadUrl = `/api/transfer/download-all?shareLink=${shareLink}&accessKey=${accessKey}&transferId=${transfer?.fileTransfer?.id}&fileIds=${fileIds}`;
         }
+
+        // Marquer les téléchargements comme terminés AVANT la redirection :
+        // la navigation annule les fetch en cours sur mobile (keepalive pour
+        // que les requêtes survivent au changement de page)
+        const mobileDuration = Date.now() - startTime;
+        filteredDownloads.forEach((downloadInfo, i) => {
+          if (downloadInfo.downloadEventId) {
+            fetch(
+              `${apiUrl}api/transfers/download-event/${downloadInfo.downloadEventId}/complete`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                keepalive: true,
+                body: JSON.stringify({
+                  duration: mobileDuration,
+                  isLastFile: i === filteredDownloads.length - 1,
+                }),
+              },
+            ).catch(() => {}); // Fire and forget
+          }
+        });
 
         // Rediriger vers l'URL - le navigateur mobile va télécharger le fichier
         window.location.href = downloadUrl;
@@ -749,7 +796,7 @@ export default function TransferPage() {
       </div>
 
       {/* Panneau droit - Card */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center px-4 py-6 lg:px-8 lg:py-10">
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-4 pt-16 pb-6 lg:px-8 lg:py-10">
         {/* Logo mobile */}
         <div className="lg:hidden absolute top-4 left-4">
           <Image
