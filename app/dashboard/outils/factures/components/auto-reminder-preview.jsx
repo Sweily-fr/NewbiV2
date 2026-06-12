@@ -57,7 +57,7 @@ function VariableHighlight({ parts }) {
       </code>
     ) : (
       <span key={index}>{part.content}</span>
-    )
+    ),
   );
 }
 
@@ -86,13 +86,21 @@ export default function AutoReminderPreview({ formData }) {
       {/* Email Meta Header */}
       <div className="px-5 py-4 space-y-2 text-sm border-b border-[#e6e7ea] dark:border-[#2E2E32]">
         <div className="flex gap-4">
-          <span className="text-muted-foreground w-20 text-xs shrink-0">De</span>
-          <span className="font-medium text-foreground text-xs break-all">{fullSender}</span>
+          <span className="text-muted-foreground w-20 text-xs shrink-0">
+            De
+          </span>
+          <span className="font-medium text-foreground text-xs break-all">
+            {fullSender}
+          </span>
         </div>
         {replyToEmail !== senderEmail && (
           <div className="flex gap-4">
-            <span className="text-muted-foreground w-20 text-xs shrink-0">Répondre à</span>
-            <span className="text-foreground text-xs break-all">{replyToEmail}</span>
+            <span className="text-muted-foreground w-20 text-xs shrink-0">
+              Répondre à
+            </span>
+            <span className="text-foreground text-xs break-all">
+              {replyToEmail}
+            </span>
           </div>
         )}
         <div className="flex gap-4">
@@ -107,13 +115,19 @@ export default function AutoReminderPreview({ formData }) {
           </div>
         </div>
         <div className="flex gap-4">
-          <span className="text-muted-foreground w-20 text-xs shrink-0">Objet</span>
+          <span className="text-muted-foreground w-20 text-xs shrink-0">
+            Objet
+          </span>
           <span className="font-medium text-foreground text-xs">
-            <VariableHighlight parts={highlightVariables(formData?.emailSubject || "")} />
+            <VariableHighlight
+              parts={highlightVariables(formData?.emailSubject || "")}
+            />
           </span>
         </div>
         <div className="flex gap-4">
-          <span className="text-muted-foreground w-20 text-xs shrink-0">Pièce jointe</span>
+          <span className="text-muted-foreground w-20 text-xs shrink-0">
+            Pièce jointe
+          </span>
           <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
             <Paperclip className="size-3" />
             {demoData.invoiceNumber}.pdf
@@ -131,7 +145,9 @@ export default function AutoReminderPreview({ formData }) {
         <div className="mb-6">
           {formData?.emailBody ? (
             <div className="text-muted-foreground text-sm leading-6 whitespace-pre-wrap">
-              <VariableHighlight parts={highlightVariables(formData.emailBody)} />
+              <VariableHighlight
+                parts={highlightVariables(formData.emailBody)}
+              />
             </div>
           ) : (
             <p className="text-muted-foreground/50 text-sm italic">
@@ -147,16 +163,26 @@ export default function AutoReminderPreview({ formData }) {
           </h2>
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Numéro</span>
-              <span className="font-medium text-foreground">{demoData.invoiceNumber}</span>
+              <span className="text-muted-foreground">
+                Numéro de la facture
+              </span>
+              <span className="font-medium text-foreground">
+                {demoData.invoiceNumber}
+              </span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Montant total</span>
-              <span className="font-semibold text-foreground">{demoData.totalAmount}</span>
+              <span className="font-semibold text-foreground">
+                {demoData.totalAmount}
+              </span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Date d&apos;échéance</span>
-              <span className="font-medium text-foreground">{demoData.dueDate}</span>
+              <span className="text-muted-foreground">
+                Date d&apos;échéance
+              </span>
+              <span className="font-medium text-foreground">
+                {demoData.dueDate}
+              </span>
             </div>
           </div>
         </div>
@@ -170,7 +196,8 @@ export default function AutoReminderPreview({ formData }) {
       {/* Footer */}
       <div className="px-6 py-3 text-center border-t border-[#e6e7ea] dark:border-[#2E2E32]">
         <p className="text-[11px] text-muted-foreground/60">
-          Cet email a été envoyé automatiquement par le système de relance de {demoData.companyName} depuis la plateforme Newbi Logiciel de gestion.
+          Cet email a été envoyé automatiquement par le système de relance de{" "}
+          {demoData.companyName} depuis la plateforme Newbi Logiciel de gestion.
         </p>
       </div>
     </div>
