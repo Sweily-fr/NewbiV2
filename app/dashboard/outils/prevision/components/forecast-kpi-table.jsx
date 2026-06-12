@@ -131,17 +131,7 @@ function CategoryCell({ m, category, type, currentMonth }) {
   const isCurrent = m.month === currentMonth;
 
   if (isPast) {
-    const pct = forecast > 0 ? Math.round((actual / forecast) * 100) : null;
-    return (
-      <span className="inline-flex items-center gap-1.5">
-        <span className="text-foreground">{formatCompact(actual)}</span>
-        {pct !== null && (
-          <span className="text-[11px] text-muted-foreground tabular-nums">
-            {pct}%
-          </span>
-        )}
-      </span>
-    );
+    return <span className="text-foreground">{formatCompact(actual)}</span>;
   }
 
   if (isCurrent) {
@@ -337,10 +327,10 @@ export function ForecastKpiTable({ months, kpi, loading }) {
               </tr>
             </thead>
             <tbody>
-              {/* ── Début du mois ── */}
+              {/* ── Solde début de mois ── */}
               <tr className="border-t border-border">
                 <td className="sticky left-0 bg-background z-10 py-3 pl-4 pr-3 text-sm font-medium text-muted-foreground whitespace-nowrap">
-                  Début du mois
+                  Solde début de mois
                 </td>
                 {safeMonths.map((m) => (
                   <td
@@ -476,10 +466,10 @@ export function ForecastKpiTable({ months, kpi, loading }) {
                   </tr>
                 ))}
 
-              {/* ── Fin du mois ── */}
+              {/* ── Solde fin de mois ── */}
               <tr className="border-t border-border">
                 <td className="sticky left-0 bg-background z-10 py-3 pl-4 pr-3 text-sm font-medium text-muted-foreground whitespace-nowrap">
-                  Fin du mois
+                  Solde fin de mois
                 </td>
                 {safeMonths.map((m) => (
                   <td

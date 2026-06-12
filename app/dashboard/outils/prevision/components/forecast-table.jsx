@@ -190,15 +190,7 @@ function AchievementBadge({ actual, forecast }) {
   );
 }
 
-function EditableCell({
-  value,
-  isPast,
-  month,
-  category,
-  type,
-  onCellEdit,
-  forecast,
-}) {
+function EditableCell({ value, isPast, month, category, type, onCellEdit }) {
   const [editing, setEditing] = useState(false);
   const [localValue, setLocalValue] = useState(String(value || ""));
 
@@ -223,14 +215,9 @@ function EditableCell({
 
   if (isPast) {
     return (
-      <div className="flex items-center justify-center gap-0.5">
-        <span className="text-[13px] tabular-nums text-foreground">
-          {formatAmount(value)}
-        </span>
-        {forecast > 0 && value > 0 && (
-          <AchievementBadge actual={value} forecast={forecast} />
-        )}
-      </div>
+      <span className="text-[13px] tabular-nums text-foreground">
+        {formatAmount(value)}
+      </span>
     );
   }
 
@@ -441,7 +428,6 @@ export function ForecastTable({ months, loading, onCellEdit }) {
                       category={item.category}
                       type={item.type}
                       onCellEdit={onCellEdit}
-                      forecast={data.forecast}
                     />
                   </td>
                 );
@@ -482,11 +468,11 @@ export function ForecastTable({ months, loading, onCellEdit }) {
         </thead>
 
         <tbody>
-          {/* ═══ DÉBUT DU MOIS ═══ */}
+          {/* ═══ SOLDE DÉBUT DE MOIS ═══ */}
           <tr className="h-[46px]">
             <td className={cn(stickyLeft, "z-30 px-5")}>
               <span className="text-[13px] font-semibold text-foreground">
-                Début du mois
+                Solde début de mois
               </span>
             </td>
             {months.map((m) => (
@@ -545,6 +531,12 @@ export function ForecastTable({ months, loading, onCellEdit }) {
                   )}
                 >
                   {formatAmount(total)}
+                  {isPast && (
+                    <AchievementBadge
+                      actual={m.actualIncome}
+                      forecast={m.forecastIncome}
+                    />
+                  )}
                 </td>
               );
             })}
@@ -589,6 +581,12 @@ export function ForecastTable({ months, loading, onCellEdit }) {
                   )}
                 >
                   {formatAmount(total)}
+                  {isPast && (
+                    <AchievementBadge
+                      actual={m.actualExpense}
+                      forecast={m.forecastExpense}
+                    />
+                  )}
                 </td>
               );
             })}
@@ -596,6 +594,33 @@ export function ForecastTable({ months, loading, onCellEdit }) {
 
           {/* Expense groups */}
           {EXPENSE_GROUPS.map((group) => renderGroup(group, expenseExpanded))}
+
+          <tr>
+            <td colSpan={colCount} className="h-2 bg-muted/40" />
+          </tr>
+
+          {/* ═══ SOLDE FIN DE MOIS ═══ */}
+          <tr className="h-[46px]">
+            <td className={cn(stickyLeft, "z-30 px-5")}>
+              <span className="text-[13px] font-semibold text-foreground">
+                Solde fin de mois
+              </span>
+            </td>
+            {months.map((m) => (
+              <td
+                key={m.month}
+                className={cn(
+                  "text-center text-[13px] font-semibold tabular-nums whitespace-nowrap",
+                  m.month === currentMonth && "bg-primary/[0.04]",
+                  (m.closingBalance || 0) >= 0
+                    ? "text-foreground"
+                    : "text-red-600",
+                )}
+              >
+                {formatAmount(m.closingBalance)}
+              </td>
+            ))}
+          </tr>
 
           {/* Sentinel for footer observer */}
           <tr>
@@ -646,7 +671,7 @@ export function ForecastTable({ months, loading, onCellEdit }) {
           <tr className="h-[46px] bg-background">
             <td className={cn(stickyLeft, "z-50 px-5")}>
               <span className="text-[13px] font-semibold text-foreground">
-                Fin du mois
+                Solde fin de mois
               </span>
             </td>
             {months.map((m) => (

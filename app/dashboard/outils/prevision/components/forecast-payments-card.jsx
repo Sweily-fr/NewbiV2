@@ -789,11 +789,20 @@ function ForecastTable({
 }) {
   const N = months.length;
 
+  // La colonne des libellés est sticky avec un fond opaque (bg-background) ;
+  // les lignes teintées en bg-muted/40 reposent leur voile via un pseudo-élément
+  // pour que le libellé reste raccord avec le reste de la ligne.
+  const labelTint =
+    "after:absolute after:inset-0 after:bg-muted/40 after:-z-10 after:pointer-events-none";
+
   const Row = ({ label, labelClass, onClick, borderClass, children }) => (
     <div className={cn("flex items-center", borderClass)} onClick={onClick}>
       <div
-        className={cn("shrink-0 px-4 py-3.5 overflow-hidden", labelClass)}
-        style={{ width: 160 }}
+        className={cn(
+          "shrink-0 px-4 py-3.5 overflow-hidden sticky left-0 z-10 bg-background",
+          labelClass,
+        )}
+        style={{ width: LABEL_COL_WIDTH }}
       >
         {label}
       </div>
@@ -818,7 +827,7 @@ function ForecastTable({
     return (
       <div
         className={cn(
-          "py-3.5 text-center text-[13px] tabular-nums group/cell relative",
+          "px-2 py-3.5 text-center text-[13px] tabular-nums whitespace-nowrap group/cell relative",
           isCurrent && "bg-black/[0.04]",
           isFutureClickable &&
             "cursor-pointer hover:bg-muted/40 transition-colors rounded",
@@ -860,313 +869,322 @@ function ForecastTable({
     </span>
   );
 
-  const EstBadge = ({ pct }) => (
-    <span className="ml-2 text-[11px] text-muted-foreground/50 tabular-nums">
-      {pct} %
-    </span>
-  );
-
   return (
-    <div>
-      {/* ── Début du mois (header séparé) ── */}
-      <Row
-        label={
-          <span className="text-[13px] font-medium text-foreground">
-            Début du mois
-          </span>
-        }
-        borderClass="bg-muted/40 border border-border rounded-lg mt-6"
-      >
-        {months.map((m) => (
-          <div
-            key={m.month}
-            className={cn(
-              "py-3.5 text-center text-[13px] tabular-nums font-semibold text-foreground",
-              m.month === currentMonth && "bg-black/[0.06]",
-            )}
+    <div className="overflow-x-auto">
+      <div style={{ minWidth: LABEL_COL_WIDTH + N * COLUMN_WIDTH }}>
+        {/* ── Solde début de mois (header séparé) ── */}
+        <Row
+          label={
+            <span className="text-[13px] font-medium text-foreground">
+              Solde début de mois
+            </span>
+          }
+          labelClass={cn(labelTint, "rounded-l-lg after:rounded-l-lg")}
+          borderClass="bg-muted/40 border border-border rounded-lg mt-6"
+        >
+          {months.map((m) => (
+            <div
+              key={m.month}
+              className={cn(
+                "py-3.5 text-center text-[13px] tabular-nums font-semibold text-foreground",
+                m.month === currentMonth && "bg-black/[0.06]",
+              )}
+            >
+              {formatNumber(m.openingBalance)}
+            </div>
+          ))}
+        </Row>
+
+        <div className="h-4" />
+
+        {/* overflow-clip (et non hidden) pour ne pas casser le sticky de la colonne libellés */}
+        <div className="border border-border rounded-lg overflow-clip">
+          {/* ── Entrées ── */}
+          <Row
+            label={
+              <div className="flex items-center gap-2">
+                <ChevronDown
+                  size={14}
+                  className={cn(
+                    "text-muted-foreground transition-transform",
+                    !incomeExpanded && "-rotate-90",
+                  )}
+                />
+                <span className="text-[13px] font-semibold text-foreground">
+                  Entrées
+                </span>
+              </div>
+            }
+            labelClass={labelTint}
+            onClick={() => setIncomeExpanded((v) => !v)}
+            borderClass="border-b border-border cursor-pointer bg-muted/40 hover:bg-muted/60 transition-colors"
           >
-            {formatNumber(m.openingBalance)}
-          </div>
-        ))}
-      </Row>
-
-      <div className="h-4" />
-
-      <div className="border border-border rounded-lg overflow-hidden">
-        {/* ── Entrées ── */}
-        <Row
-          label={
-            <div className="flex items-center gap-2">
-              <ChevronDown
-                size={14}
-                className={cn(
-                  "text-muted-foreground transition-transform",
-                  !incomeExpanded && "-rotate-90",
-                )}
-              />
-              <span className="text-[13px] font-semibold text-foreground">
-                Entrées
-              </span>
-            </div>
-          }
-          onClick={() => setIncomeExpanded((v) => !v)}
-          borderClass="border-b border-border cursor-pointer bg-muted/40 hover:bg-muted/60 transition-colors"
-        >
-          {months.map((m) => {
-            const isPast = m.month <= currentMonth;
-            const val = isPast ? m.actualIncome || 0 : m.forecastIncome || 0;
-            const forecast = m.forecastIncome || 0;
-            const pct =
-              isPast && forecast > 0
-                ? Math.round(((m.actualIncome || 0) / forecast) * 100)
-                : null;
-            return (
-              <Cell
-                key={m.month}
-                value={formatNumber(val)}
-                isPast={isPast}
-                isCurrent={m.month === currentMonth}
-                badge={pct !== null ? <Badge pct={pct} /> : null}
-              />
-            );
-          })}
-        </Row>
-
-        {incomeExpanded && (
-          <>
-            {/* Estimation */}
-            <Row
-              label={
-                <div className="flex items-center gap-2 pl-6">
-                  <Clock
-                    size={14}
-                    className="text-muted-foreground/40 shrink-0"
-                  />
-                  <span className="text-[13px] text-muted-foreground">
-                    Estimation
-                  </span>
-                </div>
-              }
-              borderClass="border-b border-border/30"
-            >
-              {months.map((m) => {
-                const isPast = m.month <= currentMonth;
-                const forecast = m.forecastIncome || 0;
-                const pct =
-                  isPast && forecast > 0
-                    ? Math.round(((m.actualIncome || 0) / forecast) * 100)
-                    : null;
-                return (
-                  <Cell
-                    key={m.month}
-                    value={forecast > 0 ? formatNumber(forecast) : "–"}
-                    isPast={false}
-                    isCurrent={m.month === currentMonth}
-                    muted
-                    badge={pct !== null ? <EstBadge pct={pct} /> : null}
-                  />
-                );
-              })}
-            </Row>
-
-            {activeIncomeCategories.map((cat, idx) => {
-              const Icon = cat.icon;
+            {months.map((m) => {
+              const isPast = m.month <= currentMonth;
+              const val = isPast ? m.actualIncome || 0 : m.forecastIncome || 0;
+              const forecast = m.forecastIncome || 0;
+              const pct =
+                isPast && forecast > 0
+                  ? Math.round(((m.actualIncome || 0) / forecast) * 100)
+                  : null;
               return (
-                <Row
-                  key={cat.key}
-                  label={
-                    <div className="flex items-center gap-2 pl-6">
-                      <span
-                        className={cn(
-                          "flex items-center justify-center w-7 h-7 rounded-lg shrink-0",
-                          cat.bg,
-                        )}
-                      >
-                        <Icon size={14} className={cat.text} />
-                      </span>
-                      <ShadTooltip>
-                        <TooltipTrigger asChild>
-                          <span className="text-[13px] text-foreground/80 truncate">
-                            {cat.label}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent side="top">{cat.label}</TooltipContent>
-                      </ShadTooltip>
-                    </div>
-                  }
-                  borderClass={
-                    idx < activeIncomeCategories.length - 1
-                      ? "border-b border-border/20"
-                      : ""
-                  }
-                >
-                  {months.map((m) => {
-                    const d = catLookup[m.month]?.[cat.key];
-                    const isPast = m.month <= currentMonth;
-                    const actual = d?.actual || 0;
-                    const forecast = d?.forecast || 0;
-                    const val = isPast ? actual : forecast;
-                    const pct =
-                      isPast && forecast > 0
-                        ? Math.round((actual / forecast) * 100)
-                        : null;
-                    return (
-                      <Cell
-                        key={m.month}
-                        value={formatNumber(val)}
-                        isPast={isPast}
-                        isCurrent={m.month === currentMonth}
-                        badge={pct !== null ? <Badge pct={pct} /> : null}
-                        onClick={
-                          onCellClick
-                            ? () => onCellClick(cat.key, "INCOME", m.month)
-                            : undefined
-                        }
-                      />
-                    );
-                  })}
-                </Row>
+                <Cell
+                  key={m.month}
+                  value={formatNumber(val)}
+                  isPast={isPast}
+                  isCurrent={m.month === currentMonth}
+                  badge={pct !== null ? <Badge pct={pct} /> : null}
+                />
               );
             })}
-          </>
-        )}
+          </Row>
 
-        {/* ── Sorties ── */}
-        <Row
-          label={
-            <div className="flex items-center gap-2">
-              <ChevronDown
-                size={14}
-                className={cn(
-                  "text-muted-foreground transition-transform",
-                  !expenseExpanded && "-rotate-90",
-                )}
-              />
-              <span className="text-[13px] font-semibold text-foreground">
-                Sorties
-              </span>
-            </div>
-          }
-          onClick={() => setExpenseExpanded((v) => !v)}
-          borderClass="border-y border-border cursor-pointer bg-muted/40 hover:bg-muted/60 transition-colors"
-        >
-          {months.map((m) => {
-            const isPast = m.month <= currentMonth;
-            const val = isPast ? m.actualExpense || 0 : m.forecastExpense || 0;
-            const forecast = m.forecastExpense || 0;
-            const pct =
-              isPast && forecast > 0
-                ? Math.round(((m.actualExpense || 0) / forecast) * 100)
-                : null;
-            return (
-              <Cell
-                key={m.month}
-                value={formatNumber(val)}
-                isPast={isPast}
-                isCurrent={m.month === currentMonth}
-                badge={pct !== null ? <Badge pct={pct} /> : null}
-              />
-            );
-          })}
-        </Row>
+          {incomeExpanded && (
+            <>
+              {/* Estimation */}
+              <Row
+                label={
+                  <div className="flex items-center gap-2 pl-6">
+                    <Clock
+                      size={14}
+                      className="text-muted-foreground/40 shrink-0"
+                    />
+                    <span className="text-[13px] text-muted-foreground">
+                      Estimation
+                    </span>
+                  </div>
+                }
+                borderClass="border-b border-border/30"
+              >
+                {months.map((m) => {
+                  const forecast = m.forecastIncome || 0;
+                  return (
+                    <Cell
+                      key={m.month}
+                      value={forecast > 0 ? formatNumber(forecast) : "–"}
+                      isPast={false}
+                      isCurrent={m.month === currentMonth}
+                      muted
+                    />
+                  );
+                })}
+              </Row>
 
-        {expenseExpanded && (
-          <>
-            <Row
-              label={
-                <div className="flex items-center gap-2 pl-6">
-                  <Clock
-                    size={14}
-                    className="text-muted-foreground/40 shrink-0"
-                  />
-                  <span className="text-[13px] text-muted-foreground">
-                    Estimation
-                  </span>
-                </div>
-              }
-              borderClass="border-b border-border/30"
-            >
-              {months.map((m) => {
-                const isPast = m.month <= currentMonth;
-                const forecast = m.forecastExpense || 0;
-                const pct =
-                  isPast && forecast > 0
-                    ? Math.round(((m.actualExpense || 0) / forecast) * 100)
-                    : null;
+              {activeIncomeCategories.map((cat, idx) => {
+                const Icon = cat.icon;
                 return (
-                  <Cell
-                    key={m.month}
-                    value={forecast > 0 ? formatNumber(forecast) : "–"}
-                    isPast={false}
-                    isCurrent={m.month === currentMonth}
-                    muted
-                    badge={pct !== null ? <EstBadge pct={pct} /> : null}
-                  />
+                  <Row
+                    key={cat.key}
+                    label={
+                      <div className="flex items-center gap-2 pl-6">
+                        <span
+                          className={cn(
+                            "flex items-center justify-center w-7 h-7 rounded-lg shrink-0",
+                            cat.bg,
+                          )}
+                        >
+                          <Icon size={14} className={cat.text} />
+                        </span>
+                        <ShadTooltip>
+                          <TooltipTrigger asChild>
+                            <span className="text-[13px] text-foreground/80 truncate">
+                              {cat.label}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">
+                            {cat.label}
+                          </TooltipContent>
+                        </ShadTooltip>
+                      </div>
+                    }
+                    borderClass={
+                      idx < activeIncomeCategories.length - 1
+                        ? "border-b border-border/20"
+                        : ""
+                    }
+                  >
+                    {months.map((m) => {
+                      const d = catLookup[m.month]?.[cat.key];
+                      const isPast = m.month <= currentMonth;
+                      const actual = d?.actual || 0;
+                      const forecast = d?.forecast || 0;
+                      const val = isPast ? actual : forecast;
+                      return (
+                        <Cell
+                          key={m.month}
+                          value={formatNumber(val)}
+                          isPast={isPast}
+                          isCurrent={m.month === currentMonth}
+                          onClick={
+                            onCellClick
+                              ? () => onCellClick(cat.key, "INCOME", m.month)
+                              : undefined
+                          }
+                        />
+                      );
+                    })}
+                  </Row>
                 );
               })}
-            </Row>
+            </>
+          )}
 
-            {activeExpenseCategories.map((cat, idx) => {
-              const Icon = cat.icon;
+          {/* ── Sorties ── */}
+          <Row
+            label={
+              <div className="flex items-center gap-2">
+                <ChevronDown
+                  size={14}
+                  className={cn(
+                    "text-muted-foreground transition-transform",
+                    !expenseExpanded && "-rotate-90",
+                  )}
+                />
+                <span className="text-[13px] font-semibold text-foreground">
+                  Sorties
+                </span>
+              </div>
+            }
+            labelClass={labelTint}
+            onClick={() => setExpenseExpanded((v) => !v)}
+            borderClass="border-y border-border cursor-pointer bg-muted/40 hover:bg-muted/60 transition-colors"
+          >
+            {months.map((m) => {
+              const isPast = m.month <= currentMonth;
+              const val = isPast
+                ? m.actualExpense || 0
+                : m.forecastExpense || 0;
+              const forecast = m.forecastExpense || 0;
+              const pct =
+                isPast && forecast > 0
+                  ? Math.round(((m.actualExpense || 0) / forecast) * 100)
+                  : null;
               return (
-                <Row
-                  key={cat.key}
-                  label={
-                    <div className="flex items-center gap-2 pl-6">
-                      <span
-                        className={cn(
-                          "flex items-center justify-center w-7 h-7 rounded-lg shrink-0",
-                          cat.bg,
-                        )}
-                      >
-                        <Icon size={14} className={cat.text} />
-                      </span>
-                      <ShadTooltip>
-                        <TooltipTrigger asChild>
-                          <span className="text-[13px] text-foreground/80 truncate">
-                            {cat.label}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent side="top">{cat.label}</TooltipContent>
-                      </ShadTooltip>
-                    </div>
-                  }
-                  borderClass={
-                    idx < activeExpenseCategories.length - 1
-                      ? "border-b border-border/20"
-                      : ""
-                  }
-                >
-                  {months.map((m) => {
-                    const d = catLookup[m.month]?.[cat.key];
-                    const isPast = m.month <= currentMonth;
-                    const actual = d?.actual || 0;
-                    const forecast = d?.forecast || 0;
-                    const val = isPast ? actual : forecast;
-                    const pct =
-                      isPast && forecast > 0
-                        ? Math.round((actual / forecast) * 100)
-                        : null;
-                    return (
-                      <Cell
-                        key={m.month}
-                        value={formatNumber(val)}
-                        isPast={isPast}
-                        isCurrent={m.month === currentMonth}
-                        badge={pct !== null ? <Badge pct={pct} /> : null}
-                        onClick={
-                          onCellClick
-                            ? () => onCellClick(cat.key, "EXPENSE", m.month)
-                            : undefined
-                        }
-                      />
-                    );
-                  })}
-                </Row>
+                <Cell
+                  key={m.month}
+                  value={formatNumber(val)}
+                  isPast={isPast}
+                  isCurrent={m.month === currentMonth}
+                  badge={pct !== null ? <Badge pct={pct} /> : null}
+                />
               );
             })}
-          </>
-        )}
+          </Row>
+
+          {expenseExpanded && (
+            <>
+              <Row
+                label={
+                  <div className="flex items-center gap-2 pl-6">
+                    <Clock
+                      size={14}
+                      className="text-muted-foreground/40 shrink-0"
+                    />
+                    <span className="text-[13px] text-muted-foreground">
+                      Estimation
+                    </span>
+                  </div>
+                }
+                borderClass="border-b border-border/30"
+              >
+                {months.map((m) => {
+                  const forecast = m.forecastExpense || 0;
+                  return (
+                    <Cell
+                      key={m.month}
+                      value={forecast > 0 ? formatNumber(forecast) : "–"}
+                      isPast={false}
+                      isCurrent={m.month === currentMonth}
+                      muted
+                    />
+                  );
+                })}
+              </Row>
+
+              {activeExpenseCategories.map((cat, idx) => {
+                const Icon = cat.icon;
+                return (
+                  <Row
+                    key={cat.key}
+                    label={
+                      <div className="flex items-center gap-2 pl-6">
+                        <span
+                          className={cn(
+                            "flex items-center justify-center w-7 h-7 rounded-lg shrink-0",
+                            cat.bg,
+                          )}
+                        >
+                          <Icon size={14} className={cat.text} />
+                        </span>
+                        <ShadTooltip>
+                          <TooltipTrigger asChild>
+                            <span className="text-[13px] text-foreground/80 truncate">
+                              {cat.label}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">
+                            {cat.label}
+                          </TooltipContent>
+                        </ShadTooltip>
+                      </div>
+                    }
+                    borderClass={
+                      idx < activeExpenseCategories.length - 1
+                        ? "border-b border-border/20"
+                        : ""
+                    }
+                  >
+                    {months.map((m) => {
+                      const d = catLookup[m.month]?.[cat.key];
+                      const isPast = m.month <= currentMonth;
+                      const actual = d?.actual || 0;
+                      const forecast = d?.forecast || 0;
+                      const val = isPast ? actual : forecast;
+                      return (
+                        <Cell
+                          key={m.month}
+                          value={formatNumber(val)}
+                          isPast={isPast}
+                          isCurrent={m.month === currentMonth}
+                          onClick={
+                            onCellClick
+                              ? () => onCellClick(cat.key, "EXPENSE", m.month)
+                              : undefined
+                          }
+                        />
+                      );
+                    })}
+                  </Row>
+                );
+              })}
+            </>
+          )}
+        </div>
+
+        <div className="h-4" />
+
+        {/* ── Solde fin de mois (footer séparé) ── */}
+        <Row
+          label={
+            <span className="text-[13px] font-medium text-foreground">
+              Solde fin de mois
+            </span>
+          }
+          labelClass={cn(labelTint, "rounded-l-lg after:rounded-l-lg")}
+          borderClass="bg-muted/40 border border-border rounded-lg"
+        >
+          {months.map((m) => (
+            <div
+              key={m.month}
+              className={cn(
+                "py-3.5 text-center text-[13px] tabular-nums font-semibold text-foreground",
+                m.month === currentMonth && "bg-black/[0.06]",
+              )}
+            >
+              {formatNumber(m.closingBalance)}
+            </div>
+          ))}
+        </Row>
       </div>
     </div>
   );
