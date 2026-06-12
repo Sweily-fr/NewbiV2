@@ -28,7 +28,6 @@ import { PackagePlusIcon } from "lucide-react";
 import { VatRateSelect } from "@/src/components/vat-rate-select";
 import ProductCustomFieldsForm from "./product-custom-fields-form";
 
-
 // Unités utilisées dans les devis
 const UNITS = [
   { value: "unité", label: "unité" },
@@ -194,7 +193,9 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
 
       // Ne fermer le modal que si la mutation a réussi (result n'est pas null et result.data existe)
       if (result && result.data) {
-        const savedProduct = isEditing ? result.data.updateProduct : result.data.createProduct;
+        const savedProduct = isEditing
+          ? result.data.updateProduct
+          : result.data.createProduct;
         onSave?.(savedProduct);
         onOpenChange(false);
         // Reset sera fait automatiquement par l'useEffect quand le modal se ferme
@@ -204,7 +205,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
     } catch (error) {
       // Error already handled by useCreateProduct/useUpdateProduct hooks
       // Le modal reste ouvert pour que l'utilisateur puisse corriger
-      console.error('Erreur lors de la soumission:', error);
+      console.error("Erreur lors de la soumission:", error);
     }
   };
 
@@ -221,13 +222,15 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
             ? "!fixed !inset-0 !w-screen !max-w-none !m-0 !rounded-none !translate-x-0 !translate-y-0"
             : "max-h-[90vh] my-4 sm:max-w-4xl"
         }`}
-        style={isMobile ? { height: '100dvh', maxHeight: '100dvh' } : {}}
+        style={isMobile ? { height: "100dvh", maxHeight: "100dvh" } : {}}
       >
         {/* Header fixe */}
         <div className="flex-shrink-0 p-6 pb-4 border-b">
           <DialogHeader>
             <DialogTitle className="text-left">
-              {product ? "Modifier le produit et/ou service" : "Ajouter un produit et/ou service"}
+              {product
+                ? "Modifier le produit et/ou service"
+                : "Ajouter un produit et/ou service"}
             </DialogTitle>
             <DialogDescription className="text-left">
               {product
@@ -244,34 +247,46 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
         >
           <div className="flex-1 overflow-y-auto px-6 py-4">
             {/* Flex 2 colonnes sur desktop */}
-            <div className={`flex ${isMobile ? 'flex-col gap-4' : 'flex-row gap-6'}`}>
+            <div
+              className={`flex ${isMobile ? "flex-col gap-4" : "flex-row gap-6"}`}
+            >
               {/* Colonne gauche - Formulaire */}
-              <div className={`space-y-4 ${isMobile ? 'w-full' : 'flex-1'}`}>
+              <div className={`space-y-4 ${isMobile ? "w-full" : "flex-1"}`}>
                 {/* Nom du produit et Référence côte à côte */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="font-normal">Nom du produit *</Label>
+                    <Label className="flex items-center gap-1 font-normal">
+                      Nom du produit <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       placeholder="Ex: Ordinateur portable Dell XPS 13"
-                      className={errors.name ? "border-red-500 focus-visible:ring-red-500" : ""}
+                      className={
+                        errors.name
+                          ? "border-red-500 focus-visible:ring-red-500"
+                          : ""
+                      }
                       {...register("name", {
                         required: "Le nom du produit est requis",
                         minLength: {
                           value: 2,
-                          message: "Le nom doit contenir au moins 2 caractères"
+                          message: "Le nom doit contenir au moins 2 caractères",
                         },
                         maxLength: {
                           value: 200,
-                          message: "Le nom ne peut pas dépasser 200 caractères"
+                          message: "Le nom ne peut pas dépasser 200 caractères",
                         },
                         pattern: {
-                          value: /^(?!.*[<>])[A-Za-zÀ-ÖØ-öø-ÿ0-9\s\-'.(),&/\\:;!?@#$%*+=[\]{}|~"_]{2,200}$/,
-                          message: "Le nom contient des caractères non autorisés (< et > sont interdits)"
-                        }
+                          value:
+                            /^(?!.*[<>])[A-Za-zÀ-ÖØ-öø-ÿ0-9\s\-'.(),&/\\:;!?@#$%*+=[\]{}|~"_]{2,200}$/,
+                          message:
+                            "Le nom contient des caractères non autorisés (< et > sont interdits)",
+                        },
                       })}
                     />
                     {errors.name && (
-                      <p className="text-sm text-red-500 font-medium">{errors.name.message}</p>
+                      <p className="text-sm text-red-500 font-medium">
+                        {errors.name.message}
+                      </p>
                     )}
                   </div>
 
@@ -288,20 +303,26 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                 <div className="space-y-4">
                   {/* Prix unitaire - pleine largeur */}
                   <div className="space-y-2">
-                    <Label className="font-normal">Prix unitaire (HT) *</Label>
+                    <Label className="flex items-center gap-1 font-normal">
+                      Prix unitaire (HT) <span className="text-red-500">*</span>
+                    </Label>
                     <div className="relative">
                       <Input
                         type="number"
                         step="0.01"
                         min="0"
                         placeholder="0.00"
-                        className={errors.unitPrice ? "pr-8 border-red-500 focus-visible:ring-red-500" : "pr-8"}
+                        className={
+                          errors.unitPrice
+                            ? "pr-8 border-red-500 focus-visible:ring-red-500"
+                            : "pr-8"
+                        }
                         {...register("unitPrice", {
                           required: "Le prix unitaire est requis",
                           min: {
                             value: 0,
-                            message: "Le prix doit être positif"
-                          }
+                            message: "Le prix doit être positif",
+                          },
                         })}
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">
@@ -309,14 +330,18 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                       </span>
                     </div>
                     {errors.unitPrice && (
-                      <p className="text-sm text-red-500 font-medium">{errors.unitPrice.message}</p>
+                      <p className="text-sm text-red-500 font-medium">
+                        {errors.unitPrice.message}
+                      </p>
                     )}
                   </div>
 
                   {/* TVA et Unité côte à côte */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="font-normal">Taux de TVA (%) *</Label>
+                      <Label className="flex items-center gap-1 font-normal">
+                        Taux de TVA (%) <span className="text-red-500">*</span>
+                      </Label>
                       <Controller
                         name="vatRate"
                         control={control}
@@ -325,24 +350,39 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                           <VatRateSelect
                             value={field.value}
                             onChange={field.onChange}
-                            className={errors.vatRate ? "w-full border-red-500" : "w-full"}
+                            className={
+                              errors.vatRate
+                                ? "w-full border-red-500"
+                                : "w-full"
+                            }
                           />
                         )}
                       />
                       {errors.vatRate && (
-                        <p className="text-sm text-red-500 font-medium">{errors.vatRate.message}</p>
+                        <p className="text-sm text-red-500 font-medium">
+                          {errors.vatRate.message}
+                        </p>
                       )}
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="font-normal">Unité *</Label>
+                      <Label className="flex items-center gap-1 font-normal">
+                        Unité <span className="text-red-500">*</span>
+                      </Label>
                       <Controller
                         name="unit"
                         control={control}
                         rules={{ required: "L'unité est requise" }}
                         render={({ field }) => (
-                          <Select value={field.value} onValueChange={field.onChange}>
-                            <SelectTrigger className={errors.unit ? "w-full border-red-500" : "w-full"}>
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                          >
+                            <SelectTrigger
+                              className={
+                                errors.unit ? "w-full border-red-500" : "w-full"
+                              }
+                            >
                               <SelectValue placeholder="Unité" />
                             </SelectTrigger>
                             <SelectContent>
@@ -356,7 +396,9 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                         )}
                       />
                       {errors.unit && (
-                        <p className="text-sm text-red-500 font-medium">{errors.unit.message}</p>
+                        <p className="text-sm text-red-500 font-medium">
+                          {errors.unit.message}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -389,7 +431,9 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
               </div>
 
               {/* Colonne droite - Aperçu des prix */}
-              <div className={`${isMobile ? 'w-full' : 'w-[260px] flex-shrink-0 sticky top-0 self-start'}`}>
+              <div
+                className={`${isMobile ? "w-full" : "w-[260px] flex-shrink-0 sticky top-0 self-start"}`}
+              >
                 <div className="bg-muted/50 rounded-lg p-4 border">
                   <div className="text-sm font-medium text-muted-foreground mb-3">
                     Aperçu des prix
@@ -398,22 +442,25 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                     <div className="flex justify-between">
                       <span>Prix HT :</span>
                       <span className="font-mono">
-                        {(watchedUnitPrice && parseFloat(watchedUnitPrice) > 0) ?
-                          `${parseFloat(watchedUnitPrice).toFixed(2)} €` : '0.00 €'}
+                        {watchedUnitPrice && parseFloat(watchedUnitPrice) > 0
+                          ? `${parseFloat(watchedUnitPrice).toFixed(2)} €`
+                          : "0.00 €"}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span>TVA ({watchedVatRate}%) :</span>
                       <span className="font-mono">
-                        {(watchedUnitPrice && parseFloat(watchedUnitPrice) > 0) ?
-                          `${vatAmount.toFixed(2)} €` : '0.00 €'}
+                        {watchedUnitPrice && parseFloat(watchedUnitPrice) > 0
+                          ? `${vatAmount.toFixed(2)} €`
+                          : "0.00 €"}
                       </span>
                     </div>
                     <div className="flex justify-between font-medium border-t pt-2 mt-2">
                       <span>Prix TTC :</span>
                       <span className="font-mono text-primary">
-                        {(watchedUnitPrice && parseFloat(watchedUnitPrice) > 0) ?
-                          `${priceWithVat.toFixed(2)} €` : '0.00 €'}
+                        {watchedUnitPrice && parseFloat(watchedUnitPrice) > 0
+                          ? `${priceWithVat.toFixed(2)} €`
+                          : "0.00 €"}
                       </span>
                     </div>
                   </div>
@@ -423,11 +470,11 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
           </div>
 
           {/* Footer dans le flux flex - s'adapte automatiquement à Safari */}
-          <div 
+          <div
             className="flex-shrink-0 flex gap-3 px-6 border-t bg-background"
-            style={{ 
-              paddingTop: '1rem',
-              paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))'
+            style={{
+              paddingTop: "1rem",
+              paddingBottom: "calc(1rem + env(safe-area-inset-bottom))",
             }}
           >
             <Button
@@ -438,12 +485,16 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
             >
               Annuler
             </Button>
-            <Button 
-              onClick={handleSubmit(onSubmit)} 
+            <Button
+              onClick={handleSubmit(onSubmit)}
               disabled={loading}
               className="flex-1"
             >
-              {loading ? "Enregistrement..." : isEditing ? "Modifier le produit et/ou service" : "Créer le produit et/ou service"}
+              {loading
+                ? "Enregistrement..."
+                : isEditing
+                  ? "Modifier le produit et/ou service"
+                  : "Créer le produit et/ou service"}
             </Button>
           </div>
         </form>
