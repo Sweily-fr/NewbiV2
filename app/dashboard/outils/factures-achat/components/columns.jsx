@@ -10,6 +10,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Wallet as WalletIcon,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -120,6 +121,9 @@ function SortableHeader({ column, children }) {
 
 function RowActions({ invoice, onViewInvoice, onDeleteInvoice }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
+  // Les lignes "dépense" (transactions) se gèrent dans le drawer transaction :
+  // pas de suppression "facture d'achat" ici.
+  const isTransaction = invoice.sourceKind === "TRANSACTION";
   return (
     <div data-no-row-click>
       <DropdownMenu>
@@ -141,17 +145,21 @@ function RowActions({ invoice, onViewInvoice, onDeleteInvoice }) {
               Voir le justificatif
             </DropdownMenuItem>
           )}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            variant="destructive"
-            onSelect={(e) => {
-              e.preventDefault();
-              setConfirmOpen(true);
-            }}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Supprimer
-          </DropdownMenuItem>
+          {!isTransaction && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                onSelect={(e) => {
+                  e.preventDefault();
+                  setConfirmOpen(true);
+                }}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Supprimer
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
@@ -194,15 +202,18 @@ export const getColumns = ({ onViewInvoice, onDeleteInvoice } = {}) => [
         />
       </div>
     ),
-    cell: ({ row }) => (
-      <div data-no-row-click>
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Sélectionner"
-        />
-      </div>
-    ),
+    cell: ({ row }) =>
+      // Les lignes "dépense" (transactions) ne sont pas sélectionnables : les
+      // actions groupées s'appliquent aux factures d'achat uniquement.
+      row.original.sourceKind === "TRANSACTION" ? null : (
+        <div data-no-row-click>
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Sélectionner"
+          />
+        </div>
+      ),
     enableSorting: false,
     enableHiding: false,
   },
@@ -215,11 +226,23 @@ export const getColumns = ({ onViewInvoice, onDeleteInvoice } = {}) => [
     cell: ({ row }) => {
       const name = row.getValue("supplierName");
       const merchant = findMerchant(name || "");
+      const isTransaction = row.original.sourceKind === "TRANSACTION";
       return (
         <div className="flex items-center gap-3">
           <MerchantLogo merchant={merchant} fallbackText={name} size="sm" />
-          <div className="font-normal truncate max-w-[200px]" title={name}>
-            {merchant?.name || name || "Fournisseur"}
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="font-normal truncate max-w-[200px]" title={name}>
+              {merchant?.name || name || "Fournisseur"}
+            </div>
+            {isTransaction && (
+              <span
+                className="inline-flex items-center gap-1 rounded-md border border-violet-200 dark:border-violet-800 px-1.5 py-0.5 text-[11px] font-medium bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300 shrink-0"
+                title="Dépense saisie dans la page Transactions"
+              >
+                <WalletIcon className="h-3 w-3" />
+                Dépense
+              </span>
+            )}
           </div>
         </div>
       );

@@ -44,9 +44,9 @@ import { AnalyticsProductChart } from "./components/analytics-product-chart";
 import { AnalyticsStatusChart } from "./components/analytics-status-chart";
 import {
   AnalyticsExpenseCategoryChart,
-  AnalyticsRevenueVsExpenseChart,
   AnalyticsPaymentMethodChart,
 } from "./components/analytics-expense-chart";
+import { AnalyticsRevenuePieChart } from "./components/analytics-revenue-pie-chart";
 import { AnalyticsClientTable } from "./components/analytics-data-table";
 import { AnalyticsCrossTabTable } from "./components/analytics-cross-tab-table";
 import { AnalyticsOverdueTable } from "./components/analytics-overdue-table";
@@ -239,8 +239,9 @@ const TRESORERIE_KPI = [
   {
     key: "collectionRate",
     label: "Taux recouvrement",
-    format: formatPercent,
-    tooltip: "Factures payées / Total factures émises",
+    format: (v) => `${(v || 0).toFixed(2)}%`,
+    tooltip:
+      "Montant encaissé / Montant impayé (factures échues sans avoir, Newbi + importées) × 100",
   },
 ];
 
@@ -314,6 +315,21 @@ export default function AnalytiquesPage() {
 
   const bankBalanceRef = useRef(null);
   const { remap } = useChartColors();
+
+  // Transactions bancaires restreintes à la période sélectionnée — le hook
+  // useDashboardData renvoie l'historique complet, sans filtre de dates
+  const filteredBankTransactions = useMemo(() => {
+    if (!dateRange?.startDate || !dateRange?.endDate) return bankTransactions;
+    const start = new Date(dateRange.startDate);
+    const end = new Date(dateRange.endDate);
+    end.setHours(23, 59, 59, 999);
+    return (bankTransactions || []).filter((t) => {
+      const rawDate = t.date || t.processedAt || t.createdAt;
+      if (!rawDate) return false;
+      const d = new Date(rawDate);
+      return !isNaN(d.getTime()) && d >= start && d <= end;
+    });
+  }, [bankTransactions, dateRange]);
 
   const { data: flowChartData, loading: flowChartLoading } = useQuery(
     GET_TREASURY_CHART,
@@ -508,18 +524,18 @@ export default function AnalytiquesPage() {
               />
             </div>
 
-            {/* Expense Category + Revenue vs Expense */}
+            {/* Expense Category + Revenue Pie */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-4 sm:px-6">
               <AnalyticsExpenseCategoryChart
                 expenseByCategory={analyticsData?.expenseByCategory}
                 totalExpensesHT={analyticsData?.kpi?.totalExpensesHT}
                 totalExpensesTTC={analyticsData?.kpi?.totalExpensesTTC}
-                bankTransactions={bankTransactions}
+                bankTransactions={filteredBankTransactions}
                 loading={loading || bankLoading}
               />
-              <AnalyticsRevenueVsExpenseChart
+              <AnalyticsRevenuePieChart
                 monthlyRevenue={analyticsData?.monthlyRevenue}
-                bankTransactions={bankTransactions}
+                bankTransactions={filteredBankTransactions}
                 loading={loading || bankLoading}
               />
             </div>
@@ -570,7 +586,7 @@ export default function AnalytiquesPage() {
               />
             </div>
 
-            {/* Bank Flow + Collection side by side */}
+            {/* Facturé vs Encaissé + Recouvrement mensuel côte à côte */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-4 sm:px-6">
               <AnalyticsBankFlowChart
                 monthlyRevenue={analyticsData?.monthlyRevenue}

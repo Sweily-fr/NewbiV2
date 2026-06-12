@@ -1090,8 +1090,15 @@ export function useInvoiceEditor({
         shouldDirty: false,
       });
     } else if (!currentNumber || currentNumber.startsWith("DRAFT-")) {
-      // Numérotation manuelle → proposer le prochain numéro sans écraser une saisie
-      setValue("number", formattedNumber, {
+      // Numérotation manuelle → proposer le prochain numéro sans écraser une saisie.
+      // Si le préfixe est nouveau, le numéro de départ global (invoiceStartNumber)
+      // prime sur le 0001 renvoyé par le backend.
+      const startNumber = parseInt(organization?.invoiceStartNumber, 10);
+      const proposedNumber =
+        !hasDocumentsForPrefix && startNumber > 0
+          ? String(startNumber).padStart(4, "0")
+          : formattedNumber;
+      setValue("number", proposedNumber, {
         shouldValidate: false,
         shouldDirty: false,
       });
@@ -1104,6 +1111,7 @@ export function useInvoiceEditor({
     hasDocumentsForPrefix,
     existingInvoice?.status,
     currentAutoNumbering,
+    organization?.invoiceStartNumber,
   ]);
 
   // Auto-remplir companyInfo avec les données de l'organisation

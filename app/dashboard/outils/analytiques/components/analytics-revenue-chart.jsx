@@ -131,11 +131,15 @@ export function AnalyticsRevenueChart({
       const expenseFromModel = m.expenseAmountHT || 0;
       const expenseFromBank = bankExpenseByMonth[m.month] || 0;
       const expense = expenseFromModel > 0 ? expenseFromModel : expenseFromBank;
+      // La marge doit refléter les dépenses affichées : quand on retombe sur
+      // les transactions bancaires (aucune dépense enregistrée), le
+      // grossMargin du backend (CA − 0) afficherait une marge égale au CA.
+      const revenue = m.netRevenueHT ?? m.revenueHT ?? 0;
       return {
         ...m,
         monthLabel: formatMonthLabel(m.month),
         expenseAmount: expense,
-        grossMarginComputed: m.grossMargin ?? (m.revenueHT || 0) - expense,
+        grossMarginComputed: revenue - expense,
       };
     });
   }, [monthlyRevenue, bankTransactions]);

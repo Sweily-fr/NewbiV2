@@ -207,6 +207,28 @@ export const columns = [
       const isBank = source === "BANK" || source === "BANK_TRANSACTION";
       const isManual = source === "MANUAL" || source === "MANUAL_EXPENSE";
       const isOcr = source === "OCR";
+      const isPurchaseInvoice =
+        row.original.sourceKind === "PURCHASE_INVOICE" ||
+        source === "PURCHASE_INVOICE";
+
+      // Affichage unifié : ligne provenant d'une facture d'achat
+      if (isPurchaseInvoice) {
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+                  <BookOpen size={12} />
+                  Facture
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                Facture d&apos;achat (saisie dans Factures d&apos;achat)
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      }
 
       // Récupérer le nom de la banque depuis les données de la transaction
       const bankName =

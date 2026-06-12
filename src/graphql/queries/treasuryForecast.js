@@ -111,6 +111,8 @@ export const GET_MANUAL_CASHFLOW_ENTRIES = gql`
       type
       category
       amount
+      amountDelta
+      amountDeltaType
       startDate
       endDate
       frequency
