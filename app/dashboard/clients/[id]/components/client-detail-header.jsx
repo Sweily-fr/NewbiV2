@@ -26,6 +26,7 @@ import {
   UserCheck,
   MessageCircle,
   Bell,
+  ArrowLeft,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -67,6 +68,19 @@ export default function ClientDetailHeader({
       {/* Left: nav + avatar + name */}
       <div className="flex items-center gap-2.5 min-w-0">
         <div className="flex items-center gap-0.5 flex-shrink-0">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => router.push("/dashboard/clients")}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Retour aux clients</TooltipContent>
+          </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
