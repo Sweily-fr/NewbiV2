@@ -13,6 +13,7 @@ import {
   FileIcon,
   LoaderCircle,
 } from "lucide-react";
+import { PdfPreview } from "./pdf-preview";
 
 // Fonction pour obtenir l'extension du fichier
 function getFileExtension(filename) {
@@ -218,7 +219,7 @@ export function FilePreviewDrawer({
                       <img
                         src={file.previewUrl}
                         alt={file.originalName}
-                        className={`max-w-full max-h-[500px] rounded-lg object-contain ${imageLoading ? "hidden" : ""}`}
+                        className={`max-w-full max-h-[70vh] mx-auto rounded-lg object-contain ${imageLoading ? "hidden" : ""}`}
                         onLoad={handleImageLoad}
                         onError={handleImageError}
                       />
@@ -236,11 +237,12 @@ export function FilePreviewDrawer({
                     </video>
                   </div>
                 ) : isPdf(file) ? (
-                  <iframe
-                    src={file.previewUrl}
-                    className="w-full h-[500px] rounded-lg bg-white"
-                    title={file.originalName}
-                  />
+                  <div className="w-full rounded-lg overflow-hidden border border-gray-100 bg-white">
+                    <PdfPreview
+                      src={file.previewUrl}
+                      fallback={renderImageFallback()}
+                    />
+                  </div>
                 ) : (
                   <div className="flex items-center justify-center h-[300px] text-gray-500 text-sm bg-gray-100 rounded-lg">
                     Prévisualisation non disponible
