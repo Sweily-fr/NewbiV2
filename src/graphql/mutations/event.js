@@ -16,6 +16,14 @@ export const CREATE_EVENT = gql`
         location
         type
         clientId
+        assignedMembers
+        assignedMembersInfo {
+          id
+          userId
+          name
+          email
+          image
+        }
         emailReminder {
           enabled
           anticipation
@@ -45,6 +53,14 @@ export const UPDATE_EVENT = gql`
         color
         location
         type
+        assignedMembers
+        assignedMembersInfo {
+          id
+          userId
+          name
+          email
+          image
+        }
         emailReminder {
           enabled
           anticipation

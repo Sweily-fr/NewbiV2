@@ -64,6 +64,7 @@ function getInitials(name) {
  */
 export function UserAvatar({ src, name, colorKey, className, fallbackClassName, size = "md" }) {
   const sizeClasses = {
+    xxs: "h-4 w-4 text-[8px]",
     xs: "h-6 w-6 text-[10px]",
     sm: "h-8 w-8 text-xs",
     md: "h-10 w-10 text-sm",
@@ -98,14 +99,15 @@ export function AvatarGroup({ users = [], max = 3, size = "sm", className }) {
   const remainingCount = users.length - max;
   
   const sizeClasses = {
+    xxs: "h-4 w-4 text-[8px]",
     xs: "h-6 w-6 text-[10px]",
     sm: "h-8 w-8 text-xs",
     md: "h-10 w-10 text-sm",
     lg: "h-12 w-12 text-base",
   };
-  
+
   return (
-    <div className={cn("flex -space-x-2", className)}>
+    <div className={cn("flex -space-x-2", size === "xxs" && "-space-x-1", className)}>
       {displayUsers.map((user, index) => (
         <UserAvatar
           key={user.userId || index}
