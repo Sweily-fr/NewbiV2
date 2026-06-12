@@ -3,12 +3,14 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
+  Download,
   Flag,
   Users,
   Clock,
   MoreHorizontal,
   AlignLeft,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { UserAvatar } from "@/src/components/ui/user-avatar";
@@ -83,6 +85,9 @@ import {
   startOfDay,
   isWithinInterval,
   getWeek,
+  startOfYear,
+  endOfYear,
+  addYears,
 } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -98,6 +103,7 @@ export function KanbanGanttView({
   members = [],
   updateTask,
   workspaceId,
+  boardTitle,
 }) {
   const [currentWeekStart, setCurrentWeekStart] = useState(() =>
     startOfWeek(new Date(), { weekStartsOn: 1 }),
@@ -251,6 +257,21 @@ export function KanbanGanttView({
 
   const goToToday = () => {
     setCurrentWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  };
+
+  // Export PDF de la période affichée (import dynamique pour ne pas charger jsPDF au montage)
+  const handleExportPDF = async () => {
+    try {
+      const { exportGanttPDF } = await import("@/src/utils/gantt-export");
+      exportGanttPDF({
+        boardTitle,
+        tasks: allTasks,
+        days: daysToDisplay,
+      });
+    } catch (error) {
+      console.error("Erreur lors de l'export PDF du Gantt:", error);
+      toast.error("Impossible de générer le PDF");
+    }
   };
 
   // Calculer la position et la largeur d'une barre de tâche
@@ -693,6 +714,15 @@ export function KanbanGanttView({
               <SelectItem value="quarter">Trimestre</SelectItem>
             </SelectContent>
           </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportPDF}
+            className="h-7 px-3 text-xs gap-1.5"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Exporter PDF</span>
+          </Button>
         </div>
       </div>
 
