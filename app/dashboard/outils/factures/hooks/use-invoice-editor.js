@@ -2581,6 +2581,7 @@ export function useInvoiceEditor({
     clearValidationErrors: () => setValidationErrors({}),
     validateInvoiceNumber,
     saveSettingsToOrganization,
+    getSourceQuoteId: () => sourceQuoteIdRef.current,
     invoice: existingInvoice,
     error: loadingInvoice ? null : !existingInvoice && mode !== "create",
   };

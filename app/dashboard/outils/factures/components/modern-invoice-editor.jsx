@@ -151,6 +151,7 @@ export default function ModernInvoiceEditor({
     clearValidationErrors,
     validateInvoiceNumber,
     saveSettingsToOrganization,
+    getSourceQuoteId,
     invoice: loadedInvoice,
     error: invoiceError,
     markFieldAsEditing,
@@ -258,6 +259,12 @@ export default function ModernInvoiceEditor({
 
   const leaveEditor = () => {
     bypassGuardRef.current = true;
+    // Si on vient d'une conversion de devis, revenir sur ce devis
+    const sourceQuoteId = getSourceQuoteId?.();
+    if (sourceQuoteId) {
+      router.push(`/dashboard/outils/devis?id=${sourceQuoteId}`);
+      return;
+    }
     router.push("/dashboard/outils/factures");
   };
 
