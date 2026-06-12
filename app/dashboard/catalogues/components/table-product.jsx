@@ -665,12 +665,18 @@ export default function TableProduct({
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
                     className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
+                    onClick={() => handleEditProduct(row.original)}
                   >
                     {row.getVisibleCells().map((cell, index, arr) => (
                       <td
                         key={cell.id}
                         style={{ width: cell.column.getSize() }}
                         className={`p-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                        onClick={
+                          ["select", "actions"].includes(cell.column.id)
+                            ? (e) => e.stopPropagation()
+                            : undefined
+                        }
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
@@ -938,7 +944,8 @@ export default function TableProduct({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    className="border-b border-gray-100 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                    className="border-b border-gray-100 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
+                    onClick={() => handleEditProduct(row.original)}
                   >
                     {row
                       .getVisibleCells()
@@ -953,6 +960,11 @@ export default function TableProduct({
                         <TableCell
                           key={cell.id}
                           className="py-3 px-3 sm:px-4 text-xs sm:text-sm"
+                          onClick={
+                            ["select", "actions"].includes(cell.column.id)
+                              ? (e) => e.stopPropagation()
+                              : undefined
+                          }
                         >
                           {flexRender(
                             cell.column.columnDef.cell,

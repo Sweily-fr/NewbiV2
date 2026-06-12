@@ -255,7 +255,7 @@ function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
 
             <div className="space-y-2">
               <label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
-                Placeholder (optionnel)
+                Texte affiché dans le champ vide (optionnel)
               </label>
               <Input
                 id="placeholder"

@@ -220,7 +220,9 @@ function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Nom du champ *</Label>
+            <Label htmlFor="name" className="flex items-center gap-1">
+              Nom du champ <span className="text-red-500">*</span>
+            </Label>
             <Input
               id="name"
               value={formData.name}
@@ -232,7 +234,9 @@ function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="fieldType">Type de champ *</Label>
+            <Label htmlFor="fieldType" className="flex items-center gap-1">
+              Type de champ <span className="text-red-500">*</span>
+            </Label>
             <Select
               value={formData.fieldType}
               onValueChange={(value) =>
@@ -263,7 +267,9 @@ function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="placeholder">Placeholder (optionnel)</Label>
+            <Label htmlFor="placeholder">
+              Texte affiché dans le champ vide (optionnel)
+            </Label>
             <Input
               id="placeholder"
               value={formData.placeholder}
