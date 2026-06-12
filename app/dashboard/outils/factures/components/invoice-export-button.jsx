@@ -50,7 +50,7 @@ const FORMAT_CONFIG = {
   csv: {
     label: "CSV",
     icon: ({ className }) => (
-      <FileText className={className} style={{ color: "#22C55E" }} />
+      <FileText className={`${className} text-green-500`} />
     ),
     description:
       "Sélectionnez une plage de dates pour filtrer les factures à exporter.",
@@ -58,7 +58,7 @@ const FORMAT_CONFIG = {
   excel: {
     label: "Excel",
     icon: ({ className }) => (
-      <FileSpreadsheet className={className} style={{ color: "#16A34A" }} />
+      <FileSpreadsheet className={`${className} text-green-600`} />
     ),
     description:
       "Sélectionnez une plage de dates pour filtrer les factures à exporter.",
@@ -66,7 +66,7 @@ const FORMAT_CONFIG = {
   fec: {
     label: "FEC (Format légal)",
     icon: ({ className }) => (
-      <FileText className={className} style={{ color: "#3B82F6" }} />
+      <FileText className={`${className} text-blue-500`} />
     ),
     description:
       "Format légal obligatoire pour l'administration fiscale française.",
@@ -196,14 +196,11 @@ export default function InvoiceExportButton({
         <DropdownMenuContent align="end" className="w-[220px]">
           <DropdownMenuLabel>Formats standards</DropdownMenuLabel>
           <DropdownMenuItem onClick={() => handleFormatSelect("csv")}>
-            <FileText className="mr-2 h-4 w-4" style={{ color: "#22C55E" }} />
+            <FileText className="mr-2 h-4 w-4 text-green-500" />
             CSV
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleFormatSelect("excel")}>
-            <FileSpreadsheet
-              className="mr-2 h-4 w-4"
-              style={{ color: "#16A34A" }}
-            />
+            <FileSpreadsheet className="mr-2 h-4 w-4 text-green-600" />
             Excel
           </DropdownMenuItem>
 
