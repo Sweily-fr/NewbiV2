@@ -14,6 +14,7 @@ import {
   Trash2,
   Loader2,
   Check as RiCheckLine,
+  Users,
 } from "lucide-react";
 import { format, isBefore } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -68,6 +69,7 @@ import {
   useCalendarConnections,
   usePushEventToCalendar,
 } from "@/src/hooks/useCalendarConnections";
+import { MemberSelector } from "../../outils/kanban/[id]/components/MemberSelector";
 
 const providerIcons = {
   google: (
@@ -116,6 +118,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
   const [allDay, setAllDay] = useState(false);
   const [location, setLocation] = useState("");
   const [color, setColor] = useState("#3B82F6");
+  const [assignedMembers, setAssignedMembers] = useState([]);
   const [emailReminder, setEmailReminder] = useState({
     enabled: false,
     anticipation: null,
@@ -168,6 +171,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
       setAllDay(event.allDay || false);
       setLocation(event.location || "");
       setColor(event.color || "#3B82F6");
+      setAssignedMembers(event.assignedMembers || []);
       setEmailReminder(
         event.emailReminder || { enabled: false, anticipation: null },
       );
@@ -188,6 +192,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
     setAllDay(false);
     setLocation("");
     setColor("#3B82F6");
+    setAssignedMembers([]);
     setEmailReminder({ enabled: false, anticipation: null });
     setError(null);
     setFieldErrors({});
@@ -305,6 +310,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
       allDay,
       location: sanitizeInput(locationValue),
       color,
+      assignedMembers,
       emailReminder,
     });
   };
@@ -596,6 +602,21 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                 </p>
               )}
             </div>
+
+            {/* Membres assignés */}
+            {!isReadOnly && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Users className="h-4 w-4" />
+                  <span className="text-sm font-medium">Membres assignés</span>
+                </div>
+                <MemberSelector
+                  selectedMembers={assignedMembers}
+                  onMembersChange={setAssignedMembers}
+                  hideLabel
+                />
+              </div>
+            )}
 
             {/* Color label */}
             {!isReadOnly && (

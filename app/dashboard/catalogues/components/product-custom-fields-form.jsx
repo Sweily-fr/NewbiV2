@@ -17,9 +17,11 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import {
-  Type,
-  Loader2,
-} from "lucide-react";
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
+import { Type, Info, Loader2 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 
 function CustomFieldInput({ field, value, onChange }) {
@@ -34,7 +36,13 @@ function CustomFieldInput({ field, value, onChange }) {
     case "PHONE":
       return (
         <Input
-          type={field.fieldType === "EMAIL" ? "email" : field.fieldType === "URL" ? "url" : "text"}
+          type={
+            field.fieldType === "EMAIL"
+              ? "email"
+              : field.fieldType === "URL"
+                ? "url"
+                : "text"
+          }
           value={value || ""}
           onChange={(e) => handleChange(e.target.value)}
           placeholder={field.placeholder || field.name}
@@ -56,7 +64,9 @@ function CustomFieldInput({ field, value, onChange }) {
         <Input
           type="number"
           value={value || ""}
-          onChange={(e) => handleChange(e.target.value ? Number(e.target.value) : "")}
+          onChange={(e) =>
+            handleChange(e.target.value ? Number(e.target.value) : "")
+          }
           placeholder={field.placeholder || "0"}
         />
       );
@@ -69,7 +79,10 @@ function CustomFieldInput({ field, value, onChange }) {
             checked={value || false}
             onCheckedChange={handleChange}
           />
-          <label htmlFor={`pfield-${field.id}`} className="text-sm cursor-pointer">
+          <label
+            htmlFor={`pfield-${field.id}`}
+            className="text-sm cursor-pointer"
+          >
             {field.placeholder || "Oui"}
           </label>
         </div>
@@ -104,7 +117,9 @@ function CustomFieldInput({ field, value, onChange }) {
                     key={val}
                     variant="secondary"
                     className="cursor-pointer hover:bg-destructive/20"
-                    onClick={() => handleChange(selectedValues.filter((v) => v !== val))}
+                    onClick={() =>
+                      handleChange(selectedValues.filter((v) => v !== val))
+                    }
                   >
                     {option?.label || val}
                     <span className="ml-1">×</span>
@@ -122,7 +137,9 @@ function CustomFieldInput({ field, value, onChange }) {
             }}
           >
             <SelectTrigger>
-              <SelectValue placeholder={field.placeholder || "Ajouter une option..."} />
+              <SelectValue
+                placeholder={field.placeholder || "Ajouter une option..."}
+              />
             </SelectTrigger>
             <SelectContent>
               {field.options
@@ -167,7 +184,9 @@ export default function ProductCustomFieldsForm({ values = {}, onChange }) {
     return (
       <div className="flex items-center justify-center py-4">
         <Loader2 className="h-4 w-4 animate-spin mr-2" />
-        <span className="text-sm text-muted-foreground">Chargement des champs...</span>
+        <span className="text-sm text-muted-foreground">
+          Chargement des champs...
+        </span>
       </div>
     );
   }
@@ -188,9 +207,17 @@ export default function ProductCustomFieldsForm({ values = {}, onChange }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {activeFields.map((field) => (
           <div key={field.id} className="space-y-2">
-            <Label className="font-normal">
+            <Label className="flex items-center gap-1 font-normal">
               {field.name}
-              {field.isRequired && <span className="text-red-500 ml-1">*</span>}
+              {field.isRequired && <span className="text-red-500">*</span>}
+              {field.description && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>{field.description}</TooltipContent>
+                </Tooltip>
+              )}
             </Label>
             <CustomFieldInput
               field={field}

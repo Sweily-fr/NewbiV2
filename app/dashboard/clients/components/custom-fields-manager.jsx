@@ -263,7 +263,9 @@ function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="placeholder">Placeholder (optionnel)</Label>
+            <Label htmlFor="placeholder">
+              Texte affiché dans le champ vide (optionnel)
+            </Label>
             <Input
               id="placeholder"
               value={formData.placeholder}
