@@ -425,8 +425,6 @@ function KanbanColumnSimpleInner({
   allBoardTags = [],
 }) {
   const [showInlineAdd, setShowInlineAdd] = useState(false);
-  const baseOffset = 240;
-  const maxHeight = `calc(100vh - ${baseOffset}px)`;
 
   // Ref pour le conteneur scrollable de la colonne
   const scrollContainerRef = useRef(null);
@@ -511,7 +509,7 @@ function KanbanColumnSimpleInner({
           data-dnd-column={column.id}
           data-dnd-column-index={columnIndex}
           data-dnd-column-color={column.color || "#94a3b8"}
-          className="group/col rounded-xl p-1 sm:p-1.5 min-w-[230px] max-w-[230px] sm:min-w-[272px] sm:max-w-[272px] flex flex-col flex-shrink-0"
+          className="group/col rounded-xl p-1 sm:p-1.5 min-w-[230px] max-w-[230px] sm:min-w-[272px] sm:max-w-[272px] flex flex-col flex-shrink-0 max-h-full"
           style={{ backgroundColor: `${column.color || "#94a3b8"}12` }}
         >
           {/* Header de la colonne — drag handle for column reorder */}
@@ -645,7 +643,7 @@ function KanbanColumnSimpleInner({
             ref={scrollContainerRef}
             data-dnd-drop-zone={column.id}
             className="kanban-column-scroll p-1 pb-2 rounded-lg transition-colors overflow-y-auto"
-            style={{ minHeight: "50px", maxHeight }}
+            style={{ minHeight: "50px" }}
           >
             {showInlineAdd && (
               <InlineNewTask

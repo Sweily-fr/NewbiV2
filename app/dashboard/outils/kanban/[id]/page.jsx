@@ -1933,7 +1933,7 @@ function KanbanBoardPageContent({ params }) {
               style={{ display: isBoard ? undefined : "none" }}
             >
               <div
-                className="h-full w-max min-w-full origin-top-left flex flex-nowrap items-start px-4 sm:px-6"
+                className="h-full w-max min-w-full origin-top-left flex flex-nowrap items-start px-4 sm:px-6 pb-3"
                 style={{
                   gap: "10px",
                 }}
