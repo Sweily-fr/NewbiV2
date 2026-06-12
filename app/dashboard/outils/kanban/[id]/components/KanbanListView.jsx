@@ -1206,7 +1206,7 @@ function InlineAddTask({
       className="grid px-4 sm:px-6 py-1.5 items-center bg-muted/30 relative overflow-hidden after:absolute after:bottom-0 after:left-6 after:right-6 after:sm:left-8 after:sm:right-8 after:h-px after:bg-border/60 after:content-['']"
       style={{
         gridTemplateColumns:
-          "minmax(0, 4fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.6fr) minmax(0, 0.8fr) 80px",
+          "minmax(0, 4fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 0.8fr) 80px",
         gap: "1rem",
       }}
     >
@@ -1984,7 +1984,7 @@ const TaskRow = React.memo(function TaskRow({
       data-dnd-list-index={index}
       style={{
         gridTemplateColumns:
-          "minmax(0, 4fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.6fr) minmax(0, 0.8fr) 80px",
+          "minmax(0, 4fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 0.8fr) 80px",
         gap: "1rem",
         minHeight: LIST_ROW_MIN_HEIGHT,
         ...(isSelected ? { backgroundColor: "#5A50FF0D" } : {}),
@@ -2213,11 +2213,11 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
       {/* Date d'échéance */}
       <div className="flex items-center gap-1.5 text-xs min-w-0">
         {task.dueDate ? (
-          <div className="relative group/date inline-flex items-center">
+          <div className="relative group/date inline-flex items-center min-w-0 max-w-full">
             <Popover>
               <PopoverTrigger asChild>
                 <button
-                  className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-muted/60 hover:ring-1 hover:ring-border transition-all cursor-pointer bg-transparent border-0 p-0"
+                  className="flex items-center min-w-0 gap-1 px-1.5 py-0.5 rounded hover:bg-muted/60 hover:ring-1 hover:ring-border transition-all cursor-pointer bg-transparent border-0 p-0"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <span className="truncate font-normal text-foreground/70">
@@ -2942,7 +2942,7 @@ export function KanbanListView({
                     className="grid px-4 sm:px-6 py-2 text-xs font-medium text-muted-foreground/70 tracking-wide relative after:absolute after:bottom-0 after:left-6 after:right-6 sm:after:left-8 sm:after:right-8 after:h-px after:bg-border/60 after:content-['']"
                     style={{
                       gridTemplateColumns:
-                        "minmax(0, 4fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.6fr) minmax(0, 0.8fr) 80px",
+                        "minmax(0, 4fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 0.8fr) 80px",
                       gap: "1rem",
                     }}
                   >
@@ -3145,11 +3145,11 @@ export function KanbanListView({
                                 {/* Date d'échéance */}
                                 <div className="flex items-center gap-1.5 text-xs min-w-0">
                                   {task.dueDate ? (
-                                    <div className="relative group/date inline-flex items-center">
+                                    <div className="relative group/date inline-flex items-center min-w-0 max-w-full">
                                       <Popover>
                                         <PopoverTrigger asChild>
                                           <button
-                                            className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-muted/60 hover:ring-1 hover:ring-border transition-all cursor-pointer bg-transparent border-0 p-0"
+                                            className="flex items-center min-w-0 gap-1 px-1.5 py-0.5 rounded hover:bg-muted/60 hover:ring-1 hover:ring-border transition-all cursor-pointer bg-transparent border-0 p-0"
                                             onClick={(e) => e.stopPropagation()}
                                           >
                                             <span className="truncate font-normal text-foreground/70">
