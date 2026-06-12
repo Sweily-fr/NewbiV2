@@ -67,6 +67,8 @@ export default function Component() {
       isReadOnly: event.isReadOnly || false,
       externalEventId: event.externalEventId,
       externalCalendarLinks: event.externalCalendarLinks || [],
+      assignedMembers: event.assignedMembers || [],
+      assignedMembersInfo: event.assignedMembersInfo || [],
       emailReminder: event.emailReminder || null,
     }));
 
@@ -85,6 +87,7 @@ export default function Component() {
         color: event.color || "sky",
         location: event.location,
         type: "MANUAL",
+        assignedMembers: event.assignedMembers || [],
         emailReminder: event.emailReminder?.enabled
           ? {
               enabled: true,
@@ -119,6 +122,9 @@ export default function Component() {
         color: updatedEvent.color,
         location: updatedEvent.location,
         type: updatedEvent.type || "MANUAL",
+        assignedMembers: Array.isArray(updatedEvent.assignedMembers)
+          ? updatedEvent.assignedMembers
+          : undefined,
         emailReminder: updatedEvent.emailReminder
           ? {
               enabled: updatedEvent.emailReminder.enabled,
