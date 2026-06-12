@@ -289,7 +289,7 @@ export default function QuoteFilters({
               </Badge>
             )}
           </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="w-[250px] max-h-[400px] overflow-y-auto">
+          <DropdownMenuSubContent className="w-[250px] max-h-[min(400px,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
             {uniqueClients.length > 0 ? (
               <>
                 {/* Checkbox Tout sélectionner */}
@@ -373,7 +373,7 @@ export default function QuoteFilters({
           <DropdownMenuSubTrigger className="whitespace-nowrap">
             Colonnes visibles
           </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="w-[250px] max-h-[400px] overflow-y-auto">
+          <DropdownMenuSubContent className="w-[250px] max-h-[min(400px,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
             {table
               .getAllColumns()
               .filter(

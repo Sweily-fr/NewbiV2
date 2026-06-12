@@ -327,7 +327,7 @@ export default function InvoiceFilters({
               </Badge>
             )}
           </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="w-[250px] max-h-[400px] overflow-y-auto">
+          <DropdownMenuSubContent className="w-[250px] max-h-[min(400px,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
             {uniqueClients.length > 0 ? (
               <>
                 {/* Checkbox Tout sélectionner */}
@@ -462,7 +462,7 @@ export default function InvoiceFilters({
           <DropdownMenuSubTrigger className="whitespace-nowrap">
             Colonnes visibles
           </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="w-[250px] max-h-[400px] overflow-y-auto">
+          <DropdownMenuSubContent className="w-[250px] max-h-[min(400px,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
             {/* Checkbox Tout sélectionner */}
             <div
               className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
