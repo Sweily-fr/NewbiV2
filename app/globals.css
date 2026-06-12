@@ -632,6 +632,26 @@
 .colorblind-mode .bg-rose-800 { background-color: var(--cb-danger-800) !important; }
 .colorblind-mode .bg-rose-900 { background-color: var(--cb-danger-900) !important; }
 
+/* --- Fonds avec opacité (ex. bg-green-500/10) ----------------------------
+   Les sélecteurs ci-dessus ne matchent pas les variantes Tailwind avec
+   opacité : la classe générée est `bg-green-500/10`, pas `bg-green-500`.
+   On cible les classes exactes (slash échappé) pour ne pas toucher les
+   variantes hover:/dark:. */
+.colorblind-mode .bg-green-500\/5  { background-color: color-mix(in srgb, var(--cb-success-500) 5%, transparent)  !important; }
+.colorblind-mode .bg-green-500\/8  { background-color: color-mix(in srgb, var(--cb-success-500) 8%, transparent)  !important; }
+.colorblind-mode .bg-green-500\/10 { background-color: color-mix(in srgb, var(--cb-success-500) 10%, transparent) !important; }
+.colorblind-mode .bg-green-50\/50  { background-color: color-mix(in srgb, var(--cb-success-50) 50%, transparent)  !important; }
+.colorblind-mode .bg-green-100\/10 { background-color: color-mix(in srgb, var(--cb-success-100) 10%, transparent) !important; }
+.colorblind-mode .bg-emerald-50\/50 { background-color: color-mix(in srgb, var(--cb-success-50) 50%, transparent) !important; }
+
+.colorblind-mode .bg-red-500\/5  { background-color: color-mix(in srgb, var(--cb-danger-500) 5%, transparent)  !important; }
+.colorblind-mode .bg-red-500\/10 { background-color: color-mix(in srgb, var(--cb-danger-500) 10%, transparent) !important; }
+.colorblind-mode .bg-red-500\/15 { background-color: color-mix(in srgb, var(--cb-danger-500) 15%, transparent) !important; }
+.colorblind-mode .bg-red-500\/20 { background-color: color-mix(in srgb, var(--cb-danger-500) 20%, transparent) !important; }
+.colorblind-mode .bg-red-50\/50  { background-color: color-mix(in srgb, var(--cb-danger-50) 50%, transparent)  !important; }
+.colorblind-mode .bg-red-100\/10 { background-color: color-mix(in srgb, var(--cb-danger-100) 10%, transparent) !important; }
+.colorblind-mode .bg-red-100\/50 { background-color: color-mix(in srgb, var(--cb-danger-100) 50%, transparent) !important; }
+
 /* --- Bordures ------------------------------------------------------------ */
 .colorblind-mode [class*="border-green-50"],
 .colorblind-mode [class*="border-green-100"],
