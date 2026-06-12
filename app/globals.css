@@ -632,6 +632,13 @@
 .colorblind-mode .bg-rose-800 { background-color: var(--cb-danger-800) !important; }
 .colorblind-mode .bg-rose-900 { background-color: var(--cb-danger-900) !important; }
 
+/* Boutons variant danger/destructive (ui/button.jsx) : hex arbitraires
+   bg-[#E5484D] / hover:bg-[#CD2B31] / active:bg-[#AA2429], hors de portée
+   des remaps bg-red-* ci-dessus. */
+.colorblind-mode .bg-\[\#E5484D\] { background-color: var(--cb-danger-500) !important; }
+.colorblind-mode .hover\:bg-\[\#CD2B31\]:hover { background-color: var(--cb-danger-600) !important; }
+.colorblind-mode .active\:bg-\[\#AA2429\]:active { background-color: var(--cb-danger-700) !important; }
+
 /* --- Bordures ------------------------------------------------------------ */
 .colorblind-mode [class*="border-green-50"],
 .colorblind-mode [class*="border-green-100"],
