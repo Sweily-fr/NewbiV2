@@ -634,6 +634,7 @@ export function ForecastPaymentsCard({ months, kpi, loading, onCellClick }) {
                   axisLine={false}
                   tickMargin={10}
                   height={X_AXIS_HEIGHT}
+                  interval={0}
                   tick={({ x, y, payload }) => {
                     const dataItem = chartData.find(
                       (d) => d.label === payload.value,
@@ -644,7 +645,7 @@ export function ForecastPaymentsCard({ months, kpi, loading, onCellClick }) {
                         x={x}
                         y={y + 4}
                         textAnchor="middle"
-                        fontSize={11}
+                        fontSize={chartData.length > 18 ? 9.5 : 11}
                         fill={isCurrent ? remap("#3b82f6") : "#9ca3af"}
                         fontWeight={isCurrent ? 600 : 400}
                       >
