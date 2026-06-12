@@ -830,7 +830,7 @@ export default function QuoteSidebar({
                   })()}
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2">
                 {/* Bouton de conversion complète */}
                 {(!quote.linkedInvoices ||
                   quote.linkedInvoices.length === 0) && (
@@ -838,7 +838,7 @@ export default function QuoteSidebar({
                     variant="outline"
                     onClick={handleConvertToInvoice}
                     disabled={isLoading}
-                    className="flex-1 font-normal"
+                    className="w-full font-normal"
                   >
                     <FileCheck className="h-4 w-4 mr-2" />
                     Conversion complète
@@ -850,7 +850,7 @@ export default function QuoteSidebar({
                   variant="outline"
                   onClick={handleConvertToPurchaseOrder}
                   disabled={isLoading}
-                  className="flex-1 font-normal"
+                  className="w-full font-normal"
                 >
                   <ShoppingCart className="h-4 w-4 mr-2" />
                   Convertir en bon de commande
