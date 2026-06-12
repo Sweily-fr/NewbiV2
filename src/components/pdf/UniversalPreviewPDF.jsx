@@ -1295,7 +1295,7 @@ const UniversalPreviewPDF = ({
                               </div>
                             )}
                             {item.discount > 0 && (
-                              <div className="text-[9px] text-amber-600 dark:text-amber-400 mt-0.5">
+                              <div className="pdf-remise text-[9px] text-amber-600 dark:text-amber-400 mt-0.5">
                                 Remise:{" "}
                                 {item.discountType?.toUpperCase() ===
                                 "PERCENTAGE"
@@ -1664,7 +1664,7 @@ const UniversalPreviewPDF = ({
                       {formatCurrency(subtotalAfterItemDiscounts)})
                     </span>
                   </div>
-                  <span className="dark:text-[#FF0000] text-[10px] font-medium">
+                  <span className="pdf-remise dark:text-[#FF0000] text-[10px] font-medium">
                     -{formatCurrency(discount)}
                   </span>
                 </div>
