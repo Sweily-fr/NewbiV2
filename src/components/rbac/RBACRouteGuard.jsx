@@ -36,7 +36,11 @@ export function RBACRouteGuard({
 }) {
   const router = useRouter();
   // ✅ FIX: Récupérer isLoading et isReady pour attendre que les permissions soient prêtes
-  const { hasPermission, isLoading: isPermissionLoading, isReady } = usePermissions();
+  const {
+    hasPermission,
+    isLoading: isPermissionLoading,
+    isReady,
+  } = usePermissions();
   const [isChecking, setIsChecking] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const toastShownRef = useRef(false); // Pour éviter les toasts multiples
@@ -115,6 +119,11 @@ export function RBACRouteGuard({
 
   // Afficher le loading pendant la vérification
   if (isChecking) {
+    // Re-vérification en arrière-plan (ex: refetch de session après mise à jour
+    // de l'organisation) : garder la page montée pour ne pas perdre l'état local
+    if (hasAccess) {
+      return <>{children}</>;
+    }
     return (
       loadingComponent || (
         <div className="flex items-center justify-center h-screen">
