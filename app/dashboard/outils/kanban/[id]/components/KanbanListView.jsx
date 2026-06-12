@@ -11,6 +11,7 @@ import {
   MoreHorizontal,
   Calendar,
   ChevronDown,
+  Minus,
   ChevronRight,
   Plus,
   Flag,
@@ -65,7 +66,10 @@ import { Calendar as CalendarComponent } from "@/src/components/ui/calendar";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { MemberSelector } from "./MemberSelector";
-import { useTaskMembers } from "../hooks/useMemberToggle";
+import {
+  useTaskMembers,
+  useDebouncedMemberFlush,
+} from "../hooks/useMemberToggle";
 import { useLazyVisible } from "../hooks/useLazyVisible";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { calculateTaskAmount, formatTaskAmount } from "./taskAmount";
@@ -404,6 +408,25 @@ function BulkActionBar({
   const count = selectedTaskIds.size;
   const [moveOpen, setMoveOpen] = useState(false);
 
+  // Assignation : état optimiste par tâche (taskId → membres) + debounce.
+  // Les clics rapides calculent depuis l'état local (le cache retarde le temps
+  // de l'écho serveur) et sont coalescés en une mutation par tâche.
+  const [assignOverrides, setAssignOverrides] = useState({});
+  const flushMembers = useDebouncedMemberFlush({
+    updateTask,
+    workspaceId,
+    // En cas d'échec serveur, revenir à la vérité du cache pour cette tâche.
+    onError: (taskId) =>
+      setAssignOverrides((prev) => {
+        const next = { ...prev };
+        delete next[taskId];
+        return next;
+      }),
+  });
+  React.useEffect(() => {
+    setAssignOverrides({});
+  }, [selectedTaskIds]);
+
   // Centrer la barre par rapport à la zone de contenu (SidebarInset)
   React.useEffect(() => {
     if (count === 0 || !bulkBarRef.current) return;
@@ -471,17 +494,6 @@ function BulkActionBar({
     setSelectedTaskIds(new Set());
   };
 
-  const bulkAssign = (memberIds) => {
-    selectedIds.forEach((taskId) => {
-      updateTask({
-        variables: {
-          input: { id: taskId, assignedMembers: memberIds },
-          workspaceId,
-        },
-      });
-    });
-  };
-
   const findTaskById = (taskId) => {
     if (!getTasksByColumn) return null;
     for (const column of columns) {
@@ -490,6 +502,31 @@ function BulkActionBar({
       if (found) return found;
     }
     return null;
+  };
+
+  const getAssignedMembers = (taskId) =>
+    assignOverrides[taskId] ??
+    (findTaskById(taskId)?.assignedMembers || []).filter(Boolean);
+
+  // Toggle (et non remplacement) : si TOUTES les tâches sélectionnées ont déjà
+  // le membre, on le retire partout ; sinon on l'ajoute là où il manque, sans
+  // toucher aux autres assignés.
+  const bulkToggleAssign = (memberId) => {
+    const allHave = selectedIds.every((id) =>
+      getAssignedMembers(id).includes(memberId),
+    );
+    const overrides = {};
+    selectedIds.forEach((taskId) => {
+      const current = getAssignedMembers(taskId);
+      const next = allHave
+        ? current.filter((id) => id !== memberId)
+        : current.includes(memberId)
+          ? current
+          : [...current, memberId];
+      overrides[taskId] = next;
+      if (next !== current) flushMembers(taskId, next);
+    });
+    setAssignOverrides((prev) => ({ ...prev, ...overrides }));
   };
 
   const bulkDuplicate = async () => {
@@ -603,21 +640,34 @@ function BulkActionBar({
                   const memberName =
                     member.name || member.user?.name || memberId;
                   const memberImage = member.image || member.user?.image;
+                  const assignedCount = selectedIds.filter((id) =>
+                    getAssignedMembers(id).includes(memberId),
+                  ).length;
+                  const allAssigned = assignedCount === selectedIds.length;
                   return (
                     <button
                       key={memberId}
-                      onClick={() => bulkAssign([memberId])}
+                      onClick={() => bulkToggleAssign(memberId)}
                       className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer"
                     >
-                      <UserAvatar
-                        src={memberImage}
-                        name={memberName}
-                        size="xs"
-                        className="h-5 w-5"
-                      />
-                      <span className="text-xs font-medium truncate">
+                      <div
+                        className={`rounded-full flex-shrink-0 ${allAssigned ? "ring-[1.5px] ring-[#5A50FF] ring-offset-1 ring-offset-background" : ""}`}
+                      >
+                        <UserAvatar
+                          src={memberImage}
+                          name={memberName}
+                          size="xs"
+                          className="h-5 w-5"
+                        />
+                      </div>
+                      <span className="flex-1 text-left text-xs font-medium truncate">
                         {memberName}
                       </span>
+                      {allAssigned ? (
+                        <Check className="h-3.5 w-3.5 text-[#5A50FF] flex-shrink-0" />
+                      ) : assignedCount > 0 ? (
+                        <Minus className="h-3.5 w-3.5 text-muted-foreground/60 flex-shrink-0" />
+                      ) : null}
                     </button>
                   );
                 })}
