@@ -117,7 +117,6 @@ function InlineNewTask({
   members,
   createTask,
   workspaceId,
-  tasks = [],
   onCancel,
   onEditTask,
 }) {
@@ -151,10 +150,6 @@ function InlineNewTask({
   const handleSave = async (openAfter = false) => {
     if (!title.trim() || saving) return;
     setSaving(true);
-    // Nouvelle tâche placée en dernier dans la colonne
-    const nextPosition = tasks.length
-      ? Math.max(...tasks.map((t) => t.position ?? 0)) + 1
-      : 0;
     try {
       const result = await createTask({
         variables: {
@@ -162,7 +157,9 @@ function InlineNewTask({
             title: title.trim(),
             columnId,
             boardId,
-            position: nextPosition,
+            // Nouvelle tâche placée en premier, comme la preview affichée en haut
+            // (le backend décale les tâches existantes via $inc position)
+            position: 0,
             assignedMembers,
             dueDate: dueDate ? dueDate.toISOString() : null,
             priority: priority || "",
@@ -652,7 +649,6 @@ function KanbanColumnSimpleInner({
                 members={members}
                 createTask={createTask}
                 workspaceId={workspaceId}
-                tasks={tasks}
                 onCancel={() => setShowInlineAdd(false)}
                 onEditTask={onEditTask}
               />
