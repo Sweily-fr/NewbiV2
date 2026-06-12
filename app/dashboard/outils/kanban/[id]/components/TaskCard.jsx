@@ -737,10 +737,7 @@ const TaskCard = memo(
               </div>
 
               {/* Ligne 2: Timer + Avatar + Date d'échéance + Priorité */}
-              <div
-                className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap"
-                onClick={(e) => e.stopPropagation()}
-              >
+              <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                 {/* Timer Display */}
                 <TimerDisplay timeTracking={task.timeTracking} />
 
