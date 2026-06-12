@@ -989,50 +989,48 @@ export default function QuoteSettingsView({
                 </div>
               </div>
 
-              {isPurchaseOrder && (
-                /* Conditions générales */
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <Label
-                      htmlFor="terms-conditions"
-                      className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-                    >
-                      Conditions générales
-                    </Label>
-                    <SuggestionDropdown
-                      suggestions={documentSuggestions.termsAndConditions}
-                      onSelect={(value) =>
-                        setValue("termsAndConditions", value, {
-                          shouldDirty: true,
-                        })
-                      }
-                      label="Suggestions"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <TextareaNew
-                      id="terms-conditions"
-                      className={`mt-2 ${errors?.termsAndConditions ? "border-red-500" : ""}`}
-                      {...register("termsAndConditions", {
-                        maxLength: {
-                          value: 2000,
-                          message:
-                            "Les conditions générales ne doivent pas dépasser 2000 caractères",
-                        },
-                      })}
-                      defaultValue={data.termsAndConditions || ""}
-                      placeholder="Conditions générales de vente..."
-                      rows={4}
-                      disabled={!canEdit}
-                    />
-                    {errors?.termsAndConditions && (
-                      <p className="text-xs text-red-500">
-                        {errors.termsAndConditions.message}
-                      </p>
-                    )}
-                  </div>
+              {/* Conditions générales */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <Label
+                    htmlFor="terms-conditions"
+                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                  >
+                    Conditions générales
+                  </Label>
+                  <SuggestionDropdown
+                    suggestions={documentSuggestions.termsAndConditions}
+                    onSelect={(value) =>
+                      setValue("termsAndConditions", value, {
+                        shouldDirty: true,
+                      })
+                    }
+                    label="Suggestions"
+                  />
                 </div>
-              )}
+                <div className="space-y-1">
+                  <TextareaNew
+                    id="terms-conditions"
+                    className={`mt-2 ${errors?.termsAndConditions ? "border-red-500" : ""}`}
+                    {...register("termsAndConditions", {
+                      maxLength: {
+                        value: 2000,
+                        message:
+                          "Les conditions générales ne doivent pas dépasser 2000 caractères",
+                      },
+                    })}
+                    defaultValue={data.termsAndConditions || ""}
+                    placeholder="Conditions générales de vente..."
+                    rows={4}
+                    disabled={!canEdit}
+                  />
+                  {errors?.termsAndConditions && (
+                    <p className="text-xs text-red-500">
+                      {errors.termsAndConditions.message}
+                    </p>
+                  )}
+                </div>
+              </div>
 
               {/* Notes de bas de page */}
               <div>
@@ -1074,51 +1072,6 @@ export default function QuoteSettingsView({
                   )}
                 </div>
               </div>
-
-              {!isPurchaseOrder && (
-                /* Conditions générales */
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <Label
-                      htmlFor="terms-conditions"
-                      className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-                    >
-                      Conditions générales
-                    </Label>
-                    <SuggestionDropdown
-                      suggestions={documentSuggestions.termsAndConditions}
-                      onSelect={(value) =>
-                        setValue("termsAndConditions", value, {
-                          shouldDirty: true,
-                        })
-                      }
-                      label="Suggestions"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <TextareaNew
-                      id="terms-conditions"
-                      className={`mt-2 ${errors?.termsAndConditions ? "border-red-500" : ""}`}
-                      {...register("termsAndConditions", {
-                        maxLength: {
-                          value: 2000,
-                          message:
-                            "Les conditions générales ne doivent pas dépasser 2000 caractères",
-                        },
-                      })}
-                      defaultValue={data.termsAndConditions || ""}
-                      placeholder="Conditions générales de vente..."
-                      rows={4}
-                      disabled={!canEdit}
-                    />
-                    {errors?.termsAndConditions && (
-                      <p className="text-xs text-red-500">
-                        {errors.termsAndConditions.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
         </div>
