@@ -27,7 +27,12 @@ import Image from "next/image";
 import JSZip from "jszip";
 
 // Composants séparés
-import { PasswordModal, FilePreviewDrawer, PaymentModal } from "./components";
+import {
+  PasswordModal,
+  FilePreviewDrawer,
+  PaymentModal,
+  PdfPreview,
+} from "./components";
 import CircularProgress from "@/src/components/ui/circular-progress";
 
 export default function TransferPage() {
@@ -796,9 +801,9 @@ export default function TransferPage() {
       </div>
 
       {/* Panneau droit - Card */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center px-4 pt-16 pb-6 lg:px-8 lg:py-10">
-        {/* Logo mobile */}
-        <div className="lg:hidden absolute top-4 left-4">
+      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center px-4 py-8 lg:px-8 lg:py-10">
+        {/* Logo mobile - centré au-dessus de la card */}
+        <div className="lg:hidden mb-10">
           <Image
             src="/newbiLetter.png"
             alt="Newbi"
@@ -990,21 +995,29 @@ export default function TransferPage() {
                             />
                           );
                         }
-                        if (isPdf && previewSrc && !thumbnailError) {
-                          return (
-                            <iframe
-                              src={previewSrc}
-                              className="w-full h-full pointer-events-none"
-                              title={thumbFile?.originalName}
-                              onError={() => setThumbnailError(true)}
-                            />
-                          );
-                        }
-                        return (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <FileIcon className="w-16 h-16 text-gray-300" />
+                        const placeholder = (
+                          <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-gray-50">
+                            <FileIcon className="w-14 h-14 text-gray-200" />
+                            {ext && (
+                              <span className="text-[10px] font-medium uppercase tracking-wide text-gray-400">
+                                {ext}
+                              </span>
+                            )}
                           </div>
                         );
+
+                        if (isPdf && previewSrc && !thumbnailError) {
+                          return (
+                            <div className="w-full h-full bg-white pointer-events-none">
+                              <PdfPreview
+                                src={previewSrc}
+                                firstPageOnly
+                                fallback={placeholder}
+                              />
+                            </div>
+                          );
+                        }
+                        return placeholder;
                       })()}
                       {/* Bouton preview au centre */}
                       <button

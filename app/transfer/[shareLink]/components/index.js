@@ -1,6 +1,7 @@
 export { PasswordModal } from "./password-screen";
 export { PreviewModal } from "./preview-modal";
 export { FilePreviewDrawer } from "./file-preview-drawer";
+export { PdfPreview } from "./pdf-preview";
 export { PaymentModal } from "./payment-modal";
 export { FileList } from "./file-list";
 export { TransferInfo } from "./transfer-info";
