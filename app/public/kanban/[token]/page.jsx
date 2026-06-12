@@ -2982,7 +2982,7 @@ function PublicTaskModal({
                           return (
                             <div
                               key={tag.id || index}
-                              className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border"
+                              className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border max-w-full wrap-anywhere"
                               style={{
                                 backgroundColor: color.bg,
                                 borderColor: color.border,
