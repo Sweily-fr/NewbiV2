@@ -1510,8 +1510,31 @@ function RowActions({
                   const availableLists = (allLists || []).filter(
                     (l) => !currentListIds.has(l.id),
                   );
-                  if ((allLists || []).length === 0) {
-                    return (
+                  return (
+                    <>
+                      {(allLists || []).length > 0 &&
+                        availableLists.length === 0 && (
+                          <DropdownMenuItem disabled>
+                            Aucune liste disponible
+                          </DropdownMenuItem>
+                        )}
+                      {availableLists.map((list) => (
+                        <DropdownMenuItem
+                          key={list.id}
+                          onClick={() => handleAddToList(list.id)}
+                          disabled={addingToList}
+                          className="cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2 w-full">
+                            <div
+                              className="w-2 h-2 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: list.color }}
+                            />
+                            <span>{list.name}</span>
+                          </div>
+                        </DropdownMenuItem>
+                      ))}
+                      {(allLists || []).length > 0 && <DropdownMenuSeparator />}
                       <DropdownMenuItem
                         onSelect={(e) => {
                           e.preventDefault();
@@ -1522,31 +1545,8 @@ function RowActions({
                         <PlusIcon className="w-3.5 h-3.5" />
                         <span>Créer une liste</span>
                       </DropdownMenuItem>
-                    );
-                  }
-                  if (availableLists.length === 0) {
-                    return (
-                      <DropdownMenuItem disabled>
-                        Aucune liste disponible
-                      </DropdownMenuItem>
-                    );
-                  }
-                  return availableLists.map((list) => (
-                    <DropdownMenuItem
-                      key={list.id}
-                      onClick={() => handleAddToList(list.id)}
-                      disabled={addingToList}
-                      className="cursor-pointer"
-                    >
-                      <div className="flex items-center gap-2 w-full">
-                        <div
-                          className="w-2 h-2 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: list.color }}
-                        />
-                        <span>{list.name}</span>
-                      </div>
-                    </DropdownMenuItem>
-                  ));
+                    </>
+                  );
                 })()}
               </DropdownMenuSubContent>
             </DropdownMenuSub>
