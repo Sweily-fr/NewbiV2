@@ -425,7 +425,7 @@ export default function PurchaseInvoiceTable({
                       </Badge>
                     )}
                   </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="w-[220px] max-h-[min(400px,calc(var(--radix-dropdown-menu-content-available-height)_-_2.5rem))] overflow-y-auto">
+                  <DropdownMenuSubContent className="w-[220px] max-h-[min(400px,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
                     {Object.entries(STATUS_LABELS).map(([key, label]) => (
                       <div
                         key={key}
@@ -453,7 +453,7 @@ export default function PurchaseInvoiceTable({
                       </Badge>
                     )}
                   </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="w-[220px] max-h-[min(20.5rem,calc(var(--radix-dropdown-menu-content-available-height)_-_2.5rem))] overflow-y-auto">
+                  <DropdownMenuSubContent className="w-[220px] max-h-[min(20.5rem,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
                     {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
                       <div
                         key={key}
@@ -477,7 +477,7 @@ export default function PurchaseInvoiceTable({
                   <DropdownMenuSubTrigger className="whitespace-nowrap">
                     Colonnes visibles
                   </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="w-[220px] max-h-[min(400px,calc(var(--radix-dropdown-menu-content-available-height)_-_2.5rem))] overflow-y-auto">
+                  <DropdownMenuSubContent className="w-[220px] max-h-[min(400px,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
                     {table
                       .getAllColumns()
                       .filter((col) => col.getCanHide())
