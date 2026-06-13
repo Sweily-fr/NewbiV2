@@ -1887,6 +1887,7 @@ function KanbanBoardPageContent({ params }) {
               members={board?.members || []}
               updateTask={updateTask}
               workspaceId={workspaceId}
+              boardTitle={board?.title}
             />
           </div>
         )}

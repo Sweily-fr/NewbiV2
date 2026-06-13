@@ -269,7 +269,7 @@ export default function PurchaseOrderFilters({
               </Badge>
             )}
           </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="w-[250px] max-h-[400px] overflow-y-auto">
+          <DropdownMenuSubContent className="w-[250px] max-h-[min(400px,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
             {uniqueClients.length > 0 ? (
               <>
                 <div
@@ -351,7 +351,7 @@ export default function PurchaseOrderFilters({
           <DropdownMenuSubTrigger className="whitespace-nowrap">
             Colonnes visibles
           </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="w-[250px] max-h-[400px] overflow-y-auto">
+          <DropdownMenuSubContent className="w-[250px] max-h-[min(400px,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
             {table
               .getAllColumns()
               .filter(

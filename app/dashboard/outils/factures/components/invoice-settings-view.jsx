@@ -1022,46 +1022,6 @@ export default function InvoiceSettingsView({
                 </div>
               </div>
 
-              {/* Notes de bas de page */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <Label
-                    htmlFor="footer-notes"
-                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-                  >
-                    Notes de bas de page
-                  </Label>
-                  <SuggestionDropdown
-                    suggestions={documentSuggestions.footerNotes}
-                    onSelect={(value) =>
-                      setValue("footerNotes", value, { shouldDirty: true })
-                    }
-                    label="Suggestions"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <TextareaNew
-                    id="footer-notes"
-                    className={`mt-2 ${errors?.footerNotes ? "border-red-500" : ""}`}
-                    {...register("footerNotes", {
-                      maxLength: {
-                        value: 2000,
-                        message:
-                          "Les notes de bas de page ne doivent pas dépasser 2000 caractères",
-                      },
-                    })}
-                    defaultValue={data.footerNotes || ""}
-                    placeholder="Notes qui apparaîtront en bas de la facture..."
-                    rows={3}
-                    disabled={!canEdit}
-                  />
-                  {errors?.footerNotes && (
-                    <p className="text-xs text-red-500">
-                      {errors.footerNotes.message}
-                    </p>
-                  )}
-                </div>
-              </div>
               {/* Conditions générales */}
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -1100,6 +1060,46 @@ export default function InvoiceSettingsView({
                   {errors?.termsAndConditions && (
                     <p className="text-xs text-red-500">
                       {errors.termsAndConditions.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+              {/* Notes de bas de page */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <Label
+                    htmlFor="footer-notes"
+                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                  >
+                    Notes de bas de page
+                  </Label>
+                  <SuggestionDropdown
+                    suggestions={documentSuggestions.footerNotes}
+                    onSelect={(value) =>
+                      setValue("footerNotes", value, { shouldDirty: true })
+                    }
+                    label="Suggestions"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <TextareaNew
+                    id="footer-notes"
+                    className={`mt-2 ${errors?.footerNotes ? "border-red-500" : ""}`}
+                    {...register("footerNotes", {
+                      maxLength: {
+                        value: 2000,
+                        message:
+                          "Les notes de bas de page ne doivent pas dépasser 2000 caractères",
+                      },
+                    })}
+                    defaultValue={data.footerNotes || ""}
+                    placeholder="Notes qui apparaîtront en bas de la facture..."
+                    rows={3}
+                    disabled={!canEdit}
+                  />
+                  {errors?.footerNotes && (
+                    <p className="text-xs text-red-500">
+                      {errors.footerNotes.message}
                     </p>
                   )}
                 </div>

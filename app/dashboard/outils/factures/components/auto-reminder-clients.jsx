@@ -24,14 +24,20 @@ export default function AutoReminderClients() {
     return clients.filter(
       (client) =>
         client.name?.toLowerCase().includes(query) ||
-        client.email?.toLowerCase().includes(query)
+        client.email?.toLowerCase().includes(query),
     );
   }, [clients, searchQuery]);
 
-  const allClientsSelected = excludedClientIds.length === 0;
+  // excludedClientIds peut contenir des IDs de clients supprimés depuis :
+  // on compte uniquement sur les clients réellement présents dans la liste
+  const totalClientsCount = clients?.length || 0;
+  const activeClientsCount =
+    clients?.filter((c) => !excludedClientIds.includes(c.id)).length || 0;
+
+  const allClientsSelected =
+    totalClientsCount > 0 && activeClientsCount === totalClientsCount;
   const someClientsSelected =
-    excludedClientIds.length > 0 &&
-    excludedClientIds.length < (clients?.length || 0);
+    activeClientsCount > 0 && activeClientsCount < totalClientsCount;
 
   const toggleAllClients = () => {
     if (allClientsSelected) {
@@ -40,8 +46,6 @@ export default function AutoReminderClients() {
       setValue("excludedClientIds", []);
     }
   };
-
-  const activeClientsCount = (clients?.length || 0) - excludedClientIds.length;
 
   if (loading) {
     return (
@@ -59,7 +63,10 @@ export default function AutoReminderClients() {
           Sélectionnez les clients qui recevront les relances.
         </p>
         <span className="text-xs text-muted-foreground shrink-0 ml-3">
-          <span className="font-medium text-foreground">{activeClientsCount}</span> / {clients?.length || 0}
+          <span className="font-medium text-foreground">
+            {activeClientsCount}
+          </span>{" "}
+          / {totalClientsCount}
         </span>
       </div>
 
@@ -117,7 +124,7 @@ export default function AutoReminderClients() {
                     if (isExcluded) {
                       setValue(
                         "excludedClientIds",
-                        excludedClientIds.filter((id) => id !== client.id)
+                        excludedClientIds.filter((id) => id !== client.id),
                       );
                     } else {
                       setValue("excludedClientIds", [

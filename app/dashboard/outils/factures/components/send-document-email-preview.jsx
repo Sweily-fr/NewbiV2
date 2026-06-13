@@ -4,10 +4,22 @@ import { useMemo } from "react";
 import { Paperclip } from "lucide-react";
 
 const DOCUMENT_LABELS = {
-  invoice: { singular: "facture", title: "Votre facture", detailsTitle: "DE LA FACTURE" },
+  invoice: {
+    singular: "facture",
+    title: "Votre facture",
+    detailsTitle: "DE LA FACTURE",
+  },
   quote: { singular: "devis", title: "Votre devis", detailsTitle: "DU DEVIS" },
-  creditNote: { singular: "avoir", title: "Votre avoir", detailsTitle: "DE L'AVOIR" },
-  purchaseOrder: { singular: "bon de commande", title: "Votre bon de commande", detailsTitle: "DU BON DE COMMANDE" },
+  creditNote: {
+    singular: "avoir",
+    title: "Votre avoir",
+    detailsTitle: "DE L'AVOIR",
+  },
+  purchaseOrder: {
+    singular: "bon de commande",
+    title: "Votre bon de commande",
+    detailsTitle: "DU BON DE COMMANDE",
+  },
 };
 
 // Données de démonstration
@@ -67,7 +79,7 @@ function VariableHighlight({ parts }) {
       </code>
     ) : (
       <span key={index}>{part.content}</span>
-    )
+    ),
   );
 }
 
@@ -87,15 +99,26 @@ export default function SendDocumentEmailPreview({
 }) {
   const labels = DOCUMENT_LABELS[documentType] || DOCUMENT_LABELS.invoice;
 
-  const displayData = useMemo(() => ({
-    documentNumber: documentNumber || demoData.documentNumber,
-    clientName: clientName || demoData.clientName,
-    totalAmount: totalAmount || demoData.totalAmount,
-    issueDate: issueDate || demoData.issueDate,
-    dueDate: dueDate || null,
-    companyName: companyName || demoData.companyName,
-    invoiceNumber: invoiceNumber || demoData.invoiceNumber,
-  }), [documentNumber, clientName, totalAmount, companyName, issueDate, dueDate, invoiceNumber]);
+  const displayData = useMemo(
+    () => ({
+      documentNumber: documentNumber || demoData.documentNumber,
+      clientName: clientName || demoData.clientName,
+      totalAmount: totalAmount || demoData.totalAmount,
+      issueDate: issueDate || demoData.issueDate,
+      dueDate: dueDate || null,
+      companyName: companyName || demoData.companyName,
+      invoiceNumber: invoiceNumber || demoData.invoiceNumber,
+    }),
+    [
+      documentNumber,
+      clientName,
+      totalAmount,
+      companyName,
+      issueDate,
+      dueDate,
+      invoiceNumber,
+    ],
+  );
 
   const fullSender = useMemo(() => {
     if (senderName && senderEmail) {
@@ -109,8 +132,12 @@ export default function SendDocumentEmailPreview({
       {/* Email Meta Header */}
       <div className="px-5 py-4 space-y-2 text-sm border-b border-[#e6e7ea] dark:border-[#2E2E32]">
         <div className="flex gap-4">
-          <span className="text-muted-foreground w-20 text-xs shrink-0">De</span>
-          <span className="font-medium text-foreground text-xs break-all">{fullSender}</span>
+          <span className="text-muted-foreground w-20 text-xs shrink-0">
+            De
+          </span>
+          <span className="font-medium text-foreground text-xs break-all">
+            {fullSender}
+          </span>
         </div>
         <div className="flex gap-4">
           <span className="text-muted-foreground w-20 text-xs shrink-0">À</span>
@@ -127,10 +154,15 @@ export default function SendDocumentEmailPreview({
         </div>
         {formData?.ccEmails?.length > 0 && (
           <div className="flex gap-4">
-            <span className="text-muted-foreground w-20 text-xs shrink-0">Cc</span>
+            <span className="text-muted-foreground w-20 text-xs shrink-0">
+              Cc
+            </span>
             <div className="flex flex-wrap gap-1">
               {formData.ccEmails.map((email) => (
-                <span key={email} className="text-xs text-foreground bg-[#5b50ff]/10 text-[#5b50ff] px-1.5 py-0.5 rounded-md font-medium">
+                <span
+                  key={email}
+                  className="text-xs text-foreground bg-[#5b50ff]/10 text-[#5b50ff] px-1.5 py-0.5 rounded-md font-medium"
+                >
                   {email}
                 </span>
               ))}
@@ -139,10 +171,15 @@ export default function SendDocumentEmailPreview({
         )}
         {formData?.bccEmails?.length > 0 && (
           <div className="flex gap-4">
-            <span className="text-muted-foreground w-20 text-xs shrink-0">Cci</span>
+            <span className="text-muted-foreground w-20 text-xs shrink-0">
+              Cci
+            </span>
             <div className="flex flex-wrap gap-1">
               {formData.bccEmails.map((email) => (
-                <span key={email} className="text-xs bg-orange-500/10 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded-md font-medium">
+                <span
+                  key={email}
+                  className="text-xs bg-orange-500/10 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded-md font-medium"
+                >
                   {email}
                 </span>
               ))}
@@ -150,13 +187,22 @@ export default function SendDocumentEmailPreview({
           </div>
         )}
         <div className="flex gap-4">
-          <span className="text-muted-foreground w-20 text-xs shrink-0">Objet</span>
+          <span className="text-muted-foreground w-20 text-xs shrink-0">
+            Objet
+          </span>
           <span className="font-medium text-foreground text-xs">
-            <VariableHighlight parts={highlightVariables(formData?.emailSubject || "", displayData)} />
+            <VariableHighlight
+              parts={highlightVariables(
+                formData?.emailSubject || "",
+                displayData,
+              )}
+            />
           </span>
         </div>
         <div className="flex gap-4">
-          <span className="text-muted-foreground w-20 text-xs shrink-0">Pièce jointe</span>
+          <span className="text-muted-foreground w-20 text-xs shrink-0">
+            Pièce jointe
+          </span>
           <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
             <Paperclip className="size-3" />
             {displayData.documentNumber}.pdf
@@ -174,7 +220,9 @@ export default function SendDocumentEmailPreview({
         <div className="mb-6">
           {formData?.emailBody ? (
             <div className="text-muted-foreground text-sm leading-6 whitespace-pre-wrap">
-              <VariableHighlight parts={highlightVariables(formData.emailBody, displayData)} />
+              <VariableHighlight
+                parts={highlightVariables(formData.emailBody, displayData)}
+              />
             </div>
           ) : (
             <p className="text-muted-foreground/50 text-sm italic">
@@ -190,29 +238,45 @@ export default function SendDocumentEmailPreview({
           </h2>
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Numéro</span>
-              <span className="font-medium text-foreground">{displayData.documentNumber}</span>
+              <span className="text-muted-foreground">
+                Numéro {labels.detailsTitle.toLowerCase()}
+              </span>
+              <span className="font-medium text-foreground">
+                {displayData.documentNumber}
+              </span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Montant total</span>
-              <span className="font-semibold text-foreground">{displayData.totalAmount}</span>
+              <span className="font-semibold text-foreground">
+                {displayData.totalAmount}
+              </span>
             </div>
             {displayData.issueDate && (
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Date</span>
-                <span className="font-medium text-foreground">{displayData.issueDate}</span>
+                <span className="text-muted-foreground">
+                  Date d&apos;émission
+                </span>
+                <span className="font-medium text-foreground">
+                  {displayData.issueDate}
+                </span>
               </div>
             )}
             {documentType === "invoice" && displayData.dueDate && (
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Date d&apos;échéance</span>
-                <span className="font-medium text-foreground">{displayData.dueDate}</span>
+                <span className="text-muted-foreground">
+                  Date d&apos;échéance
+                </span>
+                <span className="font-medium text-foreground">
+                  {displayData.dueDate}
+                </span>
               </div>
             )}
             {documentType === "creditNote" && displayData.invoiceNumber && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Facture associée</span>
-                <span className="font-medium text-foreground">{displayData.invoiceNumber}</span>
+                <span className="font-medium text-foreground">
+                  {displayData.invoiceNumber}
+                </span>
               </div>
             )}
           </div>
@@ -220,19 +284,43 @@ export default function SendDocumentEmailPreview({
 
         {/* Informations complémentaires */}
         <div className="text-sm text-muted-foreground space-y-3">
-          <p>{documentType === "invoice" ? "La" : documentType === "creditNote" ? "L'" : "Le"} {labels.singular} est {documentType === "invoice" ? "jointe" : "joint"} à cet email au format PDF.</p>
+          <p>
+            {documentType === "invoice"
+              ? "La"
+              : documentType === "creditNote"
+                ? "L'"
+                : "Le"}{" "}
+            {labels.singular} est{" "}
+            {documentType === "invoice" ? "jointe" : "joint"} à cet email au
+            format PDF.
+          </p>
         </div>
       </div>
 
       {/* Footer */}
       <div className="px-6 py-3 text-center border-t border-[#e6e7ea] dark:border-[#2E2E32]">
         <p className="text-[11px] text-muted-foreground/60">
-          {formData?.useCustomFooter && formData?.customEmailFooter
-            ? <VariableHighlight parts={highlightVariables(formData.customEmailFooter, displayData)} />
-            : <>
-                {documentType === "invoice" ? "Cette facture" : documentType === "quote" ? "Ce devis" : documentType === "purchaseOrder" ? "Ce bon de commande" : "Cet avoir"} a été envoyé{documentType === "invoice" ? "e" : ""} par {displayData.companyName} depuis la plateforme Newbi Logiciel de gestion.
-              </>
-          }
+          {formData?.useCustomFooter && formData?.customEmailFooter ? (
+            <VariableHighlight
+              parts={highlightVariables(
+                formData.customEmailFooter,
+                displayData,
+              )}
+            />
+          ) : (
+            <>
+              {documentType === "invoice"
+                ? "Cette facture"
+                : documentType === "quote"
+                  ? "Ce devis"
+                  : documentType === "purchaseOrder"
+                    ? "Ce bon de commande"
+                    : "Cet avoir"}{" "}
+              a été envoyé{documentType === "invoice" ? "e" : ""} par{" "}
+              {displayData.companyName} depuis la plateforme Newbi Logiciel de
+              gestion.
+            </>
+          )}
         </p>
       </div>
     </div>

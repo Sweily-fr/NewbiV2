@@ -205,9 +205,8 @@ function ClientsContent() {
   // Contacts sélectionnés liés à des documents (non supprimables)
   const selectedBlockedCount = useMemo(
     () =>
-      Array.from(selectedClients).filter(
-        (id) => clientsById[id]?.hasDocuments,
-      ).length,
+      Array.from(selectedClients).filter((id) => clientsById[id]?.hasDocuments)
+        .length,
     [selectedClients, clientsById],
   );
 
@@ -381,35 +380,37 @@ function ClientsContent() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  {lists && lists.length > 0 ? (
-                    lists.map((list) => (
-                      <DropdownMenuItem
-                        key={list.id}
-                        onClick={() => handleAddToList(list.id)}
-                        disabled={assigningList}
-                        className="cursor-pointer"
-                      >
-                        <div className="flex items-center gap-2 w-full">
-                          <div
-                            className="w-3 h-3 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: list.color }}
-                          />
-                          <span>{list.name}</span>
-                        </div>
-                      </DropdownMenuItem>
-                    ))
-                  ) : (
-                    <DropdownMenuItem
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        setCreateListDialogOpen(true);
-                      }}
-                      className="cursor-pointer gap-2"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Créer une liste</span>
-                    </DropdownMenuItem>
+                  {lists && lists.length > 0 && (
+                    <>
+                      {lists.map((list) => (
+                        <DropdownMenuItem
+                          key={list.id}
+                          onClick={() => handleAddToList(list.id)}
+                          disabled={assigningList}
+                          className="cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2 w-full">
+                            <div
+                              className="w-3 h-3 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: list.color }}
+                            />
+                            <span>{list.name}</span>
+                          </div>
+                        </DropdownMenuItem>
+                      ))}
+                      <DropdownMenuSeparator />
+                    </>
                   )}
+                  <DropdownMenuItem
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      setCreateListDialogOpen(true);
+                    }}
+                    className="cursor-pointer gap-2"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Créer une liste</span>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 

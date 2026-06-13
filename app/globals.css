@@ -632,6 +632,33 @@
 .colorblind-mode .bg-rose-800 { background-color: var(--cb-danger-800) !important; }
 .colorblind-mode .bg-rose-900 { background-color: var(--cb-danger-900) !important; }
 
+/* --- Fonds avec opacité (ex. bg-green-500/10) ----------------------------
+   Les sélecteurs ci-dessus ne matchent pas les variantes Tailwind avec
+   opacité : la classe générée est `bg-green-500/10`, pas `bg-green-500`.
+   On cible les classes exactes (slash échappé) pour ne pas toucher les
+   variantes hover:/dark:. */
+.colorblind-mode .bg-green-500\/5  { background-color: color-mix(in srgb, var(--cb-success-500) 5%, transparent)  !important; }
+.colorblind-mode .bg-green-500\/8  { background-color: color-mix(in srgb, var(--cb-success-500) 8%, transparent)  !important; }
+.colorblind-mode .bg-green-500\/10 { background-color: color-mix(in srgb, var(--cb-success-500) 10%, transparent) !important; }
+.colorblind-mode .bg-green-50\/50  { background-color: color-mix(in srgb, var(--cb-success-50) 50%, transparent)  !important; }
+.colorblind-mode .bg-green-100\/10 { background-color: color-mix(in srgb, var(--cb-success-100) 10%, transparent) !important; }
+.colorblind-mode .bg-emerald-50\/50 { background-color: color-mix(in srgb, var(--cb-success-50) 50%, transparent) !important; }
+
+.colorblind-mode .bg-red-500\/5  { background-color: color-mix(in srgb, var(--cb-danger-500) 5%, transparent)  !important; }
+.colorblind-mode .bg-red-500\/10 { background-color: color-mix(in srgb, var(--cb-danger-500) 10%, transparent) !important; }
+.colorblind-mode .bg-red-500\/15 { background-color: color-mix(in srgb, var(--cb-danger-500) 15%, transparent) !important; }
+.colorblind-mode .bg-red-500\/20 { background-color: color-mix(in srgb, var(--cb-danger-500) 20%, transparent) !important; }
+.colorblind-mode .bg-red-50\/50  { background-color: color-mix(in srgb, var(--cb-danger-50) 50%, transparent)  !important; }
+.colorblind-mode .bg-red-100\/10 { background-color: color-mix(in srgb, var(--cb-danger-100) 10%, transparent) !important; }
+.colorblind-mode .bg-red-100\/50 { background-color: color-mix(in srgb, var(--cb-danger-100) 50%, transparent) !important; }
+
+/* Boutons variant danger/destructive (ui/button.jsx) : hex arbitraires
+   bg-[#E5484D] / hover:bg-[#CD2B31] / active:bg-[#AA2429], hors de portée
+   des remaps bg-red-* ci-dessus. */
+.colorblind-mode .bg-\[\#E5484D\] { background-color: var(--cb-danger-500) !important; }
+.colorblind-mode .hover\:bg-\[\#CD2B31\]:hover { background-color: var(--cb-danger-600) !important; }
+.colorblind-mode .active\:bg-\[\#AA2429\]:active { background-color: var(--cb-danger-700) !important; }
+
 /* --- Bordures ------------------------------------------------------------ */
 .colorblind-mode [class*="border-green-50"],
 .colorblind-mode [class*="border-green-100"],
@@ -849,6 +876,16 @@
 .colorblind-mode svg [fill="#DC2626"] {
   stroke: #000000 !important;
   fill: #000000 !important;
+}
+
+/* --- Remises (aperçu factures / devis / bons de commande) ----------------
+   UniversalPreviewPDF colore les remises via des classes hors de portée
+   des remaps ci-dessus (arbitraire dark:text-[#FF0000], text-amber-*).
+   La classe pdf-remise est posée sur ces éléments dans le JSX.
+   Violet marque plutôt que le noir "négatif" : plus lisible sur le
+   document blanc et cohérent avec la couleur signature du mode. */
+.colorblind-mode .pdf-remise {
+  color: var(--cb-success-600) !important;
 }
 
 /* --- Pastilles d'aperçu du toggle Mode daltonien ------------------------

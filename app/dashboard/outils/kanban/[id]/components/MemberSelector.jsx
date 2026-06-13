@@ -15,7 +15,7 @@ import { useAssignedMembersInfo } from '@/src/hooks/useAssignedMembersInfo';
 /**
  * Composant pour sélectionner les membres assignés à une tâche
  */
-export function MemberSelector({ workspaceId, selectedMembers = [], onMembersChange }) {
+export function MemberSelector({ workspaceId, selectedMembers = [], onMembersChange, hideLabel = false }) {
   const [open, setOpen] = useState(false);
   const [members, setMembers] = useState([]);
   
@@ -80,8 +80,8 @@ export function MemberSelector({ workspaceId, selectedMembers = [], onMembersCha
 
   return (
     <div className="space-y-2">
-      <Label className="text-sm font-medium">Membres</Label>
-      
+      {!hideLabel && <Label className="text-sm font-medium">Membres</Label>}
+
       {selectedMembers.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {selectedMembersInfo.map((member) => {

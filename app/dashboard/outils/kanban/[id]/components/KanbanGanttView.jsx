@@ -3,12 +3,14 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
+  Download,
   Flag,
   Users,
   Clock,
   MoreHorizontal,
   AlignLeft,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { UserAvatar } from "@/src/components/ui/user-avatar";
@@ -83,6 +85,12 @@ import {
   startOfDay,
   isWithinInterval,
   getWeek,
+  startOfMonth,
+  endOfMonth,
+  addMonths,
+  startOfYear,
+  endOfYear,
+  addYears,
 } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -98,11 +106,12 @@ export function KanbanGanttView({
   members = [],
   updateTask,
   workspaceId,
+  boardTitle,
 }) {
   const [currentWeekStart, setCurrentWeekStart] = useState(() =>
     startOfWeek(new Date(), { weekStartsOn: 1 }),
   );
-  const [viewMode, setViewMode] = useState("week"); // week, month, quarter
+  const [viewMode, setViewMode] = useState("week"); // week, month, quarter, year
   const [hoveredTaskId, setHoveredTaskId] = useState(null);
   const [resizingTask, setResizingTask] = useState(null); // { taskId, side: 'left' | 'right', startX, originalDates }
   const [tempTaskDates, setTempTaskDates] = useState({}); // Pour maintenir les dates temporaires pendant la mise à jour
@@ -190,14 +199,21 @@ export function KanbanGanttView({
       const weekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 1 });
       return eachDayOfInterval({ start: currentWeekStart, end: weekEnd });
     } else if (viewMode === "month") {
+      // Mois civil complet (aligné sur le mois, pas sur des tranches de 30 jours)
       return eachDayOfInterval({
-        start: currentWeekStart,
-        end: addDays(currentWeekStart, 29),
+        start: startOfMonth(currentWeekStart),
+        end: endOfMonth(currentWeekStart),
       });
-    } else {
+    } else if (viewMode === "quarter") {
       return eachDayOfInterval({
         start: currentWeekStart,
         end: addDays(currentWeekStart, 89),
+      });
+    } else {
+      // Année civile complète
+      return eachDayOfInterval({
+        start: startOfYear(currentWeekStart),
+        end: endOfYear(currentWeekStart),
       });
     }
   }, [currentWeekStart, viewMode]);
@@ -228,14 +244,38 @@ export function KanbanGanttView({
     return groups;
   }, [daysToDisplay]);
 
+  // Grouper les jours par mois pour l'en-tête en mode année
+  const monthGroups = useMemo(() => {
+    if (viewMode !== "year") return [];
+    const groups = [];
+    let currentGroup = null;
+
+    daysToDisplay.forEach((day) => {
+      const monthKey = format(day, "yyyy-MM");
+      if (!currentGroup || currentGroup.monthKey !== monthKey) {
+        currentGroup = {
+          monthKey,
+          monthStart: day,
+          days: [],
+        };
+        groups.push(currentGroup);
+      }
+      currentGroup.days.push(day);
+    });
+
+    return groups;
+  }, [daysToDisplay, viewMode]);
+
   // Navigation
   const goToPrevious = () => {
     if (viewMode === "week") {
       setCurrentWeekStart((prev) => addDays(prev, -7));
     } else if (viewMode === "month") {
-      setCurrentWeekStart((prev) => addDays(prev, -30));
+      setCurrentWeekStart((prev) => startOfMonth(addMonths(prev, -1)));
+    } else if (viewMode === "quarter") {
+      setCurrentWeekStart((prev) => addDays(prev, -91));
     } else {
-      setCurrentWeekStart((prev) => addDays(prev, -90));
+      setCurrentWeekStart((prev) => startOfYear(addYears(prev, -1)));
     }
   };
 
@@ -243,14 +283,40 @@ export function KanbanGanttView({
     if (viewMode === "week") {
       setCurrentWeekStart((prev) => addDays(prev, 7));
     } else if (viewMode === "month") {
-      setCurrentWeekStart((prev) => addDays(prev, 30));
+      setCurrentWeekStart((prev) => startOfMonth(addMonths(prev, 1)));
+    } else if (viewMode === "quarter") {
+      setCurrentWeekStart((prev) => addDays(prev, 91));
     } else {
-      setCurrentWeekStart((prev) => addDays(prev, 90));
+      setCurrentWeekStart((prev) => startOfYear(addYears(prev, 1)));
     }
   };
 
   const goToToday = () => {
     setCurrentWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  };
+
+  // Re-caler sur un lundi pour les modes basés sur la semaine (la navigation
+  // en mode mois/année peut laisser currentWeekStart en milieu de semaine)
+  const handleViewModeChange = (mode) => {
+    setViewMode(mode);
+    if (mode === "week" || mode === "quarter") {
+      setCurrentWeekStart((prev) => startOfWeek(prev, { weekStartsOn: 1 }));
+    }
+  };
+
+  // Export PDF de la période affichée (import dynamique pour ne pas charger jsPDF au montage)
+  const handleExportPDF = async () => {
+    try {
+      const { exportGanttPDF } = await import("@/src/utils/gantt-export");
+      exportGanttPDF({
+        boardTitle,
+        tasks: allTasks,
+        days: daysToDisplay,
+      });
+    } catch (error) {
+      console.error("Erreur lors de l'export PDF du Gantt:", error);
+      toast.error("Impossible de générer le PDF");
+    }
   };
 
   // Calculer la position et la largeur d'une barre de tâche
@@ -320,10 +386,18 @@ export function KanbanGanttView({
       daysToDisplay.length - startOffset,
     );
 
-    const dayWidth = viewMode === "week" ? 120 : viewMode === "month" ? 40 : 30;
+    const dayWidth =
+      viewMode === "week"
+        ? 120
+        : viewMode === "month"
+          ? 40
+          : viewMode === "quarter"
+            ? 30
+            : 10;
 
     // Ajouter une marge à gauche et à droite pour toutes les barres
-    const horizontalMargin = 12;
+    // (réduite en mode année pour garder visibles les tâches courtes)
+    const horizontalMargin = viewMode === "year" ? 2 : 12;
 
     return {
       left: `${startOffset * dayWidth + horizontalMargin}px`,
@@ -376,7 +450,14 @@ export function KanbanGanttView({
     return "";
   };
 
-  const dayWidth = viewMode === "week" ? 120 : viewMode === "month" ? 40 : 30;
+  const dayWidth =
+    viewMode === "week"
+      ? 120
+      : viewMode === "month"
+        ? 40
+        : viewMode === "quarter"
+          ? 30
+          : 10;
 
   // Handlers pour le redimensionnement
   const handleResizeStart = (e, task, side) => {
@@ -679,11 +760,12 @@ export function KanbanGanttView({
               format(currentWeekStart, "MMMM yyyy", { locale: fr })}
             {viewMode === "quarter" &&
               `Q${Math.floor(currentWeekStart.getMonth() / 3) + 1} ${currentWeekStart.getFullYear()}`}
+            {viewMode === "year" && currentWeekStart.getFullYear()}
           </div>
         </div>
 
         <div className="flex items-center gap-2 mr-2">
-          <Select value={viewMode} onValueChange={setViewMode}>
+          <Select value={viewMode} onValueChange={handleViewModeChange}>
             <SelectTrigger className="w-28 h-7 text-xs">
               <SelectValue />
             </SelectTrigger>
@@ -691,8 +773,18 @@ export function KanbanGanttView({
               <SelectItem value="week">Semaine</SelectItem>
               <SelectItem value="month">Mois</SelectItem>
               <SelectItem value="quarter">Trimestre</SelectItem>
+              <SelectItem value="year">Année</SelectItem>
             </SelectContent>
           </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportPDF}
+            className="h-7 px-3 text-xs gap-1.5"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Exporter PDF</span>
+          </Button>
         </div>
       </div>
 
@@ -717,52 +809,117 @@ export function KanbanGanttView({
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             <div style={{ minWidth: `${daysToDisplay.length * dayWidth}px` }}>
-              {/* Ligne des semaines */}
-              <div className="flex border-b border-border">
-                {weekGroups.map((week, weekIndex) => (
-                  <div
-                    key={weekIndex}
-                    className="border-r border-border px-3 h-9 bg-background flex items-center justify-between"
-                    style={{ width: `${week.days.length * dayWidth}px` }}
-                  >
-                    <div className="text-[10px] text-muted-foreground/80">
-                      {format(week.weekStart, "MMM d", { locale: fr })} -{" "}
-                      {format(week.weekEnd, "d", { locale: fr })}
-                    </div>
-                    <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                      S{week.weekNum}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Ligne des jours */}
-              <div className="flex">
-                {daysToDisplay.map((day, index) => {
-                  const isToday = isSameDay(day, new Date());
-                  const isWeekend = day.getDay() === 0 || day.getDay() === 6;
-                  return (
-                    <div
-                      key={index}
-                      className={cn(
-                        "border-r border-border flex-shrink-0 px-2 h-9 flex items-center justify-center text-center transition-colors",
-                        isToday && "bg-primary/5",
-                        isWeekend && "bg-muted/30",
-                      )}
-                      style={{ width: `${dayWidth}px` }}
-                    >
+              {viewMode === "year" ? (
+                <>
+                  {/* Ligne des mois */}
+                  <div className="flex border-b border-border">
+                    {monthGroups.map((month, monthIndex) => (
                       <div
-                        className={cn(
-                          "text-sm font-normal",
-                          isToday ? "text-primary" : "text-foreground",
-                        )}
+                        key={monthIndex}
+                        className="border-r border-border px-3 h-9 bg-background flex items-center"
+                        style={{ width: `${month.days.length * dayWidth}px` }}
                       >
-                        {format(day, "d", { locale: fr })}
+                        <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                          {format(month.monthStart, "MMMM", { locale: fr })}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    ))}
+                  </div>
+
+                  {/* Ligne des semaines */}
+                  <div className="flex">
+                    {weekGroups.map((week, weekIndex) => {
+                      const isCurrentWeek = isWithinInterval(new Date(), {
+                        start: week.weekStart,
+                        end: week.weekEnd,
+                      });
+                      return (
+                        <div
+                          key={weekIndex}
+                          className={cn(
+                            "border-r border-border flex-shrink-0 h-9 flex items-center justify-center text-center transition-colors",
+                            isCurrentWeek && "bg-primary/5",
+                          )}
+                          style={{ width: `${week.days.length * dayWidth}px` }}
+                        >
+                          <div
+                            className={cn(
+                              "text-[9px]",
+                              isCurrentWeek
+                                ? "text-primary font-semibold"
+                                : "text-muted-foreground/80",
+                            )}
+                          >
+                            S{week.weekNum}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Ligne des semaines */}
+                  <div className="flex border-b border-border">
+                    {weekGroups.map((week, weekIndex) => {
+                      // Semaine partielle en bord de période : cellule trop
+                      // étroite pour la plage de dates, n'afficher que le n°
+                      const isNarrow = week.days.length * dayWidth < 110;
+                      return (
+                        <div
+                          key={weekIndex}
+                          className={cn(
+                            "border-r border-border px-3 h-9 bg-background flex items-center overflow-hidden whitespace-nowrap",
+                            isNarrow
+                              ? "justify-center px-1"
+                              : "justify-between",
+                          )}
+                          style={{ width: `${week.days.length * dayWidth}px` }}
+                        >
+                          {!isNarrow && (
+                            <div className="text-[10px] text-muted-foreground/80">
+                              {format(week.weekStart, "MMM d", { locale: fr })}{" "}
+                              - {format(week.weekEnd, "d", { locale: fr })}
+                            </div>
+                          )}
+                          <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                            S{week.weekNum}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Ligne des jours */}
+                  <div className="flex">
+                    {daysToDisplay.map((day, index) => {
+                      const isToday = isSameDay(day, new Date());
+                      const isWeekend =
+                        day.getDay() === 0 || day.getDay() === 6;
+                      return (
+                        <div
+                          key={index}
+                          className={cn(
+                            "border-r border-border flex-shrink-0 px-2 h-9 flex items-center justify-center text-center transition-colors",
+                            isToday && "bg-primary/5",
+                            isWeekend && "bg-muted/30",
+                          )}
+                          style={{ width: `${dayWidth}px` }}
+                        >
+                          <div
+                            className={cn(
+                              "text-sm font-normal",
+                              isToday ? "text-primary" : "text-foreground",
+                            )}
+                          >
+                            {format(day, "d", { locale: fr })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -916,21 +1073,39 @@ export function KanbanGanttView({
                 className="absolute inset-0 top-0 flex pointer-events-none"
                 style={{ minHeight: `${Math.max(allTasks.length, 20) * 45}px` }}
               >
-                {daysToDisplay.map((day, index) => {
-                  const isToday = isSameDay(day, new Date());
-                  const isWeekend = day.getDay() === 0 || day.getDay() === 6;
-                  return (
-                    <div
-                      key={index}
-                      className={cn(
-                        "border-r border-dashed border-border flex-shrink-0 h-full",
-                        isWeekend && "bg-muted/10",
-                        isToday && "bg-primary/5 border-primary/20",
-                      )}
-                      style={{ width: `${dayWidth}px` }}
-                    />
-                  );
-                })}
+                {viewMode === "year"
+                  ? weekGroups.map((week, index) => {
+                      const isCurrentWeek = isWithinInterval(new Date(), {
+                        start: week.weekStart,
+                        end: week.weekEnd,
+                      });
+                      return (
+                        <div
+                          key={index}
+                          className={cn(
+                            "border-r border-dashed border-border flex-shrink-0 h-full",
+                            isCurrentWeek && "bg-primary/5 border-primary/20",
+                          )}
+                          style={{ width: `${week.days.length * dayWidth}px` }}
+                        />
+                      );
+                    })
+                  : daysToDisplay.map((day, index) => {
+                      const isToday = isSameDay(day, new Date());
+                      const isWeekend =
+                        day.getDay() === 0 || day.getDay() === 6;
+                      return (
+                        <div
+                          key={index}
+                          className={cn(
+                            "border-r border-dashed border-border flex-shrink-0 h-full",
+                            isWeekend && "bg-muted/10",
+                            isToday && "bg-primary/5 border-primary/20",
+                          )}
+                          style={{ width: `${dayWidth}px` }}
+                        />
+                      );
+                    })}
               </div>
 
               {/* Cercle qui suit le curseur - masqué sur mobile/tablette */}
@@ -998,6 +1173,13 @@ export function KanbanGanttView({
                         const barStyle = getTaskBarStyle(task);
                         // Pas de dates affichables → shell vide (alignement conservé)
                         if (!barStyle || !barStyle.visible) return null;
+                        // Adapter le contenu à la largeur réelle de la barre
+                        // (au zoom année, une tâche courte ne fait que quelques px)
+                        const barWidthPx = parseFloat(barStyle.width);
+                        const isSliver = barWidthPx < 24; // fine bande : poignées masquées, fond opaque
+                        // Contenu dans la barre si elle est assez large,
+                        // sinon avatar + titre en débord à droite de la barre
+                        const showInside = barWidthPx >= 80;
                         return (
                           <TooltipProvider>
                             <Tooltip>
@@ -1013,7 +1195,10 @@ export function KanbanGanttView({
                                   style={{
                                     left: barStyle.left,
                                     width: barStyle.width,
-                                    backgroundColor: `${task.column.color}20`,
+                                    // Fine bande : fond plus opaque pour rester visible
+                                    backgroundColor: isSliver
+                                      ? `${task.column.color}B3`
+                                      : `${task.column.color}20`,
                                     borderColor: `${task.column.color}60`,
                                   }}
                                   onClick={(e) => {
@@ -1035,7 +1220,7 @@ export function KanbanGanttView({
                                   }}
                                 >
                                   {/* Poignée de redimensionnement gauche */}
-                                  {task.startDate && (
+                                  {task.startDate && !isSliver && (
                                     <div
                                       className="absolute top-1 bottom-1 w-1 cursor-ew-resize opacity-0 group-hover:opacity-100 transition-opacity z-10 rounded-full"
                                       style={{
@@ -1049,7 +1234,7 @@ export function KanbanGanttView({
                                   )}
 
                                   {/* Poignée de redimensionnement droite */}
-                                  {task.dueDate && (
+                                  {task.dueDate && !isSliver && (
                                     <div
                                       className="absolute top-1 bottom-1 w-1 cursor-ew-resize opacity-0 group-hover:opacity-100 transition-opacity z-10 rounded-full"
                                       style={{
@@ -1062,59 +1247,94 @@ export function KanbanGanttView({
                                     />
                                   )}
 
-                                  <div className="px-2 py-0.5 flex items-center gap-1.5 h-full overflow-hidden relative z-0">
-                                    {task.assignedMembers &&
-                                      task.assignedMembers.length > 0 && (
-                                        <div className="flex -space-x-1 flex-shrink-0">
-                                          {task.assignedMembers
-                                            .slice(0, 1)
-                                            .map((memberId) => {
-                                              const memberInfo =
-                                                membersInfo.find(
-                                                  (m) => m.id === memberId,
+                                  {showInside ? (
+                                    <div className="px-2 py-0.5 flex items-center gap-1.5 h-full overflow-hidden relative z-0">
+                                      {task.assignedMembers &&
+                                        task.assignedMembers.length > 0 && (
+                                          <div className="flex -space-x-1 flex-shrink-0">
+                                            {task.assignedMembers
+                                              .slice(0, 1)
+                                              .map((memberId) => {
+                                                const memberInfo =
+                                                  membersInfo.find(
+                                                    (m) => m.id === memberId,
+                                                  );
+                                                return (
+                                                  <UserAvatar
+                                                    key={memberId}
+                                                    src={memberInfo?.image}
+                                                    name={
+                                                      memberInfo?.name ||
+                                                      memberId
+                                                    }
+                                                    size="xs"
+                                                    className="border border-background w-5 h-5"
+                                                  />
                                                 );
-                                              return (
-                                                <UserAvatar
-                                                  key={memberId}
-                                                  src={memberInfo?.image}
-                                                  name={
-                                                    memberInfo?.name || memberId
-                                                  }
-                                                  size="xs"
-                                                  className="border border-background w-5 h-5"
-                                                />
-                                              );
-                                            })}
-                                          {task.assignedMembers.length > 1 && (
-                                            <div className="w-5 h-5 rounded-full bg-muted border border-background flex items-center justify-center text-[8px] font-semibold text-muted-foreground">
-                                              +{task.assignedMembers.length - 1}
-                                            </div>
-                                          )}
-                                        </div>
-                                      )}
-                                    <span
-                                      className="text-[11px] font-semibold truncate"
-                                      style={{ color: task.column.color }}
-                                    >
-                                      {task.title}
-                                    </span>
-                                    {task.priority &&
-                                      task.priority.toLowerCase() !==
-                                        "none" && (
-                                        <Flag
-                                          className={cn(
-                                            "h-2.5 w-2.5 flex-shrink-0",
-                                            task.priority.toLowerCase() ===
-                                              "high"
-                                              ? "text-red-500 fill-red-500"
-                                              : task.priority.toLowerCase() ===
-                                                  "medium"
-                                                ? "text-yellow-500 fill-yellow-500"
-                                                : "text-green-500 fill-green-500",
-                                          )}
-                                        />
-                                      )}
-                                  </div>
+                                              })}
+                                            {task.assignedMembers.length >
+                                              1 && (
+                                              <div className="w-5 h-5 rounded-full bg-muted border border-background flex items-center justify-center text-[8px] font-semibold text-muted-foreground">
+                                                +
+                                                {task.assignedMembers.length -
+                                                  1}
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
+                                      <span
+                                        className="text-[11px] font-semibold truncate"
+                                        style={{ color: task.column.color }}
+                                      >
+                                        {task.title}
+                                      </span>
+                                      {task.priority &&
+                                        task.priority.toLowerCase() !==
+                                          "none" && (
+                                          <Flag
+                                            className={cn(
+                                              "h-2.5 w-2.5 flex-shrink-0",
+                                              task.priority.toLowerCase() ===
+                                                "high"
+                                                ? "text-red-500 fill-red-500"
+                                                : task.priority.toLowerCase() ===
+                                                    "medium"
+                                                  ? "text-yellow-500 fill-yellow-500"
+                                                  : "text-green-500 fill-green-500",
+                                            )}
+                                          />
+                                        )}
+                                    </div>
+                                  ) : (
+                                    /* Barre trop étroite : avatar + nom en débord à droite */
+                                    <div className="absolute left-full top-1/2 -translate-y-1/2 ml-1.5 flex items-center gap-1 whitespace-nowrap pointer-events-none">
+                                      {task.assignedMembers &&
+                                        task.assignedMembers.length > 0 &&
+                                        (() => {
+                                          const memberId =
+                                            task.assignedMembers[0];
+                                          const memberInfo = membersInfo.find(
+                                            (m) => m.id === memberId,
+                                          );
+                                          return (
+                                            <UserAvatar
+                                              src={memberInfo?.image}
+                                              name={
+                                                memberInfo?.name || memberId
+                                              }
+                                              size="xs"
+                                              className="border border-background w-4 h-4"
+                                            />
+                                          );
+                                        })()}
+                                      <span
+                                        className="text-[10px] font-medium max-w-[160px] truncate"
+                                        style={{ color: task.column.color }}
+                                      >
+                                        {task.title}
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent side="top" className="max-w-xs">

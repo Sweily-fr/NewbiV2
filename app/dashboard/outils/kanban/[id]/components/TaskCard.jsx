@@ -242,17 +242,17 @@ const CardTagPopover = memo(function CardTagPopover({
             {taskTags.map((tag) => (
               <span
                 key={tag.name}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium max-w-full"
                 style={{
                   backgroundColor: tag.bg,
                   color: tag.text,
                   border: `1px solid ${tag.border}`,
                 }}
               >
-                {tag.name}
+                <span className="min-w-0 wrap-anywhere">{tag.name}</span>
                 <button
                   onClick={() => removeTagFromTask(tag.name)}
-                  className="hover:opacity-70 cursor-pointer"
+                  className="hover:opacity-70 cursor-pointer shrink-0"
                 >
                   <X className="h-2.5 w-2.5" />
                 </button>
@@ -294,7 +294,7 @@ const CardTagPopover = memo(function CardTagPopover({
               className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer"
             >
               <span
-                className="px-2 py-0.5 rounded-md text-[11px] font-medium"
+                className="px-2 py-0.5 rounded-md text-[11px] font-medium min-w-0 max-w-full wrap-anywhere text-left"
                 style={{
                   backgroundColor: tag.bg,
                   color: tag.text,
@@ -310,9 +310,11 @@ const CardTagPopover = memo(function CardTagPopover({
               onClick={createAndAdd}
               className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer"
             >
-              <span className="text-xs text-muted-foreground">Créer</span>
+              <span className="text-xs text-muted-foreground shrink-0">
+                Créer
+              </span>
               <span
-                className="px-2 py-0.5 rounded-md text-[11px] font-medium"
+                className="px-2 py-0.5 rounded-md text-[11px] font-medium min-w-0 wrap-anywhere text-left"
                 style={{
                   backgroundColor: getNextColor().bg,
                   color: getNextColor().text,
@@ -321,7 +323,7 @@ const CardTagPopover = memo(function CardTagPopover({
               >
                 {search.trim()}
               </span>
-              <kbd className="ml-auto inline-flex items-center justify-center size-4 rounded bg-muted text-[9px] text-muted-foreground">
+              <kbd className="ml-auto inline-flex items-center justify-center size-4 rounded bg-muted text-[9px] text-muted-foreground shrink-0">
                 <CornerDownLeft className="size-2.5" />
               </kbd>
             </button>
@@ -737,10 +739,7 @@ const TaskCard = memo(
               </div>
 
               {/* Ligne 2: Timer + Avatar + Date d'échéance + Priorité */}
-              <div
-                className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap"
-                onClick={(e) => e.stopPropagation()}
-              >
+              <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                 {/* Timer Display */}
                 <TimerDisplay timeTracking={task.timeTracking} />
 

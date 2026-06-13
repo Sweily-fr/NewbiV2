@@ -93,7 +93,10 @@ export function CompanyInfoGuard({ children }) {
   const completedCount = allFields.filter((f) => f.completed).length;
   const totalCount = allFields.length;
 
-  if (isLoading) {
+  // Ne bloquer que le chargement initial : lors d'un refetch en arrière-plan
+  // (ex: mise à jour de l'organisation), garder la page montée pour ne pas
+  // perdre l'état local des enfants (panneau de paramètres, formulaires…)
+  if (isLoading && !organization) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <LoaderCircle className="h-8 w-8 animate-spin text-primary" />

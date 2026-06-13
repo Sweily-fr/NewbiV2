@@ -871,7 +871,20 @@ export default function TransferTable({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-900"
+                  className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-900 cursor-pointer"
+                  onClick={(e) => {
+                    // Ne pas ouvrir le drawer si on clique sur la checkbox ou les actions
+                    if (
+                      e.target.closest('[role="checkbox"]') ||
+                      e.target.closest("[data-actions-cell]") ||
+                      e.target.closest('button[role="combobox"]') ||
+                      e.target.closest('[role="menu"]') ||
+                      e.target.closest("button")
+                    ) {
+                      return;
+                    }
+                    openTransferDetail(row.original);
+                  }}
                 >
                   {row
                     .getVisibleCells()
