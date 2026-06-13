@@ -159,14 +159,11 @@ export default function PurchaseOrderExportButton({
         <DropdownMenuContent align="end" className="w-[220px]">
           <DropdownMenuLabel>Formats standards</DropdownMenuLabel>
           <DropdownMenuItem onClick={() => handleFormatSelect("csv")}>
-            <FileText className="mr-2 h-4 w-4" style={{ color: "#22C55E" }} />
+            <FileText className="mr-2 h-4 w-4 text-green-500" />
             CSV
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleFormatSelect("excel")}>
-            <FileSpreadsheet
-              className="mr-2 h-4 w-4"
-              style={{ color: "#16A34A" }}
-            />
+            <FileSpreadsheet className="mr-2 h-4 w-4 text-green-600" />
             Excel
           </DropdownMenuItem>
 
