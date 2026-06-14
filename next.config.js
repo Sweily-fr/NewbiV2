@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Masque l'indicateur de mode dev de Next.js (le logo "N" en bas à gauche),
+  // visible dans les aperçus PDF chargés en WebView. Cosmétique, dev uniquement.
+  devIndicators: false,
   transpilePackages: ["@marsidev/react-turnstile", "apollo-upload-client"],
   compiler: {
     removeConsole:
