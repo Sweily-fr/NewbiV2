@@ -1531,11 +1531,15 @@ export default function DocumentsPartagesPage() {
   };
 
   // === Trash operations ===
-  const handleRestoreItems = async () => {
+  const handleRestoreItems = async (overrides) => {
+    // Les setState étant asynchrones, on accepte des IDs explicites pour la
+    // restauration depuis le menu "..." (sinon on lirait l'ancien state vide).
+    const documentIds = overrides?.documentIds ?? selectedTrashDocuments;
+    const folderIds = overrides?.folderIds ?? selectedTrashFolders;
     try {
       await restoreFromTrash({
-        documentIds: selectedTrashDocuments,
-        folderIds: selectedTrashFolders,
+        documentIds,
+        folderIds,
       });
       setSelectedTrashDocuments([]);
       setSelectedTrashFolders([]);
@@ -3201,7 +3205,10 @@ export default function DocumentsPartagesPage() {
                                   onClick={() => {
                                     setSelectedTrashFolders([folder.id]);
                                     setSelectedTrashDocuments([]);
-                                    handleRestoreItems();
+                                    handleRestoreItems({
+                                      folderIds: [folder.id],
+                                      documentIds: [],
+                                    });
                                   }}
                                 >
                                   <RotateCcw className="h-4 w-4 mr-2" />
@@ -3214,7 +3221,7 @@ export default function DocumentsPartagesPage() {
                                     setSelectedTrashDocuments([]);
                                     setShowPermanentDeleteModal(true);
                                   }}
-                                  className="text-destructive focus:text-destructive"
+                                  variant="destructive"
                                 >
                                   <Trash2 className="h-4 w-4 mr-2" />
                                   Supprimer définitivement
@@ -3280,7 +3287,10 @@ export default function DocumentsPartagesPage() {
                                       onClick={() => {
                                         setSelectedTrashDocuments([doc.id]);
                                         setSelectedTrashFolders([]);
-                                        handleRestoreItems();
+                                        handleRestoreItems({
+                                          documentIds: [doc.id],
+                                          folderIds: [],
+                                        });
                                       }}
                                     >
                                       <RotateCcw className="h-4 w-4 mr-2" />
@@ -3293,7 +3303,7 @@ export default function DocumentsPartagesPage() {
                                         setSelectedTrashFolders([]);
                                         setShowPermanentDeleteModal(true);
                                       }}
-                                      className="text-destructive focus:text-destructive"
+                                      variant="destructive"
                                     >
                                       <Trash2 className="h-4 w-4 mr-2" />
                                       Supprimer définitivement
@@ -3375,7 +3385,10 @@ export default function DocumentsPartagesPage() {
                               onClick={() => {
                                 setSelectedTrashDocuments([doc.id]);
                                 setSelectedTrashFolders([]);
-                                handleRestoreItems();
+                                handleRestoreItems({
+                                  documentIds: [doc.id],
+                                  folderIds: [],
+                                });
                               }}
                             >
                               <RotateCcw className="h-4 w-4 mr-2" />
@@ -3388,7 +3401,7 @@ export default function DocumentsPartagesPage() {
                                 setSelectedTrashFolders([]);
                                 setShowPermanentDeleteModal(true);
                               }}
-                              className="text-destructive focus:text-destructive"
+                              variant="destructive"
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
                               Supprimer définitivement
