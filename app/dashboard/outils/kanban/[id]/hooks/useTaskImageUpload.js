@@ -131,10 +131,12 @@ export function useTaskImageUpload(taskId, workspaceId, boardId) {
    */
   const validateFile = useCallback((file) => {
     const validTypes = [
+      // Images
       "image/jpeg",
       "image/png",
       "image/gif",
       "image/webp",
+      // Documents
       "application/pdf",
       "application/msword",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -142,21 +144,29 @@ export function useTaskImageUpload(taskId, workspaceId, boardId) {
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "text/plain",
       "text/csv",
+      // Vidéos
+      "video/mp4",
+      "video/webm",
+      "video/quicktime",
+      "video/x-msvideo",
+      "video/x-matroska",
     ];
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    const isVideo = file.type?.startsWith("video/");
+    // 100 Mo pour les vidéos, 10 Mo sinon
+    const maxSize = (isVideo ? 100 : 10) * 1024 * 1024;
 
     if (!validTypes.includes(file.type)) {
       return {
         valid: false,
         error:
-          "Type de fichier non supporté. Formats acceptés : images (JPEG, PNG, GIF, WebP), documents (PDF, Word, Excel, TXT, CSV).",
+          "Type de fichier non supporté. Formats acceptés : images (JPEG, PNG, GIF, WebP), vidéos (MP4, WebM, MOV, AVI, MKV), documents (PDF, Word, Excel, TXT, CSV).",
       };
     }
 
     if (file.size > maxSize) {
       return {
         valid: false,
-        error: "Fichier trop volumineux. Maximum 10MB.",
+        error: `Fichier trop volumineux. Maximum ${maxSize / (1024 * 1024)} Mo.`,
       };
     }
 
@@ -448,7 +458,7 @@ export function useTaskImageUpload(taskId, workspaceId, boardId) {
       const uploadedImages = [];
 
       for (const item of items) {
-        if (item.type.startsWith("image/")) {
+        if (item.type.startsWith("image/") || item.type.startsWith("video/")) {
           const file = item.getAsFile();
           if (file) {
             let result;
