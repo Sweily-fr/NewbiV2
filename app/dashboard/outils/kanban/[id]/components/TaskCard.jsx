@@ -23,6 +23,7 @@ import {
   Search,
   Check,
   Users,
+  Play,
 } from "lucide-react";
 import { TimerDisplay } from "./TimerDisplay";
 import { Button } from "@/src/components/ui/button";
@@ -65,6 +66,18 @@ import { BoardMembersLookupContext } from "@/src/hooks/useAssignedMembersInfo";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { usePrefetchTaskDetails } from "../hooks/usePrefetchTaskDetails";
 import { perfMark, perfReset } from "@/src/utils/kanbanPerf";
+
+// Choisit la pièce jointe à afficher en couverture de carte :
+// une image en priorité, sinon la première vidéo.
+function getCoverAttachment(images = []) {
+  const image = images.find((a) =>
+    (a.contentType || "image/").startsWith("image/"),
+  );
+  if (image) return { attachment: image, isVideo: false };
+  const video = images.find((a) => (a.contentType || "").startsWith("video/"));
+  if (video) return { attachment: video, isVideo: true };
+  return { attachment: null, isVideo: false };
+}
 
 function DescriptionPopover({ description }) {
   return (
@@ -391,6 +404,9 @@ const TaskCard = memo(
     const titleInputRef = useRef(null);
     const interactionLockRef = useRef(false);
 
+    // Pièce jointe de couverture (image en priorité, sinon vidéo)
+    const cover = useMemo(() => getCoverAttachment(task.images), [task.images]);
+
     // Récupérer les infos des membres assignés DIRECTEMENT depuis le context
     // (pas via useAssignedMembersInfo qui appelle useQuery — même skipé, 300
     // useQuery par TaskCard s'abonnent au cache Apollo et causent des
@@ -533,25 +549,44 @@ const TaskCard = memo(
             isDragging ? "opacity-50" : "opacity-100"
           }`}
         >
-          {/* Image de couverture - première image épinglée */}
-          {task.images && task.images.length > 0 && (
+          {/* Couverture - première image épinglée, sinon première vidéo */}
+          {cover.attachment && (
             <div
-              className="relative w-full h-32 overflow-hidden group/cover cursor-pointer"
+              className="relative w-full h-32 overflow-hidden group/cover cursor-pointer bg-black"
               onClick={(e) => {
                 e.stopPropagation();
                 setShowImagePreview(true);
               }}
             >
-              <img
-                src={task.images[0].url}
-                alt={task.images[0].fileName || "Image de la tâche"}
-                className="w-full h-full object-cover select-none"
-                loading="lazy"
-                draggable="false"
-              />
-              <div className="absolute inset-0 bg-black/0 group-hover/cover:bg-black/20 transition-colors flex items-center justify-center">
-                <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover/cover:opacity-100 transition-opacity drop-shadow-md" />
-              </div>
+              {cover.isVideo ? (
+                <>
+                  <video
+                    src={cover.attachment.url}
+                    className="w-full h-full object-cover select-none"
+                    muted
+                    playsInline
+                    preload="metadata"
+                  />
+                  <div className="absolute inset-0 bg-black/20 group-hover/cover:bg-black/30 transition-colors flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">
+                      <Play className="h-5 w-5 text-black fill-black ml-0.5" />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <img
+                    src={cover.attachment.url}
+                    alt={cover.attachment.fileName || "Image de la tâche"}
+                    className="w-full h-full object-cover select-none"
+                    loading="lazy"
+                    draggable="false"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover/cover:bg-black/20 transition-colors flex items-center justify-center">
+                    <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover/cover:opacity-100 transition-opacity drop-shadow-md" />
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -1060,13 +1095,22 @@ const TaskCard = memo(
             className="max-w-[90vw] max-h-[90vh] p-2 sm:p-4"
             onClick={(e) => e.stopPropagation()}
           >
-            {task.images && task.images.length > 0 && (
-              <img
-                src={task.images[0].url}
-                alt={task.images[0].fileName || "Image de la tâche"}
-                className="w-full h-full max-h-[85vh] object-contain rounded-md"
-              />
-            )}
+            {cover.attachment &&
+              (cover.isVideo ? (
+                <video
+                  src={cover.attachment.url}
+                  className="w-full h-full max-h-[85vh] rounded-md"
+                  controls
+                  autoPlay
+                  playsInline
+                />
+              ) : (
+                <img
+                  src={cover.attachment.url}
+                  alt={cover.attachment.fileName || "Image de la tâche"}
+                  className="w-full h-full max-h-[85vh] object-contain rounded-md"
+                />
+              ))}
           </DialogContent>
         </Dialog>
 

@@ -13,6 +13,7 @@ import {
   Check,
   Square,
   Plus,
+  Play,
 } from "lucide-react";
 import {
   MentionCommentInput,
@@ -74,6 +75,73 @@ function resolveTagColors(tag) {
   return { ...tag, bg: c.bg, text: c.text, border: c.border };
 }
 
+function isVideoAttachment(attachment) {
+  return (attachment?.contentType || "").startsWith("video/");
+}
+
+// Affiche une pièce jointe de commentaire (image ou vidéo) avec aperçu plein écran
+function CommentAttachment({ attachment }) {
+  const isVideo = isVideoAttachment(attachment);
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <div className="relative cursor-pointer group overflow-hidden rounded-md border border-border hover:border-primary/50 transition-colors bg-black">
+          {isVideo ? (
+            <>
+              <video
+                src={attachment.url}
+                className="w-full h-20 object-cover"
+                muted
+                playsInline
+                preload="metadata"
+              />
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                <div className="w-7 h-7 rounded-full bg-white/90 flex items-center justify-center">
+                  <Play className="h-3.5 w-3.5 text-black fill-black ml-0.5" />
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <img
+                src={attachment.url}
+                alt={attachment.fileName}
+                className="w-full h-20 object-cover"
+              />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                <ZoomIn className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+            </>
+          )}
+        </div>
+      </DialogTrigger>
+      <DialogContent className="max-w-4xl p-0 overflow-hidden bg-black">
+        <VisuallyHidden>
+          <DialogTitle>
+            {isVideo ? "Lecture de la vidéo" : "Aperçu de l'image"}
+          </DialogTitle>
+        </VisuallyHidden>
+        {isVideo ? (
+          <video
+            src={attachment.url}
+            className="w-full h-auto max-h-[80vh]"
+            controls
+            autoPlay
+            playsInline
+          />
+        ) : (
+          <img
+            src={attachment.url}
+            alt={attachment.fileName}
+            className="w-full h-auto max-h-[80vh] object-contain"
+          />
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 const TaskActivityComponent = ({
   task: initialTask,
   workspaceId,
@@ -111,8 +179,9 @@ const TaskActivityComponent = ({
     e.stopPropagation();
     setIsDragOver(false);
 
-    const files = Array.from(e.dataTransfer.files).filter((file) =>
-      file.type.startsWith("image/"),
+    const files = Array.from(e.dataTransfer.files).filter(
+      (file) =>
+        file.type.startsWith("image/") || file.type.startsWith("video/"),
     );
 
     if (files.length > 0) {
@@ -130,7 +199,10 @@ const TaskActivityComponent = ({
 
     const imageFiles = [];
     for (const item of items) {
-      if (item.type.startsWith("image/")) {
+      if (
+        item.type.startsWith("image/") ||
+        item.type.startsWith("video/")
+      ) {
         const file = item.getAsFile();
         if (file) {
           imageFiles.push({
@@ -981,36 +1053,14 @@ const TaskActivityComponent = ({
                                   {item.content && (
                                     <CommentContent content={item.content} />
                                   )}
-                                  {/* Affichage des images du commentaire dans le fil "Tout" */}
+                                  {/* Affichage des pièces jointes du commentaire dans le fil "Tout" */}
                                   {item.images && item.images.length > 0 && (
                                     <div className="grid grid-cols-2 gap-2 mt-2">
                                       {item.images.map((image) => (
-                                        <Dialog key={image.id}>
-                                          <DialogTrigger asChild>
-                                            <div className="relative cursor-pointer group overflow-hidden rounded-md border border-border hover:border-primary/50 transition-colors">
-                                              <img
-                                                src={image.url}
-                                                alt={image.fileName}
-                                                className="w-full h-20 object-cover"
-                                              />
-                                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                                                <ZoomIn className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                                              </div>
-                                            </div>
-                                          </DialogTrigger>
-                                          <DialogContent className="max-w-4xl p-0 overflow-hidden">
-                                            <VisuallyHidden>
-                                              <DialogTitle>
-                                                Aperçu de l'image
-                                              </DialogTitle>
-                                            </VisuallyHidden>
-                                            <img
-                                              src={image.url}
-                                              alt={image.fileName}
-                                              className="w-full h-auto max-h-[80vh] object-contain"
-                                            />
-                                          </DialogContent>
-                                        </Dialog>
+                                        <CommentAttachment
+                                          key={image.id}
+                                          attachment={image}
+                                        />
                                       ))}
                                     </div>
                                   )}
@@ -1338,36 +1388,14 @@ const TaskActivityComponent = ({
                           {comment.content && (
                             <CommentContent content={comment.content} />
                           )}
-                          {/* Affichage des images du commentaire */}
+                          {/* Affichage des pièces jointes du commentaire */}
                           {comment.images && comment.images.length > 0 && (
                             <div className="grid grid-cols-2 gap-2 mt-2">
                               {comment.images.map((image) => (
-                                <Dialog key={image.id}>
-                                  <DialogTrigger asChild>
-                                    <div className="relative cursor-pointer group overflow-hidden rounded-md border border-border hover:border-primary/50 transition-colors">
-                                      <img
-                                        src={image.url}
-                                        alt={image.fileName}
-                                        className="w-full h-20 object-cover"
-                                      />
-                                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                                        <ZoomIn className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                                      </div>
-                                    </div>
-                                  </DialogTrigger>
-                                  <DialogContent className="max-w-4xl p-0 overflow-hidden">
-                                    <VisuallyHidden>
-                                      <DialogTitle>
-                                        Aperçu de l'image
-                                      </DialogTitle>
-                                    </VisuallyHidden>
-                                    <img
-                                      src={image.url}
-                                      alt={image.fileName}
-                                      className="w-full h-auto max-h-[80vh] object-contain"
-                                    />
-                                  </DialogContent>
-                                </Dialog>
+                                <CommentAttachment
+                                  key={image.id}
+                                  attachment={image}
+                                />
                               ))}
                             </div>
                           )}
@@ -1628,7 +1656,7 @@ const TaskActivityComponent = ({
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/jpeg,image/png,image/gif,image/webp"
+              accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska"
               multiple
               onChange={(e) => {
                 const files = Array.from(e.target.files || []);
@@ -1646,11 +1674,26 @@ const TaskActivityComponent = ({
               <div className="flex flex-wrap gap-2 pb-2">
                 {pendingImages.map((img, index) => (
                   <div key={index} className="relative group">
-                    <img
-                      src={img.preview}
-                      alt={img.file.name}
-                      className={`w-12 h-12 object-cover rounded-md border border-border ${isUploadingImage ? "opacity-50" : ""}`}
-                    />
+                    {img.file.type?.startsWith("video/") ? (
+                      <div className="relative w-12 h-12 rounded-md border border-border overflow-hidden bg-black">
+                        <video
+                          src={img.preview}
+                          className={`w-full h-full object-cover ${isUploadingImage ? "opacity-50" : ""}`}
+                          muted
+                          playsInline
+                          preload="metadata"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Play className="h-4 w-4 text-white fill-white drop-shadow" />
+                        </div>
+                      </div>
+                    ) : (
+                      <img
+                        src={img.preview}
+                        alt={img.file.name}
+                        className={`w-12 h-12 object-cover rounded-md border border-border ${isUploadingImage ? "opacity-50" : ""}`}
+                      />
+                    )}
                     {!isUploadingImage && (
                       <button
                         onClick={() => {
