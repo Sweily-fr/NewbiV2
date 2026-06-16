@@ -879,13 +879,14 @@
 }
 
 /* --- Remises (aperçu factures / devis / bons de commande) ----------------
-   UniversalPreviewPDF colore les remises via des classes hors de portée
-   des remaps ci-dessus (arbitraire dark:text-[#FF0000], text-amber-*).
-   La classe pdf-remise est posée sur ces éléments dans le JSX.
-   Violet marque plutôt que le noir "négatif" : plus lisible sur le
-   document blanc et cohérent avec la couleur signature du mode. */
+   Les remises doivent toujours s'afficher en noir, quel que soit le mode
+   (clair, sombre, daltonien). UniversalPreviewPDF colore ces éléments via
+   des classes Tailwind arbitraires (dark:text-[#FF0000], text-amber-*) et
+   le mode daltonien les repassait en vert. La classe pdf-remise, posée sur
+   ces éléments dans le JSX, neutralise ici toutes ces couleurs. */
+.pdf-remise,
 .colorblind-mode .pdf-remise {
-  color: var(--cb-success-600) !important;
+  color: #000000 !important;
 }
 
 /* --- Pastilles d'aperçu du toggle Mode daltonien ------------------------
