@@ -262,13 +262,20 @@ export default function QuoteSidebar({
     const remainingAmount = calculateRemainingAmount();
     const quoteRef = `${quote.prefix || ""}-${quote.number || ""}`;
 
+    const hasOtherInvoices = quote.linkedInvoices?.length > 0;
+
     let description;
     if (isDeposit) {
       description = `Acompte sur devis ${quoteRef}`;
     } else if (amount >= remainingAmount - 0.01) {
-      description = `Facture sur devis ${quoteRef}`;
+      description = hasOtherInvoices
+        ? `Facture de solde du devis ${quoteRef}`
+        : `Facture sur devis ${quoteRef}`;
     } else {
-      description = `Facture partielle sur devis ${quoteRef}`;
+      const percentage = quote.finalTotalTTC
+        ? Math.round((amount / quote.finalTotalTTC) * 10000) / 100
+        : 0;
+      description = `Facture partielle de ${String(percentage).replace(".", ",")}% du devis ${quoteRef}`;
     }
 
     let freshClient = quote.client;
@@ -787,19 +794,30 @@ export default function QuoteSidebar({
           {/* Completed Actions */}
           {quote.status === QUOTE_STATUS.COMPLETED && (
             <div className="space-y-3">
+              {/* Devis déjà facturé via un bon de commande : conversion directe impossible */}
+              {quote.hasPurchaseOrderInvoices && (
+                <p className="text-xs text-muted-foreground">
+                  Ce devis a déjà été facturé via un bon de commande. Il ne peut
+                  plus être converti directement en facture.
+                </p>
+              )}
+
               {/* Boutons de création de factures liées */}
               <div className="space-y-2">
                 {/* Afficher le popover seulement s'il y a moins de 2 factures liées */}
-                {(!quote.linkedInvoices || quote.linkedInvoices.length < 2) && (
-                  <CreateLinkedInvoicePopover
-                    quote={quote}
-                    onCreateLinkedInvoice={handleCreateLinkedInvoice}
-                    isLoading={isLoading}
-                  />
-                )}
+                {!quote.hasPurchaseOrderInvoices &&
+                  (!quote.linkedInvoices ||
+                    quote.linkedInvoices.length < 2) && (
+                    <CreateLinkedInvoicePopover
+                      quote={quote}
+                      onCreateLinkedInvoice={handleCreateLinkedInvoice}
+                      isLoading={isLoading}
+                    />
+                  )}
 
                 {/* Bouton pour créer la facture finale quand il y a exactement 2 factures liées */}
-                {quote.linkedInvoices &&
+                {!quote.hasPurchaseOrderInvoices &&
+                  quote.linkedInvoices &&
                   quote.linkedInvoices.length === 2 &&
                   (() => {
                     const totalInvoiced = quote.linkedInvoices.reduce(
@@ -832,18 +850,19 @@ export default function QuoteSidebar({
 
               <div className="flex flex-col gap-2">
                 {/* Bouton de conversion complète */}
-                {(!quote.linkedInvoices ||
-                  quote.linkedInvoices.length === 0) && (
-                  <Button
-                    variant="outline"
-                    onClick={handleConvertToInvoice}
-                    disabled={isLoading}
-                    className="w-full font-normal"
-                  >
-                    <FileCheck className="h-4 w-4 mr-2" />
-                    Conversion complète
-                  </Button>
-                )}
+                {!quote.hasPurchaseOrderInvoices &&
+                  (!quote.linkedInvoices ||
+                    quote.linkedInvoices.length === 0) && (
+                    <Button
+                      variant="outline"
+                      onClick={handleConvertToInvoice}
+                      disabled={isLoading}
+                      className="w-full font-normal"
+                    >
+                      <FileCheck className="h-4 w-4 mr-2" />
+                      Conversion complète
+                    </Button>
+                  )}
 
                 {/* Bouton de conversion en bon de commande */}
                 <Button
