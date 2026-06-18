@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { useApolloClient } from "@apollo/client";
 import { useForm, FormProvider } from "react-hook-form";
 import {
   Boxes,
@@ -73,6 +74,7 @@ export function SettingsModal({
   const { data: session } = useSession();
   const { isActive } = useSubscription();
   const { getUserRole, isOwner, isAdmin } = usePermissions();
+  const apolloClient = useApolloClient();
   const {
     organization,
     loading: orgLoading,
@@ -269,6 +271,22 @@ export function SettingsModal({
           // Forcer un refetch pour s'assurer que les données sont bien en BDD
           if (refetchOrg) {
             await refetchOrg();
+          }
+          // L'exercice comptable borne l'encaissement/décaissement et les
+          // analytics → invalider ces caches pour un rafraîchissement immédiat
+          // du dashboard sans rechargement de page.
+          try {
+            [
+              "dashboardSummary",
+              "transactions",
+              "financialAnalytics",
+              "treasuryForecast",
+            ].forEach((fieldName) =>
+              apolloClient.cache.evict({ id: "ROOT_QUERY", fieldName }),
+            );
+            apolloClient.cache.gc();
+          } catch (e) {
+            console.error("Erreur invalidation cache (exercice):", e);
           }
           // Réinitialiser les defaultValues du form avec les valeurs sauvegardées
           // pour que isDirty reparte à false (sinon un retour à la valeur précédente
