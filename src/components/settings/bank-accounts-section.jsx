@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import { useApolloClient } from "@apollo/client";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { Button } from "@/src/components/ui/button";
 import { Separator } from "@/src/components/ui/separator";
@@ -79,6 +80,29 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
 
+  const apolloClient = useApolloClient();
+
+  // Invalide les caches Apollo dépendant des données bancaires pour que tout
+  // (dashboard : solde, encaissement/décaissement, transactions, réconciliation)
+  // se mette à jour en temps réel après une suppression, sans recharger la page.
+  const invalidateBankingCaches = () => {
+    try {
+      [
+        "bankingAccounts",
+        "dashboardSummary",
+        "transactions",
+        "reconciliationSuggestions",
+        "invoiceBalances",
+        "purchaseInvoiceStats",
+      ].forEach((fieldName) =>
+        apolloClient.cache.evict({ id: "ROOT_QUERY", fieldName }),
+      );
+      apolloClient.cache.gc();
+    } catch (e) {
+      console.error("Erreur invalidation cache Apollo:", e);
+    }
+  };
+
   // États pour les comptes bancaires
   const [accounts, setAccounts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -98,6 +122,9 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
 
   // État pour la déconnexion (stocke l'ID du compte en cours de déconnexion)
   const [disconnectingAccountId, setDisconnectingAccountId] = useState(null);
+
+  // État pour la suppression de tous les comptes
+  const [isDisconnectingAll, setIsDisconnectingAll] = useState(false);
 
   // État pour la vérification email
   const [isEmailVerified, setIsEmailVerified] = useState(true);
@@ -367,6 +394,9 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
           setIsConnected(false);
         }
 
+        // Mise à jour temps réel du reste de l'app (dashboard, etc.)
+        invalidateBankingCaches();
+
         // Afficher le message de succès
         toast.success(
           disconnectedCount > 1
@@ -382,6 +412,43 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
       console.error("Erreur déconnexion:", err);
     } finally {
       setDisconnectingAccountId(null);
+    }
+  };
+
+  // Déconnecter / supprimer TOUS les comptes bancaires (tous providers)
+  const handleDisconnectAll = async () => {
+    if (!workspaceId) {
+      toast.error("Workspace non défini");
+      return;
+    }
+
+    try {
+      setIsDisconnectingAll(true);
+      // Body vide => le backend déclenche la déconnexion globale (tous providers)
+      const response = await fetch("/api/banking-connect/disconnect", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-workspace-id": workspaceId,
+        },
+        body: JSON.stringify({}),
+      });
+
+      if (response.ok) {
+        setAccounts([]);
+        setIsConnected(false);
+        // Mise à jour temps réel du reste de l'app (dashboard, etc.)
+        invalidateBankingCaches();
+        toast.success("Tous les comptes bancaires ont été supprimés");
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        toast.error(errorData.error || "Erreur lors de la suppression");
+      }
+    } catch (err) {
+      toast.error("Erreur lors de la suppression");
+      console.error("Erreur suppression globale:", err);
+    } finally {
+      setIsDisconnectingAll(false);
     }
   };
 
@@ -509,6 +576,48 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
                   />
                   Synchroniser
                 </Button>
+                {canManageOrgSettings && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={isReadOnly || isLoading || isDisconnectingAll}
+                        title={readOnlyTooltip}
+                        className="text-xs text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 h-7 px-2 cursor-pointer"
+                      >
+                        {isDisconnectingAll ? (
+                          <LoaderCircle className="h-3 w-3 mr-1 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3 w-3 mr-1" />
+                        )}
+                        Tout supprimer
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Supprimer tous les comptes bancaires ?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Toutes vos connexions bancaires seront déconnectées et
+                          les comptes retirés de Newbi. Cette action est
+                          irréversible — vous devrez reconnecter vos banques pour
+                          resynchroniser vos transactions.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleDisconnectAll}
+                          className="bg-red-500 hover:bg-red-600 text-white"
+                        >
+                          Tout supprimer
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
                 {canAddBankAccount ? (
                   <Button
                     variant="ghost"
