@@ -3,7 +3,7 @@
  *
  * Couvre INVOICES_PAGE.md :
  *   - §30 createLinkedInvoice (conversion devis → facture)
- *   - §30.3 / §46.19 limite 3 factures liées par devis
+ *   - §30.3 / §46.19 factures liées illimitées, plafonnées au montant du devis
  *   - §21.1 acompte unique par devis
  *   - §31 factures de situation avec validation cumul ≤ contractTotal
  *   - §43.1 / §43.2 conflits DRAFT/DRAFT (rename silencieux du 1er)
@@ -25,8 +25,8 @@ import {
 
 // Crée un devis COMPLETED prêt à être converti via createLinkedInvoice.
 // On utilise un devis isolé (créé à la volée) plutôt que le seed
-// `quoteCompleted` partagé entre tests, pour éviter de saturer la limite
-// de 3 factures liées en cas de re-runs.
+// `quoteCompleted` partagé entre tests, pour éviter de saturer le reste
+// à facturer en cas de re-runs.
 async function createCompletedQuote(request, items, overrides = {}) {
   const { json: r1 } = await createQuoteMutation(request, {
     ...buildQuoteInput({ items, status: "PENDING", ...overrides }),
@@ -83,13 +83,13 @@ test.describe("[Factures] Workflows situations + conversion + conflits", () => {
     expect(invoice.client?.name).toBeTruthy();
   });
 
-  test("Test 2 — §46.19 limite 3 factures liées par devis", async ({
+  test("Test 2 — §46.19 factures liées illimitées, plafonnées au reste à facturer", async ({
     authenticatedPage: page,
   }) => {
     // Devis 1200€ TTC, divisible en 4 parts
     const quote = await createCompletedQuote(page.request, [
       buildItem({
-        description: "Devis pour test limite 3",
+        description: "Devis pour test factures liées illimitées",
         quantity: 1,
         unitPrice: 1000,
         vatRate: 20,
@@ -98,16 +98,17 @@ test.describe("[Factures] Workflows situations + conversion + conflits", () => {
     const total = Number(quote.finalTotalTTC || quote.totalTTC);
     expect(total).toBeCloseTo(1200, 2);
 
-    // §30.2 : la 3e (dernière) facture doit être exactement égale au reste.
     // FP critique : amount est interprété TTC, le resolver fait
-    //   unitPriceHT = amount / 1.20 (line 2765)
+    //   unitPriceHT = amount / 1.20
     // puis recalcule finalTotalTTC = unitPriceHT × 1.20. Pour éviter les
     // erreurs de précision flottante, on choisit des amounts MULTIPLES DE 6
     // (1.20 = 6/5, donc amount/1.20 est entier ssi amount est multiple de 6).
+    // 4 factures liées : l'ancienne limite de 3 a été supprimée.
     //   inv1 : 360€ (HT 300)
     //   inv2 : 360€ (HT 300)
-    //   inv3 : 480€ (HT 400) — exactement le reste 1200-720=480
-    const amounts = [360, 360, 480];
+    //   inv3 : 240€ (HT 200)
+    //   inv4 : 240€ (HT 200) — solde, cumul exactement 1200
+    const amounts = [360, 360, 240, 240];
 
     for (let i = 0; i < amounts.length; i++) {
       const { json } = await createLinkedInvoiceMutation(page.request, {
@@ -121,7 +122,7 @@ test.describe("[Factures] Workflows situations + conversion + conflits", () => {
       ).toBeFalsy();
     }
 
-    // 4e tentative → rejet "Limite de factures liées atteinte" (resolver:2696)
+    // 5e tentative alors que tout est facturé → rejet "reste à facturer" dépassé
     const { json: rejected } = await createLinkedInvoiceMutation(page.request, {
       quoteId: quote.id,
       amount: 100,
@@ -129,13 +130,11 @@ test.describe("[Factures] Workflows situations + conversion + conflits", () => {
     });
     expect(
       rejected.errors,
-      "La 4e facture liée doit être rejetée (limite 3, §46.19)",
+      "Une facture dépassant le reste à facturer doit être rejetée (§46.19)",
     ).toBeTruthy();
     expect(rejected.errors.length).toBeGreaterThan(0);
     const messages = rejected.errors.map((e) => e.message).join(" | ");
-    expect(messages.toLowerCase()).toMatch(
-      /3 facture|limite|maximum|plus de 3/i,
-    );
+    expect(messages.toLowerCase()).toMatch(/reste à facturer|dépasser/i);
   });
 
   test("Test 3 — §21.1 un seul acompte par devis", async ({
