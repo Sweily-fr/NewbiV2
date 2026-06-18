@@ -39,7 +39,7 @@ const formatMonthLabel = (monthStr) => {
     .toUpperCase();
 };
 
-function CustomTooltip({ active, payload, colors }) {
+function CustomTooltip({ active, payload, colors, invoicedColor, collectedColor }) {
   if (!active || !payload?.length) return null;
   const data = payload[0]?.payload;
   if (!data) return null;
@@ -55,7 +55,7 @@ function CustomTooltip({ active, payload, colors }) {
           <span className="flex items-center gap-2">
             <span
               className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: "#5b50ff" }}
+              style={{ backgroundColor: invoicedColor }}
             />
             Facture TTC
           </span>
@@ -65,7 +65,7 @@ function CustomTooltip({ active, payload, colors }) {
           <span className="flex items-center gap-2">
             <span
               className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: "#10b981" }}
+              style={{ backgroundColor: collectedColor }}
             />
             Encaissement bancaire
           </span>
@@ -83,10 +83,6 @@ function CustomTooltip({ active, payload, colors }) {
   );
 }
 
-// Couleurs fixes pour différencier clairement les barres, sans remap thématique
-const INVOICED_COLOR = "#5b50ff"; // violet — Facture TTC
-const COLLECTED_COLOR = "#10b981"; // vert — Encaissement bancaire
-
 export function AnalyticsBankFlowChart({
   monthlyRevenue,
   monthlyCollection,
@@ -94,12 +90,18 @@ export function AnalyticsBankFlowChart({
   loading,
 }) {
   const chartColors = useChartColors();
+  // Facture TTC reste le violet brand dans les deux modes.
+  // Encaissement bancaire = vert en standard, mais en daltonien on NE PEUT PAS
+  // simplement remapper le vert vers le bleu brand (il deviendrait identique à
+  // Facture TTC) : on bascule sur le noir pour garder deux barres distinctes.
+  const INVOICED_COLOR = "#5b50ff"; // violet — Facture TTC
+  const COLLECTED_COLOR = chartColors.colorblindMode ? "#000000" : "#10b981"; // vert / noir — Encaissement bancaire
   const chartConfig = useMemo(
     () => ({
       invoiced: { label: "Facture TTC", color: INVOICED_COLOR },
       collected: { label: "Encaissement bancaire", color: COLLECTED_COLOR },
     }),
-    [],
+    [INVOICED_COLOR, COLLECTED_COLOR],
   );
   const chartData = useMemo(() => {
     // Préférer monthlyCollection (qui inclut les factures importées par date d'émission)
@@ -219,7 +221,15 @@ export function AnalyticsBankFlowChart({
               axisLine={false}
               width={35}
             />
-            <Tooltip content={<CustomTooltip colors={chartColors} />} />
+            <Tooltip
+              content={
+                <CustomTooltip
+                  colors={chartColors}
+                  invoicedColor={INVOICED_COLOR}
+                  collectedColor={COLLECTED_COLOR}
+                />
+              }
+            />
             <Legend
               verticalAlign="top"
               height={36}
