@@ -169,13 +169,20 @@ export default function QuoteMobileFullscreen({
     const remainingAmount = calculateRemainingAmount();
     const quoteRef = `${quote.prefix || ""}-${quote.number || ""}`;
 
+    const hasOtherInvoices = quote.linkedInvoices?.length > 0;
+
     let description;
     if (isDeposit) {
       description = `Acompte sur devis ${quoteRef}`;
     } else if (amount >= remainingAmount - 0.01) {
-      description = `Facture sur devis ${quoteRef}`;
+      description = hasOtherInvoices
+        ? `Facture de solde du devis ${quoteRef}`
+        : `Facture sur devis ${quoteRef}`;
     } else {
-      description = `Facture partielle sur devis ${quoteRef}`;
+      const percentage = quote.finalTotalTTC
+        ? Math.round((amount / quote.finalTotalTTC) * 10000) / 100
+        : 0;
+      description = `Facture partielle de ${String(percentage).replace(".", ",")}% du devis ${quoteRef}`;
     }
 
     sessionStorage.setItem(
@@ -626,15 +633,25 @@ export default function QuoteMobileFullscreen({
 
             {quote.status === QUOTE_STATUS.COMPLETED && (
               <div className="space-y-1.5">
-                {(!quote.linkedInvoices || quote.linkedInvoices.length < 2) && (
-                  <CreateLinkedInvoicePopover
-                    quote={quote}
-                    onCreateLinkedInvoice={handleCreateLinkedInvoice}
-                    isLoading={isLoading}
-                  />
+                {quote.hasPurchaseOrderInvoices && (
+                  <p className="text-xs text-muted-foreground">
+                    Ce devis a déjà été facturé via un bon de commande. Il ne
+                    peut plus être converti directement en facture.
+                  </p>
                 )}
 
-                {quote.linkedInvoices &&
+                {!quote.hasPurchaseOrderInvoices &&
+                  (!quote.linkedInvoices ||
+                    quote.linkedInvoices.length < 2) && (
+                    <CreateLinkedInvoicePopover
+                      quote={quote}
+                      onCreateLinkedInvoice={handleCreateLinkedInvoice}
+                      isLoading={isLoading}
+                    />
+                  )}
+
+                {!quote.hasPurchaseOrderInvoices &&
+                  quote.linkedInvoices &&
                   quote.linkedInvoices.length === 2 &&
                   (() => {
                     const totalInvoiced = quote.linkedInvoices.reduce(
@@ -665,19 +682,20 @@ export default function QuoteMobileFullscreen({
                     );
                   })()}
 
-                {(!quote.linkedInvoices ||
-                  quote.linkedInvoices.length === 0) && (
-                  <Button
-                    variant="outline"
-                    onClick={handleConvertToInvoice}
-                    disabled={isLoading}
-                    size="sm"
-                    className="w-full font-normal"
-                  >
-                    <FileCheck className="mr-2 h-4 w-4" />
-                    Conversion complète
-                  </Button>
-                )}
+                {!quote.hasPurchaseOrderInvoices &&
+                  (!quote.linkedInvoices ||
+                    quote.linkedInvoices.length === 0) && (
+                    <Button
+                      variant="outline"
+                      onClick={handleConvertToInvoice}
+                      disabled={isLoading}
+                      size="sm"
+                      className="w-full font-normal"
+                    >
+                      <FileCheck className="mr-2 h-4 w-4" />
+                      Conversion complète
+                    </Button>
+                  )}
 
                 <Button
                   variant="outline"
