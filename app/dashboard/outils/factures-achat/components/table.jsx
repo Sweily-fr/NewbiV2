@@ -362,7 +362,7 @@ export default function PurchaseInvoiceTable({
   return (
     <>
       {/* Desktop View */}
-      <div className="hidden md:flex md:flex-col flex-1 min-h-0">
+      <div className="hidden md:flex md:flex-col flex-1 min-h-0 min-w-0">
         {/* Toolbar: Search + Bulk Actions */}
         <div className="flex items-center justify-between gap-3 hidden md:flex px-4 sm:px-6 py-4 flex-shrink-0">
           <div className="flex items-center gap-2">
@@ -648,96 +648,99 @@ export default function PurchaseInvoiceTable({
         {/* Table — normal tabs */}
         {activeTab !== "imported" && (
           <>
-            <div className="hidden md:flex md:flex-col flex-1 min-h-0 overflow-hidden">
-              {/* Header fixe */}
-              <div className="flex-shrink-0 border-b border-[#eeeff1] dark:border-[#232323]">
-                <table className="w-full table-fixed">
-                  <thead>
-                    {table.getHeaderGroups().map((headerGroup) => (
-                      <tr key={headerGroup.id}>
-                        {headerGroup.headers.map((header, index, arr) => (
-                          <th
-                            key={header.id}
-                            style={{ width: header.getSize() }}
-                            className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                          >
-                            {header.isPlaceholder
-                              ? null
-                              : flexRender(
-                                  header.column.columnDef.header,
-                                  header.getContext(),
-                                )}
-                          </th>
-                        ))}
-                      </tr>
-                    ))}
-                  </thead>
-                </table>
-              </div>
-              {/* Body scrollable */}
-              <div className="flex-1 overflow-auto flex flex-col">
-                {loading ? (
-                  <div className="p-0">
-                    {Array.from({ length: 8 }).map((_, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center border-b border-[#eeeff1] dark:border-[#232323] px-4 sm:px-6 py-3 gap-3"
-                      >
-                        <div className="h-4 w-4 rounded bg-muted animate-pulse" />
-                        <div className="h-7 w-7 rounded-full bg-muted animate-pulse flex-shrink-0" />
-                        <div className="h-4 w-[140px] rounded bg-muted animate-pulse" />
-                        <div className="h-4 w-[90px] rounded bg-muted animate-pulse" />
-                        <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
-                        <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
-                        <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
-                        <div className="h-7 w-7 rounded-full bg-muted animate-pulse flex-shrink-0" />
-                        <div className="h-5 w-[60px] rounded-full bg-muted animate-pulse" />
-                      </div>
-                    ))}
-                  </div>
-                ) : table.getRowModel().rows?.length ? (
+            <div className="hidden md:block flex-1 min-h-0 min-w-0 overflow-x-auto overflow-y-hidden">
+              {/* Largeur fixe partagée header + corps → scroll horizontal commun */}
+              <div className="h-full min-w-[1190px] flex flex-col">
+                {/* Header fixe */}
+                <div className="flex-shrink-0 border-b border-[#eeeff1] dark:border-[#232323]">
                   <table className="w-full table-fixed">
-                    <tbody>
-                      {table.getRowModel().rows.map((row) => (
-                        <tr
-                          key={row.id}
-                          data-state={row.getIsSelected() && "selected"}
-                          className="border-b border-[#eeeff1] dark:border-[#232323] hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
-                          onClick={(e) => {
-                            if (
-                              e.target.closest('[role="checkbox"]') ||
-                              e.target.closest("[data-no-row-click]") ||
-                              e.target.closest('[role="menu"]')
-                            ) {
-                              return;
-                            }
-                            handleRowClick(row.original);
-                          }}
-                        >
-                          {row.getVisibleCells().map((cell, index, arr) => (
-                            <td
-                              key={cell.id}
-                              style={{ width: cell.column.getSize() }}
-                              className={`p-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                    <thead>
+                      {table.getHeaderGroups().map((headerGroup) => (
+                        <tr key={headerGroup.id}>
+                          {headerGroup.headers.map((header, index, arr) => (
+                            <th
+                              key={header.id}
+                              style={{ width: header.getSize() }}
+                              className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
                             >
-                              {flexRender(
-                                cell.column.columnDef.cell,
-                                cell.getContext(),
-                              )}
-                            </td>
+                              {header.isPlaceholder
+                                ? null
+                                : flexRender(
+                                    header.column.columnDef.header,
+                                    header.getContext(),
+                                  )}
+                            </th>
                           ))}
                         </tr>
                       ))}
-                    </tbody>
+                    </thead>
                   </table>
-                ) : (
-                  <TableEmptyState
-                    icon={ShopIcon}
-                    title="Aucune facture d'achat"
-                    description="Importez vos factures fournisseurs ou créez-en une manuellement pour commencer."
-                    className="flex-1"
-                  />
-                )}
+                </div>
+                {/* Body scrollable */}
+                <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
+                  {loading ? (
+                    <div className="p-0">
+                      {Array.from({ length: 8 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center border-b border-[#eeeff1] dark:border-[#232323] px-4 sm:px-6 py-3 gap-3"
+                        >
+                          <div className="h-4 w-4 rounded bg-muted animate-pulse" />
+                          <div className="h-7 w-7 rounded-full bg-muted animate-pulse flex-shrink-0" />
+                          <div className="h-4 w-[140px] rounded bg-muted animate-pulse" />
+                          <div className="h-4 w-[90px] rounded bg-muted animate-pulse" />
+                          <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
+                          <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
+                          <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
+                          <div className="h-7 w-7 rounded-full bg-muted animate-pulse flex-shrink-0" />
+                          <div className="h-5 w-[60px] rounded-full bg-muted animate-pulse" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : table.getRowModel().rows?.length ? (
+                    <table className="w-full table-fixed">
+                      <tbody>
+                        {table.getRowModel().rows.map((row) => (
+                          <tr
+                            key={row.id}
+                            data-state={row.getIsSelected() && "selected"}
+                            className="border-b border-[#eeeff1] dark:border-[#232323] hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
+                            onClick={(e) => {
+                              if (
+                                e.target.closest('[role="checkbox"]') ||
+                                e.target.closest("[data-no-row-click]") ||
+                                e.target.closest('[role="menu"]')
+                              ) {
+                                return;
+                              }
+                              handleRowClick(row.original);
+                            }}
+                          >
+                            {row.getVisibleCells().map((cell, index, arr) => (
+                              <td
+                                key={cell.id}
+                                style={{ width: cell.column.getSize() }}
+                                className={`p-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                              >
+                                {flexRender(
+                                  cell.column.columnDef.cell,
+                                  cell.getContext(),
+                                )}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <TableEmptyState
+                      icon={ShopIcon}
+                      title="Aucune facture d'achat"
+                      description="Importez vos factures fournisseurs ou créez-en une manuellement pour commencer."
+                      className="flex-1"
+                    />
+                  )}
+                </div>
               </div>
             </div>
 
