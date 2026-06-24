@@ -54,7 +54,6 @@ import { AnalyticsAgingChart } from "./components/analytics-aging-chart";
 import { AnalyticsCollectionChart } from "./components/analytics-collection-chart";
 import { AnalyticsTreasuryForecastChart } from "./components/analytics-treasury-forecast-chart";
 import { AnalyticsBankFlowChart } from "./components/analytics-bank-flow-chart";
-import { AnalyticsPCGMapping } from "./components/analytics-pcg-mapping";
 import BankBalanceCard from "@/src/components/banking/BankBalanceCard";
 import RecentTransactionsCard from "@/src/components/banking/RecentTransactionsCard";
 import { TreasuryChart } from "@/src/components/treasury-chart";
@@ -259,13 +258,6 @@ const COMMERCIAL_KPI = [
     tooltip: "Clients actifs cette période mais pas sur N-1",
   },
   {
-    key: "retainedClientCount",
-    label: "Clients fidélisés",
-    format: formatNumber,
-    tooltip:
-      "Clients ayant facturé à la fois sur la période sélectionnée ET sur la période précédente de même durée (N-1).",
-  },
-  {
     key: "quoteConversionRate",
     label: "Conversion devis",
     format: formatPercent,
@@ -458,7 +450,6 @@ export default function AnalytiquesPage() {
                 )}
               </>
             )}
-            <TabsTrigger value="pcg">Plan Comptable</TabsTrigger>
           </TabsList>
 
           {/* ===== Tab 1 — SYNTHESE ===== */}
@@ -712,14 +703,6 @@ export default function AnalytiquesPage() {
                 loading={loading}
               />
             </div>
-          </TabsContent>
-
-          {/* ===== Tab 6 — PLAN COMPTABLE (PCG) ===== */}
-          <TabsContent
-            value="pcg"
-            className="flex-1 min-h-0 overflow-y-auto pb-8"
-          >
-            <AnalyticsPCGMapping />
           </TabsContent>
         </Tabs>
       </div>
