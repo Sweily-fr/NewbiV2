@@ -178,7 +178,7 @@ export function ImportQuoteModal({ open, onOpenChange, onImported }) {
       open={open}
       onOpenChange={phase === PHASE.UPLOADING ? undefined : handleClose}
     >
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto overflow-x-hidden">
         <DialogHeader>
           <DialogTitle>Importer des devis</DialogTitle>
           <DialogDescription>
@@ -189,7 +189,7 @@ export function ImportQuoteModal({ open, onOpenChange, onImported }) {
 
         {/* Phase: Sélection des fichiers */}
         {phase === PHASE.SELECT && (
-          <div className="space-y-4 overflow-hidden">
+          <div className="space-y-4 min-w-0 overflow-hidden">
             {/* Drop zone */}
             <div
               className={cn(
@@ -239,7 +239,7 @@ export function ImportQuoteModal({ open, onOpenChange, onImported }) {
                     Tout supprimer
                   </Button>
                 </div>
-                <ScrollArea className="h-[200px] rounded-md border overflow-hidden">
+                <ScrollArea className="h-[200px] rounded-md border overflow-hidden [&_[data-radix-scroll-area-viewport]>div]:!block">
                   <div className="p-2 space-y-1 overflow-hidden">
                     {files.map((file, index) => (
                       <div
@@ -290,12 +290,12 @@ export function ImportQuoteModal({ open, onOpenChange, onImported }) {
 
         {/* Phase: Upload en cours */}
         {phase === PHASE.UPLOADING && (
-          <div className="py-8 space-y-6">
-            <div className="flex flex-col items-center gap-4">
+          <div className="py-2 space-y-4 min-w-0 overflow-hidden">
+            <div className="flex flex-col items-center gap-3">
               <div className="relative">
-                <div className="h-16 w-16 rounded-full border-4 border-muted flex items-center justify-center">
+                <div className="h-12 w-12 rounded-full border-4 border-muted flex items-center justify-center">
                   <Upload
-                    className="h-7 w-7 animate-pulse"
+                    className="h-5 w-5 animate-pulse"
                     style={{ color: "#5b50FF" }}
                   />
                 </div>
@@ -325,7 +325,7 @@ export function ImportQuoteModal({ open, onOpenChange, onImported }) {
               </p>
             </div>
 
-            <ScrollArea className="h-[120px] rounded-md border overflow-hidden">
+            <ScrollArea className="h-[120px] rounded-md border overflow-hidden [&_[data-radix-scroll-area-viewport]>div]:!block">
               <div className="p-2 space-y-1 overflow-hidden">
                 {files.map((file, index) => (
                   <div
