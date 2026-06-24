@@ -1044,11 +1044,12 @@ export default function TransactionTable({
         counts.missingReceipt++;
       }
 
-      // À rapprocher (transactions bancaires sans facture liée, montant positif)
+      // À rapprocher (montant positif, non justifié : ni justificatif, ni facture liée).
+      // hasReceipt = receiptFiles.length > 0 || linkedInvoice?.id → "justificatif OU facture liée".
       const recoStatus = t.reconciliationStatus?.toLowerCase();
       const isNotReconciled =
         !recoStatus || recoStatus === "unmatched" || recoStatus === "suggested";
-      if (isNotReconciled && !t.linkedInvoice?.id && t.amount > 0) {
+      if (isNotReconciled && !t.hasReceipt && t.amount > 0) {
         counts.toReconcile++;
       }
     });
@@ -1088,7 +1089,8 @@ export default function TransactionTable({
           !recoStatus ||
           recoStatus === "unmatched" ||
           recoStatus === "suggested";
-        return isNotReconciled && !t.linkedInvoice?.id && t.amount > 0;
+        // Exclure les transactions déjà justifiées (justificatif OU facture liée).
+        return isNotReconciled && !t.hasReceipt && t.amount > 0;
       });
     }
 

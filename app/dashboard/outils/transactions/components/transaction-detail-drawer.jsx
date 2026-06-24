@@ -83,7 +83,10 @@ import {
 } from "@/src/components/ui/dialog";
 import { VisuallyHidden } from "@/src/components/ui/visually-hidden";
 import CategorySearchSelect from "./category-search-select";
-import { useUnlinkTransactionFromInvoice } from "@/src/hooks/useReconciliationGraphQL";
+import {
+  useUnlinkTransactionFromInvoice,
+  useReconciliationGraphQL,
+} from "@/src/hooks/useReconciliationGraphQL";
 import { useRouter } from "next/navigation";
 import { PreviewImage } from "@/src/components/ui/preview-image";
 import { getAllPCGAccounts, PCG_ACCOUNTS } from "@/lib/pcg-mapping";
@@ -429,6 +432,24 @@ export function TransactionDetailDrawer({
 
   // Hook pour délier une transaction d'une facture
   const { unlinkTransaction } = useUnlinkTransactionFromInvoice();
+
+  // Suggestions de rapprochement : on affiche la/les facture(s) rapprochable(s)
+  // pour cette transaction (au lieu d'un statut "ignoré"/"suggéré").
+  const {
+    suggestions: reconciliationSuggestions,
+    linkTransaction,
+    isLinking,
+  } = useReconciliationGraphQL();
+  const matchingInvoices =
+    reconciliationSuggestions?.find(
+      (s) => s.transaction?.id === transaction?.id,
+    )?.matchingInvoices || [];
+
+  const handleReconcileInvoice = async (invoiceId) => {
+    if (!transaction?.id || !invoiceId) return;
+    await linkTransaction(transaction.id, invoiceId);
+    onRefresh?.();
+  };
 
   // État du formulaire pour création/édition
   const [formData, setFormData] = useState({
@@ -1743,31 +1764,67 @@ export function TransactionDetailDrawer({
               </div>
             )}
 
-            {/* Indicateur de statut de rapprochement (si pas de facture liée mais statut pertinent) */}
+            {/* Factures rapprochables : si la transaction n'est pas encore liée
+                mais qu'une ou plusieurs factures correspondent, on les propose
+                directement (pas de statut "ignoré"/"suggéré"). */}
             {!isCreateMode &&
               !transaction?.linkedInvoice &&
-              transaction?.reconciliationStatus &&
-              transaction.reconciliationStatus !== "UNMATCHED" && (
-                <div className="space-y-2">
+              matchingInvoices.length > 0 && (
+                <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4 text-muted-foreground" />
                     <p className="text-sm font-normal text-muted-foreground">
-                      Rapprochement
+                      {matchingInvoices.length > 1
+                        ? "Factures à rapprocher"
+                        : "Facture à rapprocher"}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {transaction.reconciliationStatus === "SUGGESTED" && (
-                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
-                        <AlertCircle className="w-3 h-3" />
-                        Suggestion en attente
-                      </span>
-                    )}
-                    {transaction.reconciliationStatus === "IGNORED" && (
-                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
-                        Ignorée
-                      </span>
-                    )}
-                  </div>
+
+                  {matchingInvoices.map((invoice) => (
+                    <div
+                      key={invoice.id}
+                      className="p-3 border rounded-lg bg-muted/30"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-medium">
+                            Facture {invoice.number || "N/A"}
+                          </span>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {invoice.clientName}
+                          </p>
+                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                            <span>{formatAmount(invoice.totalTTC)}</span>
+                            {invoice.dueDate && (
+                              <>
+                                <span>•</span>
+                                <span>
+                                  Échéance: {formatDate(invoice.dueDate)}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-shrink-0"
+                          onClick={() => handleReconcileInvoice(invoice.id)}
+                          disabled={isReadOnly || isLinking}
+                          title={readOnlyTooltip || "Rapprocher cette facture"}
+                        >
+                          {isLinking ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <>
+                              <Link2 className="h-4 w-4 mr-1.5" />
+                              Rapprocher
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
 

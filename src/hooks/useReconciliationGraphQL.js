@@ -10,6 +10,7 @@ import {
   IGNORE_TRANSACTION,
 } from "@/src/graphql/queries/reconciliation";
 import { GET_INVOICES } from "@/src/graphql/invoiceQueries";
+import { reproposeReconciliation } from "@/src/lib/reconciliationIgnored";
 
 /**
  * Hook pour récupérer les suggestions de rapprochement
@@ -70,7 +71,13 @@ export const useTransactionsForInvoice = (invoiceId) => {
  */
 export const useLinkTransactionToInvoice = () => {
   const [linkMutation, { loading }] = useMutation(LINK_TRANSACTION_TO_INVOICE, {
+    // La mutation renvoie le Transaction complet (linkedInvoice + reconciliationStatus) :
+    // Apollo normalise l'entité par id → l'icône "facture liée" de la page Transaction
+    // se met à jour sans refetch. On ne refetch que les agrégats non normalisables :
+    // GET_RECONCILIATION_SUGGESTIONS (compteur serveur) et GET_INVOICES (statut facture,
+    // type ReconciliationInvoice ≠ Invoice donc pas de normalisation auto).
     refetchQueries: [GET_RECONCILIATION_SUGGESTIONS, GET_INVOICES],
+    awaitRefetchQueries: true,
     onCompleted: (data) => {
       if (data.linkTransactionToInvoice.success) {
         toast.success("Rapprochement effectué avec succès");
@@ -113,10 +120,19 @@ export const useUnlinkTransactionFromInvoice = () => {
   const [unlinkMutation, { loading }] = useMutation(
     UNLINK_TRANSACTION_FROM_INVOICE,
     {
+      // Idem au link : la mutation renvoie le Transaction complet (linkedInvoice null,
+      // statut unmatched) → normalisation Apollo, l'icône disparaît sans refetch liste.
       refetchQueries: [GET_RECONCILIATION_SUGGESTIONS, GET_INVOICES],
+      awaitRefetchQueries: true,
       onCompleted: (data) => {
         if (data.unlinkTransactionFromInvoice.success) {
           toast.success("Déliaison effectuée avec succès");
+          // La transaction redevient "à rapprocher" : on la retire de la liste
+          // des suggestions ignorées (où le rattachement l'avait placée) pour
+          // que le toast la repropose, sans la rattacher.
+          reproposeReconciliation(
+            data.unlinkTransactionFromInvoice.transaction?.id,
+          );
         } else {
           toast.error(
             data.unlinkTransactionFromInvoice.message ||
