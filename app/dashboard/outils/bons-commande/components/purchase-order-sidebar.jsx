@@ -246,7 +246,9 @@ export default function PurchaseOrderSidebar({
   const hasLinkedInvoices =
     !!purchaseOrder.linkedInvoices && purchaseOrder.linkedInvoices.length > 0;
   const canConvertToInvoice =
-    (isValidated || isInProgress || isDelivered) && !hasLinkedInvoices;
+    (isValidated || isInProgress || isDelivered) &&
+    !hasLinkedInvoices &&
+    !purchaseOrder.sourceQuoteHasInvoices;
   // Annulation possible uniquement avant validation client
   const canCancel = (isDraft || isConfirmed) && !hasLinkedInvoices;
 

@@ -193,7 +193,9 @@ export default function QuoteRowActions({
       toast.success("Devis accepté");
       if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error("Erreur lors de l'acceptation du devis");
+      toast.error(
+        error?.message || "Erreur lors de l'acceptation du devis"
+      );
     }
   };
 
@@ -273,7 +275,8 @@ export default function QuoteRowActions({
   const canConvertToPO = quote.status === QUOTE_STATUS.COMPLETED;
   const canConvertToInvoice =
     quote.status === QUOTE_STATUS.COMPLETED &&
-    (!quote.linkedInvoices || quote.linkedInvoices.length === 0);
+    (!quote.linkedInvoices || quote.linkedInvoices.length === 0) &&
+    !quote.hasPurchaseOrderInvoices;
   const hasStatusActions =
     quote.status === QUOTE_STATUS.DRAFT || // Envoyer le devis
     quote.status === QUOTE_STATUS.PENDING || // Accepter/Rejeter
@@ -373,8 +376,10 @@ export default function QuoteRowActions({
                 </DropdownMenuItem>
               )}
 
-              {(quote.status === QUOTE_STATUS.PENDING ||
-                quote.status === QUOTE_STATUS.IMPORTED) && (
+              {/* Accepter : devis importés librement, devis natifs uniquement une fois signés */}
+              {(quote.status === QUOTE_STATUS.IMPORTED ||
+                (quote.status === QUOTE_STATUS.PENDING &&
+                  quote.signatureStatus === "DONE")) && (
                 <>
                   <DropdownMenuItem
                     onClick={handleAccept}
