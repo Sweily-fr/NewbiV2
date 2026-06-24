@@ -101,7 +101,8 @@ export default function ClientSelector({
     street: "",
     postalCode: "",
     city: "",
-    country: "France",
+    // Pas de pays par défaut : l'utilisateur doit le choisir (clients FR comme étrangers)
+    country: "",
   };
 
   // État pour suivre les erreurs de validation
@@ -325,8 +326,10 @@ export default function ClientSelector({
       }
     });
 
-    // Validation de l'email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Validation de l'email — regex alignée sur le backend (sinon l'erreur
+    // remonterait en toast au lieu de s'afficher sur le formulaire)
+    const emailRegex =
+      /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/;
     if (newClientForm.email) {
       if (!emailRegex.test(newClientForm.email.trim())) {
         errors.email = "L'email n'est pas valide";
@@ -380,8 +383,13 @@ export default function ClientSelector({
       }
     }
 
-    // Validation du numéro de téléphone (optionnel mais doit être valide si renseigné)
-    if (newClientForm.phone && newClientForm.phone.trim() !== "") {
+    // Validation du numéro de téléphone (optionnel mais doit être valide si renseigné).
+    // Format FR uniquement pour la France ; format libre à l'international.
+    if (
+      !newClientForm.isInternational &&
+      newClientForm.phone &&
+      newClientForm.phone.trim() !== ""
+    ) {
       const phoneRegex = /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/;
       if (!phoneRegex.test(newClientForm.phone.trim())) {
         errors.phone =
@@ -389,31 +397,28 @@ export default function ClientSelector({
       }
     }
 
-    // Validation du SIREN/SIRET ou numéro d'identification (si entreprise)
-    if (newClientForm.type === "COMPANY") {
-      if (newClientForm.isInternational) {
-        // Pour les entreprises internationales : numéro d'identification obligatoire mais format libre
-        if (!newClientForm.siret || newClientForm.siret.trim() === "") {
+    // Validation du SIREN/SIRET (entreprise française uniquement).
+    // Les entreprises hors France n'ont pas ces champs (SIREN/TVA = notions FR).
+    if (newClientForm.type === "COMPANY" && !newClientForm.isInternational) {
+      // Pour les entreprises françaises : validation stricte du format SIREN/SIRET
+      if (newClientForm.siret) {
+        const siretRegex = /^\d{9}$|^\d{14}$/;
+        if (!siretRegex.test(newClientForm.siret)) {
           errors.siret =
-            "Le numéro d'identification est obligatoire pour une entreprise internationale";
+            "Le SIREN doit contenir 9 chiffres ou le SIRET 14 chiffres";
         }
       } else {
-        // Pour les entreprises françaises : validation stricte du format SIREN/SIRET
-        if (newClientForm.siret) {
-          const siretRegex = /^\d{9}$|^\d{14}$/;
-          if (!siretRegex.test(newClientForm.siret)) {
-            errors.siret =
-              "Le SIREN doit contenir 9 chiffres ou le SIRET 14 chiffres";
-          }
-        } else {
-          errors.siret =
-            "Le SIREN/SIRET est obligatoire pour une entreprise française";
-        }
+        errors.siret =
+          "Le SIREN/SIRET est obligatoire pour une entreprise française";
       }
     }
 
-    // Validation du numéro de téléphone (si fourni)
-    if (newClientForm.phone && newClientForm.phone.trim() !== "") {
+    // Validation du numéro de téléphone (si fourni) — format FR hors international
+    if (
+      !newClientForm.isInternational &&
+      newClientForm.phone &&
+      newClientForm.phone.trim() !== ""
+    ) {
       const phoneRegex = /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/;
       if (!phoneRegex.test(newClientForm.phone.trim())) {
         errors.phone =
@@ -458,7 +463,8 @@ export default function ClientSelector({
     const clientsList = Array.isArray(clients) ? clients : clients?.items || [];
     const emailExists = clientsList.some(
       (client) =>
-        client.email?.toLowerCase() === newClientForm.email.toLowerCase(),
+        client.email?.toLowerCase() ===
+        newClientForm.email.trim().toLowerCase(),
     );
 
     if (emailExists) {
@@ -473,12 +479,17 @@ export default function ClientSelector({
     try {
       const clientData = {
         type: newClientForm.type,
-        name: newClientForm.name,
-        email: newClientForm.email,
+        name: newClientForm.name.trim(),
+        email: newClientForm.email.trim(),
         firstName: newClientForm.firstName || undefined,
         lastName: newClientForm.lastName || undefined,
-        siret: newClientForm.siret || undefined,
-        vatNumber: newClientForm.vatNumber || undefined,
+        // Client hors France : pas de SIREN/TVA (notions franco-françaises) → rien en base
+        siret: newClientForm.isInternational
+          ? undefined
+          : newClientForm.siret || undefined,
+        vatNumber: newClientForm.isInternational
+          ? undefined
+          : newClientForm.vatNumber || undefined,
         isInternational: newClientForm.isInternational || false,
         hasDifferentShippingAddress: Boolean(
           newClientForm.hasDifferentShippingAddress,
@@ -1110,12 +1121,6 @@ export default function ClientSelector({
                       </SelectItem>
                     </SelectContent>
                   </Select>
-                  {newClientForm.isInternational && (
-                    <p className="text-xs text-muted-foreground">
-                      Pour les entreprises hors France, les champs SIRET et TVA
-                      sont optionnels.
-                    </p>
-                  )}
                 </div>
               )}
 
@@ -1273,8 +1278,9 @@ export default function ClientSelector({
                 </div>
               </div>
 
-              {/* SIRET / TVA - entreprises uniquement */}
-              {newClientForm.type === "COMPANY" && (
+              {/* SIRET / TVA - entreprises françaises uniquement (notions FR, masquées hors France) */}
+              {newClientForm.type === "COMPANY" &&
+                !newClientForm.isInternational && (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label
@@ -1472,7 +1478,7 @@ export default function ClientSelector({
                   </Label>
                   <CountrySearchSelect
                     id="client-country"
-                    value={newClientForm.address?.country || "France"}
+                    value={newClientForm.address?.country || ""}
                     onChange={(name) =>
                       setNewClientForm((prev) => ({
                         ...prev,

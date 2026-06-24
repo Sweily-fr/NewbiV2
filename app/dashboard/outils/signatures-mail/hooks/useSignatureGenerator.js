@@ -36,6 +36,10 @@ export function useSignatureGenerator() {
     container.style.height = '1px';
     container.style.overflow = 'hidden';
     container.style.opacity = '0.01';
+    // Forcer un fond transparent pour ne pas embarquer le blanc du dashboard
+    // dans le presse-papiers (sinon Gmail colle un fond blanc visible en dark).
+    container.style.backgroundColor = 'transparent';
+    container.style.color = 'inherit';
     container.setAttribute('contenteditable', 'true');
     container.innerHTML = html;
     document.body.appendChild(container);
@@ -75,38 +79,37 @@ export function useSignatureGenerator() {
 
     console.log('[copyToClipboard] HTML length:', html.length);
 
-    // Essayer d'abord avec execCommand (meilleure compatibilité email)
-    const execSuccess = copyWithExecCommand(html);
+    // 1. API Clipboard moderne en priorité : envoie le HTML brut sans capturer
+    // les styles calculés de la page (qui ajouteraient un fond blanc hérité).
+    if (typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
+      try {
+        const plainText = generatePlainText();
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/html": new Blob([html], { type: "text/html" }),
+            "text/plain": new Blob([plainText], { type: "text/plain" }),
+          }),
+        ]);
+        return { success: true, message: "Signature copiée !" };
+      } catch (clipboardError) {
+        console.warn('[copyToClipboard] Clipboard API failed, falling back:', clipboardError);
+      }
+    }
 
+    // 2. Fallback execCommand (anciens navigateurs)
+    const execSuccess = copyWithExecCommand(html);
     if (execSuccess) {
       return { success: true, message: "Signature copiée !" };
     }
 
-    console.log('[copyToClipboard] execCommand failed, trying Clipboard API');
-
-    // Fallback vers l'API Clipboard moderne
+    // 3. Dernier recours : texte brut
     try {
       const plainText = generatePlainText();
-
-      await navigator.clipboard.write([
-        new ClipboardItem({
-          "text/html": new Blob([html], { type: "text/html" }),
-          "text/plain": new Blob([plainText], { type: "text/plain" }),
-        }),
-      ]);
-      return { success: true, message: "Signature copiée !" };
-    } catch (clipboardError) {
-      console.error('[copyToClipboard] Clipboard API error:', clipboardError);
-
-      // Dernier fallback - copier juste le texte
-      try {
-        const plainText = generatePlainText();
-        await navigator.clipboard.writeText(plainText);
-        return { success: true, message: "Signature copiée (texte uniquement)" };
-      } catch (textError) {
-        console.error('[copyToClipboard] Text copy also failed:', textError);
-        return { success: false, message: "Erreur lors de la copie" };
-      }
+      await navigator.clipboard.writeText(plainText);
+      return { success: true, message: "Signature copiée (texte uniquement)" };
+    } catch (textError) {
+      console.error('[copyToClipboard] Text copy also failed:', textError);
+      return { success: false, message: "Erreur lors de la copie" };
     }
   }, [generateHTML, generatePlainText, copyWithExecCommand]);
 

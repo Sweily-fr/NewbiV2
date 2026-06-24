@@ -81,6 +81,8 @@ export function ChartAreaInteractive({
   externalTimeRange,
   className = "",
   isLoading = false,
+  onPeriodChange,
+  serverFiltered = false,
   ...props
 }) {
   const isMobile = useIsMobile();
@@ -116,6 +118,10 @@ export function ChartAreaInteractive({
       case "365d":
         return "12 derniers mois";
       case "custom":
+        if (customStartDate && customEndDate) {
+          const fmt = (d) => d.split("-").reverse().join("/");
+          return `${fmt(customStartDate)} - ${fmt(customEndDate)}`;
+        }
         return "Période personnalisée";
       default:
         return "3 derniers mois";
@@ -128,7 +134,25 @@ export function ChartAreaInteractive({
     }
   }, [isMobile]);
 
+  // Remonter la période choisie au parent (pour un refetch backend optionnel).
+  // Évite le filtrage client sur un jeu de données figé qui ne couvrait pas
+  // les périodes personnalisées hors de la fenêtre initiale.
+  React.useEffect(() => {
+    if (!onPeriodChange) return;
+    onPeriodChange(
+      timeRange === "custom"
+        ? {
+            startDate: customStartDate || undefined,
+            endDate: customEndDate || undefined,
+          }
+        : { preset: timeRange },
+    );
+  }, [onPeriodChange, timeRange, customStartDate, customEndDate]);
+
   const filteredData = React.useMemo(() => {
+    // Données déjà filtrées côté serveur : ne pas refiltrer côté client
+    if (serverFiltered) return data;
+
     return data.filter((item) => {
       const date = new Date(item.date);
       const referenceDate = new Date();
@@ -137,8 +161,8 @@ export function ChartAreaInteractive({
       if (timeRange === "custom") {
         if (!customStartDate && !customEndDate) return true;
 
-        const start = customStartDate ? new Date(customStartDate) : null;
-        const end = customEndDate ? new Date(customEndDate) : null;
+        const start = customStartDate ? new Date(`${customStartDate}T00:00:00`) : null;
+        const end = customEndDate ? new Date(`${customEndDate}T23:59:59`) : null;
 
         if (start && end) {
           return date >= start && date <= end;
@@ -192,7 +216,7 @@ export function ChartAreaInteractive({
       startDate.setDate(startDate.getDate() - daysToSubtract);
       return date >= startDate;
     });
-  }, [data, timeRange, customStartDate, customEndDate]);
+  }, [data, timeRange, customStartDate, customEndDate, serverFiltered]);
 
   // Agréger les données par semaine ou par mois pour les longues périodes
   // Évite les courbes invisibles quand il y a peu de transactions sur beaucoup de jours
@@ -372,6 +396,7 @@ export function ChartAreaInteractive({
 
   const timeRangeDropdown = (
     <DropdownMenu
+      modal={false}
       open={dropdownOpen}
       onOpenChange={(open) => {
         setDropdownOpen(open);

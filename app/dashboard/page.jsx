@@ -263,6 +263,10 @@ function DashboardContent() {
       // Afficher l'overlay de chargement immédiatement
       setIsBankSyncing(true);
 
+      // Filet de sécurité : ne jamais laisser l'overlay tourner indéfiniment
+      // (ex: /api/banking-sync/full qui ne répond pas).
+      let safetyTimer;
+
       const syncBankAccounts = async () => {
         try {
           // Lancer la sync complète (comptes + transactions) via le proxy Next.js
@@ -278,8 +282,15 @@ function DashboardContent() {
 
           if (response.ok) {
             const data = await response.json();
-            // Rafraîchir les données du dashboard
-            refreshData();
+            // Rafraîchir les données du dashboard. Bridge (et son webhook)
+            // peut finaliser la connexion avec un léger décalage, donc on
+            // rafraîchit plusieurs fois pendant que l'overlay est affiché
+            // pour éviter d'avoir à recharger la page manuellement.
+            await refreshData();
+            await new Promise((r) => setTimeout(r, 2500));
+            await refreshData();
+            await new Promise((r) => setTimeout(r, 3000));
+            await refreshData();
           } else {
             console.error("❌ Erreur sync bancaire:", await response.text());
           }
@@ -291,13 +302,17 @@ function DashboardContent() {
           console.error("❌ Erreur lors de la sync bancaire:", error);
         } finally {
           // Masquer l'overlay après la sync
+          clearTimeout(safetyTimer);
           setIsBankSyncing(false);
         }
       };
 
-      // Attendre un peu pour que Bridge finalise
-      const timer = setTimeout(syncBankAccounts, 1500);
-      return () => clearTimeout(timer);
+      // Attendre un peu pour que Bridge finalise, puis lancer la sync.
+      // Pas de cleanup qui annule ce timer : un re-render (changement
+      // d'identité de refreshData) ne doit pas laisser l'overlay bloqué —
+      // le garde hasHandledBridgeReturn empêche déjà tout double-déclenchement.
+      setTimeout(syncBankAccounts, 1500);
+      safetyTimer = setTimeout(() => setIsBankSyncing(false), 30000);
     }
   }, [workspaceId, refreshData]);
 

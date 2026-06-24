@@ -15,6 +15,9 @@ import { toast } from "@/src/components/ui/sonner";
 import { domToJpeg } from "modern-screenshot";
 import jsPDF from "jspdf";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
+import { useQuery } from "@apollo/client";
+import { GET_QUOTE } from "@/src/graphql/quoteQueries";
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
 const DOCUMENT_TYPE_LABELS = {
   invoice: "facture",
@@ -193,6 +196,25 @@ export function SignatureDialog({
   signatureLevel = "ses", // "ses" | "qes"
 }) {
   const { requestSignature, loading } = useRequestSignature();
+  const { workspaceId } = useRequiredWorkspace();
+
+  // Le devis passé en prop vient de la liste (fragment partiel) : il lui manque
+  // companyInfo, footerNotes, termsAndConditions. On récupère le devis COMPLET
+  // pour générer un PDF de signature identique au PDF officiel.
+  const documentId = document?._id || document?.id;
+  const { data: fullQuoteData, loading: loadingFullQuote } = useQuery(
+    GET_QUOTE,
+    {
+      variables: { workspaceId, id: documentId },
+      skip: !open || documentType !== "quote" || !documentId || !workspaceId,
+      fetchPolicy: "cache-first",
+    }
+  );
+  const documentToRender =
+    documentType === "quote" && fullQuoteData?.quote
+      ? fullQuoteData.quote
+      : document;
+
   const pdfRef = useRef(null);
   const firstInputRef = useRef(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
@@ -247,11 +269,16 @@ export function SignatureDialog({
     (s) => s.name.trim() && s.surname.trim() && s.email.trim(),
   );
 
-  const isBusy = loading || generatingPdf;
+  const isBusy = loading || generatingPdf || loadingFullQuote;
 
   const handleSubmit = async () => {
     if (!isValid) {
       toast.error("Veuillez remplir tous les champs obligatoires");
+      return;
+    }
+
+    if (loadingFullQuote) {
+      toast.error("Chargement du devis en cours, réessayez dans un instant.");
       return;
     }
 
@@ -324,7 +351,7 @@ export function SignatureDialog({
       >
         <div ref={pdfRef} style={{ position: "relative", width: "100%" }}>
           <UniversalPreviewPDF
-            data={document}
+            data={documentToRender}
             type={pdfType}
             isMobile={false}
             forPDF={true}
@@ -354,44 +381,12 @@ export function SignatureDialog({
               lien sécurisé pour signature.
             </p>
 
-            {/* Type de signature - visible uniquement pour le plan Entreprise (QES) */}
-            {signatureLevel === "qes" && (
-              <div className="mb-4">
-                <label className="text-xs font-medium text-muted-foreground mb-2 block">
-                  Type de signature
-                </label>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setSignatureType("SES")}
-                    className={`flex-1 text-xs px-3 py-2 rounded-lg border transition-colors ${
-                      signatureType === "SES"
-                        ? "border-primary bg-primary/5 text-foreground font-medium"
-                        : "border-border text-muted-foreground hover:border-primary/50"
-                    }`}
-                  >
-                    <span className="block font-medium">SES</span>
-                    <span className="block text-[10px] mt-0.5 opacity-70">
-                      Signature simple
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSignatureType("QES_automatic")}
-                    className={`flex-1 text-xs px-3 py-2 rounded-lg border transition-colors ${
-                      signatureType === "QES_automatic"
-                        ? "border-primary bg-primary/5 text-foreground font-medium"
-                        : "border-border text-muted-foreground hover:border-primary/50"
-                    }`}
-                  >
-                    <span className="block font-medium">QES</span>
-                    <span className="block text-[10px] mt-0.5 opacity-70">
-                      Signature qualifiée
-                    </span>
-                  </button>
-                </div>
-              </div>
-            )}
+            {/*
+              Signature client = SES uniquement (le client signe via un lien + OTP).
+              Les modes QES d'OpenAPI (EU-QES_automatic / EU-QES_otp) sont des cachets
+              de l'entreprise (OTP côté propriétaire du certificat, pas de lien client),
+              donc ils ne conviennent pas pour faire accepter un devis par le client.
+            */}
 
             {/* Signataires */}
             <div className="space-y-3">

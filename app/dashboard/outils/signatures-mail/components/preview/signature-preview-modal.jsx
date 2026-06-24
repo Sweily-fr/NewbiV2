@@ -455,6 +455,10 @@ export default function SignaturePreviewModal({
     container.style.height = "1px";
     container.style.overflow = "hidden";
     container.style.opacity = "0.01";
+    // Forcer un fond transparent pour ne pas hériter du blanc du dashboard
+    // lors de la copie (sinon Chrome inclut un wrapper avec background-color).
+    container.style.backgroundColor = "transparent";
+    container.style.color = "inherit";
     container.setAttribute("contenteditable", "true");
     container.innerHTML = html;
     document.body.appendChild(container);
@@ -479,31 +483,41 @@ export default function SignaturePreviewModal({
   };
 
   const copySignatureToClipboard = async (data, container) => {
-    try {
-      const signatureHTML = generatePreviewHTML(data, container);
+    const signatureHTML = generatePreviewHTML(data, container);
 
-      // Essayer d'abord avec execCommand (meilleure compatibilité email)
+    try {
+      // 1. API Clipboard moderne en priorité : envoie le HTML brut tel quel,
+      // sans capturer les styles calculés de la page (qui ajouteraient un fond
+      // blanc hérité du dashboard via execCommand).
+      if (
+        typeof ClipboardItem !== "undefined" &&
+        navigator.clipboard?.write
+      ) {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/html": new Blob([signatureHTML], { type: "text/html" }),
+            "text/plain": new Blob([signatureHTML.replace(/<[^>]*>/g, "")], {
+              type: "text/plain",
+            }),
+          }),
+        ]);
+        toast.success("Signature copiée avec succès !");
+        return;
+      }
+
+      // 2. Fallback execCommand (anciens navigateurs)
       const execSuccess = copyWithExecCommand(signatureHTML);
       if (execSuccess) {
         toast.success("Signature copiée avec succès !");
         return;
       }
 
-      // Fallback vers l'API Clipboard moderne
-      await navigator.clipboard.write([
-        new ClipboardItem({
-          "text/html": new Blob([signatureHTML], { type: "text/html" }),
-          "text/plain": new Blob([signatureHTML.replace(/<[^>]*>/g, "")], {
-            type: "text/plain",
-          }),
-        }),
-      ]);
-
-      toast.success("Signature copiée avec succès !");
+      // 3. Dernier recours : texte brut
+      await navigator.clipboard.writeText(signatureHTML);
+      toast.success("Signature copiée (texte brut)");
     } catch (error) {
       console.error("❌ Erreur copie signature:", error);
       try {
-        const signatureHTML = generatePreviewHTML(data, container);
         await navigator.clipboard.writeText(signatureHTML);
         toast.success("Signature copiée (texte brut)");
       } catch (fallbackError) {

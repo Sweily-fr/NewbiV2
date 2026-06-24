@@ -42,7 +42,6 @@ export const GET_FINANCIAL_ANALYTICS = gql`
         collectionRate
         activeClientCount
         newClientCount
-        retainedClientCount
         topClientConcentration
         quoteCount
         quoteConvertedCount

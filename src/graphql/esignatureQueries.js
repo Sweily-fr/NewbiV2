@@ -91,6 +91,19 @@ export const REQUEST_DOCUMENT_SIGNATURE = gql`
   }
 `;
 
+export const SEAL_QUOTE_DOCUMENT = gql`
+  ${SIGNATURE_REQUEST_FIELDS}
+  mutation SealQuoteDocument($quoteId: ID!) {
+    sealQuoteDocument(quoteId: $quoteId) {
+      success
+      message
+      signatureRequest {
+        ...SignatureRequestFields
+      }
+    }
+  }
+`;
+
 export const CANCEL_SIGNATURE = gql`
   ${SIGNATURE_REQUEST_FIELDS}
   mutation CancelSignature($signatureId: ID!) {

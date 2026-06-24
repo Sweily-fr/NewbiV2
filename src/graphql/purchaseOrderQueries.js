@@ -130,6 +130,7 @@ export const PURCHASE_ORDER_FRAGMENT = gql`
       number
       prefix
     }
+    sourceQuoteHasInvoices
     linkedInvoices {
       id
       number
@@ -260,6 +261,7 @@ export const PURCHASE_ORDER_LIST_FRAGMENT = gql`
       number
       prefix
     }
+    sourceQuoteHasInvoices
     linkedInvoices {
       id
       number

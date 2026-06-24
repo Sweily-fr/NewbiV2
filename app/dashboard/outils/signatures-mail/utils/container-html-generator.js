@@ -64,6 +64,61 @@ const getColorName = (colorInput) => {
   return colorMap[hexColor] || "black";
 };
 
+// Détection des couleurs noir/blanc pour appliquer une classe dark-mode adaptative
+const isBlackish = (color) => {
+  if (!color) return false;
+  const c = String(color).toLowerCase().replace(/\s/g, "");
+  return [
+    "#000",
+    "#000000",
+    "#111",
+    "#111111",
+    "#171717",
+    "#1a1a1a",
+    "#212121",
+    "#222",
+    "#222222",
+    "black",
+    "rgb(0,0,0)",
+    "rgb(23,23,23)",
+    "rgb(17,17,17)",
+  ].includes(c);
+};
+
+const isWhitish = (color) => {
+  if (!color) return false;
+  const c = String(color).toLowerCase().replace(/\s/g, "");
+  return [
+    "#fff",
+    "#ffffff",
+    "white",
+    "rgb(255,255,255)",
+  ].includes(c);
+};
+
+const getThemeClass = (color) => {
+  if (isBlackish(color)) return "nb-invert-dark";
+  if (isWhitish(color)) return "nb-invert-light";
+  return "";
+};
+
+// Bloc <style> préfixé à la signature pour gérer le dark mode
+const DARK_MODE_STYLE = `
+<style>
+@media (prefers-color-scheme: dark) {
+  .nb-invert-dark, .nb-invert-dark * { color: #ffffff !important; }
+  .nb-invert-light, .nb-invert-light * { color: #000000 !important; }
+  .nb-signature-bg { background-color: transparent !important; }
+  .nb-separator-bg { background-color: #4a4a4a !important; }
+}
+[data-ogsc] .nb-invert-dark, [data-ogsc] .nb-invert-dark * { color: #ffffff !important; }
+[data-ogsc] .nb-invert-light, [data-ogsc] .nb-invert-light * { color: #000000 !important; }
+[data-ogsc] .nb-signature-bg { background-color: transparent !important; }
+[data-ogsc] .nb-separator-bg { background-color: #4a4a4a !important; }
+[data-ogsb] .nb-signature-bg { background-color: transparent !important; }
+</style>
+`;
+
 /**
  * Helper to escape text for Gmail (prevent auto-link detection)
  */
@@ -121,7 +176,7 @@ function generateElementHTML(
       const fontStyle = props.fontStyle || "normal";
       const textAlign = props.textAlign || "left";
 
-      return `<div style="font-size: ${fontSize}px; font-weight: ${fontWeight}; color: ${color}; font-family: ${fontFamily}; font-style: ${fontStyle}; text-align: ${textAlign}; line-height: 1.4; margin: 0; padding: 0;">${name}</div>`;
+      return `<div class="${getThemeClass(color)}" style="font-size: ${fontSize}px; font-weight: ${fontWeight}; color: ${color}; font-family: ${fontFamily}; font-style: ${fontStyle}; text-align: ${textAlign}; line-height: 1.4; margin: 0; padding: 0;">${name}</div>`;
     }
 
     case ELEMENT_TYPES.POSITION: {
@@ -136,7 +191,7 @@ function generateElementHTML(
       const fontStyle = props.fontStyle || "normal";
       const textAlign = props.textAlign || "left";
 
-      return `<div style="font-size: ${fontSize}px; font-weight: ${fontWeight}; color: ${color}; font-family: ${fontFamily}; font-style: ${fontStyle}; text-align: ${textAlign}; line-height: 1.4; margin: 0; padding: 0;">${position}</div>`;
+      return `<div class="${getThemeClass(color)}" style="font-size: ${fontSize}px; font-weight: ${fontWeight}; color: ${color}; font-family: ${fontFamily}; font-style: ${fontStyle}; text-align: ${textAlign}; line-height: 1.4; margin: 0; padding: 0;">${position}</div>`;
     }
 
     case ELEMENT_TYPES.COMPANY: {
@@ -151,7 +206,7 @@ function generateElementHTML(
       const fontStyle = props.fontStyle || "normal";
       const textAlign = props.textAlign || "left";
 
-      return `<div style="font-size: ${fontSize}px; font-weight: ${fontWeight}; color: ${color}; font-family: ${fontFamily}; font-style: ${fontStyle}; text-align: ${textAlign}; line-height: 1.4; margin: 0; padding: 0;">${company}</div>`;
+      return `<div class="${getThemeClass(color)}" style="font-size: ${fontSize}px; font-weight: ${fontWeight}; color: ${color}; font-family: ${fontFamily}; font-style: ${fontStyle}; text-align: ${textAlign}; line-height: 1.4; margin: 0; padding: 0;">${company}</div>`;
     }
 
     case ELEMENT_TYPES.TEXT: {
@@ -166,7 +221,7 @@ function generateElementHTML(
       const fontStyle = props.fontStyle || "normal";
       const textAlign = props.textAlign || "left";
 
-      return `<div style="font-size: ${fontSize}px; font-weight: ${fontWeight}; color: ${color}; font-family: ${fontFamily}; font-style: ${fontStyle}; text-align: ${textAlign}; line-height: 1.4; margin: 0; padding: 0;">${content}</div>`;
+      return `<div class="${getThemeClass(color)}" style="font-size: ${fontSize}px; font-weight: ${fontWeight}; color: ${color}; font-family: ${fontFamily}; font-style: ${fontStyle}; text-align: ${textAlign}; line-height: 1.4; margin: 0; padding: 0;">${content}</div>`;
     }
 
     case ELEMENT_TYPES.CTA: {
@@ -221,7 +276,7 @@ function generateElementHTML(
         ? `<img src="https://pub-dd6ab45e76d24bfb9622b5737a421877.r2.dev/icons/${type === ELEMENT_TYPES.PHONE ? "phone" : "smartphone"}-${getColorName(iconColor)}.png" alt="" width="16" height="16" style="vertical-align: middle; margin-right: 8px; display: inline-block;" />`
         : "";
 
-      return `<div style="font-size: ${fontSize}px; color: ${color}; font-family: ${fontFamily}; line-height: 1.4; margin: 0; padding: 0;">${icon}<span>${escapeForGmail(value, "phone")}</span></div>`;
+      return `<div class="${getThemeClass(color)}" style="font-size: ${fontSize}px; color: ${color}; font-family: ${fontFamily}; line-height: 1.4; margin: 0; padding: 0;">${icon}<span>${escapeForGmail(value, "phone")}</span></div>`;
     }
 
     case ELEMENT_TYPES.EMAIL: {
@@ -239,7 +294,7 @@ function generateElementHTML(
         ? `<img src="https://pub-dd6ab45e76d24bfb9622b5737a421877.r2.dev/icons/mail-${getColorName(iconColor)}.png" alt="" width="16" height="16" style="vertical-align: middle; margin-right: 8px; display: inline-block;" />`
         : "";
 
-      return `<div style="font-size: ${fontSize}px; color: ${color}; font-family: ${fontFamily}; line-height: 1.4; margin: 0; padding: 0;">${icon}<a href="mailto:${email}" style="color: ${color}; text-decoration: none;">${escapeForGmail(email, "email")}</a></div>`;
+      return `<div class="${getThemeClass(color)}" style="font-size: ${fontSize}px; color: ${color}; font-family: ${fontFamily}; line-height: 1.4; margin: 0; padding: 0;">${icon}<a href="mailto:${email}" style="color: ${color}; text-decoration: none;">${escapeForGmail(email, "email")}</a></div>`;
     }
 
     case ELEMENT_TYPES.WEBSITE: {
@@ -258,7 +313,7 @@ function generateElementHTML(
         : "";
       const href = website.startsWith("http") ? website : `https://${website}`;
 
-      return `<div style="font-size: ${fontSize}px; color: ${color}; font-family: ${fontFamily}; line-height: 1.4; margin: 0; padding: 0;">${icon}<a href="${href}" style="color: ${color}; text-decoration: none;" target="_blank">${escapeForGmail(website, "website")}</a></div>`;
+      return `<div class="${getThemeClass(color)}" style="font-size: ${fontSize}px; color: ${color}; font-family: ${fontFamily}; line-height: 1.4; margin: 0; padding: 0;">${icon}<a href="${href}" style="color: ${color}; text-decoration: none;" target="_blank">${escapeForGmail(website, "website")}</a></div>`;
     }
 
     case ELEMENT_TYPES.ADDRESS: {
@@ -276,7 +331,7 @@ function generateElementHTML(
         ? `<img src="https://pub-dd6ab45e76d24bfb9622b5737a421877.r2.dev/icons/map-pin-${getColorName(iconColor)}.png" alt="" width="16" height="16" style="vertical-align: middle; margin-right: 8px; display: inline-block;" />`
         : "";
 
-      return `<div style="font-size: ${fontSize}px; color: ${color}; font-family: ${fontFamily}; line-height: 1.4; margin: 0; padding: 0;">${icon}<span>${address}</span></div>`;
+      return `<div class="${getThemeClass(color)}" style="font-size: ${fontSize}px; color: ${color}; font-family: ${fontFamily}; line-height: 1.4; margin: 0; padding: 0;">${icon}<span>${address}</span></div>`;
     }
 
     case ELEMENT_TYPES.PHOTO: {
@@ -602,8 +657,8 @@ export function generateSignatureHTMLFromContainer(
     }
 
     // Wrap in outer table for email clients
-    return `
-      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; font-family: ${fontFamily}; max-width: 600px;">
+    return `${DARK_MODE_STYLE}
+      <table class="nb-signature-bg" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; font-family: ${fontFamily}; max-width: 600px; background-color: transparent;">
         <tr>
           <td style="padding: 0;">
             ${containerHTML}

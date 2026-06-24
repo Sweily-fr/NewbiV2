@@ -144,6 +144,16 @@ const UniversalPreviewPDF = ({
   const isCreditNote = type === "creditNote";
   const isPurchaseOrder = type === "purchaseOrder";
 
+  // Client étranger : pays renseigné et différent de la France.
+  // Dans ce cas, SIREN et N° TVA (terminologie franco-française) ne sont pas
+  // affichés sur le document car ils n'ont pas d'équivalent direct à l'étranger.
+  const isClientForeign = (() => {
+    const country = String(data.client?.address?.country || "")
+      .trim()
+      .toLowerCase();
+    return country !== "" && country !== "france" && country !== "fr";
+  })();
+
   // Debug: Log des données reçues pour les devis
   useEffect(() => {
     if (type === "quote") {
@@ -942,13 +952,13 @@ const UniversalPreviewPDF = ({
                           {formatAddress(data.client.address) || ""}
                         </div>
                       )}
-                      {data.client?.siret && (
+                      {!isClientForeign && data.client?.siret && (
                         <div className="dark:text-[#0A0A0A]">
                           SIREN:{" "}
                           {data.client.siret.replace(/\D/g, "").slice(0, 9)}
                         </div>
                       )}
-                      {data.client?.vatNumber && (
+                      {!isClientForeign && data.client?.vatNumber && (
                         <div className="dark:text-[#0A0A0A]">
                           N° TVA: {data.client.vatNumber}
                         </div>
@@ -976,7 +986,7 @@ const UniversalPreviewPDF = ({
                           {data.client.email}
                         </div>
                       )}
-                      {data.client?.siret && (
+                      {!isClientForeign && data.client?.siret && (
                         <div className="dark:text-[#0A0A0A]">
                           SIREN:{" "}
                           {data.client.siret.replace(/\D/g, "").slice(0, 9)}
@@ -987,7 +997,7 @@ const UniversalPreviewPDF = ({
                           {data.client.phone}
                         </div>
                       )}
-                      {data.client?.vatNumber && (
+                      {!isClientForeign && data.client?.vatNumber && (
                         <div className="dark:text-[#0A0A0A]">
                           N° TVA: {data.client.vatNumber}
                         </div>
