@@ -54,7 +54,6 @@ import { AnalyticsAgingChart } from "./components/analytics-aging-chart";
 import { AnalyticsCollectionChart } from "./components/analytics-collection-chart";
 import { AnalyticsTreasuryForecastChart } from "./components/analytics-treasury-forecast-chart";
 import { AnalyticsBankFlowChart } from "./components/analytics-bank-flow-chart";
-import { AnalyticsPCGMapping } from "./components/analytics-pcg-mapping";
 import BankBalanceCard from "@/src/components/banking/BankBalanceCard";
 import RecentTransactionsCard from "@/src/components/banking/RecentTransactionsCard";
 import { TreasuryChart } from "@/src/components/treasury-chart";
@@ -451,7 +450,6 @@ export default function AnalytiquesPage() {
                 )}
               </>
             )}
-            <TabsTrigger value="pcg">Plan Comptable</TabsTrigger>
           </TabsList>
 
           {/* ===== Tab 1 — SYNTHESE ===== */}
@@ -705,14 +703,6 @@ export default function AnalytiquesPage() {
                 loading={loading}
               />
             </div>
-          </TabsContent>
-
-          {/* ===== Tab 6 — PLAN COMPTABLE (PCG) ===== */}
-          <TabsContent
-            value="pcg"
-            className="flex-1 min-h-0 overflow-y-auto pb-8"
-          >
-            <AnalyticsPCGMapping />
           </TabsContent>
         </Tabs>
       </div>
