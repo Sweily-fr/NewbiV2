@@ -1,51 +1,17 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import {
-  useReconciliation,
-  useIgnoreTransaction,
-} from "@/src/hooks/useReconciliation";
+import { useReconciliation } from "@/src/hooks/useReconciliation";
 import { useRouter } from "next/navigation";
 import { Landmark, X, Undo2 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { toast as sonnerToast } from "sonner";
-
-// ---------------------------------------------------------------------------
-// LocalStorage helpers — persistance des suggestions ignorées
-// ---------------------------------------------------------------------------
-const IGNORED_SUGGESTIONS_KEY = "reconciliation_ignored_suggestions";
-
-const getIgnoredSuggestions = () => {
-  if (typeof window === "undefined") return new Set();
-  try {
-    const stored = localStorage.getItem(IGNORED_SUGGESTIONS_KEY);
-    return stored ? new Set(JSON.parse(stored)) : new Set();
-  } catch {
-    return new Set();
-  }
-};
-
-const saveIgnoredSuggestion = (transactionId) => {
-  if (typeof window === "undefined") return;
-  try {
-    const ignored = getIgnoredSuggestions();
-    ignored.add(transactionId);
-    localStorage.setItem(IGNORED_SUGGESTIONS_KEY, JSON.stringify([...ignored]));
-  } catch {
-    // Ignorer les erreurs de localStorage
-  }
-};
-
-const removeIgnoredSuggestion = (transactionId) => {
-  if (typeof window === "undefined") return;
-  try {
-    const ignored = getIgnoredSuggestions();
-    ignored.delete(transactionId);
-    localStorage.setItem(IGNORED_SUGGESTIONS_KEY, JSON.stringify([...ignored]));
-  } catch {
-    // Ignorer les erreurs de localStorage
-  }
-};
+import {
+  getIgnoredSuggestions,
+  saveIgnoredSuggestion,
+  removeIgnoredSuggestion,
+  RECONCILIATION_REPROPOSE_EVENT,
+} from "@/src/lib/reconciliationIgnored";
 
 // Délai avant confirmation serveur (fenêtre d'undo)
 const UNDO_DELAY_MS = 5000;
@@ -152,7 +118,7 @@ function ReconciliationCard({
                   "transition-colors duration-150",
                 )}
               >
-                Ignorer
+                Masquer
               </button>
               <button
                 onClick={(e) => {
@@ -304,7 +270,6 @@ export function ReconciliationToastProvider({ children }) {
     loading,
     error,
   } = useReconciliation();
-  const { ignoreTransaction } = useIgnoreTransaction();
 
   const [ignoredSuggestions, setIgnoredSuggestions] = useState(new Set());
   const [exitingIds, setExitingIds] = useState(new Set());
@@ -314,6 +279,29 @@ export function ReconciliationToastProvider({ children }) {
   // Charger les suggestions ignorées au montage
   useEffect(() => {
     setIgnoredSuggestions(getIgnoredSuggestions());
+  }, []);
+
+  // Reproposer une transaction dissociée : le hook de déliaison a déjà nettoyé
+  // le localStorage et rafraîchi GET_RECONCILIATION_SUGGESTIONS (cache Apollo
+  // partagé). Il ne reste qu'à synchroniser l'état "ignoré" en mémoire pour que
+  // la carte réapparaisse — sans la rattacher.
+  useEffect(() => {
+    const handleRepropose = (event) => {
+      const transactionId = event.detail?.transactionId;
+      if (!transactionId) return;
+      setIgnoredSuggestions((prev) => {
+        if (!prev.has(transactionId)) return prev;
+        const next = new Set(prev);
+        next.delete(transactionId);
+        return next;
+      });
+    };
+    window.addEventListener(RECONCILIATION_REPROPOSE_EVENT, handleRepropose);
+    return () =>
+      window.removeEventListener(
+        RECONCILIATION_REPROPOSE_EVENT,
+        handleRepropose,
+      );
   }, []);
 
   // Cleanup des timers au démontage
@@ -376,9 +364,18 @@ export function ReconciliationToastProvider({ children }) {
       });
 
       try {
-        await linkTransaction(transactionId, invoiceId);
-      } catch {
-        // Erreur gérée par le hook
+        const result = await linkTransaction(transactionId, invoiceId);
+        // Rollback de l'optimistic-ignore si le serveur refuse le rattachement :
+        // sinon la carte reste masquée alors que la transaction n'est pas
+        // rapprochée (linkTransaction ne jette pas, il renvoie { success }).
+        if (!result?.success) {
+          removeIgnoredSuggestion(transactionId);
+          setIgnoredSuggestions((prev) => {
+            const next = new Set(prev);
+            next.delete(transactionId);
+            return next;
+          });
+        }
       } finally {
         setIsProcessing(false);
       }
@@ -386,23 +383,26 @@ export function ReconciliationToastProvider({ children }) {
     [linkTransaction, animateOut],
   );
 
-  // Ignorer une suggestion — optimistic UI + undo + confirmation serveur
+  // Masquer une suggestion du toast — NON bloquant. On la cache uniquement côté
+  // client (localStorage) ; la transaction reste "unmatched" en base, donc
+  // toujours rapprochable depuis le drawer transaction et la sidebar facture.
+  // Aucun statut "ignoré" serveur n'est posé.
   const handleIgnore = useCallback(
     (transactionId) => {
-      // 1. Optimistic UI : disparition immédiate
+      // Optimistic UI : disparition immédiate de la carte
       saveIgnoredSuggestion(transactionId);
       animateOut(transactionId, () => {
         setIgnoredSuggestions((prev) => new Set([...prev, transactionId]));
       });
 
-      // 2. Toast undo (5 secondes pour annuler)
+      // Toast undo (5 secondes pour annuler le masquage)
       sonnerToast.custom(
         () => (
           <div
             className="flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg max-w-[360px]"
             style={{ backgroundColor: "#202020" }}
           >
-            <p className="text-sm text-white grow">Transaction ignorée</p>
+            <p className="text-sm text-white grow">Paiement masqué</p>
             <button
               onClick={() => handleUndo(transactionId)}
               className="flex items-center gap-1.5 text-sm font-medium text-white/80 hover:text-white transition-colors cursor-pointer shrink-0"
@@ -417,35 +417,8 @@ export function ReconciliationToastProvider({ children }) {
           duration: UNDO_DELAY_MS,
         },
       );
-
-      // 3. Confirmation serveur après le délai d'undo
-      const timer = setTimeout(async () => {
-        undoTimersRef.current.delete(transactionId);
-        try {
-          const result = await ignoreTransaction(transactionId);
-          if (!result.success) {
-            // Rollback si le serveur refuse
-            removeIgnoredSuggestion(transactionId);
-            setIgnoredSuggestions((prev) => {
-              const next = new Set(prev);
-              next.delete(transactionId);
-              return next;
-            });
-          }
-        } catch {
-          // Rollback en cas d'erreur réseau
-          removeIgnoredSuggestion(transactionId);
-          setIgnoredSuggestions((prev) => {
-            const next = new Set(prev);
-            next.delete(transactionId);
-            return next;
-          });
-        }
-      }, UNDO_DELAY_MS);
-
-      undoTimersRef.current.set(transactionId, timer);
     },
-    [animateOut, ignoreTransaction, handleUndo],
+    [animateOut, handleUndo],
   );
 
   // Naviguer vers la facture (clic sur la carte)
