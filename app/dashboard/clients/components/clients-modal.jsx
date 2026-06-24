@@ -278,17 +278,16 @@ export default function ClientsModal({
   const siretValidationRules = {
     validate: (value) => {
       const currentIsInternational = watch("isInternational");
-      if (!value || value.trim() === "") {
-        return currentIsInternational
-          ? "Le numéro d'identification est obligatoire"
-          : "Le SIREN/SIRET est obligatoire";
+      // Entreprise hors France : pas de SIREN/SIRET (notions FR) → champ absent, non requis
+      if (currentIsInternational) {
+        return true;
       }
-      // Pour les entreprises françaises, vérifier le format
-      if (!currentIsInternational) {
-        const siretRegex = /^\d{9}$|^\d{14}$/;
-        if (!siretRegex.test(value)) {
-          return "Le SIREN doit contenir 9 chiffres ou le SIRET 14 chiffres";
-        }
+      if (!value || value.trim() === "") {
+        return "Le SIREN/SIRET est obligatoire";
+      }
+      const siretRegex = /^\d{9}$|^\d{14}$/;
+      if (!siretRegex.test(value)) {
+        return "Le SIREN doit contenir 9 chiffres ou le SIRET 14 chiffres";
       }
       return true;
     },
@@ -606,6 +605,12 @@ export default function ClientsModal({
         customFields: customFieldsArray,
       };
 
+      // Client hors France : pas de SIREN/TVA (notions FR) → ne rien stocker en base
+      if (formData.isInternational) {
+        clientData.siret = undefined;
+        clientData.vatNumber = undefined;
+      }
+
       let result;
       if (isEditing) {
         result = await updateClient(client.id, clientData);
@@ -825,8 +830,8 @@ export default function ClientsModal({
 
                     {clientType === "COMPANY" && isInternational && (
                       <p className="text-xs text-muted-foreground">
-                        Pour les entreprises hors France, les champs SIRET et
-                        TVA sont optionnels et sans validation stricte.
+                        Les entreprises hors France n'ont pas de SIREN ni de
+                        numéro de TVA français : ces champs ne sont pas demandés.
                       </p>
                     )}
 
@@ -1389,22 +1394,15 @@ export default function ClientsModal({
                       </div>
                     )}
 
-                    {/* Informations entreprise (pour les entreprises) */}
-                    {clientType === "COMPANY" && (
+                    {/* Informations entreprise — SIREN/TVA (notions FR), masquées hors France */}
+                    {clientType === "COMPANY" && !isInternational && (
                       <div className="space-y-3 border-t pt-4">
                         <div className="space-y-2">
                           <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
-                            {isInternational
-                              ? "Numéro d'identification"
-                              : "SIREN/SIRET"}{" "}
-                            *
+                            SIREN/SIRET *
                           </Label>
                           <Input
-                            placeholder={
-                              isInternational
-                                ? "Numéro d'identification (ex: VAT, EIN, etc.)"
-                                : "123456789 ou 12345678901234"
-                            }
+                            placeholder="123456789 ou 12345678901234"
                             className={cn(
                               errors.siret &&
                                 "border-red-500 hover:border-red-500",
@@ -1416,12 +1414,6 @@ export default function ClientsModal({
                               {errors.siret.message}
                             </p>
                           )}
-                          {isInternational && (
-                            <p className="text-xs text-muted-foreground">
-                              Numéro d'identification fiscale ou équivalent
-                              local (ex: VAT, EIN, etc.)
-                            </p>
-                          )}
                         </div>
 
                         <div className="space-y-2">
@@ -1429,11 +1421,7 @@ export default function ClientsModal({
                             Numéro de TVA
                           </Label>
                           <Input
-                            placeholder={
-                              isInternational
-                                ? "Numéro de TVA (format libre)"
-                                : "FR12345678901"
-                            }
+                            placeholder="FR12345678901"
                             className={cn(
                               errors.vatNumber &&
                                 "border-red-500 hover:border-red-500",
@@ -1443,12 +1431,6 @@ export default function ClientsModal({
                           {errors.vatNumber && (
                             <p className="text-sm text-red-500">
                               {errors.vatNumber.message}
-                            </p>
-                          )}
-                          {isInternational && (
-                            <p className="text-xs text-muted-foreground">
-                              Optionnel - Format libre pour les entreprises hors
-                              UE
                             </p>
                           )}
                         </div>
@@ -1646,8 +1628,8 @@ export default function ClientsModal({
 
                     {clientType === "COMPANY" && isInternational && (
                       <p className="text-xs text-muted-foreground">
-                        Pour les entreprises hors France, les champs SIRET et
-                        TVA sont optionnels et sans validation stricte.
+                        Les entreprises hors France n'ont pas de SIREN ni de
+                        numéro de TVA français : ces champs ne sont pas demandés.
                       </p>
                     )}
 
@@ -2210,8 +2192,8 @@ export default function ClientsModal({
                       </div>
                     )}
 
-                    {/* Informations entreprise (pour les entreprises) */}
-                    {clientType === "COMPANY" && (
+                    {/* Informations entreprise — SIREN/TVA (notions FR), masquées hors France */}
+                    {clientType === "COMPANY" && !isInternational && (
                       <div className="space-y-3 border-t pt-4">
                         <Label className="text-base font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
                           Informations entreprise
@@ -2219,17 +2201,10 @@ export default function ClientsModal({
 
                         <div className="space-y-2">
                           <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
-                            {isInternational
-                              ? "Numéro d'identification"
-                              : "SIREN/SIRET"}{" "}
-                            *
+                            SIREN/SIRET *
                           </Label>
                           <Input
-                            placeholder={
-                              isInternational
-                                ? "Numéro d'identification (ex: VAT, EIN, etc.)"
-                                : "123456789 ou 12345678901234"
-                            }
+                            placeholder="123456789 ou 12345678901234"
                             className={cn(
                               errors.siret &&
                                 "border-red-500 hover:border-red-500",
@@ -2241,12 +2216,6 @@ export default function ClientsModal({
                               {errors.siret.message}
                             </p>
                           )}
-                          {isInternational && (
-                            <p className="text-xs text-muted-foreground">
-                              Numéro d'identification fiscale ou équivalent
-                              local (ex: VAT, EIN, etc.)
-                            </p>
-                          )}
                         </div>
 
                         <div className="space-y-2">
@@ -2254,11 +2223,7 @@ export default function ClientsModal({
                             Numéro de TVA
                           </Label>
                           <Input
-                            placeholder={
-                              isInternational
-                                ? "Numéro de TVA (format libre)"
-                                : "FR12345678901"
-                            }
+                            placeholder="FR12345678901"
                             className={cn(
                               errors.vatNumber &&
                                 "border-red-500 hover:border-red-500",
@@ -2268,12 +2233,6 @@ export default function ClientsModal({
                           {errors.vatNumber && (
                             <p className="text-sm text-red-500">
                               {errors.vatNumber.message}
-                            </p>
-                          )}
-                          {isInternational && (
-                            <p className="text-xs text-muted-foreground">
-                              Optionnel - Format libre pour les entreprises hors
-                              UE
                             </p>
                           )}
                         </div>
