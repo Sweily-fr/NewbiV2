@@ -17,6 +17,8 @@ import {
   Download,
   ShoppingCart,
   LoaderCircle,
+  Stamp,
+  Ban,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/src/components/ui/button";
@@ -48,7 +50,11 @@ import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDF
 import CreateLinkedInvoicePopover from "./create-linked-invoice-popover";
 import LinkedInvoicesList from "./linked-invoices-list";
 import { SignatureStatusBadge } from "@/src/components/esignature/signature-status-badge";
-import { useDocumentSignatureStatus } from "@/src/hooks/useESignature";
+import {
+  useDocumentSignatureStatus,
+  useSealQuoteDocument,
+  useCancelSignature,
+} from "@/src/hooks/useESignature";
 
 export default function QuoteSidebar({
   isOpen,
@@ -96,8 +102,25 @@ export default function QuoteSidebar({
   } = useQuote(initialQuote?.id);
 
   // Statut de signature électronique
-  const { signatureRequest: signatureStatus, hasSignature } =
-    useDocumentSignatureStatus("quote", initialQuote?.id);
+  const {
+    signatureRequest: signatureStatus,
+    hasSignature,
+    isPending: signaturePending,
+    refetch: refetchSignature,
+  } = useDocumentSignatureStatus("quote", initialQuote?.id);
+
+  const { sealQuoteDocument, loading: sealing } = useSealQuoteDocument();
+  const { cancelSignature, loading: cancellingSignature } =
+    useCancelSignature();
+
+  // Quand une signature/cachet se termine, rafraîchir le devis pour mettre à jour
+  // l'affichage (statut accepté, sealStatus, sealedDocumentUrl).
+  useEffect(() => {
+    if (signatureStatus?.status === "DONE" && onRefetch) {
+      onRefetch();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signatureStatus?.status]);
 
   if (!initialQuote) return null;
 
@@ -175,7 +198,23 @@ export default function QuoteSidebar({
       toast.success("Devis accepté");
       if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error("Erreur lors de l'acceptation du devis");
+      toast.error(
+        error?.message || "Erreur lors de l'acceptation du devis"
+      );
+    }
+  };
+
+  const handleSeal = async () => {
+    const res = await sealQuoteDocument(quote.id);
+    if (res?.success && onRefetch) onRefetch();
+  };
+
+  const handleCancelSignatureRequest = async () => {
+    if (!signatureStatus?.id) return;
+    const res = await cancelSignature(signatureStatus.id, "quote", quote.id);
+    if (res?.success) {
+      if (refetchSignature) refetchSignature();
+      if (onRefetch) onRefetch();
     }
   };
 
@@ -741,6 +780,23 @@ export default function QuoteSidebar({
 
         {/* Action Buttons */}
         <div className="border-t px-6 py-4 space-y-3">
+          {/* Annuler une demande de signature en cours (tout type) */}
+          {signaturePending && signatureStatus?.id && (
+            <Button
+              variant="outline"
+              onClick={handleCancelSignatureRequest}
+              disabled={cancellingSignature}
+              className="w-full font-normal text-red-600 hover:text-red-600"
+            >
+              {cancellingSignature ? (
+                <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Ban className="h-4 w-4 mr-2" />
+              )}
+              Annuler la demande de signature
+            </Button>
+          )}
+
           {/* Draft Actions */}
           {quote.status === QUOTE_STATUS.DRAFT && (
             <div className="flex gap-2">
@@ -779,15 +835,20 @@ export default function QuoteSidebar({
                   ? "Refuser le devis"
                   : "Annuler le devis"}
               </Button>
-              <Button
-                variant="primary"
-                onClick={handleAccept}
-                disabled={isLoading}
-                className="flex-1 font-normal"
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Accepter le devis
-              </Button>
+              {/* Accepter : devis importés librement, devis natifs une fois signés */}
+              {(quote.status === QUOTE_STATUS.IMPORTED ||
+                (quote.status === QUOTE_STATUS.PENDING &&
+                  signatureStatus?.status === "DONE")) && (
+                <Button
+                  variant="primary"
+                  onClick={handleAccept}
+                  disabled={isLoading}
+                  className="flex-1 font-normal"
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Accepter le devis
+                </Button>
+              )}
             </div>
           )}
 
@@ -875,6 +936,64 @@ export default function QuoteSidebar({
                   Convertir en bon de commande
                 </Button>
               </div>
+
+              {/* Cachet qualifié (QES) — dispo une fois le devis signé par le client.
+                  N'affecte pas le statut du devis, certifie seulement le document signé. */}
+              {quote.signatureStatus === "DONE" && (
+                <div className="flex flex-col gap-2 pt-1">
+                  {quote.sealStatus === "DONE" ? (
+                    quote.sealedDocumentUrl ? (
+                      <Button
+                        variant="outline"
+                        onClick={() =>
+                          window.open(quote.sealedDocumentUrl, "_blank")
+                        }
+                        className="w-full font-normal"
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Télécharger le document cacheté
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        disabled
+                        className="w-full font-normal"
+                      >
+                        <Stamp className="h-4 w-4 mr-2" />
+                        Document cacheté
+                      </Button>
+                    )
+                  ) : [
+                      "PENDING",
+                      "WAIT_VALIDATION",
+                      "WAIT_SIGN",
+                      "WAIT_SIGNER",
+                    ].includes(quote.sealStatus) ? (
+                    <Button
+                      variant="outline"
+                      disabled
+                      className="w-full font-normal"
+                    >
+                      <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
+                      Cachet en cours…
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      onClick={handleSeal}
+                      disabled={isLoading || sealing}
+                      className="w-full font-normal"
+                    >
+                      {sealing ? (
+                        <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Stamp className="h-4 w-4 mr-2" />
+                      )}
+                      Cacheter le document
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
