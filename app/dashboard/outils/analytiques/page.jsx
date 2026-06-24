@@ -259,13 +259,6 @@ const COMMERCIAL_KPI = [
     tooltip: "Clients actifs cette période mais pas sur N-1",
   },
   {
-    key: "retainedClientCount",
-    label: "Clients fidélisés",
-    format: formatNumber,
-    tooltip:
-      "Clients ayant facturé à la fois sur la période sélectionnée ET sur la période précédente de même durée (N-1).",
-  },
-  {
     key: "quoteConversionRate",
     label: "Conversion devis",
     format: formatPercent,
