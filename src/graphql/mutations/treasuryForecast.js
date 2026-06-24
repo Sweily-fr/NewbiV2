@@ -92,6 +92,15 @@ export const MUTE_DETECTED_RECURRENCE = gql`
   }
 `;
 
+export const DELETE_DETECTED_RECURRENCE = gql`
+  mutation DeleteDetectedRecurrence($id: ID!) {
+    deleteDetectedRecurrence(id: $id) {
+      success
+      message
+    }
+  }
+`;
+
 export const RUN_RECURRENCE_DETECTION = gql`
   mutation RunRecurrenceDetection($workspaceId: ID) {
     runRecurrenceDetection(workspaceId: $workspaceId)
