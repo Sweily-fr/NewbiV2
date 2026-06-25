@@ -1,14 +1,16 @@
 "use client";
 
 import React from "react";
-import { useQuery, useMutation } from "@apollo/client";
+import { useQuery, useMutation, useSubscription } from "@apollo/client";
 import { toast } from "@/src/components/ui/sonner";
 import {
   GET_SIGNATURE_REQUESTS,
   GET_DOCUMENT_SIGNATURE_STATUS,
   REQUEST_DOCUMENT_SIGNATURE,
+  SEAL_QUOTE_DOCUMENT,
   CANCEL_SIGNATURE,
   RETRY_SIGNATURE,
+  SIGNATURE_STATUS_UPDATED,
 } from "@/src/graphql/esignatureQueries";
 import posthog from "posthog-js";
 
@@ -36,7 +38,9 @@ export function useDocumentSignatureStatus(documentType, documentId) {
       signatureRequest.status,
     );
 
-  // Activer le polling uniquement quand une signature est en cours
+  // Activer le polling uniquement quand une signature est en cours.
+  // La subscription temps réel ci-dessous reste le canal principal ; le polling
+  // est un filet de sécurité (ex : websocket indisponible).
   React.useEffect(() => {
     if (isPending && !isTerminal) {
       startPolling(30000);
@@ -45,6 +49,16 @@ export function useDocumentSignatureStatus(documentType, documentId) {
     }
     return () => stopPolling();
   }, [isPending, isTerminal, startPolling, stopPolling]);
+
+  // Mise à jour temps réel du statut (passage à « Signé », erreur, cachet…).
+  // À réception, on refetch pour récupérer document signé / preuve / signataires.
+  useSubscription(SIGNATURE_STATUS_UPDATED, {
+    variables: { documentId },
+    skip: !documentId,
+    onData: () => {
+      refetch?.();
+    },
+  });
 
   return {
     signatureRequest,
@@ -131,6 +145,58 @@ export function useRequestSignature() {
 
   return {
     requestSignature,
+    loading,
+  };
+}
+
+/**
+ * Hook pour apposer un cachet qualifié (QES) sur le document signé d'un devis
+ */
+export function useSealQuoteDocument() {
+  const [sealMutation, { loading }] = useMutation(SEAL_QUOTE_DOCUMENT);
+
+  const sealQuoteDocument = async (quoteId) => {
+    try {
+      const { data, errors } = await sealMutation({
+        variables: { quoteId },
+        refetchQueries: [
+          {
+            query: GET_DOCUMENT_SIGNATURE_STATUS,
+            variables: { documentType: "quote", documentId: quoteId },
+          },
+        ],
+      });
+
+      if (data?.sealQuoteDocument?.success) {
+        toast.success("Cachet appliqué", {
+          description:
+            "Le document signé a été cacheté avec le certificat qualifié de l'entreprise.",
+        });
+        return {
+          success: true,
+          signatureRequest: data.sealQuoteDocument.signatureRequest,
+        };
+      } else {
+        const errorMessage =
+          data?.sealQuoteDocument?.message ||
+          errors?.[0]?.message ||
+          "Impossible d'appliquer le cachet";
+        toast.error("Erreur", { description: errorMessage });
+        return { success: false, error: errorMessage };
+      }
+    } catch (error) {
+      const errorMessage =
+        error?.graphQLErrors?.[0]?.message ||
+        error?.networkError?.message ||
+        error?.message ||
+        "Une erreur est survenue";
+      toast.error("Erreur", { description: errorMessage });
+      return { success: false, error: errorMessage };
+    }
+  };
+
+  return {
+    sealQuoteDocument,
     loading,
   };
 }

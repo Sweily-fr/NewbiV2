@@ -69,6 +69,17 @@ export const LINK_TRANSACTION_TO_INVOICE = gql`
         description
         date
         reconciliationStatus
+        reconciliationDate
+        linkedInvoiceId
+        linkedInvoice {
+          id
+          number
+          status
+          clientName
+          totalTTC
+          issueDate
+          dueDate
+        }
       }
       invoice {
         id
@@ -90,6 +101,21 @@ export const UNLINK_TRANSACTION_FROM_INVOICE = gql`
     unlinkTransactionFromInvoice(input: $input) {
       success
       message
+      transaction {
+        id
+        reconciliationStatus
+        reconciliationDate
+        linkedInvoiceId
+        linkedInvoice {
+          id
+          number
+          status
+          clientName
+          totalTTC
+          issueDate
+          dueDate
+        }
+      }
     }
   }
 `;

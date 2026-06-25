@@ -117,6 +117,7 @@ function HelpDropdownMenu({ onCommunityClick }) {
             className="cursor-pointer flex-col items-start gap-1"
             onClick={(e) => {
               e.preventDefault();
+              setOpen(false);
               if (onCommunityClick) {
                 onCommunityClick();
               }

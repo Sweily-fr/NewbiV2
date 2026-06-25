@@ -4,16 +4,11 @@ import React, { useState, useRef, useEffect } from "react";
 import { GripVertical } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { ELEMENT_TYPES } from "../../utils/block-registry";
-import {
-  Phone,
-  Mail,
-  Globe,
-  MapPin,
-  Smartphone,
-} from "lucide-react";
+import { Phone, Mail, Globe, MapPin, Smartphone } from "lucide-react";
 
 // Cloudflare R2 base URL for social icons
-const CLOUDFLARE_SOCIAL_BASE = "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social";
+const CLOUDFLARE_SOCIAL_BASE =
+  "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social";
 
 // Function to get social icon URL from Cloudflare
 const getSocialIconUrl = (platform, color = "black") => {
@@ -25,13 +20,30 @@ const getSocialIconUrl = (platform, color = "black") => {
 const getColorName = (colorInput) => {
   if (!colorInput) return "black";
   const color = colorInput.toLowerCase().trim();
-  const validColorNames = ["blue", "pink", "purple", "black", "red", "green", "yellow", "orange", "indigo", "sky"];
+  const validColorNames = [
+    "blue",
+    "pink",
+    "purple",
+    "black",
+    "red",
+    "green",
+    "yellow",
+    "orange",
+    "indigo",
+    "sky",
+  ];
   if (validColorNames.includes(color)) return color;
 
   const hexColor = color.replace("#", "");
   const colorMap = {
-    "0077b5": "blue", "1877f2": "blue", "e4405f": "pink", "833ab4": "purple",
-    "000000": "black", "1da1f2": "blue", "ff0000": "red", "333333": "black",
+    "0077b5": "blue",
+    "1877f2": "blue",
+    e4405f: "pink",
+    "833ab4": "purple",
+    "000000": "black",
+    "1da1f2": "blue",
+    ff0000: "red",
+    333333: "black",
   };
   return colorMap[hexColor] || "black";
 };
@@ -60,6 +72,7 @@ export default function BlockElement({
   onDragStart: externalOnDragStart,
   onUpdate,
   onDelete,
+  readOnly = false,
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -176,7 +189,10 @@ export default function BlockElement({
     }
 
     // Store element data for cross-block movement (format: elementId::containerId)
-    e.dataTransfer.setData("application/x-element-id", `${element.id}::${blockId}`);
+    e.dataTransfer.setData(
+      "application/x-element-id",
+      `${element.id}::${blockId}`,
+    );
     e.dataTransfer.effectAllowed = "move";
 
     // Create drag image
@@ -205,7 +221,9 @@ export default function BlockElement({
 
   // Handle drag over for reordering - detect position (before/after)
   const handleDragOver = (e) => {
-    const hasElementData = e.dataTransfer.types.includes("application/x-element-id");
+    const hasElementData = e.dataTransfer.types.includes(
+      "application/x-element-id",
+    );
     if (hasElementData && elementRef.current) {
       e.preventDefault();
       e.stopPropagation();
@@ -222,12 +240,13 @@ export default function BlockElement({
 
       // Check if the parent flex is horizontal or vertical
       const parent = elementRef.current.parentElement;
-      const isHorizontalLayout = parent && window.getComputedStyle(parent).flexDirection === 'row';
+      const isHorizontalLayout =
+        parent && window.getComputedStyle(parent).flexDirection === "row";
 
       if (isHorizontalLayout) {
-        setDropPosition(mouseX < midX ? 'before' : 'after');
+        setDropPosition(mouseX < midX ? "before" : "after");
       } else {
-        setDropPosition(mouseY < midY ? 'before' : 'after');
+        setDropPosition(mouseY < midY ? "before" : "after");
       }
     }
   };
@@ -279,7 +298,9 @@ export default function BlockElement({
       case ELEMENT_TYPES.PHONE:
         return <Phone className={iconClass} style={{ color: iconColor }} />;
       case ELEMENT_TYPES.MOBILE:
-        return <Smartphone className={iconClass} style={{ color: iconColor }} />;
+        return (
+          <Smartphone className={iconClass} style={{ color: iconColor }} />
+        );
       case ELEMENT_TYPES.EMAIL:
         return <Mail className={iconClass} style={{ color: iconColor }} />;
       case ELEMENT_TYPES.WEBSITE:
@@ -312,6 +333,7 @@ export default function BlockElement({
               <img
                 src={photoSrc}
                 alt="Profile"
+                draggable={false}
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -333,7 +355,7 @@ export default function BlockElement({
             onKeyDown={handleKeyDown}
             className={cn(
               "outline-none transition-colors",
-              isEditing && "px-1 -mx-1 rounded bg-[rgba(90,80,255,0.05)]"
+              isEditing && "px-1 -mx-1 rounded bg-[rgba(90,80,255,0.05)]",
             )}
             style={{
               fontSize: props.fontSize || 14,
@@ -364,7 +386,7 @@ export default function BlockElement({
               onKeyDown={handleKeyDown}
               className={cn(
                 "outline-none transition-colors",
-                isEditing && "px-1 -mx-1 rounded bg-[rgba(90,80,255,0.05)]"
+                isEditing && "px-1 -mx-1 rounded bg-[rgba(90,80,255,0.05)]",
               )}
               style={{
                 fontSize: props.fontSize || 12,
@@ -390,7 +412,7 @@ export default function BlockElement({
             onKeyDown={handleKeyDown}
             className={cn(
               "outline-none transition-colors",
-              isEditing && "px-1 -mx-1 rounded bg-[rgba(90,80,255,0.05)]"
+              isEditing && "px-1 -mx-1 rounded bg-[rgba(90,80,255,0.05)]",
             )}
             style={{
               fontSize: props.fontSize || 14,
@@ -436,7 +458,9 @@ export default function BlockElement({
               className="flex items-center justify-center bg-neutral-100 dark:bg-neutral-800 border border-dashed border-neutral-300 dark:border-neutral-600 rounded"
               style={{ width: `${bannerWidth}px`, height: "60px" }}
             >
-              <span className="text-xs text-muted-foreground">Ajoutez une image via le panneau</span>
+              <span className="text-xs text-muted-foreground">
+                Ajoutez une image via le panneau
+              </span>
             </div>
           );
         }
@@ -444,6 +468,7 @@ export default function BlockElement({
           <img
             src={bannerSrc}
             alt={props.alt || "Bandeau"}
+            draggable={false}
             style={{
               width: `${bannerWidth}px`,
               maxWidth: "100%",
@@ -458,32 +483,50 @@ export default function BlockElement({
       case ELEMENT_TYPES.SOCIAL_ICONS:
         const socialNetworks = signatureData?.socialNetworks || {};
         const socialColors = signatureData?.socialColors || {};
-        const globalColor = signatureData?.socialGlobalColor || props.color || "black";
+        const globalColor =
+          signatureData?.socialGlobalColor || props.color || "black";
 
         // Liste des réseaux autorisés
-        const allowedNetworks = ["facebook", "github", "instagram", "linkedin", "x", "youtube"];
+        const allowedNetworks = [
+          "facebook",
+          "github",
+          "instagram",
+          "linkedin",
+          "x",
+          "youtube",
+        ];
 
-        // Filtrer pour n'afficher que les réseaux configurés (présents dans socialNetworks)
-        // Afficher dès qu'ils sont ajoutés, même sans URL valide
-        const configuredNetworks = Object.keys(socialNetworks).filter((network) => {
-          // Vérifier que le réseau est dans la liste autorisée
-          if (!allowedNetworks.includes(network)) return false;
+        // Filtrer pour n'afficher que les réseaux réellement configurés (URL non vide).
+        // Le backend renvoie les 6 clés en chaîne vide ; on les exclut pour ne pas
+        // afficher 6 icônes alors qu'aucun réseau n'est renseigné.
+        const configuredNetworks = Object.keys(socialNetworks).filter(
+          (network) => {
+            // Vérifier que le réseau est dans la liste autorisée
+            if (!allowedNetworks.includes(network)) return false;
 
-          // Le réseau est configuré s'il existe dans socialNetworks (valeur définie)
-          const networkData = socialNetworks[network];
-          return networkData !== undefined && networkData !== null;
-        });
+            const networkData = socialNetworks[network];
+            const url =
+              typeof networkData === "string" ? networkData : networkData?.url;
+            return !!url && url.trim() !== "" && url !== "#";
+          },
+        );
 
         // Utiliser les réseaux configurés, ou les défauts si aucun réseau configuré
-        const defaultNetworks = ["facebook", "linkedin", "x"];
-        const networksToShow = configuredNetworks.length > 0 ? configuredNetworks : defaultNetworks;
+        const defaultNetworks = ["linkedin", "facebook", "instagram"];
+        const networksToShow =
+          configuredNetworks.length > 0 ? configuredNetworks : defaultNetworks;
 
         return (
           <div
             className="flex items-center"
             style={{
               gap: props.gap || 8,
-              justifyContent: props.alignment === "center" ? "center" : props.alignment === "right" ? "flex-end" : "flex-start",
+              justifyContent:
+                props.alignment === "center"
+                  ? "center"
+                  : props.alignment === "right"
+                    ? "flex-end"
+                    : "flex-start",
             }}
           >
             {networksToShow.map((network) => {
@@ -494,6 +537,7 @@ export default function BlockElement({
                   key={network}
                   src={getSocialIconUrl(network, colorName)}
                   alt={network}
+                  draggable={false}
                   style={{
                     width: props.size || 20,
                     height: props.size || 20,
@@ -506,15 +550,17 @@ export default function BlockElement({
         );
 
       case ELEMENT_TYPES.LOGO:
-        const logoSrc = signatureData?.logo || signatureData?.companyLogo || "/newbiLetter.png";
+        const logoSrc =
+          signatureData?.logo ||
+          signatureData?.companyLogo ||
+          "/newbiLetter.png";
         const logoWidth = signatureData?.logoSize || props.maxWidth || 100;
         return (
-          <div
-            className="flex items-center justify-start"
-          >
+          <div className="flex items-center justify-start">
             <img
               src={logoSrc}
               alt="Logo"
+              draggable={false}
               style={{
                 width: `${logoWidth}px`,
                 height: "auto",
@@ -534,20 +580,24 @@ export default function BlockElement({
         return (
           <div
             className="flex-shrink-0"
-            style={isVerticalSep ? {
-              // Séparateur vertical: largeur fixe, hauteur 100%
-              width: separatorThickness,
-              minWidth: separatorThickness,
-              height: "100%",
-              minHeight: "30px",
-              backgroundColor: props.color || "#e0e0e0",
-            } : {
-              // Séparateur horizontal: hauteur fixe, largeur 100%
-              width: "100%",
-              height: separatorThickness,
-              minHeight: separatorThickness,
-              backgroundColor: props.color || "#e0e0e0",
-            }}
+            style={
+              isVerticalSep
+                ? {
+                    // Séparateur vertical: largeur fixe, hauteur 100%
+                    width: separatorThickness,
+                    minWidth: separatorThickness,
+                    height: "100%",
+                    minHeight: "30px",
+                    backgroundColor: props.color || "#e0e0e0",
+                  }
+                : {
+                    // Séparateur horizontal: hauteur fixe, largeur 100%
+                    width: "100%",
+                    height: separatorThickness,
+                    minHeight: separatorThickness,
+                    backgroundColor: props.color || "#e0e0e0",
+                  }
+            }
           />
         );
 
@@ -583,24 +633,26 @@ export default function BlockElement({
 
   // Check parent layout for drop indicators
   const getParentLayout = () => {
-    if (!elementRef.current) return 'vertical';
+    if (!elementRef.current) return "vertical";
     const parent = elementRef.current.parentElement;
-    if (!parent) return 'vertical';
-    return window.getComputedStyle(parent).flexDirection === 'row' ? 'horizontal' : 'vertical';
+    if (!parent) return "vertical";
+    return window.getComputedStyle(parent).flexDirection === "row"
+      ? "horizontal"
+      : "vertical";
   };
 
   // Drop indicator component
   const DropIndicator = ({ position }) => {
-    const isHorizontal = getParentLayout() === 'horizontal';
+    const isHorizontal = getParentLayout() === "horizontal";
 
     if (isHorizontal) {
       return (
         <div
           className={cn(
             "absolute top-0 bottom-0 w-px z-20 transition-opacity duration-150",
-            position === 'before' ? "-left-1" : "-right-1"
+            position === "before" ? "-left-1" : "-right-1",
           )}
-          style={{ backgroundColor: '#5a50ff' }}
+          style={{ backgroundColor: "#5a50ff" }}
         />
       );
     }
@@ -609,15 +661,35 @@ export default function BlockElement({
       <div
         className={cn(
           "absolute left-0 right-0 h-px z-20 transition-opacity duration-150",
-          position === 'before' ? "-top-0.5" : "-bottom-0.5"
+          position === "before" ? "-top-0.5" : "-bottom-0.5",
         )}
-        style={{ backgroundColor: '#5a50ff' }}
+        style={{ backgroundColor: "#5a50ff" }}
       />
     );
   };
 
   // Determine draggable state
-  const isDraggable = externalDraggable !== undefined ? externalDraggable && !isEditing : !isEditing;
+  const isDraggable = readOnly
+    ? false
+    : externalDraggable !== undefined
+      ? externalDraggable && !isEditing
+      : !isEditing;
+
+  // Props d'interaction (désactivées en lecture seule pour l'aperçu)
+  const elementInteraction = readOnly
+    ? {}
+    : {
+        draggable: isDraggable,
+        onDragStart: handleDragStart,
+        onDragEnd: handleDragEnd,
+        onDragOver: handleDragOver,
+        onDragLeave: handleDragLeave,
+        onDrop: handleDrop,
+        onMouseEnter: () => setIsHovered(true),
+        onMouseLeave: () => setIsHovered(false),
+        onClick: handleClick,
+        onDoubleClick: handleDoubleClick,
+      };
 
   // Check if element is a separator - separators need to stretch
   const isSeparator = element.type === ELEMENT_TYPES.SEPARATOR_LINE;
@@ -631,27 +703,19 @@ export default function BlockElement({
     return (
       <div
         ref={elementRef}
-        draggable={isDraggable}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
+        {...elementInteraction}
         className={cn(
-          "group/element relative cursor-grab active:cursor-grabbing transition-transform duration-200",
+          "group/element relative transition-transform duration-200",
+          !readOnly && "cursor-grab active:cursor-grabbing",
           isDragging && "opacity-50 scale-95",
           // Séparateur vertical: hauteur 100%, largeur auto
           // Séparateur horizontal: largeur 100%
-          isSeparator && (isVerticalSeparator ? "h-full" : "w-full")
+          isSeparator && (isVerticalSeparator ? "h-full" : "w-full"),
         )}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        onClick={handleClick}
-        onDoubleClick={handleDoubleClick}
       >
         {/* Drop indicators */}
-        {dropPosition === 'before' && <DropIndicator position="before" />}
-        {dropPosition === 'after' && <DropIndicator position="after" />}
+        {dropPosition === "before" && <DropIndicator position="before" />}
+        {dropPosition === "after" && <DropIndicator position="after" />}
 
         {/* Visual selection wrapper for single elements */}
         <div
@@ -660,13 +724,16 @@ export default function BlockElement({
             dropPosition
               ? "border-[#5a50ff]/30"
               : isSelected
-              ? "bg-[rgba(90,80,255,0.04)] border-[#5a50ff]/50"
-              : isHovered && !isEditing
-              ? "border-neutral-300/70 bg-neutral-50/50"
-              : "border-transparent",
+                ? "bg-[rgba(90,80,255,0.04)] border-[#5a50ff]/50"
+                : isHovered && !isEditing
+                  ? "border-neutral-300/70 bg-neutral-50/50"
+                  : "border-transparent",
             // Séparateur vertical: hauteur 100%, largeur auto (pas de stretch horizontal)
             // Séparateur horizontal: largeur 100%
-            isSeparator && (isVerticalSeparator ? "h-full flex items-stretch" : "w-full flex items-stretch")
+            isSeparator &&
+              (isVerticalSeparator
+                ? "h-full flex items-stretch"
+                : "w-full flex items-stretch"),
           )}
         >
           {renderContent()}
@@ -678,28 +745,20 @@ export default function BlockElement({
   return (
     <div
       ref={elementRef}
-      draggable={isDraggable}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
+      {...elementInteraction}
       className={cn(
-        "group/element relative transition-transform duration-200 cursor-pointer",
+        "group/element relative transition-transform duration-200",
+        !readOnly && "cursor-pointer",
         isDragging && "opacity-50 scale-95",
         isSelected && "z-10",
         // Séparateur vertical: hauteur 100%, largeur auto
         // Séparateur horizontal: largeur 100%
-        isSeparator && (isVerticalSeparator ? "h-full" : "w-full")
+        isSeparator && (isVerticalSeparator ? "h-full" : "w-full"),
       )}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onClick={handleClick}
-      onDoubleClick={handleDoubleClick}
     >
       {/* Drop indicators */}
-      {dropPosition === 'before' && <DropIndicator position="before" />}
-      {dropPosition === 'after' && <DropIndicator position="after" />}
+      {dropPosition === "before" && <DropIndicator position="before" />}
+      {dropPosition === "after" && <DropIndicator position="after" />}
 
       <div
         className={cn(
@@ -707,13 +766,18 @@ export default function BlockElement({
           dropPosition
             ? "border-[#5a50ff]/30"
             : isSelected
-            ? "bg-[rgba(90,80,255,0.04)] border-[#5a50ff]/50"
-            : isHovered && !isEditing
-            ? "border-neutral-300/70 bg-neutral-50/50"
-            : "border-neutral-200/50",
+              ? "bg-[rgba(90,80,255,0.04)] border-[#5a50ff]/50"
+              : isHovered && !isEditing
+                ? "border-neutral-300/70 bg-neutral-50/50"
+                : readOnly
+                  ? "border-transparent"
+                  : "border-neutral-200/50",
           // Séparateur vertical: hauteur 100%, pas de stretch horizontal
           // Séparateur horizontal: largeur 100%
-          isSeparator && (isVerticalSeparator ? "h-full flex items-stretch p-0" : "w-full flex items-stretch p-0")
+          isSeparator &&
+            (isVerticalSeparator
+              ? "h-full flex items-stretch p-0"
+              : "w-full flex items-stretch p-0"),
         )}
       >
         {/* Element drag handle indicator - positioned closer */}

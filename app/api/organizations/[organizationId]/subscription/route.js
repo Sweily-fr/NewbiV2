@@ -26,9 +26,16 @@ async function handler(request, { params }) {
   // the app-managed trial flags (trialEndDate / isTrialActive / stripeTrialActive)
   // that the frontend needs to render trial state alongside the Stripe sub.
   const [subscription, orgDoc] = await Promise.all([
-    mongoDb.collection("subscription").findOne({
-      $or: [{ organizationId: orgObjectId }, { referenceId: organizationId }],
-    }),
+    // Tri par updatedAt décroissant : si plusieurs documents coexistent pour la
+    // même org (ex: ancien abonnement expiré + nouveau réactivé après
+    // renouvellement), on renvoie TOUJOURS le plus récent (le réactivé), jamais
+    // l'ancien "canceled/expired".
+    mongoDb.collection("subscription").findOne(
+      {
+        $or: [{ organizationId: orgObjectId }, { referenceId: organizationId }],
+      },
+      { sort: { updatedAt: -1 } },
+    ),
     mongoDb.collection("organization").findOne(
       { _id: orgObjectId },
       {

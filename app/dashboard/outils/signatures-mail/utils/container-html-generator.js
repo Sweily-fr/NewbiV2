@@ -377,7 +377,7 @@ function generateElementHTML(
       });
 
       const hasNetworks = activeNetworks.length > 0;
-      const defaultNetworks = ["facebook", "linkedin", "x"];
+      const defaultNetworks = ["linkedin", "facebook", "instagram"];
       const networksToShow = hasNetworks ? activeNetworks : defaultNetworks;
 
       // Utiliser des cellules de table pour une compatibilité email maximale

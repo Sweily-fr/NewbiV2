@@ -9,15 +9,20 @@ import { isTrialAppActive } from "@/src/lib/trial-app";
 import DashboardClientLayout from "./dashboard-client-layout";
 
 /**
- * Vérifie si une organisation donnée a un abonnement valide
+ * Détermine le niveau d'accès d'une organisation à partir de son abonnement.
  * @param {string} orgId - ID de l'organisation
- * @returns {Promise<boolean>}
+ * @returns {Promise<"full"|"readonly"|"none">}
+ *   - "full"     : abonnement actif/valide → accès complet
+ *   - "readonly" : un abonnement existe mais est expiré/impayé/incomplet →
+ *                  accès en LECTURE SEULE (le client affiche la bannière
+ *                  "Expiré" + bloque les écritures). On NE redirige PLUS vers
+ *                  signup (ce qui bouclait dashboard↔signup).
+ *   - "none"     : aucun abonnement → redirection signup
  */
-async function hasValidSubscription(orgId) {
+async function getOrgSubscriptionState(orgId) {
   // App-managed trial check (feature-flagged). When ENABLE_APP_TRIAL is OFF
   // (default), this block is skipped and the legacy Stripe-based logic below
-  // runs unchanged — a Stripe-active user is never redirected to signup by
-  // this added branch.
+  // runs unchanged.
   if (isAppTrialEnabled()) {
     try {
       const orgObjectId = ObjectId.isValid(orgId) ? new ObjectId(orgId) : null;
@@ -30,7 +35,7 @@ async function hasValidSubscription(orgId) {
             )
         : null;
       if (isTrialAppActive(orgDoc)) {
-        return true;
+        return "full";
       }
     } catch (err) {
       // Non-fatal — fall through to the Stripe-based check below.
@@ -45,12 +50,10 @@ async function hasValidSubscription(orgId) {
     $or: [{ referenceId: orgId }, { organizationId: orgId }],
   });
 
-  if (!subscription) return false;
+  if (!subscription) return "none";
 
   // Décision #12 (Lot 5) — past_due est un grace period Stripe pendant les
-  // retries de paiement. Le backend (rbac.js) le considère déjà actif ; on
-  // aligne ici pour ne pas rediriger ces utilisateurs vers /auth/signup
-  // pendant qu'ils règlent leur moyen de paiement.
+  // retries de paiement, considéré actif.
   const isActive =
     subscription.status === "active" ||
     subscription.status === "trialing" ||
@@ -60,7 +63,19 @@ async function hasValidSubscription(orgId) {
     subscription.periodEnd &&
     new Date(subscription.periodEnd) > new Date();
 
-  return isActive || isCanceledButValid;
+  if (isActive || isCanceledButValid) return "full";
+
+  // Un document existe mais l'abonnement est expiré → lecture seule sur le
+  // dashboard (au lieu d'une redirection signup qui bouclait).
+  return "readonly";
+}
+
+/**
+ * @param {string} orgId
+ * @returns {Promise<boolean>} true si l'org a un abonnement PLEINEMENT valide.
+ */
+async function hasValidSubscription(orgId) {
+  return (await getOrgSubscriptionState(orgId)) === "full";
 }
 
 async function checkSubscription(userId, activeOrgId) {
@@ -79,7 +94,7 @@ async function checkSubscription(userId, activeOrgId) {
 
       if (!members || members.length === 0) {
         console.log("[Dashboard Layout] Utilisateur sans organisation");
-        return { hasSubscription: false, reason: "no_organization" };
+        return { access: "none", reason: "no_organization" };
       }
 
       // Priorité: owner > admin > member > viewer
@@ -104,15 +119,16 @@ async function checkSubscription(userId, activeOrgId) {
     );
 
     // 2. Vérifier l'abonnement de l'organisation active
-    if (await hasValidSubscription(organizationId)) {
+    const activeState = await getOrgSubscriptionState(organizationId);
+    if (activeState === "full") {
       console.log(
         `[Dashboard Layout] Abonnement valide pour org active: ${organizationId}`,
       );
-      return { hasSubscription: true, organizationId };
+      return { access: "full", organizationId };
     }
 
     console.log(
-      `[Dashboard Layout] Pas d'abonnement valide pour org active: ${organizationId}`,
+      `[Dashboard Layout] Pas d'abonnement plein pour org active: ${organizationId} (état: ${activeState})`,
     );
 
     // 3. Fallback: Chercher une autre organisation avec un abonnement valide
@@ -123,8 +139,9 @@ async function checkSubscription(userId, activeOrgId) {
 
     if (!allMembers || allMembers.length === 0) {
       return {
-        hasSubscription: false,
-        reason: "no_subscription",
+        access: activeState === "readonly" ? "readonly" : "none",
+        reason:
+          activeState === "readonly" ? "subscription_expired" : "no_subscription",
         organizationId,
       };
     }
@@ -162,18 +179,22 @@ async function checkSubscription(userId, activeOrgId) {
           `[Dashboard Layout] ${updateResult.modifiedCount} session(s) updated with activeOrganizationId: ${candidateOrgId}`,
         );
 
-        return { hasSubscription: true, organizationId: candidateOrgId };
+        return { access: "full", organizationId: candidateOrgId };
       }
     }
 
+    // Aucune autre org pleinement valide. Si l'org active a un abonnement
+    // expiré (doc existant) → accès LECTURE SEULE sur le dashboard ; sinon
+    // (aucun abonnement) → redirection signup.
     return {
-      hasSubscription: false,
-      reason: "subscription_expired",
+      access: activeState === "readonly" ? "readonly" : "none",
+      reason:
+        activeState === "readonly" ? "subscription_expired" : "no_subscription",
       organizationId,
     };
   } catch (error) {
     console.error("[Dashboard Layout] Erreur vérification abonnement:", error);
-    return { hasSubscription: false, reason: "error" };
+    return { access: "none", reason: "error" };
   }
 }
 
@@ -245,19 +266,30 @@ export default async function DashboardLayout({ children }) {
   console.log(`[Dashboard Layout] Session trouvée pour: ${session.user.email}`);
 
   // Vérifier l'abonnement
-  const { hasSubscription, reason, organizationId } = await checkSubscription(
+  const { access, reason, organizationId } = await checkSubscription(
     session.user.id,
     session.session?.activeOrganizationId,
   );
 
-  console.log(
-    `[Dashboard Layout] hasSubscription: ${hasSubscription}, reason: ${reason}`,
-  );
+  console.log(`[Dashboard Layout] access: ${access}, reason: ${reason}`);
 
-  // Si pas d'abonnement valide, vérifier s'il y a un paiement Stripe récent (webhook en cours)
-  if (!hasSubscription && organizationId) {
+  // Accès complet OU lecture seule → on rend le dashboard. En lecture seule,
+  // le client (SubscriptionReadOnlyBanner + useSubscriptionAccess) affiche la
+  // bannière "Expiré" et bloque les écritures. On NE redirige PLUS les expirés
+  // vers /auth/signup (ce qui provoquait une boucle dashboard↔signup).
+  if (access === "full" || access === "readonly") {
+    if (access === "readonly") {
+      console.log(
+        "[Dashboard Layout] Abonnement expiré → accès lecture seule (bannière)",
+      );
+    }
+    return <DashboardClientLayout>{children}</DashboardClientLayout>;
+  }
+
+  // access === "none" : pas d'abonnement du tout. Vérifier un paiement Stripe
+  // récent (webhook en cours) avant de rediriger.
+  if (organizationId) {
     const hasRecentPayment = await checkRecentStripePayment(organizationId);
-
     if (hasRecentPayment) {
       console.log(
         "[Dashboard Layout] Paiement récent détecté, accès temporaire autorisé",
@@ -266,12 +298,6 @@ export default async function DashboardLayout({ children }) {
     }
   }
 
-  // Si pas d'abonnement valide, rediriger vers signup
-  if (!hasSubscription) {
-    console.log("[Dashboard Layout] Pas d'abonnement, redirection vers signup");
-    redirect("/auth/signup");
-  }
-
-  // Utilisateur authentifié avec abonnement valide
-  return <DashboardClientLayout>{children}</DashboardClientLayout>;
+  console.log("[Dashboard Layout] Aucun abonnement, redirection vers signup");
+  redirect("/auth/signup");
 }

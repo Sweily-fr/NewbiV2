@@ -117,7 +117,7 @@ export function InviteForm({
     totalSeats > 0 ? Math.min((usedTotal / totalSeats) * 100, 100) : 0;
 
   return (
-    <div className="flex flex-col h-full px-20 py-6">
+    <div className="flex flex-col h-full px-20 py-6 overflow-y-auto">
       <div className="flex flex-col pt-14">
         {/* Title */}
         <h1 className="text-xl font-semibold text-foreground mb-2">

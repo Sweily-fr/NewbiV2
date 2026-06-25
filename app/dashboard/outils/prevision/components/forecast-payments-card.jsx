@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   Bar,
   CartesianGrid,
@@ -446,6 +446,22 @@ export function ForecastPaymentsCard({ months, kpi, loading, onCellClick }) {
   const safeMonths = months || [];
   const [selectedMonth, setSelectedMonth] = useState(null);
 
+  // Scroll horizontal du graphique : on garde l'espacement du filtre « 6 mois »
+  // comme référence. Au-delà de 6 mois, le graphique s'élargit en pixels
+  // (n / 6 × largeur visible) et déborde dans un conteneur scrollable, pour que
+  // les colonnes restent aussi espacées qu'en 6 mois sur les filtres 12 et 24 mois.
+  const BASELINE_MONTHS = 6;
+  const [chartScrollEl, setChartScrollEl] = useState(null);
+  const [chartAvailWidth, setChartAvailWidth] = useState(0);
+  useEffect(() => {
+    if (!chartScrollEl) return;
+    const update = () => setChartAvailWidth(chartScrollEl.clientWidth);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(chartScrollEl);
+    return () => observer.disconnect();
+  }, [chartScrollEl]);
+
   const now = new Date();
   const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
@@ -489,6 +505,12 @@ export function ForecastPaymentsCard({ months, kpi, loading, onCellClick }) {
     const { ticks, max: niceMax } = computeYTicks(max);
     return { yTicks: ticks, yMax: niceMax };
   }, [chartData]);
+
+  // Largeur en pixels du graphique (null = 100 %, donc remplit la carte sans scroll).
+  const chartPxWidth =
+    chartAvailWidth > 0 && chartData.length > BASELINE_MONTHS
+      ? Math.round((chartData.length / BASELINE_MONTHS) * chartAvailWidth)
+      : null;
 
   // Table data
   const [incomeExpanded, setIncomeExpanded] = useState(true);
@@ -558,182 +580,189 @@ export function ForecastPaymentsCard({ months, kpi, loading, onCellClick }) {
       {/* ─── Chart ─── */}
       <div className="relative">
         {chartData.length > 0 && (
-          <div className="w-full" style={{ height: CHART_HEIGHT }}>
-            <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
-              <ComposedChart
-                data={chartData}
-                margin={{ top: 12, right: 24, bottom: 0, left: 24 }}
-                onClick={(state) => {
-                  const payload = state?.activePayload?.[0]?.payload;
-                  if (payload?.rawMonth) setSelectedMonth(payload.rawMonth);
-                }}
-                style={{ cursor: "pointer" }}
-              >
-                <defs>
-                  <pattern
-                    id="hatchIncomePayments"
-                    patternUnits="userSpaceOnUse"
-                    width="6"
-                    height="6"
-                    patternTransform="rotate(45)"
-                  >
-                    <rect width="6" height="6" fill={remap("#e8e6ff")} />
-                    <line
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="6"
-                      stroke={remap("#5b50ff")}
-                      strokeWidth="2.5"
-                      strokeOpacity="0.5"
-                    />
-                  </pattern>
-                  <pattern
-                    id="hatchExpensePayments"
-                    patternUnits="userSpaceOnUse"
-                    width="6"
-                    height="6"
-                    patternTransform="rotate(45)"
-                  >
-                    <rect width="6" height="6" fill={remap("#e5e5e5")} />
-                    <line
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="6"
-                      stroke={remap("#000000")}
-                      strokeWidth="2.5"
-                      strokeOpacity="0.5"
-                    />
-                  </pattern>
-                </defs>
-
-                <CartesianGrid
-                  vertical={false}
-                  strokeDasharray="0"
-                  className="stroke-border"
-                />
-
-                {/* Current month highlight */}
-                {(() => {
-                  const cur = chartData.find((d) => d.isCurrent);
-                  return cur ? (
-                    <ReferenceArea
-                      x1={cur.label}
-                      x2={cur.label}
-                      fill="#000000"
-                      fillOpacity={0.04}
-                      ifOverflow="extendDomain"
-                    />
-                  ) : null;
-                })()}
-
-                <XAxis
-                  dataKey="label"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={10}
-                  height={X_AXIS_HEIGHT}
-                  interval={0}
-                  tick={({ x, y, payload }) => {
-                    const dataItem = chartData.find(
-                      (d) => d.label === payload.value,
-                    );
-                    const isCurrent = dataItem?.isCurrent;
-                    return (
-                      <text
-                        x={x}
-                        y={y + 4}
-                        textAnchor="middle"
-                        fontSize={chartData.length > 18 ? 9.5 : 11}
-                        fill={isCurrent ? remap("#3b82f6") : "#9ca3af"}
-                        fontWeight={isCurrent ? 600 : 400}
-                      >
-                        {payload.value}
-                      </text>
-                    );
+          <div ref={setChartScrollEl} className="overflow-x-auto">
+            <div
+              style={{
+                width: chartPxWidth ? `${chartPxWidth}px` : "100%",
+                height: CHART_HEIGHT,
+              }}
+            >
+              <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
+                <ComposedChart
+                  data={chartData}
+                  margin={{ top: 12, right: 24, bottom: 0, left: 24 }}
+                  onClick={(state) => {
+                    const payload = state?.activePayload?.[0]?.payload;
+                    if (payload?.rawMonth) setSelectedMonth(payload.rawMonth);
                   }}
-                />
+                  style={{ cursor: "pointer" }}
+                >
+                  <defs>
+                    <pattern
+                      id="hatchIncomePayments"
+                      patternUnits="userSpaceOnUse"
+                      width="6"
+                      height="6"
+                      patternTransform="rotate(45)"
+                    >
+                      <rect width="6" height="6" fill={remap("#e8e6ff")} />
+                      <line
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="6"
+                        stroke={remap("#5b50ff")}
+                        strokeWidth="2.5"
+                        strokeOpacity="0.5"
+                      />
+                    </pattern>
+                    <pattern
+                      id="hatchExpensePayments"
+                      patternUnits="userSpaceOnUse"
+                      width="6"
+                      height="6"
+                      patternTransform="rotate(45)"
+                    >
+                      <rect width="6" height="6" fill={remap("#e5e5e5")} />
+                      <line
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="6"
+                        stroke={remap("#000000")}
+                        strokeWidth="2.5"
+                        strokeOpacity="0.5"
+                      />
+                    </pattern>
+                  </defs>
 
-                <YAxis
-                  yAxisId="bars"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={4}
-                  domain={[0, yMax]}
-                  ticks={yTicks}
-                  tickFormatter={formatTickLabel}
-                  width={40}
-                  tick={{ fontSize: 11, fill: "#9ca3af" }}
-                />
-                <YAxis yAxisId="balance" orientation="right" hide width={0} />
+                  <CartesianGrid
+                    vertical={false}
+                    strokeDasharray="0"
+                    className="stroke-border"
+                  />
 
-                <Tooltip
-                  content={
-                    <CustomTooltip
-                      remap={remap}
-                      incomeColor={incomeColor}
-                      expenseColor={expenseColor}
-                    />
-                  }
-                  cursor={false}
-                />
+                  {/* Current month highlight */}
+                  {(() => {
+                    const cur = chartData.find((d) => d.isCurrent);
+                    return cur ? (
+                      <ReferenceArea
+                        x1={cur.label}
+                        x2={cur.label}
+                        fill="#000000"
+                        fillOpacity={0.04}
+                        ifOverflow="extendDomain"
+                      />
+                    ) : null;
+                  })()}
 
-                <Bar
-                  yAxisId="bars"
-                  dataKey="actualIncome"
-                  stackId="income"
-                  fill={remap("#5b50ff")}
-                  barSize={20}
-                  radius={[4, 4, 0, 0]}
-                />
-                <Bar
-                  yAxisId="bars"
-                  dataKey="forecastIncome"
-                  stackId="income"
-                  fill="url(#hatchIncomePayments)"
-                  barSize={20}
-                  radius={[4, 4, 0, 0]}
-                />
-                <Bar
-                  yAxisId="bars"
-                  dataKey="actualExpense"
-                  stackId="expense"
-                  fill={remap("#333333")}
-                  barSize={20}
-                  radius={[4, 4, 0, 0]}
-                />
-                <Bar
-                  yAxisId="bars"
-                  dataKey="forecastExpense"
-                  stackId="expense"
-                  fill="url(#hatchExpensePayments)"
-                  barSize={20}
-                  radius={[4, 4, 0, 0]}
-                />
+                  <XAxis
+                    dataKey="label"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={10}
+                    height={X_AXIS_HEIGHT}
+                    interval={0}
+                    tick={({ x, y, payload }) => {
+                      const dataItem = chartData.find(
+                        (d) => d.label === payload.value,
+                      );
+                      const isCurrent = dataItem?.isCurrent;
+                      return (
+                        <text
+                          x={x}
+                          y={y + 4}
+                          textAnchor="middle"
+                          fontSize={chartData.length > 18 ? 9.5 : 11}
+                          fill={isCurrent ? remap("#3b82f6") : "#9ca3af"}
+                          fontWeight={isCurrent ? 600 : 400}
+                        >
+                          {payload.value}
+                        </text>
+                      );
+                    }}
+                  />
 
-                <Line
-                  yAxisId="balance"
-                  dataKey="balance"
-                  type="monotone"
-                  stroke={remap("#3b82f6")}
-                  strokeWidth={2}
-                  dot={{
-                    r: 3,
-                    fill: "#ffffff",
-                    stroke: remap("#3b82f6"),
-                    strokeWidth: 2,
-                  }}
-                  activeDot={{
-                    r: 5,
-                    fill: "#ffffff",
-                    stroke: remap("#3b82f6"),
-                    strokeWidth: 2,
-                  }}
-                  connectNulls
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
+                  <YAxis
+                    yAxisId="bars"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={4}
+                    domain={[0, yMax]}
+                    ticks={yTicks}
+                    tickFormatter={formatTickLabel}
+                    width={40}
+                    tick={{ fontSize: 11, fill: "#9ca3af" }}
+                  />
+                  <YAxis yAxisId="balance" orientation="right" hide width={0} />
+
+                  <Tooltip
+                    content={
+                      <CustomTooltip
+                        remap={remap}
+                        incomeColor={incomeColor}
+                        expenseColor={expenseColor}
+                      />
+                    }
+                    cursor={false}
+                  />
+
+                  <Bar
+                    yAxisId="bars"
+                    dataKey="actualIncome"
+                    stackId="income"
+                    fill={remap("#5b50ff")}
+                    barSize={20}
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar
+                    yAxisId="bars"
+                    dataKey="forecastIncome"
+                    stackId="income"
+                    fill="url(#hatchIncomePayments)"
+                    barSize={20}
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar
+                    yAxisId="bars"
+                    dataKey="actualExpense"
+                    stackId="expense"
+                    fill={remap("#333333")}
+                    barSize={20}
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar
+                    yAxisId="bars"
+                    dataKey="forecastExpense"
+                    stackId="expense"
+                    fill="url(#hatchExpensePayments)"
+                    barSize={20}
+                    radius={[4, 4, 0, 0]}
+                  />
+
+                  <Line
+                    yAxisId="balance"
+                    dataKey="balance"
+                    type="monotone"
+                    stroke={remap("#3b82f6")}
+                    strokeWidth={2}
+                    dot={{
+                      r: 3,
+                      fill: "#ffffff",
+                      stroke: remap("#3b82f6"),
+                      strokeWidth: 2,
+                    }}
+                    activeDot={{
+                      r: 5,
+                      fill: "#ffffff",
+                      stroke: remap("#3b82f6"),
+                      strokeWidth: 2,
+                    }}
+                    connectNulls
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         )}
       </div>
@@ -873,6 +902,32 @@ function ForecastTable({
   return (
     <div className="overflow-x-auto">
       <div style={{ minWidth: LABEL_COL_WIDTH + N * COLUMN_WIDTH }}>
+        {/* ── En-tête des mois ── */}
+        <div className="flex items-center mt-8">
+          <div
+            className="shrink-0 px-4 py-2 sticky left-0 z-10 bg-background"
+            style={{ width: LABEL_COL_WIDTH }}
+          />
+          <div
+            className="flex-1 grid pr-6"
+            style={{ gridTemplateColumns: `repeat(${N}, 1fr)` }}
+          >
+            {months.map((m) => (
+              <div
+                key={m.month}
+                className={cn(
+                  "px-2 py-2 text-center text-[12px] font-medium capitalize whitespace-nowrap rounded",
+                  m.month === currentMonth
+                    ? "text-blue-500 font-semibold bg-black/[0.04]"
+                    : "text-muted-foreground",
+                )}
+              >
+                {formatMonthLabel(m.month)}
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* ── Solde début de mois (header séparé) ── */}
         <Row
           label={
@@ -881,7 +936,7 @@ function ForecastTable({
             </span>
           }
           labelClass={cn(labelTint, "rounded-l-lg after:rounded-l-lg")}
-          borderClass="bg-muted/40 border border-border rounded-lg mt-6"
+          borderClass="bg-muted/40 border border-border rounded-lg mt-2"
         >
           {months.map((m) => (
             <div

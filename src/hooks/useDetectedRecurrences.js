@@ -2,6 +2,7 @@ import { useQuery, useMutation } from "@apollo/client";
 import { GET_DETECTED_RECURRENCES } from "../graphql/queries/treasuryForecast";
 import {
   MUTE_DETECTED_RECURRENCE,
+  DELETE_DETECTED_RECURRENCE,
   RUN_RECURRENCE_DETECTION,
 } from "../graphql/mutations/treasuryForecast";
 import { toast } from "@/src/components/ui/sonner";
@@ -50,6 +51,37 @@ export const useMuteDetectedRecurrence = () => {
   };
 
   return { setMuted, loading };
+};
+
+export const useDeleteDetectedRecurrence = () => {
+  const { workspaceId } = useRequiredWorkspace();
+  const [mutate, { loading }] = useMutation(DELETE_DETECTED_RECURRENCE, {
+    refetchQueries: [
+      { query: GET_DETECTED_RECURRENCES, variables: { workspaceId } },
+      "GetTreasuryForecastData",
+    ],
+    awaitRefetchQueries: false,
+  });
+
+  const deleteRecurrence = async (id) => {
+    try {
+      const result = await mutate({ variables: { id } });
+      if (result.data?.deleteDetectedRecurrence?.success) {
+        toast.success("Récurrence supprimée");
+        return { success: true };
+      }
+      throw new Error("Erreur lors de la suppression");
+    } catch (error) {
+      toast.error(
+        error.graphQLErrors?.[0]?.message ||
+          error.message ||
+          "Erreur lors de la suppression",
+      );
+      return { success: false, error };
+    }
+  };
+
+  return { deleteRecurrence, loading };
 };
 
 export const useRunRecurrenceDetection = () => {

@@ -319,7 +319,7 @@ export default function ClientImportDialog({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent
-        className={`${currentStep === 1 && !showCustomFields ? "sm:max-w-[56rem]" : "sm:max-w-[580px]"} flex flex-col p-1 gap-0 border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl top-[40%]`}
+        className={`${currentStep === 1 && !showCustomFields ? "sm:max-w-[56rem]" : "sm:max-w-[580px]"} ${showCustomFields ? "max-h-[85vh] top-[50%]" : "top-[40%]"} flex flex-col p-1 gap-0 border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl`}
         showCloseButton={false}
       >
         <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1] flex flex-col h-full">
@@ -330,12 +330,6 @@ export default function ClientImportDialog({
                 <DialogHeader>
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setShowCustomFields(false)}
-                        className="flex items-center justify-center h-7 w-7 rounded-md hover:bg-accent transition-colors cursor-pointer"
-                      >
-                        <ArrowLeft className="h-4 w-4" />
-                      </button>
                       <DialogTitle className="text-sm font-medium">
                         Champs personnalisés clients
                       </DialogTitle>

@@ -28,9 +28,10 @@ import {
 } from "@/src/components/ui/toast-manager";
 import { AccountingViewProvider } from "@/src/contexts/accounting-view-context";
 import { FloatingTimer } from "@/src/components/FloatingTimer";
-import { SubscriptionBlockedDialog } from "@/src/components/subscription-blocked-dialog";
 import { SubscriptionReadOnlyBanner } from "@/src/components/subscription-readonly-banner";
 import { TrialBanner } from "@/src/components/trial-banner";
+// Panneau DEV de test d'abonnement — décommenter aussi son rendu plus bas pour l'activer.
+// import { DevSubscriptionSwitcher } from "@/src/components/dev/dev-subscription-switcher";
 import { OAuthCallbackHandler } from "@/src/components/oauth-callback-handler";
 // DÉSACTIVÉ: SuperPDP API pas encore active
 // import { EInvoicingPromoModal } from "@/src/components/e-invoicing-promo-modal";
@@ -358,7 +359,12 @@ function DashboardContent({ children }) {
         />
         <SidebarInset>
           <SiteHeader />
-          <SubscriptionReadOnlyBanner />
+          <SubscriptionReadOnlyBanner
+            onSubscribe={() => {
+              setSettingsInitialTab("subscription");
+              setSettingsModalOpen(true);
+            }}
+          />
           <TrialBanner
             onSubscribe={() => {
               setSettingsInitialTab("subscription");
@@ -427,11 +433,16 @@ function DashboardContent({ children }) {
           initialTab={settingsInitialTab}
         />
 
+        {/* Panneau DEV pour tester l'abonnement (Supprimer / Synchroniser /
+            Remettre). Désactivé — décommenter la ligne ci-dessous ET l'import
+            en haut du fichier pour le réafficher quand on en a besoin. */}
+        {/* <DevSubscriptionSwitcher /> */}
+
         {/* Timer flottant - visible sur toutes les pages quand un timer est actif */}
         <FloatingTimer />
 
-        {/* Dialog de blocage subscription — déclenché par Apollo errorLink */}
-        <SubscriptionBlockedDialog />
+        {/* Popup de blocage retirée : en lecture seule, la bannière "Expiré"
+            suffit et l'utilisateur peut naviguer librement. */}
 
         {/* DÉSACTIVÉ: SuperPDP API pas encore active */}
         {/* Modal de promotion facturation électronique */}

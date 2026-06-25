@@ -92,36 +92,46 @@ export default function VueDensemblePage() {
   const { stats: purchaseInvoiceStats, loading: piStatsLoading } =
     usePurchaseInvoiceStats();
 
-  const { data: flowChartData, loading: flowChartLoading } = useQuery(
+  // Période pilotée par chaque graphique (remontée via onPeriodChange) ; défaut
+  // = "cumul-year" pour matcher la sélection initiale interne du composant.
+  const [incomePeriod, setIncomePeriod] = useState({ preset: "cumul-year" });
+  const [expensePeriod, setExpensePeriod] = useState({ preset: "cumul-year" });
+
+  const { data: incomeFlowData, loading: incomeFlowLoading } = useQuery(
     GET_TREASURY_CHART,
     {
-      variables: {
-        workspaceId,
-        period: { preset: "365d" },
-      },
+      variables: { workspaceId, period: incomePeriod },
+      fetchPolicy: "cache-and-network",
+      skip: !workspaceId,
+    },
+  );
+
+  const { data: expenseFlowData, loading: expenseFlowLoading } = useQuery(
+    GET_TREASURY_CHART,
+    {
+      variables: { workspaceId, period: expensePeriod },
       fetchPolicy: "cache-and-network",
       skip: !workspaceId,
     },
   );
 
   const incomeChartData = useMemo(() => {
-    const points = flowChartData?.dashboardTreasuryChart?.dataPoints || [];
+    const points = incomeFlowData?.dashboardTreasuryChart?.dataPoints || [];
     return points.map((d) => ({ date: d.date, desktop: d.income, mobile: 0 }));
-  }, [flowChartData]);
+  }, [incomeFlowData]);
 
   const expenseChartData = useMemo(() => {
-    const points = flowChartData?.dashboardTreasuryChart?.dataPoints || [];
+    const points = expenseFlowData?.dashboardTreasuryChart?.dataPoints || [];
     return points.map((d) => ({
       date: d.date,
       desktop: d.expenses,
       mobile: 0,
     }));
-  }, [flowChartData]);
+  }, [expenseFlowData]);
 
   const incomeChartConfig = getIncomeChartConfig(remap);
   const expenseChartConfig = getExpenseChartConfig(remap);
   const cardsLoading = bankLoading;
-  const chartsLoading = flowChartLoading;
 
   // T1 — CA HT calculé sur les factures payées dont paymentDate est dans la période
   const caForPeriod = useMemo(() => {
@@ -287,7 +297,9 @@ export default function VueDensemblePage() {
               config={incomeChartConfig}
               data={incomeChartData}
               hideMobileCurve={true}
-              isLoading={chartsLoading}
+              isLoading={incomeFlowLoading}
+              onPeriodChange={setIncomePeriod}
+              serverFiltered
             />
             <ChartAreaInteractive
               title="Sorties"
@@ -301,7 +313,9 @@ export default function VueDensemblePage() {
               config={expenseChartConfig}
               data={expenseChartData}
               hideMobileCurve={true}
-              isLoading={chartsLoading}
+              isLoading={expenseFlowLoading}
+              onPeriodChange={setExpensePeriod}
+              serverFiltered
             />
           </div>
 

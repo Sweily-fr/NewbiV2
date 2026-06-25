@@ -25,6 +25,10 @@ async function handler(request) {
   await requireOrgMembership(user.id, workspaceId);
   await requireActiveSubscription(user.id, workspaceId);
 
+  // Transmettre le body envoyé par le client (accountId / itemId / provider).
+  // Sans ça, le backend recevait un body vide et déconnectait TOUT.
+  const body = await request.text();
+
   // Proxy to backend
   const backendUrl = (
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
@@ -37,6 +41,7 @@ async function handler(request) {
       "x-workspace-id": workspaceId,
       Cookie: cookieHeader,
     },
+    body: body || "{}",
   });
 
   if (!response.ok) {

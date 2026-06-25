@@ -19,6 +19,9 @@ export function useDashboardLayoutSimple() {
   // 403 / 500 errors so downstream hooks (useSubscriptionAccess) can treat
   // the absence of a subscription as "unknown" rather than "expired".
   const [lastFetchOk, setLastFetchOk] = useState(true);
+  // Incrémenté pour forcer un refetch de l'abonnement (ex: l'outil dev a changé
+  // le statut en BDD → on veut le voir apparaître/disparaître sans rechargement).
+  const [refreshTick, setRefreshTick] = useState(0);
 
   // Données de session
   const { data: session, isPending: sessionLoading } = useSession();
@@ -35,6 +38,9 @@ export function useDashboardLayoutSimple() {
   const hasHandledStripeReturn = useRef(false);
   const hasHandledCancelReturn = useRef(false);
   const hasHandledSubscriptionSuccess = useRef(false);
+  // Dernière organisation active connue, pour détecter un changement d'org et
+  // purger le cache d'abonnement de l'org quittée (cf. effet plus bas).
+  const prevOrgIdRef = useRef(null);
 
   // Protection contre l'erreur d'hydratation + chargement cache utilisateur
   useEffect(() => {
@@ -245,9 +251,52 @@ export function useDashboardLayoutSimple() {
     isHydrated,
     session?.session?.activeOrganizationId,
     activeOrganization?.id,
+    refreshTick,
     // Note: orgLoading retiré des deps pour éviter les re-déclenchements
     // inutiles qui causaient des flashs de loading en production
   ]);
+
+  // Refetch déclenché par un événement global `subscription:refresh`.
+  // Utilisé par l'outil dev (après modification du statut en BDD) pour observer
+  // la bannière se mettre à jour en TEMPS RÉEL, sans recharger la page. Vide
+  // d'abord le cache de l'org pour forcer un appel API frais.
+  useEffect(() => {
+    if (!isHydrated) return;
+    const onRefresh = () => {
+      try {
+        const orgId =
+          activeOrganization?.id || session?.session?.activeOrganizationId;
+        if (orgId) localStorage.removeItem(`subscription-${orgId}`);
+      } catch {
+        // ignore
+      }
+      setRefreshTick((t) => t + 1);
+    };
+    window.addEventListener("subscription:refresh", onRefresh);
+    return () => window.removeEventListener("subscription:refresh", onRefresh);
+  }, [isHydrated, session?.session?.activeOrganizationId, activeOrganization?.id]);
+
+  // Purge le cache d'abonnement de l'organisation quittée lors d'un changement
+  // d'org. Sans ça, revenir sur une org dont le statut a changé ailleurs (ou
+  // dont l'abonnement vient d'être renouvelé) réafficherait l'ancien statut
+  // tant que le cache de 5 min n'a pas expiré. Le fetch ci-dessus se
+  // redéclenche déjà au changement d'org ; on s'assure juste qu'il ne lise pas
+  // un cache périmé.
+  useEffect(() => {
+    if (!isHydrated) return;
+    const currentOrgId =
+      activeOrganization?.id || session?.session?.activeOrganizationId || null;
+    const prevOrgId = prevOrgIdRef.current;
+
+    if (prevOrgId && currentOrgId && prevOrgId !== currentOrgId) {
+      try {
+        localStorage.removeItem(`subscription-${prevOrgId}`);
+      } catch (error) {
+        console.warn("Erreur purge cache abonnement (changement d'org):", error);
+      }
+    }
+    prevOrgIdRef.current = currentOrgId;
+  }, [isHydrated, session?.session?.activeOrganizationId, activeOrganization?.id]);
 
   // Polling automatique après retour de Stripe
   useEffect(() => {
@@ -305,6 +354,9 @@ export function useDashboardLayoutSimple() {
             cacheKey,
             JSON.stringify({ data, timestamp: Date.now() }),
           );
+
+          // Rafraîchir aussi le badge PRO/Expiré du sélecteur d'org.
+          window.dispatchEvent(new CustomEvent("subscription:refresh"));
         } else if (attempts >= maxAttempts) {
           clearInterval(stripePollingRef.current);
           stripePollingRef.current = null;
@@ -315,8 +367,26 @@ export function useDashboardLayoutSimple() {
       }
     };
 
-    checkSubscription();
-    stripePollingRef.current = setInterval(checkSubscription, 1000);
+    // Synchroniser d'abord l'abonnement DEPUIS Stripe (sans dépendre du
+    // webhook : indispensable en local et résilient en prod si le webhook est
+    // en retard/échoue), puis lancer le polling qui verra le statut "active".
+    const orgId = session.session.activeOrganizationId;
+    fetch(`/api/organizations/${orgId}/sync-subscription`, { method: "POST" })
+      .then((r) => r.json())
+      .then((d) => {
+        console.log("🔄 [SYNC] Sync Stripe:", d);
+        // Prévenir les autres sources d'abonnement (ex: badge PRO/Expiré du
+        // sélecteur d'org, qui lit /api/organization/list-with-order) de se
+        // rafraîchir.
+        window.dispatchEvent(new CustomEvent("subscription:refresh"));
+      })
+      .catch((e) =>
+        console.warn("⚠️ [SYNC] Échec sync Stripe (polling quand même):", e),
+      )
+      .finally(() => {
+        checkSubscription();
+        stripePollingRef.current = setInterval(checkSubscription, 1000);
+      });
 
     return () => {
       if (stripePollingRef.current) {
@@ -422,7 +492,14 @@ export function useDashboardLayoutSimple() {
           "Vous avez maintenant accès à toutes les fonctionnalités Pro.",
       });
 
-      window.history.replaceState({}, document.title, window.location.pathname);
+      // ⚠️ NE PAS nettoyer l'URL ici. Cet effet ne dépend que de `isHydrated`
+      // et tourne donc avant que `activeOrganizationId` soit prêt. Effacer le
+      // paramètre `subscription_success` maintenant empêcherait l'effet
+      // d'invalidation de cache (ligne ~119) ET le polling post-Stripe
+      // (ligne ~253, qui attend l'org active) de le voir : le cache
+      // `subscription-${orgId}` resterait sur l'ancien statut "expiré"
+      // jusqu'à un changement d'organisation. Le polling nettoie l'URL
+      // lui-même une fois qu'il a démarré (cf. replaceState ligne ~272).
     }
   }, [isHydrated]);
 

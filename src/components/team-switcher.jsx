@@ -368,7 +368,7 @@ export function TeamSwitcher() {
                 {(!isCollapsed || isMobile) && (
                   <>
                     <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-medium text-sm text-[#212121]">
+                      <span className="truncate font-medium text-sm text-foreground">
                         {currentOrganization.name}
                       </span>
                       <span className="truncate text-xs font-normal">

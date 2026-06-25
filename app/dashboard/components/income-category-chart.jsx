@@ -84,6 +84,10 @@ export function IncomeCategoryChart({
       case "365d":
         return "12 derniers mois";
       case "custom":
+        if (customStartDate && customEndDate) {
+          const fmt = (d) => d.split("-").reverse().join("/");
+          return `${fmt(customStartDate)} - ${fmt(customEndDate)}`;
+        }
         return "Période personnalisée";
       default:
         return "3 derniers mois";
@@ -196,6 +200,7 @@ export function IncomeCategoryChart({
 
   const timeRangeDropdown = (
     <DropdownMenu
+      modal={false}
       open={dropdownOpen}
       onOpenChange={(open) => {
         setDropdownOpen(open);

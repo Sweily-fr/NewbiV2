@@ -58,6 +58,7 @@ import {
   ButtonGroupSeparator,
 } from "@/src/components/ui/button-group";
 import { Input } from "@/src/components/ui/input";
+import { DateRangePicker } from "@/src/components/ui/date-range-picker";
 import { Badge } from "@/src/components/ui/badge";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
@@ -1530,11 +1531,15 @@ export default function DocumentsPartagesPage() {
   };
 
   // === Trash operations ===
-  const handleRestoreItems = async () => {
+  const handleRestoreItems = async (overrides) => {
+    // Les setState étant asynchrones, on accepte des IDs explicites pour la
+    // restauration depuis le menu "..." (sinon on lirait l'ancien state vide).
+    const documentIds = overrides?.documentIds ?? selectedTrashDocuments;
+    const folderIds = overrides?.folderIds ?? selectedTrashFolders;
     try {
       await restoreFromTrash({
-        documentIds: selectedTrashDocuments,
-        folderIds: selectedTrashFolders,
+        documentIds,
+        folderIds,
       });
       setSelectedTrashDocuments([]);
       setSelectedTrashFolders([]);
@@ -2950,26 +2955,32 @@ export default function DocumentsPartagesPage() {
                             {/* Date */}
                             <div className="space-y-2">
                               <Label className="text-xs">Période</Label>
-                              <div className="grid grid-cols-2 gap-2">
-                                <Input
-                                  type="date"
-                                  value={filterDateFrom}
-                                  onChange={(e) =>
-                                    setFilterDateFrom(e.target.value)
-                                  }
-                                  className="h-8 text-sm"
-                                  placeholder="Du"
-                                />
-                                <Input
-                                  type="date"
-                                  value={filterDateTo}
-                                  onChange={(e) =>
-                                    setFilterDateTo(e.target.value)
-                                  }
-                                  className="h-8 text-sm"
-                                  placeholder="Au"
-                                />
-                              </div>
+                              <DateRangePicker
+                                className="[&_button]:h-8 [&_button]:text-sm"
+                                popoverClassName="z-[101]"
+                                side="left"
+                                align="start"
+                                date={{
+                                  from: filterDateFrom
+                                    ? new Date(`${filterDateFrom}T00:00:00`)
+                                    : undefined,
+                                  to: filterDateTo
+                                    ? new Date(`${filterDateTo}T00:00:00`)
+                                    : undefined,
+                                }}
+                                setDate={(range) => {
+                                  setFilterDateFrom(
+                                    range?.from
+                                      ? format(range.from, "yyyy-MM-dd")
+                                      : "",
+                                  );
+                                  setFilterDateTo(
+                                    range?.to
+                                      ? format(range.to, "yyyy-MM-dd")
+                                      : "",
+                                  );
+                                }}
+                              />
                             </div>
 
                             {/* Taille */}
@@ -3194,7 +3205,10 @@ export default function DocumentsPartagesPage() {
                                   onClick={() => {
                                     setSelectedTrashFolders([folder.id]);
                                     setSelectedTrashDocuments([]);
-                                    handleRestoreItems();
+                                    handleRestoreItems({
+                                      folderIds: [folder.id],
+                                      documentIds: [],
+                                    });
                                   }}
                                 >
                                   <RotateCcw className="h-4 w-4 mr-2" />
@@ -3207,7 +3221,7 @@ export default function DocumentsPartagesPage() {
                                     setSelectedTrashDocuments([]);
                                     setShowPermanentDeleteModal(true);
                                   }}
-                                  className="text-destructive focus:text-destructive"
+                                  variant="destructive"
                                 >
                                   <Trash2 className="h-4 w-4 mr-2" />
                                   Supprimer définitivement
@@ -3273,7 +3287,10 @@ export default function DocumentsPartagesPage() {
                                       onClick={() => {
                                         setSelectedTrashDocuments([doc.id]);
                                         setSelectedTrashFolders([]);
-                                        handleRestoreItems();
+                                        handleRestoreItems({
+                                          documentIds: [doc.id],
+                                          folderIds: [],
+                                        });
                                       }}
                                     >
                                       <RotateCcw className="h-4 w-4 mr-2" />
@@ -3286,7 +3303,7 @@ export default function DocumentsPartagesPage() {
                                         setSelectedTrashFolders([]);
                                         setShowPermanentDeleteModal(true);
                                       }}
-                                      className="text-destructive focus:text-destructive"
+                                      variant="destructive"
                                     >
                                       <Trash2 className="h-4 w-4 mr-2" />
                                       Supprimer définitivement
@@ -3368,7 +3385,10 @@ export default function DocumentsPartagesPage() {
                               onClick={() => {
                                 setSelectedTrashDocuments([doc.id]);
                                 setSelectedTrashFolders([]);
-                                handleRestoreItems();
+                                handleRestoreItems({
+                                  documentIds: [doc.id],
+                                  folderIds: [],
+                                });
                               }}
                             >
                               <RotateCcw className="h-4 w-4 mr-2" />
@@ -3381,7 +3401,7 @@ export default function DocumentsPartagesPage() {
                                 setSelectedTrashFolders([]);
                                 setShowPermanentDeleteModal(true);
                               }}
-                              className="text-destructive focus:text-destructive"
+                              variant="destructive"
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
                               Supprimer définitivement

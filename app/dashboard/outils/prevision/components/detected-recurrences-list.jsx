@@ -3,11 +3,22 @@
 import { useState } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { EyeOff, Eye, RefreshCw, Plus } from "lucide-react";
+import { EyeOff, Eye, RefreshCw, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
 import {
   useDetectedRecurrences,
   useMuteDetectedRecurrence,
+  useDeleteDetectedRecurrence,
   useRunRecurrenceDetection,
 } from "@/src/hooks/useDetectedRecurrences";
 
@@ -58,8 +69,17 @@ const PAGE_SIZE = 5;
 export function DetectedRecurrencesList({ onCreateForecast }) {
   const { recurrences, loading } = useDetectedRecurrences();
   const { setMuted, loading: muting } = useMuteDetectedRecurrence();
+  const { deleteRecurrence, loading: deleting } =
+    useDeleteDetectedRecurrence();
   const { runDetection, loading: detecting } = useRunRecurrenceDetection();
   const [expanded, setExpanded] = useState(false);
+  const [toDelete, setToDelete] = useState(null);
+
+  const confirmDelete = async () => {
+    if (!toDelete) return;
+    const result = await deleteRecurrence(toDelete.id);
+    if (result.success) setToDelete(null);
+  };
 
   if (loading) {
     return (
@@ -178,6 +198,15 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
                     >
                       {rec.isMuted ? <Eye size={13} /> : <EyeOff size={13} />}
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setToDelete(rec)}
+                      disabled={deleting}
+                      className="p-1 rounded-md text-muted-foreground/40 hover:text-red-500 hover:bg-muted/50 transition-colors cursor-pointer opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                      title="Supprimer"
+                    >
+                      <Trash2 size={13} />
+                    </button>
                   </div>
                 </div>
               );
@@ -194,6 +223,37 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
           )}
         </>
       )}
+
+      <AlertDialog
+        open={Boolean(toDelete)}
+        onOpenChange={(open) => !open && setToDelete(null)}
+      >
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer la récurrence ?</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm leading-relaxed">
+              «&nbsp;{toDelete?.partyName}&nbsp;» sera retirée de la liste et de
+              vos prévisions. Si le motif réapparaît dans vos transactions ou
+              factures, elle pourra être détectée à nouveau lors d&apos;une
+              prochaine analyse. Pour la masquer durablement, utilisez plutôt
+              l&apos;option «&nbsp;Masquer&nbsp;».
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                confirmDelete();
+              }}
+              disabled={deleting}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

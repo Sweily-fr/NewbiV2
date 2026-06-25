@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, Fragment } from "react";
+import { AnimatePresence } from "framer-motion";
 import { useDashboardData } from "@/src/hooks/useDashboardData";
 import { useUpdateTransaction } from "@/src/hooks/useTransactions";
 import { TransactionDetailDrawer } from "@/app/dashboard/outils/transactions/components/transaction-detail-drawer";
@@ -541,13 +542,17 @@ export function AnalyticsPCGMapping() {
       </p>
 
       {/* Drawer */}
-      <TransactionDetailDrawer
-        transaction={selectedTransaction}
-        open={isDrawerOpen}
-        onOpenChange={setIsDrawerOpen}
-        onRefresh={refreshData}
-        onSubmit={handleSaveTransaction}
-      />
+      <AnimatePresence onExitComplete={() => setSelectedTransaction(null)}>
+        {isDrawerOpen && (
+          <TransactionDetailDrawer
+            transaction={selectedTransaction}
+            open={isDrawerOpen}
+            onOpenChange={setIsDrawerOpen}
+            onRefresh={refreshData}
+            onSubmit={handleSaveTransaction}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

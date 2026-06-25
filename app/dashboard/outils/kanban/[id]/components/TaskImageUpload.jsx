@@ -7,6 +7,8 @@ import {
   ZoomIn,
   FileText,
   FileSpreadsheet,
+  Play,
+  Download,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { cn } from "@/src/lib/utils";
@@ -20,10 +22,12 @@ import {
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 const VALID_TYPES = [
+  // Images
   "image/jpeg",
   "image/png",
   "image/gif",
   "image/webp",
+  // Documents
   "application/pdf",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -31,13 +35,23 @@ const VALID_TYPES = [
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   "text/plain",
   "text/csv",
+  // Vidéos
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+  "video/x-msvideo",
+  "video/x-matroska",
 ];
 
 const ACCEPT_STRING =
-  "image/jpeg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,text/csv,.doc,.docx,.xls,.xlsx,.pdf,.txt,.csv";
+  "image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,text/csv,.doc,.docx,.xls,.xlsx,.pdf,.txt,.csv,.mp4,.webm,.mov,.avi,.mkv";
 
 function isImageType(contentType) {
   return contentType?.startsWith("image/");
+}
+
+function isVideoType(contentType) {
+  return contentType?.startsWith("video/");
 }
 
 function formatFileSize(bytes) {
@@ -121,23 +135,141 @@ function ImagePreview({ file, onDelete, isDeleting }) {
   );
 }
 
-function DocumentPreview({ file, onDelete, isDeleting }) {
-  const Icon = getFileIcon(file);
-  const ext = getFileExtension(file.fileName || file.name);
+function VideoPreview({ file, onDelete, isDeleting }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const src = file.url || file._localUrl;
 
   return (
-    <div className="group flex items-center gap-2.5 rounded-lg border border-border hover:bg-accent/50 transition-colors px-3 py-2">
+    <div className="relative group">
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>
+          <div className="relative cursor-pointer overflow-hidden rounded-lg border border-border hover:border-primary/50 transition-colors bg-black">
+            <video
+              src={src}
+              className="w-full h-24 object-cover"
+              muted
+              playsInline
+              preload="metadata"
+            />
+            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-white/90 flex items-center justify-center">
+                <Play className="h-4 w-4 text-black fill-black ml-0.5" />
+              </div>
+            </div>
+          </div>
+        </DialogTrigger>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-black">
+          <VisuallyHidden>
+            <DialogTitle>Lecture de la vidéo</DialogTitle>
+          </VisuallyHidden>
+          {isOpen && (
+            <video
+              src={src}
+              className="w-full h-auto max-h-[80vh]"
+              controls
+              autoPlay
+              playsInline
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {onDelete && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(file.id ?? file._localIndex);
+          }}
+          disabled={isDeleting}
+          className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white dark:bg-gray-800 text-muted-foreground border border-border shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500 disabled:opacity-50"
+        >
+          {isDeleting ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <X className="h-3 w-3" />
+          )}
+        </button>
+      )}
+
+      <p className="text-xs text-muted-foreground mt-1 truncate max-w-[120px]">
+        {file.fileName || file.name}
+      </p>
+    </div>
+  );
+}
+
+function DocumentPreview({ file, onDelete, isDeleting }) {
+  const Icon = getFileIcon(file);
+  // Fichier déjà uploadé : on a une URL distante. Fichier en attente (mode local,
+  // pas encore envoyé) : pas d'URL ouvrable.
+  const url = file.url || file._localUrl;
+  const fileName = file.fileName || file.name;
+
+  const openInNewTab = useCallback(() => {
+    if (url) window.open(url, "_blank", "noopener,noreferrer");
+  }, [url]);
+
+  const handleDownload = useCallback(
+    async (e) => {
+      e.stopPropagation();
+      if (!url) return;
+      try {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = fileName || "document";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(blobUrl);
+      } catch {
+        // Repli : ouvrir dans un nouvel onglet si le téléchargement échoue
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
+    },
+    [url, fileName],
+  );
+
+  return (
+    <div
+      className={cn(
+        "group flex items-center gap-2.5 rounded-lg border border-border hover:bg-accent/50 transition-colors px-3 py-2",
+        url && "cursor-pointer",
+      )}
+      onClick={url ? openInNewTab : undefined}
+      role={url ? "button" : undefined}
+      tabIndex={url ? 0 : undefined}
+      onKeyDown={
+        url
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                openInNewTab();
+              }
+            }
+          : undefined
+      }
+    >
       <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
       <div className="flex-1 min-w-0 flex items-baseline gap-2">
-        <p className="text-sm text-foreground truncate">
-          {file.fileName || file.name}
-        </p>
+        <p className="text-sm text-foreground truncate">{fileName}</p>
         {(file.fileSize || file.size) && (
           <span className="text-xs text-muted-foreground flex-shrink-0">
             {formatFileSize(file.fileSize || file.size)}
           </span>
         )}
       </div>
+      {url && (
+        <button
+          onClick={handleDownload}
+          title="Télécharger"
+          className="flex-shrink-0 p-1 rounded text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity hover:text-foreground"
+        >
+          <Download className="h-3.5 w-3.5" />
+        </button>
+      )}
       {onDelete && (
         <button
           onClick={(e) => {
@@ -214,7 +346,7 @@ export function TaskImageUpload({
         fileSize: file.size,
       };
 
-      if (isImageType(file.type)) {
+      if (isImageType(file.type) || isVideoType(file.type)) {
         preview._localUrl = URL.createObjectURL(file);
       }
 
@@ -353,9 +485,13 @@ export function TaskImageUpload({
   const imageFiles = displayFiles.filter((f) =>
     isImageType(f.contentType || f.type),
   );
-  const documentFiles = displayFiles.filter(
-    (f) => !isImageType(f.contentType || f.type),
+  const videoFiles = displayFiles.filter((f) =>
+    isVideoType(f.contentType || f.type),
   );
+  const documentFiles = displayFiles.filter((f) => {
+    const type = f.contentType || f.type;
+    return !isImageType(type) && !isVideoType(type);
+  });
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -442,6 +578,22 @@ export function TaskImageUpload({
           {imageFiles.map((file, index) => (
             <ImagePreview
               key={file.id ?? file._localIndex ?? `img-${index}`}
+              file={file}
+              onDelete={
+                localMode ? handleDelete : onDelete ? handleDelete : null
+              }
+              isDeleting={deletingImageId === (file.id ?? file._localIndex)}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Vidéos en grille */}
+      {videoFiles.length > 0 && (
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          {videoFiles.map((file, index) => (
+            <VideoPreview
+              key={file.id ?? file._localIndex ?? `vid-${index}`}
               file={file}
               onDelete={
                 localMode ? handleDelete : onDelete ? handleDelete : null

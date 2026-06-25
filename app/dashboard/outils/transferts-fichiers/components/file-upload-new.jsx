@@ -108,7 +108,7 @@ export default function FileUploadNew({
   onUploadingChange,
 }) {
   const maxSize = 5 * 1024 * 1024 * 1024; // 5GB
-  const maxFiles = 10;
+  // Pas de limite sur le nombre de fichiers (seule la taille totale est bornée)
 
   // Timer pour l'upload
   const [uploadTime, setUploadTime] = useState(0);
@@ -394,11 +394,6 @@ export default function FileUploadNew({
     const newErrors = [];
 
     for (const file of newFiles) {
-      if (selectedFiles.length + validFiles.length >= maxFiles) {
-        newErrors.push(`Maximum ${maxFiles} fichiers autorisés`);
-        break;
-      }
-
       const error = validateFile(file);
       if (error) {
         newErrors.push(error);
@@ -601,7 +596,7 @@ export default function FileUploadNew({
                 >
                   <span>Tous les fichiers</span>
                   <span>∙</span>
-                  <span>Max {maxFiles} fichiers</span>
+                  <span>Nombre de fichiers illimité</span>
                   <span>∙</span>
                   <span>Up to {formatFileSize(maxSize)}</span>
                 </div>

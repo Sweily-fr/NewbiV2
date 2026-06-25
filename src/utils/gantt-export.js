@@ -59,10 +59,38 @@ function formatTaskDateRange(task) {
   return "";
 }
 
+// Regroupe une liste de jours par semaine (même logique que la vue).
+// Les index retournés sont relatifs au segment fourni.
+function buildWeekGroups(daysArr) {
+  const groups = [];
+  let current = null;
+  daysArr.forEach((day, index) => {
+    const weekNum = getWeek(day, { weekStartsOn: 1 });
+    if (!current || current.weekNum !== weekNum) {
+      current = {
+        weekNum,
+        weekStart: startOfWeek(day, { weekStartsOn: 1 }),
+        weekEnd: endOfWeek(day, { weekStartsOn: 1 }),
+        startIndex: index,
+        count: 0,
+      };
+      groups.push(current);
+    }
+    current.count += 1;
+  });
+  return groups;
+}
+
 // --- Export PDF ---
+
+// Largeur minimale d'un jour (mm) en deçà de laquelle la frise devient illisible.
+// Si la période ne tient pas à cette échelle, on la pagine horizontalement.
+const MIN_DAY_W = 3.5;
 
 /**
  * Génère un PDF vectoriel du diagramme de Gantt (A4 paysage, paginé).
+ * Les périodes longues (ex. une année) sont découpées en plusieurs pages
+ * dans le temps (pagination horizontale) afin de rester lisibles.
  * @param {Object} params
  * @param {string} params.boardTitle - Titre du tableau kanban
  * @param {Array} params.tasks - Tâches triées (avec `column` attachée), telles qu'affichées dans la vue
@@ -76,46 +104,73 @@ export function exportGanttPDF({ boardTitle, tasks, days }) {
   const leftColW = 70;
   const timelineX = margin + leftColW;
   const timelineW = pageW - margin - timelineX;
-  const dayW = timelineW / days.length;
   const rowH = 7;
   const weekRowH = 5.5;
   const dayRowH = 5.5;
   const headerH = weekRowH + dayRowH;
-  const showDayNumbers = dayW >= 2.8; // illisible en deçà (vue trimestre)
+  const docHeaderH = 14.5; // hauteur du bloc titre + période (1re page de chaque segment)
 
-  const firstDay = startOfDay(days[0]);
-  const lastDay = startOfDay(days[days.length - 1]);
+  // Largeur d'un jour : on remplit la page si la période tient à une échelle
+  // lisible, sinon on borne à MIN_DAY_W et on pagine la frise horizontalement.
+  const dayW = Math.max(timelineW / days.length, MIN_DAY_W);
+  const showDayNumbers = dayW >= 2.8;
+  const daysPerSegment = Math.max(1, Math.floor(timelineW / dayW));
+
   const today = startOfDay(new Date());
 
-  // Regrouper les jours par semaine (même logique que la vue)
-  const weekGroups = [];
-  let currentGroup = null;
-  days.forEach((day, index) => {
-    const weekNum = getWeek(day, { weekStartsOn: 1 });
-    if (!currentGroup || currentGroup.weekNum !== weekNum) {
-      currentGroup = {
-        weekNum,
-        weekStart: startOfWeek(day, { weekStartsOn: 1 }),
-        weekEnd: endOfWeek(day, { weekStartsOn: 1 }),
-        startIndex: index,
-        count: 0,
-      };
-      weekGroups.push(currentGroup);
-    }
-    currentGroup.count += 1;
-  });
+  // Découpe la période en segments horizontaux (un groupe de pages chacun).
+  const segments = [];
+  for (let i = 0; i < days.length; i += daysPerSegment) {
+    const segDays = days.slice(i, i + daysPerSegment);
+    segments.push({
+      days: segDays,
+      firstDay: startOfDay(segDays[0]),
+      lastDay: startOfDay(segDays[segDays.length - 1]),
+      width: segDays.length * dayW,
+      weekGroups: buildWeekGroups(segDays),
+    });
+  }
 
   const border = { r: 226, g: 232, b: 240 }; // slate-200
 
+  // En-tête de document (titre + période du segment) ; retourne le y du corps
+  const drawDocHeader = (seg, segIndex) => {
+    let y = margin + 4;
+    pdf.setFontSize(14);
+    pdf.setTextColor(15, 23, 42);
+    const titleSuffix =
+      segments.length > 1 ? ` (${segIndex + 1}/${segments.length})` : "";
+    pdf.text(
+      truncateToWidth(
+        pdf,
+        `${boardTitle || "Tableau"} - Diagramme de Gantt${titleSuffix}`,
+        pageW - margin * 2,
+      ),
+      margin,
+      y,
+    );
+    y += 5.5;
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(100, 116, 139);
+    const periodLabel = `${format(seg.firstDay, "d MMMM yyyy", { locale: fr })} - ${format(seg.lastDay, "d MMMM yyyy", { locale: fr })}`;
+    pdf.text(
+      `Période : ${periodLabel}  ·  Exporté le ${format(new Date(), "d MMMM yyyy", { locale: fr })}  ·  ${tasks.length} tâche${tasks.length > 1 ? "s" : ""}`,
+      margin,
+      y,
+    );
+    pdf.setTextColor(0);
+    return margin + docHeaderH;
+  };
+
   // Dessine l'en-tête de timeline (semaines + jours) ; retourne le y du corps
-  const drawTimelineHeader = (yTop) => {
+  const drawTimelineHeader = (seg, yTop) => {
     pdf.setDrawColor(border.r, border.g, border.b);
     pdf.setLineWidth(0.2);
 
     // Ligne des semaines
     pdf.setFontSize(6.5);
     pdf.setTextColor(100, 116, 139);
-    weekGroups.forEach((week) => {
+    seg.weekGroups.forEach((week) => {
       const x = timelineX + week.startIndex * dayW;
       const w = week.count * dayW;
       pdf.rect(x, yTop, w, weekRowH);
@@ -125,10 +180,10 @@ export function exportGanttPDF({ boardTitle, tasks, days }) {
 
     // Ligne des jours
     const daysY = yTop + weekRowH;
-    pdf.rect(timelineX, daysY, timelineW, dayRowH);
+    pdf.rect(timelineX, daysY, seg.width, dayRowH);
     if (showDayNumbers) {
       pdf.setFontSize(6);
-      days.forEach((day, i) => {
+      seg.days.forEach((day, i) => {
         const x = timelineX + i * dayW;
         const isToday = isSameDay(day, today);
         if (isToday) {
@@ -147,10 +202,10 @@ export function exportGanttPDF({ boardTitle, tasks, days }) {
   };
 
   // Dessine le fond du corps : week-ends, traits verticaux, trait "aujourd'hui"
-  const drawBodyGrid = (bodyY, bodyH) => {
+  const drawBodyGrid = (seg, bodyY, bodyH) => {
     // Week-ends
     pdf.setFillColor(241, 245, 249); // slate-100
-    days.forEach((day, i) => {
+    seg.days.forEach((day, i) => {
       if (day.getDay() === 0 || day.getDay() === 6) {
         pdf.rect(timelineX + i * dayW, bodyY, dayW, bodyH, "F");
       }
@@ -160,20 +215,20 @@ export function exportGanttPDF({ boardTitle, tasks, days }) {
     pdf.setDrawColor(border.r, border.g, border.b);
     pdf.setLineWidth(0.1);
     if (showDayNumbers) {
-      days.forEach((_, i) => {
+      seg.days.forEach((_, i) => {
         const x = timelineX + (i + 1) * dayW;
         pdf.line(x, bodyY, x, bodyY + bodyH);
       });
     } else {
-      weekGroups.forEach((week) => {
+      seg.weekGroups.forEach((week) => {
         const x = timelineX + (week.startIndex + week.count) * dayW;
         pdf.line(x, bodyY, x, bodyY + bodyH);
       });
     }
 
     // Trait vertical "aujourd'hui"
-    if (today >= firstDay && today <= lastDay) {
-      const offset = differenceInDays(today, firstDay);
+    if (today >= seg.firstDay && today <= seg.lastDay) {
+      const offset = differenceInDays(today, seg.firstDay);
       const x = timelineX + (offset + 0.5) * dayW;
       const p = hexToRgb(PRIMARY);
       pdf.setDrawColor(p.r, p.g, p.b);
@@ -185,11 +240,11 @@ export function exportGanttPDF({ boardTitle, tasks, days }) {
     pdf.setDrawColor(border.r, border.g, border.b);
     pdf.setLineWidth(0.2);
     pdf.rect(margin, bodyY, leftColW, bodyH);
-    pdf.rect(timelineX, bodyY, timelineW, bodyH);
+    pdf.rect(timelineX, bodyY, seg.width, bodyH);
   };
 
   // Dessine une ligne de tâche (libellé + barre) à la position y
-  const drawTaskRow = (task, y) => {
+  const drawTaskRow = (seg, task, y) => {
     const color = hexToRgb(task.column?.color);
 
     // Pastille de colonne + titre
@@ -218,7 +273,7 @@ export function exportGanttPDF({ boardTitle, tasks, days }) {
     // Séparateur horizontal
     pdf.setDrawColor(border.r, border.g, border.b);
     pdf.setLineWidth(0.1);
-    pdf.line(margin, y + rowH, pageW - margin, y + rowH);
+    pdf.line(margin, y + rowH, timelineX + seg.width, y + rowH);
 
     // Barre (au moins une date requise, comme dans la vue)
     const start = task.startDate ? startOfDay(parseISO(task.startDate)) : null;
@@ -226,12 +281,12 @@ export function exportGanttPDF({ boardTitle, tasks, days }) {
     if (!start && !end) return;
     const taskStart = start || end;
     const taskEnd = end || start;
-    if (taskEnd < firstDay || taskStart > lastDay) return;
+    if (taskEnd < seg.firstDay || taskStart > seg.lastDay) return;
 
-    const visStart = Math.max(0, differenceInDays(taskStart, firstDay));
+    const visStart = Math.max(0, differenceInDays(taskStart, seg.firstDay));
     const visEnd = Math.min(
-      days.length - 1,
-      differenceInDays(taskEnd, firstDay),
+      seg.days.length - 1,
+      differenceInDays(taskEnd, seg.firstDay),
     );
     const barX = timelineX + visStart * dayW + 0.4;
     const barW = Math.max((visEnd - visStart + 1) * dayW - 0.8, 1);
@@ -258,65 +313,40 @@ export function exportGanttPDF({ boardTitle, tasks, days }) {
 
   // --- Rendu ---
 
-  // En-tête du document (première page)
-  let y = margin + 4;
-  pdf.setFontSize(14);
-  pdf.setTextColor(15, 23, 42);
-  pdf.text(
-    truncateToWidth(
-      pdf,
-      `${boardTitle || "Tableau"} - Diagramme de Gantt`,
-      pageW - margin * 2,
-    ),
-    margin,
-    y,
-  );
-  y += 5.5;
-  pdf.setFontSize(8.5);
-  pdf.setTextColor(100, 116, 139);
-  const periodLabel = `${format(firstDay, "d MMMM yyyy", { locale: fr })} - ${format(lastDay, "d MMMM yyyy", { locale: fr })}`;
-  pdf.text(
-    `Période : ${periodLabel}  ·  Exporté le ${format(new Date(), "d MMMM yyyy", { locale: fr })}  ·  ${tasks.length} tâche${tasks.length > 1 ? "s" : ""}`,
-    margin,
-    y,
-  );
-  pdf.setTextColor(0);
-  y += 5;
-
   const maxRowsFor = (startY) =>
-    Math.floor((pageH - margin - (startY + headerH)) / rowH);
+    Math.max(1, Math.floor((pageH - margin - (startY + headerH)) / rowH));
 
-  let rowsLeft = maxRowsFor(y);
-  let pageTasks = [];
+  // Construit la liste des pages : pour chaque segment temporel, on pagine
+  // verticalement les tâches. La 1re page d'un segment porte l'en-tête doc.
   const pages = [];
-  tasks.forEach((task) => {
-    if (rowsLeft === 0) {
-      pages.push(pageTasks);
-      pageTasks = [];
-      rowsLeft = maxRowsFor(margin);
-    }
-    pageTasks.push(task);
-    rowsLeft -= 1;
+  segments.forEach((seg, segIndex) => {
+    let taskIndex = 0;
+    let segmentStart = true;
+    do {
+      const startY = segmentStart ? margin + docHeaderH : margin;
+      const cap = maxRowsFor(startY);
+      const pageTasks = tasks.slice(taskIndex, taskIndex + cap);
+      pages.push({ seg, segIndex, tasks: pageTasks, docHeader: segmentStart });
+      taskIndex += pageTasks.length;
+      segmentStart = false;
+    } while (taskIndex < tasks.length);
   });
-  pages.push(pageTasks);
 
-  pages.forEach((pageTaskList, pageIndex) => {
-    if (pageIndex > 0) {
-      pdf.addPage();
-      y = margin;
-    }
-    const bodyY = drawTimelineHeader(y);
-    const bodyH = pageTaskList.length * rowH;
-    if (pageTaskList.length === 0) {
+  pages.forEach((page, pageIndex) => {
+    if (pageIndex > 0) pdf.addPage();
+    const y = page.docHeader ? drawDocHeader(page.seg, page.segIndex) : margin;
+    const bodyY = drawTimelineHeader(page.seg, y);
+    if (page.tasks.length === 0) {
       pdf.setFontSize(9);
       pdf.setTextColor(100, 116, 139);
       pdf.text("Aucune tâche", margin, bodyY + 8);
       pdf.setTextColor(0);
       return;
     }
-    drawBodyGrid(bodyY, bodyH);
-    pageTaskList.forEach((task, i) => {
-      drawTaskRow(task, bodyY + i * rowH);
+    const bodyH = page.tasks.length * rowH;
+    drawBodyGrid(page.seg, bodyY, bodyH);
+    page.tasks.forEach((task, i) => {
+      drawTaskRow(page.seg, task, bodyY + i * rowH);
     });
   });
 

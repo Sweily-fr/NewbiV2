@@ -29,6 +29,16 @@ export const QUOTE_FRAGMENT = gql`
     discountAmount
     signatureStatus
     signingUrl
+    sealStatus
+    sealedDocumentUrl
+    signedDocumentUrl
+    auditTrailUrl
+    signers {
+      name
+      surname
+      email
+      signedAt
+    }
     createdAt
     updatedAt
     client {

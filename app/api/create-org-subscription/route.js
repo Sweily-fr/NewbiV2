@@ -50,11 +50,46 @@ async function handler(request) {
   // de fin du trial maison comme date de première facturation Stripe. Les
   // features payantes seront débloquées immédiatement via le webhook (cf.
   // auth-plugins.js handler `customer.subscription.created`).
-  const trialDays = isAppTrialEnabled() ? 0 : 30;
+  let trialDays = isAppTrialEnabled() ? 0 : 30;
   if (isAppTrialEnabled()) {
     console.log(
       `🚫 [CREATE-SUB] App-trial flag ON — Stripe trial_period_days forced to 0`,
     );
+  }
+
+  // Anti re-essai : une org qui a DÉJÀ un abonnement (renouvellement après
+  // expiration/résiliation) ou qui a déjà consommé son essai ne doit pas
+  // ré-obtenir 30 jours gratuits → paiement immédiat. Sans ça, un client
+  // expiré repassait par le "bon flux nouveau client" (essai) au lieu d'un
+  // vrai renouvellement.
+  if (trialDays > 0 && session.session?.activeOrganizationId) {
+    try {
+      const { mongoDb: db } = await import("@/src/lib/mongodb");
+      const { ObjectId } = await import("mongodb");
+      const orgId = session.session.activeOrganizationId;
+      const orgObjectId = new ObjectId(orgId);
+      const [existingSub, orgDoc] = await Promise.all([
+        db.collection("subscription").findOne(
+          { $or: [{ organizationId: orgObjectId }, { referenceId: orgId }] },
+          { projection: { _id: 1 } },
+        ),
+        db.collection("organization").findOne(
+          { _id: orgObjectId },
+          { projection: { hasUsedTrial: 1 } },
+        ),
+      ]);
+      if (existingSub || orgDoc?.hasUsedTrial === true) {
+        trialDays = 0;
+        console.log(
+          `🚫 [CREATE-SUB] Pas d'essai — abonnement déjà existant: ${!!existingSub}, essai déjà utilisé: ${orgDoc?.hasUsedTrial === true}. Paiement immédiat.`,
+        );
+      }
+    } catch (err) {
+      console.warn(
+        `⚠️ [CREATE-SUB] Échec vérif éligibilité essai (fallback: essai conservé):`,
+        err.message,
+      );
+    }
   }
 
   // Pattern A : détecter "conversion du trial maison" pour cet upgrade
