@@ -129,7 +129,7 @@ export function NavUser({ user }) {
               {(!isCollapsed || isMobile) && (
                 <>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium text-[#212121]">
+                    <span className="truncate font-medium text-foreground">
                       {user.name}
                     </span>
                     <span className="text-muted-foreground truncate text-xs font-normal">
@@ -193,7 +193,7 @@ export function NavUser({ user }) {
                     */}
                   </div>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium text-[#212121]">
+                    <span className="truncate font-medium text-foreground">
                       {user.name}
                     </span>
                     <span className="text-muted-foreground truncate text-xs font-normal">
