@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useQuery, useMutation } from "@apollo/client";
+import { useQuery, useMutation, useSubscription } from "@apollo/client";
 import { toast } from "@/src/components/ui/sonner";
 import {
   GET_SIGNATURE_REQUESTS,
@@ -10,6 +10,7 @@ import {
   SEAL_QUOTE_DOCUMENT,
   CANCEL_SIGNATURE,
   RETRY_SIGNATURE,
+  SIGNATURE_STATUS_UPDATED,
 } from "@/src/graphql/esignatureQueries";
 import posthog from "posthog-js";
 
@@ -37,7 +38,9 @@ export function useDocumentSignatureStatus(documentType, documentId) {
       signatureRequest.status,
     );
 
-  // Activer le polling uniquement quand une signature est en cours
+  // Activer le polling uniquement quand une signature est en cours.
+  // La subscription temps réel ci-dessous reste le canal principal ; le polling
+  // est un filet de sécurité (ex : websocket indisponible).
   React.useEffect(() => {
     if (isPending && !isTerminal) {
       startPolling(30000);
@@ -46,6 +49,16 @@ export function useDocumentSignatureStatus(documentType, documentId) {
     }
     return () => stopPolling();
   }, [isPending, isTerminal, startPolling, stopPolling]);
+
+  // Mise à jour temps réel du statut (passage à « Signé », erreur, cachet…).
+  // À réception, on refetch pour récupérer document signé / preuve / signataires.
+  useSubscription(SIGNATURE_STATUS_UPDATED, {
+    variables: { documentId },
+    skip: !documentId,
+    onData: () => {
+      refetch?.();
+    },
+  });
 
   return {
     signatureRequest,

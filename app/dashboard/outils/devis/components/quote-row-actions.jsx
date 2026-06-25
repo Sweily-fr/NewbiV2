@@ -373,8 +373,9 @@ export default function QuoteRowActions({
                 </DropdownMenuItem>
               )}
 
-              {(quote.status === QUOTE_STATUS.PENDING ||
-                quote.status === QUOTE_STATUS.IMPORTED) && (
+              {/* Accepter : uniquement les devis importés. Les devis natifs sont
+                  acceptés via la signature électronique. */}
+              {quote.status === QUOTE_STATUS.IMPORTED && (
                 <>
                   <DropdownMenuItem
                     onClick={handleAccept}

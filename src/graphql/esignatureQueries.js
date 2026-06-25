@@ -63,10 +63,7 @@ export const GET_SIGNATURE_REQUESTS = gql`
 
 export const GET_DOCUMENT_SIGNATURE_STATUS = gql`
   ${SIGNATURE_REQUEST_FIELDS}
-  query GetDocumentSignatureStatus(
-    $documentType: String!
-    $documentId: ID!
-  ) {
+  query GetDocumentSignatureStatus($documentType: String!, $documentId: ID!) {
     getDocumentSignatureStatus(
       documentType: $documentType
       documentId: $documentId
@@ -126,6 +123,19 @@ export const RETRY_SIGNATURE = gql`
       signatureRequest {
         ...SignatureRequestFields
       }
+    }
+  }
+`;
+
+// === SUBSCRIPTIONS ===
+
+export const SIGNATURE_STATUS_UPDATED = gql`
+  subscription SignatureStatusUpdated($documentId: ID!) {
+    signatureStatusUpdated(documentId: $documentId) {
+      documentId
+      documentType
+      status
+      signatureType
     }
   }
 `;

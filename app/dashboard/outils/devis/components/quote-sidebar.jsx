@@ -17,8 +17,9 @@ import {
   Download,
   ShoppingCart,
   LoaderCircle,
-  Stamp,
   Ban,
+  ShieldCheck,
+  ScrollText,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/src/components/ui/button";
@@ -31,14 +32,13 @@ import {
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import { useRouter } from "next/navigation";
-import { useLazyQuery, useQuery } from "@apollo/client";
+import { useLazyQuery } from "@apollo/client";
 import {
   useChangeQuoteStatus,
   useQuote,
   QUOTE_STATUS,
   QUOTE_STATUS_LABELS,
   QUOTE_STATUS_COLORS,
-  QUOTE_DOCUMENT_URL,
 } from "@/src/graphql/quoteQueries";
 import { GET_CLIENT } from "@/src/graphql/clientQueries";
 import { getDraftEffectiveDates } from "@/src/utils/dateFormatter";
@@ -52,7 +52,6 @@ import LinkedInvoicesList from "./linked-invoices-list";
 import { SignatureStatusBadge } from "@/src/components/esignature/signature-status-badge";
 import {
   useDocumentSignatureStatus,
-  useSealQuoteDocument,
   useCancelSignature,
 } from "@/src/hooks/useESignature";
 
@@ -66,17 +65,6 @@ export default function QuoteSidebar({
   const router = useRouter();
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
   const { workspaceId } = useRequiredWorkspace();
-
-  // URL du PDF archivé (R2) — uniquement hors brouillon
-  const { data: quoteDocData } = useQuery(QUOTE_DOCUMENT_URL, {
-    variables: { workspaceId, quoteId: initialQuote?.id },
-    skip:
-      !workspaceId ||
-      !initialQuote?.id ||
-      initialQuote?.status === QUOTE_STATUS.DRAFT,
-    fetchPolicy: "network-only",
-  });
-  const quoteDocumentUrl = quoteDocData?.quoteDocumentUrl || null;
 
   const [fetchClient] = useLazyQuery(GET_CLIENT, {
     fetchPolicy: "network-only",
@@ -102,19 +90,14 @@ export default function QuoteSidebar({
   } = useQuote(initialQuote?.id);
 
   // Statut de signature électronique
-  const {
-    signatureRequest: signatureStatus,
-    hasSignature,
-    isPending: signaturePending,
-    refetch: refetchSignature,
-  } = useDocumentSignatureStatus("quote", initialQuote?.id);
+  const { signatureRequest: signatureStatus, refetch: refetchSignature } =
+    useDocumentSignatureStatus("quote", initialQuote?.id);
 
-  const { sealQuoteDocument, loading: sealing } = useSealQuoteDocument();
   const { cancelSignature, loading: cancellingSignature } =
     useCancelSignature();
 
-  // Quand une signature/cachet se termine, rafraîchir le devis pour mettre à jour
-  // l'affichage (statut accepté, sealStatus, sealedDocumentUrl).
+  // Quand la signature se termine, rafraîchir le devis pour mettre à jour
+  // l'affichage (statut accepté, document signé, certificat de preuve).
   useEffect(() => {
     if (signatureStatus?.status === "DONE" && onRefetch) {
       onRefetch();
@@ -198,15 +181,8 @@ export default function QuoteSidebar({
       toast.success("Devis accepté");
       if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error(
-        error?.message || "Erreur lors de l'acceptation du devis"
-      );
+      toast.error(error?.message || "Erreur lors de l'acceptation du devis");
     }
-  };
-
-  const handleSeal = async () => {
-    const res = await sealQuoteDocument(quote.id);
-    if (res?.success && onRefetch) onRefetch();
   };
 
   const handleCancelSignatureRequest = async () => {
@@ -389,6 +365,8 @@ export default function QuoteSidebar({
         }}
         transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
       >
+        {/* Aperçu : rendu HTML UniversalPreviewPDF, comme la sidebar facture.
+            On n'utilise PAS l'iframe du PDF en cache (visualiseur natif = scroll). */}
         <div className="absolute inset-0 p-0 flex items-start justify-center overflow-y-auto py-4 md:py-12 px-2 md:px-24">
           {loadingFullQuote && !fullQuote ? (
             <div className="flex items-center justify-center w-full min-h-[calc(100%-4rem)] pointer-events-auto">
@@ -396,19 +374,7 @@ export default function QuoteSidebar({
             </div>
           ) : (
             <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">
-              {quoteDocumentUrl && quote.status !== QUOTE_STATUS.DRAFT ? (
-                <iframe
-                  src={`${quoteDocumentUrl}#toolbar=0&navpanes=0&view=FitH`}
-                  title={`Devis ${quote.prefix || ""}${quote.number || ""}`}
-                  className="w-full h-full min-h-[297mm] border-0"
-                />
-              ) : (
-                <UniversalPreviewPDF
-                  data={quote}
-                  type="quote"
-                  recalcDraftDates
-                />
-              )}
+              <UniversalPreviewPDF data={quote} type="quote" recalcDraftDates />
             </div>
           )}
         </div>
@@ -454,8 +420,11 @@ export default function QuoteSidebar({
               >
                 {QUOTE_STATUS_LABELS[quote.status] || quote.status}
               </span>
-              {hasSignature && (
-                <SignatureStatusBadge status={signatureStatus.status} />
+              {/* Statut de la signature CLIENT uniquement (quote.signatureStatus
+                  ignore le cachet entreprise, contrairement au hook « dernière
+                  demande » qui basculerait sur le cachet une fois lancé). */}
+              {quote.signatureStatus && (
+                <SignatureStatusBadge status={quote.signatureStatus} />
               )}
               {isValidUntilExpired() && (
                 <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400">
@@ -780,22 +749,28 @@ export default function QuoteSidebar({
 
         {/* Action Buttons */}
         <div className="border-t px-6 py-4 space-y-3">
-          {/* Annuler une demande de signature en cours (tout type) */}
-          {signaturePending && signatureStatus?.id && (
-            <Button
-              variant="outline"
-              onClick={handleCancelSignatureRequest}
-              disabled={cancellingSignature}
-              className="w-full font-normal text-red-600 hover:text-red-600"
-            >
-              {cancellingSignature ? (
-                <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Ban className="h-4 w-4 mr-2" />
-              )}
-              Annuler la demande de signature
-            </Button>
-          )}
+          {/* Annuler une demande de signature CLIENT en cours.
+              On se base sur quote.signatureStatus (signature client) et pas sur le
+              hook « dernière demande » : une fois le devis signé, ce dernier pointe
+              sur le cachet entreprise et ne doit pas réafficher ce bouton. */}
+          {["PENDING", "WAIT_VALIDATION", "WAIT_SIGN", "WAIT_SIGNER"].includes(
+            quote.signatureStatus,
+          ) &&
+            signatureStatus?.id && (
+              <Button
+                variant="outline"
+                onClick={handleCancelSignatureRequest}
+                disabled={cancellingSignature}
+                className="w-full font-normal text-red-600 hover:text-red-600"
+              >
+                {cancellingSignature ? (
+                  <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Ban className="h-4 w-4 mr-2" />
+                )}
+                Annuler la demande de signature
+              </Button>
+            )}
 
           {/* Draft Actions */}
           {quote.status === QUOTE_STATUS.DRAFT && (
@@ -835,10 +810,10 @@ export default function QuoteSidebar({
                   ? "Refuser le devis"
                   : "Annuler le devis"}
               </Button>
-              {/* Accepter : devis importés librement, devis natifs une fois signés */}
-              {(quote.status === QUOTE_STATUS.IMPORTED ||
-                (quote.status === QUOTE_STATUS.PENDING &&
-                  signatureStatus?.status === "DONE")) && (
+              {/* Accepter : UNIQUEMENT les devis importés. Les devis natifs sont
+                  acceptés automatiquement via la signature électronique (pas de
+                  bouton d'acceptation manuelle). */}
+              {quote.status === QUOTE_STATUS.IMPORTED && (
                 <Button
                   variant="primary"
                   onClick={handleAccept}
@@ -937,61 +912,74 @@ export default function QuoteSidebar({
                 </Button>
               </div>
 
-              {/* Cachet qualifié (QES) — dispo une fois le devis signé par le client.
-                  N'affecte pas le statut du devis, certifie seulement le document signé. */}
+              {/* Preuve de signature — traçabilité + document signé + certificat
+                  de preuve (audit trail), disponible une fois le devis signé. */}
               {quote.signatureStatus === "DONE" && (
-                <div className="flex flex-col gap-2 pt-1">
-                  {quote.sealStatus === "DONE" ? (
-                    quote.sealedDocumentUrl ? (
+                <div className="rounded-lg border bg-muted/30 p-3 space-y-3">
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                    <ShieldCheck className="h-3.5 w-3.5 text-green-600" />
+                    Signature électronique vérifiée
+                  </div>
+
+                  {/* Signataires + date de signature */}
+                  {Array.isArray(quote.signers) && quote.signers.length > 0 && (
+                    <div className="space-y-1.5">
+                      {quote.signers.map((signer, i) => (
+                        <div
+                          key={`${signer.email || "signer"}-${i}`}
+                          className="flex items-start justify-between gap-2 text-xs"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate text-foreground">
+                              {[signer.name, signer.surname]
+                                .filter(Boolean)
+                                .join(" ") || signer.email}
+                            </p>
+                            {signer.email && (
+                              <p className="truncate text-muted-foreground">
+                                {signer.email}
+                              </p>
+                            )}
+                          </div>
+                          {signer.signedAt && (
+                            <span className="shrink-0 text-muted-foreground">
+                              {formatDate(signer.signedAt)}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Téléchargements : document signé + certificat de preuve */}
+                  <div className="flex flex-col gap-2">
+                    {quote.signedDocumentUrl && (
                       <Button
                         variant="outline"
+                        size="sm"
                         onClick={() =>
-                          window.open(quote.sealedDocumentUrl, "_blank")
+                          window.open(quote.signedDocumentUrl, "_blank")
                         }
                         className="w-full font-normal"
                       >
                         <Download className="h-4 w-4 mr-2" />
-                        Télécharger le document cacheté
+                        Document signé
                       </Button>
-                    ) : (
+                    )}
+                    {quote.auditTrailUrl && (
                       <Button
                         variant="outline"
-                        disabled
+                        size="sm"
+                        onClick={() =>
+                          window.open(quote.auditTrailUrl, "_blank")
+                        }
                         className="w-full font-normal"
                       >
-                        <Stamp className="h-4 w-4 mr-2" />
-                        Document cacheté
+                        <ScrollText className="h-4 w-4 mr-2" />
+                        Certificat de preuve
                       </Button>
-                    )
-                  ) : [
-                      "PENDING",
-                      "WAIT_VALIDATION",
-                      "WAIT_SIGN",
-                      "WAIT_SIGNER",
-                    ].includes(quote.sealStatus) ? (
-                    <Button
-                      variant="outline"
-                      disabled
-                      className="w-full font-normal"
-                    >
-                      <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
-                      Cachet en cours…
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      onClick={handleSeal}
-                      disabled={isLoading || sealing}
-                      className="w-full font-normal"
-                    >
-                      {sealing ? (
-                        <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Stamp className="h-4 w-4 mr-2" />
-                      )}
-                      Cacheter le document
-                    </Button>
-                  )}
+                    )}
+                  </div>
                 </div>
               )}
             </div>

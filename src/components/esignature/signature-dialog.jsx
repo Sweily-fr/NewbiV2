@@ -193,7 +193,6 @@ export function SignatureDialog({
   documentType,
   client,
   onSuccess,
-  signatureLevel = "ses", // "ses" | "qes"
 }) {
   const { requestSignature, loading } = useRequestSignature();
   const { workspaceId } = useRequiredWorkspace();
@@ -208,7 +207,7 @@ export function SignatureDialog({
       variables: { workspaceId, id: documentId },
       skip: !open || documentType !== "quote" || !documentId || !workspaceId,
       fetchPolicy: "cache-first",
-    }
+    },
   );
   const documentToRender =
     documentType === "quote" && fullQuoteData?.quote
@@ -218,7 +217,6 @@ export function SignatureDialog({
   const pdfRef = useRef(null);
   const firstInputRef = useRef(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
-  const [signatureType, setSignatureType] = useState("SES");
 
   const [signers, setSigners] = useState([]);
 
@@ -239,7 +237,6 @@ export function SignatureDialog({
         setSigners([{ name: "", surname: "", email: "", mobile: "" }]);
       }
       setGeneratingPdf(false);
-      setSignatureType("SES");
     }
   }, [open, client]);
 
@@ -316,7 +313,7 @@ export function SignatureDialog({
       const result = await requestSignature({
         documentType,
         documentId: document._id || document.id,
-        signatureType,
+        signatureType: "SES",
         signers: formattedSigners,
         title: `Signature ${DOCUMENT_TYPE_LABELS[documentType] || "document"} ${document.number || ""}`,
         documentBase64,
@@ -382,10 +379,12 @@ export function SignatureDialog({
             </p>
 
             {/*
-              Signature client = SES uniquement (le client signe via un lien + OTP).
-              Les modes QES d'OpenAPI (EU-QES_automatic / EU-QES_otp) sont des cachets
-              de l'entreprise (OTP côté propriétaire du certificat, pas de lien client),
-              donc ils ne conviennent pas pour faire accepter un devis par le client.
+              Signature client = SES uniquement (signature électronique simple
+              eIDAS : le client signe via un lien + OTP email/SMS). C'est valable
+              juridiquement et suffisant pour faire accepter un devis.
+              La QES (EU-QES_otp) n'est pas proposée : elle nécessite un certificat
+              qualifié Namirial détenu par l'entreprise + un OTP généré par son app
+              à chaque signature — ce n'est pas un parcours client en libre-service.
             */}
 
             {/* Signataires */}
