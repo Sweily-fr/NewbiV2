@@ -177,6 +177,17 @@ export function OrganizationSwitcherHeader() {
     loadOrganizations();
   }, [loadOrganizations]);
 
+  // Le badge de statut (PRO / Essai / Expiré) vient de /api/organization/
+  // list-with-order, une source distincte du contexte d'abonnement. On la
+  // recharge quand l'abonnement change (paiement / sync / réactivation
+  // dispatchent `subscription:refresh`) pour que le badge passe d'« Expiré »
+  // à « PRO » sans rechargement de page.
+  React.useEffect(() => {
+    const onRefresh = () => loadOrganizations();
+    window.addEventListener("subscription:refresh", onRefresh);
+    return () => window.removeEventListener("subscription:refresh", onRefresh);
+  }, [loadOrganizations]);
+
   // Filtrer les organisations selon la recherche
   const filteredOrganizations = React.useMemo(() => {
     if (!debouncedSearchQuery.trim()) return sortedOrganizations;

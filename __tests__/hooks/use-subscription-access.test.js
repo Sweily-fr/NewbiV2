@@ -229,3 +229,121 @@ describe("useSubscriptionAccess — app-managed trial (flag ON)", () => {
     // The TrialBanner component reads this and decides visibility.
   });
 });
+
+// ─── Banner derivation (bannerType / bannerMessage / bannerAction) ──────────
+// Ce que SubscriptionReadOnlyBanner lit pour s'afficher. Régression liée au
+// bug "bannière Expiré + bouton Renouvellement" : on verrouille ici le
+// libellé d'action attendu pour chaque statut.
+describe("useSubscriptionAccess — banner state", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("expired + owner → error banner with 'Renouveler l'abonnement' action", () => {
+    mockContext({
+      subscription: { status: "expired", appTrialEnabled: false },
+      role: "owner",
+    });
+    const { result } = renderHook(() => useSubscriptionAccess());
+    expect(result.current.isReadOnly).toBe(true);
+    expect(result.current.bannerType).toBe("error");
+    expect(result.current.bannerMessage).toMatch(/expiré/i);
+    expect(result.current.bannerAction).toBe("Renouveler l'abonnement");
+  });
+
+  it("expired + member → error banner WITHOUT action (contact admin)", () => {
+    mockContext({
+      subscription: { status: "expired", appTrialEnabled: false },
+      role: "member",
+    });
+    const { result } = renderHook(() => useSubscriptionAccess());
+    expect(result.current.isReadOnly).toBe(true);
+    expect(result.current.isOwner).toBe(false);
+    expect(result.current.bannerType).toBe("error");
+    expect(result.current.bannerAction).toBeNull();
+    expect(result.current.bannerMessage).toMatch(/administrateur/i);
+  });
+
+  it("admin role is treated as owner (gets the action button)", () => {
+    mockContext({
+      subscription: { status: "expired", appTrialEnabled: false },
+      role: "admin",
+    });
+    const { result } = renderHook(() => useSubscriptionAccess());
+    expect(result.current.isOwner).toBe(true);
+    expect(result.current.bannerAction).toBe("Renouveler l'abonnement");
+  });
+
+  it("no subscription + owner → expired error banner", () => {
+    mockContext({ subscription: null, role: "owner", loading: false });
+    const { result } = renderHook(() => useSubscriptionAccess());
+    expect(result.current.isReadOnly).toBe(true);
+    expect(result.current.bannerType).toBe("error");
+    expect(result.current.bannerAction).toBe("Renouveler l'abonnement");
+  });
+
+  it("canceled period ended → expired error banner", () => {
+    mockContext({
+      subscription: {
+        status: "canceled",
+        periodEnd: inPast(1).toISOString(),
+        appTrialEnabled: false,
+      },
+      role: "owner",
+    });
+    const { result } = renderHook(() => useSubscriptionAccess());
+    expect(result.current.isReadOnly).toBe(true);
+    expect(result.current.bannerType).toBe("error");
+    expect(result.current.bannerAction).toBe("Renouveler l'abonnement");
+  });
+
+  it("past_due + owner → warning banner with 'Mettre à jour' action", () => {
+    mockContext({
+      subscription: { status: "past_due", appTrialEnabled: false },
+      role: "owner",
+      isActive: true,
+    });
+    const { result } = renderHook(() => useSubscriptionAccess());
+    expect(result.current.isReadOnly).toBe(false);
+    expect(result.current.bannerType).toBe("warning");
+    expect(result.current.bannerAction).toBe("Mettre à jour");
+  });
+
+  it("canceled but still in paid period + owner → info banner with 'Réactiver'", () => {
+    mockContext({
+      subscription: {
+        status: "canceled",
+        periodEnd: inFuture(10).toISOString(),
+        appTrialEnabled: false,
+      },
+      role: "owner",
+    });
+    const { result } = renderHook(() => useSubscriptionAccess());
+    expect(result.current.isReadOnly).toBe(false);
+    expect(result.current.bannerType).toBe("info");
+    expect(result.current.bannerAction).toBe("Réactiver");
+  });
+
+  it("active subscription → no banner at all", () => {
+    mockContext({
+      subscription: { status: "active", appTrialEnabled: false },
+      isActive: true,
+      role: "owner",
+    });
+    const { result } = renderHook(() => useSubscriptionAccess());
+    expect(result.current.bannerType).toBeNull();
+    expect(result.current.bannerMessage).toBeNull();
+    expect(result.current.bannerAction).toBeNull();
+  });
+
+  it("fetch failed (lastFetchOk=false) → no banner (safety net)", () => {
+    mockContext({
+      subscription: null,
+      role: "owner",
+      loading: false,
+      lastFetchOk: false,
+    });
+    const { result } = renderHook(() => useSubscriptionAccess());
+    expect(result.current.bannerType).toBeNull();
+  });
+});

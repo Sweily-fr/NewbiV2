@@ -1,33 +1,27 @@
 "use client";
 
-import { useState } from "react";
-import { AlertTriangle, LoaderCircle, Info } from "lucide-react";
+import { AlertTriangle, Info } from "lucide-react";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
-import { toast } from "@/src/components/ui/sonner";
 
-export function SubscriptionExpiredBadgeHeader() {
+export function SubscriptionExpiredBadgeHeader({ onSubscribe }) {
   const { bannerType, bannerMessage, bannerAction, loading } =
     useSubscriptionAccess();
-  const [isLoading, setIsLoading] = useState(false);
 
   if (loading || !bannerType) return null;
 
-  const handleAction = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch("/api/stripe/billing-portal", {
-        method: "POST",
-      });
-      const data = await response.json();
-      if (data.url) {
-        window.open(data.url, "_blank");
-      } else {
-        toast.error("Impossible d'ouvrir le portail de facturation");
-      }
-    } catch {
-      toast.error("Erreur de connexion");
-    } finally {
-      setIsLoading(false);
+  const handleAction = () => {
+    if (onSubscribe) {
+      onSubscribe();
+      return;
+    }
+    // Le portail Stripe ne re-souscrit pas un abonnement expiré : on ouvre la
+    // modale de paramètres sur l'onglet abonnement (listener sur `document`).
+    if (typeof document !== "undefined") {
+      document.dispatchEvent(
+        new CustomEvent("openSettingsModal", {
+          detail: { section: "subscription" },
+        }),
+      );
     }
   };
 
@@ -51,11 +45,7 @@ export function SubscriptionExpiredBadgeHeader() {
 
   return (
     <div className="flex items-center gap-2 px-2 py-1">
-      {isLoading ? (
-        <LoaderCircle className={`${c.icon} animate-spin`} size={14} />
-      ) : (
-        <Icon className={c.icon} size={14} />
-      )}
+      <Icon className={c.icon} size={14} />
       <span className={`text-[11px] font-normal ${c.text} hidden md:inline`}>
         {bannerMessage}
       </span>
@@ -63,10 +53,9 @@ export function SubscriptionExpiredBadgeHeader() {
         <button
           type="button"
           onClick={handleAction}
-          disabled={isLoading}
-          className={`text-[11px] font-medium ${c.text} hover:underline cursor-pointer disabled:opacity-50 shrink-0`}
+          className={`text-[11px] font-medium ${c.text} hover:underline cursor-pointer shrink-0`}
         >
-          {isLoading ? "Ouverture..." : bannerAction}
+          {bannerAction}
         </button>
       )}
     </div>

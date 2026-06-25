@@ -245,11 +245,11 @@ const errorLink = onError(
           e.code === "SUBSCRIPTION_READ_ONLY",
       );
       if (hasSubscriptionBlock) {
-        // Trigger the subscription blocked dialog (deduplication handled in the component)
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new CustomEvent("subscription-blocked"));
-        }
-        return; // Don't process further — the dialog handles it
+        // Mode lecture seule : plus de popup bloquante (la bannière "Expiré"
+        // informe déjà l'utilisateur et il peut naviguer en lecture seule). On
+        // avale silencieusement l'erreur d'écriture refusée par le backend —
+        // pas de toast ni de modale.
+        return;
       }
 
       let hasCriticalError = false;
