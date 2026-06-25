@@ -1399,6 +1399,8 @@ export default function TransactionTable({
                               className="w-auto p-0"
                               style={{ zIndex: 9999 }}
                               align="start"
+                              side="left"
+                              collisionPadding={16}
                             >
                               <Calendar
                                 mode="single"
@@ -1452,6 +1454,8 @@ export default function TransactionTable({
                               className="w-auto p-0"
                               style={{ zIndex: 9999 }}
                               align="start"
+                              side="left"
+                              collisionPadding={16}
                             >
                               <Calendar
                                 mode="single"

@@ -196,16 +196,16 @@ function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px] p-1 gap-0 top-[40%] border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
-        <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
-          <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
+      <DialogContent className="sm:max-w-[520px] max-h-[85vh] flex flex-col p-1 gap-0 top-[50%] border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
+        <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1] flex flex-col min-h-0">
+          <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40 flex-shrink-0">
             <DialogTitle className="text-sm font-medium flex items-center gap-2">
               <Settings2 className="size-4" />
               {isEditing ? "Modifier le champ" : "Nouveau champ personnalisé"}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-3 px-5 pt-3 pb-0">
+          <div className="flex-1 overflow-y-auto min-h-0 space-y-3 px-5 pt-3 pb-4">
             <div className="space-y-2">
               <label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
                 Nom du champ *
@@ -298,22 +298,23 @@ function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
               />
             </div>
 
-            <div className="flex justify-end border-t border-border/40 mt-3 px-5 py-3 -mx-5">
-              <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
-                  Annuler
-                </Button>
-                <Button
-                  variant="primary"
-                  onClick={handleSubmit}
-                  disabled={isLoading}
-                >
-                  {isLoading && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  {isEditing ? "Enregistrer" : "Créer"}
-                </Button>
-              </div>
+          </div>
+
+          <div className="flex justify-end border-t border-border/40 px-5 py-3 flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Annuler
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleSubmit}
+                disabled={isLoading}
+              >
+                {isLoading && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                {isEditing ? "Enregistrer" : "Créer"}
+              </Button>
             </div>
           </div>
         </div>

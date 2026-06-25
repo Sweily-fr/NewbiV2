@@ -52,6 +52,7 @@ import {
   Check,
   ChevronsUpDown,
   Crown,
+  AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { getPlanLimits } from "@/src/lib/plan-limits";
@@ -240,14 +241,32 @@ function getTreePrefix(guides, isLast) {
   return prefix;
 }
 
+// Le dossier ciblé par une automatisation n'existe plus (supprimé / corbeille)
+function isFolderMissing(folders, folderId) {
+  return Boolean(folderId) && !folders.some((f) => f.id === folderId);
+}
+
 // Select de dossier avec arborescence
 function FolderTreeSelect({ folders, value, onValueChange, placeholder }) {
   const treeItems = useMemo(() => buildFolderTree(folders), [folders]);
+  const missing = isFolderMissing(folders, value);
 
   return (
-    <Select value={value} onValueChange={onValueChange}>
-      <SelectTrigger className="w-[200px] [&_[data-tree-guide]]:hidden">
-        <SelectValue placeholder={placeholder || "Dossier..."} />
+    <Select value={missing ? undefined : value} onValueChange={onValueChange}>
+      <SelectTrigger
+        className={cn(
+          "w-[200px] [&_[data-tree-guide]]:hidden",
+          missing && "border-destructive text-destructive",
+        )}
+      >
+        {missing ? (
+          <span className="flex items-center gap-1.5 text-destructive truncate">
+            <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
+            <span className="truncate">Dossier supprimé</span>
+          </span>
+        ) : (
+          <SelectValue placeholder={placeholder || "Dossier..."} />
+        )}
       </SelectTrigger>
       <SelectContent>
         {treeItems.map((f) => (
@@ -776,97 +795,109 @@ export default function DocumentAutomationsModal({
         ) : (
           <div className="space-y-3">
             {/* Existing automations */}
-            {automations.map((automation) => (
-              <div
-                key={automation.id}
-                className="flex items-center gap-2 min-w-0"
-              >
-                <span className="text-sm text-muted-foreground flex-shrink-0">
-                  Quand
-                </span>
-                <Select
-                  value={automation.triggerType}
-                  onValueChange={(value) =>
-                    handleUpdateTrigger(automation.id, value)
-                  }
+            {automations.map((automation) => {
+              const folderMissing = isFolderMissing(
+                folders,
+                automation.actionConfig?.targetFolderId,
+              );
+              return (
+                <div
+                  key={automation.id}
+                  className="flex items-center gap-2 min-w-0"
                 >
-                  <SelectTrigger className="w-[220px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>{GROUPED_TRIGGER_OPTIONS}</SelectContent>
-                </Select>
+                  <span className="text-sm text-muted-foreground flex-shrink-0">
+                    Quand
+                  </span>
+                  <Select
+                    value={automation.triggerType}
+                    onValueChange={(value) =>
+                      handleUpdateTrigger(automation.id, value)
+                    }
+                  >
+                    <SelectTrigger className="w-[220px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>{GROUPED_TRIGGER_OPTIONS}</SelectContent>
+                  </Select>
 
-                <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
 
-                <span className="text-sm text-muted-foreground flex-shrink-0">
-                  dans
-                </span>
+                  <span className="text-sm text-muted-foreground flex-shrink-0">
+                    dans
+                  </span>
 
-                <FolderTreeSelect
-                  folders={folders}
-                  value={automation.actionConfig?.targetFolderId}
-                  onValueChange={(value) =>
-                    handleUpdateFolder(automation.id, value)
-                  }
-                />
+                  <FolderTreeSelect
+                    folders={folders}
+                    value={automation.actionConfig?.targetFolderId}
+                    onValueChange={(value) =>
+                      handleUpdateFolder(automation.id, value)
+                    }
+                  />
 
-                <SettingsPopover
-                  config={automation.actionConfig}
-                  onSave={(advancedConfig) =>
-                    handleUpdateAdvanced(automation.id, {
-                      actionConfig: {
-                        targetFolderId: automation.actionConfig?.targetFolderId,
-                        ...advancedConfig,
-                      },
-                    })
-                  }
-                />
+                  <SettingsPopover
+                    config={automation.actionConfig}
+                    onSave={(advancedConfig) =>
+                      handleUpdateAdvanced(automation.id, {
+                        actionConfig: {
+                          targetFolderId:
+                            automation.actionConfig?.targetFolderId,
+                          ...advancedConfig,
+                        },
+                      })
+                    }
+                  />
 
-                <div className="flex items-center gap-2 ml-auto flex-shrink-0">
-                  {runningId === automation.id ? (
-                    <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      {progress
-                        ? `${progress.current}/${progress.total}`
-                        : "Traitement..."}
-                    </span>
-                  ) : (
+                  <div className="flex items-center gap-2 ml-auto flex-shrink-0">
+                    {runningId === automation.id ? (
+                      <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        {progress
+                          ? `${progress.current}/${progress.total}`
+                          : "Traitement..."}
+                      </span>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-[#5b50ff]"
+                        onClick={() => processExistingDocuments(automation.id)}
+                        disabled={runningId !== null || folderMissing}
+                        title={
+                          folderMissing
+                            ? "Le dossier de destination a été supprimé. Choisissez un nouveau dossier."
+                            : undefined
+                        }
+                      >
+                        <Play className="h-4 w-4" />
+                      </Button>
+                    )}
+
+                    {automation.matchingDocumentsCount != null &&
+                      automation.matchingDocumentsCount > 0 && (
+                        <span className="text-xs text-muted-foreground flex-shrink-0">
+                          {automation.matchingDocumentsCount} doc
+                          {automation.matchingDocumentsCount > 1 ? "s" : ""}
+                        </span>
+                      )}
+
+                    <Switch
+                      checked={automation.isActive}
+                      onCheckedChange={() => handleToggle(automation.id)}
+                      className="data-[state=checked]:bg-[#5b50ff]"
+                    />
+
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-[#5b50ff]"
-                      onClick={() => processExistingDocuments(automation.id)}
-                      disabled={runningId !== null}
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      onClick={() => handleDelete(automation.id)}
                     >
-                      <Play className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4" />
                     </Button>
-                  )}
-
-                  {automation.matchingDocumentsCount != null &&
-                    automation.matchingDocumentsCount > 0 && (
-                      <span className="text-xs text-muted-foreground flex-shrink-0">
-                        {automation.matchingDocumentsCount} doc
-                        {automation.matchingDocumentsCount > 1 ? "s" : ""}
-                      </span>
-                    )}
-
-                  <Switch
-                    checked={automation.isActive}
-                    onCheckedChange={() => handleToggle(automation.id)}
-                    className="data-[state=checked]:bg-[#5b50ff]"
-                  />
-
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                    onClick={() => handleDelete(automation.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* New automation row (visible when adding) */}
             {showNewRow && (

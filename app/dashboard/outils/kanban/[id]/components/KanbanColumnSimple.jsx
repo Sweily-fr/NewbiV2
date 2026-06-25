@@ -191,26 +191,8 @@ function InlineNewTask({
       ref={cardRef}
       className="relative bg-card rounded-xl border border-[#4840D9] shadow-sm p-3 mb-1.5 sm:mb-2 space-y-1.5"
     >
-      {/* Actions en haut à droite */}
-      <div className="absolute top-2 right-2 flex items-center gap-1.5">
-        <CmdEnterHint
-          onClick={() => handleSave(true)}
-          disabled={!title.trim() || saving}
-          className="h-7"
-        />
-        <Button
-          size="sm"
-          className="h-7 px-3 text-xs gap-1 text-white"
-          style={{ backgroundColor: "#4840D9" }}
-          onClick={() => handleSave(false)}
-          disabled={!title.trim() || saving}
-        >
-          Créer <CornerDownLeft className="h-3 w-3" />
-        </Button>
-      </div>
-
-      {/* Titre */}
-      <div className="pr-28">
+      {/* Titre + actions */}
+      <div className="flex items-center gap-1.5">
         <input
           ref={inputRef}
           type="text"
@@ -218,8 +200,22 @@ function InlineNewTask({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="w-full text-sm font-medium bg-transparent border-none outline-none placeholder:text-muted-foreground/50"
+          className="flex-1 min-w-0 text-sm font-medium bg-transparent border-none outline-none placeholder:text-muted-foreground/50"
         />
+        <CmdEnterHint
+          onClick={() => handleSave(true)}
+          disabled={!title.trim() || saving}
+          className="h-7 shrink-0"
+        />
+        <Button
+          size="sm"
+          className="h-7 px-3 text-xs gap-1 text-white shrink-0"
+          style={{ backgroundColor: "#4840D9" }}
+          onClick={() => handleSave(false)}
+          disabled={!title.trim() || saving}
+        >
+          Créer <CornerDownLeft className="h-3 w-3" />
+        </Button>
       </div>
 
       {/* Assigner */}

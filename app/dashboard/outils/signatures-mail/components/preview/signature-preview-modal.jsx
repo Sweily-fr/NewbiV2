@@ -15,6 +15,10 @@ import { LoaderCircle, Eye, Copy, Pencil } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 import { generateSignatureHTML } from "../../utils/standalone-signature-generator";
 import { generateSignatureHTMLFromContainer } from "../../utils/container-html-generator";
+import ContainerNode from "../blocks/ContainerNode";
+
+// No-op pour les callbacks d'interaction non utilisés en mode aperçu (lecture seule)
+const noop = () => {};
 
 // Nettoyer les champs __typename ajoutés par Apollo Client
 function cleanTypename(obj) {
@@ -582,13 +586,43 @@ export default function SignaturePreviewModal({
                 className="px-5 py-6 cursor-pointer hover:bg-accent/50 transition-colors"
                 onClick={handleEdit}
                 title="Cliquer pour modifier"
-                dangerouslySetInnerHTML={{
-                  __html: generatePreviewHTML(
-                    signatureData,
-                    containerStructure,
-                  ),
+                style={{
+                  fontFamily: signatureData.fontFamily || "Arial, sans-serif",
                 }}
-              />
+              >
+                {containerStructure ? (
+                  // Aperçu rendu via les mêmes composants que l'éditeur (lecture seule)
+                  // pour garantir un rendu identique à l'éditeur de signature.
+                  <ContainerNode
+                    container={containerStructure}
+                    signatureData={signatureData}
+                    readOnly
+                    selectedContainerId={null}
+                    selectedElementId={null}
+                    hoveredContainerId={null}
+                    onHover={noop}
+                    onSelect={noop}
+                    onDelete={noop}
+                    onUpdate={noop}
+                    onElementSelect={noop}
+                    onElementUpdate={noop}
+                    onElementDelete={noop}
+                    onDrop={noop}
+                    onMoveContainer={noop}
+                    onMoveElement={noop}
+                    onReorderContainer={noop}
+                    onReorderElement={noop}
+                    onFieldChange={noop}
+                  />
+                ) : (
+                  // Repli pour les signatures legacy sans containerStructure
+                  <div
+                    dangerouslySetInnerHTML={{
+                      __html: generatePreviewHTML(signatureData, null),
+                    }}
+                  />
+                )}
+              </div>
 
               {/* Footer */}
               <div className="flex justify-between items-center border-t border-border/40 px-5 py-3">

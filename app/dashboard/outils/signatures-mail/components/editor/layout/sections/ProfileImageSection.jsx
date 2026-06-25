@@ -15,7 +15,10 @@ import {
 import { useImageUpload } from "../../../../hooks/useImageUpload";
 import { useSignatureData } from "@/src/hooks/use-signature-data";
 import { toast } from "@/src/components/ui/sonner";
-import { optimizeImage } from "../../../../utils/imageOptimizer";
+import {
+  optimizeImage,
+  validateImageFile,
+} from "../../../../utils/imageOptimizer";
 
 export default function ProfileImageSection({
   signatureData,
@@ -72,6 +75,9 @@ export default function ProfileImageSection({
     if (!file) return;
 
     try {
+      // Contrôler le format AVANT d'annoncer l'optimisation
+      validateImageFile(file);
+
       toast.info("Optimisation de l'image...");
 
       // 🔥 ÉTAPE 1: Optimiser l'image côté client
@@ -107,7 +113,7 @@ export default function ProfileImageSection({
       }
     } catch (error) {
       console.error("❌ Erreur traitement photo:", error);
-      toast.error("Erreur lors du traitement de la photo");
+      toast.error(error.message || "Erreur lors du traitement de la photo");
     }
   };
 

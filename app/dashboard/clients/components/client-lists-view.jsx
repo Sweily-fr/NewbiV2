@@ -232,9 +232,10 @@ export default function ClientListsView({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setDeletingList(list)}
-                    className="cursor-pointer text-red-600 focus:text-red-600"
+                    className="cursor-pointer text-destructive focus:text-destructive"
+                    variant="destructive"
                   >
-                    <Trash2 className="w-4 h-4 mr-2" />
+                    <Trash2 className="w-4 h-4 mr-2 text-destructive" />
                     Supprimer
                   </DropdownMenuItem>
                 </DropdownMenuContent>

@@ -189,7 +189,7 @@ function RowActions({ invoice, onViewInvoice, onDeleteInvoice }) {
 export const getColumns = ({ onViewInvoice, onDeleteInvoice } = {}) => [
   {
     id: "select",
-    size: 28,
+    size: 50,
     header: ({ table }) => (
       <div data-no-row-click>
         <Checkbox

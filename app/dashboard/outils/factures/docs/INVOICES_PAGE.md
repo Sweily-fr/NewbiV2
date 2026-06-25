@@ -1747,7 +1747,7 @@ Mutation : `createLinkedInvoice(quoteId, workspaceId, amount, isDeposit): Linked
 Convertir un devis accepté en une (ou plusieurs) facture(s). Permet :
 
 - Émission d'un acompte (`isDeposit: true`)
-- Émission de factures partielles successives (max 3)
+- Émission de factures partielles successives (nombre illimité)
 - Émission d'une facture finale du solde
 
 ### 30.2 Logique (`invoice.js:2645-2890`)
@@ -1776,9 +1776,8 @@ Convertir un devis accepté en une (ou plusieurs) facture(s). Permet :
 ### 30.3 Limites
 
 - TVA fixée à 20% (pas configurable)
-- Max 3 factures par devis
 - 1 seul acompte par devis
-- Dernière facture = solde exact obligatoire
+- Le total facturé ne peut pas dépasser le montant du devis
 
 ---
 
@@ -2567,9 +2566,9 @@ Modifier une facture après sync laisse `pennylaneSyncStatus: "SYNCED"` mais ne 
 
 Le bouton "Supprimer (n)" peut sélectionner des factures `COMPLETED` qui seront refusées côté backend silencieusement. À améliorer en désactivant la checkbox sur les non-supprimables.
 
-### 46.19 Limite 3 factures liées par devis
+### 46.19 Nombre de factures liées par devis
 
-Hardcodée dans `createLinkedInvoice` (`invoice.js:2695-2698`). Si business demande plus, il faut modifier le code (pas de config).
+Illimité depuis juin 2026 (l'ancienne limite hardcodée de 3 dans `createLinkedInvoice` a été supprimée). Seule contrainte restante : le total facturé ne peut pas dépasser le montant du devis.
 
 ### 46.20 Validation date émission ne couvre pas DRAFT
 

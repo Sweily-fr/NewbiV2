@@ -902,6 +902,32 @@ function ForecastTable({
   return (
     <div className="overflow-x-auto">
       <div style={{ minWidth: LABEL_COL_WIDTH + N * COLUMN_WIDTH }}>
+        {/* ── En-tête des mois ── */}
+        <div className="flex items-center mt-8">
+          <div
+            className="shrink-0 px-4 py-2 sticky left-0 z-10 bg-background"
+            style={{ width: LABEL_COL_WIDTH }}
+          />
+          <div
+            className="flex-1 grid pr-6"
+            style={{ gridTemplateColumns: `repeat(${N}, 1fr)` }}
+          >
+            {months.map((m) => (
+              <div
+                key={m.month}
+                className={cn(
+                  "px-2 py-2 text-center text-[12px] font-medium capitalize whitespace-nowrap rounded",
+                  m.month === currentMonth
+                    ? "text-blue-500 font-semibold bg-black/[0.04]"
+                    : "text-muted-foreground",
+                )}
+              >
+                {formatMonthLabel(m.month)}
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* ── Solde début de mois (header séparé) ── */}
         <Row
           label={
@@ -910,7 +936,7 @@ function ForecastTable({
             </span>
           }
           labelClass={cn(labelTint, "rounded-l-lg after:rounded-l-lg")}
-          borderClass="bg-muted/40 border border-border rounded-lg mt-6"
+          borderClass="bg-muted/40 border border-border rounded-lg mt-2"
         >
           {months.map((m) => (
             <div

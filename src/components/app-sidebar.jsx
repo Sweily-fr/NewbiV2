@@ -404,10 +404,6 @@ const data = {
               title: "Documents partagés",
               url: "/dashboard/comptabilite/dossier-client/documents",
             },
-            {
-              title: "Plan comptable",
-              url: "/dashboard/comptabilite/dossier-client/plan-comptable",
-            },
           ],
         },
         {

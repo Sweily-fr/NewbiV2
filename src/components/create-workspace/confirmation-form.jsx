@@ -133,7 +133,7 @@ export function ConfirmationForm({
   };
 
   return (
-    <div className="flex flex-col h-full px-20 py-6">
+    <div className="flex flex-col h-full px-20 py-6 overflow-y-auto">
       <div className="flex flex-col pt-14">
         <h1 className="text-xl font-semibold text-foreground mb-2">
           Confirmez votre espace de travail

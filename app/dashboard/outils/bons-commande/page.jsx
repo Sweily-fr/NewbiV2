@@ -108,14 +108,17 @@ function PurchaseOrdersContent() {
         return;
       }
 
-      totalAmount += po.totalHT || 0;
+      // finalTotalHT inclut la remise globale du document, contrairement à totalHT
+      const poAmount = po.finalTotalHT ?? po.totalHT ?? 0;
+
+      totalAmount += poAmount;
 
       if (po.status !== PURCHASE_ORDER_STATUS.DRAFT) {
-        confirmedAmount += po.totalHT || 0;
+        confirmedAmount += poAmount;
       }
 
       if (po.status === PURCHASE_ORDER_STATUS.IN_PROGRESS) {
-        inProgressAmount += po.totalHT || 0;
+        inProgressAmount += poAmount;
         inProgressCount++;
       }
     });
