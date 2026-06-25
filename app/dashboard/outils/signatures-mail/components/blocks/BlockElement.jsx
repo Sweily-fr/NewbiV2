@@ -333,6 +333,7 @@ export default function BlockElement({
               <img
                 src={photoSrc}
                 alt="Profile"
+                draggable={false}
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -467,6 +468,7 @@ export default function BlockElement({
           <img
             src={bannerSrc}
             alt={props.alt || "Bandeau"}
+            draggable={false}
             style={{
               width: `${bannerWidth}px`,
               maxWidth: "100%",
@@ -535,6 +537,7 @@ export default function BlockElement({
                   key={network}
                   src={getSocialIconUrl(network, colorName)}
                   alt={network}
+                  draggable={false}
                   style={{
                     width: props.size || 20,
                     height: props.size || 20,
@@ -557,6 +560,7 @@ export default function BlockElement({
             <img
               src={logoSrc}
               alt="Logo"
+              draggable={false}
               style={{
                 width: `${logoWidth}px`,
                 height: "auto",
