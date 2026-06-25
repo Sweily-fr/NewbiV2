@@ -40,6 +40,7 @@ export default function ContainerNode({
   onReorderElement,
   signatureData,
   onFieldChange,
+  readOnly = false,
 }) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -63,12 +64,12 @@ export default function ContainerNode({
       setDropPosition(null);
     };
 
-    document.addEventListener('dragend', handleGlobalDragEnd);
-    document.addEventListener('drop', handleGlobalDrop);
+    document.addEventListener("dragend", handleGlobalDragEnd);
+    document.addEventListener("drop", handleGlobalDrop);
 
     return () => {
-      document.removeEventListener('dragend', handleGlobalDragEnd);
-      document.removeEventListener('drop', handleGlobalDrop);
+      document.removeEventListener("dragend", handleGlobalDragEnd);
+      document.removeEventListener("drop", handleGlobalDrop);
     };
   }, []);
 
@@ -77,9 +78,10 @@ export default function ContainerNode({
   const hasChildren = container.children && container.children.length > 0;
 
   // Check if container only has separator elements - these need to stretch
-  const hasSeparatorOnly = hasElements &&
+  const hasSeparatorOnly =
+    hasElements &&
     container.elements.length === 1 &&
-    container.elements[0].type === 'separator-line';
+    container.elements[0].type === "separator-line";
 
   // Should this container stretch to fill parent?
   // Containers with separators should stretch to allow separator to fill space
@@ -91,7 +93,8 @@ export default function ContainerNode({
   // Visual states - show selection style only when container is selected AND no element is selected
   const isContainerSelected = isThisContainerSelected && !selectedElementId;
   // Show controls when selected, hovered, OR while dragging
-  const showControls = !isRoot && (isContainerSelected || isHovered || isDragging);
+  const showControls =
+    !readOnly && !isRoot && (isContainerSelected || isHovered || isDragging);
 
   // Handle container selection
   const handleSelect = (e) => {
@@ -108,7 +111,8 @@ export default function ContainerNode({
   // Handle layout toggle
   const handleLayoutToggle = (e) => {
     e.stopPropagation();
-    const newLayout = container.layout === "horizontal" ? "vertical" : "horizontal";
+    const newLayout =
+      container.layout === "horizontal" ? "vertical" : "horizontal";
     onUpdate(container.id, { layout: newLayout });
   };
 
@@ -178,8 +182,12 @@ export default function ContainerNode({
   // Handle drag over for drops
   const handleDragOver = (e) => {
     const hasWidget = e.dataTransfer.types.includes("application/x-widget-id");
-    const hasContainer = e.dataTransfer.types.includes("application/x-container-id");
-    const hasElement = e.dataTransfer.types.includes("application/x-element-id");
+    const hasContainer = e.dataTransfer.types.includes(
+      "application/x-container-id",
+    );
+    const hasElement = e.dataTransfer.types.includes(
+      "application/x-element-id",
+    );
 
     if (hasWidget || hasContainer || hasElement) {
       e.preventDefault();
@@ -197,10 +205,10 @@ export default function ContainerNode({
 
         if (isHorizontalParent) {
           const midX = rect.left + rect.width / 2;
-          setDropPosition(mouseX < midX ? 'before' : 'after');
+          setDropPosition(mouseX < midX ? "before" : "after");
         } else {
           const midY = rect.top + rect.height / 2;
-          setDropPosition(mouseY < midY ? 'before' : 'after');
+          setDropPosition(mouseY < midY ? "before" : "after");
         }
       } else {
         setDropPosition(null);
@@ -225,7 +233,12 @@ export default function ContainerNode({
     setIsDragOver(false);
     setDropPosition(null);
 
-    console.log("📥 [ContainerNode] Drop received on container:", container.id, "position:", currentDropPosition);
+    console.log(
+      "📥 [ContainerNode] Drop received on container:",
+      container.id,
+      "position:",
+      currentDropPosition,
+    );
 
     // Handle widget drop (from palette)
     const widgetId = e.dataTransfer.getData("application/x-widget-id");
@@ -240,11 +253,21 @@ export default function ContainerNode({
     if (containerId && containerId !== container.id) {
       // Use reorderContainer if we have a drop position (sibling reorder)
       if (currentDropPosition && onReorderContainer) {
-        console.log("📥 [ContainerNode] Reordering container", containerId, currentDropPosition, container.id);
+        console.log(
+          "📥 [ContainerNode] Reordering container",
+          containerId,
+          currentDropPosition,
+          container.id,
+        );
         onReorderContainer(containerId, container.id, currentDropPosition);
       } else if (onMoveContainer) {
         // Fall back to moving container into this one
-        console.log("📥 [ContainerNode] Moving container", containerId, "into", container.id);
+        console.log(
+          "📥 [ContainerNode] Moving container",
+          containerId,
+          "into",
+          container.id,
+        );
         onMoveContainer(containerId, container.id);
       }
       return;
@@ -255,7 +278,14 @@ export default function ContainerNode({
     if (elementData && onMoveElement) {
       const [elementId, sourceContainerId] = elementData.split("::");
       if (sourceContainerId !== container.id) {
-        console.log("📥 [ContainerNode] Moving element", elementId, "from", sourceContainerId, "to", container.id);
+        console.log(
+          "📥 [ContainerNode] Moving element",
+          elementId,
+          "from",
+          sourceContainerId,
+          "to",
+          container.id,
+        );
         onMoveElement(elementId, sourceContainerId, container.id);
       }
     }
@@ -263,9 +293,12 @@ export default function ContainerNode({
 
   // Get border color based on state
   const getBorderColor = () => {
+    // En lecture seule (aperçu), pas de bordure d'édition
+    if (readOnly) return "border-transparent";
     if (dropPosition) return "border-[#5a50ff]/30";
     if (isDragOver) return "border-[#5a50ff] bg-[#5a50ff]/5";
-    if (isContainerSelected) return "border-[#5a50ff] bg-[rgba(90,80,255,0.03)]";
+    if (isContainerSelected)
+      return "border-[#5a50ff] bg-[rgba(90,80,255,0.03)]";
     if (isHovered && !isRoot) return "border-neutral-400";
     return "border-neutral-300/70";
   };
@@ -279,9 +312,9 @@ export default function ContainerNode({
         <div
           className={cn(
             "absolute top-0 bottom-0 w-0.5 z-20 pointer-events-none",
-            position === 'before' ? "-left-1.5" : "-right-1.5"
+            position === "before" ? "-left-1.5" : "-right-1.5",
           )}
-          style={{ backgroundColor: '#5a50ff' }}
+          style={{ backgroundColor: "#5a50ff" }}
         />
       );
     }
@@ -290,24 +323,27 @@ export default function ContainerNode({
       <div
         className={cn(
           "absolute left-0 right-0 h-0.5 z-20 pointer-events-none",
-          position === 'before' ? "-top-1.5" : "-bottom-1.5"
+          position === "before" ? "-top-1.5" : "-bottom-1.5",
         )}
-        style={{ backgroundColor: '#5a50ff' }}
+        style={{ backgroundColor: "#5a50ff" }}
       />
     );
   };
 
   // Get alignment classes based on layout and alignment property
   const getAlignmentClasses = () => {
-    const alignment = container.alignment || 'start';
+    const alignment = container.alignment || "start";
 
     // items-* controls cross-axis alignment:
     // - In column (vertical): horizontal alignment (left/center/right)
     // - In row (horizontal): vertical alignment (top/center/bottom)
     switch (alignment) {
-      case 'center': return 'items-center';
-      case 'end': return 'items-end';
-      default: return 'items-start';
+      case "center":
+        return "items-center";
+      case "end":
+        return "items-end";
+      default:
+        return "items-start";
     }
   };
 
@@ -329,7 +365,8 @@ export default function ContainerNode({
 
     // Pour un conteneur avec séparateur dans un parent horizontal,
     // ne pas forcer la largeur - laisser le séparateur définir sa propre largeur
-    const isVerticalSeparatorContainer = shouldStretch && parentLayout === "horizontal";
+    const isVerticalSeparatorContainer =
+      shouldStretch && parentLayout === "horizontal";
 
     return (
       <div
@@ -337,10 +374,12 @@ export default function ContainerNode({
           "flex",
           container.layout === "horizontal" ? "flex-row" : "flex-col",
           // Largeur 100% seulement pour les conteneurs verticaux (non-séparateur vertical)
-          !isVerticalSeparatorContainer && container.layout !== "horizontal" && "w-full",
+          !isVerticalSeparatorContainer &&
+            container.layout !== "horizontal" &&
+            "w-full",
           getAlignmentClasses(),
           // Stretch height only when container has a separator that needs it
-          shouldStretch && "flex-1 h-full"
+          shouldStretch && "flex-1 h-full",
         )}
         style={getGapStyle()}
       >
@@ -352,11 +391,14 @@ export default function ContainerNode({
 
           // Pour les séparateurs seuls dans leur conteneur, utiliser le layout du parent (grandparent)
           // car le séparateur doit s'adapter à la position de son conteneur, pas à son layout interne
-          const isSeparatorElement = element.type === 'separator-line';
-          const visibleElements = container.elements.filter(el => !el.props?.hidden);
-          const effectiveParentLayout = (isSeparatorElement && visibleElements.length === 1)
-            ? parentLayout  // Layout du grandparent
-            : container.layout;  // Layout du conteneur actuel
+          const isSeparatorElement = element.type === "separator-line";
+          const visibleElements = container.elements.filter(
+            (el) => !el.props?.hidden,
+          );
+          const effectiveParentLayout =
+            isSeparatorElement && visibleElements.length === 1
+              ? parentLayout // Layout du grandparent
+              : container.layout; // Layout du conteneur actuel
 
           return (
             <BlockElement
@@ -365,16 +407,20 @@ export default function ContainerNode({
               blockId={container.id}
               isSelected={selectedElementId === element.id}
               onSelect={() => onElementSelect(element.id, container.id)}
-              onUpdate={(newProps) => onElementUpdate(container.id, element.id, newProps)}
+              onUpdate={(newProps) =>
+                onElementUpdate(container.id, element.id, newProps)
+              }
               onDelete={() => onElementDelete(container.id, element.id)}
               onMoveElement={onMoveElement}
               onReorderElement={(draggedId, targetId, position) =>
-                onReorderElement && onReorderElement(container.id, draggedId, targetId, position)
+                onReorderElement &&
+                onReorderElement(container.id, draggedId, targetId, position)
               }
               signatureData={signatureData}
               onFieldChange={onFieldChange}
               isSingleElement={visibleElements.length === 1}
               parentLayout={effectiveParentLayout}
+              readOnly={readOnly}
             />
           );
         })}
@@ -391,7 +437,7 @@ export default function ContainerNode({
         className={cn(
           "flex",
           container.layout === "horizontal" ? "flex-row" : "flex-col",
-          getAlignmentClasses()
+          getAlignmentClasses(),
         )}
         style={getGapStyle()}
       >
@@ -418,11 +464,29 @@ export default function ContainerNode({
             onReorderElement={onReorderElement}
             signatureData={signatureData}
             onFieldChange={onFieldChange}
+            readOnly={readOnly}
           />
         ))}
       </div>
     );
   };
+
+  // Props d'interaction (désactivées en lecture seule pour l'aperçu)
+  const interactionProps = readOnly
+    ? {}
+    : {
+        onClick: handleSelect,
+        onMouseEnter: () => onHover && onHover(container.id),
+        onMouseLeave: (e) => {
+          // Only clear hover if leaving to outside, not to a child
+          if (!e.currentTarget.contains(e.relatedTarget)) {
+            onHover && onHover(null);
+          }
+        },
+        onDragOver: handleDragOver,
+        onDragLeave: handleDragLeave,
+        onDrop: handleDrop,
+      };
 
   // Root container
   if (isRoot) {
@@ -435,28 +499,20 @@ export default function ContainerNode({
         data-container-id={container.id}
         className={cn(
           "relative w-full border border-dashed rounded-lg transition-all duration-150 cursor-pointer",
-          getBorderColor()
+          getBorderColor(),
         )}
         style={{ padding: `${rootPadding}px` }}
-        onClick={handleSelect}
-        onMouseEnter={() => onHover && onHover(container.id)}
-        onMouseLeave={(e) => {
-          // Only clear hover if leaving to outside, not to a child
-          if (!e.currentTarget.contains(e.relatedTarget)) {
-            onHover && onHover(null);
-          }
-        }}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
+        {...interactionProps}
       >
         {/* Content */}
         <div
           className={cn(
             "flex",
             // Use items-stretch for horizontal to allow children to stretch vertically
-            container.layout === "horizontal" ? "flex-row items-stretch" : "flex-col",
-            getAlignmentClasses()
+            container.layout === "horizontal"
+              ? "flex-row items-stretch"
+              : "flex-col",
+            getAlignmentClasses(),
           )}
           style={getGapStyle()}
         >
@@ -491,28 +547,22 @@ export default function ContainerNode({
         // Others fit content (unless width is set)
         !shouldStretch && !container.width && "w-fit",
         // Non-stretch containers in horizontal parent: don't stretch height
-        !shouldStretch && isInHorizontalParent && "self-start"
+        !shouldStretch && isInHorizontalParent && "self-start",
       )}
       style={{
         padding: `${containerPadding}px`,
         ...(container.width && { width: `${container.width}px` }),
         ...(container.height && { height: `${container.height}px` }),
       }}
-      onClick={handleSelect}
-      onMouseEnter={() => onHover && onHover(container.id)}
-      onMouseLeave={(e) => {
-        // Only clear hover if leaving to outside, not to a child
-        if (!e.currentTarget.contains(e.relatedTarget)) {
-          onHover && onHover(null);
-        }
-      }}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
+      {...interactionProps}
     >
       {/* Drop indicators for container reordering */}
-      {dropPosition === 'before' && <DropIndicator position="before" />}
-      {dropPosition === 'after' && <DropIndicator position="after" />}
+      {!readOnly && dropPosition === "before" && (
+        <DropIndicator position="before" />
+      )}
+      {!readOnly && dropPosition === "after" && (
+        <DropIndicator position="after" />
+      )}
 
       {/* Resize handles - COMMENTED OUT FOR NOW
       {(isHovered || isContainerSelected || isResizing) && (
@@ -558,9 +608,7 @@ export default function ContainerNode({
             onDragEnd={handleContainerDragEnd}
             className={cn(
               "p-1 rounded cursor-grab active:cursor-grabbing",
-              isDragging
-                ? "bg-[#5a50ff]"
-                : "bg-[#202020] hover:bg-[#303030]"
+              isDragging ? "bg-[#5a50ff]" : "bg-[#202020] hover:bg-[#303030]",
             )}
             title="Glisser pour réorganiser"
           >
@@ -592,10 +640,12 @@ export default function ContainerNode({
         className={cn(
           "flex h-full",
           // Use items-stretch for horizontal to allow children to stretch vertically
-          container.layout === "horizontal" ? "flex-row items-stretch" : "flex-col",
+          container.layout === "horizontal"
+            ? "flex-row items-stretch"
+            : "flex-col",
           getAlignmentClasses(),
           // Stretch content: largeur 100% seulement si pas un séparateur vertical
-          shouldStretch && !isInHorizontalParent && "w-full"
+          shouldStretch && !isInHorizontalParent && "w-full",
         )}
         style={getGapStyle()}
       >
@@ -603,7 +653,7 @@ export default function ContainerNode({
         {hasChildren && renderChildren()}
 
         {/* Empty state */}
-        {!hasElements && !hasChildren && (
+        {!readOnly && !hasElements && !hasChildren && (
           <div className="py-4 px-6 text-center text-xs text-neutral-400">
             Glissez ici
           </div>

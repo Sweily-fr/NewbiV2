@@ -14,11 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-} from "@/src/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import {
   Popover,
   PopoverContent,
@@ -52,7 +48,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 import { useImageUpload } from "../../hooks/useImageUpload";
-import { optimizeImage } from "../../utils/imageOptimizer";
+import { optimizeImage, validateImageFile } from "../../utils/imageOptimizer";
 import AlignmentSelector from "@/src/components/ui/alignment-selector";
 import { Button } from "@/src/components/ui/button";
 import { useSignatureData } from "@/src/hooks/use-signature-data";
@@ -86,8 +82,10 @@ export default function BlockSettings({
   // If block/container is selected, show container settings
   if (selectedBlock) {
     // Check if it's a container with children (branch node)
-    const hasChildren = selectedBlock.children && selectedBlock.children.length > 0;
-    const hasElements = selectedBlock.elements && selectedBlock.elements.length > 0;
+    const hasChildren =
+      selectedBlock.children && selectedBlock.children.length > 0;
+    const hasElements =
+      selectedBlock.elements && selectedBlock.elements.length > 0;
     const isRoot = selectedBlock.isRoot;
 
     // Container with children (branch) - show parent-level settings
@@ -138,19 +136,23 @@ export default function BlockSettings({
  * Container with elements (leaf node) settings panel
  */
 function ContainerLeafSettings({ container, onUpdate, onDelete }) {
-  const currentAlignment = container.alignment || 'start';
+  const currentAlignment = container.alignment || "start";
   const currentPadding = container.padding ?? 12;
   const currentGap = container.gap ?? 12;
-  const { updateElement: updateElementInContext, selectedContainerId } = useSignatureData();
+  const { updateElement: updateElementInContext, selectedContainerId } =
+    useSignatureData();
 
   // Toggle la visibilité d'un élément (hidden/visible)
   const handleToggleElementVisibility = (elementId, isCurrentlyHidden) => {
     if (selectedContainerId) {
-      updateElementInContext(selectedContainerId, elementId, { hidden: !isCurrentlyHidden });
+      updateElementInContext(selectedContainerId, elementId, {
+        hidden: !isCurrentlyHidden,
+      });
     }
   };
 
-  const visibleCount = container.elements?.filter(el => !el.props?.hidden).length || 0;
+  const visibleCount =
+    container.elements?.filter((el) => !el.props?.hidden).length || 0;
   const totalCount = container.elements?.length || 0;
 
   return (
@@ -159,7 +161,7 @@ function ContainerLeafSettings({ container, onUpdate, onDelete }) {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-            {container.label || 'Conteneur'}
+            {container.label || "Conteneur"}
           </h3>
           <p className="text-xs text-neutral-500">
             Conteneur • {visibleCount}/{totalCount} éléments visibles
@@ -209,7 +211,10 @@ function ContainerLeafSettings({ container, onUpdate, onDelete }) {
           <TabsList className="w-full">
             <TabsTrigger value="start" className="flex-1">
               {container.layout === "horizontal" ? (
-                <AlignEndVertical size={16} className="transition-transform duration-200 -rotate-90" />
+                <AlignEndVertical
+                  size={16}
+                  className="transition-transform duration-200 -rotate-90"
+                />
               ) : (
                 <AlignStartVertical size={16} />
               )}
@@ -219,13 +224,16 @@ function ContainerLeafSettings({ container, onUpdate, onDelete }) {
                 size={16}
                 className={cn(
                   "transition-transform duration-200",
-                  container.layout === "horizontal" && "-rotate-90"
+                  container.layout === "horizontal" && "-rotate-90",
                 )}
               />
             </TabsTrigger>
             <TabsTrigger value="end" className="flex-1">
               {container.layout === "horizontal" ? (
-                <AlignStartVertical size={16} className="transition-transform duration-200 -rotate-90" />
+                <AlignStartVertical
+                  size={16}
+                  className="transition-transform duration-200 -rotate-90"
+                />
               ) : (
                 <AlignEndVertical size={16} />
               )}
@@ -236,7 +244,9 @@ function ContainerLeafSettings({ container, onUpdate, onDelete }) {
 
       {/* Padding setting */}
       <div className="flex items-center justify-between">
-        <Label className="text-xs text-neutral-600 dark:text-neutral-400">Padding</Label>
+        <Label className="text-xs text-neutral-600 dark:text-neutral-400">
+          Padding
+        </Label>
         <div className="flex items-center gap-1.5 w-40">
           <Slider
             className="flex-1"
@@ -263,7 +273,9 @@ function ContainerLeafSettings({ container, onUpdate, onDelete }) {
 
       {/* Gap setting */}
       <div className="flex items-center justify-between">
-        <Label className="text-xs text-neutral-600 dark:text-neutral-400">Gap</Label>
+        <Label className="text-xs text-neutral-600 dark:text-neutral-400">
+          Gap
+        </Label>
         <div className="flex items-center gap-1.5 w-40">
           <Slider
             className="flex-1"
@@ -290,7 +302,9 @@ function ContainerLeafSettings({ container, onUpdate, onDelete }) {
 
       {/* Elements list with visibility toggles */}
       <div className="space-y-2">
-        <Label className="text-xs">Éléments ({visibleCount}/{totalCount})</Label>
+        <Label className="text-xs">
+          Éléments ({visibleCount}/{totalCount})
+        </Label>
         <div className="space-y-1 max-h-64 overflow-auto">
           {container.elements.map((element) => {
             const isHidden = element.props?.hidden === true;
@@ -301,7 +315,7 @@ function ContainerLeafSettings({ container, onUpdate, onDelete }) {
                   "flex items-center justify-between py-1.5 px-2 rounded text-xs transition-all",
                   isHidden
                     ? "bg-neutral-100/50 dark:bg-neutral-800/50"
-                    : "bg-neutral-50 dark:bg-neutral-800"
+                    : "bg-neutral-50 dark:bg-neutral-800",
                 )}
               >
                 <span
@@ -309,7 +323,7 @@ function ContainerLeafSettings({ container, onUpdate, onDelete }) {
                     "transition-all",
                     isHidden
                       ? "line-through text-neutral-400 dark:text-neutral-500"
-                      : "text-neutral-600 dark:text-neutral-400"
+                      : "text-neutral-600 dark:text-neutral-400",
                   )}
                 >
                   {getElementLabel(element.type)}
@@ -323,11 +337,15 @@ function ContainerLeafSettings({ container, onUpdate, onDelete }) {
                     "p-1 rounded transition-colors",
                     isHidden
                       ? "text-neutral-400 hover:text-neutral-600 hover:bg-neutral-200/50 dark:hover:bg-neutral-700/50"
-                      : "text-neutral-500 hover:text-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                      : "text-neutral-500 hover:text-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-700",
                   )}
                   title={isHidden ? "Réactiver l'élément" : "Masquer l'élément"}
                 >
-                  {isHidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  {isHidden ? (
+                    <EyeOff className="w-3.5 h-3.5" />
+                  ) : (
+                    <Eye className="w-3.5 h-3.5" />
+                  )}
                 </button>
               </div>
             );
@@ -347,8 +365,8 @@ function ContainerLeafSettings({ container, onUpdate, onDelete }) {
  * Container with children (branch node) settings panel
  */
 function ContainerBranchSettings({ container, onUpdate, onDelete, isRoot }) {
-  const currentLayout = container.layout || 'vertical';
-  const currentAlignment = container.alignment || 'start';
+  const currentLayout = container.layout || "vertical";
+  const currentAlignment = container.alignment || "start";
   const currentPadding = container.padding ?? 12;
   const currentGap = container.gap ?? 12;
 
@@ -356,7 +374,7 @@ function ContainerBranchSettings({ container, onUpdate, onDelete, isRoot }) {
   const countElements = (cont) => {
     let count = cont.elements?.length || 0;
     if (cont.children) {
-      cont.children.forEach(child => {
+      cont.children.forEach((child) => {
         count += countElements(child);
       });
     }
@@ -371,10 +389,11 @@ function ContainerBranchSettings({ container, onUpdate, onDelete, isRoot }) {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-            {container.label || (isRoot ? 'Signature' : 'Conteneur')}
+            {container.label || (isRoot ? "Signature" : "Conteneur")}
           </h3>
           <p className="text-xs text-neutral-500">
-            {isRoot ? 'Conteneur racine' : 'Conteneur parent'} • {container.children?.length || 0} enfants
+            {isRoot ? "Conteneur racine" : "Conteneur parent"} •{" "}
+            {container.children?.length || 0} enfants
           </p>
         </div>
         {!isRoot && (
@@ -423,7 +442,10 @@ function ContainerBranchSettings({ container, onUpdate, onDelete, isRoot }) {
           <TabsList className="w-full">
             <TabsTrigger value="start" className="flex-1">
               {currentLayout === "horizontal" ? (
-                <AlignEndVertical size={16} className="transition-transform duration-200 -rotate-90" />
+                <AlignEndVertical
+                  size={16}
+                  className="transition-transform duration-200 -rotate-90"
+                />
               ) : (
                 <AlignStartVertical size={16} />
               )}
@@ -433,13 +455,16 @@ function ContainerBranchSettings({ container, onUpdate, onDelete, isRoot }) {
                 size={16}
                 className={cn(
                   "transition-transform duration-200",
-                  currentLayout === "horizontal" && "-rotate-90"
+                  currentLayout === "horizontal" && "-rotate-90",
                 )}
               />
             </TabsTrigger>
             <TabsTrigger value="end" className="flex-1">
               {currentLayout === "horizontal" ? (
-                <AlignStartVertical size={16} className="transition-transform duration-200 -rotate-90" />
+                <AlignStartVertical
+                  size={16}
+                  className="transition-transform duration-200 -rotate-90"
+                />
               ) : (
                 <AlignEndVertical size={16} />
               )}
@@ -450,7 +475,9 @@ function ContainerBranchSettings({ container, onUpdate, onDelete, isRoot }) {
 
       {/* Padding setting */}
       <div className="flex items-center justify-between">
-        <Label className="text-xs text-neutral-600 dark:text-neutral-400">Padding</Label>
+        <Label className="text-xs text-neutral-600 dark:text-neutral-400">
+          Padding
+        </Label>
         <div className="flex items-center gap-1.5 w-40">
           <Slider
             className="flex-1"
@@ -477,7 +504,9 @@ function ContainerBranchSettings({ container, onUpdate, onDelete, isRoot }) {
 
       {/* Gap setting */}
       <div className="flex items-center justify-between">
-        <Label className="text-xs text-neutral-600 dark:text-neutral-400">Gap</Label>
+        <Label className="text-xs text-neutral-600 dark:text-neutral-400">
+          Gap
+        </Label>
         <div className="flex items-center gap-1.5 w-40">
           <Slider
             className="flex-1"
@@ -504,7 +533,9 @@ function ContainerBranchSettings({ container, onUpdate, onDelete, isRoot }) {
 
       {/* Children list */}
       <div className="space-y-2">
-        <Label className="text-xs">Conteneurs enfants ({container.children?.length || 0})</Label>
+        <Label className="text-xs">
+          Conteneurs enfants ({container.children?.length || 0})
+        </Label>
         <div className="space-y-1 max-h-48 overflow-auto">
           {container.children?.map((child, index) => {
             const hasChildElements = child.elements?.length > 0;
@@ -515,10 +546,12 @@ function ContainerBranchSettings({ container, onUpdate, onDelete, isRoot }) {
                 className="flex items-center justify-between py-1.5 px-2 rounded bg-neutral-50 dark:bg-neutral-800 text-xs"
               >
                 <div className="flex items-center gap-2">
-                  <div className={cn(
-                    "w-1.5 h-1.5 rounded-full",
-                    hasGrandchildren ? "bg-purple-500" : "bg-blue-500"
-                  )} />
+                  <div
+                    className={cn(
+                      "w-1.5 h-1.5 rounded-full",
+                      hasGrandchildren ? "bg-purple-500" : "bg-blue-500",
+                    )}
+                  />
                   <span className="text-neutral-600 dark:text-neutral-400">
                     {child.label || `Conteneur ${index + 1}`}
                   </span>
@@ -526,8 +559,7 @@ function ContainerBranchSettings({ container, onUpdate, onDelete, isRoot }) {
                 <span className="text-neutral-400">
                   {hasGrandchildren
                     ? `${child.children.length} cont.`
-                    : `${child.elements?.length || 0} él.`
-                  }
+                    : `${child.elements?.length || 0} él.`}
                 </span>
               </div>
             );
@@ -547,8 +579,8 @@ function ContainerBranchSettings({ container, onUpdate, onDelete, isRoot }) {
  * Empty container settings panel
  */
 function EmptyContainerSettings({ container, onUpdate, onDelete, isRoot }) {
-  const currentLayout = container.layout || 'vertical';
-  const currentAlignment = container.alignment || 'start';
+  const currentLayout = container.layout || "vertical";
+  const currentAlignment = container.alignment || "start";
   const currentPadding = container.padding ?? 12;
   const currentGap = container.gap ?? 12;
 
@@ -558,11 +590,9 @@ function EmptyContainerSettings({ container, onUpdate, onDelete, isRoot }) {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-            {container.label || 'Conteneur vide'}
+            {container.label || "Conteneur vide"}
           </h3>
-          <p className="text-xs text-neutral-500">
-            Conteneur vide
-          </p>
+          <p className="text-xs text-neutral-500">Conteneur vide</p>
         </div>
         {!isRoot && (
           <Button
@@ -610,7 +640,10 @@ function EmptyContainerSettings({ container, onUpdate, onDelete, isRoot }) {
           <TabsList className="w-full">
             <TabsTrigger value="start" className="flex-1">
               {currentLayout === "horizontal" ? (
-                <AlignEndVertical size={16} className="transition-transform duration-200 -rotate-90" />
+                <AlignEndVertical
+                  size={16}
+                  className="transition-transform duration-200 -rotate-90"
+                />
               ) : (
                 <AlignStartVertical size={16} />
               )}
@@ -620,13 +653,16 @@ function EmptyContainerSettings({ container, onUpdate, onDelete, isRoot }) {
                 size={16}
                 className={cn(
                   "transition-transform duration-200",
-                  currentLayout === "horizontal" && "-rotate-90"
+                  currentLayout === "horizontal" && "-rotate-90",
                 )}
               />
             </TabsTrigger>
             <TabsTrigger value="end" className="flex-1">
               {currentLayout === "horizontal" ? (
-                <AlignStartVertical size={16} className="transition-transform duration-200 -rotate-90" />
+                <AlignStartVertical
+                  size={16}
+                  className="transition-transform duration-200 -rotate-90"
+                />
               ) : (
                 <AlignEndVertical size={16} />
               )}
@@ -637,7 +673,9 @@ function EmptyContainerSettings({ container, onUpdate, onDelete, isRoot }) {
 
       {/* Padding setting */}
       <div className="flex items-center justify-between">
-        <Label className="text-xs text-neutral-600 dark:text-neutral-400">Padding</Label>
+        <Label className="text-xs text-neutral-600 dark:text-neutral-400">
+          Padding
+        </Label>
         <div className="flex items-center gap-1.5 w-40">
           <Slider
             className="flex-1"
@@ -664,7 +702,9 @@ function EmptyContainerSettings({ container, onUpdate, onDelete, isRoot }) {
 
       {/* Gap setting */}
       <div className="flex items-center justify-between">
-        <Label className="text-xs text-neutral-600 dark:text-neutral-400">Gap</Label>
+        <Label className="text-xs text-neutral-600 dark:text-neutral-400">
+          Gap
+        </Label>
         <div className="flex items-center gap-1.5 w-40">
           <Slider
             className="flex-1"
@@ -751,12 +791,14 @@ function ElementSettings({ element, onUpdate, onDelete }) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className={cn(
-            "text-sm font-semibold",
-            isHidden
-              ? "text-neutral-400 dark:text-neutral-500 line-through"
-              : "text-neutral-700 dark:text-neutral-300"
-          )}>
+          <h3
+            className={cn(
+              "text-sm font-semibold",
+              isHidden
+                ? "text-neutral-400 dark:text-neutral-500 line-through"
+                : "text-neutral-700 dark:text-neutral-300",
+            )}
+          >
             {getElementLabel(element.type)}
           </h3>
           <p className="text-xs text-neutral-500">
@@ -771,11 +813,15 @@ function ElementSettings({ element, onUpdate, onDelete }) {
             className={cn(
               isHidden
                 ? "text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                : "text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                : "text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800",
             )}
             title={isHidden ? "Réactiver l'élément" : "Masquer l'élément"}
           >
-            {isHidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            {isHidden ? (
+              <EyeOff className="w-4 h-4" />
+            ) : (
+              <Eye className="w-4 h-4" />
+            )}
           </Button>
           {onDelete && (
             <Button
@@ -807,7 +853,8 @@ function ElementSettings({ element, onUpdate, onDelete }) {
  * Photo element settings - Full version with upload
  */
 function PhotoSettings({ props, onUpdate }) {
-  const { signatureData, updateSignatureData, editingSignatureId } = useSignatureData();
+  const { signatureData, updateSignatureData, editingSignatureId } =
+    useSignatureData();
   const { deleteImageFile, uploadImageFile } = useImageUpload();
 
   // Gestion de la taille de l'image de profil
@@ -852,13 +899,16 @@ function PhotoSettings({ props, onUpdate }) {
     if (!file) return;
 
     try {
+      // Contrôler le format AVANT d'annoncer l'optimisation
+      validateImageFile(file);
+
       toast.info("Optimisation de l'image...");
 
       const optimizedBlob = await optimizeImage(file, "profile");
       const optimizedFile = new File(
         [optimizedBlob],
         `profile-${Date.now()}.jpg`,
-        { type: "image/jpeg" }
+        { type: "image/jpeg" },
       );
 
       const signatureId = editingSignatureId || `temp-${Date.now()}`;
@@ -873,7 +923,7 @@ function PhotoSettings({ props, onUpdate }) {
             updateSignatureData("photoKey", key);
             updateSignatureData("photoVisible", true);
             toast.success("Photo uploadée avec succès");
-          }
+          },
         );
       } catch (uploadError) {
         console.error("❌ Erreur upload Cloudflare:", uploadError);
@@ -881,7 +931,7 @@ function PhotoSettings({ props, onUpdate }) {
       }
     } catch (error) {
       console.error("❌ Erreur traitement photo:", error);
-      toast.error("Erreur lors du traitement de la photo");
+      toast.error(error.message || "Erreur lors du traitement de la photo");
     }
   };
 
@@ -899,9 +949,12 @@ function PhotoSettings({ props, onUpdate }) {
     input.click();
   };
 
-  const hasPhoto = signatureData.photo !== null && signatureData.photo !== undefined;
+  const hasPhoto =
+    signatureData.photo !== null && signatureData.photo !== undefined;
   const currentSize = signatureData.imageSize ?? props.width ?? 70;
-  const currentShape = signatureData.imageShape || (props.borderRadius === "50%" ? "round" : "square");
+  const currentShape =
+    signatureData.imageShape ||
+    (props.borderRadius === "50%" ? "round" : "square");
 
   return (
     <div className="space-y-4">
@@ -1012,14 +1065,39 @@ const fontOptions = [
 ];
 
 const weightOptions = [
-  { value: "normal", label: "Normal", fontWeight: "normal", fontStyle: "normal" },
+  {
+    value: "normal",
+    label: "Normal",
+    fontWeight: "normal",
+    fontStyle: "normal",
+  },
   { value: "500", label: "Medium", fontWeight: "500", fontStyle: "normal" },
   { value: "600", label: "Semi-bold", fontWeight: "600", fontStyle: "normal" },
   { value: "700", label: "Bold", fontWeight: "700", fontStyle: "normal" },
-  { value: "italic", label: "Italic", fontWeight: "normal", fontStyle: "italic" },
-  { value: "500-italic", label: "Medium Italic", fontWeight: "500", fontStyle: "italic" },
-  { value: "600-italic", label: "Semi-bold Italic", fontWeight: "600", fontStyle: "italic" },
-  { value: "700-italic", label: "Bold Italic", fontWeight: "700", fontStyle: "italic" },
+  {
+    value: "italic",
+    label: "Italic",
+    fontWeight: "normal",
+    fontStyle: "italic",
+  },
+  {
+    value: "500-italic",
+    label: "Medium Italic",
+    fontWeight: "500",
+    fontStyle: "italic",
+  },
+  {
+    value: "600-italic",
+    label: "Semi-bold Italic",
+    fontWeight: "600",
+    fontStyle: "italic",
+  },
+  {
+    value: "700-italic",
+    label: "Bold Italic",
+    fontWeight: "700",
+    fontStyle: "italic",
+  },
 ];
 
 /**
@@ -1030,7 +1108,11 @@ function TextSettings({ props, onUpdate }) {
   return (
     <div className="space-y-3">
       {/* Police */}
-      <div className="flex items-center justify-between" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+      <div
+        className="flex items-center justify-between"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      >
         <Label className="text-xs text-neutral-600 dark:text-neutral-400">
           Police
         </Label>
@@ -1052,7 +1134,11 @@ function TextSettings({ props, onUpdate }) {
       </div>
 
       {/* Graisse */}
-      <div className="flex items-center justify-between" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+      <div
+        className="flex items-center justify-between"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      >
         <Label className="text-xs text-neutral-600 dark:text-neutral-400">
           Graisse
         </Label>
@@ -1067,7 +1153,10 @@ function TextSettings({ props, onUpdate }) {
           onValueChange={(value) => {
             const option = weightOptions.find((w) => w.value === value);
             if (option) {
-              onUpdate({ fontWeight: option.fontWeight, fontStyle: option.fontStyle });
+              onUpdate({
+                fontWeight: option.fontWeight,
+                fontStyle: option.fontStyle,
+              });
             }
           }}
         >
@@ -1184,7 +1273,11 @@ function ContactSettings({ props, onUpdate }) {
       </div>
 
       {/* Police */}
-      <div className="flex items-center justify-between" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+      <div
+        className="flex items-center justify-between"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      >
         <Label className="text-xs text-neutral-600 dark:text-neutral-400">
           Police
         </Label>
@@ -1206,7 +1299,11 @@ function ContactSettings({ props, onUpdate }) {
       </div>
 
       {/* Graisse */}
-      <div className="flex items-center justify-between" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+      <div
+        className="flex items-center justify-between"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      >
         <Label className="text-xs text-neutral-600 dark:text-neutral-400">
           Graisse
         </Label>
@@ -1221,7 +1318,10 @@ function ContactSettings({ props, onUpdate }) {
           onValueChange={(value) => {
             const option = weightOptions.find((w) => w.value === value);
             if (option) {
-              onUpdate({ fontWeight: option.fontWeight, fontStyle: option.fontStyle });
+              onUpdate({
+                fontWeight: option.fontWeight,
+                fontStyle: option.fontStyle,
+              });
             }
           }}
         >
@@ -1414,7 +1514,11 @@ function SocialSettings({ props, onUpdate }) {
 
       updateSignatureData("socialNetworks", updatedNetworks);
     },
-    [signatureData.socialNetworks, signatureData.socialIcons, updateSignatureData]
+    [
+      signatureData.socialNetworks,
+      signatureData.socialIcons,
+      updateSignatureData,
+    ],
   );
 
   // Gestion des changements d'URL
@@ -1425,7 +1529,7 @@ function SocialSettings({ props, onUpdate }) {
         [platform]: url,
       });
     },
-    [signatureData.socialNetworks, updateSignatureData]
+    [signatureData.socialNetworks, updateSignatureData],
   );
 
   // Gestion de la couleur globale des icônes
@@ -1461,27 +1565,32 @@ function SocialSettings({ props, onUpdate }) {
 
   // Réseaux activés (ceux qui sont dans socialNetworks ET dans la liste autorisée)
   // On inclut les réseaux avec des URLs "#" (placeholders) pour permettre leur configuration
-  const activeNetworks = Object.keys(signatureData.socialNetworks || {}).filter((network) => {
-    if (!ALLOWED_SOCIAL_NETWORKS.includes(network)) return false;
-    const networkData = signatureData.socialNetworks[network];
-    // Accepter tout réseau défini (même avec placeholder "#")
-    return networkData !== undefined && networkData !== null;
-  });
+  const activeNetworks = Object.keys(signatureData.socialNetworks || {}).filter(
+    (network) => {
+      if (!ALLOWED_SOCIAL_NETWORKS.includes(network)) return false;
+      const networkData = signatureData.socialNetworks[network];
+      // Accepter tout réseau défini (même avec placeholder "#")
+      return networkData !== undefined && networkData !== null;
+    },
+  );
 
   // Helper pour obtenir l'URL d'un réseau (gère string et objet { url: "..." })
   const getNetworkUrl = (network) => {
     const networkData = signatureData.socialNetworks?.[network];
     if (!networkData) return "";
-    const url = typeof networkData === "string" ? networkData : networkData?.url;
+    const url =
+      typeof networkData === "string" ? networkData : networkData?.url;
     // Si c'est un placeholder "#", retourner vide pour afficher le placeholder
-    return url === "#" ? "" : (url || "");
+    return url === "#" ? "" : url || "";
   };
 
   // Réseaux disponibles pour l'ajout (filtrés par recherche)
   const availableNetworks = ALLOWED_SOCIAL_NETWORKS.filter(
-    (network) => !activeNetworks.includes(network)
+    (network) => !activeNetworks.includes(network),
   ).filter((network) =>
-    socialNetworkLabels[network].toLowerCase().includes(searchQuery.toLowerCase())
+    socialNetworkLabels[network]
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -1563,7 +1672,9 @@ function SocialSettings({ props, onUpdate }) {
                 </Label>
                 <Popover
                   open={openNetworkPopover === network}
-                  onOpenChange={(open) => setOpenNetworkPopover(open ? network : null)}
+                  onOpenChange={(open) =>
+                    setOpenNetworkPopover(open ? network : null)
+                  }
                 >
                   <PopoverTrigger asChild>
                     <Button
@@ -1571,21 +1682,32 @@ function SocialSettings({ props, onUpdate }) {
                       className="h-8 w-40 px-1.5 justify-between gap-1"
                     >
                       <div className="flex items-center gap-1.5">
-                        {IconComponent && <IconComponent className="w-3.5 h-3.5" />}
+                        {IconComponent && (
+                          <IconComponent className="w-3.5 h-3.5" />
+                        )}
                         <span className="text-xs font-normal truncate">
                           {socialNetworkLabels[network].split(" ")[0]}
                         </span>
                       </div>
-                      <button
+                      <span
+                        role="button"
+                        tabIndex={0}
                         onClick={(e) => {
                           e.stopPropagation();
                           handleSocialToggle(network, false);
                         }}
-                        className="p-0.5 rounded hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleSocialToggle(network, false);
+                          }
+                        }}
+                        className="p-0.5 rounded hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors cursor-pointer"
                         title="Supprimer"
                       >
                         <X className="w-2.5 h-2.5 text-neutral-400 hover:text-neutral-600" />
-                      </button>
+                      </span>
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent
@@ -1617,7 +1739,9 @@ function SocialSettings({ props, onUpdate }) {
                           className="h-8 w-full px-2 py-1 text-xs"
                           type="url"
                           value={getNetworkUrl(network)}
-                          onChange={(e) => handleSocialUrlChange(network, e.target.value)}
+                          onChange={(e) =>
+                            handleSocialUrlChange(network, e.target.value)
+                          }
                           placeholder={`https://${network}.com/...`}
                         />
                       </div>
@@ -1639,7 +1763,10 @@ function SocialSettings({ props, onUpdate }) {
                                 24
                               }
                               onChange={(e) =>
-                                handleIndividualSizeChange(network, parseInt(e.target.value) || 24)
+                                handleIndividualSizeChange(
+                                  network,
+                                  parseInt(e.target.value) || 24,
+                                )
                               }
                             />
                             <span className="text-xs text-neutral-400">px</span>
@@ -1652,7 +1779,9 @@ function SocialSettings({ props, onUpdate }) {
                               signatureData.socialSize ??
                               24,
                           ]}
-                          onValueChange={(value) => handleIndividualSizeChange(network, value[0])}
+                          onValueChange={(value) =>
+                            handleIndividualSizeChange(network, value[0])
+                          }
                           min={12}
                           max={64}
                           step={1}
@@ -1665,8 +1794,12 @@ function SocialSettings({ props, onUpdate }) {
                           Couleur
                         </Label>
                         <Select
-                          value={signatureData.socialColors?.[network] || "default"}
-                          onValueChange={(color) => handleIndividualColorChange(network, color)}
+                          value={
+                            signatureData.socialColors?.[network] || "default"
+                          }
+                          onValueChange={(color) =>
+                            handleIndividualColorChange(network, color)
+                          }
                         >
                           <SelectTrigger size="sm" className="h-8 w-40 text-xs">
                             <SelectValue placeholder="Défaut" />
@@ -1683,9 +1816,12 @@ function SocialSettings({ props, onUpdate }) {
                                 <div className="flex items-center gap-2">
                                   <div
                                     className="w-3 h-3 rounded border border-neutral-300"
-                                    style={{ backgroundColor: getColorPreview(color) }}
+                                    style={{
+                                      backgroundColor: getColorPreview(color),
+                                    }}
                                   />
-                                  {color.charAt(0).toUpperCase() + color.slice(1)}
+                                  {color.charAt(0).toUpperCase() +
+                                    color.slice(1)}
                                 </div>
                               </SelectItem>
                             ))}
@@ -1703,7 +1839,9 @@ function SocialSettings({ props, onUpdate }) {
           <div className="mt-2 pt-3 border-t border-neutral-100 dark:border-neutral-800 space-y-3">
             {/* Couleur globale */}
             <div className="flex items-center justify-between">
-              <Label className="text-xs text-neutral-500">Couleur globale</Label>
+              <Label className="text-xs text-neutral-500">
+                Couleur globale
+              </Label>
               <Select
                 value={signatureData.socialGlobalColor || "default"}
                 onValueChange={handleGlobalColorChange}
@@ -1794,7 +1932,8 @@ function SocialSettings({ props, onUpdate }) {
  * Logo settings - Full version with upload (similar to PhotoSettings)
  */
 function LogoSettings({ props, onUpdate }) {
-  const { signatureData, updateSignatureData, editingSignatureId } = useSignatureData();
+  const { signatureData, updateSignatureData, editingSignatureId } =
+    useSignatureData();
   const { deleteImageFile, uploadImageFile } = useImageUpload();
 
   // Gestion de la taille du logo (largeur uniquement, hauteur auto pour garder le ratio)
@@ -1833,13 +1972,16 @@ function LogoSettings({ props, onUpdate }) {
     if (!file) return;
 
     try {
+      // Contrôler le format AVANT d'annoncer l'optimisation
+      validateImageFile(file);
+
       toast.info("Optimisation de l'image...");
 
       const optimizedBlob = await optimizeImage(file, "logo");
       const optimizedFile = new File(
         [optimizedBlob],
         `logo-${Date.now()}.jpg`,
-        { type: "image/jpeg" }
+        { type: "image/jpeg" },
       );
 
       const signatureId = editingSignatureId || `temp-${Date.now()}`;
@@ -1854,7 +1996,7 @@ function LogoSettings({ props, onUpdate }) {
             updateSignatureData("logoKey", key);
             updateSignatureData("logoVisible", true);
             toast.success("Logo uploadé avec succès");
-          }
+          },
         );
       } catch (uploadError) {
         console.error("❌ Erreur upload Cloudflare:", uploadError);
@@ -1862,7 +2004,7 @@ function LogoSettings({ props, onUpdate }) {
       }
     } catch (error) {
       console.error("❌ Erreur traitement logo:", error);
-      toast.error("Erreur lors du traitement du logo");
+      toast.error(error.message || "Erreur lors du traitement du logo");
     }
   };
 
@@ -1880,7 +2022,8 @@ function LogoSettings({ props, onUpdate }) {
     input.click();
   };
 
-  const hasLogo = signatureData.logo !== null && signatureData.logo !== undefined;
+  const hasLogo =
+    signatureData.logo !== null && signatureData.logo !== undefined;
   const currentSize = signatureData.logoSize ?? props.maxWidth ?? 150;
 
   return (
@@ -2116,7 +2259,8 @@ function SpacerSettings({ props, onUpdate }) {
 }
 
 function BannerSettings({ props, onUpdate }) {
-  const { signatureData, updateSignatureData, editingSignatureId } = useSignatureData();
+  const { signatureData, updateSignatureData, editingSignatureId } =
+    useSignatureData();
   const { deleteImageFile, uploadImageFile } = useImageUpload();
 
   const handleDeleteBanner = async (e) => {
@@ -2137,12 +2281,15 @@ function BannerSettings({ props, onUpdate }) {
   const handleBannerUpload = async (file) => {
     if (!file) return;
     try {
+      // Contrôler le format AVANT d'annoncer l'optimisation
+      validateImageFile(file);
+
       toast.info("Optimisation de l'image...");
       const optimizedBlob = await optimizeImage(file, "logo");
       const optimizedFile = new File(
         [optimizedBlob],
         `banner-${Date.now()}.jpg`,
-        { type: "image/jpeg" }
+        { type: "image/jpeg" },
       );
       const signatureId = editingSignatureId || `temp-${Date.now()}`;
       await uploadImageFile(
@@ -2153,11 +2300,11 @@ function BannerSettings({ props, onUpdate }) {
           updateSignatureData("banner", url);
           updateSignatureData("bannerKey", key);
           toast.success("Bandeau uploadé avec succès");
-        }
+        },
       );
     } catch (error) {
       console.error("❌ Erreur upload bandeau:", error);
-      toast.error("Erreur lors de l'upload");
+      toast.error(error.message || "Erreur lors de l'upload");
     }
   };
 
