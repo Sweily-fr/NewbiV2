@@ -311,7 +311,7 @@ export function WorkspaceForm({
   const showResults = hasSearched && !selectedCompany && !isCheckingSiret;
 
   return (
-    <div className="flex flex-col h-full px-20 py-6">
+    <div className="flex flex-col h-full px-20 py-6 overflow-y-auto">
       <div className="flex flex-col pt-14">
         <h1 className="text-xl font-semibold text-foreground mb-10">
           Créer votre espace de travail
@@ -524,7 +524,7 @@ export function WorkspaceForm({
       </div>
 
       {/* Continue button */}
-      <div className="mt-auto pb-6">
+      <div className="mt-auto pt-8 pb-6">
         <Button
           variant="primary"
           className="w-full"
