@@ -8,6 +8,7 @@ import {
   FileText,
   FileSpreadsheet,
   Play,
+  Download,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { cn } from "@/src/lib/utils";
@@ -199,21 +200,76 @@ function VideoPreview({ file, onDelete, isDeleting }) {
 
 function DocumentPreview({ file, onDelete, isDeleting }) {
   const Icon = getFileIcon(file);
-  const ext = getFileExtension(file.fileName || file.name);
+  // Fichier déjà uploadé : on a une URL distante. Fichier en attente (mode local,
+  // pas encore envoyé) : pas d'URL ouvrable.
+  const url = file.url || file._localUrl;
+  const fileName = file.fileName || file.name;
+
+  const openInNewTab = useCallback(() => {
+    if (url) window.open(url, "_blank", "noopener,noreferrer");
+  }, [url]);
+
+  const handleDownload = useCallback(
+    async (e) => {
+      e.stopPropagation();
+      if (!url) return;
+      try {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = fileName || "document";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(blobUrl);
+      } catch {
+        // Repli : ouvrir dans un nouvel onglet si le téléchargement échoue
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
+    },
+    [url, fileName],
+  );
 
   return (
-    <div className="group flex items-center gap-2.5 rounded-lg border border-border hover:bg-accent/50 transition-colors px-3 py-2">
+    <div
+      className={cn(
+        "group flex items-center gap-2.5 rounded-lg border border-border hover:bg-accent/50 transition-colors px-3 py-2",
+        url && "cursor-pointer",
+      )}
+      onClick={url ? openInNewTab : undefined}
+      role={url ? "button" : undefined}
+      tabIndex={url ? 0 : undefined}
+      onKeyDown={
+        url
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                openInNewTab();
+              }
+            }
+          : undefined
+      }
+    >
       <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
       <div className="flex-1 min-w-0 flex items-baseline gap-2">
-        <p className="text-sm text-foreground truncate">
-          {file.fileName || file.name}
-        </p>
+        <p className="text-sm text-foreground truncate">{fileName}</p>
         {(file.fileSize || file.size) && (
           <span className="text-xs text-muted-foreground flex-shrink-0">
             {formatFileSize(file.fileSize || file.size)}
           </span>
         )}
       </div>
+      {url && (
+        <button
+          onClick={handleDownload}
+          title="Télécharger"
+          className="flex-shrink-0 p-1 rounded text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity hover:text-foreground"
+        >
+          <Download className="h-3.5 w-3.5" />
+        </button>
+      )}
       {onDelete && (
         <button
           onClick={(e) => {
