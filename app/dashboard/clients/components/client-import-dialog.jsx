@@ -330,12 +330,6 @@ export default function ClientImportDialog({
                 <DialogHeader>
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setShowCustomFields(false)}
-                        className="flex items-center justify-center h-7 w-7 rounded-md hover:bg-accent transition-colors cursor-pointer"
-                      >
-                        <ArrowLeft className="h-4 w-4" />
-                      </button>
                       <DialogTitle className="text-sm font-medium">
                         Champs personnalisés clients
                       </DialogTitle>
