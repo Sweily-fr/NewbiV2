@@ -56,6 +56,33 @@ const SOURCE_LABELS = {
   TRANSACTION: "transactions bancaires",
 };
 
+// Suffixe affiché après le montant (montant par occurrence).
+const FREQUENCY_SUFFIX = {
+  WEEKLY: "/sem.",
+  BIWEEKLY: "/2 sem.",
+  MONTHLY: "/mois",
+  QUARTERLY: "/trim.",
+  SEMIANNUAL: "/semestre",
+  ANNUAL: "/an",
+};
+const FREQUENCY_LABELS = {
+  WEEKLY: "Hebdomadaire",
+  BIWEEKLY: "Bi-mensuel",
+  MONTHLY: "Mensuel",
+  QUARTERLY: "Trimestriel",
+  SEMIANNUAL: "Semestriel",
+  ANNUAL: "Annuel",
+};
+// Périodicités gérées par les prévisions manuelles (CashflowFrequency).
+const FORECAST_FREQUENCY = {
+  WEEKLY: "WEEKLY",
+  BIWEEKLY: "MONTHLY",
+  MONTHLY: "MONTHLY",
+  QUARTERLY: "QUARTERLY",
+  SEMIANNUAL: "SEMIANNUAL",
+  ANNUAL: "ANNUAL",
+};
+
 const formatCurrency = (value) =>
   new Intl.NumberFormat("fr-FR", {
     style: "currency",
@@ -121,8 +148,9 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
       {recurrences.length === 0 ? (
         <p className="text-xs text-muted-foreground py-6 text-center">
           Aucune récurrence détectée. Cliquez sur «&nbsp;Analyser&nbsp;» pour
-          rechercher les abonnements et factures qui reviennent au moins 3 mois
-          de suite dans vos transactions bancaires et vos factures.
+          rechercher les abonnements et factures qui reviennent à intervalle
+          régulier (hebdomadaire, mensuel, trimestriel, annuel…) dans vos
+          transactions bancaires et vos factures.
         </p>
       ) : (
         <>
@@ -154,8 +182,12 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
                       )}
                     </div>
                     <p className="text-[11px] text-muted-foreground/60 mt-0.5">
-                      {CATEGORY_LABELS[rec.category] || rec.category || "—"} · ~
-                      {formatCurrency(rec.averageAmount)}/mois
+                      {CATEGORY_LABELS[rec.category] || rec.category || "—"}
+                      {rec.frequency
+                        ? ` · ${FREQUENCY_LABELS[rec.frequency] || ""}`
+                        : ""}{" "}
+                      · ~{formatCurrency(rec.averageAmount)}
+                      {FREQUENCY_SUFFIX[rec.frequency] || "/mois"}
                       {SOURCE_LABELS[rec.source]
                         ? ` · via ${SOURCE_LABELS[rec.source]}`
                         : ""}
@@ -179,7 +211,8 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
                             type: rec.type,
                             name: rec.partyName,
                             amount: rec.averageAmount,
-                            frequency: "MONTHLY",
+                            frequency:
+                              FORECAST_FREQUENCY[rec.frequency] || "MONTHLY",
                             category: rec.category,
                           })
                         }
