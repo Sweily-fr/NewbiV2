@@ -127,9 +127,20 @@ export default function PolitiqueDeConfidentialite() {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-800 mb-4">8. Cookies</h2>
               <p className="text-gray-600 leading-relaxed">
-                Nous utilisons des cookies et des technologies similaires pour améliorer votre expérience sur 
-                notre site, analyser notre trafic et personnaliser notre contenu. Vous pouvez contrôler 
-                l'utilisation des cookies via les paramètres de votre navigateur.
+                Nous utilisons des cookies et des technologies similaires pour améliorer votre expérience sur
+                notre site, analyser notre trafic et personnaliser notre contenu. À l'exception des cookies
+                strictement nécessaires, aucun cookie n'est déposé sans votre consentement préalable.
+              </p>
+              <ul className="list-disc list-inside text-gray-600 leading-relaxed mt-4 space-y-2">
+                <li><strong>Cookies nécessaires :</strong> indispensables au fonctionnement du site, ils ne peuvent pas être désactivés.</li>
+                <li><strong>Cookies fonctionnels :</strong> améliorent les fonctionnalités et la personnalisation, et permettent l'affichage de services et widgets tiers, notamment le widget d'avis clients <strong>Trustpilot</strong> (Trustpilot A/S), qui peut déposer ses propres cookies tiers lorsque vous y consentez.</li>
+                <li><strong>Cookies analytiques :</strong> nous aident à comprendre l'utilisation du site afin de l'améliorer.</li>
+                <li><strong>Cookies marketing :</strong> utilisés pour mesurer l'efficacité de nos campagnes et personnaliser la publicité.</li>
+              </ul>
+              <p className="text-gray-600 leading-relaxed mt-4">
+                Vous pouvez à tout moment accepter, refuser ou modifier vos préférences par catégorie via notre
+                gestionnaire de consentement, ainsi que contrôler l'utilisation des cookies via les paramètres
+                de votre navigateur.
               </p>
             </section>
 
