@@ -111,9 +111,10 @@ export function AnalyticsMarginChart({ monthlyRevenue, loading }) {
     return monthlyRevenue.map((m) => ({
       ...m,
       monthLabel: formatMonthLabel(m.month),
-      // Taux calculé côté backend ; null = pas de CA encaissé sur le mois
-      // (le point n'est pas tracé, connectNulls relie les mois avec CA)
-      grossMarginRate: m.grossMarginRate ?? null,
+      // Taux calculé côté backend ; 0 par défaut quand pas de CA encaissé
+      // sur le mois, pour que la courbe traverse tout le graphique (comme
+      // le graphe CA/marge où chaque mois a une valeur).
+      grossMarginRate: m.grossMarginRate ?? 0,
     }));
   }, [monthlyRevenue]);
 
