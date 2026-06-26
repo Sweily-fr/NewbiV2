@@ -148,5 +148,22 @@
       "erreurs-devis-perdre-clients",
       "conseils-convertir-devis-facture"
     ]
+  },
+  {
+    "date": "2026-06-15",
+    "articles": [
+      "facture-formateur-independant",
+      "devis-coach-formateur-modele",
+      "quest-ce-que-bon-commande",
+      "quest-ce-que-conditions-generales-vente"
+    ]
+  },
+  {
+    "date": "2026-06-22",
+    "articles": [
+      "quest-ce-que-numero-siret-siren",
+      "quickbooks-vs-newbi-comparatif",
+      "transfert-fichiers-securise-professionnel"
+    ]
   }
 ]
