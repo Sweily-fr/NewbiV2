@@ -77,13 +77,19 @@ const CookiePreferencesModal = ({ isOpen, onClose }) => {
       key: "functional",
       name: "Cookies fonctionnels",
       description:
-        "Ces cookies permettent d'améliorer les fonctionnalités et la personnalisation de votre expérience sur notre site.",
+        "Ces cookies permettent d'améliorer les fonctionnalités et la personnalisation de votre expérience sur notre site, ainsi que l'affichage de services et widgets tiers (par exemple l'affichage des avis clients Trustpilot).",
       cookies: [
         {
           name: "user_preferences",
           provider: "Newbi",
           purpose: "Mémorisation des préférences utilisateur",
           expiration: "6 mois",
+        },
+        {
+          name: "Widget Trustpilot",
+          provider: "Trustpilot",
+          purpose: "Affichage des avis clients et collecte d'avis",
+          expiration: "Variable (cookies tiers Trustpilot)",
         },
       ],
     },
