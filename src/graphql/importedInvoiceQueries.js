@@ -58,6 +58,7 @@ const IMPORTED_INVOICE_FRAGMENT = gql`
     }
     notes
     linkedExpenseId
+    linkedTransactionId
     isDuplicate
     duplicateOf
     createdAt
