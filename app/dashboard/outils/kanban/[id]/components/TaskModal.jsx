@@ -280,12 +280,28 @@ export function TaskModal({
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [isOpen, isEditing, goToPrev, goToNext]);
+  // Titre auto-extensible : le textarea grandit en hauteur pour afficher
+  // un titre long sur plusieurs lignes au lieu de le tronquer.
+  const titleRef = useRef(null);
+  const autoResizeTitle = useCallback((el) => {
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, []);
+  useEffect(() => {
+    // Différé après le paint : à l'ouverture, la largeur du modal n'est pas
+    // encore stabilisée et scrollHeight ne renverrait qu'une seule ligne.
+    const id = requestAnimationFrame(() => autoResizeTitle(titleRef.current));
+    return () => cancelAnimationFrame(id);
+  }, [taskForm.title, isOpen, autoResizeTitle]);
+
   // Optimisation: handlers mémorisés pour éviter les re-renders
   const handleTitleChange = useCallback(
     (e) => {
+      autoResizeTitle(e.target);
       setTaskForm((prev) => ({ ...prev, title: e.target.value }));
     },
-    [setTaskForm],
+    [setTaskForm, autoResizeTitle],
   );
 
   const handleNewTagChange = useCallback(
@@ -835,16 +851,24 @@ export function TaskModal({
 
                 <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 h-0 min-h-0">
                   {/* Titre — gros, hover gris, focus border + montant à droite */}
-                  <div className="flex items-center gap-3">
-                    <input
+                  <div className="flex items-start gap-3">
+                    <textarea
+                      ref={titleRef}
                       value={taskForm.title}
                       onChange={handleTitleChange}
+                      rows={1}
                       onFocus={(e) => {
                         e.target.setSelectionRange(0, 0);
                         handleTextInputFocus();
                       }}
                       onBlur={handleTextInputBlur}
-                      className="flex-1 min-w-0 text-2xl font-semibold text-foreground bg-transparent outline-none caret-[#5A50FF] px-2 py-1 -mx-2 rounded-md border border-transparent hover:bg-muted/40 focus:bg-transparent focus:border-border/60 transition-all placeholder:text-muted-foreground/30"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          e.target.blur();
+                        }
+                      }}
+                      className="flex-1 min-w-0 resize-none overflow-hidden leading-snug break-words text-2xl font-semibold text-foreground bg-transparent outline-none caret-[#5A50FF] px-2 py-1 -mx-2 rounded-md border border-transparent hover:bg-muted/40 focus:bg-transparent focus:border-border/60 transition-all placeholder:text-muted-foreground/30"
                       placeholder="Titre de la tâche"
                     />
                     {(() => {
