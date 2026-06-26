@@ -4,6 +4,7 @@ import { useSession } from "@/src/lib/auth-client";
 import { Heart, Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { getAssetUrl } from "@/src/lib/image-utils";
+import TrustpilotWidget from "@/src/components/cookies/TrustpilotWidget";
 import Link from "next/link";
 // import { useCookieConsent } from "@/src/hooks/useCookieConsent";
 
@@ -288,6 +289,7 @@ const Footer7 = ({
             />
           </Link>
         </div>
+        <TrustpilotWidget className="px-4 md:px-0 pt-4 pb-2" />
         <div className="flex flex-col sm:flex-row sm:justify-between group/row relative isolate pt-[calc(--spacing(2)+1px)] last:pb-[calc(--spacing(2)+1px)] px-4 md:px-0 gap-4 sm:gap-0">
           <div
             aria-hidden="true"
