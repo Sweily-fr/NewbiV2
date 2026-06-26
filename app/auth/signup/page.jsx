@@ -357,14 +357,20 @@ function SignUpPageContent() {
     e.preventDefault();
     if (!selectedCompany || isSavingStep) return;
     const siege = selectedCompany.siege || {};
+    // L'API recherche-entreprises renvoie la chaîne littérale "[NON-DIFFUSIBLE]"
+    // (et non null) pour les champs masqués des entreprises non-diffusibles.
+    // On la neutralise : sinon addressZipCode = "[NON-DIFFUSIBLE]" (16 car.)
+    // dépasse la limite max(10) du schéma → 400 "Données invalides" et le toast
+    // générique "Erreur lors de la sauvegarde" à la création de l'espace.
+    const diffusible = (v) => (v && v !== "[NON-DIFFUSIBLE]" ? v : "");
     const newCompanyData = {
       companyName,
-      siret: siege.siret || "",
-      siren: selectedCompany.siren || "",
+      siret: diffusible(siege.siret),
+      siren: diffusible(selectedCompany.siren),
       legalForm: FORME_JURIDIQUE_MAP[selectedCompany.nature_juridique] || "",
-      addressStreet: siege.adresse || "",
-      addressCity: siege.libelle_commune || "",
-      addressZipCode: siege.code_postal || "",
+      addressStreet: diffusible(siege.adresse),
+      addressCity: diffusible(siege.libelle_commune),
+      addressZipCode: diffusible(siege.code_postal),
       addressCountry: billingCountry === "FR" ? "France" : billingCountry,
     };
     setCompanyData(newCompanyData);
