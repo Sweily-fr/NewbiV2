@@ -184,7 +184,10 @@ export const MentionCommentInput = forwardRef(function MentionCommentInput(
 
   const checkEmpty = useCallback(() => {
     if (!editorRef.current) return;
-    const text = editorRef.current.textContent || "";
+    // innerText préserve les retours à la ligne (\n) des blocs du contentEditable,
+    // contrairement à textContent qui les supprime
+    const text =
+      editorRef.current.innerText ?? editorRef.current.textContent ?? "";
     setIsEmpty(text.trim().length === 0);
   }, []);
 
@@ -280,7 +283,11 @@ export const MentionCommentInput = forwardRef(function MentionCommentInput(
 
   const handleSubmit = useCallback(() => {
     if (!editorRef.current || disabled) return;
-    const text = editorRef.current.textContent?.trim() || "";
+    // innerText conserve les retours à la ligne saisis dans le contentEditable ;
+    // textContent les écraserait, perdant les sauts de ligne des commentaires sans mention
+    const raw =
+      editorRef.current.innerText ?? editorRef.current.textContent ?? "";
+    const text = raw.trim();
     if (text.length === 0 && !allowEmpty) return;
 
     const html = editorRef.current.innerHTML;
