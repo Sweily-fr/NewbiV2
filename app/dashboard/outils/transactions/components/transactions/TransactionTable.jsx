@@ -144,8 +144,19 @@ export default function TransactionTable({
   triggerAddOcr = false,
   onAddOcrTriggered,
   bankAccounts = [],
+  initialTab = null,
 }) {
   const id = useId();
+
+  // Onglet initial déduit de l'URL (?filter=... depuis le dashboard).
+  // "unmatched" (lien "Rapprochements à faire") → onglet "À rapprocher".
+  const FILTER_TO_TAB = {
+    unmatched: "toReconcile",
+    toReconcile: "toReconcile",
+    lastMonth: "lastMonth",
+    missingReceipt: "missingReceipt",
+  };
+  const resolvedInitialTab = FILTER_TO_TAB[initialTab] || "all";
   const [columnFilters, setColumnFilters] = useState([]);
   const [pagination, setPagination] = useState({
     pageIndex: 0,
@@ -170,7 +181,7 @@ export default function TransactionTable({
     useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-  const [mobileTab, setMobileTab] = useState("all");
+  const [mobileTab, setMobileTab] = useState(resolvedInitialTab);
   const [isMobileScrolled, setIsMobileScrolled] = useState(false);
   const [advancedFilters, setAdvancedFilters] = useState([]);
   const [pcgTransaction, setPcgTransaction] = useState(null);
@@ -1004,7 +1015,7 @@ export default function TransactionTable({
   });
 
   // État pour les tabs de filtre rapide
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState(resolvedInitialTab);
 
   // Gérer le changement de tab
   const handleTabChange = (value) => {
@@ -1044,11 +1055,14 @@ export default function TransactionTable({
         counts.missingReceipt++;
       }
 
-      // À rapprocher (transactions bancaires sans facture liée, montant positif)
+      // À rapprocher : entrée d'argent (amount > 0), non rapprochée et SANS
+      // justificatif. hasReceipt = un justificatif (receiptFiles) OU une facture
+      // liée → dans les deux cas il n'y a plus rien à rapprocher. Doit rester
+      // identique au filtre toReconcile ci-dessous et au backend (reconcileQuery).
       const recoStatus = t.reconciliationStatus?.toLowerCase();
       const isNotReconciled =
         !recoStatus || recoStatus === "unmatched" || recoStatus === "suggested";
-      if (isNotReconciled && !t.linkedInvoice?.id && t.amount > 0) {
+      if (isNotReconciled && !t.hasReceipt && t.amount > 0) {
         counts.toReconcile++;
       }
     });
@@ -1088,7 +1102,7 @@ export default function TransactionTable({
           !recoStatus ||
           recoStatus === "unmatched" ||
           recoStatus === "suggested";
-        return isNotReconciled && !t.linkedInvoice?.id && t.amount > 0;
+        return isNotReconciled && !t.hasReceipt && t.amount > 0;
       });
     }
 
