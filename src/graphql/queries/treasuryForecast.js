@@ -93,6 +93,9 @@ export const GET_DETECTED_RECURRENCES = gql`
       partyName
       category
       averageAmount
+      frequency
+      intervalDays
+      occurrenceCount
       lastSeenMonth
       consecutiveMonths
       isActive
