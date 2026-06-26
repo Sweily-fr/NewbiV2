@@ -24,6 +24,7 @@ export const GET_RECONCILIATION_SUGGESTIONS = gql`
           totalTTC
           dueDate
           status
+          documentType
         }
         confidence
       }
@@ -115,6 +116,77 @@ export const UNLINK_TRANSACTION_FROM_INVOICE = gql`
           issueDate
           dueDate
         }
+      }
+    }
+  }
+`;
+
+/**
+ * Récupérer les transactions candidates pour une facture de CA importée
+ */
+export const GET_TRANSACTIONS_FOR_IMPORTED_INVOICE = gql`
+  query GetTransactionsForImportedInvoice($importedInvoiceId: ID!) {
+    transactionsForImportedInvoice(importedInvoiceId: $importedInvoiceId) {
+      success
+      transactions {
+        id
+        amount
+        description
+        date
+        reconciliationStatus
+        score
+      }
+      invoiceAmount
+    }
+  }
+`;
+
+/**
+ * Lier une transaction à une facture de CA importée
+ */
+export const LINK_TRANSACTION_TO_IMPORTED_INVOICE = gql`
+  mutation LinkTransactionToImportedInvoice(
+    $input: ImportedInvoiceReconciliationLinkInput!
+  ) {
+    linkTransactionToImportedInvoice(input: $input) {
+      success
+      message
+      transaction {
+        id
+        amount
+        description
+        date
+        reconciliationStatus
+        reconciliationDate
+        linkedImportedInvoiceId
+      }
+      invoice {
+        id
+        number
+        clientName
+        totalTTC
+        dueDate
+        status
+      }
+    }
+  }
+`;
+
+/**
+ * Délier une transaction d'une facture de CA importée
+ */
+export const UNLINK_TRANSACTION_FROM_IMPORTED_INVOICE = gql`
+  mutation UnlinkTransactionFromImportedInvoice(
+    $input: ImportedInvoiceReconciliationUnlinkInput!
+  ) {
+    unlinkTransactionFromImportedInvoice(input: $input) {
+      success
+      message
+      transaction {
+        id
+        reconciliationStatus
+        reconciliationDate
+        linkedImportedInvoiceId
       }
     }
   }

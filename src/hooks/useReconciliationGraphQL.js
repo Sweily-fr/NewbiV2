@@ -8,6 +8,9 @@ import {
   LINK_TRANSACTION_TO_INVOICE,
   UNLINK_TRANSACTION_FROM_INVOICE,
   IGNORE_TRANSACTION,
+  GET_TRANSACTIONS_FOR_IMPORTED_INVOICE,
+  LINK_TRANSACTION_TO_IMPORTED_INVOICE,
+  UNLINK_TRANSACTION_FROM_IMPORTED_INVOICE,
 } from "@/src/graphql/queries/reconciliation";
 import { GET_INVOICES } from "@/src/graphql/invoiceQueries";
 import { reproposeReconciliation } from "@/src/lib/reconciliationIgnored";
@@ -343,5 +346,102 @@ export const useReconciliationForSidebar = () => {
     linkTransaction,
     unlinkTransaction,
     fetchTransactionsForInvoice,
+  };
+};
+
+/**
+ * Hook de rapprochement pour la popup des factures de CA importées.
+ * Miroir de useReconciliationForSidebar côté ImportedInvoice (entrée d'argent).
+ */
+export const useReconciliationForImportedInvoice = () => {
+  const client = useApolloClient();
+
+  const [linkMutation, { loading: linkLoading }] = useMutation(
+    LINK_TRANSACTION_TO_IMPORTED_INVOICE,
+    {
+      // Apollo normalise la Transaction renvoyée (id + statut matched). On
+      // refetch la liste/stats des factures importées (statut → Encaissée).
+      refetchQueries: [
+        "GetImportedInvoices",
+        "GetImportedInvoiceStats",
+        "GetReconciliationSuggestions",
+      ],
+      awaitRefetchQueries: true,
+    },
+  );
+
+  const [unlinkMutation, { loading: unlinkLoading }] = useMutation(
+    UNLINK_TRANSACTION_FROM_IMPORTED_INVOICE,
+    {
+      refetchQueries: [
+        "GetImportedInvoices",
+        "GetImportedInvoiceStats",
+        "GetReconciliationSuggestions",
+      ],
+      awaitRefetchQueries: true,
+    },
+  );
+
+  const linkTransaction = async (transactionId, importedInvoiceId) => {
+    try {
+      const result = await linkMutation({
+        variables: { input: { transactionId, importedInvoiceId } },
+      });
+      const payload = result.data?.linkTransactionToImportedInvoice;
+      return {
+        success: payload?.success || false,
+        error: payload?.success ? null : payload?.message,
+      };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  };
+
+  const unlinkTransaction = async (transactionId, importedInvoiceId) => {
+    try {
+      const result = await unlinkMutation({
+        variables: { input: { transactionId, importedInvoiceId } },
+      });
+      const payload = result.data?.unlinkTransactionFromImportedInvoice;
+      return {
+        success: payload?.success || false,
+        error: payload?.success ? null : payload?.message,
+      };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  };
+
+  const fetchTransactionsForImportedInvoice = useCallback(
+    async (importedInvoiceId) => {
+      try {
+        const { data } = await client.query({
+          query: GET_TRANSACTIONS_FOR_IMPORTED_INVOICE,
+          variables: { importedInvoiceId },
+          fetchPolicy: "network-only",
+        });
+
+        const result = data?.transactionsForImportedInvoice;
+        return {
+          transactions: result?.transactions || [],
+          invoiceAmount: result?.invoiceAmount || 0,
+        };
+      } catch (error) {
+        console.error(
+          "[RECONCILIATION] Erreur fetchTransactionsForImportedInvoice:",
+          error,
+        );
+        return { transactions: [], invoiceAmount: 0 };
+      }
+    },
+    [client],
+  );
+
+  return {
+    isLinking: linkLoading,
+    isUnlinking: unlinkLoading,
+    linkTransaction,
+    unlinkTransaction,
+    fetchTransactionsForImportedInvoice,
   };
 };
