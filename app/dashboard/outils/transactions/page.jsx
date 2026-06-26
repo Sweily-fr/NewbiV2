@@ -672,6 +672,7 @@ function GestionDepensesContent() {
             refetchExpenses={refetchExpenses}
             initialTransactionId={searchParams.get("transactionId")}
             openOcr={searchParams.get("openOcr") === "true"}
+            initialTab={searchParams.get("filter")}
             triggerAddManual={triggerAddManual}
             onAddManualTriggered={() => setTriggerAddManual(false)}
             triggerAddOcr={triggerAddOcr}
@@ -845,6 +846,7 @@ function GestionDepensesContent() {
             refetchExpenses={refetchExpenses}
             initialTransactionId={searchParams.get("transactionId")}
             openOcr={searchParams.get("openOcr") === "true"}
+            initialTab={searchParams.get("filter")}
           />
         </Suspense>
       </div>
