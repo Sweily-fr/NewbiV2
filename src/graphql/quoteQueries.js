@@ -147,6 +147,7 @@ export const QUOTE_FRAGMENT = gql`
       finalTotalTTC
       isDeposit
     }
+    hasPurchaseOrderInvoices
     emailTracking {
       emailSentAt
       emailOpenedAt
@@ -256,6 +257,7 @@ export const QUOTE_LIST_FRAGMENT = gql`
       status
       finalTotalTTC
     }
+    hasPurchaseOrderInvoices
     emailTracking {
       emailSentAt
       emailOpenedAt
