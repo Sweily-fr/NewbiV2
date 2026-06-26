@@ -17,6 +17,7 @@ import {
   Mail,
   Import,
   BookTemplate,
+  Link2,
 } from "lucide-react";
 import { ButtonGroup } from "@/src/components/ui/button-group";
 import {
@@ -108,6 +109,15 @@ export default function InvoiceRowActions({
 
   const handleEdit = () => {
     router.push(`/dashboard/outils/factures/${invoice.id}/editer`);
+  };
+
+  const handleCopyPaymentLink = async () => {
+    try {
+      await navigator.clipboard.writeText(invoice.paymentLink);
+      toast.success("Lien de paiement copié");
+    } catch (error) {
+      toast.error("Impossible de copier le lien");
+    }
   };
 
   const handleDelete = async () => {
@@ -311,6 +321,12 @@ export default function InvoiceRowActions({
                     <CheckCircle className="mr-2 h-4 w-4" />
                     Marquer comme payée
                   </DropdownMenuItem>
+                  {invoice.paymentLink && (
+                    <DropdownMenuItem onClick={handleCopyPaymentLink}>
+                      <Link2 className="mr-2 h-4 w-4" />
+                      Copier le lien de paiement
+                    </DropdownMenuItem>
+                  )}
                   {canCreateCreditNote && (
                     <DropdownMenuItem
                       onClick={handleCreateCreditNote}
