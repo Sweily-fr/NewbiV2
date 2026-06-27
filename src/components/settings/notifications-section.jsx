@@ -499,23 +499,8 @@ export function NotificationsSection({ onClose }) {
       </div>
 
       {/* Tabs pour les différents types de notifications */}
-      <Tabs defaultValue="invitations" className="w-full">
+      <Tabs defaultValue="activity" className="w-full">
         <TabsList className="grid w-full grid-cols-3 h-auto">
-          <TabsTrigger
-            value="invitations"
-            className="gap-1 md:gap-2 font-normal flex-col md:flex-row py-2 md:py-1.5 text-xs md:text-sm"
-          >
-            <div className="flex items-center gap-1 relative">
-              <AtSign className="w-4 h-4" />
-              <span className="hidden sm:inline">Invitations</span>
-              {/* Point violet sur mobile, badge sur desktop */}
-              {unreadInvitationsCount > 0 && (
-                <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
-                  {unreadInvitationsCount}
-                </span>
-              )}
-            </div>
-          </TabsTrigger>
           <TabsTrigger
             value="activity"
             className="gap-1 md:gap-2 font-normal flex-col md:flex-row py-2 md:py-1.5 text-xs md:text-sm"
@@ -527,6 +512,21 @@ export function NotificationsSection({ onClose }) {
               {activityUnreadCount > 0 && (
                 <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
                   {activityUnreadCount}
+                </span>
+              )}
+            </div>
+          </TabsTrigger>
+          <TabsTrigger
+            value="invitations"
+            className="gap-1 md:gap-2 font-normal flex-col md:flex-row py-2 md:py-1.5 text-xs md:text-sm"
+          >
+            <div className="flex items-center gap-1 relative">
+              <AtSign className="w-4 h-4" />
+              <span className="hidden sm:inline">Invitations</span>
+              {/* Point violet sur mobile, badge sur desktop */}
+              {unreadInvitationsCount > 0 && (
+                <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
+                  {unreadInvitationsCount}
                 </span>
               )}
             </div>
@@ -717,8 +717,7 @@ export function NotificationsSection({ onClose }) {
                     className={`group flex items-center gap-3 hover:bg-[#f9f9f9] dark:hover:bg-[#1a1a1a] hover:rounded-lg cursor-pointer transition-all duration-75 ${!isLast ? "border-b border-[#eeeff1] dark:border-[#232323]" : ""}`}
                     style={{ padding: "12px 16px 12px 12px" }}
                     onClick={() => {
-                      if (!notification.read)
-                        markActivityAsRead(notification.id);
+                      deleteActivityNotification(notification.id);
                       if (notification.data?.url) {
                         if (onClose) onClose();
                         try {
