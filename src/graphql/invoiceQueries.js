@@ -33,6 +33,7 @@ export const INVOICE_FRAGMENT = gql`
     finalTotalTTC
     discountAmount
     stripeInvoiceId
+    paymentLink
     linkedTransactionId
     showBankDetails
     clientPositionRight
@@ -180,6 +181,7 @@ export const INVOICE_LIST_FRAGMENT = gql`
     finalTotalVAT
     finalTotalTTC
     stripeInvoiceId
+    paymentLink
     isReverseCharge
     items {
       description
