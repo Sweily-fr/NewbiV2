@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { organization, useSession, authClient } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
 
@@ -6,7 +6,6 @@ export const useOrganizationInvitations = () => {
   const { data: session } = useSession();
   const [loading, setLoading] = useState(false);
   const [inviting, setInviting] = useState(false);
-  const [activeOrgSet, setActiveOrgSet] = useState(false);
 
   // Utiliser les hooks Better Auth
   const { data: organizations } = authClient.useListOrganizations();
@@ -63,7 +62,9 @@ export const useOrganizationInvitations = () => {
         }
 
         // Utiliser l'organizationId fourni ou récupérer l'organisation active
-        const userOrg = organizationId ? { id: organizationId } : getUserOrganization();
+        const userOrg = organizationId
+          ? { id: organizationId }
+          : getUserOrganization();
 
         if (!userOrg?.id) {
           throw new Error("Aucune organisation trouvée pour cet utilisateur");
@@ -87,18 +88,18 @@ export const useOrganizationInvitations = () => {
           // Afficher un avertissement si c'est un siège payant
           if (result.isPaid) {
             console.log(
-              `💰 Siège payant: ${result.additionalCost}€/mois supplémentaire`
+              `💰 Siège payant: ${result.additionalCost}€/mois supplémentaire`,
             );
             // Note: On pourrait ajouter une confirmation ici si nécessaire
           }
 
           console.log(
-            `✅ Limite vérifiée pour ${role}: canInvite=${result.canInvite}`
+            `✅ Limite vérifiée pour ${role}: canInvite=${result.canInvite}`,
           );
         } catch (limitError) {
           console.error("❌ Erreur vérification limite:", limitError);
           toast.error(
-            "Impossible de vérifier les limites. Veuillez réessayer."
+            "Impossible de vérifier les limites. Veuillez réessayer.",
           );
           return { success: false, error: "Erreur vérification limite" };
         }
@@ -129,7 +130,7 @@ export const useOrganizationInvitations = () => {
         setInviting(false);
       }
     },
-    [session, getUserOrganization]
+    [session, getUserOrganization],
   );
 
   // Lister les membres de l'organisation
@@ -149,7 +150,7 @@ export const useOrganizationInvitations = () => {
           {
             organizationId: orgId,
             membersLimit: 100,
-          }
+          },
         );
 
         if (error) {
@@ -158,7 +159,7 @@ export const useOrganizationInvitations = () => {
 
         // Filtrer les membres pour exclure les owners
         const filteredMembers = (fullOrg?.members || []).filter(
-          (member) => member.role !== "owner"
+          (member) => member.role !== "owner",
         );
 
         return { success: true, data: filteredMembers };
@@ -168,7 +169,7 @@ export const useOrganizationInvitations = () => {
         setLoading(false);
       }
     },
-    [getUserOrganization]
+    [getUserOrganization],
   );
 
   // Lister les invitations en attente
@@ -187,13 +188,13 @@ export const useOrganizationInvitations = () => {
         const { data: fullOrg, error } = await organization.getFullOrganization(
           {
             organizationId: orgId,
-          }
+          },
         );
 
         if (error) {
           console.error(
             "Erreur lors de la récupération de l'organisation complète:",
-            error
+            error,
           );
           return { success: false, error };
         }
@@ -206,7 +207,7 @@ export const useOrganizationInvitations = () => {
         setLoading(false);
       }
     },
-    [getUserOrganization]
+    [getUserOrganization],
   );
 
   // Supprimer un membre
@@ -219,7 +220,7 @@ export const useOrganizationInvitations = () => {
           "🗑️ Suppression du membre:",
           memberIdOrEmail,
           "de l'org:",
-          orgId
+          orgId,
         );
 
         // 1. Supprimer le membre via Better Auth
@@ -238,35 +239,13 @@ export const useOrganizationInvitations = () => {
 
         console.log("✅ Membre supprimé avec succès de Better Auth");
 
-        // 2. Synchroniser la facturation des sièges (non-bloquant)
-        try {
-          console.log(
-            `💳 Synchronisation facturation après suppression de membre`
-          );
-
-          const response = await fetch("/api/billing/sync-seats", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ organizationId: orgId }),
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            console.warn(
-              "⚠️ Erreur sync facturation (non-bloquant):",
-              errorData
-            );
-          } else {
-            const result = await response.json();
-            console.log(`✅ Facturation synchronisée:`, result);
-          }
-        } catch (billingError) {
-          // Ne pas faire échouer la suppression si la facturation échoue
-          console.warn(
-            "⚠️ Erreur sync facturation (non-bloquant):",
-            billingError
-          );
-        }
+        // 2. Synchronisation facturation des sièges : DÉSORMAIS gérée côté
+        // serveur par le hook Better Auth `afterRemoveMember`
+        // (src/lib/auth-plugins.js → syncOrgSeatsSafe). Ça couvre web ET mobile
+        // de façon uniforme. On retire l'appel client redondant à
+        // /api/billing/sync-seats pour éviter une double synchro (et un éventuel
+        // double email d'alerte de limite). La route reste disponible pour une
+        // synchro manuelle/forcée.
 
         toast.success("Membre supprimé avec succès");
         return { success: true, data };
@@ -275,7 +254,7 @@ export const useOrganizationInvitations = () => {
         return { success: false, error: error.message };
       }
     },
-    [getUserOrganization]
+    [getUserOrganization],
   );
 
   // Annuler une invitation
@@ -294,7 +273,7 @@ export const useOrganizationInvitations = () => {
       return { success: true, data };
     } catch (error) {
       toast.error(
-        error.message || "Erreur lors de l'annulation de l'invitation"
+        error.message || "Erreur lors de l'annulation de l'invitation",
       );
       return { success: false, error: error.message };
     }
@@ -324,7 +303,9 @@ export const useOrganizationInvitations = () => {
 
         if (error) {
           const errorMessage =
-            error.message || error.error || "Erreur lors du renvoi de l'invitation";
+            error.message ||
+            error.error ||
+            "Erreur lors du renvoi de l'invitation";
           if (!silent) toast.error(errorMessage);
           return { success: false, error };
         }
@@ -332,11 +313,12 @@ export const useOrganizationInvitations = () => {
         if (!silent) toast.success(`Invitation renvoyée à ${email}`);
         return { success: true, data };
       } catch (error) {
-        if (!silent) toast.error(error.message || "Erreur lors du renvoi de l'invitation");
+        if (!silent)
+          toast.error(error.message || "Erreur lors du renvoi de l'invitation");
         return { success: false, error: error.message };
       }
     },
-    [getUserOrganization]
+    [getUserOrganization],
   );
 
   // Mettre à jour le rôle d'un membre
@@ -381,24 +363,34 @@ export const useOrganizationInvitations = () => {
             }
           } catch (checkError) {
             console.error("❌ Erreur vérification limite:", checkError);
-            toast.error("Impossible de vérifier les limites. Veuillez réessayer.");
+            toast.error(
+              "Impossible de vérifier les limites. Veuillez réessayer.",
+            );
             return { success: false, error: "Erreur vérification limite" };
           }
         }
 
         // Better Auth attend 'memberId' et 'role' comme paramètres
-        console.log("🔄 updateMemberRole params:", { memberId, role: newRole, orgId });
+        console.log("🔄 updateMemberRole params:", {
+          memberId,
+          role: newRole,
+          orgId,
+        });
 
         const { data, error } = await organization.updateMemberRole({
           memberId: memberId,
-          role: newRole,  // ✅ Better Auth utilise "role", pas "newRole"
+          role: newRole, // ✅ Better Auth utilise "role", pas "newRole"
           organizationId: orgId,
         });
 
         if (error) {
           console.error("❌ Erreur updateMemberRole:", error);
           // Afficher le message d'erreur détaillé
-          const errorMessage = error.message || error.error || error.statusText || "Erreur lors de la mise à jour du rôle";
+          const errorMessage =
+            error.message ||
+            error.error ||
+            error.statusText ||
+            "Erreur lors de la mise à jour du rôle";
           toast.error(errorMessage);
           return { success: false, error };
         }
@@ -412,7 +404,7 @@ export const useOrganizationInvitations = () => {
         return { success: false, error: error.message };
       }
     },
-    [getUserOrganization]
+    [getUserOrganization],
   );
 
   // Fonction pour récupérer tous les collaborateurs (membres + invitations)
@@ -433,7 +425,7 @@ export const useOrganizationInvitations = () => {
           {
             organizationId: orgId,
             membersLimit: 100,
-          }
+          },
         );
 
         if (error) {
@@ -442,7 +434,7 @@ export const useOrganizationInvitations = () => {
         }
 
         console.log(
-          `📋 Organisation récupérée: ${fullOrg?.name} (ID: ${fullOrg?.id})`
+          `📋 Organisation récupérée: ${fullOrg?.name} (ID: ${fullOrg?.id})`,
         );
 
         // Récupérer TOUS les membres (y compris les owners)
@@ -451,11 +443,11 @@ export const useOrganizationInvitations = () => {
 
         console.log(
           `📊 getAllCollaborators pour "${fullOrg?.name}" - Membres:`,
-          allMembers.length
+          allMembers.length,
         );
         console.log(
           "📊 getAllCollaborators - Invitations:",
-          invitations.length
+          invitations.length,
         );
         console.log(
           "📋 Détails membres:",
@@ -464,19 +456,19 @@ export const useOrganizationInvitations = () => {
             role: m.role,
             avatar: m.avatar || m.user?.avatar,
             user: m.user ? "présent" : "absent",
-          }))
+          })),
         );
 
         // Log détaillé de la structure du premier membre
         if (allMembers.length > 0) {
           console.log(
             "🔍 Structure complète du premier membre:",
-            JSON.stringify(allMembers[0], null, 2)
+            JSON.stringify(allMembers[0], null, 2),
           );
         }
         console.log(
           "📋 Détails invitations:",
-          invitations.map((i) => ({ email: i.email, status: i.status }))
+          invitations.map((i) => ({ email: i.email, status: i.status })),
         );
 
         // Combiner membres et invitations avec un type pour les différencier
@@ -497,7 +489,7 @@ export const useOrganizationInvitations = () => {
         setLoading(false);
       }
     },
-    [getUserOrganization]
+    [getUserOrganization],
   );
 
   return {

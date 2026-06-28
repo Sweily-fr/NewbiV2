@@ -1359,6 +1359,43 @@ export const stripePlugin = stripe({
 });
 
 // Configuration du plugin Organization
+/**
+ * Synchronise les sièges Stripe d'une organisation côté SERVEUR.
+ *
+ * Déclenché par les organizationHooks de Better Auth → couvre TOUS les clients
+ * (web, mobile, API) de façon uniforme, contrairement aux appels existants qui
+ * étaient codés uniquement dans le JS du web.
+ *
+ * Idempotent : `syncSeatsAfterInvitationAccepted` recompte le nombre ABSOLU de
+ * sièges facturables et ne touche Stripe que si la quantité a changé. Les appels
+ * web existants (/api/billing/sync-seats, route d'acceptation) restent donc
+ * valides — au pire ils tombent sur un no-op. Ne throw jamais pour ne pas
+ * bloquer l'opération membre en cours si Stripe est indisponible.
+ *
+ * L'adapter est récupéré comme dans les routes existantes (auth.options.database).
+ * L'import est dynamique pour éviter une dépendance circulaire avec auth.js.
+ */
+async function syncOrgSeatsSafe(organizationId, context) {
+  if (!organizationId) return;
+  try {
+    const { seatSyncService } = await import("../services/seatSyncService.js");
+    const { auth } = await import("./auth.js");
+    const adapter = auth.options.database;
+    await seatSyncService.syncSeatsAfterInvitationAccepted(
+      organizationId,
+      adapter,
+    );
+    console.log(
+      `✅ [ORG HOOK] Sièges synchronisés (${context}) pour org ${organizationId}`,
+    );
+  } catch (error) {
+    console.error(
+      `⚠️ [ORG HOOK] Échec synchro sièges (${context}) pour org ${organizationId}:`,
+      error?.message || error,
+    );
+  }
+}
+
 export const organizationPlugin = organization({
   allowUserToCreateOrganization: true,
   organizationLimit: 5,
@@ -1781,6 +1818,20 @@ export const organizationPlugin = organization({
   },
   async sendInvitationEmail(data) {
     await sendOrganizationInvitationEmail(data);
+  },
+  // ── Synchronisation des sièges Stripe côté SERVEUR ──
+  // Garantit que l'ajout/suppression de membre met à jour la facturation
+  // quel que soit le client (web ET mobile). Idempotent (cf. syncOrgSeatsSafe).
+  organizationHooks: {
+    afterAddMember: async ({ organization }) => {
+      await syncOrgSeatsSafe(organization?.id, "afterAddMember");
+    },
+    afterRemoveMember: async ({ organization }) => {
+      await syncOrgSeatsSafe(organization?.id, "afterRemoveMember");
+    },
+    afterAcceptInvitation: async ({ organization }) => {
+      await syncOrgSeatsSafe(organization?.id, "afterAcceptInvitation");
+    },
   },
 });
 
