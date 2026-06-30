@@ -119,6 +119,10 @@ export const authClient = createAuthClient({
             invoiceStartNumber: { type: "string" },
             quoteStartNumber: { type: "string" },
             purchaseOrderStartNumber: { type: "string" },
+            // Numérotation séquentielle continue (indépendante du préfixe)
+            invoiceAutoNumbering: { type: "boolean" },
+            quoteAutoNumbering: { type: "boolean" },
+            purchaseOrderAutoNumbering: { type: "boolean" },
             // Trial system fields (ISO date strings)
             trialStartDate: { type: "string" },
             trialEndDate: { type: "string" },

@@ -178,7 +178,24 @@ export default function QuoteSettingsView({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showBankDetailsDialog, setShowBankDetailsDialog] = useState(false);
   const [numberDuplicateError, setNumberDuplicateError] = useState(null);
+  const [showAutoNumberingConfirm, setShowAutoNumberingConfirm] =
+    useState(false);
   const initialValuesRef = useRef(null);
+
+  // Des documents finalisés existent-ils déjà (tous préfixes confondus) ?
+  // Le hook global ne filtre pas par préfixe : hasDocumentsForPrefix = max global > 0.
+  const globalHook = isPurchaseOrder ? poGlobalHook : quoteGlobalHook;
+  const hasAnyFinalizedDocument = globalHook.hasDocumentsForPrefix;
+
+  // Activation de la séquence continue : confirmation requise si des documents
+  // existent déjà (la numérotation doit rester chronologique).
+  const handleAutoNumberingChange = (checked) => {
+    if (checked && hasAnyFinalizedDocument) {
+      setShowAutoNumberingConfirm(true);
+      return;
+    }
+    setValue("autoNumbering", checked, { shouldValidate: false });
+  };
 
   // Écouter l'événement personnalisé émis par BankDetailsDialog
   useEffect(() => {
@@ -450,11 +467,7 @@ export default function QuoteSettingsView({
                 </div>
                 <Switch
                   checked={autoNumbering}
-                  onCheckedChange={(checked) => {
-                    setValue("autoNumbering", checked, {
-                      shouldValidate: false,
-                    });
-                  }}
+                  onCheckedChange={handleAutoNumberingChange}
                   className="data-[state=checked]:bg-[#5b4fff]"
                 />
               </div>
@@ -1124,6 +1137,45 @@ export default function QuoteSettingsView({
             </Button>
             <Button variant="danger" onClick={handleConfirmCancel}>
               Quitter sans sauvegarder
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog de confirmation : activation de la séquence continue */}
+      <AlertDialog
+        open={showAutoNumberingConfirm}
+        onOpenChange={setShowAutoNumberingConfirm}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Activer la numérotation séquentielle continue ?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Des {documentLabelPlural} ont déjà été créés avec une numérotation
+              par préfixe. En activant la séquence continue, les numéros
+              existants restent inchangés, mais tous les nouveaux documents
+              suivront une séquence unique, indépendante du préfixe. La
+              numérotation doit rester chronologique : cette action est
+              irréversible pour les documents déjà émis.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowAutoNumberingConfirm(false)}
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                setValue("autoNumbering", true, { shouldValidate: false });
+                setShowAutoNumberingConfirm(false);
+              }}
+            >
+              Activer la séquence continue
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

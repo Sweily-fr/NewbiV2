@@ -54,8 +54,26 @@ export const useInvoiceNumber = (prefix, { autoNumbering = false } = {}) => {
       return { isValid: true };
     }
 
-    // Numérotation manuelle (autoNumbering désactivé) : le numéro est libre,
-    // indépendamment du préfixe. L'unicité est vérifiée séparément (checkInvoiceNumber).
+    // Numérotation manuelle (autoNumbering désactivé) : séquence par préfixe.
+    // Nouveau préfixe (aucune facture finalisée) → numéro de départ libre.
+    if (!computed.hasDocumentsForPrefix) {
+      return { isValid: true };
+    }
+
+    // Préfixe existant : le numéro doit suivre la séquence (pas de recul, pas de trou).
+    if (num <= computed.lastNumber) {
+      return {
+        isValid: false,
+        message: `Le numéro doit être supérieur à ${String(computed.lastNumber).padStart(4, "0")}`,
+      };
+    }
+    if (num > computed.lastNumber + 1) {
+      return {
+        isValid: false,
+        message: `Le numéro doit être ${String(computed.lastNumber + 1).padStart(4, "0")} pour maintenir la séquence`,
+      };
+    }
+
     return { isValid: true };
   };
 
