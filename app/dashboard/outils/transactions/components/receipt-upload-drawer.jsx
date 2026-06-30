@@ -27,7 +27,6 @@ import {
   CheckIcon,
   AlertCircleIcon,
   LoaderCircle,
-  PlusIcon,
   Landmark,
   Link2,
 } from "lucide-react";
@@ -318,12 +317,6 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
     setReconcileMode("manual");
   }, []);
 
-  // Créer une nouvelle dépense (sans rapprochement)
-  const handleCreateNewExpense = useCallback(() => {
-    setSelectedTransactionId(null);
-    setReconcileMode("new");
-  }, []);
-
   // Formatage de la taille du fichier
   const formatFileSize = (bytes) => {
     if (bytes === 0) return "0 Bytes";
@@ -564,18 +557,6 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
                       </div>
                     ))}
                   </div>
-
-                  <div className="mt-3 pt-3 border-t">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleCreateNewExpense}
-                      className="w-full text-muted-foreground"
-                    >
-                      <PlusIcon className="h-4 w-4 mr-2" />
-                      Créer une nouvelle dépense (sans rapprochement)
-                    </Button>
-                  </div>
                 </div>
               )}
 
@@ -588,7 +569,8 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
                     </h4>
                     <p className="text-xs">
                       Aucune transaction bancaire ne correspond à ce montant.
-                      Une nouvelle dépense sera créée.
+                      Ajoutez d'abord la transaction (manuelle ou bancaire),
+                      puis attachez-y ce justificatif.
                     </p>
                   </div>
                 </Callout>
@@ -690,21 +672,26 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
                         editedFinancialAnalysis || ocrResult?.financialAnalysis,
                       )
                     }
-                    disabled={isReadOnly || isCreatingExpense || isReconciling}
-                    title={readOnlyTooltip}
+                    disabled={
+                      isReadOnly ||
+                      isCreatingExpense ||
+                      isReconciling ||
+                      !selectedTransactionId
+                    }
+                    title={
+                      !selectedTransactionId
+                        ? "Sélectionnez la transaction à laquelle attacher ce justificatif"
+                        : readOnlyTooltip
+                    }
                     className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-popover dark:text-popover-foreground dark:hover:bg-popover/90"
                   >
                     {isCreatingExpense || isReconciling ? (
                       <>
                         <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
-                        {selectedTransactionId ? "Liaison..." : "Création..."}
+                        Liaison...
                       </>
-                    ) : selectedTransactionId ? (
-                      "Lier le justificatif"
-                    ) : matchResult?.allMatches?.length > 0 ? (
-                      "Créer une dépense"
                     ) : (
-                      "Valider la dépense"
+                      "Lier le justificatif"
                     )}
                   </Button>
                 </>

@@ -100,16 +100,23 @@ export function useDashboardData({
   const bankAccounts = accountsData?.bankingAccounts || [];
   const bankTransactions = transactionsData?.transactions || [];
 
-  // Si skipTransactions, les stats viennent du backend
+  // Si skipTransactions, les stats viennent du backend (qui inclut déjà les espèces)
   const bankBalance = useMemo(() => {
     if (skipTransactions && summaryData?.dashboardSummary) {
       return summaryData.dashboardSummary.bankBalance;
     }
-    return bankAccounts.reduce(
+    // Solde global = somme des comptes bancaires + mouvements manuels (espèces),
+    // ces derniers n'étant reflétés par aucun solde de compte.
+    const accountsBalance = bankAccounts.reduce(
       (sum, account) => sum + (account.balance?.current || 0),
       0,
     );
-  }, [skipTransactions, summaryData, bankAccounts]);
+    const cashBalance = bankTransactions.reduce(
+      (sum, t) => (t.provider === "manual" ? sum + (t.amount || 0) : sum),
+      0,
+    );
+    return accountsBalance + cashBalance;
+  }, [skipTransactions, summaryData, bankAccounts, bankTransactions]);
 
   const processedData = useMemo(() => {
     if (skipTransactions) {
