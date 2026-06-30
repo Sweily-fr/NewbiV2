@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useReconciliation } from "@/src/hooks/useReconciliation";
+import {
+  useReconciliation,
+  useReconciliationForImportedInvoice,
+} from "@/src/hooks/useReconciliation";
 import { useRouter } from "next/navigation";
 import { Landmark, X, Undo2 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
@@ -123,7 +126,7 @@ function ReconciliationCard({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onLink(transaction.id, invoice.id);
+                  onLink(transaction.id, invoice.id, invoice.documentType);
                 }}
                 className={cn(
                   "h-[30px] px-3.5 text-[12px] font-medium rounded-full cursor-pointer",
@@ -270,6 +273,10 @@ export function ReconciliationToastProvider({ children }) {
     loading,
     error,
   } = useReconciliation();
+  // Rattachement des factures de CA importées (mutation dédiée, même signature
+  // (transactionId, importedInvoiceId) que linkTransaction).
+  const { linkTransaction: linkImportedTransaction } =
+    useReconciliationForImportedInvoice();
 
   const [ignoredSuggestions, setIgnoredSuggestions] = useState(new Set());
   const [exitingIds, setExitingIds] = useState(new Set());
@@ -353,9 +360,9 @@ export function ReconciliationToastProvider({ children }) {
     sonnerToast.dismiss(`undo-${transactionId}`);
   }, []);
 
-  // Rattacher une transaction à une facture
+  // Rattacher une transaction à une facture (standard ou de CA importée)
   const handleLink = useCallback(
-    async (transactionId, invoiceId) => {
+    async (transactionId, invoiceId, documentType) => {
       setIsProcessing(true);
       saveIgnoredSuggestion(transactionId);
 
@@ -364,7 +371,11 @@ export function ReconciliationToastProvider({ children }) {
       });
 
       try {
-        const result = await linkTransaction(transactionId, invoiceId);
+        const linkFn =
+          documentType === "IMPORTED_INVOICE"
+            ? linkImportedTransaction
+            : linkTransaction;
+        const result = await linkFn(transactionId, invoiceId);
         // Rollback de l'optimistic-ignore si le serveur refuse le rattachement :
         // sinon la carte reste masquée alors que la transaction n'est pas
         // rapprochée (linkTransaction ne jette pas, il renvoie { success }).
@@ -380,7 +391,7 @@ export function ReconciliationToastProvider({ children }) {
         setIsProcessing(false);
       }
     },
-    [linkTransaction, animateOut],
+    [linkTransaction, linkImportedTransaction, animateOut],
   );
 
   // Masquer une suggestion du toast — NON bloquant. On la cache uniquement côté

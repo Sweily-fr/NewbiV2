@@ -451,15 +451,22 @@ export default function InvoiceTable({
     checkPermission();
   }, [canCreate]);
 
-  // Ouvrir automatiquement la sidebar si un ID est fourni
+  // Ouvrir automatiquement la sidebar si un ID est fourni (facture standard ou
+  // facture de CA importée — ex. depuis le toast de rapprochement).
   useEffect(() => {
-    if (invoiceIdToOpen && invoices && invoices.length > 0) {
-      const invoice = invoices.find((inv) => inv.id === invoiceIdToOpen);
-      if (invoice) {
-        setInvoiceToOpen(invoice);
-      }
+    if (!invoiceIdToOpen) return;
+    const invoice = (invoices || []).find((inv) => inv.id === invoiceIdToOpen);
+    if (invoice) {
+      setInvoiceToOpen(invoice);
+      return;
     }
-  }, [invoiceIdToOpen, invoices]);
+    const imported = (importedInvoices || []).find(
+      (inv) => inv.id === invoiceIdToOpen,
+    );
+    if (imported) {
+      setSelectedImportedInvoice(imported);
+    }
+  }, [invoiceIdToOpen, invoices, importedInvoices]);
 
   if (loading) {
     return <InvoiceTableSkeleton />;
@@ -1249,47 +1256,43 @@ export default function InvoiceTable({
       />
 
       {/* Sidebar pour les factures importées (revue 1 par 1 ou ouverture simple) */}
-      <AnimatePresence>
-        {(reviewQueue.length > 0 || !!selectedImportedInvoice) && (
-          <ImportedInvoiceSidebar
-            invoice={
-              reviewQueue.length > 0
-                ? reviewQueue[reviewIndex]
-                : selectedImportedInvoice
-            }
-            open={true}
-            reviewInfo={
-              reviewQueue.length > 0
-                ? { current: reviewIndex + 1, total: reviewQueue.length }
-                : null
-            }
-            onValidated={() => {
-              refetchImported();
-              onBalancesRefetch?.();
-              if (reviewIndex + 1 < reviewQueue.length) {
-                setReviewIndex((i) => i + 1);
-              } else {
-                setReviewQueue([]);
-                setReviewIndex(0);
-              }
-            }}
-            onOpenChange={(open) => {
-              if (!open) {
-                setSelectedImportedInvoice(null);
-                setReviewQueue([]);
-                setReviewIndex(0);
-              }
-            }}
-            onUpdate={() => {
-              refetchImported();
-              onBalancesRefetch?.();
-              if (reviewQueue.length === 0) {
-                setSelectedImportedInvoice(null);
-              }
-            }}
-          />
-        )}
-      </AnimatePresence>
+      <ImportedInvoiceSidebar
+        invoice={
+          reviewQueue.length > 0
+            ? reviewQueue[reviewIndex]
+            : selectedImportedInvoice
+        }
+        open={reviewQueue.length > 0 || !!selectedImportedInvoice}
+        reviewInfo={
+          reviewQueue.length > 0
+            ? { current: reviewIndex + 1, total: reviewQueue.length }
+            : null
+        }
+        onValidated={() => {
+          refetchImported();
+          onBalancesRefetch?.();
+          if (reviewIndex + 1 < reviewQueue.length) {
+            setReviewIndex((i) => i + 1);
+          } else {
+            setReviewQueue([]);
+            setReviewIndex(0);
+          }
+        }}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedImportedInvoice(null);
+            setReviewQueue([]);
+            setReviewIndex(0);
+          }
+        }}
+        onUpdate={() => {
+          refetchImported();
+          onBalancesRefetch?.();
+          if (reviewQueue.length === 0) {
+            setSelectedImportedInvoice(null);
+          }
+        }}
+      />
 
       {/* Modal d'envoi par email - géré au niveau du tableau pour éviter les re-renders */}
       {sendEmailInvoice && (

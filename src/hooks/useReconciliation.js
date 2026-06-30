@@ -18,6 +18,7 @@ export {
   useReconciliationGraphQL as useReconciliation,
   useReconciliationCount,
   useReconciliationForSidebar,
+  useReconciliationForImportedInvoice,
 } from "./useReconciliationGraphQL";
 
 /**
