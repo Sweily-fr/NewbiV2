@@ -2678,4 +2678,9 @@ const UniversalPreviewPDF = ({
   );
 };
 
-export default UniversalPreviewPDF;
+// Mémoïsé : l'aperçu est lourd (rendu HTML complet du document). Sans ça, il se
+// re-rend à chaque re-render du parent (ex: refetch de la requête numéro lors d'un
+// changement de préfixe), ce qui faisait clignoter l'aperçu. Il ne se re-rend
+// désormais que lorsque ses props changent réellement (data déjà debouncée côté
+// éditeur).
+export default React.memo(UniversalPreviewPDF);
