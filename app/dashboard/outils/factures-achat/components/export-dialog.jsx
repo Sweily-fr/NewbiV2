@@ -18,9 +18,27 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { Label } from "@/src/components/ui/label";
-import { Input } from "@/src/components/ui/input";
-import { Download, FileSpreadsheet, FileText } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
+import { Calendar } from "@/src/components/ui/calendar";
+import {
+  Download,
+  FileSpreadsheet,
+  FileText,
+  Calendar as CalendarIcon,
+} from "lucide-react";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { cn } from "@/src/lib/utils";
 import { toast } from "@/src/components/ui/sonner";
+
+const toYMD = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate(),
+  ).padStart(2, "0")}`;
 
 const CATEGORY_LABELS = {
   RENT: "Loyer",
@@ -161,23 +179,55 @@ export function ExportDialog({ open, onOpenChange, invoices = [] }) {
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Date d&apos;émission début</Label>
-              <Input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>Date d&apos;émission fin</Label>
-              <Input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-              />
-            </div>
+          <div>
+            <Label>Plage de dates d&apos;émission</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal mt-1",
+                    !dateFrom && "text-muted-foreground",
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                  <span className="truncate">
+                    {dateFrom
+                      ? dateTo
+                        ? `${format(new Date(dateFrom + "T00:00:00"), "dd MMM yyyy", { locale: fr })} → ${format(new Date(dateTo + "T00:00:00"), "dd MMM yyyy", { locale: fr })}`
+                        : format(
+                            new Date(dateFrom + "T00:00:00"),
+                            "dd MMM yyyy",
+                            {
+                              locale: fr,
+                            },
+                          )
+                      : "Sélectionner une période"}
+                  </span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={
+                    dateFrom ? new Date(dateFrom + "T00:00:00") : undefined
+                  }
+                  selected={{
+                    from: dateFrom
+                      ? new Date(dateFrom + "T00:00:00")
+                      : undefined,
+                    to: dateTo ? new Date(dateTo + "T00:00:00") : undefined,
+                  }}
+                  onSelect={(range) => {
+                    setDateFrom(range?.from ? toYMD(range.from) : "");
+                    setDateTo(range?.to ? toYMD(range.to) : "");
+                  }}
+                  numberOfMonths={2}
+                  locale={fr}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="text-sm text-muted-foreground">

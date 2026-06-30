@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, CalendarIcon, ArrowLeft } from "lucide-react";
+import { ChevronRight, ArrowLeft } from "lucide-react";
 import { Label, Pie, PieChart } from "recharts";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@apollo/client";
@@ -27,19 +27,15 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import { Button } from "@/src/components/ui/button";
-import { Label as FormLabel } from "@/src/components/ui/label";
-import { parseDate } from "@internationalized/date";
-import {
-  Button as RACButton,
-  DatePicker,
-  Dialog,
-  Group,
-  Popover as RACPopover,
-  I18nProvider,
-} from "react-aria-components";
-import { Calendar } from "@/src/components/ui/calendar-rac";
-import { DateInput } from "@/src/components/ui/datefield-rac";
+import { I18nProvider } from "react-aria-components";
+import { Calendar as RangeCalendar } from "@/src/components/ui/calendar";
+import { fr } from "date-fns/locale";
 import { useChartColors } from "@/src/hooks/useChartColors";
+
+const toYMD = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate(),
+  ).padStart(2, "0")}`;
 
 // chartConfig dynamique généré à partir des données réelles
 const baseChartConfig = {
@@ -313,59 +309,28 @@ export function ExpenseCategoryChart({
                   <ArrowLeft size={16} />
                 </Button>
               </div>
-              <div className="grid grid-cols-2 gap-2 px-2 pt-2">
-                <div className="min-w-0 space-y-1.5">
-                  <FormLabel className="text-sm font-medium">Début</FormLabel>
-                  <DatePicker
-                    value={tempStartDate ? parseDate(tempStartDate) : null}
-                    onChange={(date) => {
-                      if (date) setTempStartDate(date.toString());
-                    }}
-                  >
-                    <div className="flex">
-                      <Group className="w-full min-w-0">
-                        <DateInput className="pe-9 text-sm" />
-                      </Group>
-                      <RACButton className="z-10 -ms-9 -me-px flex w-9 shrink-0 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground data-focus-visible:border-ring data-focus-visible:ring-[3px] data-focus-visible:ring-ring/50">
-                        <CalendarIcon size={14} />
-                      </RACButton>
-                    </div>
-                    <RACPopover
-                      className="z-50 rounded-lg border bg-background text-popover-foreground shadow-lg outline-hidden data-entering:animate-in data-exiting:animate-out data-[entering]:fade-in-0 data-[entering]:zoom-in-95 data-[exiting]:fade-out-0 data-[exiting]:zoom-out-95"
-                      offset={4}
-                    >
-                      <Dialog className="max-h-[inherit] overflow-auto p-2">
-                        <Calendar />
-                      </Dialog>
-                    </RACPopover>
-                  </DatePicker>
-                </div>
-                <div className="min-w-0 space-y-1.5">
-                  <FormLabel className="text-sm font-medium">Fin</FormLabel>
-                  <DatePicker
-                    value={tempEndDate ? parseDate(tempEndDate) : null}
-                    onChange={(date) => {
-                      if (date) setTempEndDate(date.toString());
-                    }}
-                  >
-                    <div className="flex">
-                      <Group className="w-full min-w-0">
-                        <DateInput className="pe-9 text-sm" />
-                      </Group>
-                      <RACButton className="z-10 -ms-9 -me-px flex w-9 shrink-0 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground data-focus-visible:border-ring data-focus-visible:ring-[3px] data-focus-visible:ring-ring/50">
-                        <CalendarIcon size={14} />
-                      </RACButton>
-                    </div>
-                    <RACPopover
-                      className="z-50 rounded-lg border bg-background text-popover-foreground shadow-lg outline-hidden data-entering:animate-in data-exiting:animate-out data-[entering]:fade-in-0 data-[entering]:zoom-in-95 data-[exiting]:fade-out-0 data-[exiting]:zoom-out-95"
-                      offset={4}
-                    >
-                      <Dialog className="max-h-[inherit] overflow-auto p-2">
-                        <Calendar />
-                      </Dialog>
-                    </RACPopover>
-                  </DatePicker>
-                </div>
+              <div className="px-2 pt-2">
+                <RangeCalendar
+                  mode="range"
+                  defaultMonth={
+                    tempStartDate
+                      ? new Date(tempStartDate + "T00:00:00")
+                      : undefined
+                  }
+                  selected={{
+                    from: tempStartDate
+                      ? new Date(tempStartDate + "T00:00:00")
+                      : undefined,
+                    to: tempEndDate
+                      ? new Date(tempEndDate + "T00:00:00")
+                      : undefined,
+                  }}
+                  onSelect={(range) => {
+                    setTempStartDate(range?.from ? toYMD(range.from) : "");
+                    setTempEndDate(range?.to ? toYMD(range.to) : "");
+                  }}
+                  locale={fr}
+                />
               </div>
               <div className="flex gap-2 mt-3 px-2 pb-2 justify-end">
                 <Button
