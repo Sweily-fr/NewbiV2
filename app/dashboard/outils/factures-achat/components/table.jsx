@@ -648,11 +648,10 @@ export default function PurchaseInvoiceTable({
         {/* Table — normal tabs */}
         {activeTab !== "imported" && (
           <>
-            <div className="hidden md:block flex-1 min-h-0 min-w-0 overflow-x-auto overflow-y-hidden">
-              {/* Largeur fixe partagée header + corps → scroll horizontal commun */}
-              <div className="h-full min-w-[1190px] flex flex-col">
-                {/* Header fixe */}
-                <div className="flex-shrink-0 border-b border-[#eeeff1] dark:border-[#232323]">
+            <div className="hidden md:block min-w-0">
+              <div className="flex flex-col">
+                {/* Header sticky */}
+                <div className="sticky top-0 z-10 bg-background border-b border-[#eeeff1] dark:border-[#232323]">
                   <table className="w-full table-fixed">
                     <thead>
                       {table.getHeaderGroups().map((headerGroup) => (
@@ -676,8 +675,8 @@ export default function PurchaseInvoiceTable({
                     </thead>
                   </table>
                 </div>
-                {/* Body scrollable */}
-                <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
+                {/* Body */}
+                <div className="flex flex-col">
                   {loading ? (
                     <div className="p-0">
                       {Array.from({ length: 8 }).map((_, i) => (
@@ -745,7 +744,7 @@ export default function PurchaseInvoiceTable({
             </div>
 
             {/* Pagination */}
-            <div className="hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-[#eeeff1] dark:border-[#232323] bg-background flex-shrink-0">
+            <div className="hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-[#eeeff1] dark:border-[#232323] bg-background sticky bottom-0 z-10">
               <div className="flex-1 text-xs font-normal text-muted-foreground">
                 {table.getFilteredSelectedRowModel().rows.length} sur{" "}
                 {table.getFilteredRowModel().rows.length} ligne(s)
