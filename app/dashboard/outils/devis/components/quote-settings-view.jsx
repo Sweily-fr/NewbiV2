@@ -124,6 +124,7 @@ export default function QuoteSettingsView({
   // changement de préfixe sans passer par un état "numéro vide" qui ferait
   // clignoter l'aperçu PDF).
   const numberSyncedForPrefixRef = useRef(null);
+  const lastAutoNumberingRef = useRef(autoNumbering);
 
   // Synchroniser le numéro depuis le hook de numérotation.
   // N'agit qu'une fois la requête résolue pour le préfixe courant, et met à jour
@@ -135,11 +136,14 @@ export default function QuoteSettingsView({
     // Première synchro avec un numéro déjà présent → ne pas l'écraser.
     if (numberSyncedForPrefixRef.current === null && data.number) {
       numberSyncedForPrefixRef.current = data.prefix;
+      lastAutoNumberingRef.current = autoNumbering;
       return;
     }
 
     const prefixChanged = numberSyncedForPrefixRef.current !== data.prefix;
+    const modeChanged = lastAutoNumberingRef.current !== autoNumbering;
     numberSyncedForPrefixRef.current = data.prefix;
+    lastAutoNumberingRef.current = autoNumbering;
 
     const setIfDifferent = () => {
       if (data.number !== formattedNumber) {
@@ -150,8 +154,10 @@ export default function QuoteSettingsView({
     if (autoNumbering || perPrefixHook.hasDocumentsForPrefix) {
       // Séquence continue ou préfixe existant → numéro séquentiel imposé
       setIfDifferent();
-    } else if (prefixChanged || !data.number) {
-      // Changement de préfixe (nouveau → 0001) ou champ vide. Modifiable ensuite.
+    } else if (prefixChanged || modeChanged || !data.number) {
+      // Mode manuel : changement de préfixe, désactivation de la séquence
+      // continue, ou champ vide → re-proposer le numéro par préfixe (nouveau
+      // préfixe → 0001). Reste modifiable ensuite.
       setIfDifferent();
     }
   }, [
