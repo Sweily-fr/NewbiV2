@@ -780,12 +780,14 @@ export function ForecastPaymentsCard({ months, kpi, loading, onCellClick }) {
           expenseExpanded={expenseExpanded}
           setExpenseExpanded={setExpenseExpanded}
           onCellClick={onCellClick}
+          onMonthClick={setSelectedMonth}
         />
       )}
 
       <MonthDetailsDrawer
         month={selectedMonth}
         open={!!selectedMonth}
+        readOnly={!!selectedMonth && selectedMonth < currentMonth}
         onOpenChange={(open) => {
           if (!open) setSelectedMonth(null);
         }}
@@ -816,6 +818,7 @@ function ForecastTable({
   expenseExpanded,
   setExpenseExpanded,
   onCellClick,
+  onMonthClick,
 }) {
   const N = months.length;
 
@@ -913,17 +916,21 @@ function ForecastTable({
             style={{ gridTemplateColumns: `repeat(${N}, 1fr)` }}
           >
             {months.map((m) => (
-              <div
+              <button
+                type="button"
                 key={m.month}
+                onClick={() => onMonthClick?.(m.month)}
+                title="Voir le détail du mois (réel et prévisions)"
                 className={cn(
-                  "px-2 py-2 text-center text-[12px] font-medium capitalize whitespace-nowrap rounded",
+                  "px-2 py-2 text-center text-[12px] font-medium capitalize whitespace-nowrap rounded transition-colors",
+                  onMonthClick && "cursor-pointer hover:bg-muted/60",
                   m.month === currentMonth
                     ? "text-blue-500 font-semibold bg-black/[0.04]"
                     : "text-muted-foreground",
                 )}
               >
                 {formatMonthLabel(m.month)}
-              </div>
+              </button>
             ))}
           </div>
         </div>

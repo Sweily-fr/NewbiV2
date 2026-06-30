@@ -106,3 +106,15 @@ export const RUN_RECURRENCE_DETECTION = gql`
     runRecurrenceDetection(workspaceId: $workspaceId)
   }
 `;
+
+// Supprime une seule occurrence (un mois) d'une prévision récurrente
+// (saisie manuelle ou récurrence détectée) sans affecter les autres mois.
+export const EXCLUDE_FORECAST_OCCURRENCE = gql`
+  mutation ExcludeForecastOccurrence(
+    $kind: ForecastOccurrenceKind!
+    $id: ID!
+    $month: String!
+  ) {
+    excludeForecastOccurrence(kind: $kind, id: $id, month: $month)
+  }
+`;
