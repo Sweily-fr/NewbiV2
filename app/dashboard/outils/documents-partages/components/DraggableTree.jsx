@@ -1017,6 +1017,8 @@ export function DraggableTree({
               onSelectFolder?.(item.isInbox ? null : itemId);
               if (!expandedFolders.has(itemId)) toggleFolder(itemId);
             } else {
+              // Ouvrir le dossier parent à droite pour voir le fichier dans son contexte
+              onSelectFolder?.(item.folderId || null);
               onSelectDocument?.(itemId.replace("doc-", ""));
             }
           }}
