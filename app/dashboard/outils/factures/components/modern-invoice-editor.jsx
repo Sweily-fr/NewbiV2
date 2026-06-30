@@ -781,17 +781,21 @@ export default function ModernInvoiceEditor({
           </div> */}
 
           <div className="flex-1 overflow-y-auto pl-18 pr-18 pt-22 pb-22 bg-[#F9F9F9] dark:bg-[#1a1a1a] h-full relative">
-            {loading ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-[#F9F9F9] dark:bg-[#1a1a1a]">
-                <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : debouncedFormData ? (
+            {/* Une fois l'aperçu disponible, on le garde affiché et on ne le
+                remplace jamais par un loader (sinon un rechargement transitoire,
+                ex: requête du numéro au changement de préfixe, ferait clignoter
+                l'aperçu). Le loader ne sert qu'au tout premier chargement. */}
+            {debouncedFormData ? (
               <div ref={pdfRef}>
                 <UniversalPreviewPDF
                   data={debouncedFormData}
                   type="invoice"
                   previousSituationInvoices={previousSituationInvoices}
                 />
+              </div>
+            ) : loading ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-[#F9F9F9] dark:bg-[#1a1a1a]">
+                <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : null}
           </div>
