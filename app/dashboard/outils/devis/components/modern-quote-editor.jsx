@@ -699,17 +699,13 @@ export default function ModernQuoteEditor({
         {/* Right Panel - Preview */}
         <div className="border-l flex-col h-full overflow-hidden hidden lg:flex">
           <div className="flex-1 overflow-y-auto pl-18 pr-18 pt-22 pb-22 bg-[#F9F9F9] dark:bg-[#1a1a1a] h-full relative">
-            {/* Une fois l'aperçu disponible, on le garde affiché et on ne le
-                remplace jamais par un loader (sinon un rechargement transitoire,
-                ex: requête du numéro au changement de préfixe, ferait clignoter
-                l'aperçu). Le loader ne sert qu'au tout premier chargement. */}
-            {debouncedFormData ? (
-              <div ref={pdfRef}>
-                <UniversalPreviewPDF data={debouncedFormData} type="quote" />
-              </div>
-            ) : loading ? (
+            {loading ? (
               <div className="absolute inset-0 flex items-center justify-center bg-[#F9F9F9] dark:bg-[#1a1a1a]">
                 <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : debouncedFormData ? (
+              <div ref={pdfRef}>
+                <UniversalPreviewPDF data={debouncedFormData} type="quote" />
               </div>
             ) : null}
           </div>
