@@ -579,6 +579,7 @@ import { useState, useMemo, useCallback } from "react";
 import { toast } from "@/src/components/ui/sonner";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useErrorHandler } from "@/src/hooks/useErrorHandler";
+import { GET_RECONCILIATION_SUGGESTIONS } from "@/src/graphql/queries/reconciliation";
 
 // Hook optimisé pour récupérer la liste des factures
 export const useInvoices = () => {
@@ -885,6 +886,7 @@ export const useLatestInvoiceIssueDate = () => {
 
 // Hook pour créer une facture
 export const useCreateInvoice = () => {
+  const client = useApolloClient();
   const { workspaceId } = useRequiredWorkspace();
 
   const [createInvoiceMutation, { loading }] = useMutation(CREATE_INVOICE, {
@@ -915,7 +917,18 @@ export const useCreateInvoice = () => {
         throw err;
       }
 
-      return result?.data?.createInvoice;
+      const createdInvoice = result?.data?.createInvoice;
+
+      // Une facture finalisée (PENDING) peut correspondre à une transaction
+      // bancaire : rafraîchir les suggestions de rapprochement immédiatement
+      // (le toast "haut-droite") au lieu d'attendre le polling de 60 s.
+      if (createdInvoice && createdInvoice.status !== "DRAFT") {
+        client
+          .refetchQueries({ include: [GET_RECONCILIATION_SUGGESTIONS] })
+          .catch(() => {});
+      }
+
+      return createdInvoice;
     } catch (error) {
       // Préserver les détails de validation depuis les erreurs GraphQL
       if (!error.validationDetails && error.graphQLErrors?.length > 0) {
@@ -944,10 +957,15 @@ export const useUpdateInvoice = () => {
         variables: { id: data.updateInvoice.id, workspaceId },
         data: { invoice: data.updateInvoice },
       });
-      // Stats et soldes invalidés car les totaux peuvent changer
-      client.refetchQueries({
-        include: [GET_INVOICE_STATS, GET_INVOICE_BALANCES],
-      });
+      // Stats et soldes invalidés car les totaux peuvent changer.
+      // Une facture finalisée (non brouillon) peut correspondre à une
+      // transaction bancaire : rafraîchir aussi les suggestions de
+      // rapprochement (toast "haut-droite") sans attendre le polling de 60 s.
+      const include = [GET_INVOICE_STATS, GET_INVOICE_BALANCES];
+      if (data?.updateInvoice?.status !== "DRAFT") {
+        include.push(GET_RECONCILIATION_SUGGESTIONS);
+      }
+      client.refetchQueries({ include });
     },
     // onError désactivé - les erreurs sont gérées dans les composants appelants
   });
