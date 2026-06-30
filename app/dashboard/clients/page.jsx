@@ -56,6 +56,7 @@ import ClientFilters from "./components/client-filters";
 import AutomationsPopover from "./components/automations-popover";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import ClientImportDialog from "./components/client-import-dialog";
+import ClientExportButton from "./components/client-export-button";
 import CreateListDialog from "./components/create-list-dialog";
 import AssignMembersDialog from "./components/assign-members-dialog";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
@@ -303,6 +304,7 @@ function ClientsContent() {
               <Upload size={14} strokeWidth={2} aria-hidden="true" />
               Importer
             </Button>
+            <ClientExportButton workspaceId={workspaceId} />
             <PermissionButton
               requiresActiveSubscription
               resource="clients"
@@ -573,6 +575,7 @@ function ClientsContent() {
               >
                 <Upload className="h-4 w-4" />
               </Button>
+              <ClientExportButton workspaceId={workspaceId} iconOnly />
               <PermissionButton
                 requiresActiveSubscription
                 resource="clients"
