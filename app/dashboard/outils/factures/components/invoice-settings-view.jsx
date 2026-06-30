@@ -162,7 +162,11 @@ export default function InvoiceSettingsView({
       // Reste modifiable ensuite.
       setIfDifferent();
     }
-  }, [nextInvoiceNumber, isLoadingInvoiceNumber, autoNumbering]); // eslint-disable-line react-hooks/exhaustive-deps
+    // data.number dans les deps : si le formulaire est réinitialisé en externe
+    // (ex: le modal des paramètres réécrit le numéro de départ après coup),
+    // l'effet se réapplique et reprend la main. La garde setIfDifferent évite
+    // toute boucle (aucun setValue si la valeur est déjà correcte).
+  }, [nextInvoiceNumber, isLoadingInvoiceNumber, autoNumbering, data.number]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Gérer le changement de préfixe avec auto-fill pour MM et AAAA
   const handlePrefixChange = (e) => {

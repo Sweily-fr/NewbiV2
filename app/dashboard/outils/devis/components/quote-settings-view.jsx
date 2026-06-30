@@ -60,6 +60,7 @@ export default function QuoteSettingsView({
   validateNumberExists,
   saveLabel = "Enregistrer les modifications",
   organization,
+  isGlobalSettings = false,
 }) {
   const isPurchaseOrder = documentType === "purchaseOrder";
   const documentLabel = isPurchaseOrder ? "bon de commande" : "devis";
@@ -131,13 +132,8 @@ export default function QuoteSettingsView({
     if (isLoadingNumber || nextNumber == null) return;
     const formattedNumber = String(nextNumber).padStart(4, "0");
 
-    // Première synchro avec un numéro déjà présent → ne pas l'écraser.
-    if (numberSyncedForPrefixRef.current === null && data.number) {
-      numberSyncedForPrefixRef.current = data.prefix;
-      lastAutoNumberingRef.current = autoNumbering;
-      return;
-    }
-
+    const firstSyncWithNumber =
+      numberSyncedForPrefixRef.current === null && Boolean(data.number);
     const prefixChanged = numberSyncedForPrefixRef.current !== data.prefix;
     const modeChanged = lastAutoNumberingRef.current !== autoNumbering;
     numberSyncedForPrefixRef.current = data.prefix;
@@ -149,19 +145,30 @@ export default function QuoteSettingsView({
       }
     };
 
-    if (autoNumbering || perPrefixHook.hasDocumentsForPrefix) {
-      // Séquence continue ou préfixe existant → numéro séquentiel imposé
+    if (autoNumbering) {
+      // Séquence continue → numéro séquentiel imposé (verrouillé)
       setIfDifferent();
+    } else if (isGlobalSettings && perPrefixHook.hasDocumentsForPrefix) {
+      // Paramètres généraux + préfixe existant → afficher le prochain numéro
+      // RÉEL (cohérent avec l'éditeur). Le "numéro de départ" devient périmé.
+      setIfDifferent();
+    } else if (firstSyncWithNumber) {
+      // Première synchro avec un numéro déjà présent (numéro du document, ou
+      // numéro de départ d'un nouveau préfixe) → préserver.
     } else if (prefixChanged || modeChanged || !data.number) {
       // Mode manuel : changement de préfixe (nouveau → 0001), désactivation de
       // la séquence continue, ou champ vide. Reste modifiable ensuite.
       setIfDifferent();
     }
+    // data.number dans les deps : permet à l'effet de reprendre la main si le
+    // formulaire est réinitialisé en externe (reset du modal). setIfDifferent
+    // évite toute boucle.
   }, [
     nextNumber,
     isLoadingNumber,
     perPrefixHook.hasDocumentsForPrefix,
     autoNumbering,
+    data.number,
   ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle prefix changes with auto-fill for MM and AAAA

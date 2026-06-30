@@ -429,6 +429,7 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
                       onCancel={() => onOpenChange(false)}
                       onSave={handleSave}
                       documentType="purchaseOrder"
+                      isGlobalSettings={true}
                     />
                   </FormProvider>
                 )}
