@@ -113,25 +113,31 @@ const toYMD = (d) =>
     d.getDate(),
   ).padStart(2, "0")}`;
 
-// Sélecteur de date inline, cohérent avec le reste de la plateforme : Popover +
-// Calendar (jours, navigation mois/année). Valeur "YYYY-MM-DD". `min`/`max`
-// (YYYY-MM-DD) bornent la sélection (début ≤ fin).
-function DateFilterButton({ value, onChange, min, max }) {
-  const selected = parseYMD(value);
-  const label = selected
-    ? selected.toLocaleDateString("fr-FR", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      })
-    : "Choisir";
+// Sélecteur de PLAGE (début + fin) en un seul calendrier (mode "range"),
+// cohérent avec les autres filtres calendrier de la plateforme. Bornes
+// "YYYY-MM-DD" ; la fin ≥ le début est garantie par le mode range.
+function DateRangeFilterButton({ start, end, onChange }) {
   const [open, setOpen] = useState(false);
+  const startD = parseYMD(start);
+  const endD = parseYMD(end);
+  const fmt = (d) =>
+    d.toLocaleDateString("fr-FR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  const label =
+    startD && endD
+      ? `du ${fmt(startD)} au ${fmt(endD)}`
+      : startD
+        ? `à partir du ${fmt(startD)}`
+        : "Choisir une période";
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-foreground font-medium capitalize hover:bg-muted/50 transition-colors cursor-pointer"
+          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-foreground font-medium hover:bg-muted/50 transition-colors cursor-pointer"
         >
           {label}
           <ChevronDown size={12} className="opacity-50" />
@@ -139,23 +145,19 @@ function DateFilterButton({ value, onChange, min, max }) {
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
-          mode="single"
+          mode="range"
           captionLayout="dropdown"
           startMonth={new Date(2015, 0)}
           endMonth={new Date(new Date().getFullYear() + 10, 11)}
-          defaultMonth={selected}
-          selected={selected}
-          onSelect={(date) => {
-            if (!date) return;
-            onChange(toYMD(date));
-            setOpen(false);
-          }}
-          disabled={(date) => {
-            const d = toYMD(date);
-            if (min && d < min) return true;
-            if (max && d > max) return true;
-            return false;
-          }}
+          defaultMonth={startD}
+          numberOfMonths={2}
+          selected={{ from: startD, to: endD }}
+          onSelect={(range) =>
+            onChange(
+              range?.from ? toYMD(range.from) : "",
+              range?.to ? toYMD(range.to) : "",
+            )
+          }
         />
       </PopoverContent>
     </Popover>
@@ -421,17 +423,13 @@ export default function PrevisionPage() {
           {/* Bornes de la période personnalisée */}
           {period === "custom" && (
             <div className="flex items-center gap-1 ml-1">
-              <span>du</span>
-              <DateFilterButton
-                value={customStart}
-                onChange={setCustomStart}
-                max={customEnd}
-              />
-              <span>au</span>
-              <DateFilterButton
-                value={customEnd}
-                onChange={setCustomEnd}
-                min={customStart}
+              <DateRangeFilterButton
+                start={customStart}
+                end={customEnd}
+                onChange={(s, e) => {
+                  setCustomStart(s);
+                  setCustomEnd(e);
+                }}
               />
               {maxPeriod > 0 &&
                 monthSpan(customStart.slice(0, 7), customEnd.slice(0, 7)) >
