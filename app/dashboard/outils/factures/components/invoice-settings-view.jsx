@@ -119,17 +119,42 @@ export default function InvoiceSettingsView({
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Synchroniser le numéro depuis le hook de numérotation
+  // Préfixe pour lequel le numéro a été synchronisé en dernier (détecte un
+  // changement de préfixe sans passer par un état "numéro vide" qui ferait
+  // clignoter l'aperçu PDF).
+  const numberSyncedForPrefixRef = useRef(null);
+
+  // Synchroniser le numéro depuis le hook de numérotation.
+  // Ne dépend que des données du hook (pas de data.prefix) pour n'agir qu'une
+  // fois la requête résolue pour le préfixe courant (évite d'utiliser une
+  // valeur périmée). Met à jour le champ uniquement si la valeur change vraiment.
   useEffect(() => {
     if (isLoadingInvoiceNumber || nextInvoiceNumber == null) return;
     const formattedNumber = String(nextInvoiceNumber).padStart(4, "0");
 
+    // Première synchro avec un numéro déjà présent (ex: ouverture des paramètres
+    // avec un numéro de départ enregistré) → ne pas l'écraser.
+    if (numberSyncedForPrefixRef.current === null && data.number) {
+      numberSyncedForPrefixRef.current = data.prefix;
+      return;
+    }
+
+    const prefixChanged = numberSyncedForPrefixRef.current !== data.prefix;
+    numberSyncedForPrefixRef.current = data.prefix;
+
+    const setIfDifferent = () => {
+      if (data.number !== formattedNumber) {
+        setValue("number", formattedNumber, { shouldValidate: false });
+      }
+    };
+
     if (autoNumbering) {
-      // Numérotation automatique → forcer le numéro séquentiel (verrouillé)
-      setValue("number", formattedNumber, { shouldValidate: false });
-    } else if (!data.number) {
-      // Numérotation manuelle → proposer une valeur par défaut sans écraser la saisie
-      setValue("number", formattedNumber, { shouldValidate: false });
+      // Séquence continue → numéro séquentiel imposé (verrouillé)
+      setIfDifferent();
+    } else if (prefixChanged || !data.number) {
+      // Changement de préfixe (nouveau → 0001, existant → suite) ou champ vide.
+      // Le numéro reste modifiable ensuite.
+      setIfDifferent();
     }
   }, [nextInvoiceNumber, isLoadingInvoiceNumber, autoNumbering]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -138,7 +163,13 @@ export default function InvoiceSettingsView({
     const value = e.target.value;
     const cursorPosition = e.target.selectionStart;
 
-    // Le useEffect synchronisera le numéro quand le hook aura rechargé avec le nouveau préfixe
+    // Effacer les erreurs de numéro liées à l'ancien préfixe ; le numéro lui-même
+    // est resynchronisé (sans état vide) par l'effet ci-dessus une fois la requête
+    // rechargée pour le nouveau préfixe.
+    if (!autoNumbering) {
+      if (numberDuplicateError) setNumberDuplicateError(null);
+      if (numberSequenceError) setNumberSequenceError(null);
+    }
 
     // Auto-fill MM (month)
     if (value.includes("MM")) {

@@ -120,17 +120,39 @@ export default function QuoteSettingsView({
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Synchroniser le numéro depuis le hook de numérotation
+  // Préfixe pour lequel le numéro a été synchronisé en dernier (détecte un
+  // changement de préfixe sans passer par un état "numéro vide" qui ferait
+  // clignoter l'aperçu PDF).
+  const numberSyncedForPrefixRef = useRef(null);
+
+  // Synchroniser le numéro depuis le hook de numérotation.
+  // N'agit qu'une fois la requête résolue pour le préfixe courant, et met à jour
+  // le champ uniquement si la valeur change vraiment.
   useEffect(() => {
     if (isLoadingNumber || nextNumber == null) return;
     const formattedNumber = String(nextNumber).padStart(4, "0");
 
+    // Première synchro avec un numéro déjà présent → ne pas l'écraser.
+    if (numberSyncedForPrefixRef.current === null && data.number) {
+      numberSyncedForPrefixRef.current = data.prefix;
+      return;
+    }
+
+    const prefixChanged = numberSyncedForPrefixRef.current !== data.prefix;
+    numberSyncedForPrefixRef.current = data.prefix;
+
+    const setIfDifferent = () => {
+      if (data.number !== formattedNumber) {
+        setValue("number", formattedNumber, { shouldValidate: false });
+      }
+    };
+
     if (autoNumbering || perPrefixHook.hasDocumentsForPrefix) {
-      // Auto-numbering activé ou préfixe existant → forcer le numéro séquentiel
-      setValue("number", formattedNumber, { shouldValidate: false });
-    } else if (!data.number) {
-      // Nouveau préfixe, pas de numéro → proposer 0001
-      setValue("number", formattedNumber, { shouldValidate: false });
+      // Séquence continue ou préfixe existant → numéro séquentiel imposé
+      setIfDifferent();
+    } else if (prefixChanged || !data.number) {
+      // Changement de préfixe (nouveau → 0001) ou champ vide. Modifiable ensuite.
+      setIfDifferent();
     }
   }, [
     nextNumber,
@@ -144,7 +166,12 @@ export default function QuoteSettingsView({
     const value = e.target.value;
     const cursorPosition = e.target.selectionStart;
 
-    // Le useEffect synchronisera le numéro quand le hook aura rechargé avec le nouveau préfixe
+    // Effacer l'erreur de doublon liée à l'ancien préfixe ; le numéro est
+    // resynchronisé (sans état vide) par l'effet ci-dessus une fois la requête
+    // rechargée pour le nouveau préfixe.
+    if (!autoNumbering && numberDuplicateError) {
+      setNumberDuplicateError(null);
+    }
 
     // Auto-fill MM (month)
     if (value.includes("MM")) {
