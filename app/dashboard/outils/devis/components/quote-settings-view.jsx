@@ -303,6 +303,10 @@ export default function QuoteSettingsView({
   useEffect(() => {
     if (!initialValuesRef.current) {
       initialValuesRef.current = {
+        // Numérotation
+        prefix: data.prefix,
+        number: data.number,
+        autoNumbering: data.autoNumbering,
         textColor: data.appearance?.textColor,
         headerTextColor: data.appearance?.headerTextColor,
         headerBgColor: data.appearance?.headerBgColor,
@@ -330,6 +334,9 @@ export default function QuoteSettingsView({
     if (!initialValuesRef.current) return;
 
     const hasChanges =
+      data.prefix !== initialValuesRef.current.prefix ||
+      data.number !== initialValuesRef.current.number ||
+      data.autoNumbering !== initialValuesRef.current.autoNumbering ||
       data.appearance?.textColor !== initialValuesRef.current.textColor ||
       data.appearance?.headerTextColor !==
         initialValuesRef.current.headerTextColor ||
@@ -364,6 +371,17 @@ export default function QuoteSettingsView({
   const handleConfirmCancel = () => {
     // Restaurer les valeurs initiales avec fallback sur les valeurs par défaut
     if (initialValuesRef.current) {
+      // Numérotation : restaurer le mode AVANT préfixe/numéro pour neutraliser
+      // l'effet de resynchronisation, puis remettre le numéro initial.
+      setValue("autoNumbering", initialValuesRef.current.autoNumbering ?? false, {
+        shouldValidate: false,
+      });
+      setValue("prefix", initialValuesRef.current.prefix ?? "", {
+        shouldValidate: false,
+      });
+      setValue("number", initialValuesRef.current.number ?? "", {
+        shouldValidate: false,
+      });
       setValue(
         "appearance.textColor",
         initialValuesRef.current.textColor || "#000000",
@@ -413,6 +431,9 @@ export default function QuoteSettingsView({
   const handleSaveClick = () => {
     // Mettre à jour les valeurs de référence après la sauvegarde
     initialValuesRef.current = {
+      prefix: data.prefix,
+      number: data.number,
+      autoNumbering: data.autoNumbering,
       textColor: data.appearance?.textColor,
       headerTextColor: data.appearance?.headerTextColor,
       headerBgColor: data.appearance?.headerBgColor,
