@@ -386,104 +386,113 @@ function PurchaseInvoicesContent() {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="flex gap-3 px-4 sm:px-6 py-3">
-          {statsLoading ? (
-            <>
-              <Skeleton className="h-[60px] w-[200px] rounded-lg" />
-              <Skeleton className="h-[60px] w-[200px] rounded-lg" />
-              <Skeleton className="h-[60px] w-[200px] rounded-lg" />
-              <Skeleton className="h-[60px] w-[200px] rounded-lg" />
-            </>
-          ) : (
-            <>
-              <div className="bg-background border rounded-lg px-4 py-3 flex items-center gap-0">
-                <div className="pr-4">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-xs text-muted-foreground">
-                      Total à payer
-                    </span>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent
-                          side="bottom"
-                          className="bg-[#202020] text-white border-0"
-                        >
-                          <p>Factures à payer + en retard</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+        {/* Zone scrollable : KPIs + tableau */}
+        <div className="flex-1 min-h-0 overflow-auto">
+          <div className="flex flex-col min-h-full">
+            {/* Stats Cards */}
+            <div className="flex gap-3 px-4 sm:px-6 py-3">
+              {statsLoading ? (
+                <>
+                  <Skeleton className="h-[60px] w-[200px] rounded-lg" />
+                  <Skeleton className="h-[60px] w-[200px] rounded-lg" />
+                  <Skeleton className="h-[60px] w-[200px] rounded-lg" />
+                  <Skeleton className="h-[60px] w-[200px] rounded-lg" />
+                </>
+              ) : (
+                <>
+                  <div className="bg-background border rounded-lg px-4 py-3 flex items-center gap-0">
+                    <div className="pr-4">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="text-xs text-muted-foreground">
+                          Total à payer
+                        </span>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent
+                              side="bottom"
+                              className="bg-[#202020] text-white border-0"
+                            >
+                              <p>Factures à payer + en retard</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-lg font-medium tracking-tight">
+                          {formatAmount(stats.totalToPay)} €
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          TTC
+                        </span>
+                      </div>
+                    </div>
+                    <div className="w-px h-10 bg-border mx-4" />
+                    <div className="pl-0">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="text-xs text-muted-foreground">
+                          Payé ce mois
+                        </span>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent
+                              side="bottom"
+                              className="bg-[#202020] text-white border-0"
+                            >
+                              <p>Total des factures payées ce mois</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-lg font-medium tracking-tight">
+                          {formatAmount(stats.paidThisMonth)} €
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          TTC
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-lg font-medium tracking-tight">
-                      {formatAmount(stats.totalToPay)} €
-                    </span>
-                    <span className="text-xs text-muted-foreground">TTC</span>
-                  </div>
-                </div>
-                <div className="w-px h-10 bg-border mx-4" />
-                <div className="pl-0">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-xs text-muted-foreground">
-                      Payé ce mois
-                    </span>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent
-                          side="bottom"
-                          className="bg-[#202020] text-white border-0"
-                        >
-                          <p>Total des factures payées ce mois</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-lg font-medium tracking-tight">
-                      {formatAmount(stats.paidThisMonth)} €
-                    </span>
-                    <span className="text-xs text-muted-foreground">TTC</span>
-                  </div>
-                </div>
-              </div>
-              <StatsCard
-                label="Factures en retard"
-                tooltip="Factures dont la date d'échéance est dépassée"
-                amount={stats.totalOverdue}
-                count={stats.totalOverdueCount}
-                alert
-              />
-              <StatsCard
-                label="Total du mois"
-                tooltip="Toutes les factures du mois en cours"
-                amount={stats.totalThisMonth}
-                count={stats.totalThisMonthCount}
-              />
-            </>
-          )}
-        </div>
+                  <StatsCard
+                    label="Factures en retard"
+                    tooltip="Factures dont la date d'échéance est dépassée"
+                    amount={stats.totalOverdue}
+                    count={stats.totalOverdueCount}
+                    alert
+                  />
+                  <StatsCard
+                    label="Total du mois"
+                    tooltip="Toutes les factures du mois en cours"
+                    amount={stats.totalThisMonth}
+                    count={stats.totalThisMonthCount}
+                  />
+                </>
+              )}
+            </div>
 
-        {/* Table */}
-        <Suspense fallback={<TableSkeleton />}>
-          <PurchaseInvoiceTable
-            invoices={mergedInvoices}
-            loading={loading}
-            refetch={refetch}
-            refetchStats={refetchStats}
-            onRowClick={handleRowClick}
-            importedInvoices={importedInvoices}
-            importedLoading={importedLoading}
-            onImportedConverted={handleImportedConverted}
-            gmailConnection={gmailConnection}
-            onOpenGmailDialog={handleOpenGmailDialog}
-          />
-        </Suspense>
+            {/* Table */}
+            <Suspense fallback={<TableSkeleton />}>
+              <PurchaseInvoiceTable
+                invoices={mergedInvoices}
+                loading={loading}
+                refetch={refetch}
+                refetchStats={refetchStats}
+                onRowClick={handleRowClick}
+                importedInvoices={importedInvoices}
+                importedLoading={importedLoading}
+                onImportedConverted={handleImportedConverted}
+                gmailConnection={gmailConnection}
+                onOpenGmailDialog={handleOpenGmailDialog}
+              />
+            </Suspense>
+          </div>
+        </div>
       </div>
 
       {/* Mobile Layout */}
