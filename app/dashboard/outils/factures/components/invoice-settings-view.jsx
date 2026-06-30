@@ -80,6 +80,7 @@ export default function InvoiceSettingsView({
   setValidationErrors,
   organization,
   saveLabel = "Enregistrer les modifications",
+  isGlobalSettings = false,
 }) {
   const {
     watch,
@@ -131,14 +132,8 @@ export default function InvoiceSettingsView({
     if (isLoadingInvoiceNumber || nextInvoiceNumber == null) return;
     const formattedNumber = String(nextInvoiceNumber).padStart(4, "0");
 
-    // Première synchro avec un numéro déjà présent (ex: numéro de départ
-    // enregistré) → ne pas l'écraser.
-    if (numberSyncedForPrefixRef.current === null && data.number) {
-      numberSyncedForPrefixRef.current = data.prefix;
-      lastAutoNumberingRef.current = autoNumbering;
-      return;
-    }
-
+    const firstSyncWithNumber =
+      numberSyncedForPrefixRef.current === null && Boolean(data.number);
     const prefixChanged = numberSyncedForPrefixRef.current !== data.prefix;
     const modeChanged = lastAutoNumberingRef.current !== autoNumbering;
     numberSyncedForPrefixRef.current = data.prefix;
@@ -153,6 +148,14 @@ export default function InvoiceSettingsView({
     if (autoNumbering) {
       // Séquence continue → numéro séquentiel imposé (verrouillé)
       setIfDifferent();
+    } else if (isGlobalSettings && hasDocumentsForPrefix) {
+      // Paramètres généraux + préfixe existant → afficher le prochain numéro
+      // RÉEL (cohérent avec l'éditeur). Le "numéro de départ" enregistré ne
+      // s'applique qu'à un nouveau préfixe et devient périmé ensuite.
+      setIfDifferent();
+    } else if (firstSyncWithNumber) {
+      // Première synchro avec un numéro déjà présent (numéro du document dans
+      // l'éditeur, ou numéro de départ d'un nouveau préfixe) → préserver.
     } else if (prefixChanged || modeChanged || !data.number) {
       // Mode manuel : changement de préfixe (nouveau → 0001, existant → la
       // suite), désactivation de la séquence continue, ou champ vide.
