@@ -60,6 +60,7 @@ export default function QuoteSettingsView({
   validateNumberExists,
   saveLabel = "Enregistrer les modifications",
   organization,
+  isGlobalSettings = false,
 }) {
   const isPurchaseOrder = documentType === "purchaseOrder";
   const documentLabel = isPurchaseOrder ? "bon de commande" : "devis";
@@ -120,23 +121,54 @@ export default function QuoteSettingsView({
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Synchroniser le numéro depuis le hook de numérotation
+  // Préfixe / mode pour lesquels le numéro a été synchronisé en dernier.
+  const numberSyncedForPrefixRef = useRef(null);
+  const lastAutoNumberingRef = useRef(autoNumbering);
+
+  // Synchroniser le numéro depuis le hook de numérotation.
+  // N'agit qu'une fois la requête résolue pour le préfixe courant, et ne met à
+  // jour le champ que si la valeur change vraiment.
   useEffect(() => {
     if (isLoadingNumber || nextNumber == null) return;
     const formattedNumber = String(nextNumber).padStart(4, "0");
 
-    if (autoNumbering || perPrefixHook.hasDocumentsForPrefix) {
-      // Auto-numbering activé ou préfixe existant → forcer le numéro séquentiel
-      setValue("number", formattedNumber, { shouldValidate: false });
-    } else if (!data.number) {
-      // Nouveau préfixe, pas de numéro → proposer 0001
-      setValue("number", formattedNumber, { shouldValidate: false });
+    const firstSyncWithNumber =
+      numberSyncedForPrefixRef.current === null && Boolean(data.number);
+    const prefixChanged = numberSyncedForPrefixRef.current !== data.prefix;
+    const modeChanged = lastAutoNumberingRef.current !== autoNumbering;
+    numberSyncedForPrefixRef.current = data.prefix;
+    lastAutoNumberingRef.current = autoNumbering;
+
+    const setIfDifferent = () => {
+      if (data.number !== formattedNumber) {
+        setValue("number", formattedNumber, { shouldValidate: false });
+      }
+    };
+
+    if (autoNumbering) {
+      // Séquence continue → numéro séquentiel imposé (verrouillé)
+      setIfDifferent();
+    } else if (isGlobalSettings && perPrefixHook.hasDocumentsForPrefix) {
+      // Paramètres généraux + préfixe existant → afficher le prochain numéro
+      // RÉEL (cohérent avec l'éditeur). Le "numéro de départ" devient périmé.
+      setIfDifferent();
+    } else if (firstSyncWithNumber) {
+      // Première synchro avec un numéro déjà présent (numéro du document, ou
+      // numéro de départ d'un nouveau préfixe) → préserver.
+    } else if (prefixChanged || modeChanged || !data.number) {
+      // Mode manuel : changement de préfixe (nouveau → 0001), désactivation de
+      // la séquence continue, ou champ vide. Reste modifiable ensuite.
+      setIfDifferent();
     }
+    // data.number dans les deps : permet à l'effet de reprendre la main si le
+    // formulaire est réinitialisé en externe (reset du modal). setIfDifferent
+    // évite toute boucle.
   }, [
     nextNumber,
     isLoadingNumber,
     perPrefixHook.hasDocumentsForPrefix,
     autoNumbering,
+    data.number,
   ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle prefix changes with auto-fill for MM and AAAA
@@ -278,6 +310,10 @@ export default function QuoteSettingsView({
   useEffect(() => {
     if (!initialValuesRef.current) {
       initialValuesRef.current = {
+        // Numérotation
+        prefix: data.prefix,
+        number: data.number,
+        autoNumbering: data.autoNumbering,
         textColor: data.appearance?.textColor,
         headerTextColor: data.appearance?.headerTextColor,
         headerBgColor: data.appearance?.headerBgColor,
@@ -305,6 +341,9 @@ export default function QuoteSettingsView({
     if (!initialValuesRef.current) return;
 
     const hasChanges =
+      data.prefix !== initialValuesRef.current.prefix ||
+      data.number !== initialValuesRef.current.number ||
+      data.autoNumbering !== initialValuesRef.current.autoNumbering ||
       data.appearance?.textColor !== initialValuesRef.current.textColor ||
       data.appearance?.headerTextColor !==
         initialValuesRef.current.headerTextColor ||
@@ -339,6 +378,17 @@ export default function QuoteSettingsView({
   const handleConfirmCancel = () => {
     // Restaurer les valeurs initiales avec fallback sur les valeurs par défaut
     if (initialValuesRef.current) {
+      // Numérotation : restaurer le mode AVANT préfixe/numéro pour neutraliser
+      // l'effet de resynchronisation, puis remettre le numéro initial.
+      setValue("autoNumbering", initialValuesRef.current.autoNumbering ?? false, {
+        shouldValidate: false,
+      });
+      setValue("prefix", initialValuesRef.current.prefix ?? "", {
+        shouldValidate: false,
+      });
+      setValue("number", initialValuesRef.current.number ?? "", {
+        shouldValidate: false,
+      });
       setValue(
         "appearance.textColor",
         initialValuesRef.current.textColor || "#000000",
@@ -388,6 +438,9 @@ export default function QuoteSettingsView({
   const handleSaveClick = () => {
     // Mettre à jour les valeurs de référence après la sauvegarde
     initialValuesRef.current = {
+      prefix: data.prefix,
+      number: data.number,
+      autoNumbering: data.autoNumbering,
       textColor: data.appearance?.textColor,
       headerTextColor: data.appearance?.headerTextColor,
       headerBgColor: data.appearance?.headerBgColor,

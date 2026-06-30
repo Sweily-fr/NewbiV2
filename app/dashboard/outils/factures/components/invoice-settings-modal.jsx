@@ -468,6 +468,7 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
                       onCancel={() => onOpenChange(false)}
                       onSave={handleSave}
                       organization={organization}
+                      isGlobalSettings={true}
                     />
                   </FormProvider>
                 )}
