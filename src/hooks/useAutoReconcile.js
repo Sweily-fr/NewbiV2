@@ -60,7 +60,7 @@ export const useAutoReconcile = () => {
         setIsSearching(false);
       }
     },
-    [workspaceId]
+    [workspaceId],
   );
 
   /**
@@ -107,19 +107,8 @@ export const useAutoReconcile = () => {
         setReconcileResult(data);
 
         // Afficher un toast selon le résultat
-        if (data.action === "auto-matched") {
-          toast.success(
-            "Justificatif automatiquement lié à une transaction bancaire !",
-            {
-              description: `Transaction: ${data.matchedTransaction?.description || ""}`,
-            }
-          );
-        } else if (data.action === "linked") {
+        if (data.action === "linked") {
           toast.success("Justificatif lié à la transaction");
-        } else if (data.action === "created") {
-          toast.info("Aucune transaction correspondante. Dépense créée.", {
-            description: "Vous pouvez la lier manuellement si nécessaire.",
-          });
         }
 
         return data;
@@ -134,7 +123,7 @@ export const useAutoReconcile = () => {
         setIsReconciling(false);
       }
     },
-    [workspaceId]
+    [workspaceId],
   );
 
   /**
