@@ -119,17 +119,45 @@ export default function InvoiceSettingsView({
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Synchroniser le numéro depuis le hook de numérotation
+  // Préfixe / mode pour lesquels le numéro a été synchronisé en dernier.
+  const numberSyncedForPrefixRef = useRef(null);
+  const lastAutoNumberingRef = useRef(autoNumbering);
+
+  // Synchroniser le numéro depuis le hook de numérotation.
+  // Déps limitées aux données du hook → n'agit qu'une fois la requête résolue
+  // pour le préfixe courant. Ne met à jour le champ que si la valeur change
+  // vraiment (pas d'état "numéro vide", pas de re-render inutile).
   useEffect(() => {
     if (isLoadingInvoiceNumber || nextInvoiceNumber == null) return;
     const formattedNumber = String(nextInvoiceNumber).padStart(4, "0");
 
+    // Première synchro avec un numéro déjà présent (ex: numéro de départ
+    // enregistré) → ne pas l'écraser.
+    if (numberSyncedForPrefixRef.current === null && data.number) {
+      numberSyncedForPrefixRef.current = data.prefix;
+      lastAutoNumberingRef.current = autoNumbering;
+      return;
+    }
+
+    const prefixChanged = numberSyncedForPrefixRef.current !== data.prefix;
+    const modeChanged = lastAutoNumberingRef.current !== autoNumbering;
+    numberSyncedForPrefixRef.current = data.prefix;
+    lastAutoNumberingRef.current = autoNumbering;
+
+    const setIfDifferent = () => {
+      if (data.number !== formattedNumber) {
+        setValue("number", formattedNumber, { shouldValidate: false });
+      }
+    };
+
     if (autoNumbering) {
-      // Numérotation automatique → forcer le numéro séquentiel (verrouillé)
-      setValue("number", formattedNumber, { shouldValidate: false });
-    } else if (!data.number) {
-      // Numérotation manuelle → proposer une valeur par défaut sans écraser la saisie
-      setValue("number", formattedNumber, { shouldValidate: false });
+      // Séquence continue → numéro séquentiel imposé (verrouillé)
+      setIfDifferent();
+    } else if (prefixChanged || modeChanged || !data.number) {
+      // Mode manuel : changement de préfixe (nouveau → 0001, existant → la
+      // suite), désactivation de la séquence continue, ou champ vide.
+      // Reste modifiable ensuite.
+      setIfDifferent();
     }
   }, [nextInvoiceNumber, isLoadingInvoiceNumber, autoNumbering]); // eslint-disable-line react-hooks/exhaustive-deps
 

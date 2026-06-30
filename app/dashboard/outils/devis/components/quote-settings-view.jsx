@@ -120,17 +120,42 @@ export default function QuoteSettingsView({
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Synchroniser le numéro depuis le hook de numérotation
+  // Préfixe / mode pour lesquels le numéro a été synchronisé en dernier.
+  const numberSyncedForPrefixRef = useRef(null);
+  const lastAutoNumberingRef = useRef(autoNumbering);
+
+  // Synchroniser le numéro depuis le hook de numérotation.
+  // N'agit qu'une fois la requête résolue pour le préfixe courant, et ne met à
+  // jour le champ que si la valeur change vraiment.
   useEffect(() => {
     if (isLoadingNumber || nextNumber == null) return;
     const formattedNumber = String(nextNumber).padStart(4, "0");
 
+    // Première synchro avec un numéro déjà présent → ne pas l'écraser.
+    if (numberSyncedForPrefixRef.current === null && data.number) {
+      numberSyncedForPrefixRef.current = data.prefix;
+      lastAutoNumberingRef.current = autoNumbering;
+      return;
+    }
+
+    const prefixChanged = numberSyncedForPrefixRef.current !== data.prefix;
+    const modeChanged = lastAutoNumberingRef.current !== autoNumbering;
+    numberSyncedForPrefixRef.current = data.prefix;
+    lastAutoNumberingRef.current = autoNumbering;
+
+    const setIfDifferent = () => {
+      if (data.number !== formattedNumber) {
+        setValue("number", formattedNumber, { shouldValidate: false });
+      }
+    };
+
     if (autoNumbering || perPrefixHook.hasDocumentsForPrefix) {
-      // Auto-numbering activé ou préfixe existant → forcer le numéro séquentiel
-      setValue("number", formattedNumber, { shouldValidate: false });
-    } else if (!data.number) {
-      // Nouveau préfixe, pas de numéro → proposer 0001
-      setValue("number", formattedNumber, { shouldValidate: false });
+      // Séquence continue ou préfixe existant → numéro séquentiel imposé
+      setIfDifferent();
+    } else if (prefixChanged || modeChanged || !data.number) {
+      // Mode manuel : changement de préfixe (nouveau → 0001), désactivation de
+      // la séquence continue, ou champ vide. Reste modifiable ensuite.
+      setIfDifferent();
     }
   }, [
     nextNumber,
