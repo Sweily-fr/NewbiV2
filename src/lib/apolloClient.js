@@ -524,6 +524,13 @@ const cache = new InMemoryCache({
         },
       },
     },
+    // Une occurrence de prévision n'est pas une entité : toutes les occurrences
+    // d'une même récurrence (sept., oct., …) partagent l'id du document parent.
+    // Sans keyFields: false, le cache les normalise par id et les fusionne en un
+    // seul objet → lignes dupliquées avec la même date dans « Détails prévisions ».
+    ForecastEntryItem: {
+      keyFields: false,
+    },
   },
 });
 
