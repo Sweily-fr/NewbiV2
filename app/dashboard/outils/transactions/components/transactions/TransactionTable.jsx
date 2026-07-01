@@ -264,6 +264,15 @@ export default function TransactionTable({
     );
   };
 
+  // Mettre à jour la plage de dates (début + fin) en une seule fois
+  const updateFilterRange = (filterId, startDate, endDate) => {
+    setAdvancedFilters(
+      advancedFilters.map((f) =>
+        f.id === filterId ? { ...f, startDate, endDate } : f,
+      ),
+    );
+  };
+
   // Supprimer tous les filtres
   const clearAllFilters = () => {
     setAdvancedFilters([]);
@@ -824,12 +833,8 @@ export default function TransactionTable({
     // Toujours rafraîchir les données après un upload de reçu réussi
     refetch();
 
-    if (
-      receiptData.action === "created" ||
-      receiptData.action === "auto-matched" ||
-      receiptData.action === "linked"
-    ) {
-      toast.success(`Dépense traitée avec succès`);
+    if (receiptData.action === "linked") {
+      toast.success(`Justificatif lié à la transaction`);
     } else {
       toast.success(`Reçu "${receiptData.fileName}" traité avec succès`);
     }
@@ -1383,29 +1388,40 @@ export default function TransactionTable({
 
                       {/* Valeur */}
                       {filter.field === "date" ? (
-                        <div className="flex-1 flex items-center gap-2">
+                        <div className="flex-1">
                           <Popover>
                             <PopoverTrigger asChild>
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="flex-1 justify-start text-left font-normal h-9"
+                                className="w-full justify-start text-left font-normal h-9"
                               >
-                                <CalendarIcon className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                                <CalendarIcon className="mr-2 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                                 <span
-                                  className={
+                                  className={cn(
+                                    "truncate",
                                     filter.startDate
                                       ? "text-foreground"
-                                      : "text-muted-foreground"
-                                  }
+                                      : "text-muted-foreground",
+                                  )}
                                 >
                                   {filter.startDate
-                                    ? format(
-                                        new Date(filter.startDate),
-                                        "dd MMM yyyy",
-                                        { locale: fr },
-                                      )
-                                    : "Date début"}
+                                    ? filter.endDate
+                                      ? `${format(
+                                          new Date(filter.startDate),
+                                          "dd MMM yyyy",
+                                          { locale: fr },
+                                        )} → ${format(
+                                          new Date(filter.endDate),
+                                          "dd MMM yyyy",
+                                          { locale: fr },
+                                        )}`
+                                      : format(
+                                          new Date(filter.startDate),
+                                          "dd MMM yyyy",
+                                          { locale: fr },
+                                        )
+                                    : "Sélectionner une période"}
                                 </span>
                               </Button>
                             </PopoverTrigger>
@@ -1417,74 +1433,29 @@ export default function TransactionTable({
                               collisionPadding={16}
                             >
                               <Calendar
-                                mode="single"
-                                selected={
+                                initialFocus
+                                mode="range"
+                                defaultMonth={
                                   filter.startDate
                                     ? new Date(filter.startDate)
                                     : undefined
                                 }
-                                onSelect={(date) =>
-                                  updateFilter(
-                                    filter.id,
-                                    "startDate",
-                                    date ? date.toISOString() : "",
-                                  )
-                                }
-                                locale={fr}
-                              />
-                            </PopoverContent>
-                          </Popover>
-
-                          <span className="text-muted-foreground text-xs">
-                            →
-                          </span>
-
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex-1 justify-start text-left font-normal h-9"
-                              >
-                                <CalendarIcon className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-                                <span
-                                  className={
-                                    filter.endDate
-                                      ? "text-foreground"
-                                      : "text-muted-foreground"
-                                  }
-                                >
-                                  {filter.endDate
-                                    ? format(
-                                        new Date(filter.endDate),
-                                        "dd MMM yyyy",
-                                        { locale: fr },
-                                      )
-                                    : "Date fin"}
-                                </span>
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent
-                              className="w-auto p-0"
-                              style={{ zIndex: 9999 }}
-                              align="start"
-                              side="left"
-                              collisionPadding={16}
-                            >
-                              <Calendar
-                                mode="single"
-                                selected={
-                                  filter.endDate
+                                selected={{
+                                  from: filter.startDate
+                                    ? new Date(filter.startDate)
+                                    : undefined,
+                                  to: filter.endDate
                                     ? new Date(filter.endDate)
-                                    : undefined
-                                }
-                                onSelect={(date) =>
-                                  updateFilter(
+                                    : undefined,
+                                }}
+                                onSelect={(range) =>
+                                  updateFilterRange(
                                     filter.id,
-                                    "endDate",
-                                    date ? date.toISOString() : "",
+                                    range?.from ? range.from.toISOString() : "",
+                                    range?.to ? range.to.toISOString() : "",
                                   )
                                 }
+                                numberOfMonths={2}
                                 locale={fr}
                               />
                             </PopoverContent>

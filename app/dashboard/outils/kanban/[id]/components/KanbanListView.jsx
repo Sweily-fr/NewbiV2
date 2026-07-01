@@ -1136,7 +1136,7 @@ function StatusPopoverWrapper({
     >
       <PopoverTrigger asChild ref={triggerRef}>
         <button
-          className="px-2 py-1 rounded-md flex-shrink-0 text-xs font-medium border flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
+          className="px-2 py-1 rounded-md min-w-0 max-w-full text-xs font-medium border flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
           style={{
             backgroundColor: `${column.color || "#94a3b8"}20`,
             borderColor: `${column.color || "#94a3b8"}20`,
@@ -1148,7 +1148,7 @@ function StatusPopoverWrapper({
             className="w-2 h-2 rounded-full flex-shrink-0"
             style={{ backgroundColor: column.color || "#94a3b8" }}
           />
-          <span>{column.title}</span>
+          <span className="truncate min-w-0">{column.title}</span>
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-60 p-0" side={popoverSide} align="start">

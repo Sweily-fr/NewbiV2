@@ -431,6 +431,7 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
                       canEdit={true}
                       onCancel={() => onOpenChange(false)}
                       onSave={handleSave}
+                      isGlobalSettings={true}
                     />
                   </FormProvider>
                 )}

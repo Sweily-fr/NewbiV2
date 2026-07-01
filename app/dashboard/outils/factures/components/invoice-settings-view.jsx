@@ -80,6 +80,7 @@ export default function InvoiceSettingsView({
   setValidationErrors,
   organization,
   saveLabel = "Enregistrer les modifications",
+  isGlobalSettings = false,
 }) {
   const {
     watch,
@@ -119,19 +120,53 @@ export default function InvoiceSettingsView({
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Synchroniser le numéro depuis le hook de numérotation
+  // Préfixe / mode pour lesquels le numéro a été synchronisé en dernier.
+  const numberSyncedForPrefixRef = useRef(null);
+  const lastAutoNumberingRef = useRef(autoNumbering);
+
+  // Synchroniser le numéro depuis le hook de numérotation.
+  // Déps limitées aux données du hook → n'agit qu'une fois la requête résolue
+  // pour le préfixe courant. Ne met à jour le champ que si la valeur change
+  // vraiment (pas d'état "numéro vide", pas de re-render inutile).
   useEffect(() => {
     if (isLoadingInvoiceNumber || nextInvoiceNumber == null) return;
     const formattedNumber = String(nextInvoiceNumber).padStart(4, "0");
 
+    const firstSyncWithNumber =
+      numberSyncedForPrefixRef.current === null && Boolean(data.number);
+    const prefixChanged = numberSyncedForPrefixRef.current !== data.prefix;
+    const modeChanged = lastAutoNumberingRef.current !== autoNumbering;
+    numberSyncedForPrefixRef.current = data.prefix;
+    lastAutoNumberingRef.current = autoNumbering;
+
+    const setIfDifferent = () => {
+      if (data.number !== formattedNumber) {
+        setValue("number", formattedNumber, { shouldValidate: false });
+      }
+    };
+
     if (autoNumbering) {
-      // Numérotation automatique → forcer le numéro séquentiel (verrouillé)
-      setValue("number", formattedNumber, { shouldValidate: false });
-    } else if (!data.number) {
-      // Numérotation manuelle → proposer une valeur par défaut sans écraser la saisie
-      setValue("number", formattedNumber, { shouldValidate: false });
+      // Séquence continue → numéro séquentiel imposé (verrouillé)
+      setIfDifferent();
+    } else if (isGlobalSettings && hasDocumentsForPrefix) {
+      // Paramètres généraux + préfixe existant → afficher le prochain numéro
+      // RÉEL (cohérent avec l'éditeur). Le "numéro de départ" enregistré ne
+      // s'applique qu'à un nouveau préfixe et devient périmé ensuite.
+      setIfDifferent();
+    } else if (firstSyncWithNumber) {
+      // Première synchro avec un numéro déjà présent (numéro du document dans
+      // l'éditeur, ou numéro de départ d'un nouveau préfixe) → préserver.
+    } else if (prefixChanged || modeChanged || !data.number) {
+      // Mode manuel : changement de préfixe (nouveau → 0001, existant → la
+      // suite), désactivation de la séquence continue, ou champ vide.
+      // Reste modifiable ensuite.
+      setIfDifferent();
     }
-  }, [nextInvoiceNumber, isLoadingInvoiceNumber, autoNumbering]); // eslint-disable-line react-hooks/exhaustive-deps
+    // data.number dans les deps : si le formulaire est réinitialisé en externe
+    // (ex: le modal des paramètres réécrit le numéro de départ après coup),
+    // l'effet se réapplique et reprend la main. La garde setIfDifferent évite
+    // toute boucle (aucun setValue si la valeur est déjà correcte).
+  }, [nextInvoiceNumber, isLoadingInvoiceNumber, autoNumbering, data.number]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Gérer le changement de préfixe avec auto-fill pour MM et AAAA
   const handlePrefixChange = (e) => {
@@ -173,7 +208,24 @@ export default function InvoiceSettingsView({
   const [showBankDetailsDialog, setShowBankDetailsDialog] = useState(false);
   const [organizationRefreshKey, setOrganizationRefreshKey] = useState(0);
   const [numberDuplicateError, setNumberDuplicateError] = useState(null);
+  const [numberSequenceError, setNumberSequenceError] = useState(null);
+  const [showAutoNumberingConfirm, setShowAutoNumberingConfirm] =
+    useState(false);
   const initialValuesRef = useRef(null);
+
+  // Des factures finalisées existent-elles déjà (tous préfixes confondus) ?
+  // Le hook global ne filtre pas par préfixe : hasDocumentsForPrefix = max global > 0.
+  const hasAnyFinalizedInvoice = globalHook.hasDocumentsForPrefix;
+
+  // Activation de la séquence continue : confirmation requise si des factures
+  // existent déjà (la numérotation doit rester chronologique).
+  const handleAutoNumberingChange = (checked) => {
+    if (checked && hasAnyFinalizedInvoice) {
+      setShowAutoNumberingConfirm(true);
+      return;
+    }
+    setValue("autoNumbering", checked, { shouldValidate: false });
+  };
 
   // Fonction pour rafraîchir les données de l'organisation après mise à jour
   const handleBankDetailsSuccess = async () => {
@@ -233,6 +285,10 @@ export default function InvoiceSettingsView({
   useEffect(() => {
     if (!initialValuesRef.current) {
       initialValuesRef.current = {
+        // Numérotation
+        prefix: data.prefix,
+        number: data.number,
+        autoNumbering: data.autoNumbering,
         textColor: data.appearance?.textColor,
         headerTextColor: data.appearance?.headerTextColor,
         headerBgColor: data.appearance?.headerBgColor,
@@ -260,6 +316,9 @@ export default function InvoiceSettingsView({
     if (!initialValuesRef.current) return;
 
     const hasChanges =
+      data.prefix !== initialValuesRef.current.prefix ||
+      data.number !== initialValuesRef.current.number ||
+      data.autoNumbering !== initialValuesRef.current.autoNumbering ||
       data.appearance?.textColor !== initialValuesRef.current.textColor ||
       data.appearance?.headerTextColor !==
         initialValuesRef.current.headerTextColor ||
@@ -294,6 +353,17 @@ export default function InvoiceSettingsView({
   const handleConfirmCancel = () => {
     // Restaurer les valeurs initiales avec fallback sur les valeurs par défaut
     if (initialValuesRef.current) {
+      // Numérotation : restaurer le mode AVANT préfixe/numéro pour neutraliser
+      // l'effet de resynchronisation, puis remettre le numéro initial.
+      setValue("autoNumbering", initialValuesRef.current.autoNumbering ?? false, {
+        shouldValidate: false,
+      });
+      setValue("prefix", initialValuesRef.current.prefix ?? "", {
+        shouldValidate: false,
+      });
+      setValue("number", initialValuesRef.current.number ?? "", {
+        shouldValidate: false,
+      });
       setValue(
         "appearance.textColor",
         initialValuesRef.current.textColor || "#000000",
@@ -343,6 +413,9 @@ export default function InvoiceSettingsView({
   const handleSaveClick = () => {
     // Mettre à jour les valeurs de référence après la sauvegarde
     initialValuesRef.current = {
+      prefix: data.prefix,
+      number: data.number,
+      autoNumbering: data.autoNumbering,
       textColor: data.appearance?.textColor,
       headerTextColor: data.appearance?.headerTextColor,
       headerBgColor: data.appearance?.headerBgColor,
@@ -484,11 +557,7 @@ export default function InvoiceSettingsView({
                 </div>
                 <Switch
                   checked={autoNumbering}
-                  onCheckedChange={(checked) => {
-                    setValue("autoNumbering", checked, {
-                      shouldValidate: false,
-                    });
-                  }}
+                  onCheckedChange={handleAutoNumberingChange}
                   className="data-[state=checked]:bg-[#5b4fff]"
                 />
               </div>
@@ -606,6 +675,13 @@ export default function InvoiceSettingsView({
                               });
                               if (numberDuplicateError)
                                 setNumberDuplicateError(null);
+                              // Vérifier la continuité de la séquence à la volée
+                              const seq = val
+                                ? validateInvoiceNumber(val)
+                                : { isValid: true };
+                              setNumberSequenceError(
+                                seq.isValid ? null : seq.message,
+                              );
                             }
                           : () => {}
                       }
@@ -634,21 +710,23 @@ export default function InvoiceSettingsView({
                       }
                       className={
                         canEditNumber
-                          ? numberDuplicateError
+                          ? numberDuplicateError || numberSequenceError
                             ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
                             : ""
                           : "bg-muted/50 cursor-not-allowed select-none"
                       }
                     />
-                    {numberDuplicateError && (
+                    {(numberDuplicateError || numberSequenceError) && (
                       <p className="text-xs text-destructive">
-                        {numberDuplicateError}
+                        {numberDuplicateError || numberSequenceError}
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground mt-2">
                       {autoNumbering
                         ? "Numéro attribué automatiquement — séquence continue indépendante du préfixe."
-                        : "Numérotation manuelle — vous pouvez définir le numéro de votre choix."}
+                        : hasDocumentsForPrefix
+                          ? "Numérotation par préfixe — le numéro doit suivre la séquence (sans saut)."
+                          : "Nouveau préfixe — vous pouvez choisir le numéro de départ."}
                     </p>
                   </div>
                 </div>
@@ -1148,6 +1226,45 @@ export default function InvoiceSettingsView({
             </Button>
             <Button variant="danger" onClick={handleConfirmCancel}>
               Quitter sans sauvegarder
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog de confirmation : activation de la séquence continue */}
+      <AlertDialog
+        open={showAutoNumberingConfirm}
+        onOpenChange={setShowAutoNumberingConfirm}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Activer la numérotation séquentielle continue ?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Des factures ont déjà été créées avec une numérotation par
+              préfixe. En activant la séquence continue, les numéros existants
+              restent inchangés, mais toutes les nouvelles factures suivront une
+              séquence unique, indépendante du préfixe. La numérotation doit
+              rester chronologique : cette action est irréversible pour les
+              documents déjà émis.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowAutoNumberingConfirm(false)}
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                setValue("autoNumbering", true, { shouldValidate: false });
+                setShowAutoNumberingConfirm(false);
+              }}
+            >
+              Activer la séquence continue
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

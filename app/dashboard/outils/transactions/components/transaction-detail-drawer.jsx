@@ -824,10 +824,10 @@ export function TransactionDetailDrawer({
     setReceiptViewerOpen(true);
   };
 
-  // Naviguer vers la facture liée
+  // Naviguer vers la facture liée (ouvre le panneau d'aperçu, pas l'éditeur)
   const handleViewLinkedInvoice = () => {
     if (transaction?.linkedInvoice?.id) {
-      router.push(`/dashboard/outils/factures/${transaction.linkedInvoice.id}`);
+      router.push(`/dashboard/outils/factures?id=${transaction.linkedInvoice.id}`);
       onOpenChange(false);
     }
   };

@@ -493,6 +493,9 @@ export function useSharedDocuments(filter = {}) {
   const dateTo = filter.dateTo;
   const minSize = filter.minSize;
   const maxSize = filter.maxSize;
+  // Taille de page configurable (l'arbre de gauche en demande une grande pour
+  // afficher tous les documents sans bouton « charger plus »).
+  const pageSize = filter.limit || DOCUMENTS_PER_PAGE;
 
   const { data, loading, error, refetch, fetchMore } = useQuery(
     GET_SHARED_DOCUMENTS,
@@ -510,7 +513,7 @@ export function useSharedDocuments(filter = {}) {
           minSize,
           maxSize,
         },
-        limit: DOCUMENTS_PER_PAGE,
+        limit: pageSize,
         offset: 0,
         sortBy,
         sortOrder,

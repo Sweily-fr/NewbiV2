@@ -537,13 +537,27 @@ export default function DocumentsPartagesPage() {
     tags: filterTags.length > 0 ? filterTags : undefined,
   });
 
-  // Tous les documents (pour le tree)
+  // Tous les documents (pour le tree). L'arbre n'a pas de bouton « charger
+  // plus » : il doit donc récupérer tous les documents en une fois. La requête
+  // par défaut était plafonnée à 50, ce qui masquait les documents les plus
+  // anciens (au-delà de la 1re page) dans l'arbre. On demande une grande page,
+  // puis on draine les éventuelles pages suivantes pour vraiment tout afficher.
   const {
     documents: allDocuments,
     loading: allDocsLoading,
     isInitialLoading: allDocsInitialLoading,
+    hasMore: allDocsHasMore,
+    loadMore: loadMoreAllDocs,
     refetch: refetchAllDocs,
-  } = useSharedDocuments({});
+  } = useSharedDocuments({ limit: 1000 });
+
+  // Filet de sécurité au cas (rare) où il y aurait plus de 1000 documents :
+  // on charge automatiquement les pages restantes, sans bouton.
+  useEffect(() => {
+    if (allDocsHasMore && !allDocsLoading) {
+      loadMoreAllDocs();
+    }
+  }, [allDocsHasMore, allDocsLoading, loadMoreAllDocs]);
 
   // L'arbre de gauche (tous les fichiers) a des variables fixes : il ne se
   // relance jamais tout seul. Les automatisations s'exécutant côté serveur
@@ -566,6 +580,63 @@ export default function DocumentsPartagesPage() {
     isRefetching: foldersRefetching,
     refetch: refetchFolders,
   } = useSharedFolders();
+
+  // documentsCount des dossiers est calculé côté serveur (cache-and-network)
+  // et ne se rafraîchit pas tout seul. Sans ça, déplacer/classer un fichier
+  // laisse les cartes de sous-dossiers sur un compteur figé (ex. « 0 fichier »
+  // alors que le dossier en contient). On resynchronise à chaque navigation.
+  const isFirstFolderCountSync = useRef(true);
+  useEffect(() => {
+    if (isFirstFolderCountSync.current) {
+      isFirstFolderCountSync.current = false;
+      return; // la requête initiale se charge déjà toute seule
+    }
+    refetchFolders();
+  }, [selectedFolder, refetchFolders]);
+
+  // Navigation dossier <-> historique navigateur : permet de revenir au
+  // dossier précédent avec le bouton « précédent » ou le swipe à deux doigts
+  // (qui déclenchent un popstate). On stocke le dossier courant dans
+  // history.state sans toucher à l'URL, en préservant l'état du router Next.
+  const historyInitRef = useRef(false);
+  const skipHistoryPushRef = useRef(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const baseState = window.history.state || {};
+    if (!historyInitRef.current) {
+      // Première fois : on ancre le dossier courant sur l'entrée existante
+      historyInitRef.current = true;
+      window.history.replaceState(
+        { ...baseState, sharedFolderId: selectedFolder },
+        "",
+      );
+      return;
+    }
+    if (skipHistoryPushRef.current) {
+      // Changement déclenché par un retour/avance : ne pas ré-empiler
+      skipHistoryPushRef.current = false;
+      return;
+    }
+    window.history.pushState(
+      { ...baseState, sharedFolderId: selectedFolder },
+      "",
+    );
+  }, [selectedFolder]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onPopState = (event) => {
+      const state = event.state;
+      // N'agir que sur nos propres entrées d'historique
+      if (!state || !("sharedFolderId" in state)) return;
+      skipHistoryPushRef.current = true;
+      setShowTrash(false);
+      setSelectedFolder(state.sharedFolderId ?? null);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
   const { stats, loading: statsLoading } = useSharedDocumentsStats();
   const { upload, loading: uploadLoading } = useUploadSharedDocument();
   const { move, loading: moveLoading } = useMoveSharedDocuments();
@@ -1673,6 +1744,34 @@ export default function DocumentsPartagesPage() {
 
     return path;
   }, [selectedFolder, folders]);
+
+  // Sous-dossiers du dossier courant (affichés dans la zone de droite pour
+  // permettre la navigation au clic, comme un explorateur de fichiers).
+  // selectedFolder === null = racine "Documents à classer" → dossiers racine.
+  const currentSubfolders = useMemo(() => {
+    return folders
+      .filter((f) => (f.parentId || null) === selectedFolder)
+      .sort(
+        (a, b) =>
+          (a.order ?? 0) - (b.order ?? 0) ||
+          (a.name || "").localeCompare(b.name || ""),
+      );
+  }, [folders, selectedFolder]);
+
+  // On masque les sous-dossiers pendant une recherche : les résultats sont
+  // alors filtrés côté serveur sur les documents uniquement.
+  const showSubfolders = !debouncedSearch && currentSubfolders.length > 0;
+
+  // Nombre de sous-dossiers directs par dossier (pour afficher « X dossiers »
+  // sur les cartes). Le nombre de fichiers vient de folder.documentsCount.
+  const subfolderCountByParent = useMemo(() => {
+    const counts = new Map();
+    for (const f of folders) {
+      const parent = f.parentId || null;
+      counts.set(parent, (counts.get(parent) || 0) + 1);
+    }
+    return counts;
+  }, [folders]);
 
   // Toggle sort
   const handleSort = (field) => {
@@ -3482,6 +3581,62 @@ export default function DocumentsPartagesPage() {
                       </div>
                     )}
 
+                  {/* Sous-dossiers : navigation au clic */}
+                  {showSubfolders && (
+                    <div className="px-2 sm:px-4 pt-3 pb-2">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                        Dossiers
+                      </p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                        {currentSubfolders.map((folder) => (
+                          <button
+                            key={folder.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedFolder(folder.id);
+                              setShowTrash(false);
+                              setSelectedDocuments([]);
+                            }}
+                            className="group flex items-center gap-2 border rounded-lg px-3 py-2.5 text-left hover:border-[#5b4eff]/50 hover:bg-accent/40 transition-all min-w-0"
+                          >
+                            <FolderClosed
+                              className="h-5 w-5 shrink-0"
+                              style={{
+                                color: folder.color || "currentColor",
+                                opacity: 0.8,
+                              }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-normal truncate">
+                                {folder.name}
+                              </p>
+                              {(() => {
+                                const folderCount =
+                                  subfolderCountByParent.get(folder.id) || 0;
+                                const fileCount = folder.documentsCount || 0;
+                                const parts = [];
+                                if (folderCount > 0) {
+                                  parts.push(
+                                    `${folderCount} dossier${folderCount > 1 ? "s" : ""}`,
+                                  );
+                                }
+                                parts.push(
+                                  `${fileCount} fichier${fileCount > 1 ? "s" : ""}`,
+                                );
+                                return (
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    {parts.join(" · ")}
+                                  </p>
+                                );
+                              })()}
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground/50 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {docsInitialLoading ? (
                     <div className="space-y-2 p-2 sm:p-4">
                       {[1, 2, 3, 4, 5].map((i) => (
@@ -3489,14 +3644,16 @@ export default function DocumentsPartagesPage() {
                       ))}
                     </div>
                   ) : filteredDocuments.length === 0 ? (
-                    <div className="h-full min-h-[400px] flex items-center justify-center">
-                      <div className="flex flex-col items-center gap-2 text-muted-foreground/60">
-                        <FileText className="h-5 w-5" />
-                        <p className="text-sm">
-                          {searchQuery ? "Aucun résultat" : "Aucun document"}
-                        </p>
+                    showSubfolders ? null : (
+                      <div className="h-full min-h-[400px] flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-2 text-muted-foreground/60">
+                          <FileText className="h-5 w-5" />
+                          <p className="text-sm">
+                            {searchQuery ? "Aucun résultat" : "Aucun document"}
+                          </p>
+                        </div>
                       </div>
-                    </div>
+                    )
                   ) : viewMode === "list" ? (
                     /* Vue liste */
                     <div>

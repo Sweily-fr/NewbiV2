@@ -24,6 +24,12 @@ import {
   Plus,
 } from "lucide-react";
 import { ManualEntryDialog } from "./components/manual-entry-dialog";
+import { Calendar } from "@/src/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,7 +50,40 @@ const PERIOD_OPTIONS = [
   { value: "6", label: "6 mois" },
   { value: "12", label: "12 mois" },
   { value: "24", label: "24 mois" },
+  { value: "custom", label: "Période personnalisée" },
 ];
+
+const currentMonthStr = () => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+};
+
+// Nombre de mois inclus entre deux clés "YYYY-MM" (>= 1).
+const monthSpan = (startStr, endStr) => {
+  const [sy, sm] = startStr.split("-").map(Number);
+  const [ey, em] = endStr.split("-").map(Number);
+  return (ey - sy) * 12 + (em - sm) + 1;
+};
+
+// Ajoute n mois (n peut être négatif) à une clé "YYYY-MM".
+const addMonths = (monthStr, n) => {
+  const [y, m] = monthStr.split("-").map(Number);
+  const d = new Date(y, m - 1 + n, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+};
+
+// Plage personnalisée : les bornes sont des dates "YYYY-MM-DD", mais le
+// prévisionnel raisonne par mois — on dérive donc le mois (YYYY-MM) de chaque
+// borne, puis on plafonne par l'horizon autorisé du plan (maxMonths).
+const getCustomRange = (customStart, customEnd, maxMonths) => {
+  let startStr = (customStart || "").slice(0, 7) || currentMonthStr();
+  let endStr = (customEnd || "").slice(0, 7) || startStr;
+  if (endStr < startStr) endStr = startStr;
+  if (maxMonths > 0 && monthSpan(startStr, endStr) > maxMonths) {
+    endStr = addMonths(startStr, maxMonths - 1);
+  }
+  return { startDate: startStr, endDate: endStr };
+};
 
 const getDateRange = (periodMonths) => {
   const now = new Date();
@@ -68,6 +107,63 @@ const getDateRange = (periodMonths) => {
   return { startDate: startStr, endDate: endStr };
 };
 
+const parseYMD = (s) => (s ? new Date(s + "T00:00:00") : undefined);
+const toYMD = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate(),
+  ).padStart(2, "0")}`;
+
+// Sélecteur de PLAGE (début + fin) en un seul calendrier (mode "range"),
+// cohérent avec les autres filtres calendrier de la plateforme. Bornes
+// "YYYY-MM-DD" ; la fin ≥ le début est garantie par le mode range.
+function DateRangeFilterButton({ start, end, onChange }) {
+  const [open, setOpen] = useState(false);
+  const startD = parseYMD(start);
+  const endD = parseYMD(end);
+  const fmt = (d) =>
+    d.toLocaleDateString("fr-FR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  const label =
+    startD && endD
+      ? `du ${fmt(startD)} au ${fmt(endD)}`
+      : startD
+        ? `à partir du ${fmt(startD)}`
+        : "Choisir une période";
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-foreground font-medium hover:bg-muted/50 transition-colors cursor-pointer"
+        >
+          {label}
+          <ChevronDown size={12} className="opacity-50" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar
+          mode="range"
+          captionLayout="dropdown"
+          startMonth={new Date(2015, 0)}
+          endMonth={new Date(new Date().getFullYear() + 10, 11)}
+          defaultMonth={startD}
+          numberOfMonths={2}
+          selected={{ from: startD, to: endD }}
+          onSelect={(range) =>
+            onChange(
+              range?.from ? toYMD(range.from) : "",
+              range?.to ? toYMD(range.to) : "",
+            )
+          }
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export default function PrevisionPage() {
   const { workspaceId } = useRequiredWorkspace();
   const { subscription } = useSubscription();
@@ -84,6 +180,13 @@ export default function PrevisionPage() {
         : "6";
 
   const [period, setPeriod] = useState(defaultPeriod);
+  const [customStart, setCustomStart] = useState(`${currentMonthStr()}-01`);
+  const [customEnd, setCustomEnd] = useState(
+    `${addMonths(
+      currentMonthStr(),
+      Math.max(0, parseInt(defaultPeriod) - 1) || 5,
+    )}-01`,
+  );
   const [accountFilter, setAccountFilter] = useState("all");
   const [exportOpen, setExportOpen] = useState(false);
   const [manualEntryOpen, setManualEntryOpen] = useState(false);
@@ -96,8 +199,11 @@ export default function PrevisionPage() {
   };
 
   const { startDate, endDate } = useMemo(
-    () => getDateRange(parseInt(period)),
-    [period],
+    () =>
+      period === "custom"
+        ? getCustomRange(customStart, customEnd, maxPeriod)
+        : getDateRange(parseInt(period)),
+    [period, customStart, customEnd, maxPeriod],
   );
 
   const { data: bankData } = useQuery(GET_BANKING_ACCOUNTS, {
@@ -313,6 +419,36 @@ export default function PrevisionPage() {
               })}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* Bornes de la période personnalisée */}
+          {period === "custom" && (
+            <div className="flex items-center gap-1 ml-1">
+              <DateRangeFilterButton
+                start={customStart}
+                end={customEnd}
+                onChange={(s, e) => {
+                  setCustomStart(s);
+                  setCustomEnd(e);
+                }}
+              />
+              {maxPeriod > 0 &&
+                monthSpan(customStart.slice(0, 7), customEnd.slice(0, 7)) >
+                  maxPeriod && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Lock
+                        size={12}
+                        className="text-muted-foreground ml-0.5"
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Horizon limité à {maxPeriod} mois sur votre plan — la fin
+                      est ramenée en conséquence.
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -432,6 +568,8 @@ export default function PrevisionPage() {
         }}
         entry={null}
         defaults={manualEntryDefaults}
+        rangeStart={startDate}
+        rangeEnd={endDate}
       />
     </div>
   );

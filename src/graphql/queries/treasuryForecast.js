@@ -79,6 +79,37 @@ export const GET_FORECAST_MONTH_DETAILS = gql`
         date
         category
       }
+      forecastEntries {
+        id
+        kind
+        name
+        category
+        type
+        amount
+        date
+      }
+    }
+  }
+`;
+
+export const GET_FORECAST_OCCURRENCES = gql`
+  query GetForecastOccurrences(
+    $workspaceId: ID
+    $startMonth: String!
+    $endMonth: String!
+  ) {
+    forecastOccurrences(
+      workspaceId: $workspaceId
+      startMonth: $startMonth
+      endMonth: $endMonth
+    ) {
+      id
+      kind
+      name
+      category
+      type
+      amount
+      date
     }
   }
 `;
