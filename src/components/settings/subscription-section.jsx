@@ -23,74 +23,19 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import { cn } from "@/src/lib/utils";
-import { PLANS_DISPLAY, getAnnualTotalAmount } from "@/src/lib/plans-display";
+import {
+  PLANS_DISPLAY,
+  PLAN_FEATURES_SECTIONS,
+  getAnnualTotalAmount,
+} from "@/src/lib/plans-display";
 
-// Features (comparatif) sont spécifiques à ce composant — prix et label
-// dérivés du module central (plans-display.js) pour garantir la cohérence
-// avec landing/pricing-modal/workspace/signup. Le `annualTotal` est calculé
-// (× 12) — plus jamais écrit en dur.
+// Prix, labels ET matrice de features dérivés du module central
+// (plans-display.js) — même comparatif que la landing (#pricing).
+// Le `annualTotal` est calculé (× 12) — plus jamais écrit en dur.
 const PLAN_UI_EXTRA = {
-  freelance: {
-    description: "Parfait pour les indépendants et freelances",
-    features: {
-      users: "1 utilisateur",
-      accountants: "1 accès comptable gratuit",
-      extraUsers: false,
-      invoicing: true,
-      autoReminders: false,
-      ocr: "20 reçus/mois",
-      bankAccounts: "1 compte",
-      cashFlow: true,
-      projects: true,
-      signatures: "1 signature",
-      fileTransfer: "5 Go",
-      crm: true,
-      catalog: true,
-      prioritySupport: false,
-      api: false,
-    },
-  },
-  pme: {
-    popular: true,
-    description: "Idéal pour les petites et moyennes entreprises",
-    features: {
-      users: "Jusqu'à 10",
-      accountants: "3 accès comptables gratuits",
-      extraUsers: "7,49 €/utilisateur",
-      invoicing: true,
-      autoReminders: true,
-      ocr: "Illimité",
-      bankAccounts: "3 comptes",
-      cashFlow: true,
-      projects: true,
-      signatures: "10 signatures",
-      fileTransfer: "15 Go",
-      crm: true,
-      catalog: true,
-      prioritySupport: true,
-      api: true,
-    },
-  },
-  entreprise: {
-    description: "Pour les grandes structures avec des besoins avancés",
-    features: {
-      users: "Jusqu'à 25",
-      accountants: "5 accès comptables gratuits",
-      extraUsers: "5,99 €/utilisateur",
-      invoicing: true,
-      autoReminders: true,
-      ocr: "Illimité",
-      bankAccounts: "5 comptes",
-      cashFlow: true,
-      projects: true,
-      signatures: "25 signatures",
-      fileTransfer: "50 Go",
-      crm: true,
-      catalog: true,
-      prioritySupport: true,
-      api: true,
-    },
-  },
+  freelance: {},
+  pme: { popular: true },
+  entreprise: {},
 };
 
 const PLANS_CONFIG = PLANS_DISPLAY.map((p) => ({
@@ -101,24 +46,6 @@ const PLANS_CONFIG = PLANS_DISPLAY.map((p) => ({
   annualTotal: getAnnualTotalAmount(p),
   ...PLAN_UI_EXTRA[p.key],
 }));
-
-const COMPARISON_ROWS = [
-  { key: "users", label: "Utilisateurs" },
-  { key: "accountants", label: "Accès comptables gratuits" },
-  { key: "extraUsers", label: "Utilisateurs supplémentaires" },
-  { key: "invoicing", label: "Facturation & Devis" },
-  { key: "autoReminders", label: "Relances automatiques" },
-  { key: "ocr", label: "OCR des reçus" },
-  { key: "bankAccounts", label: "Connexion bancaire" },
-  { key: "cashFlow", label: "Gestion de trésorerie" },
-  { key: "projects", label: "Gestion des projets" },
-  { key: "signatures", label: "Signatures email" },
-  { key: "fileTransfer", label: "Transfert de fichier" },
-  { key: "crm", label: "CRM client" },
-  { key: "catalog", label: "Catalogue" },
-  { key: "prioritySupport", label: "Support prioritaire" },
-  { key: "api", label: "Accès API" },
-];
 
 export function SubscriptionSection({
   canManageSubscription: canManageSubscriptionProp,
@@ -603,7 +530,7 @@ export function SubscriptionSection({
                       ? currentPlanConfig.annualPrice
                       : currentPlanConfig.monthlyPrice,
                   )}{" "}
-                  €/mois
+                  €/mois TTC
                   {isAnnual
                     ? ", facturé annuellement"
                     : ", facturé mensuellement"}
@@ -652,8 +579,20 @@ export function SubscriptionSection({
                   Trouvez le plan adapté
                 </p>
               </div>
-              {/* Toggle */}
+              {/* Toggle — même ordre que la landing : Mensuel puis Annuel */}
               <div className="inline-flex items-center rounded-lg border border-gray-200 dark:border-[#2c2c2c] p-0.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setIsAnnual(false)}
+                  className={cn(
+                    "px-2.5 py-1 rounded-md cursor-pointer transition-colors",
+                    !isAnnual
+                      ? "bg-white dark:bg-[#2c2c2c] font-medium"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  Mensuel
+                </button>
                 <button
                   type="button"
                   onClick={() => setIsAnnual(true)}
@@ -668,18 +607,6 @@ export function SubscriptionSection({
                   <span className="text-[10px] text-[#5b50fe] bg-[#5b50fe]/10 rounded px-1 py-0.5 font-medium">
                     -10%
                   </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsAnnual(false)}
-                  className={cn(
-                    "px-2.5 py-1 rounded-md cursor-pointer transition-colors",
-                    !isAnnual
-                      ? "bg-white dark:bg-[#2c2c2c] font-medium"
-                      : "text-muted-foreground",
-                  )}
-                >
-                  Mensuel
                 </button>
               </div>
             </div>
@@ -711,20 +638,21 @@ export function SubscriptionSection({
                     )}
                   </div>
 
-                  {/* Price */}
+                  {/* Price — même format que la landing : "17,99€ /mois, TTC"
+                      + total annuel calculé quand le cycle annuel est actif */}
                   <div className="mt-3">
                     <div className="flex items-baseline">
                       <span className="text-2xl font-semibold tabular-nums">
-                        €{formatPrice(price)}
+                        {formatPrice(price)}€
                       </span>
                       <span className="text-xs text-muted-foreground ml-1">
-                        /mois
+                        /mois, TTC
                       </span>
                     </div>
                     <p className="text-[11px] text-muted-foreground">
                       {isAnnual
-                        ? "facturé annuellement"
-                        : "facturé mensuellement"}
+                        ? `facturé ${formatPrice(plan.annualTotal)}€/an`
+                        : " "}
                     </p>
                   </div>
 
@@ -771,66 +699,72 @@ export function SubscriptionSection({
             })}
           </div>
 
-          {/* Comparison Rows */}
+          {/* Comparison Rows — sections partagées avec la landing (#pricing) */}
           <div className="relative before:content-[''] before:absolute before:top-0 before:left-4 before:right-4 before:h-px before:bg-gray-200 dark:before:bg-[#2c2c2c]">
-            {/* Section title */}
-            <div className="grid grid-cols-[1.2fr_1fr_1fr_1fr] relative after:content-[''] after:absolute after:bottom-0 after:left-4 after:right-4 after:h-px after:bg-gray-200 dark:after:bg-[#2c2c2c]">
-              <div className="px-4 py-2 bg-[#FBFBFB] dark:bg-[#111111] border-r border-gray-200 dark:border-[#2c2c2c]">
-                <p className="text-xs font-semibold">Fonctionnalités</p>
-              </div>
-              {PLANS_CONFIG.map((plan) => {
-                const isCurrentPlan = subscription?.plan === plan.key;
-                return (
-                  <div
-                    key={plan.key}
-                    className={cn(
-                      "px-4 py-2",
-                      isCurrentPlan &&
-                        "bg-[#5b50fe]/[0.02] dark:bg-[#5b50fe]/5",
-                    )}
-                  />
-                );
-              })}
-            </div>
-
-            {/* Feature rows */}
-            {COMPARISON_ROWS.map((row, index) => (
-              <div
-                key={row.key}
-                className={cn(
-                  "grid grid-cols-[1.2fr_1fr_1fr_1fr]",
-                  index < COMPARISON_ROWS.length - 1 &&
-                    "relative after:content-[''] after:absolute after:bottom-0 after:left-4 after:right-4 after:h-px after:bg-gray-100 dark:after:bg-[#2c2c2c]",
-                )}
-              >
-                <div className="px-4 py-2.5 bg-[#FBFBFB] dark:bg-[#111111] border-r border-gray-200 dark:border-[#2c2c2c]">
-                  <span className="text-xs text-muted-foreground">
-                    {row.label}
-                  </span>
+            {PLAN_FEATURES_SECTIONS.map((section) => (
+              <React.Fragment key={section.title}>
+                {/* Section title */}
+                <div className="grid grid-cols-[1.2fr_1fr_1fr_1fr] relative after:content-[''] after:absolute after:bottom-0 after:left-4 after:right-4 after:h-px after:bg-gray-200 dark:after:bg-[#2c2c2c]">
+                  <div className="px-4 py-2 bg-[#FBFBFB] dark:bg-[#111111] border-r border-gray-200 dark:border-[#2c2c2c]">
+                    <p className="text-xs font-semibold">{section.title}</p>
+                  </div>
+                  {PLANS_CONFIG.map((plan) => {
+                    const isCurrentPlan = subscription?.plan === plan.key;
+                    return (
+                      <div
+                        key={plan.key}
+                        className={cn(
+                          "px-4 py-2",
+                          isCurrentPlan &&
+                            "bg-[#5b50fe]/[0.02] dark:bg-[#5b50fe]/5",
+                        )}
+                      />
+                    );
+                  })}
                 </div>
-                {PLANS_CONFIG.map((plan) => {
-                  const isCurrentPlan = subscription?.plan === plan.key;
-                  const value = plan.features[row.key];
-                  return (
-                    <div
-                      key={plan.key}
-                      className={cn(
-                        "px-4 py-2.5 flex items-center",
-                        isCurrentPlan &&
-                          "bg-[#5b50fe]/[0.02] dark:bg-[#5b50fe]/5",
-                      )}
-                    >
-                      {value === true ? (
-                        <Check className="h-3.5 w-3.5 text-[#5b50fe]" />
-                      ) : value === false ? (
-                        <X className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600" />
-                      ) : (
-                        <span className="text-xs font-medium">{value}</span>
-                      )}
+
+                {/* Feature rows */}
+                {section.features.map((feature, index) => (
+                  <div
+                    key={feature.name}
+                    className={cn(
+                      "grid grid-cols-[1.2fr_1fr_1fr_1fr]",
+                      index < section.features.length - 1 &&
+                        "relative after:content-[''] after:absolute after:bottom-0 after:left-4 after:right-4 after:h-px after:bg-gray-100 dark:after:bg-[#2c2c2c]",
+                    )}
+                  >
+                    <div className="px-4 py-2.5 bg-[#FBFBFB] dark:bg-[#111111] border-r border-gray-200 dark:border-[#2c2c2c]">
+                      <span className="text-xs text-muted-foreground">
+                        {feature.name}
+                      </span>
                     </div>
-                  );
-                })}
-              </div>
+                    {PLANS_CONFIG.map((plan) => {
+                      const isCurrentPlan = subscription?.plan === plan.key;
+                      const value = feature[plan.key];
+                      return (
+                        <div
+                          key={plan.key}
+                          className={cn(
+                            "px-4 py-2.5 flex items-center",
+                            isCurrentPlan &&
+                              "bg-[#5b50fe]/[0.02] dark:bg-[#5b50fe]/5",
+                          )}
+                        >
+                          {value === true ? (
+                            <Check className="h-3.5 w-3.5 text-[#5b50fe]" />
+                          ) : value === false ? (
+                            <X className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600" />
+                          ) : (
+                            <span className="text-xs font-medium">
+                              {value}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </React.Fragment>
             ))}
           </div>
         </div>
