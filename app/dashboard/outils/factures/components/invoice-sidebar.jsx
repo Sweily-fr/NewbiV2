@@ -504,9 +504,9 @@ export default function InvoiceSidebar({
       // toast.success("Facture créée avec succès");
       if (onRefetch) onRefetch();
     } catch (error) {
-      // L'erreur est gérée par errorLink dans apolloClient.js
-      // qui affiche automatiquement le message du backend
+      // errorLink ne toaste pas les mutations : afficher l'erreur ici
       console.error("Erreur lors du changement de statut:", error);
+      toast.error(error?.message || "Erreur lors de la création de la facture");
     }
   };
 
