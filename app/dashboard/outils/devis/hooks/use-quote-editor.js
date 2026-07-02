@@ -600,7 +600,7 @@ export function useQuoteEditor({
             }
 
             // Vérifier le texte d'exonération de TVA si la TVA est à 0% (sauf en auto-liquidation)
-            const vatRate = parseFloat(item.vatRate) || 0;
+            const vatRate = parseFloat(item.vatRate || item.taxRate) || 0;
             if (vatRate === 0 && !formData.isReverseCharge) {
               const vatExemptionText = item.vatExemptionText;
               if (
@@ -1366,14 +1366,22 @@ export function useQuoteEditor({
           };
         }
 
-        // Validation des informations entreprise
-        if (
-          !currentFormData.companyInfo?.name ||
-          !currentFormData.companyInfo?.email
-        ) {
+        // Validation des informations entreprise.
+        // Source de vérité = l'organisation : le backend résout/snapshot
+        // companyInfo depuis l'organisation à la finalisation (le formulaire
+        // n'envoie pas companyInfo). On ne bloque donc que si NI le formulaire
+        // NI l'organisation chargée n'ont le nom + l'email — évite un faux
+        // blocage quand companyInfo n'a pas encore été rempli dans le formulaire
+        // alors que l'entreprise EST bien configurée.
+        const hasCompanyInfo =
+          (currentFormData.companyInfo?.name &&
+            currentFormData.companyInfo?.email) ||
+          (organization?.companyName && organization?.companyEmail);
+        if (!hasCompanyInfo) {
           errors.companyInfo = {
-            message: "Les informations de l'entreprise sont incomplètes",
-            canEdit: false,
+            message:
+              "Les informations de votre entreprise (nom et email) ne sont pas configurées. Renseignez-les dans les paramètres de l'entreprise.",
+            canEdit: true,
           };
         }
 
@@ -1450,7 +1458,7 @@ export function useQuoteEditor({
             }
 
             // Vérifier le texte d'exonération de TVA si la TVA est à 0% (sauf en auto-liquidation)
-            const vatRate = parseFloat(item.vatRate) || 0;
+            const vatRate = parseFloat(item.vatRate || item.taxRate) || 0;
             if (vatRate === 0 && !formData.isReverseCharge) {
               const vatExemptionText = item.vatExemptionText;
               if (
@@ -1603,6 +1611,9 @@ export function useQuoteEditor({
 
         if (Object.keys(errors).length > 0) {
           setValidationErrors(errors);
+          toast.error("Le brouillon n'a pas pu être enregistré", {
+            description: buildValidationReasons(errors),
+          });
           setSaving(false);
           return false;
         }
@@ -1616,30 +1627,47 @@ export function useQuoteEditor({
           session,
           existingQuote,
         );
-        input.status = "DRAFT";
+        // Ne pas rétrograder un devis déjà finalisé : "enregistrer" sur un
+        // devis PENDING sauvegarde le contenu en conservant son statut. Seuls
+        // les nouveaux documents et les brouillons restent/passent en DRAFT.
+        // (Le backend rejette désormais toute rétrogradation via updateQuote.)
+        input.status =
+          existingQuote?.status && existingQuote.status !== "DRAFT"
+            ? existingQuote.status
+            : "DRAFT";
 
         let result;
         if (mode === "create" || !quoteId) {
           result = await createQuote(input);
 
-          if (result?.id) {
-            posthog.capture("quote_created", {
-              client_name: input.client?.name,
-              currency: input.currency,
-              status: "DRAFT",
-            });
-            // Mettre à jour le numéro dans le formulaire avec celui retourné par le backend
-            if (result.number) {
-              setValue("number", result.number);
-            }
+          if (!result?.id) {
+            // Échec silencieux (mutation résolue sans données) : ne surtout
+            // pas afficher de succès ni rediriger
+            return false;
+          }
 
-            if (!isAutoSave) {
-              toast.success("Brouillon sauvegardé");
-              router.push("/dashboard/outils/devis");
-            }
+          posthog.capture("quote_created", {
+            client_name: input.client?.name,
+            currency: input.currency,
+            status: "DRAFT",
+          });
+          // Mettre à jour le numéro dans le formulaire avec celui retourné par le backend
+          if (result.number) {
+            setValue("number", result.number);
+          }
+
+          if (!isAutoSave) {
+            toast.success("Brouillon sauvegardé");
+            router.push("/dashboard/outils/devis");
           }
         } else {
           result = await updateQuote(quoteId, input);
+
+          if (!result?.id) {
+            // Échec silencieux (mutation résolue sans données) : ne surtout
+            // pas afficher de succès ni rediriger
+            return false;
+          }
 
           if (!isAutoSave) {
             toast.success("Brouillon sauvegardé");
@@ -1668,6 +1696,7 @@ export function useQuoteEditor({
       router,
       session,
       handleError,
+      organization,
     ],
   );
 
@@ -1689,14 +1718,22 @@ export function useQuoteEditor({
           };
         }
 
-        // Validation des informations entreprise
-        if (
-          !currentFormData.companyInfo?.name ||
-          !currentFormData.companyInfo?.email
-        ) {
+        // Validation des informations entreprise.
+        // Source de vérité = l'organisation : le backend résout/snapshot
+        // companyInfo depuis l'organisation à la finalisation (le formulaire
+        // n'envoie pas companyInfo). On ne bloque donc que si NI le formulaire
+        // NI l'organisation chargée n'ont le nom + l'email — évite un faux
+        // blocage quand companyInfo n'a pas encore été rempli dans le formulaire
+        // alors que l'entreprise EST bien configurée.
+        const hasCompanyInfo =
+          (currentFormData.companyInfo?.name &&
+            currentFormData.companyInfo?.email) ||
+          (organization?.companyName && organization?.companyEmail);
+        if (!hasCompanyInfo) {
           errors.companyInfo = {
-            message: "Les informations de l'entreprise sont incomplètes",
-            canEdit: false,
+            message:
+              "Les informations de votre entreprise (nom et email) ne sont pas configurées. Renseignez-les dans les paramètres de l'entreprise.",
+            canEdit: true,
           };
         }
 
@@ -1773,7 +1810,7 @@ export function useQuoteEditor({
             }
 
             // Vérifier le texte d'exonération de TVA si la TVA est à 0% (sauf en auto-liquidation)
-            const vatRate = parseFloat(item.vatRate) || 0;
+            const vatRate = parseFloat(item.vatRate || item.taxRate) || 0;
             if (vatRate === 0 && !formData.isReverseCharge) {
               const vatExemptionText = item.vatExemptionText;
               if (
@@ -1926,7 +1963,9 @@ export function useQuoteEditor({
 
         if (Object.keys(errors).length > 0) {
           setValidationErrors(errors);
-          toast.error("Veuillez corriger les erreurs avant de créer le devis");
+          toast.error("Le devis n'a pas pu être créé", {
+            description: buildValidationReasons(errors),
+          });
           setSaving(false);
           return;
         }
@@ -1978,6 +2017,9 @@ export function useQuoteEditor({
             isNewQuote: !existingQuote?.id,
           };
         }
+
+        // Mutation résolue sans données : traiter comme un échec
+        return { success: false };
       } catch (error) {
         handleError(error, "quote");
         return { success: false };
@@ -1994,6 +2036,7 @@ export function useQuoteEditor({
       router,
       session,
       handleError,
+      organization,
     ],
   );
 
@@ -2129,6 +2172,17 @@ export function useQuoteEditor({
     quote: existingQuote,
     error: loadingQuote ? null : !existingQuote && mode !== "create",
   };
+}
+
+// Construit un texte lisible listant les raisons de blocage de validation,
+// à partir de l'objet `errors` ({ champ: { message } }). Utilisé comme
+// description du toast pour dire précisément POURQUOI le document est bloqué.
+function buildValidationReasons(errors) {
+  const messages = Object.values(errors || {})
+    .map((e) => (typeof e === "string" ? e : e?.message))
+    .filter(Boolean);
+  if (messages.length === 0) return "Veuillez vérifier les informations saisies.";
+  return messages.map((m) => `• ${m}`).join("\n");
 }
 
 // Helper functions

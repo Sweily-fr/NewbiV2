@@ -592,7 +592,7 @@ export function usePurchaseOrderEditor({
             }
 
             // Vérifier le texte d'exonération de TVA si la TVA est à 0% (sauf en auto-liquidation)
-            const vatRate = parseFloat(item.vatRate) || 0;
+            const vatRate = parseFloat(item.vatRate || item.taxRate) || 0;
             if (vatRate === 0 && !formData.isReverseCharge) {
               const vatExemptionText = item.vatExemptionText;
               if (
@@ -1408,14 +1408,22 @@ export function usePurchaseOrderEditor({
           };
         }
 
-        // Validation des informations entreprise
-        if (
-          !currentFormData.companyInfo?.name ||
-          !currentFormData.companyInfo?.email
-        ) {
+        // Validation des informations entreprise.
+        // Source de vérité = l'organisation : le backend résout/snapshot
+        // companyInfo depuis l'organisation à la finalisation (le formulaire
+        // n'envoie pas companyInfo). On ne bloque que si NI le formulaire NI
+        // l'organisation chargée n'ont le nom + l'email — évite un faux blocage
+        // quand le formulaire n'est pas encore rempli alors que l'entreprise
+        // EST bien configurée.
+        const hasCompanyInfo =
+          (currentFormData.companyInfo?.name &&
+            currentFormData.companyInfo?.email) ||
+          (organization?.companyName && organization?.companyEmail);
+        if (!hasCompanyInfo) {
           errors.companyInfo = {
-            message: "Les informations de l'entreprise sont incomplètes",
-            canEdit: false,
+            message:
+              "Les informations de votre entreprise (nom et email) ne sont pas configurées. Renseignez-les dans les paramètres de l'entreprise.",
+            canEdit: true,
           };
         }
 
@@ -1492,7 +1500,7 @@ export function usePurchaseOrderEditor({
             }
 
             // Vérifier le texte d'exonération de TVA si la TVA est à 0% (sauf en auto-liquidation)
-            const vatRate = parseFloat(item.vatRate) || 0;
+            const vatRate = parseFloat(item.vatRate || item.taxRate) || 0;
             if (vatRate === 0 && !formData.isReverseCharge) {
               const vatExemptionText = item.vatExemptionText;
               if (
@@ -1645,6 +1653,9 @@ export function usePurchaseOrderEditor({
 
         if (Object.keys(errors).length > 0) {
           setValidationErrors(errors);
+          toast.error("Le brouillon n'a pas pu être enregistré", {
+            description: buildValidationReasons(errors),
+          });
           setSaving(false);
           return false;
         }
@@ -1658,7 +1669,15 @@ export function usePurchaseOrderEditor({
           session,
           existingPurchaseOrder,
         );
-        input.status = "DRAFT";
+        // Ne pas rétrograder un bon de commande déjà finalisé : "enregistrer"
+        // sur un BC CONFIRMED/VALIDATED/… sauvegarde le contenu en conservant
+        // son statut. Seuls les nouveaux documents et les brouillons
+        // restent/passent en DRAFT.
+        input.status =
+          existingPurchaseOrder?.status &&
+          existingPurchaseOrder.status !== "DRAFT"
+            ? existingPurchaseOrder.status
+            : "DRAFT";
 
         // Ajouter la référence au devis source si présente
         if (sourceQuoteIdRef.current) {
@@ -1669,19 +1688,29 @@ export function usePurchaseOrderEditor({
         if (mode === "create" || !purchaseOrderId) {
           result = await createPurchaseOrder(input);
 
-          if (result?.id) {
-            // Mettre à jour le numéro dans le formulaire avec celui retourné par le backend
-            if (result.number) {
-              setValue("number", result.number);
-            }
+          if (!result?.id) {
+            // Échec silencieux (mutation résolue sans données) : ne surtout
+            // pas afficher de succès ni rediriger
+            return false;
+          }
 
-            if (!isAutoSave) {
-              toast.success("Brouillon sauvegardé");
-              router.push("/dashboard/outils/bons-commande");
-            }
+          // Mettre à jour le numéro dans le formulaire avec celui retourné par le backend
+          if (result.number) {
+            setValue("number", result.number);
+          }
+
+          if (!isAutoSave) {
+            toast.success("Brouillon sauvegardé");
+            router.push("/dashboard/outils/bons-commande");
           }
         } else {
           result = await updatePurchaseOrder(purchaseOrderId, input);
+
+          if (!result?.id) {
+            // Échec silencieux (mutation résolue sans données) : ne surtout
+            // pas afficher de succès ni rediriger
+            return false;
+          }
 
           if (!isAutoSave) {
             toast.success("Brouillon sauvegardé");
@@ -1710,6 +1739,7 @@ export function usePurchaseOrderEditor({
       router,
       session,
       handleError,
+      organization,
     ],
   );
 
@@ -1731,14 +1761,22 @@ export function usePurchaseOrderEditor({
           };
         }
 
-        // Validation des informations entreprise
-        if (
-          !currentFormData.companyInfo?.name ||
-          !currentFormData.companyInfo?.email
-        ) {
+        // Validation des informations entreprise.
+        // Source de vérité = l'organisation : le backend résout/snapshot
+        // companyInfo depuis l'organisation à la finalisation (le formulaire
+        // n'envoie pas companyInfo). On ne bloque que si NI le formulaire NI
+        // l'organisation chargée n'ont le nom + l'email — évite un faux blocage
+        // quand le formulaire n'est pas encore rempli alors que l'entreprise
+        // EST bien configurée.
+        const hasCompanyInfo =
+          (currentFormData.companyInfo?.name &&
+            currentFormData.companyInfo?.email) ||
+          (organization?.companyName && organization?.companyEmail);
+        if (!hasCompanyInfo) {
           errors.companyInfo = {
-            message: "Les informations de l'entreprise sont incomplètes",
-            canEdit: false,
+            message:
+              "Les informations de votre entreprise (nom et email) ne sont pas configurées. Renseignez-les dans les paramètres de l'entreprise.",
+            canEdit: true,
           };
         }
 
@@ -1815,7 +1853,7 @@ export function usePurchaseOrderEditor({
             }
 
             // Vérifier le texte d'exonération de TVA si la TVA est à 0% (sauf en auto-liquidation)
-            const vatRate = parseFloat(item.vatRate) || 0;
+            const vatRate = parseFloat(item.vatRate || item.taxRate) || 0;
             if (vatRate === 0 && !formData.isReverseCharge) {
               const vatExemptionText = item.vatExemptionText;
               if (
@@ -1968,9 +2006,9 @@ export function usePurchaseOrderEditor({
 
         if (Object.keys(errors).length > 0) {
           setValidationErrors(errors);
-          toast.error(
-            "Veuillez corriger les erreurs avant de créer le bon de commande",
-          );
+          toast.error("Le bon de commande n'a pas pu être créé", {
+            description: buildValidationReasons(errors),
+          });
           setSaving(false);
           return;
         }
@@ -2022,6 +2060,9 @@ export function usePurchaseOrderEditor({
             isNewOrder: !existingPurchaseOrder?.id,
           };
         }
+
+        // Mutation résolue sans données : traiter comme un échec
+        return { success: false };
       } catch (error) {
         handleError(error, "purchaseOrder");
         return { success: false };
@@ -2038,6 +2079,7 @@ export function usePurchaseOrderEditor({
       router,
       session,
       handleError,
+      organization,
     ],
   );
 
@@ -2183,6 +2225,17 @@ export function usePurchaseOrderEditor({
       ? null
       : !existingPurchaseOrder && mode !== "create",
   };
+}
+
+// Construit un texte lisible listant les raisons de blocage de validation,
+// à partir de l'objet `errors` ({ champ: { message } }). Sert de description
+// au toast pour dire précisément POURQUOI le bon de commande est bloqué.
+function buildValidationReasons(errors) {
+  const messages = Object.values(errors || {})
+    .map((e) => (typeof e === "string" ? e : e?.message))
+    .filter(Boolean);
+  if (messages.length === 0) return "Veuillez vérifier les informations saisies.";
+  return messages.map((m) => `• ${m}`).join("\n");
 }
 
 // Helper functions

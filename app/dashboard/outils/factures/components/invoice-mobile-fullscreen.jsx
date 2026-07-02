@@ -291,7 +291,9 @@ export default function InvoiceMobileFullscreen({
       if (onRefetch) onRefetch();
       onClose();
     } catch (error) {
+      // errorLink ne toaste pas les mutations : afficher l'erreur ici
       console.error("Erreur lors du changement de statut:", error);
+      toast.error(error?.message || "Erreur lors de la création de la facture");
     }
   };
 

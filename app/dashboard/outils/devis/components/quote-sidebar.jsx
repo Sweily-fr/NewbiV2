@@ -171,7 +171,7 @@ export default function QuoteSidebar({
       toast.success("Devis envoyé avec succès");
       if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error("Erreur lors de l'envoi du devis");
+      toast.error(error?.message || "Erreur lors de l'envoi du devis");
     }
   };
 
@@ -225,7 +225,7 @@ export default function QuoteSidebar({
       toast.success("Devis rejeté");
       if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error("Erreur lors du rejet du devis");
+      toast.error(error?.message || "Erreur lors du rejet du devis");
     }
   };
 
@@ -235,7 +235,7 @@ export default function QuoteSidebar({
       toast.success("Devis annulé");
       if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error("Erreur lors de l'annulation du devis");
+      toast.error(error?.message || "Erreur lors de l'annulation du devis");
     }
   };
 
