@@ -81,7 +81,7 @@ export default function QuoteMobileFullscreen({
       if (onRefetch) onRefetch();
       onClose();
     } catch (error) {
-      toast.error("Erreur lors de l'envoi du devis");
+      toast.error(error?.message || "Erreur lors de l'envoi du devis");
     }
   };
 
@@ -92,7 +92,7 @@ export default function QuoteMobileFullscreen({
       if (onRefetch) onRefetch();
       onClose();
     } catch (error) {
-      toast.error("Erreur lors de l'acceptation du devis");
+      toast.error(error?.message || "Erreur lors de l'acceptation du devis");
     }
   };
 
@@ -103,7 +103,7 @@ export default function QuoteMobileFullscreen({
       if (onRefetch) onRefetch();
       onClose();
     } catch (error) {
-      toast.error("Erreur lors du rejet du devis");
+      toast.error(error?.message || "Erreur lors du rejet du devis");
     }
   };
 

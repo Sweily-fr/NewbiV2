@@ -730,7 +730,7 @@ export function useInvoiceEditor({
             }
 
             // Vérifier le texte d'exonération de TVA si la TVA est à 0% (sauf en auto-liquidation)
-            const vatRate = parseFloat(item.vatRate) || 0;
+            const vatRate = parseFloat(item.vatRate || item.taxRate) || 0;
             if (vatRate === 0 && !formData.isReverseCharge) {
               const vatExemptionText = item.vatExemptionText;
               if (
@@ -1673,13 +1673,19 @@ export function useInvoiceEditor({
       }
     }
 
-    if (
-      !currentFormData.companyInfo?.name ||
-      !currentFormData.companyInfo?.email
-    ) {
+    // Source de vérité = l'organisation : le backend résout/snapshot
+    // companyInfo depuis l'organisation à la finalisation. On ne bloque que si
+    // NI le formulaire NI l'organisation chargée n'ont le nom + l'email —
+    // évite un faux blocage quand le formulaire n'est pas encore rempli.
+    const hasCompanyInfo =
+      (currentFormData.companyInfo?.name &&
+        currentFormData.companyInfo?.email) ||
+      (organization?.companyName && organization?.companyEmail);
+    if (!hasCompanyInfo) {
       errors.companyInfo = {
-        message: "Les informations de l'entreprise sont incomplètes",
-        canEdit: true, // On peut toujours modifier l'entreprise
+        message:
+          "Les informations de votre entreprise (nom et email) ne sont pas configurées. Renseignez-les dans les paramètres de l'entreprise.",
+        canEdit: true,
       };
     }
 
@@ -1838,7 +1844,7 @@ export function useInvoiceEditor({
         }
 
         // Vérifier le texte d'exonération de TVA si la TVA est à 0% (sauf en auto-liquidation)
-        const vatRate = parseFloat(item.vatRate) || 0;
+        const vatRate = parseFloat(item.vatRate || item.taxRate) || 0;
         if (vatRate === 0 && !currentFormData.isReverseCharge) {
           const vatExemptionText = item.vatExemptionText;
           if (
@@ -1871,6 +1877,9 @@ export function useInvoiceEditor({
 
     if (hasErrors) {
       setValidationErrors(errors);
+      toast.error("La facture n'a pas pu être enregistrée", {
+        description: buildValidationReasons(errors),
+      });
       return false;
     }
 
@@ -2012,6 +2021,7 @@ export function useInvoiceEditor({
     router,
     reset,
     handleError,
+    organization,
   ]);
 
   // Submit handler (validate and send)
@@ -2061,13 +2071,19 @@ export function useInvoiceEditor({
       }
     }
 
-    if (
-      !currentFormData.companyInfo?.name ||
-      !currentFormData.companyInfo?.email
-    ) {
+    // Source de vérité = l'organisation : le backend résout/snapshot
+    // companyInfo depuis l'organisation à la finalisation. On ne bloque que si
+    // NI le formulaire NI l'organisation chargée n'ont le nom + l'email —
+    // évite un faux blocage quand le formulaire n'est pas encore rempli.
+    const hasCompanyInfo =
+      (currentFormData.companyInfo?.name &&
+        currentFormData.companyInfo?.email) ||
+      (organization?.companyName && organization?.companyEmail);
+    if (!hasCompanyInfo) {
       errors.companyInfo = {
-        message: "Les informations de l'entreprise sont incomplètes",
-        canEdit: true, // On peut toujours modifier l'entreprise
+        message:
+          "Les informations de votre entreprise (nom et email) ne sont pas configurées. Renseignez-les dans les paramètres de l'entreprise.",
+        canEdit: true,
       };
     }
 
@@ -2218,7 +2234,7 @@ export function useInvoiceEditor({
         }
 
         // Vérifier le texte d'exonération de TVA si la TVA est à 0% (sauf en auto-liquidation)
-        const vatRate = parseFloat(item.vatRate) || 0;
+        const vatRate = parseFloat(item.vatRate || item.taxRate) || 0;
         if (vatRate === 0 && !formData.isReverseCharge) {
           const vatExemptionText = item.vatExemptionText;
           if (
@@ -2267,7 +2283,9 @@ export function useInvoiceEditor({
 
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
-      toast.error("Veuillez corriger les erreurs avant de valider la facture");
+      toast.error("La facture n'a pas pu être validée", {
+        description: buildValidationReasons(errors),
+      });
       return false;
     }
 
@@ -2435,6 +2453,7 @@ export function useInvoiceEditor({
     router,
     existingInvoice?.status,
     handleError,
+    organization,
   ]);
 
   // Fonction pour sauvegarder les paramètres dans l'organisation
@@ -2585,6 +2604,17 @@ export function useInvoiceEditor({
     invoice: existingInvoice,
     error: loadingInvoice ? null : !existingInvoice && mode !== "create",
   };
+}
+
+// Construit un texte lisible listant les raisons de blocage de validation,
+// à partir de l'objet `errors` ({ champ: { message } }). Sert de description
+// au toast pour dire précisément POURQUOI la facture est bloquée.
+function buildValidationReasons(errors) {
+  const messages = Object.values(errors || {})
+    .map((e) => (typeof e === "string" ? e : e?.message))
+    .filter(Boolean);
+  if (messages.length === 0) return "Veuillez vérifier les informations saisies.";
+  return messages.map((m) => `• ${m}`).join("\n");
 }
 
 // Helper functions

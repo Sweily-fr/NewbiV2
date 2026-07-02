@@ -452,7 +452,6 @@ import { useQuery, useMutation, useApolloClient } from "@apollo/client";
 import { useState, useMemo, useCallback } from "react";
 import { toast } from "@/src/components/ui/sonner";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
-import { useErrorHandler } from "@/src/hooks/useErrorHandler";
 
 // Hook pour récupérer le dernier préfixe de bon de commande
 export const useLastPurchaseOrderPrefix = () => {
@@ -671,7 +670,6 @@ export const useCheckPurchaseOrderNumber = () => {
 // Hook pour créer un bon de commande
 export const useCreatePurchaseOrder = () => {
   const { workspaceId } = useRequiredWorkspace();
-  const { handleMutationError } = useErrorHandler();
 
   const [createMutation, { loading }] = useMutation(CREATE_PURCHASE_ORDER, {
     refetchQueries: [
@@ -679,9 +677,9 @@ export const useCreatePurchaseOrder = () => {
       { query: GET_PURCHASE_ORDER_STATS, variables: { workspaceId } },
     ],
     awaitRefetchQueries: true,
-    onError: (error) => {
-      handleMutationError(error, "create", "purchaseOrder");
-    },
+    // onError désactivé - les erreurs sont gérées dans les composants appelants.
+    // (Avec onError, Apollo résout la promesse au lieu de la rejeter, ce qui
+    // faisait passer les créations échouées pour des succès.)
   });
 
   const createPurchaseOrder = async (input) => {
@@ -715,12 +713,9 @@ export const useUpdatePurchaseOrder = () => {
         data: { purchaseOrder: data.updatePurchaseOrder },
       });
     },
-    onError: (error) => {
-      console.error("Erreur lors de la mise à jour du bon de commande:", error);
-      toast.error(
-        error.message || "Erreur lors de la mise à jour du bon de commande",
-      );
-    },
+    // onError désactivé - les erreurs sont gérées dans les composants appelants.
+    // (Avec onError, Apollo résout la promesse au lieu de la rejeter : l'éditeur
+    // affichait alors "Brouillon sauvegardé" alors que la mutation avait échoué.)
   });
 
   const updatePurchaseOrder = async (id, input) => {
@@ -784,21 +779,28 @@ export const useChangePurchaseOrderStatus = () => {
         });
       },
       onError: (error) => {
+        // Toast désactivé ici - géré dans les composants appelants
         console.error("Erreur lors du changement de statut:", error);
-        toast.error(error.message || "Erreur lors du changement de statut");
       },
     },
   );
 
   const changeStatus = async (id, status) => {
-    try {
-      const result = await changeStatusMutation({
-        variables: { id, workspaceId, status },
-      });
-      return result.data?.changePurchaseOrderStatus;
-    } catch (error) {
-      throw error;
+    const result = await changeStatusMutation({
+      variables: { id, workspaceId, status },
+    });
+
+    // Avec onError, Apollo résout la promesse au lieu de la rejeter :
+    // re-lancer l'erreur pour que le composant appelant ne prenne pas
+    // un échec pour un succès (toast "succès" sur mutation échouée).
+    if (result.errors && result.errors.length > 0) {
+      throw new Error(result.errors[0].message);
     }
+    if (!result.data?.changePurchaseOrderStatus) {
+      throw new Error("Le changement de statut a échoué");
+    }
+
+    return result.data.changePurchaseOrderStatus;
   };
 
   return { changeStatus, loading };

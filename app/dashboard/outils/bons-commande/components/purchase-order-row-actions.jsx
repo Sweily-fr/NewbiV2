@@ -109,7 +109,7 @@ export default function PurchaseOrderRowActions({
       toast.success("Bon de commande mis en attente");
       if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error("Erreur lors de la confirmation");
+      toast.error(error?.message || "Erreur lors de la confirmation");
     }
   };
 
@@ -119,7 +119,7 @@ export default function PurchaseOrderRowActions({
       toast.success("Bon de commande validé par le client");
       if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error("Erreur lors de la validation");
+      toast.error(error?.message || "Erreur lors de la validation");
     }
   };
 
@@ -129,7 +129,7 @@ export default function PurchaseOrderRowActions({
       toast.success("Bon de commande en cours de traitement");
       if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error("Erreur lors du changement de statut");
+      toast.error(error?.message || "Erreur lors du changement de statut");
     }
   };
 
@@ -139,7 +139,7 @@ export default function PurchaseOrderRowActions({
       toast.success("Bon de commande marqué comme livré");
       if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error("Erreur lors du changement de statut");
+      toast.error(error?.message || "Erreur lors du changement de statut");
     }
   };
 
@@ -149,7 +149,7 @@ export default function PurchaseOrderRowActions({
       toast.success("Bon de commande annulé");
       if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error("Erreur lors de l'annulation");
+      toast.error(error?.message || "Erreur lors de l'annulation");
     }
   };
 
@@ -159,7 +159,7 @@ export default function PurchaseOrderRowActions({
       toast.success("Bon de commande repassé en brouillon");
       if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error("Erreur lors du passage en brouillon");
+      toast.error(error?.message || "Erreur lors du passage en brouillon");
     }
   };
 
