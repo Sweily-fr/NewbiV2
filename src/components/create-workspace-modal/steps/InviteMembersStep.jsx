@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { Lightbulb, Users } from "lucide-react";
 import MultipleSelector from "@/src/components/ui/multiselect";
 import {
@@ -12,6 +11,7 @@ import {
 } from "@/src/components/ui/select";
 import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
 import { Callout } from "@/src/components/ui/callout";
+import { getPlanLimits } from "@/src/lib/plan-limits";
 
 export function InviteMembersStep({
   invitedEmails,
@@ -20,15 +20,17 @@ export function InviteMembersStep({
   onRoleChange,
   selectedPlan,
 }) {
-  // Configuration des limites par plan
-  const planLimitsConfig = {
-    freelance: { users: 0, accountants: 1 },
-    pme: { users: 10, accountants: 3 },
-    entreprise: { users: 25, accountants: 5 },
+  // Limites centralisées : utilisateurs = inclus + plafond de sièges payants
+  // (Freelance : 0 inclus + 1 payant max)
+  const centralLimits = getPlanLimits(selectedPlan);
+  const paidSeatAllowance =
+    centralLimits.canAddPaidUsers && centralLimits.maxPaidSeats > 0
+      ? centralLimits.maxPaidSeats
+      : 0;
+  const planLimits = {
+    users: centralLimits.invitableUsers + paidSeatAllowance,
+    accountants: centralLimits.accountants,
   };
-
-  const planLimits =
-    planLimitsConfig[selectedPlan] || planLimitsConfig.freelance;
 
   // Compter les utilisateurs et comptables invités
   const invitedUsers = membersWithRoles.filter(
@@ -43,24 +45,6 @@ export function InviteMembersStep({
     0,
     planLimits.accountants - invitedAccountants,
   );
-
-  // Forcer le rôle "accountant" pour le plan Freelance
-  React.useEffect(() => {
-    if (selectedPlan === "freelance" && membersWithRoles.length > 0) {
-      const hasNonAccountant = membersWithRoles.some(
-        (m) => m.role !== "accountant",
-      );
-      if (hasNonAccountant) {
-        // Convertir tous les membres en comptables
-        const updatedMembers = membersWithRoles.map((m, index) => {
-          if (m.role !== "accountant") {
-            onRoleChange(index, "accountant");
-          }
-          return m;
-        });
-      }
-    }
-  }, [selectedPlan, membersWithRoles, onRoleChange]);
 
   return (
     <div className="w-full max-w-3xl space-y-4 sm:space-y-6">
@@ -160,27 +144,25 @@ export function InviteMembersStep({
                   </SelectTrigger>
                   <SelectContent>
                     {selectedPlan !== "freelance" && (
-                      <>
-                        <SelectItem value="admin">
-                          <div className="flex flex-col">
-                            <span className="font-normal text-sm">
-                              Administrateur
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              Gestion complète
-                            </span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="member">
-                          <div className="flex flex-col">
-                            <span className="font-normal text-sm">Membre</span>
-                            <span className="text-xs text-muted-foreground">
-                              Accès standard
-                            </span>
-                          </div>
-                        </SelectItem>
-                      </>
+                      <SelectItem value="admin">
+                        <div className="flex flex-col">
+                          <span className="font-normal text-sm">
+                            Administrateur
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            Gestion complète
+                          </span>
+                        </div>
+                      </SelectItem>
                     )}
+                    <SelectItem value="member">
+                      <div className="flex flex-col">
+                        <span className="font-normal text-sm">Membre</span>
+                        <span className="text-xs text-muted-foreground">
+                          Accès standard
+                        </span>
+                      </div>
+                    </SelectItem>
                     <SelectItem value="accountant">
                       <div className="flex flex-col">
                         <span className="font-normal text-sm">Comptable</span>

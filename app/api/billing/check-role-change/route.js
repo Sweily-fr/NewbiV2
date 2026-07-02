@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
 import { getPlanLimits } from "@/src/lib/plan-limits";
 import { withErrorHandler } from "@/src/lib/security";
+import { isAppTrialEnabled } from "@/src/lib/feature-flags";
+import { isTrialAppActive } from "@/src/lib/trial-app";
 
 /**
  * API pour vérifier si un changement de rôle est autorisé
@@ -40,11 +42,28 @@ async function handler(request) {
       referenceId: organizationId,
     });
 
+    // Repli trial app-managed (aligné sur require-active-subscription.js) :
+    // pendant le trial 30j, aucun document `subscription` n'existe — le trial
+    // vit sur l'organisation. On applique alors les limites du plan freelance.
+    let planName = subscription?.plan;
     if (!subscription) {
-      return NextResponse.json(
-        { canChange: false, reason: "Aucun abonnement actif." },
-        { status: 200 },
-      );
+      let trialActive = false;
+      if (isAppTrialEnabled() && ObjectId.isValid(organizationId)) {
+        const orgDoc = await mongoDb.collection("organization").findOne(
+          { _id: new ObjectId(organizationId) },
+          { projection: { isTrialActive: 1, trialEndDate: 1 } },
+        );
+        trialActive = isTrialAppActive(orgDoc);
+      }
+
+      if (!trialActive) {
+        return NextResponse.json(
+          { canChange: false, reason: "Aucun abonnement actif." },
+          { status: 200 },
+        );
+      }
+
+      planName = "freelance";
     }
 
     // 3. Si le nouveau rôle n'est pas comptable, pas de restriction
@@ -56,7 +75,7 @@ async function handler(request) {
     }
 
     // 4. Vérifier la limite de comptables
-    const planLimits = getPlanLimits(subscription.plan);
+    const planLimits = getPlanLimits(planName);
 
     // Compter les comptables actuels
     const members = await mongoDb
@@ -94,7 +113,7 @@ async function handler(request) {
     if (adjustedTotal >= planLimits.accountants) {
       return NextResponse.json({
         canChange: false,
-        reason: `Limite de ${planLimits.accountants} comptable(s) atteinte pour le plan ${subscription.plan.toUpperCase()}. Passez à un plan supérieur pour ajouter plus de comptables.`,
+        reason: `Limite de ${planLimits.accountants} comptable(s) atteinte pour le plan ${planName.toUpperCase()}. Passez à un plan supérieur pour ajouter plus de comptables.`,
         currentAccountants,
         pendingAccountants,
         limit: planLimits.accountants,

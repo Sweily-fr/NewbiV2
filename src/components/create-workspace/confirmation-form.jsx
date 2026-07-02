@@ -98,9 +98,16 @@ export function ConfirmationForm({
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        // La réponse peut ne pas être du JSON (ex: 500 "Internal Server Error"
+        // en texte brut) — ne pas laisser fuiter une erreur de parsing.
+        let errorData = null;
+        try {
+          errorData = await response.json();
+        } catch {
+          // réponse non-JSON
+        }
         throw new Error(
-          errorData.error || "Erreur lors de la création de la session",
+          errorData?.error || "Erreur lors de la création de la session",
         );
       }
 

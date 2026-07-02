@@ -94,12 +94,18 @@ function SuccessContent() {
     if (validEmails.length > 0) {
       setIsSendingInvites(true);
       try {
+        // inviteMember ne throw pas : il renvoie { success } et toaste déjà
+        // chaque échec — on ne compte que les envois réellement réussis.
+        let sentCount = 0;
         for (const email of validEmails) {
-          await inviteMember({ email, role: inviteRole });
+          const result = await inviteMember({ email, role: inviteRole });
+          if (result?.success) sentCount++;
         }
-        toast.success(
-          `${validEmails.length} invitation${validEmails.length > 1 ? "s" : ""} envoyée${validEmails.length > 1 ? "s" : ""}`,
-        );
+        if (sentCount > 0) {
+          toast.success(
+            `${sentCount} invitation${sentCount > 1 ? "s" : ""} envoyée${sentCount > 1 ? "s" : ""}`,
+          );
+        }
       } catch {
         toast.error("Erreur lors de l'envoi des invitations");
       }

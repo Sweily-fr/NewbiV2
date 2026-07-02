@@ -227,7 +227,11 @@ async function handler(request) {
         ? `${baseUrl}/auth/signup?source=mobile${ngrok}`
         : `${baseUrl}/auth/signup${isNgrok ? "?ngrok-skip-browser-warning=true" : ""}`;
     } else if (isNewOrganization) {
-      successUrl = `${baseUrl}/dashboard?org_created=true&payment_success=true${ngrok}`;
+      // Page de transition dédiée : vérifie le paiement (verify-checkout-session
+      // crée l'org si le webhook tarde), active la nouvelle org et préchauffe le
+      // cache d'abonnement AVANT d'arriver sur le dashboard — l'utilisateur ne
+      // repasse jamais par son ancien workspace ni par un statut périmé.
+      successUrl = `${baseUrl}/create-workspace/success?session_id={CHECKOUT_SESSION_ID}${ngrok}`;
       cancelUrl = `${baseUrl}/create-workspace/payment-error${isNgrok ? "?ngrok-skip-browser-warning=true" : ""}`;
     } else {
       successUrl = `${baseUrl}/dashboard?subscription_success=true${ngrok}`;

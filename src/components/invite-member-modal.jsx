@@ -166,6 +166,7 @@ export function InviteMemberModal({
               availableUsers,
               availableAccountants,
               canAddPaidUsers: planLimits.canAddPaidUsers,
+              maxPaidSeats: planLimits.maxPaidSeats ?? -1,
               plan: planName,
               seatCost: getSeatPrice(planName),
             });
@@ -338,6 +339,15 @@ export function InviteMemberModal({
     if (usersOverLimit > 0 && !seatsInfo?.canAddPaidUsers) {
       toast.error(
         `Votre plan ne permet pas d'ajouter d'utilisateurs supplémentaires. Passez à un plan supérieur.`,
+      );
+      return;
+    }
+
+    // Vérifier le plafond de sièges payants (ex: Freelance = 1 max)
+    const maxPaidSeats = seatsInfo?.maxPaidSeats ?? -1;
+    if (usersOverLimit > 0 && maxPaidSeats >= 0 && usersOverLimit > maxPaidSeats) {
+      toast.error(
+        `Limite de ${maxPaidSeats} utilisateur${maxPaidSeats > 1 ? "s" : ""} supplémentaire${maxPaidSeats > 1 ? "s" : ""} atteinte pour votre plan. Passez à un plan supérieur pour inviter plus d'utilisateurs.`,
       );
       return;
     }
@@ -541,6 +551,23 @@ export function InviteMemberModal({
                               </span>{" "}
                               / {seatsInfo.includedAccountants} accès comptable
                               {seatsInfo.includedAccountants > 1 ? "s" : ""}
+                              {seatsInfo.maxPaidSeats > 0 && (
+                                <>
+                                  {" "}
+                                  &middot;{" "}
+                                  <span className="font-medium text-foreground">
+                                    {usedUsers}
+                                  </span>{" "}
+                                  / {seatsInfo.maxPaidSeats} utilisateur
+                                  {seatsInfo.maxPaidSeats > 1 ? "s" : ""}{" "}
+                                  supplémentaire
+                                  {seatsInfo.maxPaidSeats > 1 ? "s" : ""} (
+                                  {seatsInfo.seatCost
+                                    .toFixed(2)
+                                    .replace(".", ",")}
+                                  €/mois)
+                                </>
+                              )}
                             </p>
                           </div>
                         )}

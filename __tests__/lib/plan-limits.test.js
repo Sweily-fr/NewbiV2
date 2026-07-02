@@ -43,8 +43,17 @@ describe("PLAN_LIMITS structure", () => {
     expect(p.accountants).toBe(3);
   });
 
+  it("freelance is capped at 1 paid seat, other plans are unlimited", () => {
+    expect(PLAN_LIMITS.freelance.maxPaidSeats).toBe(1);
+    expect(PLAN_LIMITS.pme.maxPaidSeats).toBe(-1);
+    expect(PLAN_LIMITS.entreprise.maxPaidSeats).toBe(-1);
+  });
+
   it("availableRoles grows with plan tier", () => {
-    expect(PLAN_LIMITS.freelance.availableRoles).toEqual(["accountant"]);
+    expect(PLAN_LIMITS.freelance.availableRoles).toEqual([
+      "member",
+      "accountant",
+    ]);
     expect(PLAN_LIMITS.pme.availableRoles).toContain("admin");
   });
 });

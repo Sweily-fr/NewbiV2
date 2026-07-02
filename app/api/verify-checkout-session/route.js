@@ -117,9 +117,23 @@ export async function GET(request) {
       // ✅ NOUVEAU FLUX: Vérifier si c'est une nouvelle organisation
       const isNewOrganization =
         checkoutSession.metadata?.isNewOrganization === "true";
-      let organizationId =
-        checkoutSession.metadata?.organizationId ||
-        session.session?.activeOrganizationId;
+
+      let organizationId;
+      if (isNewOrganization) {
+        // Pour une NOUVELLE org, metadata.organizationId contient l'ancienne
+        // org active de l'utilisateur (posée par create-org-subscription) —
+        // il ne faut PAS l'utiliser. La bonne org est celle qui porte le
+        // nouvel abonnement Stripe (créée par le webhook, sinon on la crée
+        // ci-dessous).
+        const subDoc = await mongoDb.collection("subscription").findOne({
+          stripeSubscriptionId: subscriptionId,
+        });
+        organizationId = subDoc?.referenceId || null;
+      } else {
+        organizationId =
+          checkoutSession.metadata?.organizationId ||
+          session.session?.activeOrganizationId;
+      }
 
       console.log(
         `🏢 [VERIFY-CHECKOUT] Organization ID initial: ${organizationId}, isNewOrganization: ${isNewOrganization}`,

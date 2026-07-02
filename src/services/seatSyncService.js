@@ -1,5 +1,7 @@
 import Stripe from "stripe";
 import { getPlanLimits as getCentralizedPlanLimits, getSeatPrice, SEAT_PRICE } from "../lib/plan-limits.js";
+import { isAppTrialEnabled } from "../lib/feature-flags.js";
+import { isTrialAppActive } from "../lib/trial-app.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const SEAT_PRICE_ID = process.env.STRIPE_SEAT_PRICE_ID; // Prix par siège additionnel
@@ -26,6 +28,7 @@ export class SeatSyncService {
       users: centralLimits.invitableUsers,  // Nombre d'utilisateurs invitables
       accountants: centralLimits.accountants,
       canAddPaidUsers: centralLimits.canAddPaidUsers,
+      maxPaidSeats: centralLimits.maxPaidSeats ?? -1,
       workspaces: centralLimits.workspaces,
       bankAccounts: centralLimits.bankAccounts,
       storage: centralLimits.storage,
@@ -35,9 +38,9 @@ export class SeatSyncService {
   /**
    * Vérifie si l'organisation peut inviter un nouveau membre selon son rôle
    * Logique :
-   * - Freelance : 0 utilisateur, 1 comptable (pas de siège payant)
+   * - Freelance : 0 utilisateur inclus, 1 comptable, sièges payants possibles (7,49€/mois)
    * - PME : 10 utilisateurs inclus, 3 comptables, sièges payants possibles (7,49€/mois)
-   * - Entreprise : 25 utilisateurs inclus, 5 comptables, sièges payants possibles (7,49€/mois)
+   * - Entreprise : 25 utilisateurs inclus, 5 comptables, sièges payants possibles (5,99€/mois)
    *
    * @param {string} organizationId
    * @param {string} role - Rôle de l'invité (member, admin, viewer, accountant)
@@ -53,16 +56,33 @@ export class SeatSyncService {
         referenceId: organizationId,
       });
 
+      // Repli trial app-managed (aligné sur require-active-subscription.js) :
+      // pendant le trial 30j, aucun document `subscription` n'existe — le trial
+      // vit sur l'organisation. On applique alors les limites du plan freelance.
+      let planName = subscription?.plan;
       if (!subscription) {
-        return {
-          canInvite: false,
-          reason: "Aucun abonnement actif. Veuillez souscrire à un plan.",
-          planName: "none",
-        };
+        let trialActive = false;
+        if (isAppTrialEnabled() && ObjectId.isValid(organizationId)) {
+          const orgDoc = await mongoDb.collection("organization").findOne(
+            { _id: new ObjectId(organizationId) },
+            { projection: { isTrialActive: 1, trialEndDate: 1 } },
+          );
+          trialActive = isTrialAppActive(orgDoc);
+        }
+
+        if (!trialActive) {
+          return {
+            canInvite: false,
+            reason: "Aucun abonnement actif. Veuillez souscrire à un plan.",
+            planName: "none",
+          };
+        }
+
+        planName = "freelance";
       }
 
       // 2. Récupérer les limites du plan
-      const planLimits = this.getPlanLimits(subscription.plan);
+      const planLimits = this.getPlanLimits(planName);
       const isAccountant = role === "accountant";
 
       // 3. Compter les membres actuels par type
@@ -99,7 +119,7 @@ export class SeatSyncService {
       const totalAccountants = currentAccountants + pendingAccountants;
 
       console.log(`📊 [INVITE CHECK] Organisation ${organizationId}:`, {
-        plan: subscription.plan,
+        plan: planName,
         role,
         currentUsers,
         pendingUsers,
@@ -118,8 +138,8 @@ export class SeatSyncService {
         if (totalAccountants >= planLimits.accountants) {
           return {
             canInvite: false,
-            reason: `Limite de ${planLimits.accountants} comptable(s) atteinte pour le plan ${subscription.plan.toUpperCase()}. Passez à un plan supérieur pour inviter plus de comptables.`,
-            planName: subscription.plan,
+            reason: `Limite de ${planLimits.accountants} comptable(s) atteinte pour le plan ${planName.toUpperCase()}. Passez à un plan supérieur pour inviter plus de comptables.`,
+            planName,
             currentAccountants,
             pendingAccountants,
             totalAccountants,
@@ -130,7 +150,7 @@ export class SeatSyncService {
         return {
           canInvite: true,
           reason: "OK",
-          planName: subscription.plan,
+          planName,
           currentAccountants,
           pendingAccountants,
           totalAccountants,
@@ -147,7 +167,7 @@ export class SeatSyncService {
           return {
             canInvite: true,
             reason: "OK",
-            planName: subscription.plan,
+            planName,
             currentUsers,
             pendingUsers,
             totalUsers,
@@ -160,12 +180,29 @@ export class SeatSyncService {
 
         // Au-delà de la limite incluse
         if (planLimits.canAddPaidUsers) {
-          // Siège payant possible (tous les plans)
           const additionalSeats = totalUsers - usersIncluded + 1; // +1 pour le nouveau
+          const maxPaidSeats = planLimits.maxPaidSeats ?? -1;
+
+          // Plafond de sièges payants (ex: Freelance = 1 utilisateur payant max)
+          if (maxPaidSeats >= 0 && additionalSeats > maxPaidSeats) {
+            return {
+              canInvite: false,
+              reason: `Limite de ${maxPaidSeats} utilisateur(s) supplémentaire(s) atteinte pour le plan ${planName.toUpperCase()}. Passez à un plan supérieur pour inviter plus d'utilisateurs.`,
+              planName,
+              currentUsers,
+              pendingUsers,
+              totalUsers,
+              limitUsers: usersIncluded,
+              availableUsers: 0,
+              maxPaidSeats,
+              isPaid: false,
+            };
+          }
+
           return {
             canInvite: true,
             reason: "OK - Siège supplémentaire payant",
-            planName: subscription.plan,
+            planName,
             currentUsers,
             pendingUsers,
             totalUsers,
@@ -181,7 +218,7 @@ export class SeatSyncService {
           return {
             canInvite: false,
             reason: `Votre plan ne permet pas d'ajouter d'utilisateurs supplémentaires. Passez à un plan supérieur.`,
-            planName: subscription.plan,
+            planName,
             currentUsers,
             pendingUsers,
             totalUsers,

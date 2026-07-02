@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { UserPlus, Link2, Trash2 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -12,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { getPlanLimits } from "@/src/lib/plan-limits";
+import { getPlanLimits, getSeatPrice } from "@/src/lib/plan-limits";
 
 const ROLE_LABELS = {
   admin: "Administrateur",
@@ -30,18 +31,43 @@ export function InviteForm({
   const limits = getPlanLimits(selectedPlan);
   const isFreelance = selectedPlan === "freelance";
 
+  // Sièges utilisateurs invitables = inclus + plafond de sièges payants
+  // (Freelance : 0 inclus + 1 payant max ; PME/Entreprise : inclus uniquement
+  // à cette étape, les sièges payants illimités se gèrent depuis le dashboard)
+  const paidSeatAllowance =
+    limits.canAddPaidUsers && limits.maxPaidSeats > 0 ? limits.maxPaidSeats : 0;
+  const userSeatLimit = limits.invitableUsers + paidSeatAllowance;
+
   // Count used seats by type
   const filledMembers = members.filter((m) => m.email.trim());
   const usedUsers = filledMembers.filter((m) => m.role !== "accountant").length;
   const usedAccountants = filledMembers.filter(
     (m) => m.role === "accountant",
   ).length;
-  const totalSeats = limits.invitableUsers + limits.accountants;
+  const totalSeats = userSeatLimit + limits.accountants;
   const usedTotal = usedUsers + usedAccountants;
 
-  const isUserLimitReached = usedUsers >= limits.invitableUsers;
+  const isUserLimitReached = usedUsers >= userSeatLimit;
   const isAccountantLimitReached = usedAccountants >= limits.accountants;
   const isTotalLimitReached = usedTotal >= totalSeats;
+
+  // Freelance : tant que rien n'est saisi, proposer par défaut le comptable
+  // gratuit + l'utilisateur payant (au lieu de 2 lignes « Membre »)
+  useEffect(() => {
+    if (!isFreelance) return;
+    const allEmpty = members.every((m) => !m.email.trim());
+    const alreadyAdapted =
+      members.length === 2 &&
+      members[0].role === "accountant" &&
+      members[1].role === "member";
+    if (allEmpty && !alreadyAdapted) {
+      setMembers([
+        { email: "", role: "accountant" },
+        { email: "", role: "member" },
+      ]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFreelance]);
 
   const updateEmail = (index, value) => {
     const updated = [...members];
@@ -56,7 +82,9 @@ export function InviteForm({
   };
 
   const addRow = () => {
-    const defaultRole = isFreelance ? "accountant" : "member";
+    // Freelance : comptable gratuit d'abord, puis l'utilisateur payant
+    const defaultRole =
+      isFreelance && !isAccountantLimitReached ? "accountant" : "member";
     setMembers([...members, { email: "", role: defaultRole }]);
   };
 
@@ -70,9 +98,6 @@ export function InviteForm({
     "accountant",
   ];
   const getAvailableRoles = (currentRole) => {
-    if (isFreelance) {
-      return ["accountant"];
-    }
     const roles = [];
     // Only show roles allowed by the plan, respecting seat limits
     if (
@@ -107,6 +132,12 @@ export function InviteForm({
     );
     if (invalidEmails.length > 0) {
       toast.error("Veuillez saisir des adresses email valides");
+      return;
+    }
+    if (usedUsers > userSeatLimit || usedAccountants > limits.accountants) {
+      toast.error(
+        "Vous dépassez les sièges disponibles pour ce plan. Ajustez les rôles ou retirez des invitations.",
+      );
       return;
     }
     onContinue();
@@ -182,8 +213,8 @@ export function InviteForm({
               className={`text-xs whitespace-nowrap ${isTotalLimitReached ? "text-red-500" : "text-muted-foreground"}`}
             >
               {isFreelance
-                ? `${usedAccountants} / ${limits.accountants} accès comptable`
-                : `${usedUsers} / ${limits.invitableUsers} sièges${limits.accountants > 0 ? ` · ${usedAccountants} / ${limits.accountants} accès comptable${limits.accountants > 1 ? "s" : ""}` : ""}`}
+                ? `${usedUsers} / ${userSeatLimit} utilisateur${userSeatLimit > 1 ? "s" : ""} (${getSeatPrice(selectedPlan).toFixed(2).replace(".", ",")}€/mois) · ${usedAccountants} / ${limits.accountants} accès comptable`
+                : `${usedUsers} / ${userSeatLimit} sièges${limits.accountants > 0 ? ` · ${usedAccountants} / ${limits.accountants} accès comptable${limits.accountants > 1 ? "s" : ""}` : ""}`}
             </span>
           </div>
         )}
@@ -193,9 +224,7 @@ export function InviteForm({
           <Button
             variant="filter"
             onClick={addRow}
-            disabled={
-              isFreelance ? isAccountantLimitReached : isTotalLimitReached
-            }
+            disabled={isTotalLimitReached}
             className="flex items-center gap-1.5"
           >
             <UserPlus className="size-4" />

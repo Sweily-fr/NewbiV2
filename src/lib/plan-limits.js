@@ -9,23 +9,25 @@
  * - `accountants`: Nombre de comptables gratuits
  * - `totalUsers`: Nombre total d'utilisateurs (owner + invités) pour Stripe
  * - `canAddPaidUsers`: Si des sièges payants sont disponibles au-delà de la limite
+ * - `maxPaidSeats`: Nombre max de sièges payants au-delà de la limite incluse (-1 = illimité)
  */
 
 export const PLAN_LIMITS = {
   freelance: {
-    // Freelance: Owner + possibilité d'ajouter des sièges payants
+    // Freelance: Owner + 1 utilisateur payant max + 1 comptable gratuit
     invitableUsers: 0,
     accountants: 1,
     totalUsers: 1,
     canAddPaidUsers: true,
+    maxPaidSeats: 1,
     seatPrice: 7.49,
     workspaces: 1,
     bankAccounts: 1,
     storage: 50,
     // Taille max par transfert de fichier (en Go)
     fileTransferMaxGB: 5,
-    // Rôles disponibles à l'invitation
-    availableRoles: ["accountant"],
+    // Rôles disponibles à l'invitation (member = siège payant, aucun inclus)
+    availableRoles: ["member", "accountant"],
     // Exports comptables
     exports: ["csv", "excel"],
     // E-signature (SES avec quota mensuel)
@@ -59,6 +61,7 @@ export const PLAN_LIMITS = {
     accountants: 3,
     totalUsers: 11,
     canAddPaidUsers: true,
+    maxPaidSeats: -1,
     seatPrice: 7.49,
     workspaces: 1,
     bankAccounts: 3,
@@ -100,6 +103,7 @@ export const PLAN_LIMITS = {
     accountants: 5,
     totalUsers: 26,
     canAddPaidUsers: true,
+    maxPaidSeats: -1,
     seatPrice: 5.99,
     workspaces: 1,
     bankAccounts: 5,
