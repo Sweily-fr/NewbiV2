@@ -88,6 +88,9 @@ import {
   startOfMonth,
   endOfMonth,
   addMonths,
+  startOfQuarter,
+  endOfQuarter,
+  addQuarters,
   startOfYear,
   endOfYear,
   addYears,
@@ -108,9 +111,11 @@ export function KanbanGanttView({
   workspaceId,
   boardTitle,
 }) {
-  const [currentWeekStart, setCurrentWeekStart] = useState(() =>
-    startOfWeek(new Date(), { weekStartsOn: 1 }),
-  );
+  // Date de référence de la période affichée. Volontairement NON alignée sur
+  // le lundi : un jeudi 2 juillet doit afficher Q3/juillet, pas Q2/juin (le
+  // lundi de sa semaine tombe le 29 juin). L'alignement semaine se fait au
+  // rendu, dans daysToDisplay.
+  const [currentWeekStart, setCurrentWeekStart] = useState(() => new Date());
   const [viewMode, setViewMode] = useState("week"); // week, month, quarter, year
   const [hoveredTaskId, setHoveredTaskId] = useState(null);
   const [resizingTask, setResizingTask] = useState(null); // { taskId, side: 'left' | 'right', startX, originalDates }
@@ -121,6 +126,13 @@ export function KanbanGanttView({
     visible: false,
   }); // Position du curseur pour le cercle
   const [isOverTask, setIsOverTask] = useState(false); // Pour masquer le cercle quand on survole une tâche
+  // Hauteur de la scrollbar horizontale de la timeline (0 avec les scrollbars
+  // en overlay, ~15px avec les scrollbars classiques Windows/macOS « toujours
+  // afficher »)
+  const [hScrollbarHeight, setHScrollbarHeight] = useState(0);
+  // Largeur visible de la timeline, pour étirer les colonnes hebdo quand la
+  // période tient à l'écran (mois/trimestre)
+  const [timelineWidth, setTimelineWidth] = useState(0);
   const scrollContainerRef = useRef(null); // Timeline (droite)
   const leftColumnRef = useRef(null); // Colonne de gauche
   const headerTimelineRef = useRef(null); // Header de la timeline
@@ -196,8 +208,9 @@ export function KanbanGanttView({
   // Générer les jours à afficher selon le mode
   const daysToDisplay = useMemo(() => {
     if (viewMode === "week") {
+      const weekStart = startOfWeek(currentWeekStart, { weekStartsOn: 1 });
       const weekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 1 });
-      return eachDayOfInterval({ start: currentWeekStart, end: weekEnd });
+      return eachDayOfInterval({ start: weekStart, end: weekEnd });
     } else if (viewMode === "month") {
       // Mois civil complet (aligné sur le mois, pas sur des tranches de 30 jours)
       return eachDayOfInterval({
@@ -205,9 +218,10 @@ export function KanbanGanttView({
         end: endOfMonth(currentWeekStart),
       });
     } else if (viewMode === "quarter") {
+      // Trimestre civil complet (Q1 = 1er janvier, etc.)
       return eachDayOfInterval({
-        start: currentWeekStart,
-        end: addDays(currentWeekStart, 89),
+        start: startOfQuarter(currentWeekStart),
+        end: endOfQuarter(currentWeekStart),
       });
     } else {
       // Année civile complète
@@ -224,7 +238,12 @@ export function KanbanGanttView({
     let currentGroup = null;
 
     daysToDisplay.forEach((day, index) => {
-      const weekNum = getWeek(day, { weekStartsOn: 1 });
+      // Numérotation ISO 8601 (firstWeekContainsDate: 4) : sinon fin décembre
+      // est numérotée S1 (semaine contenant le 1er janvier suivant)
+      const weekNum = getWeek(day, {
+        weekStartsOn: 1,
+        firstWeekContainsDate: 4,
+      });
       const weekStart = startOfWeek(day, { weekStartsOn: 1 });
       const weekEnd = endOfWeek(day, { weekStartsOn: 1 });
 
@@ -244,9 +263,20 @@ export function KanbanGanttView({
     return groups;
   }, [daysToDisplay]);
 
-  // Grouper les jours par mois pour l'en-tête en mode année
+  // Mois/trimestre/année : colonnes hebdomadaires (70px minimum, comme le
+  // mode année), en-tête mois + semaines. Seul le mode semaine affiche des
+  // colonnes par jour. Quand la période tient à l'écran (mois/trimestre),
+  // les colonnes s'étirent pour remplir la largeur disponible.
+  const useWeekColumns = viewMode !== "week";
+  const baseDayWidth = viewMode === "week" ? 120 : 10;
+  const dayWidth =
+    useWeekColumns && timelineWidth > 0
+      ? Math.max(baseDayWidth, timelineWidth / daysToDisplay.length)
+      : baseDayWidth;
+
+  // Grouper les jours par mois pour l'en-tête (modes à colonnes hebdo)
   const monthGroups = useMemo(() => {
-    if (viewMode !== "year") return [];
+    if (viewMode === "week") return [];
     const groups = [];
     let currentGroup = null;
 
@@ -273,7 +303,7 @@ export function KanbanGanttView({
     } else if (viewMode === "month") {
       setCurrentWeekStart((prev) => startOfMonth(addMonths(prev, -1)));
     } else if (viewMode === "quarter") {
-      setCurrentWeekStart((prev) => addDays(prev, -91));
+      setCurrentWeekStart((prev) => startOfQuarter(addQuarters(prev, -1)));
     } else {
       setCurrentWeekStart((prev) => startOfYear(addYears(prev, -1)));
     }
@@ -285,23 +315,18 @@ export function KanbanGanttView({
     } else if (viewMode === "month") {
       setCurrentWeekStart((prev) => startOfMonth(addMonths(prev, 1)));
     } else if (viewMode === "quarter") {
-      setCurrentWeekStart((prev) => addDays(prev, 91));
+      setCurrentWeekStart((prev) => startOfQuarter(addQuarters(prev, 1)));
     } else {
       setCurrentWeekStart((prev) => startOfYear(addYears(prev, 1)));
     }
   };
 
   const goToToday = () => {
-    setCurrentWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
+    setCurrentWeekStart(new Date());
   };
 
-  // Re-caler sur un lundi pour les modes basés sur la semaine (la navigation
-  // en mode mois/année peut laisser currentWeekStart en milieu de semaine)
   const handleViewModeChange = (mode) => {
     setViewMode(mode);
-    if (mode === "week" || mode === "quarter") {
-      setCurrentWeekStart((prev) => startOfWeek(prev, { weekStartsOn: 1 }));
-    }
   };
 
   // Export PDF de la période affichée (import dynamique pour ne pas charger jsPDF au montage)
@@ -312,6 +337,9 @@ export function KanbanGanttView({
         boardTitle,
         tasks: allTasks,
         days: daysToDisplay,
+        membersById: Object.fromEntries(
+          membersInfo.map((m) => [String(m.id), m.name]),
+        ),
       });
     } catch (error) {
       console.error("Erreur lors de l'export PDF du Gantt:", error);
@@ -386,18 +414,9 @@ export function KanbanGanttView({
       daysToDisplay.length - startOffset,
     );
 
-    const dayWidth =
-      viewMode === "week"
-        ? 120
-        : viewMode === "month"
-          ? 40
-          : viewMode === "quarter"
-            ? 30
-            : 10;
-
     // Ajouter une marge à gauche et à droite pour toutes les barres
-    // (réduite en mode année pour garder visibles les tâches courtes)
-    const horizontalMargin = viewMode === "year" ? 2 : 12;
+    // (réduite en colonnes hebdo pour garder visibles les tâches courtes)
+    const horizontalMargin = useWeekColumns ? 2 : 12;
 
     return {
       left: `${startOffset * dayWidth + horizontalMargin}px`,
@@ -449,15 +468,6 @@ export function KanbanGanttView({
     }
     return "";
   };
-
-  const dayWidth =
-    viewMode === "week"
-      ? 120
-      : viewMode === "month"
-        ? 40
-        : viewMode === "quarter"
-          ? 30
-          : 10;
 
   // Handlers pour le redimensionnement
   const handleResizeStart = (e, task, side) => {
@@ -617,6 +627,21 @@ export function KanbanGanttView({
       };
     }
   }, [resizingTask]);
+
+  // Mesure de la timeline : scrollbar horizontale compensée en bas de la
+  // colonne de gauche, largeur visible pour étirer les colonnes hebdo
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const measure = () => {
+      setHScrollbarHeight(el.offsetHeight - el.clientHeight);
+      setTimelineWidth(el.clientWidth);
+    };
+    measure();
+    const resizeObserver = new ResizeObserver(measure);
+    resizeObserver.observe(el);
+    return () => resizeObserver.disconnect();
+  }, [viewMode]);
 
   // Synchroniser le scroll horizontal entre le header et la timeline
   useEffect(() => {
@@ -809,7 +834,7 @@ export function KanbanGanttView({
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             <div style={{ minWidth: `${daysToDisplay.length * dayWidth}px` }}>
-              {viewMode === "year" ? (
+              {useWeekColumns ? (
                 <>
                   {/* Ligne des mois */}
                   <div className="flex border-b border-border">
@@ -878,8 +903,13 @@ export function KanbanGanttView({
                         >
                           {!isNarrow && (
                             <div className="text-[10px] text-muted-foreground/80">
-                              {format(week.weekStart, "MMM d", { locale: fr })}{" "}
-                              - {format(week.weekEnd, "d", { locale: fr })}
+                              {/* Borné aux jours visibles : en bord de période,
+                                  la semaine ISO peut déborder sur le mois
+                                  précédent/suivant (ex. « déc. 29 » en Q1) */}
+                              {format(week.days[0], "MMM d", { locale: fr })} -{" "}
+                              {format(week.days[week.days.length - 1], "d", {
+                                locale: fr,
+                              })}
                             </div>
                           )}
                           <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
@@ -932,7 +962,11 @@ export function KanbanGanttView({
           {/* Colonne des tâches */}
           <div
             className="border-r border-border bg-muted/20"
-            style={{ minHeight: `${Math.max(allTasks.length, 20) * 45}px` }}
+            style={{
+              // + hScrollbarHeight : la ligne de grille doit être assez haute
+              // pour le contenu de la timeline PLUS sa scrollbar horizontale
+              minHeight: `${Math.max(allTasks.length, 20) * 45 + hScrollbarHeight}px`,
+            }}
           >
             {/* Liste des tâches */}
             <div className="divide-y divide-border">
@@ -1055,13 +1089,18 @@ export function KanbanGanttView({
             </div>
           </div>
 
-          {/* Timeline - scroll horizontal seulement */}
+          {/* Timeline - scroll horizontal seulement (overflow-y-hidden : sinon
+              la scrollbar horizontale classique (Windows / macOS « toujours
+              afficher ») consomme ~15px de hauteur et déclenche un 2e scroll
+              vertical interne) */}
           <div
-            className="bg-background overflow-x-auto"
+            className="bg-background overflow-x-auto overflow-y-hidden"
             ref={scrollContainerRef}
           >
             <div
-              className="relative cursor-pointer"
+              // overflow-x-clip : les poignées de resize (right: -10px) des
+              // barres en bord de période ne doivent pas créer de scroll
+              className="relative cursor-pointer overflow-x-clip"
               style={{
                 minWidth: `${daysToDisplay.length * dayWidth}px`,
                 minHeight: `${Math.max(allTasks.length, 20) * 45}px`,
@@ -1073,7 +1112,7 @@ export function KanbanGanttView({
                 className="absolute inset-0 top-0 flex pointer-events-none"
                 style={{ minHeight: `${Math.max(allTasks.length, 20) * 45}px` }}
               >
-                {viewMode === "year"
+                {useWeekColumns
                   ? weekGroups.map((week, index) => {
                       const isCurrentWeek = isWithinInterval(new Date(), {
                         start: week.weekStart,
