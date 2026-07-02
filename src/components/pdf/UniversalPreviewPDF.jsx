@@ -590,6 +590,9 @@ const UniversalPreviewPDF = ({
             transform: `scale(${scale})`,
             transformOrigin: "top left",
             width: `${100 / scale}%`,
+            // Hauteur A4 : le corps (flex-grow) s'étire et le footer reste
+            // collé en bas de page, comme sur le PDF généré.
+            minHeight: "1123px",
           }),
           ...(forPDF && {
             minHeight: "1123px", // Hauteur A4 en pixels
