@@ -27,7 +27,7 @@ describe("PLAN_LIMITS constants", () => {
     expect(plan.bankAccounts).toBe(1);
     expect(plan.storage).toBe(50);
     expect(plan.fileTransferMaxGB).toBe(5);
-    expect(plan.availableRoles).toEqual(["accountant"]);
+    expect(plan.availableRoles).toEqual(["member", "accountant"]);
     expect(plan.exports).toEqual(["csv", "excel"]);
     expect(plan.esignature).toBe("ses");
     expect(plan.documentAutomations).toBe(5);

@@ -52,9 +52,9 @@ function getUpgradeSuggestion(currentPlanKey, projectedBillableUsers) {
  * selon les limites de son plan et le rôle demandé
  *
  * Limites :
- * - Freelance : 0 utilisateur, 1 comptable (pas de siège payant)
+ * - Freelance : 0 utilisateur inclus, 1 comptable, sièges payants possibles (7,49€/mois)
  * - PME : 10 utilisateurs inclus, 3 comptables, sièges payants possibles (7,49€/mois)
- * - Entreprise : 25 utilisateurs inclus, 5 comptables, sièges payants possibles (7,49€/mois)
+ * - Entreprise : 25 utilisateurs inclus, 5 comptables, sièges payants possibles (5,99€/mois)
  */
 async function handler(request) {
   try {
