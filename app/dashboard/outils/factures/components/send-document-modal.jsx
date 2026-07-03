@@ -139,7 +139,7 @@ export function SendDocumentModal({
   const [isSending, setIsSending] = useState(false);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, organization } = useWorkspace();
 
   const labels = DOCUMENT_LABELS[documentType] || DOCUMENT_LABELS.invoice;
 
@@ -330,8 +330,11 @@ export function SendDocumentModal({
 
   if (!open) return null;
 
-  const senderEmail = emailData?.getEmailSettings?.fromEmail;
-  const senderName = emailData?.getEmailSettings?.fromName;
+  // L'expéditeur affiché est l'email de l'organisation (cohérent avec l'envoi backend)
+  const senderEmail =
+    organization?.companyEmail || emailData?.getEmailSettings?.fromEmail;
+  const senderName =
+    organization?.companyName || emailData?.getEmailSettings?.fromName;
 
   // Handler pour confirmer la fermeture
   const handleCloseConfirm = () => {
