@@ -24,7 +24,11 @@ export function useDashboardLayoutSimple() {
   const [refreshTick, setRefreshTick] = useState(0);
 
   // Données de session
-  const { data: session, isPending: sessionLoading } = useSession();
+  const {
+    data: session,
+    isPending: sessionLoading,
+    refetch: refetchSession,
+  } = useSession();
   // Données d'organisation active (Better Auth)
   const { data: activeOrganization, isPending: orgLoading } =
     authClient.useActiveOrganization();
@@ -62,6 +66,32 @@ export function useDashboardLayoutSimple() {
       console.warn("Erreur lecture cache utilisateur:", error);
     }
   }, []);
+
+  // Session cliente vide alors qu'on est dans le dashboard (le layout serveur
+  // a déjà validé les cookies) : c'est presque toujours un échec ponctuel de
+  // /api/auth/get-session (réseau, 429…). Better Auth ne retente pas de
+  // lui-même et toute l'UI dépendante (sidebar, « Bonjour … ») reste vide
+  // jusqu'à un rechargement manuel. On retente avec backoff (1 s, 2 s, 4 s).
+  const [sessionRetry, setSessionRetry] = useState(0);
+  useEffect(() => {
+    if (!isHydrated || sessionLoading) return;
+    if (session?.user) {
+      if (sessionRetry !== 0) setSessionRetry(0);
+      return;
+    }
+    if (sessionRetry >= 3) return;
+
+    const timer = setTimeout(
+      () => {
+        refetchSession?.();
+        setSessionRetry((n) => n + 1);
+      },
+      1000 * 2 ** sessionRetry,
+    );
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHydrated, sessionLoading, session?.user, sessionRetry]);
 
   // Sauvegarder les données utilisateur en cache quand elles changent
   useEffect(() => {
@@ -274,7 +304,11 @@ export function useDashboardLayoutSimple() {
     };
     window.addEventListener("subscription:refresh", onRefresh);
     return () => window.removeEventListener("subscription:refresh", onRefresh);
-  }, [isHydrated, session?.session?.activeOrganizationId, activeOrganization?.id]);
+  }, [
+    isHydrated,
+    session?.session?.activeOrganizationId,
+    activeOrganization?.id,
+  ]);
 
   // Purge le cache d'abonnement de l'organisation quittée lors d'un changement
   // d'org. Sans ça, revenir sur une org dont le statut a changé ailleurs (ou
@@ -292,11 +326,18 @@ export function useDashboardLayoutSimple() {
       try {
         localStorage.removeItem(`subscription-${prevOrgId}`);
       } catch (error) {
-        console.warn("Erreur purge cache abonnement (changement d'org):", error);
+        console.warn(
+          "Erreur purge cache abonnement (changement d'org):",
+          error,
+        );
       }
     }
     prevOrgIdRef.current = currentOrgId;
-  }, [isHydrated, session?.session?.activeOrganizationId, activeOrganization?.id]);
+  }, [
+    isHydrated,
+    session?.session?.activeOrganizationId,
+    activeOrganization?.id,
+  ]);
 
   // Polling automatique après retour de Stripe
   useEffect(() => {
@@ -701,8 +742,10 @@ export function useDashboardLayoutSimple() {
       localStorage.removeItem("user-cache");
 
       // Ne PAS réinitialiser subscription à null - garder l'ancienne valeur pendant le chargement
-      // Le useEffect se chargera de refetch automatiquement
+      // Incrémenter refreshTick pour re-déclencher l'effet de fetch : sans ça,
+      // aucune dépendance ne change et isLoading resterait bloqué à true.
       setIsLoading(true);
+      setRefreshTick((t) => t + 1);
       console.log("✅ Caches vidés, refetch en cours...");
     } catch (error) {
       console.warn("Erreur suppression caches:", error);
