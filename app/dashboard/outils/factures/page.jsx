@@ -34,6 +34,8 @@ function InvoicesContent() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAutoReminderOpen, setIsAutoReminderOpen] = useState(false);
   const [invoiceIdToOpen, setInvoiceIdToOpen] = useState(null);
+  // Page d'origine (ex: transactions) pour y revenir à la fermeture de la sidebar
+  const [sidebarReturnTo, setSidebarReturnTo] = useState(null);
 
   // Refs pour déclencher les actions depuis le header
   const [triggerImport, setTriggerImport] = useState(false);
@@ -108,10 +110,20 @@ function InvoicesContent() {
     const id = searchParams.get("id");
     if (id) {
       setInvoiceIdToOpen(id);
+      setSidebarReturnTo(searchParams.get("returnTo"));
       // Nettoyer l'URL après avoir récupéré l'ID
       router.replace("/dashboard/outils/factures", { scroll: false });
     }
   }, [searchParams, router]);
+
+  // Fermeture de la sidebar ouverte via ?id= : revenir à la page d'origine
+  const handleAutoOpenedSidebarClose = useCallback(() => {
+    setInvoiceIdToOpen(null);
+    if (sidebarReturnTo === "transactions") {
+      setSidebarReturnTo(null);
+      router.push("/dashboard/outils/transactions");
+    }
+  }, [sidebarReturnTo, router]);
 
   const handleNewInvoice = () => {
     router.push("/dashboard/outils/factures/new");
@@ -349,6 +361,7 @@ function InvoicesContent() {
               <InvoiceTable
                 handleNewInvoice={handleNewInvoice}
                 invoiceIdToOpen={invoiceIdToOpen}
+                onAutoOpenedSidebarClose={handleAutoOpenedSidebarClose}
                 onOpenReminderSettings={() => setIsAutoReminderOpen(true)}
                 triggerImport={triggerImport}
                 onImportTriggered={() => setTriggerImport(false)}
@@ -406,6 +419,7 @@ function InvoicesContent() {
         <Suspense fallback={<InvoiceTableSkeleton />}>
           <InvoiceTable
             invoiceIdToOpen={invoiceIdToOpen}
+            onAutoOpenedSidebarClose={handleAutoOpenedSidebarClose}
             onOpenReminderSettings={() => setIsAutoReminderOpen(true)}
           />
         </Suspense>

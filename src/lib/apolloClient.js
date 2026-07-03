@@ -531,6 +531,15 @@ const cache = new InMemoryCache({
     ForecastEntryItem: {
       keyFields: false,
     },
+    // Le client embarqué dans un document (facture, devis, BC, avoir) est un
+    // SNAPSHOT propre à ce document, mais son id référence le client d'origine.
+    // Sans keyFields: false, le cache normalise tous les snapshots du même
+    // client en une seule entrée EmbeddedClient:<id> : la dernière requête
+    // (liste devis, brouillon, sidebar…) écrase les autres → mauvais
+    // destinataire affiché dans le modal d'envoi d'email.
+    EmbeddedClient: {
+      keyFields: false,
+    },
   },
 });
 

@@ -118,6 +118,7 @@ import { DocumentText2Icon } from "@/src/components/icons";
 export default function InvoiceTable({
   handleNewInvoice,
   invoiceIdToOpen,
+  onAutoOpenedSidebarClose,
   onOpenReminderSettings,
   triggerImport,
   onImportTriggered,
@@ -130,6 +131,12 @@ export default function InvoiceTable({
   const { canCreate } = usePermissions();
   const [canCreateInvoice, setCanCreateInvoice] = useState(false);
   const [invoiceToOpen, setInvoiceToOpen] = useState(null);
+  // Vrai si la sidebar a été ouverte automatiquement via ?id= (ex: depuis Transactions)
+  const sidebarAutoOpenedRef = useRef(false);
+  const openSidebarManually = useCallback((invoice) => {
+    sidebarAutoOpenedRef.current = false;
+    setInvoiceToOpen(invoice);
+  }, []);
   // État pour la modal d'envoi par email - géré au niveau du tableau pour éviter les re-renders
   const [sendEmailInvoice, setSendEmailInvoice] = useState(null);
   const [templateInvoice, setTemplateInvoice] = useState(null);
@@ -252,7 +259,7 @@ export default function InvoiceTable({
     reminderEnabled,
     onOpenReminderSettings,
     excludedClientIds,
-    onOpenSidebar: setInvoiceToOpen,
+    onOpenSidebar: openSidebarManually,
     onOpenImportedSidebar: setSelectedImportedInvoice,
     onSendEmail: setSendEmailInvoice,
     onSaveAsTemplate: setTemplateInvoice,
@@ -456,6 +463,7 @@ export default function InvoiceTable({
     if (invoiceIdToOpen && invoices && invoices.length > 0) {
       const invoice = invoices.find((inv) => inv.id === invoiceIdToOpen);
       if (invoice) {
+        sidebarAutoOpenedRef.current = true;
         setInvoiceToOpen(invoice);
       }
     }
@@ -1091,7 +1099,7 @@ export default function InvoiceTable({
           globalFilter={globalFilter}
           onPreviewInvoice={(invoiceId) => {
             const inv = (invoices || []).find((i) => i.id === invoiceId);
-            if (inv) setInvoiceToOpen(inv);
+            if (inv) openSidebarManually(inv);
           }}
         />
       )}
@@ -1197,7 +1205,13 @@ export default function InvoiceTable({
           <InvoiceSidebar
             invoice={invoiceToOpen}
             isOpen={!!invoiceToOpen}
-            onClose={() => setInvoiceToOpen(null)}
+            onClose={() => {
+              setInvoiceToOpen(null);
+              if (sidebarAutoOpenedRef.current) {
+                sidebarAutoOpenedRef.current = false;
+                onAutoOpenedSidebarClose?.();
+              }
+            }}
             onRefetch={() => {
               refetch();
               onBalancesRefetch?.();

@@ -827,7 +827,9 @@ export function TransactionDetailDrawer({
   // Naviguer vers la facture liée (ouvre le panneau d'aperçu, pas l'éditeur)
   const handleViewLinkedInvoice = () => {
     if (transaction?.linkedInvoice?.id) {
-      router.push(`/dashboard/outils/factures?id=${transaction.linkedInvoice.id}`);
+      router.push(
+        `/dashboard/outils/factures?id=${transaction.linkedInvoice.id}&returnTo=transactions`,
+      );
       onOpenChange(false);
     }
   };

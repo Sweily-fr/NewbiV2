@@ -62,7 +62,7 @@ import {
 import { getCurrentUser } from "../lib/auth/api";
 import { useUser } from "../lib/auth/hooks";
 import { TeamSwitcher } from "@/src/components/team-switcher";
-import { useSubscription } from "@/src/contexts/dashboard-layout-context";
+import { useDashboardLayoutContext } from "@/src/contexts/dashboard-layout-context";
 import { authClient } from "@/src/lib/auth-client";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import { EmailVerificationBadge } from "@/src/components/email-verification-badge";
@@ -432,11 +432,11 @@ export function AppSidebar({
 }) {
   const pathname = usePathname();
   const { session } = useUser();
-  const {
-    isLoading: subscriptionLoading,
-    isActive,
-    subscription,
-  } = useSubscription();
+  // Utilisateur avec repli sur le cache localStorage (user-cache). La nav est
+  // statique : elle ne doit pas être remplacée par un squelette pendant les
+  // (re)chargements d'abonnement/organisation — un échec ponctuel de l'un
+  // d'eux laissait la sidebar en squelette jusqu'à un rechargement manuel.
+  const { user } = useDashboardLayoutContext();
   const [theme, setTheme] = React.useState("light");
   const [notificationCount, setNotificationCount] = React.useState(0);
   const { listInvitations } = useOrganizationInvitations();
@@ -581,7 +581,7 @@ export function AppSidebar({
         <TeamSwitcher />
       </SidebarHeader>
       <SidebarContent className="mt-1">
-        {session?.user && !subscriptionLoading ? (
+        {user ? (
           <>
             {/* Tabs pour les cabinets comptables */}
             {isAccountingFirm && !orgTypeLoading && <SidebarViewTabs />}
@@ -692,8 +692,8 @@ export function AppSidebar({
         )}
       </SidebarContent>
       <SidebarFooter>
-        {session?.user && !subscriptionLoading ? (
-          <NavUser user={session.user} />
+        {user ? (
+          <NavUser user={user} />
         ) : (
           <div
             className={
