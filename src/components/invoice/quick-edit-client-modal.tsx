@@ -39,6 +39,7 @@ export function QuickEditClientModal({
     handleSubmit,
     formState: { errors },
     reset,
+    watch,
   } = useForm({
     defaultValues: {
       name: client?.name || "",
@@ -52,6 +53,14 @@ export function QuickEditClientModal({
       addressCountry: client?.address?.country || "",
     },
   })
+
+  // Client hors France : SIREN/TVA (notions FR) masqués et non stockés
+  const isForeignClient = (() => {
+    const c = String(watch("addressCountry") || "")
+      .trim()
+      .toLowerCase()
+    return c !== "" && c !== "france" && c !== "fr"
+  })()
 
   // Mettre à jour le formulaire quand le client change
   useEffect(() => {
@@ -78,8 +87,9 @@ export function QuickEditClientModal({
         type: client.type, // Garder le type du client
         name: data.name,
         email: data.email,
-        siret: data.siret,
-        vatNumber: data.vatNumber,
+        // Client hors France : pas de SIREN/TVA (notions FR) → rien en base
+        siret: isForeignClient ? undefined : data.siret,
+        vatNumber: isForeignClient ? undefined : data.vatNumber,
         address: {
           street: data.addressStreet,
           city: data.addressCity,
@@ -148,17 +158,21 @@ export function QuickEditClientModal({
               error={errors.phone?.message as string}
             />
 
-            <InputWithError
-              label="SIRET"
-              {...register("siret")}
-              error={errors.siret?.message as string}
-            />
+            {!isForeignClient && (
+              <>
+                <InputWithError
+                  label="SIRET"
+                  {...register("siret")}
+                  error={errors.siret?.message as string}
+                />
 
-            <InputWithError
-              label="Numéro de TVA"
-              {...register("vatNumber")}
-              error={errors.vatNumber?.message as string}
-            />
+                <InputWithError
+                  label="Numéro de TVA"
+                  {...register("vatNumber")}
+                  error={errors.vatNumber?.message as string}
+                />
+              </>
+            )}
           </div>
 
           <div className="space-y-4">
