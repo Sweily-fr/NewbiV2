@@ -64,6 +64,42 @@ function normalizeMobile(raw) {
   return null;
 }
 
+// Dimensions d'une page A4 en points PDF (unité utilisée par l'API eSignature)
+const A4_WIDTH_PT = 595.28;
+const A4_HEIGHT_PT = 841.89;
+// Hauteur réservée au tampon de signature apposé par le prestataire : la boîte
+// a une taille fixe non paramétrable (l'API n'accepte que page/x/y), on garde
+// donc assez de place pour qu'elle tienne entièrement au-dessus du footer.
+const SIGNATURE_RESERVED_PT = 90;
+
+/**
+ * Calcule où placer la zone de signature : juste au-dessus du bandeau de pied
+ * de page ([data-pdf-section="footer"]), sur la partie blanche du document.
+ * Coordonnées en points PDF, origine en HAUT à gauche (convention OpenAPI
+ * eSignature). Retourne null si le footer est introuvable — le backend
+ * applique alors son placement par défaut.
+ */
+function computeSignaturePlacement(componentRef) {
+  const container = componentRef.current;
+  const footer = container?.querySelector('[data-pdf-section="footer"]');
+  if (!container || !footer) return null;
+
+  const containerRect = container.getBoundingClientRect();
+  const footerRect = footer.getBoundingClientRect();
+  if (!containerRect.width) return null;
+
+  // Même découpage que generatePdfBase64FromRef : l'image est tranchée en
+  // pages A4 pleines, chaque tranche dessinée à partir du haut de sa page.
+  const pageHeightPx = containerRect.width * (A4_HEIGHT_PT / A4_WIDTH_PT);
+  const footerTopPx = footerRect.top - containerRect.top;
+  const pageIndex = Math.floor(footerTopPx / pageHeightPx);
+  const ptPerPx = A4_WIDTH_PT / containerRect.width;
+  const footerTopPt = (footerTopPx - pageIndex * pageHeightPx) * ptPerPx;
+
+  const y = Math.max(40, Math.round(footerTopPt - SIGNATURE_RESERVED_PT));
+  return [{ page: pageIndex + 1, x: 400, y }];
+}
+
 /**
  * Génère un PDF en base64 à partir d'un ref DOM
  */
@@ -310,6 +346,10 @@ export function SignatureDialog({
         };
       });
 
+      // Zone de signature juste au-dessus du pied de page, mesurée sur le
+      // document rendu (le footer varie selon les notes/mentions de l'orga)
+      const signaturePlacement = computeSignaturePlacement(pdfRef);
+
       const result = await requestSignature({
         documentType,
         documentId: document._id || document.id,
@@ -317,6 +357,7 @@ export function SignatureDialog({
         signers: formattedSigners,
         title: `Signature ${DOCUMENT_TYPE_LABELS[documentType] || "document"} ${document.number || ""}`,
         documentBase64,
+        ...(signaturePlacement && { signaturePlacement }),
       });
 
       if (result.success) {
