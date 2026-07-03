@@ -7,7 +7,7 @@ import React, {
   useMemo,
   useRef,
 } from "react";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
 import { useQuery } from "@apollo/client";
 import {
   Calendar as CalendarIcon,
@@ -134,8 +134,11 @@ export default function QuoteInfoSection({
     },
   );
 
-  // Simple state for selected period without complex calculations
-  const [selectedPeriod, setSelectedPeriod] = useState(null);
+  // Suivre les deux dates pour dériver la période sélectionnée (le reste du
+  // formulaire continue de passer par getValues pour limiter les re-renders)
+  const [watchedIssueDate, watchedValidUntil] = useWatch({
+    name: ["issueDate", "validUntil"],
+  });
 
   // Get the last prefix (quote or purchase order depending on documentType)
   const { prefix: lastQuotePrefix, loading: loadingLastQuotePrefix } =
@@ -205,6 +208,27 @@ export default function QuoteInfoSection({
     // Crée une nouvelle date en ne gardant que l'année, le mois et le jour
     return new Date(date.getFullYear(), date.getMonth(), date.getDate());
   };
+
+  // Période dérivée de l'écart émission → validité, pour que le sélecteur
+  // réaffiche la durée (15/30/45/60/90 jours) à la réouverture d'un brouillon.
+  const selectedPeriod = useMemo(() => {
+    const issue = createDateWithoutTime(watchedIssueDate);
+    const validUntil = createDateWithoutTime(watchedValidUntil);
+    if (
+      !issue ||
+      !validUntil ||
+      isNaN(issue.getTime()) ||
+      isNaN(validUntil.getTime())
+    ) {
+      return "";
+    }
+    const diffDays = Math.round(
+      (validUntil.getTime() - issue.getTime()) / (24 * 60 * 60 * 1000),
+    );
+    return VALIDITY_PERIOD_SUGGESTIONS.some((p) => p.value === diffDays)
+      ? String(diffDays)
+      : "";
+  }, [watchedIssueDate, watchedValidUntil]);
 
   const validateValidUntil = (value) => {
     if (!value) return "La date de validité est requise";
@@ -522,7 +546,7 @@ export default function QuoteInfoSection({
                   </PopoverContent>
                 </Popover>
                 <Select
-                  value={selectedPeriod || ""}
+                  value={selectedPeriod}
                   onValueChange={(value) => {
                     if (!value || value === "custom") return;
                     const days = parseInt(value);
@@ -534,7 +558,6 @@ export default function QuoteInfoSection({
                       shouldDirty: true,
                       shouldValidate: false,
                     });
-                    setSelectedPeriod(value);
                   }}
                   disabled={!canEdit}
                 >
