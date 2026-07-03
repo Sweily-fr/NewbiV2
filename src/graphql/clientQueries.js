@@ -361,7 +361,11 @@ export const useCreateClient = (providedWorkspaceId) => {
   const [createClientMutation, { loading, error }] = useMutation(
     CREATE_CLIENT,
     {
-      update: (cache, { data: { createClient: newClient } }) => {
+      update: (cache, { data }) => {
+        // En cas d'erreur GraphQL, data peut être null → ne pas planter ici
+        // (sinon l'erreur réelle du backend est masquée par un TypeError)
+        const newClient = data?.createClient;
+        if (!newClient) return;
         // Mettre à jour le cache en temps réel
         try {
           const existingClients = cache.readQuery({
@@ -482,7 +486,10 @@ export const useUpdateClient = (providedWorkspaceId, options = {}) => {
   const { showToast = true } = options;
 
   const [updateClientMutation, { loading }] = useMutation(UPDATE_CLIENT, {
-    update: (cache, { data: { updateClient: updatedClient } }) => {
+    update: (cache, { data }) => {
+      // En cas d'erreur GraphQL, data peut être null → ne pas planter ici
+      const updatedClient = data?.updateClient;
+      if (!updatedClient) return;
       // Mettre à jour le client dans le cache GET_CLIENT
       cache.writeQuery({
         query: GET_CLIENT,
