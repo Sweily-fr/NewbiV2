@@ -176,6 +176,8 @@ export const GET_PURCHASE_INVOICE_STATS = gql`
     purchaseInvoiceStats(workspaceId: $workspaceId) {
       totalToPay
       totalToPayCount
+      totalUnpaid
+      totalUnpaidCount
       totalOverdue
       totalOverdueCount
       paidThisMonth
