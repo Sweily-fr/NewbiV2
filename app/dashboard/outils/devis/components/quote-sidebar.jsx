@@ -472,7 +472,7 @@ export default function QuoteSidebar({
               Client
             </p>
             {quote.client ? (
-              <div className="space-y-2">
+              <div className="space-y-0.5">
                 <div>
                   <p className="font-medium">{quote.client.name}</p>
                   {quote.client.email && (
@@ -790,7 +790,7 @@ export default function QuoteSidebar({
                 className="flex-1 font-normal"
               >
                 <Send className="h-4 w-4 mr-2" />
-                Envoyer le devis
+                Créer le devis
               </Button>
             </div>
           )}
