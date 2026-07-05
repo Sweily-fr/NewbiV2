@@ -119,11 +119,11 @@ export function AnalyticsPCGMapping() {
       receiptFiles: tx.receiptFiles || [],
       hasReceipt:
         (Array.isArray(tx.receiptFiles) && tx.receiptFiles.length > 0) ||
-        !!tx.linkedInvoice?.id,
+        (tx.linkedInvoices?.length || 0) > 0,
       pcgAccount: tx.pcgAccount || null,
       metadata: tx.metadata || {},
-      linkedInvoice: tx.linkedInvoice || null,
-      linkedInvoiceId: tx.linkedInvoiceId || null,
+      linkedInvoices: tx.linkedInvoices || [],
+      linkedInvoiceIds: tx.linkedInvoiceIds || [],
       reconciliationStatus: tx.reconciliationStatus || null,
       originalTransaction: {
         id: tx.id,

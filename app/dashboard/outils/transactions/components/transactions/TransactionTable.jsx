@@ -494,13 +494,15 @@ export default function TransactionTable({
         updatedAt: expense.updatedAt,
         // Préserver la source originale (BANK, MANUAL, OCR) ou le type (BANK_TRANSACTION, MANUAL_EXPENSE)
         source: expense.source || expense.type || "MANUAL",
-        // Indicateurs pour la vue unifiée
+        // Indicateurs pour la vue unifiée (N↔N : "a une facture liée" =
+        // array non vide).
         hasReceipt:
           expense.hasReceipt ||
           (expense.files && expense.files.length > 0) ||
-          !!expense.linkedInvoice?.id,
+          (expense.linkedInvoices?.length || 0) > 0,
         receiptRequired:
-          expense.receiptRequired !== false && !expense.linkedInvoice?.id,
+          expense.receiptRequired !== false &&
+          (expense.linkedInvoices?.length || 0) === 0,
         expenseType: expense.expenseType || "ORGANIZATION",
         assignedMember: expense.assignedMember || null,
         // Données originales de la transaction bancaire si disponibles
@@ -508,9 +510,9 @@ export default function TransactionTable({
         // Affichage unifié : ligne issue d'une facture d'achat (sourceKind)
         sourceKind: expense.sourceKind || null,
         originalPurchaseInvoice: expense.originalPurchaseInvoice || null,
-        // Champs de rapprochement bancaire
-        linkedInvoiceId: expense.linkedInvoiceId || null,
-        linkedInvoice: expense.linkedInvoice || null,
+        // Champs de rapprochement bancaire (N↔N)
+        linkedInvoiceIds: expense.linkedInvoiceIds || [],
+        linkedInvoices: expense.linkedInvoices || [],
         reconciliationStatus: expense.reconciliationStatus || null,
         reconciliationDate: expense.reconciliationDate || null,
         // Compte PCG et métadonnées (pour affichage et suggestion dans le dialog)

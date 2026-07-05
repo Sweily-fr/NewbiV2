@@ -34,7 +34,16 @@ export const INVOICE_FRAGMENT = gql`
     discountAmount
     stripeInvoiceId
     paymentLink
-    linkedTransactionId
+    linkedTransactionIds
+    # Transactions bancaires rapprochées (résolveur backend Invoice.linkedTransactions).
+    linkedTransactions {
+      id
+      description
+      fromAccount
+      amount
+      currency
+      date
+    }
     showBankDetails
     clientPositionRight
     isReverseCharge
