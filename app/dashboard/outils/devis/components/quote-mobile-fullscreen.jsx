@@ -307,7 +307,7 @@ export default function QuoteMobileFullscreen({
                     Client
                   </h3>
                   {quote.client ? (
-                    <div className="space-y-1.5">
+                    <div className="space-y-0.5">
                       <div>
                         <p className="font-medium">{quote.client.name}</p>
                         {quote.client.email && (
@@ -598,7 +598,7 @@ export default function QuoteMobileFullscreen({
                 ) : (
                   <Send className="mr-2 h-4 w-4" />
                 )}
-                Envoyer le devis
+                Créer le devis
               </Button>
             )}
 

@@ -319,7 +319,8 @@ export const columns = [
     cell: ({ row, table }) => {
       const files = row.original.files || [];
       const receiptFiles = row.original.receiptFiles || [];
-      const linkedInvoice = row.original.linkedInvoice;
+      // N↔N : on prend la 1re facture liée pour l'affichage compact du tableau.
+      const linkedInvoice = row.original.linkedInvoices?.[0] || null;
       const hasLinkedInvoice = !!linkedInvoice?.id;
       const reconciliationStatus =
         row.original.reconciliationStatus?.toLowerCase();

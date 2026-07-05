@@ -244,7 +244,7 @@ export default function InvoiceSidebar({
       isOpen &&
       initialInvoice?.id &&
       initialInvoice?.status === INVOICE_STATUS.PENDING &&
-      !initialInvoice?.linkedTransactionId
+      (initialInvoice?.linkedTransactionIds?.length || 0) === 0
     ) {
       loadAvailableTransactions();
     }
@@ -285,29 +285,36 @@ export default function InvoiceSidebar({
     [initialInvoice?.id, linkTransaction, onRefetch],
   );
 
-  // Délier la transaction de cette facture
-  const handleUnlinkTransaction = useCallback(async () => {
-    if (!isMountedRef.current) return;
-    setLinkingTransaction(true);
-    try {
-      const result = await unlinkTransaction(null, initialInvoice.id);
-      if (!isMountedRef.current) return;
-      if (result.success) {
-        toast.success("Paiement bancaire détaché");
-        if (onRefetch) onRefetch();
-      } else {
-        toast.error(result.error || "Erreur lors du détachement");
+  // Délier une transaction précise de cette facture (N↔N : la mutation
+  // backend exige les DEUX ids).
+  const handleUnlinkTransaction = useCallback(
+    async (transactionId) => {
+      if (!isMountedRef.current || !transactionId) return;
+      setLinkingTransaction(true);
+      try {
+        const result = await unlinkTransaction(
+          transactionId,
+          initialInvoice.id,
+        );
+        if (!isMountedRef.current) return;
+        if (result.success) {
+          toast.success("Paiement bancaire détaché");
+          if (onRefetch) onRefetch();
+        } else {
+          toast.error(result.error || "Erreur lors du détachement");
+        }
+      } catch (err) {
+        if (isMountedRef.current) {
+          toast.error("Erreur lors du détachement");
+        }
+      } finally {
+        if (isMountedRef.current) {
+          setLinkingTransaction(false);
+        }
       }
-    } catch (err) {
-      if (isMountedRef.current) {
-        toast.error("Erreur lors du détachement");
-      }
-    } finally {
-      if (isMountedRef.current) {
-        setLinkingTransaction(false);
-      }
-    }
-  }, [initialInvoice?.id, unlinkTransaction, onRefetch]);
+    },
+    [initialInvoice?.id, unlinkTransaction, onRefetch],
+  );
 
   // Détecter si on est sur mobile
   useEffect(() => {
@@ -707,7 +714,7 @@ export default function InvoiceSidebar({
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Section Paiement détecté */}
           {invoice.status === INVOICE_STATUS.PENDING &&
-            !invoice.linkedTransactionId &&
+            (invoice.linkedTransactionIds?.length || 0) === 0 &&
             suggestedTransactions.length > 0 && (
               <>
                 <div className="space-y-3">
@@ -1236,45 +1243,152 @@ export default function InvoiceSidebar({
             )}
           </div>
 
-          {/* Section Paiement Bancaire - Affichée uniquement si paiement rattaché */}
-          {invoice.linkedTransactionId && (
+          {/* Section Paiement Bancaire — liste des transactions rattachées
+              (N↔N : plusieurs transactions possibles). Header avec bouton
+              "Ajouter" pour attacher une autre transaction (paiement
+              échelonné). Chaque row : nom / date / montant + bouton délier. */}
+          {(invoice.linkedTransactions?.length || 0) > 0 && (
             <>
               <Separator />
               <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Landmark className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                    Paiement bancaire
-                  </p>
-                </div>
-                <div className="p-3 border rounded-lg bg-muted/30">
-                  <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
-                      <CheckCircle className="h-3 w-3" />
-                      Paiement rattaché
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleUnlinkTransaction}
-                      disabled={linkingTransaction}
-                      className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
-                    >
-                      {linkingTransaction ? (
-                        <LoaderCircle className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <Unlink className="h-3 w-3" />
-                      )}
-                    </Button>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Landmark className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                      Paiement bancaire
+                    </p>
                   </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowTransactionPicker(true)}
+                    disabled={linkingTransaction}
+                    className="h-7 px-2 text-xs"
+                  >
+                    <Link2 className="h-3 w-3 mr-1" />
+                    Ajouter
+                  </Button>
                 </div>
+
+                <div className="space-y-2">
+                  {invoice.linkedTransactions.map((tx) => (
+                    <div
+                      key={tx.id}
+                      className="p-3 border rounded-lg bg-muted/30 flex items-start justify-between gap-2"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {tx.description || tx.fromAccount || "Transaction"}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                          <span>
+                            {tx.date
+                              ? new Intl.DateTimeFormat("fr-FR", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                }).format(new Date(tx.date))
+                              : "—"}
+                          </span>
+                          <span>•</span>
+                          <span className="font-medium text-green-600 dark:text-green-400">
+                            +
+                            {new Intl.NumberFormat("fr-FR", {
+                              style: "currency",
+                              currency: tx.currency || "EUR",
+                            }).format(tx.amount || 0)}
+                          </span>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleUnlinkTransaction(tx.id)}
+                        disabled={linkingTransaction}
+                        className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                      >
+                        {linkingTransaction ? (
+                          <LoaderCircle className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Unlink className="h-3 w-3" />
+                        )}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Sélecteur pour attacher une autre transaction (N↔N) */}
+                {showTransactionPicker && (
+                  <div className="border rounded-lg p-3 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">
+                        Sélectionner une transaction
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowTransactionPicker(false)}
+                        className="h-6 w-6 p-0"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    {loadingTransactions ? (
+                      <div className="flex items-center justify-center py-4">
+                        <LoaderCircle className="h-4 w-4 animate-spin" />
+                      </div>
+                    ) : availableTransactions.length > 0 ? (
+                      <ScrollArea className="h-[200px]">
+                        <div className="space-y-2">
+                          {availableTransactions.map((tx) => (
+                            <div
+                              key={tx.id || tx._id}
+                              className="p-2 border rounded cursor-pointer hover:bg-muted/50"
+                              onClick={() =>
+                                handleLinkTransaction(tx.id || tx._id)
+                              }
+                            >
+                              <p className="text-sm font-medium truncate">
+                                {tx.description ||
+                                  tx.fromAccount ||
+                                  "Transaction"}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                                <span>
+                                  {tx.date
+                                    ? new Intl.DateTimeFormat("fr-FR", {
+                                        day: "numeric",
+                                        month: "short",
+                                      }).format(new Date(tx.date))
+                                    : "—"}
+                                </span>
+                                <span>•</span>
+                                <span className="font-medium text-green-600">
+                                  +
+                                  {new Intl.NumberFormat("fr-FR", {
+                                    style: "currency",
+                                    currency: tx.currency || "EUR",
+                                  }).format(tx.amount || 0)}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    ) : (
+                      <p className="text-center py-4 text-xs text-muted-foreground">
+                        Aucune transaction disponible.
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             </>
           )}
 
           {/* Section Paiement Bancaire - Pour factures en attente sans suggestions */}
           {invoice.status === INVOICE_STATUS.PENDING &&
-            !invoice.linkedTransactionId &&
+            (invoice.linkedTransactionIds?.length || 0) === 0 &&
             suggestedTransactions.length === 0 && (
               <>
                 <Separator />

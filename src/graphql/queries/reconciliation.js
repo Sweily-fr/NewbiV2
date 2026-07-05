@@ -70,8 +70,8 @@ export const LINK_TRANSACTION_TO_INVOICE = gql`
         date
         reconciliationStatus
         reconciliationDate
-        linkedInvoiceId
-        linkedInvoice {
+        linkedInvoiceIds
+        linkedInvoices {
           id
           number
           status
@@ -105,8 +105,8 @@ export const UNLINK_TRANSACTION_FROM_INVOICE = gql`
         id
         reconciliationStatus
         reconciliationDate
-        linkedInvoiceId
-        linkedInvoice {
+        linkedInvoiceIds
+        linkedInvoices {
           id
           number
           status

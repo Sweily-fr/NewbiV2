@@ -121,9 +121,9 @@ export const GET_TRANSACTIONS = gql`
         uploadedAt
       }
       receiptRequired
-      # Champs de rapprochement bancaire
-      linkedInvoiceId
-      linkedInvoice {
+      # Champs de rapprochement bancaire (N↔N)
+      linkedInvoiceIds
+      linkedInvoices {
         id
         number
         status
@@ -184,9 +184,9 @@ export const GET_TRANSACTION = gql`
         uploadedAt
       }
       receiptRequired
-      # Champs de rapprochement bancaire
-      linkedInvoiceId
-      linkedInvoice {
+      # Champs de rapprochement bancaire (N↔N)
+      linkedInvoiceIds
+      linkedInvoices {
         id
         number
         status
