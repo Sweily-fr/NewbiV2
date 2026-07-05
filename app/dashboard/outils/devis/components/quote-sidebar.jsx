@@ -168,10 +168,10 @@ export default function QuoteSidebar({
   const handleSendQuote = async () => {
     try {
       await changeStatus(quote.id, QUOTE_STATUS.PENDING);
-      toast.success("Devis envoyé avec succès");
+      toast.success("Devis créé");
       if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error(error?.message || "Erreur lors de l'envoi du devis");
+      toast.error(error?.message || "Erreur lors de la création du devis");
     }
   };
 
