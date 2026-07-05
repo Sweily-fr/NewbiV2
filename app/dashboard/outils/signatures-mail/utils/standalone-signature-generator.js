@@ -534,7 +534,7 @@ ${socialHTML}
   // Si orientation verticale, générer la structure verticale
   if (isVertical) {
     const htmlResult = `
-<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; width: auto; max-width: 400px; margin: 0 auto; table-layout: auto; font-family: ${signatureData.fontFamily || "Arial, sans-serif"};">
+<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; width: auto; max-width: 400px; margin: 0 auto; table-layout: auto; font-family: ${signatureData.fontFamily || "Arial, sans-serif"}; background-color: transparent; color-scheme: light dark;">
 <tbody>
 ${
   signatureData.photo && signatureData.photoVisible !== false
@@ -766,7 +766,7 @@ ${verticalSocialHTML}
     .join("");
 
   const htmlResult = `
-<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; width: auto; max-width: 600px; table-layout: auto; font-family: ${signatureData.fontFamily || "Arial, sans-serif"};">
+<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; width: auto; max-width: 600px; table-layout: auto; font-family: ${signatureData.fontFamily || "Arial, sans-serif"}; background-color: transparent; color-scheme: light dark;">
 <tbody>
 <tr>
 <!-- Colonne gauche -->
