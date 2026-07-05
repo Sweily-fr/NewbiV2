@@ -649,13 +649,12 @@ const UniversalPreviewPDF = ({
               <div className="text-3xl font-medium dark:text-[#0A0A0A] mb-2">
                 {getDocumentTitle()}
               </div>
-              {/* Grid 2 colonnes (libellé / valeur) : les colonnes s'alignent
-                  automatiquement sur la largeur du libellé le plus long,
-                  contrairement à un "flex justify-end" par ligne qui décale
-                  chaque valeur en fonction de sa propre longueur. */}
-              <div className="grid grid-cols-[auto_auto] gap-y-1 justify-end">
-                <div className="contents" style={{ fontSize: "10px" }}>
-                  <span className="font-medium text-right dark:text-[#0A0A0A] mr-2">
+              {/* Flex par ligne (et non un grid partagé) : chaque valeur
+                  colle à son propre libellé au lieu de s'aligner sur la
+                  largeur du libellé le plus long parmi toutes les lignes. */}
+              <div className="flex flex-col items-end gap-1">
+                <div className="flex gap-1" style={{ fontSize: "10px" }}>
+                  <span className="font-medium dark:text-[#0A0A0A]">
                     {isCreditNote
                       ? "Numéro d'avoir"
                       : isPurchaseOrder
@@ -698,8 +697,8 @@ const UniversalPreviewPDF = ({
                     })()}
                   </span>
                 </div>
-                <div className="contents" style={{ fontSize: "10px" }}>
-                  <span className="font-medium text-right dark:text-[#0A0A0A] mr-2">
+                <div className="flex gap-1" style={{ fontSize: "10px" }}>
+                  <span className="font-medium dark:text-[#0A0A0A]">
                     Date d'émission:
                   </span>
                   <span className="dark:text-[#0A0A0A]">
@@ -707,8 +706,8 @@ const UniversalPreviewPDF = ({
                   </span>
                 </div>
                 {!isCreditNote && (
-                  <div className="contents" style={{ fontSize: "10px" }}>
-                    <span className="font-medium text-right dark:text-[#0A0A0A] mr-2">
+                  <div className="flex gap-1" style={{ fontSize: "10px" }}>
+                    <span className="font-medium dark:text-[#0A0A0A]">
                       {type === "quote" || isPurchaseOrder
                         ? "Date de validité:"
                         : "Date d'échéance:"}
@@ -722,8 +721,8 @@ const UniversalPreviewPDF = ({
                   </div>
                 )}
                 {isCreditNote && data.originalInvoice && (
-                  <div className="contents" style={{ fontSize: "10px" }}>
-                    <span className="font-medium text-right dark:text-[#0A0A0A] mr-2">
+                  <div className="flex gap-1" style={{ fontSize: "10px" }}>
+                    <span className="font-medium dark:text-[#0A0A0A]">
                       Facture d'origine:
                     </span>
                     <span className="dark:text-[#0A0A0A]">
@@ -735,8 +734,8 @@ const UniversalPreviewPDF = ({
                   </div>
                 )}
                 {data.purchaseOrderNumber && (
-                  <div className="contents" style={{ fontSize: "10px" }}>
-                    <span className="font-medium text-right dark:text-[#0A0A0A] mr-2">
+                  <div className="flex gap-1" style={{ fontSize: "10px" }}>
+                    <span className="font-medium dark:text-[#0A0A0A]">
                       Référence:
                     </span>
                     <span className="dark:text-[#0A0A0A]">
@@ -747,8 +746,8 @@ const UniversalPreviewPDF = ({
                 {data.invoiceType === "situation" && (
                   <>
                     {(data.situationReference || data.purchaseOrderNumber) && (
-                      <div className="contents" style={{ fontSize: "10px" }}>
-                        <span className="font-medium text-right dark:text-[#0A0A0A] mr-2">
+                      <div className="flex gap-1" style={{ fontSize: "10px" }}>
+                        <span className="font-medium dark:text-[#0A0A0A]">
                           Réf. projet:
                         </span>
                         <span className="dark:text-[#0A0A0A]">
@@ -756,16 +755,16 @@ const UniversalPreviewPDF = ({
                         </span>
                       </div>
                     )}
-                    <div className="contents" style={{ fontSize: "10px" }}>
-                      <span className="font-medium text-right dark:text-[#0A0A0A] mr-2">
+                    <div className="flex gap-1" style={{ fontSize: "10px" }}>
+                      <span className="font-medium dark:text-[#0A0A0A]">
                         Montant marché:
                       </span>
                       <span className="dark:text-[#0A0A0A]">
                         {formatCurrency(montantMarcheHT)} HT
                       </span>
                     </div>
-                    <div className="contents" style={{ fontSize: "10px" }}>
-                      <span className="font-medium text-right dark:text-[#0A0A0A] mr-2">
+                    <div className="flex gap-1" style={{ fontSize: "10px" }}>
+                      <span className="font-medium dark:text-[#0A0A0A]">
                         Situation n°:
                       </span>
                       <span className="dark:text-[#0A0A0A] font-semibold">
@@ -775,8 +774,8 @@ const UniversalPreviewPDF = ({
                   </>
                 )}
                 {data.operationType && (
-                  <div className="contents" style={{ fontSize: "10px" }}>
-                    <span className="font-medium text-right dark:text-[#0A0A0A] mr-2">
+                  <div className="flex gap-1" style={{ fontSize: "10px" }}>
+                    <span className="font-medium dark:text-[#0A0A0A]">
                       Nature de l'opération:
                     </span>
                     <span className="dark:text-[#0A0A0A]">
