@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect } from "react";
 
 const DRAG_THRESHOLD = 5;
 const TOUCH_DELAY = 200;
@@ -21,8 +21,12 @@ export function useListDnD({
   const onDragStartRef = useRef(onDragStart);
   const onDragEndRef = useRef(onDragEnd);
 
-  useEffect(() => { onDragStartRef.current = onDragStart; }, [onDragStart]);
-  useEffect(() => { onDragEndRef.current = onDragEnd; }, [onDragEnd]);
+  useEffect(() => {
+    onDragStartRef.current = onDragStart;
+  }, [onDragStart]);
+  useEffect(() => {
+    onDragEndRef.current = onDragEnd;
+  }, [onDragEnd]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -34,25 +38,43 @@ export function useListDnD({
 
     function getPointer(e) {
       const t = e.touches?.[0];
-      return t ? { x: t.clientX, y: t.clientY } : { x: e.clientX, y: e.clientY };
+      return t
+        ? { x: t.clientX, y: t.clientY }
+        : { x: e.clientX, y: e.clientY };
     }
 
     function findDraggable(target) {
       const scrollEl = scrollElementRef.current;
       if (!scrollEl || !scrollEl.contains(target)) return null;
-      if (target.closest(
-        'button, a, input, textarea, select, [role="button"], [role="checkbox"], [data-radix-collection-item], [data-radix-popover-trigger], [data-radix-dropdown-menu-trigger]'
-      )) return null;
+      if (
+        target.closest(
+          'button, a, input, textarea, select, [role="button"], [role="checkbox"], [data-radix-collection-item], [data-radix-popover-trigger], [data-radix-dropdown-menu-trigger]',
+        )
+      )
+        return null;
 
-      const rowEl = target.closest('[data-dnd-list-task]');
+      const rowEl = target.closest("[data-dnd-list-task]");
       if (rowEl) {
         return {
-          type: 'task',
+          type: "task",
           id: rowEl.dataset.dndListTask,
           columnId: rowEl.dataset.dndListColumn,
           index: parseInt(rowEl.dataset.dndListIndex, 10),
           element: rowEl,
         };
+      }
+
+      const handleEl = target.closest("[data-dnd-column-handle]");
+      if (handleEl) {
+        const colEl = handleEl.closest("[data-dnd-column]");
+        if (colEl) {
+          return {
+            type: "column",
+            id: colEl.dataset.dndColumn,
+            index: parseInt(colEl.dataset.dndColumnIndex, 10),
+            element: colEl,
+          };
+        }
       }
       return null;
     }
@@ -63,10 +85,10 @@ export function useListDnD({
       const clone = element.cloneNode(true);
 
       // Strip DnD data-attrs
-      [clone, ...clone.querySelectorAll('*')].forEach(el => {
+      [clone, ...clone.querySelectorAll("*")].forEach((el) => {
         if (el.dataset) {
-          Object.keys(el.dataset).forEach(k => {
-            if (k.startsWith('dnd')) delete el.dataset[k];
+          Object.keys(el.dataset).forEach((k) => {
+            if (k.startsWith("dnd")) delete el.dataset[k];
           });
         }
       });
@@ -74,25 +96,25 @@ export function useListDnD({
       // Preserve the original grid layout
       const computed = window.getComputedStyle(element);
       clone.style.cssText = [
-        'position:fixed',
+        "position:fixed",
         `left:${rect.left}px`,
         `top:${rect.top}px`,
         `width:${rect.width}px`,
         `height:${rect.height}px`,
-        'z-index:10000',
-        'pointer-events:none',
-        'opacity:.7',
-        'cursor:grabbing',
-        'border:1px solid rgba(0,0,0,.1)',
-        'border-radius:6px',
-        'background:var(--background, #fff)',
-        'overflow:hidden',
+        "z-index:10000",
+        "pointer-events:none",
+        "opacity:.7",
+        "cursor:grabbing",
+        "border:1px solid rgba(0,0,0,.1)",
+        "border-radius:6px",
+        "background:var(--background, #fff)",
+        "overflow:hidden",
         `display:${computed.display}`,
         `grid-template-columns:${computed.gridTemplateColumns}`,
         `gap:${computed.gap}`,
         `padding:${computed.padding}`,
         `align-items:${computed.alignItems}`,
-      ].join(';');
+      ].join(";");
 
       document.body.appendChild(clone);
       return clone;
@@ -101,11 +123,11 @@ export function useListDnD({
     // ─── Indicator ───
     function ensureIndicator() {
       if (indicator) return indicator;
-      indicator = document.createElement('div');
+      indicator = document.createElement("div");
       indicator.style.cssText =
-        'position:fixed;z-index:9999;pointer-events:none;display:none;' +
-        'border-radius:2px;' +
-        'transition:top 60ms ease-out,left 60ms ease-out,width 60ms ease-out;';
+        "position:fixed;z-index:9999;pointer-events:none;display:none;" +
+        "border-radius:2px;" +
+        "transition:top 60ms ease-out,left 60ms ease-out,width 60ms ease-out;";
       document.body.appendChild(indicator);
       return indicator;
     }
@@ -121,7 +143,7 @@ export function useListDnD({
       if (!scrollEl) return null;
 
       // Find all drop zones (sections/columns)
-      const zones = scrollEl.querySelectorAll('[data-dnd-list-zone]');
+      const zones = scrollEl.querySelectorAll("[data-dnd-list-zone]");
       for (const zone of zones) {
         const r = zone.getBoundingClientRect();
         if (y >= r.top && y <= r.bottom && x >= r.left && x <= r.right) {
@@ -136,14 +158,18 @@ export function useListDnD({
         const r = zone.getBoundingClientRect();
         const cy = Math.max(r.top, Math.min(y, r.bottom));
         const d = Math.abs(y - cy);
-        if (d < bestDist) { bestDist = d; best = zone; }
+        if (d < bestDist) {
+          bestDist = d;
+          best = zone;
+        }
       }
       return bestDist < 200 ? best : null;
     }
 
     function computeInsertIndex(zone, cursorY) {
-      const rows = Array.from(zone.querySelectorAll(':scope > [data-dnd-list-task]'))
-        .filter(el => !(drag && el.dataset.dndListTask === drag.id));
+      const rows = Array.from(
+        zone.querySelectorAll(":scope > [data-dnd-list-task]"),
+      ).filter((el) => !(drag && el.dataset.dndListTask === drag.id));
 
       let idx = 0;
       for (const row of rows) {
@@ -154,20 +180,86 @@ export function useListDnD({
       return idx;
     }
 
+    // ─── Column reorder helpers (section header acts as handle) ───
+    function getOtherColumnSections() {
+      const scrollEl = scrollElementRef.current;
+      if (!scrollEl) return [];
+      return Array.from(scrollEl.querySelectorAll("[data-dnd-column]")).filter(
+        (el) => !(drag && el.dataset.dndColumn === drag.id),
+      );
+    }
+
+    function computeColumnIndex(cursorY) {
+      const sections = getOtherColumnSections();
+      let idx = 0;
+      for (const section of sections) {
+        const handle =
+          section.querySelector("[data-dnd-column-handle]") || section;
+        const r = handle.getBoundingClientRect();
+        if (cursorY > r.top + r.height / 2) idx++;
+        else break;
+      }
+      return idx;
+    }
+
     // ─── Visual feedback ───
     function updateFeedback(x, y) {
       const ind = ensureIndicator();
+
+      // ── Column (section) drag ──
+      if (drag.type === "column") {
+        const insertIndex = computeColumnIndex(y);
+        const sections = getOtherColumnSections();
+
+        if (sections.length === 0) {
+          ind.style.display = "none";
+          return { insertIndex };
+        }
+
+        let top, refRect;
+        if (insertIndex >= sections.length) {
+          const lastSection = sections[sections.length - 1];
+          refRect = (
+            lastSection.querySelector("[data-dnd-column-handle]") || lastSection
+          ).getBoundingClientRect();
+          top = refRect.bottom;
+        } else {
+          const section = sections[insertIndex];
+          refRect = (
+            section.querySelector("[data-dnd-column-handle]") || section
+          ).getBoundingClientRect();
+          top = refRect.top;
+        }
+
+        const draggedColor = drag.element.dataset.dndColumnColor || "#5A50FF";
+        setIndicatorColor(ind, draggedColor);
+        Object.assign(ind.style, {
+          display: "block",
+          top: top - 1 + "px",
+          left: refRect.left + 4 + "px",
+          width: refRect.width - 8 + "px",
+          height: "3px",
+        });
+
+        return { insertIndex };
+      }
+
+      // ── Task drag ──
       const zone = findTargetSection(x, y);
 
-      if (!zone) { ind.style.display = 'none'; return null; }
+      if (!zone) {
+        ind.style.display = "none";
+        return null;
+      }
 
       const columnId = zone.dataset.dndListZone;
-      const columnColor = zone.dataset.dndListZoneColor || '#5A50FF';
+      const columnColor = zone.dataset.dndListZoneColor || "#5A50FF";
       const insertIndex = computeInsertIndex(zone, y);
 
       // Position indicator
-      const rows = Array.from(zone.querySelectorAll(':scope > [data-dnd-list-task]'))
-        .filter(el => el.dataset.dndListTask !== drag.id);
+      const rows = Array.from(
+        zone.querySelectorAll(":scope > [data-dnd-list-task]"),
+      ).filter((el) => el.dataset.dndListTask !== drag.id);
       const zoneRect = zone.getBoundingClientRect();
       let top;
 
@@ -181,11 +273,11 @@ export function useListDnD({
 
       setIndicatorColor(ind, columnColor);
       Object.assign(ind.style, {
-        display: 'block',
-        top: (top - 1) + 'px',
-        left: (zoneRect.left + 24) + 'px',
-        width: (zoneRect.width - 48) + 'px',
-        height: '2px',
+        display: "block",
+        top: top - 1 + "px",
+        left: zoneRect.left + 24 + "px",
+        width: zoneRect.width - 48 + "px",
+        height: "2px",
       });
 
       return { columnId, insertIndex };
@@ -200,9 +292,9 @@ export function useListDnD({
       const dT = y - r.top;
       const dB = r.bottom - y;
       if (dT >= 0 && dT < EDGE_ZONE) {
-        el.scrollTop -= ((1 - dT / EDGE_ZONE) ** 2) * MAX_SCROLL_SPEED;
+        el.scrollTop -= (1 - dT / EDGE_ZONE) ** 2 * MAX_SCROLL_SPEED;
       } else if (dB >= 0 && dB < EDGE_ZONE) {
-        el.scrollTop += ((1 - dB / EDGE_ZONE) ** 2) * MAX_SCROLL_SPEED;
+        el.scrollTop += (1 - dB / EDGE_ZONE) ** 2 * MAX_SCROLL_SPEED;
       }
     }
 
@@ -210,12 +302,12 @@ export function useListDnD({
     function beginDrag() {
       if (!drag || drag.started) return;
       drag.started = true;
-      drag.clone = createClone(drag.element);
-      drag.element.style.opacity = '0.25';
-      drag.element.style.transition = 'opacity 150ms';
-      document.body.style.userSelect = 'none';
-      document.body.style.webkitUserSelect = 'none';
-      document.body.style.cursor = 'grabbing';
+      drag.clone = createClone(drag.visualEl || drag.element);
+      drag.element.style.opacity = "0.25";
+      drag.element.style.transition = "opacity 150ms";
+      document.body.style.userSelect = "none";
+      document.body.style.webkitUserSelect = "none";
+      document.body.style.cursor = "grabbing";
       onDragStartRef.current?.({ type: drag.type });
     }
 
@@ -224,8 +316,8 @@ export function useListDnD({
       drag.currentX = x;
       drag.currentY = y;
       if (drag.clone) {
-        drag.clone.style.left = (x - drag.offsetX) + 'px';
-        drag.clone.style.top = (y - drag.offsetY) + 'px';
+        drag.clone.style.left = x - drag.offsetX + "px";
+        drag.clone.style.top = y - drag.offsetY + "px";
       }
       drag.lastTarget = updateFeedback(x, y);
     }
@@ -234,37 +326,63 @@ export function useListDnD({
       if (!drag) return;
       const wasStarted = drag.started;
       const target = drag.lastTarget;
-      const info = { type: drag.type, id: drag.id, columnId: drag.columnId, index: drag.index };
+      const info = {
+        type: drag.type,
+        id: drag.id,
+        columnId: drag.columnId,
+        index: drag.index,
+      };
 
       // Restore
-      drag.element.style.opacity = '';
-      drag.element.style.transition = '';
+      drag.element.style.opacity = "";
+      drag.element.style.transition = "";
       if (drag.clone) drag.clone.remove();
-      if (indicator) { indicator.remove(); indicator = null; }
-      document.body.style.userSelect = '';
-      document.body.style.webkitUserSelect = '';
-      document.body.style.cursor = '';
-      if (raf) { cancelAnimationFrame(raf); raf = null; }
-      if (touchTimer) { clearTimeout(touchTimer); touchTimer = null; }
+      if (indicator) {
+        indicator.remove();
+        indicator = null;
+      }
+      document.body.style.userSelect = "";
+      document.body.style.webkitUserSelect = "";
+      document.body.style.cursor = "";
+      if (raf) {
+        cancelAnimationFrame(raf);
+        raf = null;
+      }
+      if (touchTimer) {
+        clearTimeout(touchTimer);
+        touchTimer = null;
+      }
 
-      window.removeEventListener('mousemove', onMouseMove, true);
-      window.removeEventListener('mouseup', onMouseUp, true);
-      window.removeEventListener('touchmove', onTouchMove, true);
-      window.removeEventListener('touchend', onTouchEnd, true);
-      window.removeEventListener('touchcancel', onTouchEnd, true);
+      window.removeEventListener("mousemove", onMouseMove, true);
+      window.removeEventListener("mouseup", onMouseUp, true);
+      window.removeEventListener("touchmove", onTouchMove, true);
+      window.removeEventListener("touchend", onTouchEnd, true);
+      window.removeEventListener("touchcancel", onTouchEnd, true);
 
       drag = null;
 
       if (!wasStarted) return;
 
-      const result = {
-        type: 'task',
-        draggableId: info.id,
-        source: { droppableId: info.columnId, index: info.index },
-        destination: target
-          ? { droppableId: target.columnId, index: target.insertIndex }
-          : null,
-      };
+      let result;
+      if (info.type === "column") {
+        result = {
+          type: "column",
+          draggableId: `column-${info.id}`,
+          source: { droppableId: "all-columns", index: info.index },
+          destination: target
+            ? { droppableId: "all-columns", index: target.insertIndex }
+            : null,
+        };
+      } else {
+        result = {
+          type: "task",
+          draggableId: info.id,
+          source: { droppableId: info.columnId, index: info.index },
+          destination: target
+            ? { droppableId: target.columnId, index: target.insertIndex }
+            : null,
+        };
+      }
       onDragEndRef.current?.(result);
     }
 
@@ -281,23 +399,34 @@ export function useListDnD({
       if (!d) return;
 
       const p = getPointer(e);
-      const r = d.element.getBoundingClientRect();
+      const visualEl =
+        d.type === "column"
+          ? d.element.querySelector("[data-dnd-column-handle]") || d.element
+          : d.element;
+      const r = visualEl.getBoundingClientRect();
       drag = {
         ...d,
-        startX: p.x, startY: p.y,
-        currentX: p.x, currentY: p.y,
-        offsetX: p.x - r.left, offsetY: p.y - r.top,
-        started: false, clone: null, lastTarget: null,
+        visualEl,
+        startX: p.x,
+        startY: p.y,
+        currentX: p.x,
+        currentY: p.y,
+        offsetX: p.x - r.left,
+        offsetY: p.y - r.top,
+        started: false,
+        clone: null,
+        lastTarget: null,
       };
-      window.addEventListener('mousemove', onMouseMove, true);
-      window.addEventListener('mouseup', onMouseUp, true);
+      window.addEventListener("mousemove", onMouseMove, true);
+      window.addEventListener("mouseup", onMouseUp, true);
     }
 
     function onMouseMove(e) {
       if (!drag) return;
       const p = getPointer(e);
       if (!drag.started) {
-        if (Math.hypot(p.x - drag.startX, p.y - drag.startY) < DRAG_THRESHOLD) return;
+        if (Math.hypot(p.x - drag.startX, p.y - drag.startY) < DRAG_THRESHOLD)
+          return;
         beginDrag();
         raf = requestAnimationFrame(tick);
       }
@@ -305,7 +434,9 @@ export function useListDnD({
       moveDrag(p.x, p.y);
     }
 
-    function onMouseUp() { endDrag(); }
+    function onMouseUp() {
+      endDrag();
+    }
 
     // ═══════ Touch events ═══════
     function onTouchStart(e) {
@@ -313,14 +444,24 @@ export function useListDnD({
       if (!d) return;
 
       const p = getPointer(e);
-      const r = d.element.getBoundingClientRect();
+      const visualEl =
+        d.type === "column"
+          ? d.element.querySelector("[data-dnd-column-handle]") || d.element
+          : d.element;
+      const r = visualEl.getBoundingClientRect();
       drag = {
         ...d,
-        startX: p.x, startY: p.y,
-        currentX: p.x, currentY: p.y,
-        offsetX: p.x - r.left, offsetY: p.y - r.top,
-        started: false, touchReady: false,
-        clone: null, lastTarget: null,
+        visualEl,
+        startX: p.x,
+        startY: p.y,
+        currentX: p.x,
+        currentY: p.y,
+        offsetX: p.x - r.left,
+        offsetY: p.y - r.top,
+        started: false,
+        touchReady: false,
+        clone: null,
+        lastTarget: null,
       };
       touchTimer = setTimeout(() => {
         if (drag && !drag.started) {
@@ -329,9 +470,12 @@ export function useListDnD({
         }
       }, TOUCH_DELAY);
 
-      window.addEventListener('touchmove', onTouchMove, { capture: true, passive: false });
-      window.addEventListener('touchend', onTouchEnd, true);
-      window.addEventListener('touchcancel', onTouchEnd, true);
+      window.addEventListener("touchmove", onTouchMove, {
+        capture: true,
+        passive: false,
+      });
+      window.addEventListener("touchend", onTouchEnd, true);
+      window.addEventListener("touchcancel", onTouchEnd, true);
     }
 
     function onTouchMove(e) {
@@ -346,9 +490,9 @@ export function useListDnD({
           if (dist > DRAG_THRESHOLD) {
             clearTimeout(touchTimer);
             touchTimer = null;
-            window.removeEventListener('touchmove', onTouchMove, true);
-            window.removeEventListener('touchend', onTouchEnd, true);
-            window.removeEventListener('touchcancel', onTouchEnd, true);
+            window.removeEventListener("touchmove", onTouchMove, true);
+            window.removeEventListener("touchend", onTouchEnd, true);
+            window.removeEventListener("touchcancel", onTouchEnd, true);
             drag = null;
           }
           return;
@@ -363,32 +507,40 @@ export function useListDnD({
       moveDrag(p.x, p.y);
     }
 
-    function onTouchEnd() { endDrag(); }
+    function onTouchEnd() {
+      endDrag();
+    }
 
     // ═══════ Attach ═══════
-    document.addEventListener('mousedown', onMouseDown, true);
-    document.addEventListener('touchstart', onTouchStart, { capture: true, passive: true });
+    document.addEventListener("mousedown", onMouseDown, true);
+    document.addEventListener("touchstart", onTouchStart, {
+      capture: true,
+      passive: true,
+    });
 
     return () => {
-      document.removeEventListener('mousedown', onMouseDown, true);
-      document.removeEventListener('touchstart', onTouchStart, true);
+      document.removeEventListener("mousedown", onMouseDown, true);
+      document.removeEventListener("touchstart", onTouchStart, true);
       if (drag) {
         if (drag.clone) drag.clone.remove();
-        drag.element.style.opacity = '';
-        drag.element.style.transition = '';
+        drag.element.style.opacity = "";
+        drag.element.style.transition = "";
         drag = null;
       }
-      if (indicator) { indicator.remove(); indicator = null; }
+      if (indicator) {
+        indicator.remove();
+        indicator = null;
+      }
       if (raf) cancelAnimationFrame(raf);
       if (touchTimer) clearTimeout(touchTimer);
-      window.removeEventListener('mousemove', onMouseMove, true);
-      window.removeEventListener('mouseup', onMouseUp, true);
-      window.removeEventListener('touchmove', onTouchMove, true);
-      window.removeEventListener('touchend', onTouchEnd, true);
-      window.removeEventListener('touchcancel', onTouchEnd, true);
-      document.body.style.userSelect = '';
-      document.body.style.webkitUserSelect = '';
-      document.body.style.cursor = '';
+      window.removeEventListener("mousemove", onMouseMove, true);
+      window.removeEventListener("mouseup", onMouseUp, true);
+      window.removeEventListener("touchmove", onTouchMove, true);
+      window.removeEventListener("touchend", onTouchEnd, true);
+      window.removeEventListener("touchcancel", onTouchEnd, true);
+      document.body.style.userSelect = "";
+      document.body.style.webkitUserSelect = "";
+      document.body.style.cursor = "";
     };
   }, [enabled, scrollElementRef]);
 }

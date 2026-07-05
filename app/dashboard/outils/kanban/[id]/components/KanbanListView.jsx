@@ -2877,12 +2877,19 @@ export function KanbanListView({
           });
 
         return (
-          <div key={column.id} className="space-y-0">
+          <div
+            key={column.id}
+            className="space-y-0"
+            data-dnd-column={column.id}
+            data-dnd-column-index={columnIndex}
+            data-dnd-column-color={column.color || "#94a3b8"}
+          >
             {/* En-tête de colonne pliable avec zone de drop si fermée */}
             {isCollapsed ? (
               <>
                 <CollapsedColumnDropZone columnId={column.id}>
                   <div
+                    data-dnd-column-handle
                     className="flex items-center gap-3 py-2 px-4 sm:px-6 bg-muted/10 hover:bg-muted/20 cursor-pointer transition-colors group"
                     onClick={() => toggleColumn(column.id)}
                   >
@@ -3052,6 +3059,7 @@ export function KanbanListView({
                 <div className="sticky top-6 z-[20] bg-background">
                   {/* En-tête de section cliquable */}
                   <div
+                    data-dnd-column-handle
                     className="flex items-center gap-3 py-2 px-4 sm:px-6 bg-muted/5 hover:bg-muted/10 cursor-pointer transition-all group"
                     onClick={() => toggleColumn(column.id)}
                   >
