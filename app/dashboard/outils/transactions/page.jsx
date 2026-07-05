@@ -266,14 +266,15 @@ function GestionDepensesContent() {
       date: tx.processedAt || tx.date || tx.createdAt,
       category: getSmartCategory(tx),
       vendor: tx.metadata?.vendor || null,
+      // N↔N : "a une facture liée" = array non vide.
       hasReceipt:
         (Array.isArray(tx.receiptFiles) && tx.receiptFiles.length > 0) ||
-        !!tx.linkedInvoice?.id,
+        (tx.linkedInvoices?.length || 0) > 0,
       receiptFiles: tx.receiptFiles || [],
       receiptRequired:
         tx.amount < 0 &&
         !(Array.isArray(tx.receiptFiles) && tx.receiptFiles.length > 0) &&
-        !tx.linkedInvoice?.id,
+        (tx.linkedInvoices?.length || 0) === 0,
       status: tx.status === "completed" ? "PAID" : tx.status?.toUpperCase(),
       paymentMethod:
         tx.metadata?.paymentMethod ||
@@ -286,8 +287,8 @@ function GestionDepensesContent() {
         provider: tx.provider,
         fromAccount: tx.fromAccount,
       },
-      linkedInvoiceId: tx.linkedInvoiceId || null,
-      linkedInvoice: tx.linkedInvoice || null,
+      linkedInvoiceIds: tx.linkedInvoiceIds || [],
+      linkedInvoices: tx.linkedInvoices || [],
       reconciliationStatus: tx.reconciliationStatus || null,
       reconciliationDate: tx.reconciliationDate || null,
       pcgAccount: tx.pcgAccount || null,

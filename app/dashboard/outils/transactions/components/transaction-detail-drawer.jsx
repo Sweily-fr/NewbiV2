@@ -471,6 +471,10 @@ export function TransactionDetailDrawer({
       transaction.source === "BANK_TRANSACTION" ||
       transaction.type === "BANK_TRANSACTION");
   const isManualTransaction = transaction && !isBankTransaction;
+  // N↔N : la transaction peut avoir plusieurs factures liées. L'UI historique
+  // n'en affiche qu'une → on prend la 1re. À faire évoluer si on veut lister
+  // toutes les factures liées dans le drawer.
+  const linkedInvoice = transaction?.linkedInvoices?.[0] || null;
 
   // Initialiser le formulaire uniquement quand le drawer s'ouvre (transition false → true)
   useEffect(() => {
@@ -792,15 +796,16 @@ export function TransactionDetailDrawer({
     });
   };
 
-  // Délier la transaction de la facture
+  // Délier la transaction de la facture.
+  // N↔N : la mutation exige transactionId ET invoiceId. Tant que l'UI affiche
+  // une seule facture liée (la 1re), on cible celle-là. À faire évoluer si on
+  // affiche toutes les factures liées et qu'on veut choisir laquelle délier.
   const handleUnlinkInvoice = async () => {
-    if (!transaction?.linkedInvoiceId) return;
+    const linkedInvoiceId = transaction?.linkedInvoiceIds?.[0];
+    if (!linkedInvoiceId) return;
     setIsUnlinking(true);
     try {
-      const result = await unlinkTransaction(
-        transaction.id,
-        transaction.linkedInvoiceId,
-      );
+      const result = await unlinkTransaction(transaction.id, linkedInvoiceId);
       if (result.success) {
         toast.success("Facture détachée avec succès");
         onRefresh?.();
@@ -826,9 +831,9 @@ export function TransactionDetailDrawer({
 
   // Naviguer vers la facture liée (ouvre le panneau d'aperçu, pas l'éditeur)
   const handleViewLinkedInvoice = () => {
-    if (transaction?.linkedInvoice?.id) {
+    if (linkedInvoice?.id) {
       router.push(
-        `/dashboard/outils/factures?id=${transaction.linkedInvoice.id}&returnTo=transactions`,
+        `/dashboard/outils/factures?id=${linkedInvoice.id}&returnTo=transactions`,
       );
       onOpenChange(false);
     }
@@ -1655,6 +1660,67 @@ export function TransactionDetailDrawer({
                   })}
                 </div>
               )}
+
+              {/* Factures liées (rapprochement N↔N) — rendues DANS la section
+                  Justificatif : la facture est un justificatif comptable de la
+                  transaction. Tap = navigate vers la facture. */}
+              {!isCreateMode &&
+                (transaction?.linkedInvoices?.length || 0) > 0 && (
+                  <div className="space-y-1.5">
+                    {transaction.linkedInvoices.map((inv) => (
+                      <div
+                        key={`linked-${inv.id}`}
+                        onClick={() => {
+                          router.push(
+                            `/dashboard/outils/factures?id=${inv.id}&returnTo=transactions`,
+                          );
+                          onOpenChange(false);
+                        }}
+                        className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer bg-muted/40 hover:bg-muted/60 transition-colors duration-[120ms]"
+                      >
+                        <div className="size-8 rounded-md bg-muted flex items-center justify-center shrink-0">
+                          <FileText className="h-4 w-4 text-[#5A50FF]" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">
+                            Facture {inv.number || "N/A"}
+                            {inv.clientName ? ` — ${inv.clientName}` : ""}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {inv.totalTTC != null
+                              ? formatAmount(inv.totalTTC)
+                              : ""}
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              const result = await unlinkTransaction(
+                                transaction.id,
+                                inv.id,
+                              );
+                              if (result.success) {
+                                toast.success("Facture détachée");
+                                onRefresh?.();
+                              } else {
+                                toast.error(result.error || "Erreur");
+                              }
+                            } catch (err) {
+                              toast.error("Erreur lors du détachement");
+                            }
+                          }}
+                          title="Détacher la facture"
+                        >
+                          <Unlink className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
             </div>
 
             {/* Notes (seulement en visualisation) */}
@@ -1675,7 +1741,7 @@ export function TransactionDetailDrawer({
               )}
 
             {/* Section Facture liée (seulement si une facture est liée) */}
-            {!isCreateMode && transaction?.linkedInvoice && (
+            {!isCreateMode && linkedInvoice && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -1695,35 +1761,32 @@ export function TransactionDetailDrawer({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-sm font-medium">
-                          Facture {transaction.linkedInvoice.number || "N/A"}
+                          Facture {linkedInvoice.number || "N/A"}
                         </span>
                         <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
-                          {transaction.linkedInvoice.status === "COMPLETED" && (
+                          {linkedInvoice.status === "COMPLETED" && (
                             <CheckCircle2 className="w-3 h-3" />
                           )}
-                          {transaction.linkedInvoice.status === "PENDING" && (
+                          {linkedInvoice.status === "PENDING" && (
                             <AlertCircle className="w-3 h-3" />
                           )}
-                          {transaction.linkedInvoice.status === "COMPLETED"
+                          {linkedInvoice.status === "COMPLETED"
                             ? "Payée"
-                            : transaction.linkedInvoice.status === "PENDING"
+                            : linkedInvoice.status === "PENDING"
                               ? "En attente"
-                              : transaction.linkedInvoice.status}
+                              : linkedInvoice.status}
                         </span>
                       </div>
                       <p className="text-sm text-muted-foreground truncate">
-                        {transaction.linkedInvoice.clientName}
+                        {linkedInvoice.clientName}
                       </p>
                       <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                        <span>
-                          {formatAmount(transaction.linkedInvoice.totalTTC)}
-                        </span>
-                        {transaction.linkedInvoice.dueDate && (
+                        <span>{formatAmount(linkedInvoice.totalTTC)}</span>
+                        {linkedInvoice.dueDate && (
                           <>
                             <span>•</span>
                             <span>
-                              Échéance:{" "}
-                              {formatDate(transaction.linkedInvoice.dueDate)}
+                              Échéance: {formatDate(linkedInvoice.dueDate)}
                             </span>
                           </>
                         )}
@@ -1769,66 +1832,64 @@ export function TransactionDetailDrawer({
             {/* Factures rapprochables : si la transaction n'est pas encore liée
                 mais qu'une ou plusieurs factures correspondent, on les propose
                 directement (pas de statut "ignoré"/"suggéré"). */}
-            {!isCreateMode &&
-              !transaction?.linkedInvoice &&
-              matchingInvoices.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <p className="text-sm font-normal text-muted-foreground">
-                      {matchingInvoices.length > 1
-                        ? "Factures à rapprocher"
-                        : "Facture à rapprocher"}
-                    </p>
-                  </div>
+            {!isCreateMode && !linkedInvoice && matchingInvoices.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-sm font-normal text-muted-foreground">
+                    {matchingInvoices.length > 1
+                      ? "Factures à rapprocher"
+                      : "Facture à rapprocher"}
+                  </p>
+                </div>
 
-                  {matchingInvoices.map((invoice) => (
-                    <div
-                      key={invoice.id}
-                      className="p-3 border rounded-lg bg-muted/30"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <span className="text-sm font-medium">
-                            Facture {invoice.number || "N/A"}
-                          </span>
-                          <p className="text-sm text-muted-foreground truncate">
-                            {invoice.clientName}
-                          </p>
-                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                            <span>{formatAmount(invoice.totalTTC)}</span>
-                            {invoice.dueDate && (
-                              <>
-                                <span>•</span>
-                                <span>
-                                  Échéance: {formatDate(invoice.dueDate)}
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-shrink-0"
-                          onClick={() => handleReconcileInvoice(invoice.id)}
-                          disabled={isReadOnly || isLinking}
-                          title={readOnlyTooltip || "Rapprocher cette facture"}
-                        >
-                          {isLinking ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
+                {matchingInvoices.map((invoice) => (
+                  <div
+                    key={invoice.id}
+                    className="p-3 border rounded-lg bg-muted/30"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-medium">
+                          Facture {invoice.number || "N/A"}
+                        </span>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {invoice.clientName}
+                        </p>
+                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                          <span>{formatAmount(invoice.totalTTC)}</span>
+                          {invoice.dueDate && (
                             <>
-                              <Link2 className="h-4 w-4 mr-1.5" />
-                              Rapprocher
+                              <span>•</span>
+                              <span>
+                                Échéance: {formatDate(invoice.dueDate)}
+                              </span>
                             </>
                           )}
-                        </Button>
+                        </div>
                       </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-shrink-0"
+                        onClick={() => handleReconcileInvoice(invoice.id)}
+                        disabled={isReadOnly || isLinking}
+                        title={readOnlyTooltip || "Rapprocher cette facture"}
+                      >
+                        {isLinking ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Link2 className="h-4 w-4 mr-1.5" />
+                            Rapprocher
+                          </>
+                        )}
+                      </Button>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Dates de création/modification */}
             {!isCreateMode && (
