@@ -529,6 +529,17 @@ export default function TableClients({
   const error = useProvidedClients ? null : hookError;
   const refetch = useProvidedClients ? () => {} : hookRefetch;
 
+  // Après une suppression (ou un filtre), la page courante peut dépasser le
+  // nouveau totalPages (ex: on était en page 5, il ne reste que 1 page) :
+  // se recaler sur la dernière page valide.
+  useEffect(() => {
+    if (useProvidedClients || loading) return;
+    const maxPageIndex = Math.max(0, (totalPages || 1) - 1);
+    if (pagination.pageIndex > maxPageIndex) {
+      setPagination((prev) => ({ ...prev, pageIndex: maxPageIndex }));
+    }
+  }, [useProvidedClients, loading, totalPages, pagination.pageIndex]);
+
   const { deleteClient } = useDeleteClient();
 
   // Récupérer les factures pour calculer le nombre par client
