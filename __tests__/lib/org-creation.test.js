@@ -536,10 +536,7 @@ describe("createOrganizationWithSubscription — subscription handling", () => {
 });
 
 describe("createOrganizationWithSubscription — invitations", () => {
-  // Skipped: this test depends on a dynamic ESM import (`./auth-utils.js`)
-  // that doesn't get caught by vi.mock with the @-aliased id. The skip-dedup
-  // and error-handling tests below cover the surrounding code paths.
-  it.skip("sends invitations for each invited member and increments invitationsSent", async () => {
+  it("sends invitations for each invited member and increments invitationsSent", async () => {
     const newOrgId = new ObjectId();
     const collections = {
       member: buildCollection({ findOne: vi.fn().mockResolvedValue(null) }),
