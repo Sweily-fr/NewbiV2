@@ -121,6 +121,7 @@ export const GET_BOARD = gql`
         columnId
         position
         userId
+        claudeWorkingSince
         createdAt
         updatedAt
         tags {
@@ -169,6 +170,7 @@ export const GET_TASK_DETAILS = gql`
   query GetTaskDetails($id: ID!, $workspaceId: ID) {
     task(id: $id, workspaceId: $workspaceId) {
       id
+      claudeWorkingSince
       comments {
         id
         userId
@@ -608,6 +610,7 @@ export const TASK_LIGHT_FRAGMENT = gql`
     columnId
     position
     userId
+    claudeWorkingSince
     createdAt
     updatedAt
     tags {
@@ -1040,6 +1043,7 @@ export const GET_PUBLIC_BOARD = gql`
           dueDate
           columnId
           position
+          claudeWorkingSince
           checklist {
             id
             text
@@ -1419,6 +1423,7 @@ export const ADD_EXTERNAL_COMMENT = gql`
         dueDate
         columnId
         position
+        claudeWorkingSince
         checklist {
           id
           text
@@ -1550,6 +1555,7 @@ export const PUBLIC_TASK_UPDATED_SUBSCRIPTION = gql`
         dueDate
         columnId
         position
+        claudeWorkingSince
         tags {
           name
         }
