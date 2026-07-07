@@ -183,7 +183,17 @@ const wsLink =
 
             if (isPublicPage) return {};
 
-            const jwtToken = await getJWTToken();
+            // L'auth du WebSocket est figée au moment de la connexion : si le
+            // JWT n'est pas encore disponible (session en cours de chargement,
+            // échec transitoire de /api/auth/token), la connexion s'établirait
+            // anonyme et TOUTES les subscriptions échoueraient en silence
+            // jusqu'au refresh de la page. On attend donc le JWT (jusqu'à ~8s)
+            // avant de laisser la connexion s'ouvrir.
+            let jwtToken = await getJWTToken();
+            for (let attempt = 0; !jwtToken && attempt < 16; attempt++) {
+              await new Promise((resolve) => setTimeout(resolve, 500));
+              jwtToken = await getJWTToken();
+            }
             return {
               authorization: jwtToken ? `Bearer ${jwtToken}` : "",
             };
@@ -196,8 +206,31 @@ const wsLink =
     : null;
 
 if (wsLink && typeof window !== "undefined") {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _wsClient = wsLink.subscriptionClient;
+}
+
+// Force une reconnexion du WebSocket (avec re-souscription automatique des
+// subscriptions actives par subscriptions-transport-ws). À appeler quand une
+// subscription échoue en auth : la connexion a pu s'établir sans JWT valide,
+// la reconnexion relance connectionParams et repart avec un JWT frais.
+// Débouncé pour ne pas boucler si l'auth échoue durablement.
+let _lastWsReconnectAt = 0;
+export function forceWsReconnect() {
+  if (!_wsClient) return;
+  const now = Date.now();
+  if (now - _lastWsReconnectAt < 30000) return;
+  _lastWsReconnectAt = now;
+  try {
+    clearCachedJWT();
+    // close(isForced=false) : le client rouvre la connexion (reconnect: true)
+    // et rejoue les opérations en cours.
+    _wsClient.close(false, false);
+    console.warn(
+      "[WebSocket] Reconnexion forcée (subscription en échec d'authentification)",
+    );
+  } catch (err) {
+    console.error("[WebSocket] Échec de la reconnexion forcée:", err);
+  }
 }
 
 // ==================== AUTH LINK ====================

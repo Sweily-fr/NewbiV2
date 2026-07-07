@@ -7,6 +7,7 @@ import {
 } from "@/src/graphql/kanbanQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/utils/debouncedToast";
+import { forceWsReconnect } from "@/src/lib/apolloClient";
 import { useRef, useCallback } from "react";
 
 // Logs de debug gated par localStorage('kanban-debug' === '1'). Désactivés
@@ -258,7 +259,13 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
       scheduleFlush();
     },
     onError: (error) => {
-      if (error.message?.includes("connecté")) return;
+      if (error.message?.includes("connecté")) {
+        // La connexion WebSocket s'est établie sans JWT valide → la
+        // subscription est morte en silence. Forcer une reconnexion
+        // (débouncée) pour repartir authentifié au lieu d'ignorer.
+        forceWsReconnect();
+        return;
+      }
       console.error("❌ [Kanban] Erreur subscription tâches:", error);
     },
   });
@@ -301,7 +308,10 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
       scheduleFlush();
     },
     onError: (error) => {
-      if (error.message?.includes("connecté")) return;
+      if (error.message?.includes("connecté")) {
+        forceWsReconnect();
+        return;
+      }
       console.error("❌ [Kanban] Erreur subscription colonnes:", error);
     },
   });
