@@ -119,6 +119,7 @@ export const useKanbanTasks = (boardId, board) => {
         ...prev,
         comments: Array.isArray(task.comments) ? task.comments : [],
         activity: Array.isArray(task.activity) ? task.activity : [],
+        claudeWorkingSince: task.claudeWorkingSince ?? null,
         timeTracking: prev.timeTracking
           ? {
               ...prev.timeTracking,
@@ -197,6 +198,9 @@ export const useKanbanTasks = (boardId, board) => {
             ? editingTaskFromBoard.images
             : prev.images,
           timeTracking: editingTaskFromBoard.timeTracking ?? prev.timeTracking,
+          // null = Claude a répondu (marqueur effacé) : on prend la valeur du
+          // board telle quelle, sans repli sur l'ancienne
+          claudeWorkingSince: editingTaskFromBoard.claudeWorkingSince ?? null,
           updatedAt: editingTaskFromBoard.updatedAt ?? prev.updatedAt,
         };
         // Mettre à jour initialFormRef pour éviter que l'auto-save ne se déclenche
