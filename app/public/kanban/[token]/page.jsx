@@ -61,6 +61,10 @@ import {
 } from "@/src/components/ui/tooltip";
 import { UserAvatar, AvatarGroup } from "@/src/components/ui/user-avatar";
 import {
+  ClaudeWorkingIndicator,
+  ClaudeWorkingBadge,
+} from "@/src/components/ui/claude-working-indicator";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -1000,6 +1004,9 @@ function PublicTaskCard({ task, onEdit }) {
               </TooltipContent>
             </Tooltip>
           )}
+
+          {/* Claude est en train de répondre */}
+          <ClaudeWorkingBadge claudeWorkingSince={task.claudeWorkingSince} />
         </div>
 
         {/* Ligne 2: Timer + Avatar + Date d'échéance + Priorité */}
@@ -1617,6 +1624,10 @@ function PublicTaskActivity({
                 )}
               </>
             )}
+            <ClaudeWorkingIndicator
+              claudeWorkingSince={task?.claudeWorkingSince}
+              className="pt-1"
+            />
           </TabsContent>
 
           <TabsContent value="comments" className="space-y-3 mt-0">
@@ -1627,6 +1638,10 @@ function PublicTaskActivity({
             ) : (
               comments.map((comment) => renderCommentItem(comment))
             )}
+            <ClaudeWorkingIndicator
+              claudeWorkingSince={task?.claudeWorkingSince}
+              className="pt-1"
+            />
           </TabsContent>
 
           <TabsContent value="activity" className="space-y-3 mt-0">

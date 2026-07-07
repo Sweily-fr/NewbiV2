@@ -33,6 +33,7 @@ import {
   TabsTrigger,
 } from "@/src/components/ui/tabs";
 import { UserAvatar } from "@/src/components/ui/user-avatar";
+import { ClaudeWorkingIndicator } from "@/src/components/ui/claude-working-indicator";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1255,6 +1256,10 @@ const TaskActivityComponent = ({
                 })}
               </>
             )}
+            <ClaudeWorkingIndicator
+              claudeWorkingSince={task?.claudeWorkingSince}
+              className="pt-1"
+            />
           </TabsContent>
 
           <TabsContent value="comments" className="space-y-2.5 mt-3">
@@ -1406,6 +1411,10 @@ const TaskActivityComponent = ({
                 </div>
               ))
             )}
+            <ClaudeWorkingIndicator
+              claudeWorkingSince={task?.claudeWorkingSince}
+              className="pt-1"
+            />
           </TabsContent>
 
           <TabsContent value="activity" className="space-y-2.5 mt-3">
@@ -1725,6 +1734,7 @@ export const TaskActivity = React.memo(
       prevProps.task?.id === nextProps.task?.id &&
       prevProps.task?.comments === nextProps.task?.comments &&
       prevProps.task?.activity === nextProps.task?.activity &&
+      prevProps.task?.claudeWorkingSince === nextProps.task?.claudeWorkingSince &&
       prevProps.boardMembers === nextProps.boardMembers &&
       prevProps.columns === nextProps.columns
     );
