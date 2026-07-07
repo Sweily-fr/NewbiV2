@@ -229,6 +229,28 @@ export const useKanbanTasks = (boardId, board) => {
     workspaceId,
   ]);
 
+  // Filet de sécurité temps réel : tant que le modal est ouvert (et l'onglet
+  // visible), re-synchroniser les détails (commentaires, activité, loader
+  // Claude) toutes les 30s. Couvre les cas où le WebSocket est mort en
+  // silence (connexion établie sans JWT valide, coupure réseau, proxy) — la
+  // réinjection étant dédupliquée par id-updatedAt, un poll sans changement
+  // ne provoque aucun re-render.
+  useEffect(() => {
+    if (!isEditTaskOpen || !editingTask?.id) return undefined;
+    const interval = setInterval(() => {
+      if (
+        typeof document !== "undefined" &&
+        document.visibilityState !== "visible"
+      )
+        return;
+      fetchTaskDetails({
+        variables: { id: editingTask.id, workspaceId },
+        fetchPolicy: "network-only",
+      });
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [isEditTaskOpen, editingTask?.id, fetchTaskDetails, workspaceId]);
+
   // Ref pour savoir si le timer local tournait lors de la création
   const timerWasRunningRef = useRef(false);
 
