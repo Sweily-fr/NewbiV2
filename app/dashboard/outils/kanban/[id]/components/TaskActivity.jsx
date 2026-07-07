@@ -321,6 +321,9 @@ const TaskActivityComponent = ({
             ...prev,
             comments: data.addComment.comments,
             activity: data.addComment.activity,
+            // Propager le marqueur pour que le loader « Claude répond »
+            // apparaisse immédiatement, sans attendre la subscription
+            claudeWorkingSince: data.addComment.claudeWorkingSince ?? null,
           }));
         }
       }
@@ -448,6 +451,7 @@ const TaskActivityComponent = ({
               ...prev,
               comments: finalComments,
               activity: taskData.activity,
+              claudeWorkingSince: taskData.claudeWorkingSince ?? null,
             }));
           }
         }
