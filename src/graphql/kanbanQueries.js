@@ -170,6 +170,7 @@ export const GET_TASK_DETAILS = gql`
   query GetTaskDetails($id: ID!, $workspaceId: ID) {
     task(id: $id, workspaceId: $workspaceId) {
       id
+      updatedAt
       claudeWorkingSince
       comments {
         id
