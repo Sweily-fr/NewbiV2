@@ -99,19 +99,24 @@ export const useKanbanTasks = (boardId, board) => {
     notifyOnNetworkStatusChange: false,
   });
 
-  // Ref pour ignorer le premier render avec data déjà en cache, sinon on
-  // réinjecterait des comments/activity sur un form fraîchement initialisé.
+  // Ref pour dédupliquer les résultats : clé id-updatedAt, pour ne réinjecter
+  // comments/activity que quand la tâche a réellement changé côté serveur
+  // (updatedAt est sélectionné par GET_TASK_DETAILS). L'ancien garde sur le
+  // seul id jetait TOUS les refetchs après le premier chargement → les
+  // commentaires du modal (dont les réponses 🤖 de Claude) n'apparaissaient
+  // qu'après un refresh de la page.
   const lastTaskDetailsIdRef = useRef(null);
 
   useEffect(() => {
     const task = taskDetailsData?.task;
     if (!task?.id) return;
-    if (lastTaskDetailsIdRef.current === task.id && !task.updatedAt) return;
+    const detailsKey = `${task.id}-${task.updatedAt || ""}`;
+    if (lastTaskDetailsIdRef.current === detailsKey) return;
     perfMark("fetchTaskDetails data received", {
       comments: task.comments?.length ?? 0,
       activity: task.activity?.length ?? 0,
     });
-    lastTaskDetailsIdRef.current = task.id;
+    lastTaskDetailsIdRef.current = detailsKey;
     setTaskForm((prev) => {
       // Ne pas écraser si on a changé de tâche entre-temps
       if (prev?.id && prev.id !== task.id) return prev;
@@ -209,9 +214,12 @@ export const useKanbanTasks = (boardId, board) => {
       });
     }
 
-    // Refetch les détails (comments, activity, timeTracking.entries) depuis le serveur
+    // Refetch les détails (comments, activity, timeTracking.entries) depuis le serveur.
+    // network-only : nextFetchPolicy est cache-first, sans ça les ré-exécutions
+    // servent le cache et les commentaires fraîchement postés n'arrivent jamais.
     fetchTaskDetails({
       variables: { id: editingTaskFromBoard.id, workspaceId },
+      fetchPolicy: "network-only",
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
