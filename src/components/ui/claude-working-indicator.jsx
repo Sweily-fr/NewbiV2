@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Code2 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 
 // Au-delà de ce délai sans réponse 🤖 (claudeWorkingSince jamais remis à null,
@@ -111,6 +111,74 @@ export function ClaudeWorkingBadge({ claudeWorkingSince, className }) {
         <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#D97757]" />
       </span>
       Claude répond…
+    </span>
+  );
+}
+
+/**
+ * Bulle « Claude est en train de coder… » à afficher dans le fil de
+ * commentaires d'une tâche kanban tant que claudeCodingSince est actif
+ * (entre l'accusé de prise en charge et le commentaire de synthèse final).
+ * avatarSrc : avatar du profil invité Claude (repli : pastille étincelle).
+ */
+export function ClaudeCodingIndicator({
+  claudeCodingSince,
+  avatarSrc,
+  className,
+}) {
+  const coding = useClaudeWorking(claudeCodingSince);
+  if (!coding) return null;
+
+  return (
+    <div
+      className={cn("flex items-center gap-2", className)}
+      role="status"
+      aria-live="polite"
+    >
+      <div className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#D97757]">
+        {avatarSrc ? (
+          <img
+            src={avatarSrc}
+            alt="Claude"
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <Code2 className="h-3.5 w-3.5 text-white" />
+        )}
+      </div>
+      <div className="flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5">
+        <span className="text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">Claude</span> est en
+          train de coder
+        </span>
+        <TypingDots />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Petit badge animé pour la carte kanban sur le board, pendant la phase de
+ * développement (distinct du badge « répond » qui couvre la rédaction d'un
+ * commentaire).
+ */
+export function ClaudeCodingBadge({ claudeCodingSince, className }) {
+  const coding = useClaudeWorking(claudeCodingSince);
+  if (!coding) return null;
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full bg-[#D97757]/10 px-1.5 py-0.5 text-[10px] font-medium text-[#D97757]",
+        className,
+      )}
+      title="Claude est en train de coder"
+    >
+      <span className="relative flex h-1.5 w-1.5">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#D97757] opacity-75" />
+        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#D97757]" />
+      </span>
+      Claude code…
     </span>
   );
 }

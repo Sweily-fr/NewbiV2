@@ -63,6 +63,8 @@ import { UserAvatar, AvatarGroup } from "@/src/components/ui/user-avatar";
 import {
   ClaudeWorkingIndicator,
   ClaudeWorkingBadge,
+  ClaudeCodingIndicator,
+  ClaudeCodingBadge,
 } from "@/src/components/ui/claude-working-indicator";
 import {
   Select,
@@ -1007,6 +1009,7 @@ function PublicTaskCard({ task, onEdit }) {
 
           {/* Claude est en train de répondre */}
           <ClaudeWorkingBadge claudeWorkingSince={task.claudeWorkingSince} />
+          <ClaudeCodingBadge claudeCodingSince={task.claudeCodingSince} />
         </div>
 
         {/* Ligne 2: Timer + Avatar + Date d'échéance + Priorité */}
@@ -1646,6 +1649,11 @@ function PublicTaskActivity({
               avatarSrc={claudeAvatar}
               className="pt-1"
             />
+            <ClaudeCodingIndicator
+              claudeCodingSince={task?.claudeCodingSince}
+              avatarSrc={claudeAvatar}
+              className="pt-1"
+            />
           </TabsContent>
 
           <TabsContent value="comments" className="space-y-3 mt-0">
@@ -1658,6 +1666,11 @@ function PublicTaskActivity({
             )}
             <ClaudeWorkingIndicator
               claudeWorkingSince={task?.claudeWorkingSince}
+              avatarSrc={claudeAvatar}
+              className="pt-1"
+            />
+            <ClaudeCodingIndicator
+              claudeCodingSince={task?.claudeCodingSince}
               avatarSrc={claudeAvatar}
               className="pt-1"
             />
