@@ -892,6 +892,19 @@ const TaskActivityComponent = ({
     ].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
   }, [comments, activities]);
 
+  // Avatar du profil invité Claude : repris de son dernier commentaire 🤖
+  // (le préfixe est le marqueur fiable du bot), pour le loader « Claude
+  // est en train de répondre »
+  const claudeAvatar = React.useMemo(() => {
+    for (let i = comments.length - 1; i >= 0; i--) {
+      const c = comments[i];
+      if (c?.userImage && String(c.content || "").trimStart().startsWith("🤖")) {
+        return c.userImage;
+      }
+    }
+    return null;
+  }, [comments]);
+
   // Auto-scroll vers le bas pour voir les dernières activités
   React.useEffect(() => {
     requestAnimationFrame(() => {
@@ -1262,6 +1275,7 @@ const TaskActivityComponent = ({
             )}
             <ClaudeWorkingIndicator
               claudeWorkingSince={task?.claudeWorkingSince}
+              avatarSrc={claudeAvatar}
               className="pt-1"
             />
           </TabsContent>
@@ -1417,6 +1431,7 @@ const TaskActivityComponent = ({
             )}
             <ClaudeWorkingIndicator
               claudeWorkingSince={task?.claudeWorkingSince}
+              avatarSrc={claudeAvatar}
               className="pt-1"
             />
           </TabsContent>

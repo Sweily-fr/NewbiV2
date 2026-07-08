@@ -1245,6 +1245,23 @@ function PublicTaskActivity({
     ].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
   }, [comments, activities]);
 
+  // Avatar du profil invité Claude : repris de son dernier commentaire 🤖,
+  // pour le loader « Claude est en train de répondre »
+  const claudeAvatar = useMemo(() => {
+    for (let i = comments.length - 1; i >= 0; i--) {
+      const c = comments[i];
+      if (
+        c?.userImage &&
+        String(c.content || "")
+          .trimStart()
+          .startsWith("🤖")
+      ) {
+        return c.userImage;
+      }
+    }
+    return null;
+  }, [comments]);
+
   const formatDate = (dateString) => {
     if (!dateString) return "";
     const date = new Date(dateString);
@@ -1626,6 +1643,7 @@ function PublicTaskActivity({
             )}
             <ClaudeWorkingIndicator
               claudeWorkingSince={task?.claudeWorkingSince}
+              avatarSrc={claudeAvatar}
               className="pt-1"
             />
           </TabsContent>
@@ -1640,6 +1658,7 @@ function PublicTaskActivity({
             )}
             <ClaudeWorkingIndicator
               claudeWorkingSince={task?.claudeWorkingSince}
+              avatarSrc={claudeAvatar}
               className="pt-1"
             />
           </TabsContent>
