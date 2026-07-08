@@ -1,6 +1,5 @@
 import { auth } from "@/src/lib/auth";
 import { headers } from "next/headers";
-import { seatSyncService } from "@/src/services/seatSyncService";
 import { emailTemplates } from "@/src/lib/email-templates";
 import { sendEmail } from "@/src/lib/auth-utils";
 import { withErrorHandler } from "@/src/lib/security";
@@ -223,50 +222,12 @@ async function postHandler(request, { params }) {
       // Ne pas bloquer si ça échoue, mais logger l'erreur
     }
 
-    // ÉTAPE 4: Synchroniser la facturation des sièges (NON-BLOQUANT)
-    try {
-      console.log(
-        `🔄 ÉTAPE 4: Synchronisation facturation pour organisation ${organizationId}`,
-      );
-      console.log(`👤 Utilisateur invité: ${session.user.email}`);
-
-      const { mongoDb } = await import("@/src/lib/mongodb");
-
-      // Vérifier que l'organisation a un abonnement avant de synchroniser
-      const subscription = await mongoDb.collection("subscription").findOne({
-        referenceId: organizationId,
-      });
-
-      if (!subscription || !subscription.stripeSubscriptionId) {
-        console.log(
-          `ℹ️ Organisation ${organizationId} en plan Free, pas de facturation à synchroniser`,
-        );
-      } else {
-        console.log(
-          `📋 Organisation ${organizationId} a un abonnement Pro, synchronisation...`,
-        );
-
-        const { auth: authInstance } = await import("@/src/lib/auth");
-        const adapter = authInstance.options.database;
-
-        await seatSyncService.syncSeatsAfterInvitationAccepted(
-          organizationId,
-          adapter,
-        );
-
-        console.log(`✅ Facturation synchronisée avec succès`);
-      }
-    } catch (billingError) {
-      // NE PAS bloquer l'acceptation si la facturation échoue
-      console.error(
-        "⚠️ Erreur synchronisation facturation (non-bloquant):",
-        billingError,
-      );
-      console.warn(
-        "⚠️ Le membre a été ajouté mais la facturation n'a pas été synchronisée",
-      );
-      // Continuer sans erreur
-    }
+    // ÉTAPE 4 (facturation des sièges) : SUPPRIMÉE.
+    // La synchro Stripe est déjà déclenchée par le hook Better Auth
+    // `afterAcceptInvitation` (src/lib/auth-plugins.js) lors de l'ÉTAPE 1.
+    // La refaire ici la lançait DEUX fois en concurrence → risque de double
+    // création d'item de siège (le create utilisait une clé d'idempotence non
+    // stable). On garde l'unique appel via le hook.
 
     // ÉTAPE 5: Envoyer les emails de notification (NON-BLOQUANT)
     try {
