@@ -45,6 +45,13 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
     fetchPolicy: "cache-and-network",
     nextFetchPolicy: "cache-first",
     notifyOnNetworkStatusChange: false,
+    // Filet de sécurité temps réel au niveau du board : si le WebSocket est
+    // mort en silence (connexion anonyme, proxy, coupure), le board entier
+    // (cartes, badge/loader « Claude répond », commentaires comptés) converge
+    // quand même en ≤45s. Les polls passent par le réseau et ne tournent que
+    // si l'onglet est au premier plan.
+    pollInterval: 45000,
+    skipPollingIfUnfocused: true,
     context: {
       skipErrorToast: isRedirecting,
     },
