@@ -53,8 +53,13 @@ function TypingDots() {
 /**
  * Bulle « Claude est en train de répondre… » à afficher dans le fil de
  * commentaires d'une tâche kanban tant que claudeWorkingSince est actif.
+ * avatarSrc : avatar du profil invité Claude (repli : pastille étincelle).
  */
-export function ClaudeWorkingIndicator({ claudeWorkingSince, className }) {
+export function ClaudeWorkingIndicator({
+  claudeWorkingSince,
+  avatarSrc,
+  className,
+}) {
   const working = useClaudeWorking(claudeWorkingSince);
   if (!working) return null;
 
@@ -64,8 +69,16 @@ export function ClaudeWorkingIndicator({ claudeWorkingSince, className }) {
       role="status"
       aria-live="polite"
     >
-      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#D97757]">
-        <Sparkles className="h-3.5 w-3.5 text-white" />
+      <div className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#D97757]">
+        {avatarSrc ? (
+          <img
+            src={avatarSrc}
+            alt="Claude"
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <Sparkles className="h-3.5 w-3.5 text-white" />
+        )}
       </div>
       <div className="flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5">
         <span className="text-xs text-muted-foreground">
