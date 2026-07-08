@@ -33,7 +33,10 @@ import {
   TabsTrigger,
 } from "@/src/components/ui/tabs";
 import { UserAvatar } from "@/src/components/ui/user-avatar";
-import { ClaudeWorkingIndicator } from "@/src/components/ui/claude-working-indicator";
+import {
+  ClaudeWorkingIndicator,
+  ClaudeCodingIndicator,
+} from "@/src/components/ui/claude-working-indicator";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -200,10 +203,7 @@ const TaskActivityComponent = ({
 
     const imageFiles = [];
     for (const item of items) {
-      if (
-        item.type.startsWith("image/") ||
-        item.type.startsWith("video/")
-      ) {
+      if (item.type.startsWith("image/") || item.type.startsWith("video/")) {
         const file = item.getAsFile();
         if (file) {
           imageFiles.push({
@@ -324,6 +324,7 @@ const TaskActivityComponent = ({
             // Propager le marqueur pour que le loader « Claude répond »
             // apparaisse immédiatement, sans attendre la subscription
             claudeWorkingSince: data.addComment.claudeWorkingSince ?? null,
+            claudeCodingSince: data.addComment.claudeCodingSince ?? null,
           }));
         }
       }
@@ -452,6 +453,7 @@ const TaskActivityComponent = ({
               comments: finalComments,
               activity: taskData.activity,
               claudeWorkingSince: taskData.claudeWorkingSince ?? null,
+              claudeCodingSince: taskData.claudeCodingSince ?? null,
             }));
           }
         }
@@ -898,7 +900,12 @@ const TaskActivityComponent = ({
   const claudeAvatar = React.useMemo(() => {
     for (let i = comments.length - 1; i >= 0; i--) {
       const c = comments[i];
-      if (c?.userImage && String(c.content || "").trimStart().startsWith("🤖")) {
+      if (
+        c?.userImage &&
+        String(c.content || "")
+          .trimStart()
+          .startsWith("🤖")
+      ) {
         return c.userImage;
       }
     }
@@ -1278,6 +1285,11 @@ const TaskActivityComponent = ({
               avatarSrc={claudeAvatar}
               className="pt-1"
             />
+            <ClaudeCodingIndicator
+              claudeCodingSince={task?.claudeCodingSince}
+              avatarSrc={claudeAvatar}
+              className="pt-1"
+            />
           </TabsContent>
 
           <TabsContent value="comments" className="space-y-2.5 mt-3">
@@ -1431,6 +1443,11 @@ const TaskActivityComponent = ({
             )}
             <ClaudeWorkingIndicator
               claudeWorkingSince={task?.claudeWorkingSince}
+              avatarSrc={claudeAvatar}
+              className="pt-1"
+            />
+            <ClaudeCodingIndicator
+              claudeCodingSince={task?.claudeCodingSince}
               avatarSrc={claudeAvatar}
               className="pt-1"
             />
@@ -1753,7 +1770,9 @@ export const TaskActivity = React.memo(
       prevProps.task?.id === nextProps.task?.id &&
       prevProps.task?.comments === nextProps.task?.comments &&
       prevProps.task?.activity === nextProps.task?.activity &&
-      prevProps.task?.claudeWorkingSince === nextProps.task?.claudeWorkingSince &&
+      prevProps.task?.claudeWorkingSince ===
+        nextProps.task?.claudeWorkingSince &&
+      prevProps.task?.claudeCodingSince === nextProps.task?.claudeCodingSince &&
       prevProps.boardMembers === nextProps.boardMembers &&
       prevProps.columns === nextProps.columns
     );
