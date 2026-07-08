@@ -92,7 +92,9 @@ export default function TrustpilotWidget({ className = "" }) {
           data-businessunit-id="6a37f47b64265226696b1838"
           data-style-height="52px"
           data-style-width="100%"
-          data-token={"8cdefee3-f6f3-4588-902d-280ab2a4a88d" /* gitleaks:allow */}
+          data-token={
+            "34292005-471a-40d8-8b95-d163aef06ceb" /* gitleaks:allow */
+          }
         >
           <a
             href="https://fr.trustpilot.com/review/newbi.fr"

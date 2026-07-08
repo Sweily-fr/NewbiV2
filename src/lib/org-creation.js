@@ -426,6 +426,12 @@ export async function createOrganizationWithSubscription({
         .findOne({ _id: organizationObjectId });
 
       if (inviterUser && org) {
+        // Résolu une seule fois avant les envois concurrents : un import()
+        // dynamique par membre invité entraînerait une résolution concurrente
+        // du même module, ce qui peut retourner des instances différentes.
+        const { sendOrganizationInvitationEmail } =
+          await import("./auth-utils.js");
+
         const invitationResults = await Promise.allSettled(
           orgInvitedMembers
             .filter((m) => m && (m.email || m).toString().trim())
@@ -468,9 +474,6 @@ export async function createOrganizationWithSubscription({
                 });
 
               const invitationId = insertResult.insertedId.toString();
-
-              const { sendOrganizationInvitationEmail } =
-                await import("./auth-utils.js");
 
               await sendOrganizationInvitationEmail({
                 id: invitationId,
