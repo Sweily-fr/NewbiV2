@@ -62,7 +62,10 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { formatDateRelative } from "../../../../../../src/utils/kanbanHelpers";
 import { AvatarGroup, UserAvatar } from "@/src/components/ui/user-avatar";
-import { ClaudeWorkingBadge } from "@/src/components/ui/claude-working-indicator";
+import {
+  ClaudeWorkingBadge,
+  ClaudeCodingBadge,
+} from "@/src/components/ui/claude-working-indicator";
 import { BoardMembersLookupContext } from "@/src/hooks/useAssignedMembersInfo";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { usePrefetchTaskDetails } from "../hooks/usePrefetchTaskDetails";
@@ -777,6 +780,8 @@ const TaskCard = memo(
                 <ClaudeWorkingBadge
                   claudeWorkingSince={task.claudeWorkingSince}
                 />
+                {/* Claude est en train de coder */}
+                <ClaudeCodingBadge claudeCodingSince={task.claudeCodingSince} />
               </div>
 
               {/* Ligne 2: Timer + Avatar + Date d'échéance + Priorité */}
@@ -1164,6 +1169,7 @@ const TaskCard = memo(
       pt.dueDate === nt.dueDate &&
       pt.updatedAt === nt.updatedAt &&
       pt.claudeWorkingSince === nt.claudeWorkingSince &&
+      pt.claudeCodingSince === nt.claudeCodingSince &&
       prevProps.isDragging === nextProps.isDragging &&
       (pt.tags === nt.tags ||
         (pt.tags?.length ?? 0) === (nt.tags?.length ?? 0)) &&

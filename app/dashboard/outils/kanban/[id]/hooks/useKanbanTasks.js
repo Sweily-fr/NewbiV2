@@ -140,6 +140,7 @@ export const useKanbanTasks = (boardId, board) => {
         comments: Array.isArray(task.comments) ? task.comments : [],
         activity: Array.isArray(task.activity) ? task.activity : [],
         claudeWorkingSince: task.claudeWorkingSince ?? null,
+        claudeCodingSince: task.claudeCodingSince ?? null,
         timeTracking: prev.timeTracking
           ? {
               ...prev.timeTracking,
@@ -225,6 +226,7 @@ export const useKanbanTasks = (boardId, board) => {
           // null = Claude a répondu (marqueur effacé) : on prend la valeur du
           // board telle quelle, sans repli sur l'ancienne
           claudeWorkingSince: editingTaskFromBoard.claudeWorkingSince ?? null,
+          claudeCodingSince: editingTaskFromBoard.claudeCodingSince ?? null,
           updatedAt: editingTaskFromBoard.updatedAt ?? prev.updatedAt,
         };
         // Mettre à jour initialFormRef pour éviter que l'auto-save ne se déclenche
@@ -242,7 +244,8 @@ export const useKanbanTasks = (boardId, board) => {
       variables: { id: editingTaskFromBoard.id, workspaceId },
       fetchPolicy: "network-only",
     })
-      .then((result) => applyTaskDetails(result?.data?.task))      .catch(() => {});
+      .then((result) => applyTaskDetails(result?.data?.task))
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     editingTaskFromBoard?.id,
@@ -269,7 +272,8 @@ export const useKanbanTasks = (boardId, board) => {
         variables: { id: editingTask.id, workspaceId },
         fetchPolicy: "network-only",
       })
-        .then((result) => applyTaskDetails(result?.data?.task))        .catch(() => {});
+        .then((result) => applyTaskDetails(result?.data?.task))
+        .catch(() => {});
     }, 30000);
     return () => clearInterval(interval);
   }, [
@@ -906,7 +910,8 @@ export const useKanbanTasks = (boardId, board) => {
         fetchTaskDetails({
           variables: { id: taskId, workspaceId },
         })
-          .then((result) => applyTaskDetails(result?.data?.task))          .catch(() => {});
+          .then((result) => applyTaskDetails(result?.data?.task))
+          .catch(() => {});
       }
     },
     [apolloClient, workspaceId, fetchTaskDetails, applyTaskDetails],

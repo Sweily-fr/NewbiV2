@@ -453,6 +453,7 @@ export function TaskModal({
       comments: taskForm.comments || [],
       activity: taskForm.activity || [],
       claudeWorkingSince: taskForm.claudeWorkingSince || null,
+      claudeCodingSince: taskForm.claudeCodingSince || null,
       userId: taskForm.userId,
     }),
     [
@@ -461,6 +462,7 @@ export function TaskModal({
       taskForm.comments,
       taskForm.activity,
       taskForm.claudeWorkingSince,
+      taskForm.claudeCodingSince,
       taskForm.userId,
     ],
   );

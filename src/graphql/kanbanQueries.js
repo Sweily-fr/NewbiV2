@@ -122,6 +122,7 @@ export const GET_BOARD = gql`
         position
         userId
         claudeWorkingSince
+        claudeCodingSince
         createdAt
         updatedAt
         tags {
@@ -172,6 +173,7 @@ export const GET_TASK_DETAILS = gql`
       id
       updatedAt
       claudeWorkingSince
+      claudeCodingSince
       comments {
         id
         userId
@@ -612,6 +614,7 @@ export const TASK_LIGHT_FRAGMENT = gql`
     position
     userId
     claudeWorkingSince
+    claudeCodingSince
     createdAt
     updatedAt
     tags {
@@ -1045,6 +1048,7 @@ export const GET_PUBLIC_BOARD = gql`
           columnId
           position
           claudeWorkingSince
+          claudeCodingSince
           checklist {
             id
             text
@@ -1425,6 +1429,7 @@ export const ADD_EXTERNAL_COMMENT = gql`
         columnId
         position
         claudeWorkingSince
+        claudeCodingSince
         checklist {
           id
           text
@@ -1557,6 +1562,7 @@ export const PUBLIC_TASK_UPDATED_SUBSCRIPTION = gql`
         columnId
         position
         claudeWorkingSince
+        claudeCodingSince
         tags {
           name
         }
