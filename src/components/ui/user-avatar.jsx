@@ -1,5 +1,6 @@
 "use client";
 
+import { Sparkles } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar";
 import { cn } from "@/src/lib/utils";
 
@@ -62,6 +63,15 @@ function getInitials(name) {
  * @param {string} props.className - Classes CSS additionnelles
  * @param {string} props.size - Taille de l'avatar (sm, md, lg, xl)
  */
+const sparklesSizeClasses = {
+  xxs: "h-2.5 w-2.5",
+  xs: "h-3.5 w-3.5",
+  sm: "h-4 w-4",
+  md: "h-5 w-5",
+  lg: "h-6 w-6",
+  xl: "h-8 w-8",
+};
+
 export function UserAvatar({ src, name, colorKey, className, fallbackClassName, size = "md" }) {
   const sizeClasses = {
     xxs: "h-4 w-4 text-[8px]",
@@ -72,14 +82,23 @@ export function UserAvatar({ src, name, colorKey, className, fallbackClassName, 
     xl: "h-16 w-16 text-lg",
   };
 
+  // Claude (bot) a une identité visuelle dédiée (rond orange + étincelle),
+  // reprise du loader "Claude est en train de répondre" pour que l'avatar
+  // reste identique entre le loader et le commentaire une fois posté.
+  const isClaude = name?.trim().toLowerCase() === "claude";
   const bgColor = getAvatarColor(colorKey || name);
   const initials = getInitials(name);
 
   return (
     <Avatar className={cn(sizeClasses[size], className)}>
       {src && <AvatarImage src={src} alt={name} className="object-cover" />}
-      <AvatarFallback className={fallbackClassName || cn(bgColor, "text-white font-medium")}>
-        {initials}
+      <AvatarFallback
+        className={
+          fallbackClassName ||
+          (isClaude ? "bg-[#D97757] text-white" : cn(bgColor, "text-white font-medium"))
+        }
+      >
+        {isClaude ? <Sparkles className={sparklesSizeClasses[size]} /> : initials}
       </AvatarFallback>
     </Avatar>
   );
