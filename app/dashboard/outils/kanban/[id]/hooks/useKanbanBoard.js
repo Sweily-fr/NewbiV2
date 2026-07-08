@@ -8,7 +8,7 @@ import {
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/utils/debouncedToast";
 import { forceWsReconnect } from "@/src/lib/apolloClient";
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useState, useEffect } from "react";
 
 // Logs de debug gated par localStorage('kanban-debug' === '1'). Désactivés
 // par défaut pour ne pas alourdir le 'message handler' en prod.
@@ -32,6 +32,38 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
   // Vérifier directement si la session est prête (sans état intermédiaire)
   const isSessionReady = !sessionLoading && !!session?.user;
 
+  // ── Redémarrage des subscriptions après erreur ─────────────────────────
+  // Une erreur reçue par useSubscription TERMINE l'observable Apollo : même
+  // si le WebSocket est réparé ensuite (forceWsReconnect), le transport
+  // rejoue l'opération et les trames ARRIVENT au navigateur… mais tombent
+  // dans un observable mort et sont jetées — plus aucun événement traité
+  // jusqu'au refresh de la page. On force donc un vrai ré-abonnement en
+  // basculant `skip` (démonte puis remonte les subscriptions), avec backoff
+  // exponentiel pour ne pas marteler le serveur si l'erreur persiste.
+  const [wsRestartPause, setWsRestartPause] = useState(false);
+  const wsRestartAttemptsRef = useRef(0);
+  const wsRestartTimerRef = useRef(null);
+  const restartSubscriptions = useCallback(() => {
+    forceWsReconnect();
+    if (wsRestartTimerRef.current) return;
+    const delay = Math.min(30000, 1500 * 2 ** wsRestartAttemptsRef.current);
+    console.warn(
+      `[WebSocket] Ré-abonnement des subscriptions kanban dans ${delay}ms`,
+    );
+    wsRestartAttemptsRef.current += 1;
+    setWsRestartPause(true);
+    wsRestartTimerRef.current = setTimeout(() => {
+      wsRestartTimerRef.current = null;
+      setWsRestartPause(false);
+    }, delay);
+  }, []);
+  useEffect(
+    () => () => {
+      if (wsRestartTimerRef.current) clearTimeout(wsRestartTimerRef.current);
+    },
+    [],
+  );
+
   const { data, loading, error, refetch } = useQuery(GET_BOARD, {
     variables: {
       id,
@@ -45,13 +77,6 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
     fetchPolicy: "cache-and-network",
     nextFetchPolicy: "cache-first",
     notifyOnNetworkStatusChange: false,
-    // Filet de sécurité temps réel au niveau du board : si le WebSocket est
-    // mort en silence (connexion anonyme, proxy, coupure), le board entier
-    // (cartes, badge/loader « Claude répond », commentaires comptés) converge
-    // quand même en ≤45s. Les polls passent par le réseau et ne tournent que
-    // si l'onglet est au premier plan.
-    pollInterval: 45000,
-    skipPollingIfUnfocused: true,
     context: {
       skipErrorToast: isRedirecting,
     },
@@ -235,10 +260,12 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
   // Subscription pour les mises à jour temps réel des tâches
   useSubscription(TASK_UPDATED_SUBSCRIPTION, {
     variables: { boardId: id, workspaceId },
-    skip: !workspaceId || !id || !isSessionReady || isRedirecting,
+    skip: !workspaceId || !id || !isSessionReady || isRedirecting || wsRestartPause,
     onData: ({ data: subscriptionData }) => {
       const event = subscriptionData?.data?.taskUpdated;
       if (!event) return;
+      // Événement reçu = subscription saine → réarmer le backoff
+      wsRestartAttemptsRef.current = 0;
       const { type, task, taskId, visitor } = event;
       __klog("📡 [Subscription] Données reçues:", type);
 
@@ -266,21 +293,19 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
       scheduleFlush();
     },
     onError: (error) => {
-      if (error.message?.includes("connecté")) {
-        // La connexion WebSocket s'est établie sans JWT valide → la
-        // subscription est morte en silence. Forcer une reconnexion
-        // (débouncée) pour repartir authentifié au lieu d'ignorer.
-        forceWsReconnect();
-        return;
+      if (!error.message?.includes("connecté")) {
+        console.error("❌ [Kanban] Erreur subscription tâches:", error);
       }
-      console.error("❌ [Kanban] Erreur subscription tâches:", error);
+      // Toute erreur TERMINE l'observable : reconnexion du transport ET
+      // ré-abonnement Apollo, sinon la subscription reste sourde à vie.
+      restartSubscriptions();
     },
   });
 
   // Subscription pour les mises à jour temps réel des colonnes
   useSubscription(COLUMN_UPDATED_SUBSCRIPTION, {
     variables: { boardId: id, workspaceId },
-    skip: !workspaceId || !id || !isSessionReady || isRedirecting,
+    skip: !workspaceId || !id || !isSessionReady || isRedirecting || wsRestartPause,
     onData: ({ data: subscriptionData }) => {
       const event = subscriptionData?.data?.columnUpdated;
       if (!event) return;
@@ -315,11 +340,10 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
       scheduleFlush();
     },
     onError: (error) => {
-      if (error.message?.includes("connecté")) {
-        forceWsReconnect();
-        return;
+      if (!error.message?.includes("connecté")) {
+        console.error("❌ [Kanban] Erreur subscription colonnes:", error);
       }
-      console.error("❌ [Kanban] Erreur subscription colonnes:", error);
+      restartSubscriptions();
     },
   });
 
