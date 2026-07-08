@@ -40,6 +40,17 @@ export default function AcceptInvitationPage() {
   const [isAccepting, setIsAccepting] = useState(false);
   const [userExists, setUserExists] = useState(null);
   const [members, setMembers] = useState([]);
+  // Détection mobile : sur téléphone, newbiv2 n'est pas fait pour finaliser
+  // l'invitation → on affiche une passerelle qui renvoie vers l'app native.
+  const [isMobile, setIsMobile] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
+
+  useEffect(() => {
+    if (typeof navigator === "undefined") return;
+    const ua = navigator.userAgent || "";
+    setIsMobile(/iPhone|iPad|iPod|Android/i.test(ua));
+    setIsAndroid(/Android/i.test(ua));
+  }, []);
 
   useEffect(() => {
     const fetchInvitation = async () => {
@@ -231,6 +242,70 @@ export default function AcceptInvitationPage() {
             </p>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  // ── Passerelle mobile ──────────────────────────────────────────────
+  // Sur téléphone, on ne finalise pas l'invitation dans le navigateur : on
+  // renvoie vers l'app Newbi via le scheme custom (newbi://), qui fonctionne
+  // sans universal links / AASA. Fallback stores si l'app n'est pas installée.
+  if (isMobile && invitation) {
+    const search = typeof window !== "undefined" ? window.location.search : "";
+    const appDeepLink = `newbi://accept-invitation/${invitationId}${search}`;
+    const storeUrl = isAndroid
+      ? "https://play.google.com/store/apps/details?id=com.anonymous.appnewbi"
+      : "https://apps.apple.com/app/id6772126520";
+    const roleLabel =
+      {
+        owner: "Propriétaire",
+        admin: "Administrateur",
+        member: "Membre",
+        viewer: "Invité",
+        accountant: "Comptable",
+      }[invitation.role] || "Membre";
+
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-white dark:bg-background">
+        <div className="w-full max-w-sm flex flex-col items-center text-center gap-6">
+          <div className="flex size-16 items-center justify-center rounded-2xl border border-black/5 dark:border-white/10 shadow-sm">
+            <img src="/ni2.svg" alt="Newbi" className="w-7 h-7" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-medium">
+              Rejoindre {invitation.organizationName}
+            </h1>
+            <p className="text-muted-foreground text-sm">
+              Vous êtes invité en tant que <strong>{roleLabel}</strong>. Ouvrez
+              l'application Newbi pour accepter.
+            </p>
+          </div>
+
+          {invitation.status === "pending" ? (
+            <div className="w-full space-y-3">
+              <a href={appDeepLink} className="block">
+                <Button className="w-full bg-[#5b4fff] hover:bg-[#5b4fff]/90 cursor-pointer">
+                  Ouvrir dans l'app Newbi
+                </Button>
+              </a>
+              <a href={storeUrl} className="block">
+                <Button variant="outline" className="w-full cursor-pointer">
+                  Télécharger l'app
+                </Button>
+              </a>
+              <p className="text-xs text-muted-foreground pt-1">
+                Connectez-vous avec l'email invité pour finaliser dans l'app.
+              </p>
+            </div>
+          ) : (
+            <div className="pt-2">
+              <CheckCircleIcon className="h-10 w-10 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">
+                Cette invitation a déjà été traitée.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
