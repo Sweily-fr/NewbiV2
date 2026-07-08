@@ -107,10 +107,25 @@ export const useKanbanTasks = (boardId, board) => {
   // qu'après un refresh de la page.
   const lastTaskDetailsIdRef = useRef(null);
 
-  useEffect(() => {
-    const task = taskDetailsData?.task;
+  // Applique un résultat de GET_TASK_DETAILS au formulaire du modal.
+  // ⚠️ Depuis Apollo 3.14, le `data` réactif de useLazyQuery ne se met plus
+  // à jour lors des ré-exécutions : les résultats n'arrivent que via la
+  // PROMESSE de la fonction d'exécution. Chaque appel de fetchTaskDetails
+  // doit donc chaîner .then(applyTaskDetails) — l'effet sur taskDetailsData
+  // ci-dessous ne couvre que le premier chargement.
+  const applyTaskDetails = useCallback((task) => {
     if (!task?.id) return;
-    const detailsKey = `${task.id}-${task.updatedAt || ""}`;
+    // La clé de dédup inclut les compteurs : un événement de subscription
+    // fusionne l'updatedAt frais dans le cache AVANT que la réponse réseau
+    // n'apporte les nouveaux commentaires — une clé id-updatedAt seule
+    // consommerait la clé sur la vue périmée et rejetterait la fraîche.
+    const detailsKey = [
+      task.id,
+      task.updatedAt || "",
+      task.comments?.length ?? 0,
+      task.activity?.length ?? 0,
+      task.timeTracking?.entries?.length ?? 0,
+    ].join("-");
     if (lastTaskDetailsIdRef.current === detailsKey) return;
     perfMark("fetchTaskDetails data received", {
       comments: task.comments?.length ?? 0,
@@ -135,7 +150,11 @@ export const useKanbanTasks = (boardId, board) => {
       initialFormRef.current = computeAutoSaveSignature(updated);
       return updated;
     });
-  }, [taskDetailsData]);
+  }, []);
+
+  useEffect(() => {
+    applyTaskDetails(taskDetailsData?.task);
+  }, [taskDetailsData, applyTaskDetails]);
 
   // Extraire uniquement la tâche en cours d'édition du board (évite de dépendre de board?.tasks entier)
   const editingTaskFromBoard = useMemo(() => {
@@ -217,10 +236,13 @@ export const useKanbanTasks = (boardId, board) => {
     // Refetch les détails (comments, activity, timeTracking.entries) depuis le serveur.
     // network-only : nextFetchPolicy est cache-first, sans ça les ré-exécutions
     // servent le cache et les commentaires fraîchement postés n'arrivent jamais.
+    // Le résultat DOIT être appliqué via la promesse (Apollo 3.14 ne met plus
+    // à jour le data réactif de useLazyQuery sur les ré-exécutions).
     fetchTaskDetails({
       variables: { id: editingTaskFromBoard.id, workspaceId },
       fetchPolicy: "network-only",
-    });
+    })
+      .then((result) => applyTaskDetails(result?.data?.task))      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     editingTaskFromBoard?.id,
@@ -246,10 +268,17 @@ export const useKanbanTasks = (boardId, board) => {
       fetchTaskDetails({
         variables: { id: editingTask.id, workspaceId },
         fetchPolicy: "network-only",
-      });
+      })
+        .then((result) => applyTaskDetails(result?.data?.task))        .catch(() => {});
     }, 30000);
     return () => clearInterval(interval);
-  }, [isEditTaskOpen, editingTask?.id, fetchTaskDetails, workspaceId]);
+  }, [
+    isEditTaskOpen,
+    editingTask?.id,
+    fetchTaskDetails,
+    applyTaskDetails,
+    workspaceId,
+  ]);
 
   // Ref pour savoir si le timer local tournait lors de la création
   const timerWasRunningRef = useRef(false);
@@ -872,12 +901,15 @@ export const useKanbanTasks = (boardId, board) => {
       // Charger les détails (comments, activity, timeTracking.entries) en arrière-plan
       if (!isCreating && taskId) {
         perfMark("fetchTaskDetails call");
+        // Réinitialiser la dédup pour que l'ouverture réinjecte toujours
+        lastTaskDetailsIdRef.current = null;
         fetchTaskDetails({
           variables: { id: taskId, workspaceId },
-        });
+        })
+          .then((result) => applyTaskDetails(result?.data?.task))          .catch(() => {});
       }
     },
-    [apolloClient, workspaceId, fetchTaskDetails],
+    [apolloClient, workspaceId, fetchTaskDetails, applyTaskDetails],
   );
 
   // Gestion des commentaires en attente (pour la création de tâche)
