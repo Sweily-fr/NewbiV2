@@ -1477,6 +1477,7 @@ export function useInvoiceEditor({
             setValue("purchaseOrderNumber", po.purchaseOrderNumber);
           if (po.isReverseCharge != null)
             setValue("isReverseCharge", po.isReverseCharge);
+          if (po.isVatExempt != null) setValue("isVatExempt", po.isVatExempt);
           if (po.retenueGarantie != null)
             setValue("retenueGarantie", po.retenueGarantie);
           if (po.escompte != null) setValue("escompte", po.escompte);
@@ -1531,6 +1532,7 @@ export function useInvoiceEditor({
             setValue("purchaseOrderNumber", q.purchaseOrderNumber);
           if (q.isReverseCharge != null)
             setValue("isReverseCharge", q.isReverseCharge);
+          if (q.isVatExempt != null) setValue("isVatExempt", q.isVatExempt);
           if (q.retenueGarantie != null)
             setValue("retenueGarantie", q.retenueGarantie);
           if (q.escompte != null) setValue("escompte", q.escompte);
@@ -2613,7 +2615,8 @@ function buildValidationReasons(errors) {
   const messages = Object.values(errors || {})
     .map((e) => (typeof e === "string" ? e : e?.message))
     .filter(Boolean);
-  if (messages.length === 0) return "Veuillez vérifier les informations saisies.";
+  if (messages.length === 0)
+    return "Veuillez vérifier les informations saisies.";
   return messages.map((m) => `• ${m}`).join("\n");
 }
 
@@ -2669,6 +2672,7 @@ function getInitialFormData(mode, initialData, session, organization) {
     purchaseOrderNumber: "",
     progressMode: "uniform", // Mode d'avancement: "uniform" ou "individual"
     globalProgressPercentage: 100, // Pourcentage global pour le mode uniforme
+    isVatExempt: false,
     // Récupérer les données bancaires si elles existent dans la facture
     showBankDetails: organization?.showBankDetails || false,
     // Nom du bénéficiaire
@@ -2787,6 +2791,7 @@ function transformInvoiceToFormData(invoice) {
   };
 
   const transformedData = {
+    id: invoice.id,
     prefix: invoice.prefix || "",
     number: invoice.number || "",
     issueDate:
@@ -2881,6 +2886,30 @@ function transformInvoiceToFormData(invoice) {
       invoice.invoiceType || (invoice.isDeposit ? "deposit" : "standard"), // Mapper invoiceType avec fallback sur isDeposit
     situationNumber: invoice.situationNumber || 1,
     situationReference: invoice.situationReference || "",
+    // Les pourcentages des articles font foi : les factures enregistrées avant
+    // la persistance de progressMode/globalProgressPercentage n'ont que ceux-là.
+    ...(() => {
+      const itemProgress = (invoice.items || []).map(
+        (item) => item.progressPercentage ?? 100,
+      );
+      const allEqual =
+        itemProgress.length > 0 &&
+        itemProgress.every((p) => p === itemProgress[0]);
+      const progressMode =
+        invoice.progressMode === "individual" ||
+        (itemProgress.length > 0 && !allEqual)
+          ? "individual"
+          : "uniform";
+      return {
+        progressMode,
+        globalProgressPercentage:
+          progressMode === "uniform" && allEqual
+            ? itemProgress[0]
+            : (invoice.globalProgressPercentage ?? 100),
+      };
+    })(),
+    isReverseCharge: invoice.isReverseCharge || false,
+    isVatExempt: invoice.isVatExempt || false,
     purchaseOrderNumber: invoice.purchaseOrderNumber || "",
     // Récupérer les données bancaires si elles existent dans la facture
     showBankDetails: invoice.showBankDetails || false,
@@ -3113,6 +3142,13 @@ function transformFormDataToInput(formData, previousStatus = null) {
     isDeposit: formData.isDepositInvoice || formData.invoiceType === "deposit", // Mapping correct vers le champ backend
     invoiceType: formData.invoiceType || "standard", // Type de facture (standard, deposit, situation)
     situationNumber: formData.situationNumber || 1, // Numéro de situation pour les factures de situation
+    progressMode: formData.progressMode || "uniform", // Mode d'avancement (uniform ou individual)
+    globalProgressPercentage:
+      formData.globalProgressPercentage !== undefined &&
+      formData.globalProgressPercentage !== null &&
+      formData.globalProgressPercentage !== ""
+        ? parseFloat(formData.globalProgressPercentage)
+        : 100, // Pourcentage d'avancement global (mode uniforme)
     showBankDetails: shouldShowBankDetails,
     bankDetails: bankDetailsForInvoice,
     appearance: {
@@ -3137,6 +3173,7 @@ function transformFormDataToInput(formData, previousStatus = null) {
         }
       : null,
     isReverseCharge: formData.isReverseCharge || false,
+    isVatExempt: formData.isVatExempt || false,
     clientPositionRight: formData.clientPositionRight || false,
     ...(formData.operationType && { operationType: formData.operationType }),
   };

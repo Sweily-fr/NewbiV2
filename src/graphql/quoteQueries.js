@@ -127,6 +127,7 @@ export const QUOTE_FRAGMENT = gql`
     showBankDetails
     clientPositionRight
     isReverseCharge
+    isVatExempt
     operationType
     createdBy {
       id
@@ -196,6 +197,7 @@ export const QUOTE_LIST_FRAGMENT = gql`
     finalTotalVAT
     finalTotalTTC
     isReverseCharge
+    isVatExempt
     items {
       description
       quantity
@@ -1021,6 +1023,7 @@ export const GET_QUOTE_TEMPLATES = gql`
       }
       clientPositionRight
       isReverseCharge
+      isVatExempt
       showBankDetails
       shipping {
         billShipping
