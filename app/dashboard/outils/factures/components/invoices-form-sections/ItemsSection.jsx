@@ -258,9 +258,11 @@ export default function ItemsSection({
         ? "PERCENTAGE"
         : productData.discountType) || "PERCENTAGE";
 
-    // Si auto-liquidation est activée, forcer la TVA à 0%
+    // Si auto-liquidation ou exonération de TVA globale est activée, forcer la TVA à 0%
     const isReverseCharge = watch("isReverseCharge");
-    const defaultVatRate = isReverseCharge ? 0 : 20;
+    const isVatExempt = watch("isVatExempt");
+    const forceZeroVat = isReverseCharge || isVatExempt;
+    const defaultVatRate = forceZeroVat ? 0 : 20;
 
     append({
       description: productData.description || "",
@@ -269,7 +271,7 @@ export default function ItemsSection({
       unitPrice: unitPrice,
       vatRate:
         productData.vatRate !== undefined
-          ? isReverseCharge
+          ? forceZeroVat
             ? 0
             : productData.vatRate
           : defaultVatRate,
@@ -300,39 +302,82 @@ export default function ItemsSection({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6 p-0">
-        {/* Checkbox Auto-liquidation - Masquée pour les avoirs car copiée automatiquement depuis la facture */}
+        {/* Checkboxes Auto-liquidation / Exonération de TVA - Masquées pour les avoirs car copiées automatiquement depuis la facture */}
         {!isCreditNoteContext && (
-          <div className="flex items-center space-x-2 py-2">
-            <Controller
-              name="isReverseCharge"
-              render={({ field }) => (
-                <Checkbox
-                  id="isReverseCharge"
-                  checked={field.value || false}
-                  onCheckedChange={(checked) => {
-                    field.onChange(checked);
+          <div className="space-y-1">
+            <div className="flex items-center space-x-2 py-1">
+              <Controller
+                name="isReverseCharge"
+                render={({ field }) => (
+                  <Checkbox
+                    id="isReverseCharge"
+                    checked={field.value || false}
+                    onCheckedChange={(checked) => {
+                      field.onChange(checked);
 
-                    // Si auto-liquidation activée, mettre tous les taux de TVA à 0%
-                    if (checked) {
-                      const currentItems = watch("items") || [];
-                      currentItems.forEach((_, index) => {
-                        setValue(`items.${index}.vatRate`, 0, {
-                          shouldDirty: true,
-                          shouldValidate: true,
+                      // Si auto-liquidation activée, mettre tous les taux de TVA à 0%
+                      if (checked) {
+                        // Exclusion mutuelle avec l'exonération de TVA globale
+                        setValue("isVatExempt", false, { shouldDirty: true });
+                        const currentItems = watch("items") || [];
+                        currentItems.forEach((_, index) => {
+                          setValue(`items.${index}.vatRate`, 0, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          });
                         });
-                      });
-                    }
-                  }}
-                  disabled={!canEdit}
-                />
-              )}
-            />
-            <label
-              htmlFor="isReverseCharge"
-              className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-            >
-              Auto-liquidation (TVA non applicable - Article 283 du CGI)
-            </label>
+                      }
+                    }}
+                    disabled={!canEdit}
+                  />
+                )}
+              />
+              <label
+                htmlFor="isReverseCharge"
+                className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+              >
+                Auto-liquidation (TVA non applicable - Article 283 du CGI)
+              </label>
+            </div>
+
+            {/* Checkbox Exonération de TVA globale */}
+            <div className="flex items-center space-x-2 py-1">
+              <Controller
+                name="isVatExempt"
+                render={({ field }) => (
+                  <Checkbox
+                    id="isVatExempt"
+                    checked={field.value || false}
+                    onCheckedChange={(checked) => {
+                      field.onChange(checked);
+
+                      // Si exonération activée, mettre tous les taux de TVA à 0%
+                      if (checked) {
+                        // Exclusion mutuelle avec l'auto-liquidation
+                        setValue("isReverseCharge", false, {
+                          shouldDirty: true,
+                        });
+                        const currentItems = watch("items") || [];
+                        currentItems.forEach((_, index) => {
+                          setValue(`items.${index}.vatRate`, 0, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          });
+                        });
+                      }
+                    }}
+                    disabled={!canEdit}
+                  />
+                )}
+              />
+              <label
+                htmlFor="isVatExempt"
+                className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+              >
+                Exonéré de TVA global (TVA à 0% par défaut sur tous les
+                articles)
+              </label>
+            </div>
           </div>
         )}
 

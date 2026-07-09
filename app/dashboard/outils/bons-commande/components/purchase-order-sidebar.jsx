@@ -147,7 +147,9 @@ export default function PurchaseOrderSidebar({
       toast.success("Bon de commande mis en attente");
       if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error(error?.message || "Erreur lors de la confirmation du bon de commande");
+      toast.error(
+        error?.message || "Erreur lors de la confirmation du bon de commande",
+      );
     }
   };
 
@@ -157,7 +159,9 @@ export default function PurchaseOrderSidebar({
       toast.success("Bon de commande validé par le client");
       if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error(error?.message || "Erreur lors de la validation du bon de commande");
+      toast.error(
+        error?.message || "Erreur lors de la validation du bon de commande",
+      );
     }
   };
 
@@ -187,7 +191,9 @@ export default function PurchaseOrderSidebar({
       toast.success("Bon de commande annulé");
       if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error(error?.message || "Erreur lors de l'annulation du bon de commande");
+      toast.error(
+        error?.message || "Erreur lors de l'annulation du bon de commande",
+      );
     }
   };
 
@@ -215,6 +221,7 @@ export default function PurchaseOrderSidebar({
         customFields: po.customFields,
         shipping: po.shipping,
         isReverseCharge: po.isReverseCharge,
+        isVatExempt: po.isVatExempt,
         retenueGarantie: po.retenueGarantie,
         escompte: po.escompte,
       }),

@@ -12,6 +12,8 @@ export const INVOICE_FRAGMENT = gql`
     invoiceType
     situationNumber
     situationReference
+    progressMode
+    globalProgressPercentage
     status
     issueDate
     dueDate
@@ -47,6 +49,7 @@ export const INVOICE_FRAGMENT = gql`
     showBankDetails
     clientPositionRight
     isReverseCharge
+    isVatExempt
     operationType
     createdAt
     updatedAt
@@ -169,6 +172,9 @@ export const INVOICE_LIST_FRAGMENT = gql`
     isDeposit
     invoiceType
     situationNumber
+    situationReference
+    progressMode
+    globalProgressPercentage
     status
     eInvoiceStatus
     eInvoiceLastCode
@@ -192,6 +198,7 @@ export const INVOICE_LIST_FRAGMENT = gql`
     stripeInvoiceId
     paymentLink
     isReverseCharge
+    isVatExempt
     items {
       description
       quantity
@@ -395,6 +402,7 @@ export const GET_SITUATION_INVOICES_BY_QUOTE_REF = gql`
       escompte
       retenueGarantie
       isReverseCharge
+      isVatExempt
       discount
       discountType
       headerNotes
@@ -1365,6 +1373,7 @@ export const GET_INVOICE_TEMPLATES = gql`
       }
       clientPositionRight
       isReverseCharge
+      isVatExempt
       showBankDetails
       bankDetails {
         iban

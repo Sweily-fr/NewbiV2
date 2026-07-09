@@ -178,6 +178,7 @@ export default function PurchaseOrderRowActions({
           customFields: po.customFields,
           shipping: po.shipping,
           isReverseCharge: po.isReverseCharge,
+          isVatExempt: po.isVatExempt,
           retenueGarantie: po.retenueGarantie,
           escompte: po.escompte,
         }),

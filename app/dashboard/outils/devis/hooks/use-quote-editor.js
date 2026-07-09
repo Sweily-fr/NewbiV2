@@ -2181,7 +2181,8 @@ function buildValidationReasons(errors) {
   const messages = Object.values(errors || {})
     .map((e) => (typeof e === "string" ? e : e?.message))
     .filter(Boolean);
-  if (messages.length === 0) return "Veuillez vérifier les informations saisies.";
+  if (messages.length === 0)
+    return "Veuillez vérifier les informations saisies.";
   return messages.map((m) => `• ${m}`).join("\n");
 }
 
@@ -2581,6 +2582,7 @@ function transformQuoteToFormData(quote) {
 
     // Auto-liquidation
     isReverseCharge: quote.isReverseCharge || false,
+    isVatExempt: quote.isVatExempt || false,
 
     // Position du client dans le PDF
     clientPositionRight: quote.clientPositionRight || false,
@@ -3001,6 +3003,7 @@ function transformFormDataToInput(
         }
       : null,
     isReverseCharge: formData.isReverseCharge || false,
+    isVatExempt: formData.isVatExempt || false,
     clientPositionRight: formData.clientPositionRight || false,
     ...(formData.operationType && { operationType: formData.operationType }),
   };

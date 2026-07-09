@@ -1983,39 +1983,43 @@ const UniversalPreviewPDF = ({
           )}
 
           {/* TEXTE D'EXONÉRATION DE TVA - Masqué en auto-liquidation car déjà affiché au-dessus */}
+          {/* Textes dédupliqués : chaque mention d'exonération n'apparaît qu'une seule fois */}
           {!data.isReverseCharge &&
             data.items &&
             data.items.some(
               (item) =>
                 (item.vatRate === 0 || item.vatRate === "0") &&
                 item.vatExemptionText,
-            ) && (
-              <div
-                className="mb-4 text-[10px] pt-4"
-                data-pdf-section="vat-exemption"
-                data-no-break={
-                  data.items.filter(
-                    (item) =>
-                      (item.vatRate === 0 || item.vatRate === "0") &&
-                      item.vatExemptionText,
-                  ).length <= 2
-                }
-              >
-                <div className="whitespace-pre-line dark:text-[#0A0A0A] text-[10px]">
-                  {data.items
+            ) &&
+            (() => {
+              const uniqueExemptionTexts = [
+                ...new Set(
+                  data.items
                     .filter(
                       (item) =>
                         (item.vatRate === 0 || item.vatRate === "0") &&
                         item.vatExemptionText,
                     )
-                    .map((item, index) => (
+                    .map((item) => item.vatExemptionText),
+                ),
+              ];
+
+              return (
+                <div
+                  className="mb-4 text-[10px] pt-4"
+                  data-pdf-section="vat-exemption"
+                  data-no-break={uniqueExemptionTexts.length <= 2}
+                >
+                  <div className="whitespace-pre-line dark:text-[#0A0A0A] text-[10px]">
+                    {uniqueExemptionTexts.map((text, index) => (
                       <div key={`vat-exemption-${index}`} className="mb-2">
-                        TVA non applicable, {item.vatExemptionText}
+                        TVA non applicable, {text}
                       </div>
                     ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
           {/* CONDITIONS GÉNÉRALES - masquées pour les avoirs */}
           {(data.termsAndConditions || data.terms) && !isCreditNote && (

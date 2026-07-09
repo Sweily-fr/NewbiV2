@@ -456,6 +456,7 @@ export default function ModernInvoiceEditor({
     },
     clientPositionRight: organization?.invoiceClientPositionRight || false,
     isReverseCharge: false,
+    isVatExempt: false,
     showBankDetails: organization?.showBankDetails || false,
     bankDetails: {
       iban: organization?.bankIban || "",
@@ -526,6 +527,7 @@ export default function ModernInvoiceEditor({
         },
         clientPositionRight: template.clientPositionRight ?? false,
         isReverseCharge: template.isReverseCharge ?? false,
+        isVatExempt: template.isVatExempt ?? false,
         showBankDetails: template.showBankDetails ?? false,
         bankDetails: template.bankDetails ?? {
           iban: "",

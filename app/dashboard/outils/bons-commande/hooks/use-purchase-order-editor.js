@@ -1316,6 +1316,7 @@ export function usePurchaseOrderEditor({
             setValue("purchaseOrderNumber", q.purchaseOrderNumber);
           if (q.isReverseCharge != null)
             setValue("isReverseCharge", q.isReverseCharge);
+          if (q.isVatExempt != null) setValue("isVatExempt", q.isVatExempt);
           if (q.operationType != null)
             setValue("operationType", q.operationType);
           if (q.retenueGarantie != null)
@@ -2234,7 +2235,8 @@ function buildValidationReasons(errors) {
   const messages = Object.values(errors || {})
     .map((e) => (typeof e === "string" ? e : e?.message))
     .filter(Boolean);
-  if (messages.length === 0) return "Veuillez vérifier les informations saisies.";
+  if (messages.length === 0)
+    return "Veuillez vérifier les informations saisies.";
   return messages.map((m) => `• ${m}`).join("\n");
 }
 
@@ -2593,6 +2595,8 @@ function transformPurchaseOrderToFormData(purchaseOrder) {
     discountType: purchaseOrder.discountType || "PERCENTAGE",
     retenueGarantie: purchaseOrder.retenueGarantie || 0,
     escompte: purchaseOrder.escompte || 0,
+    isReverseCharge: purchaseOrder.isReverseCharge || false,
+    isVatExempt: purchaseOrder.isVatExempt || false,
 
     headerNotes: purchaseOrder.headerNotes || "",
     footerNotes: purchaseOrder.footerNotes || "",
@@ -2935,6 +2939,7 @@ function transformFormDataToInput(
         }
       : null,
     isReverseCharge: formData.isReverseCharge || false,
+    isVatExempt: formData.isVatExempt || false,
     clientPositionRight: formData.clientPositionRight || false,
     ...(formData.operationType && { operationType: formData.operationType }),
   };

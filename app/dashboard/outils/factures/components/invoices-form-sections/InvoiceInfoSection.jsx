@@ -384,9 +384,11 @@ export default function InvoiceInfoSection({
             quantity: item.quantity || 1,
             unitPrice: item.unitPrice || 0,
             vatRate: item.vatRate ?? 20,
+            vatExemptionText: item.vatExemptionText || "",
             unit: item.unit || "unité",
             discount: item.discount || 0,
             discountType: item.discountType || "PERCENTAGE",
+            details: item.details || "",
             progressPercentage: itemProgress,
           }));
 
@@ -429,6 +431,11 @@ export default function InvoiceInfoSection({
           }
           if (lastSituationInvoice.isReverseCharge !== undefined) {
             setValue("isReverseCharge", lastSituationInvoice.isReverseCharge, {
+              shouldDirty: true,
+            });
+          }
+          if (lastSituationInvoice.isVatExempt !== undefined) {
+            setValue("isVatExempt", lastSituationInvoice.isVatExempt, {
               shouldDirty: true,
             });
           }
