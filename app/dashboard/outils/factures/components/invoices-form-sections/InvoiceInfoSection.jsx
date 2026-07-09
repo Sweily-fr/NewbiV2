@@ -535,6 +535,27 @@ export default function InvoiceInfoSection({
   // que la dueDate se resynchronise quand issueDate change.
   const [paymentTermDays, setPaymentTermDays] = React.useState(30);
 
+  // Mode édition : synchroniser le délai avec les dates chargées depuis la DB.
+  // Sans cela, le resync ci-dessous écrase la dueDate enregistrée (ex: +15j)
+  // avec le délai par défaut de 30j dès que reset() applique l'issueDate de la
+  // facture. On ré-arme aussi le skip pour que ce changement d'issueDate
+  // (issu du chargement, pas de l'utilisateur) ne déclenche aucun recalcul.
+  const loadedPaymentTermRef = React.useRef(false);
+  React.useEffect(() => {
+    if (!data.id || loadedPaymentTermRef.current) return;
+    loadedPaymentTermRef.current = true;
+    dueDateRecalcReadyRef.current = false;
+    if (data.issueDate && data.dueDate) {
+      const gap = Math.round(
+        (new Date(data.dueDate) - new Date(data.issueDate)) /
+          (1000 * 60 * 60 * 24),
+      );
+      if (!isNaN(gap) && gap >= 0) {
+        setPaymentTermDays(gap);
+      }
+    }
+  }, [data.id, data.issueDate, data.dueDate]);
+
   // R13 — Resync dueDate quand issueDate OU délai changent. Skip le
   // 1er run (mount) via un ref : en mode `edit`, data.dueDate vient déjà
   // de la DB et ne doit pas être écrasé tant que l'utilisateur n'a rien
@@ -796,10 +817,23 @@ export default function InvoiceInfoSection({
                       }
                       onSelect={(date) => {
                         const dateStr = format(date, "yyyy-MM-dd");
+                        // Ne pas déclencher le resync : la dueDate choisie
+                        // manuellement est la source de vérité
+                        dueDateRecalcReadyRef.current = false;
                         setValue("dueDate", dateStr, {
                           shouldDirty: true,
                           shouldValidate: true,
                         });
+                        // Aligner le délai sur l'écart réellement choisi
+                        if (data.issueDate) {
+                          const gap = Math.round(
+                            (new Date(dateStr) - new Date(data.issueDate)) /
+                              (1000 * 60 * 60 * 24),
+                          );
+                          if (!isNaN(gap) && gap >= 0) {
+                            setPaymentTermDays(gap);
+                          }
+                        }
                       }}
                       initialFocus
                       locale={fr}
@@ -823,10 +857,16 @@ export default function InvoiceInfoSection({
                     });
                   }}
                   disabled={!canEdit}
-                  defaultValue="30"
+                  value={
+                    PAYMENT_TERMS_SUGGESTIONS.some(
+                      (term) => term.value === paymentTermDays,
+                    )
+                      ? paymentTermDays.toString()
+                      : ""
+                  }
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="30 jours" />
+                    <SelectValue placeholder="Délai personnalisé" />
                   </SelectTrigger>
                   <SelectContent>
                     {PAYMENT_TERMS_SUGGESTIONS.map((term) => (
