@@ -31,15 +31,15 @@ export default function ProgressSection({ canEdit = true }) {
   const [previousProgress, setPreviousProgress] = useState(0);
   const [previousInvoicesCount, setPreviousInvoicesCount] = useState(0);
 
-  // Ref pour éviter les modifications de données au montage initial
-  const isInitialMountRef = useRef(true);
+  // Ref pour ne synchroniser que les articles nouvellement ajoutés
+  const prevItemsLengthRef = useRef(null);
 
   // Requête pour récupérer les factures de situation précédentes
   const [fetchPreviousInvoices, { data: previousInvoicesData }] = useLazyQuery(
     GET_SITUATION_INVOICES_BY_QUOTE_REF,
     {
       fetchPolicy: "cache-and-network",
-    }
+    },
   );
 
   // Récupérer les factures précédentes quand la référence de situation change
@@ -61,7 +61,7 @@ export default function ProgressSection({ canEdit = true }) {
 
       // Filtrer pour exclure la facture en cours d'édition
       const otherInvoices = invoices.filter(
-        (inv) => inv.id !== currentInvoiceId
+        (inv) => inv.id !== currentInvoiceId,
       );
 
       setPreviousInvoicesCount(otherInvoices.length);
@@ -167,27 +167,27 @@ export default function ProgressSection({ canEdit = true }) {
     }
   };
 
-  // Synchroniser le pourcentage global avec les articles quand le mode change
-  // (pas au montage initial pour éviter de modifier les calculs au changement d'étape)
+  // Appliquer le pourcentage global aux articles nouvellement ajoutés (mode uniforme).
+  // Ne touche jamais aux articles existants : leurs pourcentages enregistrés
+  // (rechargés à l'édition d'un brouillon) ne doivent pas être écrasés.
   useEffect(() => {
-    if (isInitialMountRef.current) {
-      isInitialMountRef.current = false;
-      return;
-    }
+    const prevLength = prevItemsLengthRef.current;
+    prevItemsLengthRef.current = items.length;
+
+    if (prevLength === null || items.length <= prevLength) return;
     if (invoiceType !== "situation") return;
-    if (progressMode === "uniform" && items.length > 0) {
-      const currentGlobalProgress =
-        getValues("globalProgressPercentage") ?? 100;
-      items.forEach((_, index) => {
-        const currentItemProgress = getValues(
-          `items.${index}.progressPercentage`
-        );
-        if (currentItemProgress !== currentGlobalProgress) {
-          setValue(`items.${index}.progressPercentage`, currentGlobalProgress, {
-            shouldDirty: true,
-          });
-        }
-      });
+    if (progressMode !== "uniform") return;
+
+    const currentGlobalProgress = getValues("globalProgressPercentage") ?? 100;
+    for (let index = prevLength; index < items.length; index++) {
+      const currentItemProgress = getValues(
+        `items.${index}.progressPercentage`,
+      );
+      if (currentItemProgress !== currentGlobalProgress) {
+        setValue(`items.${index}.progressPercentage`, currentGlobalProgress, {
+          shouldDirty: true,
+        });
+      }
     }
   }, [progressMode, items.length, invoiceType]);
 

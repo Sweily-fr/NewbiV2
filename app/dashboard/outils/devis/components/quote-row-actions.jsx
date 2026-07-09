@@ -232,6 +232,7 @@ export default function QuoteRowActions({
     customFields: source.customFields,
     shipping: source.shipping,
     isReverseCharge: source.isReverseCharge,
+    isVatExempt: source.isVatExempt,
     retenueGarantie: source.retenueGarantie,
     escompte: source.escompte,
   });

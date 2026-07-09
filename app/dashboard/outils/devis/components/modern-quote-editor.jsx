@@ -393,6 +393,7 @@ export default function ModernQuoteEditor({
     },
     clientPositionRight: organization?.quoteClientPositionRight || false,
     isReverseCharge: false,
+    isVatExempt: false,
     showBankDetails: organization?.showBankDetails || false,
     shipping: {
       billShipping: false,
@@ -456,6 +457,7 @@ export default function ModernQuoteEditor({
         },
         clientPositionRight: template.clientPositionRight ?? false,
         isReverseCharge: template.isReverseCharge ?? false,
+        isVatExempt: template.isVatExempt ?? false,
         showBankDetails: template.showBankDetails ?? false,
         shipping: template.shipping ?? {
           billShipping: false,
