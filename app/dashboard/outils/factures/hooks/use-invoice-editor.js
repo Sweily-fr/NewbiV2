@@ -1089,19 +1089,40 @@ export function useInvoiceEditor({
         shouldValidate: false,
         shouldDirty: false,
       });
-    } else if (!currentNumber || currentNumber.startsWith("DRAFT-")) {
+    } else {
       // Numérotation manuelle → proposer le prochain numéro sans écraser une saisie.
-      // Si le préfixe est nouveau, le numéro de départ global (invoiceStartNumber)
-      // prime sur le 0001 renvoyé par le backend.
-      const startNumber = parseInt(organization?.invoiceStartNumber, 10);
-      const proposedNumber =
-        !hasDocumentsForPrefix && startNumber > 0
-          ? String(startNumber).padStart(4, "0")
-          : formattedNumber;
-      setValue("number", proposedNumber, {
-        shouldValidate: false,
-        shouldDirty: false,
-      });
+      // Brouillon rouvert : si des factures ont été finalisées entre-temps sur le
+      // même préfixe, le numéro conservé par le brouillon est déjà pris (ou en
+      // retrait de la séquence) → on le remplace par le prochain numéro.
+      const currentNum = parseInt(currentNumber, 10);
+      const isStaleDraftNumber =
+        isDraftEdit &&
+        hasDocumentsForPrefix &&
+        !Number.isNaN(currentNum) &&
+        currentNum < nextInvoiceNumber;
+
+      if (
+        !currentNumber ||
+        currentNumber.startsWith("DRAFT-") ||
+        isStaleDraftNumber
+      ) {
+        // Si le préfixe est nouveau, le numéro de départ global (invoiceStartNumber)
+        // prime sur le 0001 renvoyé par le backend.
+        const startNumber = parseInt(organization?.invoiceStartNumber, 10);
+        const proposedNumber =
+          !hasDocumentsForPrefix && startNumber > 0
+            ? String(startNumber).padStart(4, "0")
+            : formattedNumber;
+        setValue("number", proposedNumber, {
+          shouldValidate: false,
+          shouldDirty: false,
+        });
+        if (isStaleDraftNumber) {
+          toast.info(
+            `Le numéro ${currentNumber} a déjà été utilisé depuis l'enregistrement du brouillon. La facture portera le numéro ${proposedNumber}.`,
+          );
+        }
+      }
     }
   }, [
     mode,
