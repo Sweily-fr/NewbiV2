@@ -101,7 +101,9 @@ export default function QuoteInfoSection({
   const { workspaceId } = useRequiredWorkspace();
 
   // Helper pour vérifier si les dates ont une erreur
-  const hasQuoteInfoError = validationErrors?.quoteInfo;
+  // (clé quoteInfo pour les devis, orderInfo pour les bons de commande)
+  const hasQuoteInfoError =
+    validationErrors?.quoteInfo || validationErrors?.orderInfo;
 
   // Use getValues instead of watch to prevent re-renders
   const [, forceUpdate] = useState({});
