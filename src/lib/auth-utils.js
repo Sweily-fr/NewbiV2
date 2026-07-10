@@ -24,7 +24,7 @@ export async function sendReactivationEmail(user) {
 export function sendSMSInDevelopment(phoneNumber, code, context = "SMS") {
   if (process.env.NODE_ENV === "development") {
     console.log(
-      `[${context} DEV] Code de vérification pour ${phoneNumber}: ${code}`
+      `[${context} DEV] Code de vérification pour ${phoneNumber}: ${code}`,
     );
   }
   // TODO: Intégrer un vrai service SMS en production
@@ -288,7 +288,7 @@ export async function sendPaymentSucceededEmail({
     if (invoicePdfUrl) {
       try {
         console.log(
-          `[EMAIL] Téléchargement de la facture PDF: ${invoicePdfUrl}`
+          `[EMAIL] Téléchargement de la facture PDF: ${invoicePdfUrl}`,
         );
 
         const response = await fetch(invoicePdfUrl);
@@ -306,13 +306,13 @@ export async function sendPaymentSucceededEmail({
           console.log(`✅ [EMAIL] Facture PDF ajoutée en pièce jointe`);
         } else {
           console.warn(
-            `⚠️ [EMAIL] Impossible de télécharger la facture PDF: ${response.status}`
+            `⚠️ [EMAIL] Impossible de télécharger la facture PDF: ${response.status}`,
           );
         }
       } catch (pdfError) {
         console.error(
           `❌ [EMAIL] Erreur téléchargement facture PDF:`,
-          pdfError
+          pdfError,
         );
       }
     }
@@ -338,13 +338,13 @@ export async function sendPaymentSucceededEmail({
           console.log(`✅ [EMAIL] Reçu Stripe ajouté en pièce jointe`);
         } else {
           console.warn(
-            `⚠️ [EMAIL] Impossible de télécharger le reçu Stripe: ${response.status}`
+            `⚠️ [EMAIL] Impossible de télécharger le reçu Stripe: ${response.status}`,
           );
         }
       } catch (receiptError) {
         console.error(
           `❌ [EMAIL] Erreur téléchargement reçu Stripe:`,
-          receiptError
+          receiptError,
         );
       }
     }
@@ -362,7 +362,7 @@ export async function sendPaymentSucceededEmail({
     if (receiptUrl) attachmentInfo.push("reçu Stripe");
 
     console.log(
-      `✅ [EMAIL] Email de paiement réussi envoyé à ${to}${attachmentInfo.length > 0 ? ` avec ${attachmentInfo.join(" et ")}` : ""}`
+      `✅ [EMAIL] Email de paiement réussi envoyé à ${to}${attachmentInfo.length > 0 ? ` avec ${attachmentInfo.join(" et ")}` : ""}`,
     );
   } catch (error) {
     console.error("❌ [EMAIL] Erreur envoi email paiement réussi:", error);
@@ -408,6 +408,65 @@ export async function sendTrialEndingEmail({
   });
 }
 
+// Push "vous avez été invité" à l'invité — best-effort, NE BLOQUE JAMAIS.
+// Ne s'applique que si l'invité a déjà un compte + un token push enregistré
+// (collection `user` partagée avec newbi-api, champ expoPushTokens). Sinon il
+// reçoit juste l'email. On poste directement à l'API Expo (pas de SDK requis).
+async function sendInvitationPush(data) {
+  try {
+    const email = String(data?.email || "").trim();
+    if (!email) return;
+
+    const { mongoDb } = await import("@/src/lib/mongodb");
+    const escaped = email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const invitee = await mongoDb
+      .collection("user")
+      .findOne(
+        { email: { $regex: `^${escaped}$`, $options: "i" } },
+        { projection: { expoPushTokens: 1 } },
+      );
+
+    const tokens = (invitee?.expoPushTokens || [])
+      .map((t) => t?.token)
+      .filter(
+        (t) => typeof t === "string" && t.startsWith("ExponentPushToken"),
+      );
+    if (tokens.length === 0) return;
+
+    const inviterName =
+      data?.inviter?.user?.name || data?.inviter?.user?.email || "Quelqu'un";
+    const orgName = data?.organization?.name || "une équipe";
+
+    const messages = tokens.map((to) => ({
+      to,
+      sound: "default",
+      title: "Invitation à une équipe",
+      body: `${inviterName} vous invite à rejoindre ${orgName}`,
+      data: {
+        type: "invitation",
+        invitationId: String(data?.id || ""),
+        org: orgName,
+      },
+      priority: "high",
+      channelId: "default",
+    }));
+
+    await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(messages),
+    });
+  } catch (error) {
+    console.warn(
+      "[invitation push] échec (non bloquant):",
+      error?.message || error,
+    );
+  }
+}
+
 // Fonction pour envoyer un email d'invitation d'organisation
 export async function sendOrganizationInvitationEmail(data) {
   // Construire le lien d'invitation avec les informations de base
@@ -424,4 +483,7 @@ export async function sendOrganizationInvitationEmail(data) {
     console.error("Erreur lors de l'envoi de l'email d'invitation:", error);
     throw error;
   }
+
+  // Push in-app (après l'email, non bloquant)
+  await sendInvitationPush(data);
 }
