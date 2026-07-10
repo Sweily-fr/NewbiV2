@@ -616,9 +616,9 @@ const UniversalPreviewPDF = ({
         {/* CONTENU PRINCIPAL */}
         <div
           className={
-            isMobile
-              ? "px-6 pt-4 pb-4 relative flex-grow"
-              : "px-14 pt-10 pb-4 relative flex-grow"
+            // Preview mobile aligné sur le PDF : même padding (px-14 pt-10) pour
+            // un rendu cohérent trait pour trait avec le PDF R2.
+            "px-14 pt-10 pb-4 relative flex-grow"
           }
           data-pdf-content="true"
           data-pdf-section="body"

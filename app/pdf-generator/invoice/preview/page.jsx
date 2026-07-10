@@ -312,7 +312,10 @@ export default function PDFPreviewPage() {
   return (
     <div
       className={
-        isVisual ? "bg-white min-h-screen" : "bg-white min-h-screen p-4"
+        // Mode visuel (preview mobile WebView) : PAS de min-h-screen → la page
+        // s'arrête au footer, sinon du blanc remplit jusqu'en bas (marge sous le
+        // footer). Pour matcher le PDF qui s'arrête au contenu.
+        isVisual ? "bg-white" : "bg-white min-h-screen p-4"
       }
     >
       <div
