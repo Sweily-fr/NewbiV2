@@ -2561,7 +2561,10 @@ const UniversalPreviewPDF = ({
         {/* FOOTER - DÉTAILS BANCAIRES */}
         <div
           className={
-            isMobile ? "pt-4 pb-4 px-6 w-full" : "pt-8 pb-8 px-14 w-full"
+            // Même padding qu'en PDF R2 (pt-8 pb-8 px-14) en mode mobile aussi :
+            // le bandeau footer doit avoir la même hauteur/indentation que le PDF
+            // (pas de décalage entre l'aperçu HTML et le PDF archivé).
+            "pt-8 pb-8 px-14 w-full"
           }
           style={{
             background: `linear-gradient(${applyOpacityToColor(data.appearance?.headerBgColor || "#1d1d1b", 0.1)}, ${applyOpacityToColor(data.appearance?.headerBgColor || "#1d1d1b", 0.1)}), white`,
