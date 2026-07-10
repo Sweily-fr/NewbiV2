@@ -792,6 +792,48 @@ export function useInvoiceEditor({
     isFormInitialized,
   ]);
 
+  // Effacer les erreurs de facture de situation quand l'utilisateur corrige
+  // l'avancement ou les articles. Ces clés sont posées à la soumission
+  // (progress) ou renvoyées par le backend (situationTotal, dépassement du
+  // montant du contrat) et aucune re-validation temps réel ne les gérait :
+  // l'erreur restait affichée après correction.
+  useEffect(() => {
+    if (!isFormInitialized) return;
+
+    const timeoutId = setTimeout(() => {
+      setValidationErrors((prevErrors) => {
+        if (!prevErrors.progress && !prevErrors.situationTotal) {
+          return prevErrors;
+        }
+
+        const newErrors = { ...prevErrors };
+        const globalProgress =
+          parseFloat(formData.globalProgressPercentage) || 0;
+        if (
+          newErrors.progress &&
+          (formData.invoiceType !== "situation" || globalProgress <= 100)
+        ) {
+          delete newErrors.progress;
+        }
+        // situationTotal est un calcul backend : toute modification de
+        // l'avancement ou des articles l'invalide, il sera re-vérifié à la
+        // prochaine soumission.
+        delete newErrors.situationTotal;
+
+        return Object.keys(newErrors).length !== Object.keys(prevErrors).length
+          ? newErrors
+          : prevErrors;
+      });
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [
+    formData.invoiceType,
+    formData.globalProgressPercentage,
+    itemsDataString,
+    isFormInitialized,
+  ]);
+
   // Re-valider quand la remise change
   useEffect(() => {
     // Ne pas valider si le formulaire n'est pas encore initialisé

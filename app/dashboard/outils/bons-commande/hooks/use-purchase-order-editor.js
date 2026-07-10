@@ -557,6 +557,36 @@ export function usePurchaseOrderEditor({
     return () => clearTimeout(timeoutId);
   }, [watchedDeliveryDate, watchedIssueDate, isFormInitialized]);
 
+  // Effacer l'erreur groupée "orderInfo" (posée par handleSave/handleSubmit et
+  // affichée sous les champs de dates) dès que les dates redeviennent valides.
+  // Les effets ci-dessus ne gèrent que les clés granulaires issueDate/deliveryDate :
+  // sans celui-ci, l'erreur restait affichée après correction du champ.
+  useEffect(() => {
+    if (!isFormInitialized) return;
+
+    const timeoutId = setTimeout(() => {
+      setValidationErrors((prevErrors) => {
+        if (!prevErrors.orderInfo) return prevErrors;
+
+        // Mêmes règles que la validation à la soumission
+        if (!watchedIssueDate) return prevErrors;
+        const issueDate = new Date(watchedIssueDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (issueDate < today) return prevErrors;
+        if (watchedDeliveryDate && new Date(watchedDeliveryDate) < issueDate) {
+          return prevErrors;
+        }
+
+        const newErrors = { ...prevErrors };
+        delete newErrors.orderInfo;
+        return newErrors;
+      });
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [watchedIssueDate, watchedDeliveryDate, isFormInitialized]);
+
   // Re-valider quand les articles changent (avec debounce)
   useEffect(() => {
     // Ne pas valider si le formulaire n'est pas encore initialisé
