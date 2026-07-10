@@ -35,8 +35,16 @@ export default function QuotePDFPreviewPage() {
         setQuoteData(data);
         setStatus("ready");
 
-        // Visual mode: just render, no PDF generation
-        const isVisualMode = window.__PREVIEW_MODE === "visual";
+        // Visual mode: just render, no PDF generation.
+        // On lit ?mode=visual dans l'URL (fiable, dispo immédiatement) EN PLUS de
+        // window.__PREVIEW_MODE : l'injection JS de la WebView mobile n'est pas
+        // toujours prise en compte à temps (timing WKWebView).
+        const urlMode =
+          typeof window !== "undefined"
+            ? new URLSearchParams(window.location.search).get("mode")
+            : null;
+        const isVisualMode =
+          urlMode === "visual" || window.__PREVIEW_MODE === "visual";
         if (isVisualMode) {
           console.log("👁️ Visual mode — skipping PDF generation");
           setIsVisual(true);
@@ -312,7 +320,13 @@ export default function QuotePDFPreviewPage() {
   return (
     <div
       className={
-        isVisual ? "bg-white min-h-screen" : "bg-white min-h-screen p-4"
+        // Mode visuel (preview mobile WebView) : fond NOIR opaque plein écran.
+        // La WebView de l'app (app-newbi) force parfois `body{background:#fff}`
+        // (bundle non rechargé), ce qui laissait une bande blanche sous le footer.
+        // Un wrapper bg-black min-h-screen RECOUVRE ce body blanc → le rendu ne
+        // dépend plus de l'app : noir sous le devis, comme le PDF R2.
+        // Seul le devis (UniversalPreviewPDF) reste blanc.
+        isVisual ? "bg-black min-h-screen" : "bg-white min-h-screen p-4"
       }
     >
       <div
@@ -320,9 +334,12 @@ export default function QuotePDFPreviewPage() {
         style={
           isVisual
             ? {
+                // PAS de fond blanc ici : le wrapper peut être un peu plus haut
+                // que le document, et son blanc dépassait sous le footer.
+                // Transparent → cette zone montre le fond noir. Seul le devis
+                // (UniversalPreviewPDF) reste blanc.
                 width: "100%",
                 maxWidth: "794px",
-                backgroundColor: "#ffffff",
                 margin: "0 auto",
               }
             : { width: "794px", backgroundColor: "#ffffff", margin: "0 auto" }
