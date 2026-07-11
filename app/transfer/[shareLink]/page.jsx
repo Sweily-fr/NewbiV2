@@ -380,8 +380,9 @@ export default function TransferPage() {
         if (filteredDownloads.length === 1) {
           downloadUrl = filteredDownloads[0].downloadUrl;
         } else {
-          const fileIds = filteredDownloads.map((d) => d.fileId).join(",");
-          downloadUrl = `/api/transfer/download-all?shareLink=${shareLink}&accessKey=${accessKey}&transferId=${transfer?.fileTransfer?.id}&fileIds=${fileIds}`;
+          // ZIP streamé par le backend : la route Next.js sur Vercel chargeait
+          // tous les fichiers en mémoire et crashait sur les gros transferts
+          downloadUrl = `${apiUrl}file-transfer/download-all?link=${shareLink}&key=${accessKey}`;
         }
 
         // Marquer les téléchargements comme terminés AVANT la redirection :
