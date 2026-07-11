@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFormContext, useFieldArray, Controller } from "react-hook-form";
 import { Package, Plus, Trash2, Percent, GripVertical } from "lucide-react";
 import {
@@ -231,6 +231,48 @@ export default function ItemsSection({
     }
     wasOpenRef.current.delete(active.id);
   };
+
+  // Ouvre automatiquement les articles en erreur : le contenu d'un article
+  // replié est démonté, l'erreur resterait invisible et le scroll/focus du
+  // formulaire ne trouverait pas le champ. Clé de contenu (et non la référence
+  // du tableau) : la validation live débouncée reconstruit la liste à chaque
+  // saisie, on ne veut pas re-déclencher tant que les erreurs sont les mêmes.
+  const itemErrorsKey = JSON.stringify(
+    (Array.isArray(validationErrors) ? validationErrors : []).map((error) => [
+      error.index,
+      ...(error.fields || []),
+    ]),
+  );
+  useEffect(() => {
+    if (!Array.isArray(validationErrors) || validationErrors.length === 0) {
+      return;
+    }
+    // N'agir que sur les articles en erreur actuellement repliés : si tous
+    // sont déjà ouverts (ex. erreur live pendant la saisie), l'erreur est
+    // visible et scroller/voler le focus serait intrusif.
+    const closedErrors = validationErrors.filter((error) => {
+      const id = items[error.index]?.id;
+      return id && !openItems.includes(id);
+    });
+    if (closedErrors.length === 0) return;
+    const idsToOpen = closedErrors.map((error) => items[error.index].id);
+    setOpenItems((prev) => [
+      ...prev,
+      ...idsToOpen.filter((id) => !prev.includes(id)),
+    ]);
+    const { index, fields: errorFields } = closedErrors[0];
+    const field = errorFields?.[0] || "description";
+    // Attendre la fin de l'animation d'ouverture de l'accordéon
+    const timer = setTimeout(() => {
+      const el =
+        document.querySelector(`[name="items.${index}.${field}"]`) ||
+        document.querySelector(`[data-item-index="${index}"]`);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      el?.focus?.({ preventScroll: true });
+    }, 350);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemErrorsKey]);
 
   // Observer les changements en temps réel pour tous les items
   const watchedItems = watch("items") || [];
@@ -491,6 +533,7 @@ export default function ItemsSection({
                         {({ listeners, attributes }) => (
                           <AccordionItem
                             value={item.id}
+                            data-item-index={index}
                             className="rounded-xl px-4 py-1 overflow-visible border last:border-b-1 bg-[#F5F5F5] dark:bg-neutral-900"
                           >
                             <AccordionTrigger className="w-full justify-start gap-3 text-[15px] leading-6 hover:no-underline focus-visible:ring-0 py-3 [&[data-state=open]>svg]:rotate-180">
