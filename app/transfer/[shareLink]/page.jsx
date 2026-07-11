@@ -33,7 +33,6 @@ import {
   PaymentModal,
   PdfPreview,
 } from "./components";
-import CircularProgress from "@/src/components/ui/circular-progress";
 
 // Déclenche un téléchargement sans quitter la page : une navigation
 // (window.location.href) remplace la page de transfert par un onglet blanc
@@ -830,61 +829,6 @@ export default function TransferPage() {
 
   return (
     <div className="flex min-h-screen">
-      {/* Overlay plein écran pendant le téléchargement */}
-      {isDownloading && (
-        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-[#5a50ff] via-[#4a41e0] to-[#2d27a3]">
-          {/* Halos décoratifs */}
-          <div className="absolute -top-24 -left-24 w-80 h-80 rounded-full bg-white/10 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-32 -right-16 w-96 h-96 rounded-full bg-[#8c85ff]/30 blur-3xl pointer-events-none" />
-
-          {/* Logo — unoptimized : l'optimiseur d'images Next refuse les SVG
-              (400) sans dangerouslyAllowSVG, le fichier est servi tel quel */}
-          <div className="absolute top-10 left-1/2 -translate-x-1/2">
-            <Image
-              src="/Logo + texte_blanc.svg"
-              alt="Newbi"
-              width={127}
-              height={36}
-              priority
-              unoptimized
-            />
-          </div>
-
-          <CircularProgress
-            value={downloadProgress}
-            size={220}
-            strokeWidth={12}
-            showLabel
-            labelClassName="text-4xl font-semibold text-white"
-            renderLabel={(progress) => `${Math.round(progress)}%`}
-            className="stroke-white/20"
-            progressClassName="stroke-white"
-          />
-
-          <p className="mt-8 text-white text-base font-medium">
-            {downloadProgress >= 100
-              ? "Finalisation..."
-              : "Téléchargement en cours"}
-          </p>
-          <p className="mt-1 text-white/70 text-sm text-center px-8">
-            {downloadingFileId === "all"
-              ? `${transferFiles.length} fichiers · ${formatSize(
-                  Math.round((downloadProgress / 100) * (totalSize || 0)),
-                )} sur ${formatSize(totalSize)}`
-              : transferFiles.find(
-                  (f) => (f.id || f.fileId) === downloadingFileId,
-                )?.originalName || ""}
-          </p>
-
-          <button
-            onClick={cancelDownload}
-            className="mt-10 px-6 py-2 rounded-full border border-white/40 text-white text-sm hover:bg-white/10 transition-colors cursor-pointer"
-          >
-            Annuler
-          </button>
-        </div>
-      )}
-
       {/* Modal de mot de passe */}
       {needsPasswordVerification && (
         <PasswordModal
@@ -902,6 +846,9 @@ export default function TransferPage() {
         onDownload={downloadSingleFile}
         onNavigate={handlePreviewNavigate}
         hasWatermark={transfer?.fileTransfer?.hasWatermark}
+        isDownloading={isDownloading}
+        downloadProgress={downloadProgress}
+        onCancelDownload={cancelDownload}
       />
 
       {/* Modal de paiement */}
@@ -977,7 +924,7 @@ export default function TransferPage() {
             <>
               {/* Carte "Prévisualisation désactivée" quand le transfert
                   a explicitement allowPreview=false (non-ZIP) */}
-              {displayFiles?.[0] && previewDisabled && !isDownloading && (
+              {displayFiles?.[0] && previewDisabled && (
                 <div className="mx-4 mt-4 border border-gray-200 rounded-xl overflow-hidden bg-white">
                   <p className="px-4 py-3 text-xs text-gray-500 border-b border-gray-200">
                     Prévisualiser
@@ -991,40 +938,11 @@ export default function TransferPage() {
                 </div>
               )}
 
-              {/* Preview de la première image OU Progress pendant téléchargement.
-                  Quand previewDisabled=true, ce bloc ne s'affiche qu'en cours
-                  de téléchargement (pour afficher la progress bar). */}
-              {displayFiles?.[0] && (!previewDisabled || isDownloading) && (
-                <div
-                  className={`mx-4 mt-4 ${isDownloading ? "h-auto" : "h-32"} bg-gray-100 rounded-xl overflow-hidden relative`}
-                >
-                  {isDownloading ? (
-                    /* Afficher la progression pendant le téléchargement */
-                    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 bg-white py-4">
-                      <CircularProgress
-                        value={downloadProgress}
-                        size={120}
-                        strokeWidth={10}
-                        showLabel
-                        labelClassName="text-sm font-bold"
-                        renderLabel={(progress) => `${Math.round(progress)}%`}
-                        className="stroke-[#5a50ff]/25"
-                        progressClassName="stroke-[#5a50ff]"
-                      />
-                      <div className="flex items-center gap-2 mt-1">
-                        <p className="text-[10px] text-[#5a50ff]">
-                          Téléchargement...
-                        </p>
-                        <span className="text-[10px] text-gray-300">•</span>
-                        <button
-                          onClick={cancelDownload}
-                          className="text-[10px] text-red-500 hover:underline"
-                        >
-                          Annuler
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
+              {/* Preview de la première image (reste affichée pendant un
+                  téléchargement : la progression vit dans le bouton en bas) */}
+              {displayFiles?.[0] && !previewDisabled && (
+                <div className="mx-4 mt-4 h-32 bg-gray-100 rounded-xl overflow-hidden relative">
+                  {
                     <>
                       {(() => {
                         const PREVIEWABLE_EXTS = [
@@ -1203,7 +1121,7 @@ export default function TransferPage() {
                         </div>
                       </button>
                     </>
-                  )}
+                  }
                 </div>
               )}
 
@@ -1295,7 +1213,14 @@ export default function TransferPage() {
                                   : "text-gray-400 hover:text-[#5a50ff]"
                               }`}
                             >
-                              <Download className="w-4 h-4" />
+                              {downloadingFileId ===
+                              (file.id || file.fileId || file.path) ? (
+                                <span className="text-[10px] font-semibold text-[#5a50ff] tabular-nums">
+                                  {Math.round(downloadProgress)}%
+                                </span>
+                              ) : (
+                                <Download className="w-4 h-4" />
+                              )}
                             </button>
                           )}
                         </div>
@@ -1319,19 +1244,39 @@ export default function TransferPage() {
               {/* Bouton télécharger - masqué si filigrane actif */}
               {!transfer?.fileTransfer?.hasWatermark && (
                 <div className="w-full px-5 py-5 text-center">
-                  <Button
-                    onClick={downloadAllFiles}
-                    disabled={isDownloading}
-                    className="text-white px-10 w-full rounded-xl"
-                  >
-                    {isDownloading ? (
-                      <LoaderCircle className="w-5 h-5 animate-spin" />
-                    ) : (transfer?.fileTransfer?.files?.length || 0) > 1 ? (
-                      "Tout télécharger"
-                    ) : (
-                      "Télécharger"
-                    )}
-                  </Button>
+                  {isDownloading ? (
+                    <>
+                      {/* Le bouton devient la barre de progression */}
+                      <div className="relative w-full h-9 rounded-xl overflow-hidden bg-[#5a50ff]/15">
+                        <div
+                          className="absolute inset-y-0 left-0 bg-[#5a50ff] transition-[width] duration-300 ease-out"
+                          style={{ width: `${downloadProgress}%` }}
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-xs font-semibold text-white mix-blend-difference">
+                            {downloadProgress >= 100
+                              ? "Finalisation…"
+                              : `${Math.round(downloadProgress)}%`}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={cancelDownload}
+                        className="mt-2 text-[11px] text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                      >
+                        Annuler
+                      </button>
+                    </>
+                  ) : (
+                    <Button
+                      onClick={downloadAllFiles}
+                      className="text-white px-10 w-full rounded-xl"
+                    >
+                      {(transfer?.fileTransfer?.files?.length || 0) > 1
+                        ? "Tout télécharger"
+                        : "Télécharger"}
+                    </Button>
+                  )}
                 </div>
               )}
             </>
