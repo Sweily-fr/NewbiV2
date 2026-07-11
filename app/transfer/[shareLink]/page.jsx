@@ -837,7 +837,8 @@ export default function TransferPage() {
           <div className="absolute -top-24 -left-24 w-80 h-80 rounded-full bg-white/10 blur-3xl pointer-events-none" />
           <div className="absolute -bottom-32 -right-16 w-96 h-96 rounded-full bg-[#8c85ff]/30 blur-3xl pointer-events-none" />
 
-          {/* Logo */}
+          {/* Logo — unoptimized : l'optimiseur d'images Next refuse les SVG
+              (400) sans dangerouslyAllowSVG, le fichier est servi tel quel */}
           <div className="absolute top-10 left-1/2 -translate-x-1/2">
             <Image
               src="/Logo + texte_blanc.svg"
@@ -845,6 +846,7 @@ export default function TransferPage() {
               width={127}
               height={36}
               priority
+              unoptimized
             />
           </div>
 
