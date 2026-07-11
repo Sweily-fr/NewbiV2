@@ -830,6 +830,59 @@ export default function TransferPage() {
 
   return (
     <div className="flex min-h-screen">
+      {/* Overlay plein écran pendant le téléchargement */}
+      {isDownloading && (
+        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-[#5a50ff] via-[#4a41e0] to-[#2d27a3]">
+          {/* Halos décoratifs */}
+          <div className="absolute -top-24 -left-24 w-80 h-80 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-32 -right-16 w-96 h-96 rounded-full bg-[#8c85ff]/30 blur-3xl pointer-events-none" />
+
+          {/* Logo */}
+          <div className="absolute top-10 left-1/2 -translate-x-1/2">
+            <Image
+              src="/Logo + texte_blanc.svg"
+              alt="Newbi"
+              width={127}
+              height={36}
+              priority
+            />
+          </div>
+
+          <CircularProgress
+            value={downloadProgress}
+            size={220}
+            strokeWidth={12}
+            showLabel
+            labelClassName="text-4xl font-semibold text-white"
+            renderLabel={(progress) => `${Math.round(progress)}%`}
+            className="stroke-white/20"
+            progressClassName="stroke-white"
+          />
+
+          <p className="mt-8 text-white text-base font-medium">
+            {downloadProgress >= 100
+              ? "Finalisation..."
+              : "Téléchargement en cours"}
+          </p>
+          <p className="mt-1 text-white/70 text-sm text-center px-8">
+            {downloadingFileId === "all"
+              ? `${transferFiles.length} fichiers · ${formatSize(
+                  Math.round((downloadProgress / 100) * (totalSize || 0)),
+                )} sur ${formatSize(totalSize)}`
+              : transferFiles.find(
+                  (f) => (f.id || f.fileId) === downloadingFileId,
+                )?.originalName || ""}
+          </p>
+
+          <button
+            onClick={cancelDownload}
+            className="mt-10 px-6 py-2 rounded-full border border-white/40 text-white text-sm hover:bg-white/10 transition-colors cursor-pointer"
+          >
+            Annuler
+          </button>
+        </div>
+      )}
+
       {/* Modal de mot de passe */}
       {needsPasswordVerification && (
         <PasswordModal
@@ -882,7 +935,12 @@ export default function TransferPage() {
       </div>
 
       {/* Panneau droit - Card */}
-      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center px-4 py-8 lg:px-8 lg:py-10">
+      <div className="w-full lg:w-1/2 relative overflow-hidden flex flex-col items-center justify-center px-4 py-8 lg:px-8 lg:py-10">
+        {/* Fond style Newbi */}
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#f4f3ff] via-white to-[#f4f3ff] pointer-events-none" />
+        <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-[#5a50ff]/10 blur-3xl -z-10 pointer-events-none" />
+        <div className="absolute -bottom-24 -left-16 w-80 h-80 rounded-full bg-[#5a50ff]/10 blur-3xl -z-10 pointer-events-none" />
+
         {/* Logo mobile - centré au-dessus de la card */}
         <div className="lg:hidden mb-10">
           <Image
