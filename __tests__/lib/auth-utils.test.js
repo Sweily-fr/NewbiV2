@@ -1,14 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const { resendMock } = vi.hoisted(() => ({
+const { resendMock, findOneMock, fetchMock } = vi.hoisted(() => ({
   resendMock: {
     emails: {
       send: vi.fn().mockResolvedValue({ data: { id: "email-1" }, error: null }),
     },
   },
+  // Par défaut : invité sans compte → pas de push, pas d'appel réseau
+  findOneMock: vi.fn().mockResolvedValue(null),
+  fetchMock: vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) }),
 }));
 
 vi.mock("@/src/lib/resend", () => ({ resend: resendMock }));
+
+// sendInvitationPush (import dynamique) lit la collection `user` puis poste à
+// l'API Expo — à mocker pour éviter tout appel Mongo/réseau réel en test
+vi.mock("@/src/lib/mongodb", () => ({
+  mongoDb: { collection: () => ({ findOne: findOneMock }) },
+  mongoClient: {},
+  getMongoDb: vi.fn(),
+  ensureConnection: vi.fn(),
+}));
 
 vi.mock("@/src/lib/email-templates", () => ({
   emailTemplates: {
@@ -45,6 +57,7 @@ import {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.stubGlobal("fetch", fetchMock);
   vi.spyOn(console, "log").mockImplementation(() => {});
   vi.spyOn(console, "error").mockImplementation(() => {});
   vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -216,5 +229,40 @@ describe("sendOrganizationInvitationEmail", () => {
     const arg = resendMock.emails.send.mock.calls[0][0];
     expect(arg.subject).toContain("Acme Corp");
     expect(arg.to).toBe("invitee@test.fr");
+    // Invité sans compte → aucun push envoyé
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("sends an Expo push when the invitee has push tokens", async () => {
+    findOneMock.mockResolvedValueOnce({
+      expoPushTokens: [{ token: "ExponentPushToken[abc123]" }],
+    });
+    await sendOrganizationInvitationEmail({
+      id: "inv-2",
+      email: "invitee@test.fr",
+      role: "member",
+      organization: { name: "Acme Corp" },
+      inviter: { user: { name: "Alice", email: "alice@test.fr" } },
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, opts] = fetchMock.mock.calls[0];
+    expect(url).toBe("https://exp.host/--/api/v2/push/send");
+    const messages = JSON.parse(opts.body);
+    expect(messages[0].to).toBe("ExponentPushToken[abc123]");
+    expect(messages[0].body).toContain("Acme Corp");
+  });
+
+  it("does not throw when the push lookup fails (best-effort)", async () => {
+    findOneMock.mockRejectedValueOnce(new Error("Mongo down"));
+    await expect(
+      sendOrganizationInvitationEmail({
+        id: "inv-3",
+        email: "invitee@test.fr",
+        role: "member",
+        organization: { name: "Acme Corp" },
+        inviter: { user: { name: "Alice", email: "alice@test.fr" } },
+      }),
+    ).resolves.toBeUndefined();
+    expect(resendMock.emails.send).toHaveBeenCalledTimes(1);
   });
 });
