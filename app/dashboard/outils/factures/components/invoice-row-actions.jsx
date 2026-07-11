@@ -129,16 +129,11 @@ export default function InvoiceRowActions({
     }
   };
 
-  const handleCreateInvoice = async () => {
-    try {
-      await changeStatus(invoice.id, INVOICE_STATUS.PENDING);
-      toast.success("Facture créée avec succès");
-      if (onRefetch) onRefetch();
-    } catch (error) {
-      // errorLink ne toaste pas les mutations : afficher l'erreur ici
-      console.error("Erreur lors du changement de statut:", error);
-      toast.error(error?.message || "Erreur lors de la création de la facture");
-    }
+  // Ouvrir le panel de la facture plutôt que de changer le statut
+  // directement : l'utilisateur y voit les dates recalées (émission ramenée à
+  // aujourd'hui) et finalise depuis le bouton « Créer la facture » du panel.
+  const handleCreateInvoice = () => {
+    handleView();
   };
 
   const handleMarkAsPaid = async () => {

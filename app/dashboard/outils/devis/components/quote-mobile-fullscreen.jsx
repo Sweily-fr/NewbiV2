@@ -24,6 +24,7 @@ import {
 } from "@/src/graphql/quoteQueries";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
+import { getDraftEffectiveDates } from "@/src/utils/dateFormatter";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDFDownloaderWithFacturX";
 import LinkedInvoicesList from "./linked-invoices-list";
@@ -74,6 +75,9 @@ export default function QuoteMobileFullscreen({
     return date.toLocaleDateString("fr-FR", options);
   };
 
+  // La mutation changeQuoteStatus recale côté serveur les dates d'un
+  // brouillon repris plus tard (émission ramenée à aujourd'hui, validité
+  // décalée d'autant).
   const handleSendQuote = async () => {
     try {
       await changeStatus(quote.id, QUOTE_STATUS.PENDING);
@@ -428,31 +432,73 @@ export default function QuoteMobileFullscreen({
                     Dates
                   </h3>
                   <div className="space-y-1.5">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        Date d'émission
-                      </span>
-                      <span>{formatDate(quote.issueDate)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        Valide jusqu'au
-                      </span>
-                      <span
-                        className={
-                          isValidUntilExpired()
-                            ? "text-red-600 font-medium"
-                            : ""
-                        }
-                      >
-                        {formatDate(quote.validUntil)}
-                        {isValidUntilExpired() && (
-                          <span className="text-xs block text-red-500">
-                            Expiré
-                          </span>
-                        )}
-                      </span>
-                    </div>
+                    {/* Pour un brouillon repris plus tard, afficher les dates
+                        recalées (jour J / validité) et l'ancienne date entre
+                        parenthèses, car elles seront mises à jour à la
+                        finalisation — même logique que la sidebar desktop. */}
+                    {(() => {
+                      const draftDates =
+                        quote.status === "DRAFT"
+                          ? getDraftEffectiveDates(
+                              quote.issueDate,
+                              quote.validUntil,
+                            )
+                          : null;
+                      const refreshed = draftDates?.changed;
+                      return (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">
+                              Date d'émission
+                            </span>
+                            <span className="flex flex-col items-end">
+                              <span>
+                                {formatDate(
+                                  refreshed
+                                    ? draftDates.issue.effective
+                                    : quote.issueDate,
+                                )}
+                              </span>
+                              {refreshed && draftDates.issue.original && (
+                                <span className="text-xs text-muted-foreground">
+                                  (ancienne&nbsp;:{" "}
+                                  {formatDate(draftDates.issue.original)})
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">
+                              Valide jusqu'au
+                            </span>
+                            <span
+                              className={
+                                !refreshed && isValidUntilExpired()
+                                  ? "text-red-600 font-medium"
+                                  : ""
+                              }
+                            >
+                              {formatDate(
+                                refreshed
+                                  ? draftDates.second.effective
+                                  : quote.validUntil,
+                              )}
+                              {refreshed && draftDates.second.original && (
+                                <span className="text-xs block text-muted-foreground">
+                                  (ancienne&nbsp;:{" "}
+                                  {formatDate(draftDates.second.original)})
+                                </span>
+                              )}
+                              {!refreshed && isValidUntilExpired() && (
+                                <span className="text-xs block text-red-500">
+                                  Expiré
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
 

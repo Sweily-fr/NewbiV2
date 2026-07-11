@@ -165,6 +165,9 @@ export default function QuoteSidebar({
     onClose();
   };
 
+  // La mutation changeQuoteStatus recale côté serveur les dates d'un
+  // brouillon repris plus tard (émission ramenée à aujourd'hui, validité
+  // décalée d'autant) — cohérent avec les dates affichées dans le panel.
   const handleSendQuote = async () => {
     try {
       await changeStatus(quote.id, QUOTE_STATUS.PENDING);

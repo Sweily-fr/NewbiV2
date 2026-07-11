@@ -505,10 +505,12 @@ export default function InvoiceSidebar({
     onClose();
   };
 
+  // La mutation changeInvoiceStatus recale côté serveur les dates d'un
+  // brouillon repris plus tard (émission ramenée à aujourd'hui, échéance
+  // décalée d'autant) — cohérent avec les dates affichées dans le panel.
   const handleCreateInvoice = async () => {
     try {
       await changeStatus(invoice.id, INVOICE_STATUS.PENDING);
-      // toast.success("Facture créée avec succès");
       if (onRefetch) onRefetch();
     } catch (error) {
       // errorLink ne toaste pas les mutations : afficher l'erreur ici

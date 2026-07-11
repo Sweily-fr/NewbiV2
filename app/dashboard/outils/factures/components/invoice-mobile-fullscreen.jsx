@@ -35,7 +35,10 @@ import {
   EInvoiceStatusBadge,
   EReportingErrorBadge,
 } from "./einvoice-status-badge";
-import { formatLocalDate } from "@/src/utils/dateFormatter";
+import {
+  formatLocalDate,
+  getDraftEffectiveDates,
+} from "@/src/utils/dateFormatter";
 
 export default function InvoiceMobileFullscreen({
   isOpen,
@@ -284,6 +287,9 @@ export default function InvoiceMobileFullscreen({
     }
   };
 
+  // La mutation changeInvoiceStatus recale côté serveur les dates d'un
+  // brouillon repris plus tard (émission ramenée à aujourd'hui, échéance
+  // décalée d'autant).
   const handleCreateInvoice = async () => {
     try {
       await changeStatus(invoice.id, INVOICE_STATUS.PENDING);
@@ -538,18 +544,64 @@ export default function InvoiceMobileFullscreen({
                     Dates
                   </h3>
                   <div className="space-y-1.5">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        Date d'émission
-                      </span>
-                      <span>{formatDate(invoice.issueDate)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        Date d'échéance
-                      </span>
-                      <span>{formatDate(invoice.dueDate)}</span>
-                    </div>
+                    {/* Pour un brouillon repris plus tard, afficher les dates
+                        recalées (jour J / échéance) et l'ancienne date entre
+                        parenthèses, car elles seront mises à jour à la
+                        finalisation — même logique que la sidebar desktop. */}
+                    {(() => {
+                      const draftDates =
+                        invoice.status === "DRAFT"
+                          ? getDraftEffectiveDates(
+                              invoice.issueDate,
+                              invoice.dueDate,
+                            )
+                          : null;
+                      const refreshed = draftDates?.changed;
+                      return (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">
+                              Date d'émission
+                            </span>
+                            <span className="flex flex-col items-end">
+                              <span>
+                                {formatDate(
+                                  refreshed
+                                    ? draftDates.issue.effective
+                                    : invoice.issueDate,
+                                )}
+                              </span>
+                              {refreshed && draftDates.issue.original && (
+                                <span className="text-xs text-muted-foreground">
+                                  (ancienne&nbsp;:{" "}
+                                  {formatDate(draftDates.issue.original)})
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">
+                              Date d'échéance
+                            </span>
+                            <span className="flex flex-col items-end">
+                              <span>
+                                {formatDate(
+                                  refreshed
+                                    ? draftDates.second.effective
+                                    : invoice.dueDate,
+                                )}
+                              </span>
+                              {refreshed && draftDates.second.original && (
+                                <span className="text-xs text-muted-foreground">
+                                  (ancienne&nbsp;:{" "}
+                                  {formatDate(draftDates.second.original)})
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                        </>
+                      );
+                    })()}
                     {invoice.paymentDate && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">

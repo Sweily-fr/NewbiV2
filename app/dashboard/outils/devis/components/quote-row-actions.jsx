@@ -177,14 +177,11 @@ export default function QuoteRowActions({
     }
   };
 
-  const handleSendQuote = async () => {
-    try {
-      await changeStatus(quote.id, QUOTE_STATUS.PENDING);
-      toast.success("Devis envoyé avec succès");
-      if (onRefetch) onRefetch();
-    } catch (error) {
-      toast.error(error?.message || "Erreur lors de l'envoi du devis");
-    }
+  // Ouvrir le panel du devis plutôt que de changer le statut directement :
+  // l'utilisateur y voit les dates recalées (émission ramenée à aujourd'hui)
+  // et finalise depuis le bouton du panel.
+  const handleSendQuote = () => {
+    handleView();
   };
 
   const handleAccept = async () => {

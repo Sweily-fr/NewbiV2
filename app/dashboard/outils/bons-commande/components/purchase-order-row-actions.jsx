@@ -103,14 +103,11 @@ export default function PurchaseOrderRowActions({
     }
   };
 
-  const handleConfirm = async () => {
-    try {
-      await changeStatus(purchaseOrder.id, PURCHASE_ORDER_STATUS.CONFIRMED);
-      toast.success("Bon de commande mis en attente");
-      if (onRefetch) onRefetch();
-    } catch (error) {
-      toast.error(error?.message || "Erreur lors de la confirmation");
-    }
+  // Ouvrir le panel du bon de commande plutôt que de changer le statut
+  // directement : l'utilisateur y voit les dates recalées (émission ramenée à
+  // aujourd'hui) et confirme depuis le bouton du panel.
+  const handleConfirm = () => {
+    handleView();
   };
 
   const handleValidate = async () => {

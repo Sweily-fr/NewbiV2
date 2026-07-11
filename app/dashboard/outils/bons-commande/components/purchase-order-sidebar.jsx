@@ -141,6 +141,9 @@ export default function PurchaseOrderSidebar({
     onClose();
   };
 
+  // La mutation changePurchaseOrderStatus recale côté serveur les dates d'un
+  // brouillon repris plus tard (émission ramenée à aujourd'hui, validité
+  // décalée d'autant) — cohérent avec les dates affichées dans le panel.
   const handleConfirm = async () => {
     try {
       await changeStatus(purchaseOrder.id, PURCHASE_ORDER_STATUS.CONFIRMED);
