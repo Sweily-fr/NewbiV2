@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 
-// Le ZIP est généré en streaming par le backend Express (archiver).
-// L'ancienne implémentation chargeait tous les fichiers en mémoire dans la
-// fonction serverless Vercel, ce qui la faisait crasher (erreur 500) dès que
-// le transfert dépassait la mémoire disponible.
+// Ancienne URL de téléchargement direct : rediriger vers la page de
+// transfert avec ?autodl=1 — elle affiche l'interface Newbi et lance le
+// téléchargement du ZIP automatiquement (avec progression), au lieu de
+// naviguer vers le fichier sur une page vide.
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const shareLink = searchParams.get("shareLink");
@@ -16,11 +16,12 @@ export async function GET(request) {
     );
   }
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/";
-
   return NextResponse.redirect(
-    `${apiUrl}file-transfer/download-all?link=${encodeURIComponent(
-      shareLink,
-    )}&key=${encodeURIComponent(accessKey)}`,
+    new URL(
+      `/transfer/${encodeURIComponent(shareLink)}?key=${encodeURIComponent(
+        accessKey,
+      )}&autodl=1`,
+      request.url,
+    ),
   );
 }

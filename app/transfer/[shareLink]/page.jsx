@@ -66,6 +66,9 @@ export default function TransferPage() {
   // Ref pour annuler le téléchargement
   const downloadAbortRef = useRef(null);
 
+  // Ref pour ne déclencher le téléchargement automatique (?autodl=1) qu'une fois
+  const autoDownloadRef = useRef(false);
+
   // Hook pour gérer les paiements Stripe
   const { initiatePayment, isProcessing } = useStripePayment();
 
@@ -685,6 +688,37 @@ export default function TransferPage() {
   // Vérifier si le transfert nécessite un mot de passe et s'il n'est pas encore vérifié
   const needsPasswordVerification =
     !!transfer?.fileTransfer?.passwordProtected && !isPasswordVerified;
+
+  // Téléchargement automatique quand on arrive via un lien de téléchargement
+  // direct (ancienne URL /api/transfer/download-all, redirigée ici avec
+  // ?autodl=1) : la page s'affiche et le téléchargement démarre tout seul
+  const wantsAutoDownload = searchParams.get("autodl") === "1";
+  useEffect(() => {
+    if (!wantsAutoDownload || autoDownloadRef.current) return;
+    const ft = transfer?.fileTransfer;
+    if (!ft?.files?.length) return;
+    const expired = new Date(ft.expiryDate) < new Date();
+    const paymentRequired = !!(
+      (ft.isPaymentRequired === true ||
+        (ft.paymentAmount && ft.paymentAmount > 0)) &&
+      !ft.isPaid
+    );
+    if (
+      expired ||
+      paymentRequired ||
+      needsPasswordVerification ||
+      ft.hasWatermark
+    ) {
+      return;
+    }
+    autoDownloadRef.current = true;
+    // Retirer le paramètre pour ne pas relancer au refresh
+    const url = new URL(window.location.href);
+    url.searchParams.delete("autodl");
+    window.history.replaceState({}, document.title, url.toString());
+    downloadAllFiles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wantsAutoDownload, transfer, needsPasswordVerification]);
 
   if (!shareLink || !accessKey) {
     return (
