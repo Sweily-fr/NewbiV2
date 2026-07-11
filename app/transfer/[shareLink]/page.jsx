@@ -35,6 +35,19 @@ import {
 } from "./components";
 import CircularProgress from "@/src/components/ui/circular-progress";
 
+// Déclenche un téléchargement sans quitter la page : une navigation
+// (window.location.href) remplace la page de transfert par un onglet blanc
+// sur mobile pendant que le navigateur streame la pièce jointe
+const triggerMobileDownload = (url) => {
+  const iframe = document.createElement("iframe");
+  iframe.style.display = "none";
+  iframe.src = url;
+  document.body.appendChild(iframe);
+  // Le téléchargement devient indépendant de l'iframe dès que le navigateur
+  // a reçu les headers de la réponse ; on nettoie après coup
+  setTimeout(() => iframe.remove(), 60000);
+};
+
 export default function TransferPage() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -211,8 +224,9 @@ export default function TransferPage() {
           ).catch(() => {}); // Fire and forget
         }
 
-        // Laisser le navigateur mobile gérer le téléchargement nativement
-        window.location.href = downloadInfo.downloadUrl;
+        // Laisser le navigateur mobile gérer le téléchargement nativement,
+        // sans quitter la page de transfert
+        triggerMobileDownload(downloadInfo.downloadUrl);
         toast.info("Téléchargement en cours...");
         return;
       }
@@ -406,8 +420,9 @@ export default function TransferPage() {
           }
         });
 
-        // Rediriger vers l'URL - le navigateur mobile va télécharger le fichier
-        window.location.href = downloadUrl;
+        // Déclencher le téléchargement sans navigation - le navigateur
+        // mobile gère le téléchargement, la page de transfert reste affichée
+        triggerMobileDownload(downloadUrl);
 
         // Sur mobile, le téléchargement est géré par le navigateur
         toast.info("Téléchargement en cours...");
