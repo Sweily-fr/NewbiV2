@@ -387,21 +387,12 @@ export default function TransferPage() {
         return;
       }
 
-      // Sur mobile, rediriger vers l'URL de téléchargement
+      // Sur mobile : un seul fichier → téléchargement natif ; plusieurs
+      // fichiers → fetch du ZIP streamé par le backend, avec progression
+      // affichée sur la page
       if (isMobile) {
-        let downloadUrl;
-
-        if (filteredDownloads.length === 1) {
-          downloadUrl = filteredDownloads[0].downloadUrl;
-        } else {
-          // ZIP streamé par le backend : la route Next.js sur Vercel chargeait
-          // tous les fichiers en mémoire et crashait sur les gros transferts
-          downloadUrl = `${apiUrl}file-transfer/download-all?link=${shareLink}&key=${accessKey}`;
-        }
-
-        // Marquer les téléchargements comme terminés AVANT la redirection :
-        // la navigation annule les fetch en cours sur mobile (keepalive pour
-        // que les requêtes survivent au changement de page)
+        // Marquer les téléchargements comme terminés (keepalive pour que
+        // les requêtes survivent si l'utilisateur quitte la page)
         const mobileDuration = Date.now() - startTime;
         filteredDownloads.forEach((downloadInfo, i) => {
           if (downloadInfo.downloadEventId) {
@@ -420,14 +411,88 @@ export default function TransferPage() {
           }
         });
 
-        // Déclencher le téléchargement sans navigation - le navigateur
-        // mobile gère le téléchargement, la page de transfert reste affichée
-        triggerMobileDownload(downloadUrl);
+        if (filteredDownloads.length === 1) {
+          // Déclencher le téléchargement sans navigation - le navigateur
+          // mobile gère le téléchargement, la page de transfert reste affichée
+          triggerMobileDownload(filteredDownloads[0].downloadUrl);
+          toast.info("Téléchargement en cours...");
+          return;
+        }
 
-        // Sur mobile, le téléchargement est géré par le navigateur
-        toast.info("Téléchargement en cours...");
-        setIsDownloading(false);
-        setDownloadProgress(0);
+        const zipUrl = `${apiUrl}file-transfer/download-all?link=${shareLink}&key=${accessKey}`;
+
+        try {
+          // Streamer le ZIP pour afficher la progression réelle sur la page
+          const response = await fetch(zipUrl, {
+            signal: downloadAbortRef.current.signal,
+          });
+
+          if (!response.ok) {
+            throw new Error(`Erreur ${response.status}`);
+          }
+
+          const expectedBytes =
+            parseInt(response.headers.get("content-length") || "0", 10) ||
+            totalSize;
+          const reader = response.body.getReader();
+
+          // Consolider les chunks en Blobs intermédiaires (~32 Mo) pour ne
+          // pas saturer la mémoire JS sur mobile : le navigateur stocke les
+          // gros Blobs sur disque, et le Blob final référence les parties
+          // sans recopier les données
+          const FLUSH_THRESHOLD = 32 * 1024 * 1024;
+          const parts = [];
+          let pendingChunks = [];
+          let pendingBytes = 0;
+          let receivedBytes = 0;
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            pendingChunks.push(value);
+            pendingBytes += value.length;
+            receivedBytes += value.length;
+            if (pendingBytes >= FLUSH_THRESHOLD) {
+              parts.push(new Blob(pendingChunks));
+              pendingChunks = [];
+              pendingBytes = 0;
+            }
+            if (expectedBytes) {
+              setDownloadProgress(
+                Math.min(Math.round((receivedBytes / expectedBytes) * 100), 99),
+              );
+            }
+          }
+          if (pendingChunks.length > 0) {
+            parts.push(new Blob(pendingChunks));
+          }
+
+          const zipBlob = new Blob(parts, { type: "application/zip" });
+          setDownloadProgress(100);
+
+          const url = window.URL.createObjectURL(zipBlob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${transfer?.fileTransfer?.title || "transfert"}.zip`;
+          a.style.display = "none";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          // Ne pas révoquer tout de suite : iOS a besoin de l'URL le temps
+          // d'enregistrer le fichier
+          setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+
+          toast.success("Fichiers téléchargés avec succès !");
+        } catch (mobileZipError) {
+          if (mobileZipError.name === "AbortError") {
+            throw mobileZipError;
+          }
+          // Secours : laisser le navigateur gérer le téléchargement
+          // nativement (sans progression sur la page)
+          console.error("Erreur streaming ZIP mobile:", mobileZipError);
+          triggerMobileDownload(zipUrl);
+          toast.info("Téléchargement en cours...");
+        }
         return;
       } else {
         // Desktop : télécharger tous les fichiers et créer un ZIP
