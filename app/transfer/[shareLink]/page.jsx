@@ -420,6 +420,19 @@ export default function TransferPage() {
 
         const zipUrl = `${apiUrl}file-transfer/download-all?link=${shareLink}&key=${accessKey}`;
 
+        // Au-delà de cette taille, garder le ZIP en mémoire dans la page
+        // peut faire planter le navigateur sur certains téléphones : on
+        // délègue au téléchargement natif (progression affichée par le
+        // navigateur, le ZIP annonce sa taille exacte)
+        const IN_PAGE_ZIP_LIMIT = 150 * 1024 * 1024;
+        if (totalSize > IN_PAGE_ZIP_LIMIT) {
+          triggerMobileDownload(zipUrl);
+          toast.info(
+            "Téléchargement lancé — suivez la progression dans les téléchargements de votre navigateur",
+          );
+          return;
+        }
+
         try {
           // Streamer le ZIP pour afficher la progression réelle sur la page
           const response = await fetch(zipUrl, {
@@ -481,7 +494,14 @@ export default function TransferPage() {
           // d'enregistrer le fichier
           setTimeout(() => window.URL.revokeObjectURL(url), 60000);
 
-          toast.success("Fichiers téléchargés avec succès !");
+          // iOS demande une confirmation pour enregistrer un fichier fourni
+          // par la page (instantané : le contenu est déjà téléchargé)
+          const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+          toast.success(
+            isIOS
+              ? "Appuyez sur « Télécharger » pour enregistrer le fichier"
+              : "Fichiers téléchargés avec succès !",
+          );
         } catch (mobileZipError) {
           if (mobileZipError.name === "AbortError") {
             throw mobileZipError;
