@@ -70,6 +70,9 @@ export function FilePreviewDrawer({
   onDownload,
   onNavigate,
   hasWatermark = false,
+  isDownloading = false,
+  downloadProgress = 0,
+  onCancelDownload,
 }) {
   // Vérifier si le téléchargement est bloqué (filigrane actif)
   const isDownloadBlocked = !!hasWatermark;
@@ -305,14 +308,39 @@ export function FilePreviewDrawer({
 
           {/* Footer avec bouton Télécharger - masqué si filigrane sur image */}
           {!isDownloadBlocked && (
-            <div className="px-8 py-4 border-t border-gray-100 flex justify-end">
-              <Button
-                onClick={() => onDownload?.(file)}
-                className="text-white rounded-lg px-6"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Télécharger
-              </Button>
+            <div className="px-8 py-4 border-t border-gray-100 flex items-center justify-end gap-3">
+              {isDownloading ? (
+                <>
+                  <button
+                    onClick={() => onCancelDownload?.()}
+                    className="text-[11px] text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                  >
+                    Annuler
+                  </button>
+                  {/* Le bouton devient la barre de progression */}
+                  <div className="relative w-40 h-9 rounded-lg overflow-hidden bg-[#5a50ff]/15">
+                    <div
+                      className="absolute inset-y-0 left-0 bg-[#5a50ff] transition-[width] duration-300 ease-out"
+                      style={{ width: `${downloadProgress}%` }}
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-xs font-semibold text-white mix-blend-difference">
+                        {downloadProgress >= 100
+                          ? "Finalisation…"
+                          : `${Math.round(downloadProgress)}%`}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <Button
+                  onClick={() => onDownload?.(file)}
+                  className="text-white rounded-lg px-6"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Télécharger
+                </Button>
+              )}
             </div>
           )}
         </div>
