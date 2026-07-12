@@ -317,11 +317,8 @@ export function FilePreviewDrawer({
                   >
                     Annuler
                   </button>
-                  {/* Le bouton devient le loader : juste le % qui monte */}
-                  <Button className="text-white rounded-lg px-6 pointer-events-none tabular-nums">
-                    {downloadProgress >= 100
-                      ? "Finalisation…"
-                      : `${Math.round(downloadProgress)}%`}
+                  <Button className="text-white rounded-lg px-6 pointer-events-none opacity-70">
+                    Téléchargement en cours…
                   </Button>
                 </>
               ) : (
