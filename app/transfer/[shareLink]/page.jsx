@@ -24,7 +24,6 @@ import {
   MessageSquare,
 } from "lucide-react";
 import Image from "next/image";
-import JSZip from "jszip";
 
 // Composants séparés
 import {
@@ -42,11 +41,26 @@ const triggerMobileDownload = (url) => {
   window.location.href = url;
 };
 
-// Au-delà de ces tailles, garder le contenu en mémoire dans la page peut
+// Remet au navigateur un fichier téléchargé par la page. Sur iOS, la
+// confirmation d'enregistrement apparaît à ce moment-là (mécanisme du
+// système, elle ne peut pas être affichée avant).
+const saveBlobAsFile = (blob, fileName) => {
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName || "fichier";
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  // Ne pas révoquer tout de suite : iOS a besoin de l'URL le temps
+  // d'enregistrer le fichier
+  setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+};
+
+// Au-delà de cette taille, garder le fichier en mémoire dans la page peut
 // faire planter le navigateur sur certains téléphones : on délègue au
-// téléchargement natif (progression affichée par le navigateur). Le ZIP
-// groupé est plus conservateur (taille totale non bornée).
-const IN_PAGE_DOWNLOAD_LIMIT = 150 * 1024 * 1024;
+// téléchargement natif (progression affichée par le navigateur)
 const IN_PAGE_SINGLE_FILE_LIMIT = 400 * 1024 * 1024;
 
 export default function TransferPage() {
@@ -299,18 +313,7 @@ export default function TransferPage() {
         }
 
         // Assembler les parties en blob final (par référence, sans copie)
-        const blob = new Blob(parts);
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = fileName;
-        a.style.display = "none";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        // Ne pas révoquer tout de suite : iOS a besoin de l'URL le temps
-        // d'enregistrer le fichier
-        setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+        saveBlobAsFile(new Blob(parts), fileName);
       } else {
         // Fallback: téléchargement natif via l'endpoint backend stable
         triggerMobileDownload(
@@ -376,20 +379,10 @@ export default function TransferPage() {
     }
 
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    const estimatedTotalSize = transferFilesList.reduce(
-      (acc, f) => acc + (f.size || 0),
-      0,
-    );
-    // Téléchargement natif (gros transfert sur mobile) : aucun loader dans
-    // la page, le navigateur affiche déjà sa progression
-    const willUseNativeDownload =
-      isMobile && estimatedTotalSize > IN_PAGE_DOWNLOAD_LIMIT;
 
-    if (!willUseNativeDownload) {
-      setIsDownloading(true);
-      setDownloadingFileId("all");
-      setDownloadProgress(0);
-    }
+    setIsDownloading(true);
+    setDownloadingFileId("all");
+    setDownloadProgress(0);
     const startTime = Date.now();
 
     try {
@@ -444,8 +437,6 @@ export default function TransferPage() {
         return;
       }
 
-      const totalSize = files.reduce((acc, f) => acc + (f.size || 0), 0);
-
       // Filtrer les téléchargements autorisés pour exclure les images si filigrane
       const downloadableFileIds = files.map((f) => f.id);
       const filteredDownloads = authData.downloads.filter((d) =>
@@ -457,41 +448,9 @@ export default function TransferPage() {
         return;
       }
 
-      // Mobile + gros transfert : téléchargement natif du ZIP streamé (le
-      // navigateur affiche sa propre progression)
-      if (isMobile && totalSize > IN_PAGE_DOWNLOAD_LIMIT) {
-        // Marquer les téléchargements comme terminés (keepalive pour que
-        // les requêtes survivent si l'utilisateur quitte la page)
-        const mobileDuration = Date.now() - startTime;
-        filteredDownloads.forEach((downloadInfo, i) => {
-          if (downloadInfo.downloadEventId) {
-            fetch(
-              `${apiUrl}api/transfers/download-event/${downloadInfo.downloadEventId}/complete`,
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                keepalive: true,
-                body: JSON.stringify({
-                  duration: mobileDuration,
-                  isLastFile: i === filteredDownloads.length - 1,
-                }),
-              },
-            ).catch(() => {}); // Fire and forget
-          }
-        });
-
-        triggerMobileDownload(
-          `${apiUrl}file-transfer/download-all?link=${shareLink}&key=${accessKey}`,
-        );
-        toast.info(
-          "Acceptez le téléchargement — la progression s'affiche dans les téléchargements de votre navigateur",
-        );
-        return;
-      }
-
-      // Télécharger les fichiers UN PAR UN : le pourcentage de la ligne du
-      // fichier en cours monte à son tour, puis tout est réuni dans un ZIP
-      const zip = new JSZip();
+      // Télécharger les fichiers UN PAR UN : le pourcentage monte sur le
+      // bouton de téléchargement de chaque ligne à son tour, et chaque
+      // fichier est remis au navigateur dès qu'il est complet
       const FLUSH_THRESHOLD = 32 * 1024 * 1024;
 
       for (let i = 0; i < filteredDownloads.length; i++) {
@@ -507,6 +466,14 @@ export default function TransferPage() {
         // authorize expirent en quelques minutes — en séquentiel, celle du
         // fichier suivant était souvent expirée avant son tour
         const fileUrl = `${apiUrl}api/files/download/${transfer?.fileTransfer?.id}/${downloadInfo.fileId}`;
+
+        // Très gros fichier sur mobile : natif pour ne pas saturer la mémoire
+        if (isMobile && fileSize > IN_PAGE_SINGLE_FILE_LIMIT) {
+          triggerMobileDownload(fileUrl);
+          setDownloadProgress(100);
+          continue;
+        }
+
         const response = await fetch(fileUrl, {
           signal: downloadAbortRef.current.signal,
         });
@@ -554,34 +521,20 @@ export default function TransferPage() {
             parts.push(new Blob(pendingChunks));
           }
 
-          zip.file(downloadInfo.fileName, new Blob(parts));
+          // Remettre ce fichier au navigateur dès qu'il est complet
+          saveBlobAsFile(new Blob(parts), downloadInfo.fileName);
         } else {
           // Fallback : télécharger sans streaming
           const response2 = await fetch(fileUrl, {
             signal: downloadAbortRef.current.signal,
           });
-          zip.file(downloadInfo.fileName, await response2.blob());
+          saveBlobAsFile(await response2.blob(), downloadInfo.fileName);
           setDownloadProgress(100);
         }
       }
 
-      // Générer le ZIP
       setDownloadingFileId(null);
       setDownloadProgress(100);
-      const zipBlob = await zip.generateAsync({ type: "blob" });
-
-      // Télécharger le ZIP
-      const url = window.URL.createObjectURL(zipBlob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${transfer?.fileTransfer?.title || "transfert"}.zip`;
-      a.style.display = "none";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      // Ne pas révoquer tout de suite : iOS a besoin de l'URL le temps
-      // d'enregistrer le fichier
-      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
 
       // Marquer les téléchargements comme terminés
       const duration = Date.now() - startTime;
