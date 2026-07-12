@@ -327,12 +327,12 @@ export default function TransferPage() {
         ).catch(() => {}); // Fire and forget
       }
 
-      // iOS demande une confirmation pour enregistrer un fichier fourni
-      // par la page (instantané : le contenu est déjà téléchargé)
+      // Popup de fin explicite (sur iOS, la fenêtre d'enregistrement
+      // apparaît au même moment : le contenu est déjà téléchargé)
       toast.success(
         /iPhone|iPad|iPod/i.test(navigator.userAgent)
-          ? "Appuyez sur « Télécharger » pour enregistrer le fichier"
-          : "Fichier téléchargé avec succès",
+          ? "Téléchargement terminé — appuyez sur « Télécharger » pour enregistrer"
+          : "Téléchargement terminé !",
       );
     } catch (error) {
       // Si c'est une annulation, ne pas afficher d'erreur
@@ -450,10 +450,9 @@ export default function TransferPage() {
         return;
       }
 
-      // Sur mobile : un seul fichier → téléchargement natif ; plusieurs
-      // fichiers → fetch du ZIP streamé par le backend, avec progression
-      // affichée sur la page
-      if (isMobile) {
+      // Mobile + gros transfert : téléchargement natif du ZIP streamé (le
+      // navigateur affiche sa propre progression)
+      if (isMobile && totalSize > IN_PAGE_DOWNLOAD_LIMIT) {
         // Marquer les téléchargements comme terminés (keepalive pour que
         // les requêtes survivent si l'utilisateur quitte la page)
         const mobileDuration = Date.now() - startTime;
@@ -474,186 +473,104 @@ export default function TransferPage() {
           }
         });
 
-        if (filteredDownloads.length === 1) {
-          // Déclencher le téléchargement sans navigation - le navigateur
-          // mobile gère le téléchargement, la page de transfert reste
-          // affichée. URL backend stable (l'URL signée R2 peut être expirée)
-          triggerMobileDownload(
-            `${apiUrl}api/files/download/${transfer?.fileTransfer?.id}/${filteredDownloads[0].fileId}`,
-          );
-          toast.info("Téléchargement en cours...");
-          return;
+        triggerMobileDownload(
+          `${apiUrl}file-transfer/download-all?link=${shareLink}&key=${accessKey}`,
+        );
+        toast.info(
+          "Acceptez le téléchargement — la progression s'affiche dans les téléchargements de votre navigateur",
+        );
+        return;
+      }
+
+      // Télécharger les fichiers UN PAR UN : le pourcentage de la ligne du
+      // fichier en cours monte à son tour, puis tout est réuni dans un ZIP
+      const zip = new JSZip();
+      const FLUSH_THRESHOLD = 32 * 1024 * 1024;
+
+      for (let i = 0; i < filteredDownloads.length; i++) {
+        const downloadInfo = filteredDownloads[i];
+        const file = files.find((f) => f.id === downloadInfo.fileId);
+        const fileSize = file?.size || 0;
+
+        // Le loader de cette ligne démarre
+        setDownloadingFileId(downloadInfo.fileId);
+        setDownloadProgress(0);
+
+        const response = await fetch(downloadInfo.downloadUrl, {
+          signal: downloadAbortRef.current.signal,
+        });
+
+        if (!response.ok) {
+          console.error(`Erreur téléchargement ${downloadInfo.fileName}`);
+          continue;
         }
 
-        const zipUrl = `${apiUrl}file-transfer/download-all?link=${shareLink}&key=${accessKey}`;
+        const contentLength = response.headers.get("content-length");
+        const actualFileSize = contentLength
+          ? parseInt(contentLength, 10)
+          : fileSize;
 
-        if (totalSize > IN_PAGE_DOWNLOAD_LIMIT) {
-          triggerMobileDownload(zipUrl);
-          toast.info(
-            "Acceptez le téléchargement — la progression s'affiche dans les téléchargements de votre navigateur",
-          );
-          return;
-        }
-
-        try {
-          // Streamer le ZIP pour afficher la progression réelle sur la page
-          const response = await fetch(zipUrl, {
-            signal: downloadAbortRef.current.signal,
-          });
-
-          if (!response.ok) {
-            throw new Error(`Erreur ${response.status}`);
-          }
-
-          const expectedBytes =
-            parseInt(response.headers.get("content-length") || "0", 10) ||
-            totalSize;
+        if (actualFileSize && response.body) {
           const reader = response.body.getReader();
-
           // Consolider les chunks en Blobs intermédiaires (~32 Mo) pour ne
-          // pas saturer la mémoire JS sur mobile : le navigateur stocke les
-          // gros Blobs sur disque, et le Blob final référence les parties
-          // sans recopier les données
-          const FLUSH_THRESHOLD = 32 * 1024 * 1024;
+          // pas saturer la mémoire JS sur mobile
           const parts = [];
           let pendingChunks = [];
           let pendingBytes = 0;
-          let receivedBytes = 0;
+          let receivedLength = 0;
 
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
             pendingChunks.push(value);
             pendingBytes += value.length;
-            receivedBytes += value.length;
+            receivedLength += value.length;
             if (pendingBytes >= FLUSH_THRESHOLD) {
               parts.push(new Blob(pendingChunks));
               pendingChunks = [];
               pendingBytes = 0;
             }
-            if (expectedBytes) {
-              setDownloadProgress(
-                Math.min(Math.round((receivedBytes / expectedBytes) * 100), 99),
-              );
-            }
+
+            // Progression de CE fichier (0 → 100)
+            setDownloadProgress(
+              Math.min(
+                Math.round((receivedLength / actualFileSize) * 100),
+                100,
+              ),
+            );
           }
           if (pendingChunks.length > 0) {
             parts.push(new Blob(pendingChunks));
           }
 
-          const zipBlob = new Blob(parts, { type: "application/zip" });
-          setDownloadProgress(100);
-
-          const url = window.URL.createObjectURL(zipBlob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `${transfer?.fileTransfer?.title || "transfert"}.zip`;
-          a.style.display = "none";
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          // Ne pas révoquer tout de suite : iOS a besoin de l'URL le temps
-          // d'enregistrer le fichier
-          setTimeout(() => window.URL.revokeObjectURL(url), 60000);
-
-          // iOS demande une confirmation pour enregistrer un fichier fourni
-          // par la page (instantané : le contenu est déjà téléchargé)
-          const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-          toast.success(
-            isIOS
-              ? "Appuyez sur « Télécharger » pour enregistrer le fichier"
-              : "Fichiers téléchargés avec succès !",
-          );
-        } catch (mobileZipError) {
-          if (mobileZipError.name === "AbortError") {
-            throw mobileZipError;
-          }
-          // Secours : laisser le navigateur gérer le téléchargement
-          // nativement (sans progression sur la page)
-          console.error("Erreur streaming ZIP mobile:", mobileZipError);
-          triggerMobileDownload(zipUrl);
-          toast.info("Téléchargement en cours...");
-        }
-        return;
-      } else {
-        // Desktop : télécharger tous les fichiers et créer un ZIP
-        const zip = new JSZip();
-        let totalDownloaded = 0;
-
-        for (let i = 0; i < filteredDownloads.length; i++) {
-          const downloadInfo = filteredDownloads[i];
-          const file = files.find((f) => f.id === downloadInfo.fileId);
-          const fileSize = file?.size || 0;
-
-          const response = await fetch(downloadInfo.downloadUrl, {
+          zip.file(downloadInfo.fileName, new Blob(parts));
+        } else {
+          // Fallback : télécharger sans streaming
+          const response2 = await fetch(downloadInfo.downloadUrl, {
             signal: downloadAbortRef.current.signal,
           });
-
-          if (!response.ok) {
-            console.error(`Erreur téléchargement ${downloadInfo.fileName}`);
-            continue;
-          }
-
-          const contentLength = response.headers.get("content-length");
-          const actualFileSize = contentLength
-            ? parseInt(contentLength, 10)
-            : fileSize;
-
-          if (actualFileSize && response.body) {
-            const reader = response.body.getReader();
-            const chunks = [];
-            let receivedLength = 0;
-
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              chunks.push(value);
-              receivedLength += value.length;
-
-              // Progression globale : (déjà téléchargé + en cours) / total
-              // Réserver les derniers 5% pour la génération du ZIP
-              const globalProgress = Math.round(
-                ((totalDownloaded + receivedLength) / totalSize) * 95,
-              );
-              setDownloadProgress(Math.min(globalProgress, 95));
-            }
-
-            totalDownloaded += actualFileSize;
-
-            const blob = new Blob(chunks);
-            const arrayBuffer = await blob.arrayBuffer();
-            zip.file(downloadInfo.fileName, arrayBuffer);
-          } else {
-            // Fallback : télécharger sans streaming
-            const response2 = await fetch(downloadInfo.downloadUrl, {
-              signal: downloadAbortRef.current.signal,
-            });
-            const blob = await response2.blob();
-            const arrayBuffer = await blob.arrayBuffer();
-            zip.file(downloadInfo.fileName, arrayBuffer);
-            totalDownloaded += fileSize;
-            setDownloadProgress(
-              Math.min(Math.round((totalDownloaded / totalSize) * 95), 95),
-            );
-          }
+          zip.file(downloadInfo.fileName, await response2.blob());
+          setDownloadProgress(100);
         }
-
-        // Générer le ZIP
-        setDownloadProgress(96);
-        const zipBlob = await zip.generateAsync({ type: "blob" });
-        setDownloadProgress(100);
-
-        // Télécharger le ZIP
-        const url = window.URL.createObjectURL(zipBlob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${transfer?.fileTransfer?.title || "transfert"}.zip`;
-        a.style.display = "none";
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
       }
+
+      // Générer le ZIP
+      setDownloadingFileId(null);
+      setDownloadProgress(100);
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+
+      // Télécharger le ZIP
+      const url = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${transfer?.fileTransfer?.title || "transfert"}.zip`;
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      // Ne pas révoquer tout de suite : iOS a besoin de l'URL le temps
+      // d'enregistrer le fichier
+      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
 
       // Marquer les téléchargements comme terminés
       const duration = Date.now() - startTime;
@@ -675,7 +592,13 @@ export default function TransferPage() {
         }
       }
 
-      toast.success("Fichiers téléchargés avec succès !");
+      // Popup de fin explicite (sur iOS, la fenêtre d'enregistrement
+      // apparaît au même moment : le contenu est déjà téléchargé)
+      toast.success(
+        /iPhone|iPad|iPod/i.test(navigator.userAgent)
+          ? "Téléchargement terminé — appuyez sur « Télécharger » pour enregistrer"
+          : "Téléchargement terminé !",
+      );
     } catch (error) {
       // Si c'est une annulation, ne pas afficher d'erreur
       if (error.name === "AbortError") {
@@ -1330,11 +1253,9 @@ export default function TransferPage() {
                 <div className="w-full px-5 py-5 text-center">
                   {isDownloading ? (
                     <>
-                      {/* Le bouton devient le loader : juste le % qui monte */}
-                      <Button className="text-white px-10 w-full rounded-xl pointer-events-none tabular-nums">
-                        {downloadProgress >= 100
-                          ? "Finalisation…"
-                          : `${Math.round(downloadProgress)}%`}
+                      {/* Le seul loader est le % sur la ligne du fichier */}
+                      <Button className="text-white px-10 w-full rounded-xl pointer-events-none opacity-70">
+                        Téléchargement en cours…
                       </Button>
                       <button
                         onClick={cancelDownload}
