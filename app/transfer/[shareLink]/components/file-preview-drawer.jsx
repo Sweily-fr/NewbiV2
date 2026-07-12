@@ -71,8 +71,6 @@ export function FilePreviewDrawer({
   onNavigate,
   hasWatermark = false,
   isDownloading = false,
-  downloadProgress = 0,
-  onCancelDownload,
 }) {
   // Vérifier si le téléchargement est bloqué (filigrane actif)
   const isDownloadBlocked = !!hasWatermark;
