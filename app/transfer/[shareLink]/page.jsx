@@ -158,9 +158,17 @@ export default function TransferPage() {
     // Créer un nouvel AbortController
     downloadAbortRef.current = new AbortController();
 
-    setIsDownloading(true);
-    setDownloadingFileId(fileId);
-    setDownloadProgress(0);
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    // Téléchargement natif (gros fichier sur mobile) : aucun loader dans la
+    // page, le navigateur affiche déjà sa propre progression
+    const willUseNativeDownload =
+      isMobile && (fileSize || 0) > IN_PAGE_DOWNLOAD_LIMIT;
+
+    if (!willUseNativeDownload) {
+      setIsDownloading(true);
+      setDownloadingFileId(fileId);
+      setDownloadProgress(0);
+    }
     const startTime = Date.now();
 
     try {
@@ -201,13 +209,10 @@ export default function TransferPage() {
         throw new Error("URL de téléchargement non trouvée");
       }
 
-      // Détecter si on est sur mobile
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
       // Sur mobile, seuls les gros fichiers passent en téléchargement natif ;
       // en dessous du seuil, le streaming avec progression dans la page
       // fonctionne partout (même comportement que « Tout télécharger »)
-      if (isMobile && (fileSize || 0) > IN_PAGE_DOWNLOAD_LIMIT) {
+      if (willUseNativeDownload) {
         // Marquer le téléchargement comme terminé AVANT la redirection :
         // la navigation annule les fetch en cours sur mobile (keepalive pour
         // que la requête survive au changement de page)
@@ -328,14 +333,27 @@ export default function TransferPage() {
     // Créer un nouvel AbortController
     downloadAbortRef.current = new AbortController();
 
-    setIsDownloading(true);
-    setDownloadingFileId("all");
-    setDownloadProgress(0);
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const estimatedTotalSize = (transfer?.fileTransfer?.files || []).reduce(
+      (acc, f) => acc + (f.size || 0),
+      0,
+    );
+    // Téléchargement natif (gros transfert ou fichier unique sur mobile) :
+    // aucun loader dans la page, le navigateur affiche déjà sa progression
+    const willUseNativeDownload =
+      isMobile &&
+      ((transfer?.fileTransfer?.files || []).length === 1 ||
+        estimatedTotalSize > IN_PAGE_DOWNLOAD_LIMIT);
+
+    if (!willUseNativeDownload) {
+      setIsDownloading(true);
+      setDownloadingFileId("all");
+      setDownloadProgress(0);
+    }
     const startTime = Date.now();
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
       // Demander l'autorisation de téléchargement pour tous les fichiers
       const authResponse = await fetch(
