@@ -232,8 +232,12 @@ export default function TransferPage() {
         }
 
         // Laisser le navigateur mobile gérer le téléchargement nativement,
-        // sans quitter la page de transfert
-        triggerMobileDownload(downloadInfo.downloadUrl);
+        // sans quitter la page de transfert. Passer par l'endpoint backend
+        // (URL stable, Content-Disposition + Content-Length) plutôt que par
+        // l'URL signée R2 qui peut être expirée
+        triggerMobileDownload(
+          `${apiUrl}api/files/download/${transfer?.fileTransfer?.id}/${fileId}`,
+        );
         toast.info(
           "Acceptez le téléchargement — la progression s'affiche dans les téléchargements de votre navigateur",
         );
@@ -443,8 +447,11 @@ export default function TransferPage() {
 
         if (filteredDownloads.length === 1) {
           // Déclencher le téléchargement sans navigation - le navigateur
-          // mobile gère le téléchargement, la page de transfert reste affichée
-          triggerMobileDownload(filteredDownloads[0].downloadUrl);
+          // mobile gère le téléchargement, la page de transfert reste
+          // affichée. URL backend stable (l'URL signée R2 peut être expirée)
+          triggerMobileDownload(
+            `${apiUrl}api/files/download/${transfer?.fileTransfer?.id}/${filteredDownloads[0].fileId}`,
+          );
           toast.info("Téléchargement en cours...");
           return;
         }
