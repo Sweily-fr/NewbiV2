@@ -42,10 +42,12 @@ const triggerMobileDownload = (url) => {
   window.location.href = url;
 };
 
-// Au-delà de cette taille, garder le fichier en mémoire dans la page peut
+// Au-delà de ces tailles, garder le contenu en mémoire dans la page peut
 // faire planter le navigateur sur certains téléphones : on délègue au
-// téléchargement natif (progression affichée par le navigateur)
+// téléchargement natif (progression affichée par le navigateur). Le ZIP
+// groupé est plus conservateur (taille totale non bornée).
 const IN_PAGE_DOWNLOAD_LIMIT = 150 * 1024 * 1024;
+const IN_PAGE_SINGLE_FILE_LIMIT = 400 * 1024 * 1024;
 
 export default function TransferPage() {
   const params = useParams();
@@ -159,10 +161,10 @@ export default function TransferPage() {
     downloadAbortRef.current = new AbortController();
 
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    // Téléchargement natif (gros fichier sur mobile) : aucun loader dans la
-    // page, le navigateur affiche déjà sa propre progression
+    // Téléchargement natif (très gros fichier sur mobile) : aucun loader
+    // dans la page, le navigateur affiche déjà sa propre progression
     const willUseNativeDownload =
-      isMobile && (fileSize || 0) > IN_PAGE_DOWNLOAD_LIMIT;
+      isMobile && (fileSize || 0) > IN_PAGE_SINGLE_FILE_LIMIT;
 
     if (!willUseNativeDownload) {
       setIsDownloading(true);
@@ -259,7 +261,14 @@ export default function TransferPage() {
       // Si on peut streamer avec progression
       if (totalSize && response.body) {
         const reader = response.body.getReader();
-        const chunks = [];
+        // Consolider les chunks en Blobs intermédiaires (~32 Mo) pour ne
+        // pas saturer la mémoire JS sur mobile : le navigateur stocke les
+        // gros Blobs sur disque, et le Blob final référence les parties
+        // sans recopier les données
+        const FLUSH_THRESHOLD = 32 * 1024 * 1024;
+        const parts = [];
+        let pendingChunks = [];
+        let pendingBytes = 0;
         let receivedLength = 0;
 
         while (true) {
@@ -267,16 +276,25 @@ export default function TransferPage() {
 
           if (done) break;
 
-          chunks.push(value);
+          pendingChunks.push(value);
+          pendingBytes += value.length;
           receivedLength += value.length;
+          if (pendingBytes >= FLUSH_THRESHOLD) {
+            parts.push(new Blob(pendingChunks));
+            pendingChunks = [];
+            pendingBytes = 0;
+          }
 
           // Mettre à jour la progression
           const progress = Math.round((receivedLength / totalSize) * 100);
           setDownloadProgress(progress);
         }
+        if (pendingChunks.length > 0) {
+          parts.push(new Blob(pendingChunks));
+        }
 
-        // Assembler les chunks en blob
-        const blob = new Blob(chunks);
+        // Assembler les parties en blob final (par référence, sans copie)
+        const blob = new Blob(parts);
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -337,17 +355,28 @@ export default function TransferPage() {
     // Créer un nouvel AbortController
     downloadAbortRef.current = new AbortController();
 
+    const transferFilesList = transfer?.fileTransfer?.files || [];
+
+    // Transfert à un seul fichier : même logique que le téléchargement
+    // individuel (streaming avec progression, natif au-delà du seuil)
+    if (transferFilesList.length === 1) {
+      const single = transferFilesList[0];
+      return downloadFile(
+        single.id || single.fileId,
+        single.originalName,
+        single.size,
+      );
+    }
+
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    const estimatedTotalSize = (transfer?.fileTransfer?.files || []).reduce(
+    const estimatedTotalSize = transferFilesList.reduce(
       (acc, f) => acc + (f.size || 0),
       0,
     );
-    // Téléchargement natif (gros transfert ou fichier unique sur mobile) :
-    // aucun loader dans la page, le navigateur affiche déjà sa progression
+    // Téléchargement natif (gros transfert sur mobile) : aucun loader dans
+    // la page, le navigateur affiche déjà sa progression
     const willUseNativeDownload =
-      isMobile &&
-      ((transfer?.fileTransfer?.files || []).length === 1 ||
-        estimatedTotalSize > IN_PAGE_DOWNLOAD_LIMIT);
+      isMobile && estimatedTotalSize > IN_PAGE_DOWNLOAD_LIMIT;
 
     if (!willUseNativeDownload) {
       setIsDownloading(true);
@@ -729,9 +758,11 @@ export default function TransferPage() {
     }
 
     const fileId = file.id || file.fileId || file._id;
-    // Utiliser la fonction principale avec progression
-    await downloadFile(fileId, file.originalName, file.size);
+    // Fermer la preview AVANT de lancer le téléchargement : l'utilisateur
+    // retrouve la page principale où la progression s'affiche dans le
+    // bouton en bas
     setPreviewFile(null);
+    await downloadFile(fileId, file.originalName, file.size);
   };
 
   // Vérifier si le transfert nécessite un mot de passe et s'il n'est pas encore vérifié
