@@ -246,10 +246,15 @@ export default function TransferPage() {
         return;
       }
 
-      // Téléchargement avec streaming et progression
-      const response = await fetch(downloadInfo.downloadUrl, {
-        signal: downloadAbortRef.current.signal,
-      });
+      // Téléchargement avec streaming et progression, via l'endpoint backend
+      // stable : l'URL signée R2 renvoyée par authorize expire en quelques
+      // minutes et faisait échouer les téléchargements longs
+      const response = await fetch(
+        `${apiUrl}api/files/download/${transfer?.fileTransfer?.id}/${fileId}`,
+        {
+          signal: downloadAbortRef.current.signal,
+        },
+      );
 
       if (!response.ok) {
         throw new Error("Erreur lors du téléchargement");
@@ -307,8 +312,10 @@ export default function TransferPage() {
         // d'enregistrer le fichier
         setTimeout(() => window.URL.revokeObjectURL(url), 60000);
       } else {
-        // Fallback: rediriger vers l'URL de téléchargement
-        window.location.href = downloadInfo.downloadUrl;
+        // Fallback: téléchargement natif via l'endpoint backend stable
+        triggerMobileDownload(
+          `${apiUrl}api/files/download/${transfer?.fileTransfer?.id}/${fileId}`,
+        );
       }
 
       // Marquer le téléchargement comme terminé
@@ -496,7 +503,11 @@ export default function TransferPage() {
         setDownloadingFileId(downloadInfo.fileId);
         setDownloadProgress(0);
 
-        const response = await fetch(downloadInfo.downloadUrl, {
+        // Endpoint backend stable : les URL signées R2 renvoyées par
+        // authorize expirent en quelques minutes — en séquentiel, celle du
+        // fichier suivant était souvent expirée avant son tour
+        const fileUrl = `${apiUrl}api/files/download/${transfer?.fileTransfer?.id}/${downloadInfo.fileId}`;
+        const response = await fetch(fileUrl, {
           signal: downloadAbortRef.current.signal,
         });
 
@@ -546,7 +557,7 @@ export default function TransferPage() {
           zip.file(downloadInfo.fileName, new Blob(parts));
         } else {
           // Fallback : télécharger sans streaming
-          const response2 = await fetch(downloadInfo.downloadUrl, {
+          const response2 = await fetch(fileUrl, {
             signal: downloadAbortRef.current.signal,
           });
           zip.file(downloadInfo.fileName, await response2.blob());
@@ -1251,28 +1262,24 @@ export default function TransferPage() {
               {/* Bouton télécharger - masqué si filigrane actif */}
               {!transfer?.fileTransfer?.hasWatermark && (
                 <div className="w-full px-5 py-5 text-center">
-                  {isDownloading ? (
-                    <>
-                      {/* Le seul loader est le % sur la ligne du fichier */}
-                      <Button className="text-white px-10 w-full rounded-xl pointer-events-none opacity-70">
-                        Téléchargement en cours…
-                      </Button>
-                      <button
-                        onClick={cancelDownload}
-                        className="mt-2 text-[11px] text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
-                      >
-                        Annuler
-                      </button>
-                    </>
-                  ) : (
-                    <Button
-                      onClick={downloadAllFiles}
-                      className="text-white px-10 w-full rounded-xl"
+                  {/* Le seul loader est le % sur la ligne du fichier : le
+                      bouton global garde son libellé */}
+                  <Button
+                    onClick={downloadAllFiles}
+                    disabled={isDownloading}
+                    className="text-white px-10 w-full rounded-xl"
+                  >
+                    {(transfer?.fileTransfer?.files?.length || 0) > 1
+                      ? "Tout télécharger"
+                      : "Télécharger"}
+                  </Button>
+                  {isDownloading && (
+                    <button
+                      onClick={cancelDownload}
+                      className="mt-2 text-[11px] text-gray-400 hover:text-red-500 transition-colors cursor-pointer block mx-auto"
                     >
-                      {(transfer?.fileTransfer?.files?.length || 0) > 1
-                        ? "Tout télécharger"
-                        : "Télécharger"}
-                    </Button>
+                      Annuler
+                    </button>
                   )}
                 </div>
               )}
