@@ -1330,20 +1330,12 @@ export default function TransferPage() {
                 <div className="w-full px-5 py-5 text-center">
                   {isDownloading ? (
                     <>
-                      {/* Le bouton devient la barre de progression */}
-                      <div className="relative w-full h-9 rounded-xl overflow-hidden bg-[#5a50ff]/15">
-                        <div
-                          className="absolute inset-y-0 left-0 bg-[#5a50ff] transition-[width] duration-300 ease-out"
-                          style={{ width: `${downloadProgress}%` }}
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-xs font-semibold text-white mix-blend-difference">
-                            {downloadProgress >= 100
-                              ? "Finalisation…"
-                              : `${Math.round(downloadProgress)}%`}
-                          </span>
-                        </div>
-                      </div>
+                      {/* Le bouton devient le loader : juste le % qui monte */}
+                      <Button className="text-white px-10 w-full rounded-xl pointer-events-none tabular-nums">
+                        {downloadProgress >= 100
+                          ? "Finalisation…"
+                          : `${Math.round(downloadProgress)}%`}
+                      </Button>
                       <button
                         onClick={cancelDownload}
                         className="mt-2 text-[11px] text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
