@@ -309,27 +309,14 @@ export function FilePreviewDrawer({
           {/* Footer avec bouton Télécharger - masqué si filigrane sur image */}
           {!isDownloadBlocked && (
             <div className="px-8 py-4 border-t border-gray-100 flex items-center justify-end gap-3">
-              {isDownloading ? (
-                <>
-                  <button
-                    onClick={() => onCancelDownload?.()}
-                    className="text-[11px] text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
-                  >
-                    Annuler
-                  </button>
-                  <Button className="text-white rounded-lg px-6 pointer-events-none opacity-70">
-                    Téléchargement en cours…
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  onClick={() => onDownload?.(file)}
-                  className="text-white rounded-lg px-6"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Télécharger
-                </Button>
-              )}
+              <Button
+                onClick={() => onDownload?.(file)}
+                disabled={isDownloading}
+                className="text-white rounded-lg px-6"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Télécharger
+              </Button>
             </div>
           )}
         </div>
