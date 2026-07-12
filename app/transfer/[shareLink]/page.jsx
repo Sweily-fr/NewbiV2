@@ -34,17 +34,12 @@ import {
   PdfPreview,
 } from "./components";
 
-// Déclenche un téléchargement sans quitter la page : une navigation
-// (window.location.href) remplace la page de transfert par un onglet blanc
-// sur mobile pendant que le navigateur streame la pièce jointe
+// Déclenche un téléchargement natif : la réponse étant une pièce jointe
+// (Content-Disposition: attachment), le navigateur garde la page affichée
+// et lance son propre téléchargement. Ne PAS utiliser d'iframe caché :
+// iOS Safari ignore silencieusement les téléchargements qui en proviennent.
 const triggerMobileDownload = (url) => {
-  const iframe = document.createElement("iframe");
-  iframe.style.display = "none";
-  iframe.src = url;
-  document.body.appendChild(iframe);
-  // Le téléchargement devient indépendant de l'iframe dès que le navigateur
-  // a reçu les headers de la réponse ; on nettoie après coup
-  setTimeout(() => iframe.remove(), 60000);
+  window.location.href = url;
 };
 
 export default function TransferPage() {
@@ -428,7 +423,7 @@ export default function TransferPage() {
         if (totalSize > IN_PAGE_ZIP_LIMIT) {
           triggerMobileDownload(zipUrl);
           toast.info(
-            "Téléchargement lancé — suivez la progression dans les téléchargements de votre navigateur",
+            "Acceptez le téléchargement — la progression s'affiche dans les téléchargements de votre navigateur",
           );
           return;
         }
