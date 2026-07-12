@@ -80,6 +80,16 @@ export async function sendVerificationEmail(user, url) {
   });
 }
 
+// Fonction pour envoyer le CODE de vérification email (OTP) — flux mobile.
+export async function sendVerificationOtpEmail(email, otp) {
+  await resend.emails.send({
+    to: email,
+    subject: "Votre code de vérification - Newbi",
+    html: emailTemplates.emailOtp(otp),
+    from: "Newbi <noreply@newbi.sweily.fr>",
+  });
+}
+
 // Fonction générique pour envoyer un email
 export async function sendEmail({
   to,
