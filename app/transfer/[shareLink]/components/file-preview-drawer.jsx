@@ -317,20 +317,12 @@ export function FilePreviewDrawer({
                   >
                     Annuler
                   </button>
-                  {/* Le bouton devient la barre de progression */}
-                  <div className="relative w-40 h-9 rounded-lg overflow-hidden bg-[#5a50ff]/15">
-                    <div
-                      className="absolute inset-y-0 left-0 bg-[#5a50ff] transition-[width] duration-300 ease-out"
-                      style={{ width: `${downloadProgress}%` }}
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-xs font-semibold text-white mix-blend-difference">
-                        {downloadProgress >= 100
-                          ? "Finalisation…"
-                          : `${Math.round(downloadProgress)}%`}
-                      </span>
-                    </div>
-                  </div>
+                  {/* Le bouton devient le loader : juste le % qui monte */}
+                  <Button className="text-white rounded-lg px-6 pointer-events-none tabular-nums">
+                    {downloadProgress >= 100
+                      ? "Finalisation…"
+                      : `${Math.round(downloadProgress)}%`}
+                  </Button>
                 </>
               ) : (
                 <Button
