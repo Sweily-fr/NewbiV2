@@ -42,6 +42,11 @@ const triggerMobileDownload = (url) => {
   window.location.href = url;
 };
 
+// Au-delà de cette taille, garder le fichier en mémoire dans la page peut
+// faire planter le navigateur sur certains téléphones : on délègue au
+// téléchargement natif (progression affichée par le navigateur)
+const IN_PAGE_DOWNLOAD_LIMIT = 150 * 1024 * 1024;
+
 export default function TransferPage() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -199,7 +204,10 @@ export default function TransferPage() {
       // Détecter si on est sur mobile
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-      if (isMobile) {
+      // Sur mobile, seuls les gros fichiers passent en téléchargement natif ;
+      // en dessous du seuil, le streaming avec progression dans la page
+      // fonctionne partout (même comportement que « Tout télécharger »)
+      if (isMobile && (fileSize || 0) > IN_PAGE_DOWNLOAD_LIMIT) {
         // Marquer le téléchargement comme terminé AVANT la redirection :
         // la navigation annule les fetch en cours sur mobile (keepalive pour
         // que la requête survive au changement de page)
@@ -221,7 +229,9 @@ export default function TransferPage() {
         // Laisser le navigateur mobile gérer le téléchargement nativement,
         // sans quitter la page de transfert
         triggerMobileDownload(downloadInfo.downloadUrl);
-        toast.info("Téléchargement en cours...");
+        toast.info(
+          "Acceptez le téléchargement — la progression s'affiche dans les téléchargements de votre navigateur",
+        );
         return;
       }
 
@@ -265,8 +275,10 @@ export default function TransferPage() {
         a.style.display = "none";
         document.body.appendChild(a);
         a.click();
-        window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
+        // Ne pas révoquer tout de suite : iOS a besoin de l'URL le temps
+        // d'enregistrer le fichier
+        setTimeout(() => window.URL.revokeObjectURL(url), 60000);
       } else {
         // Fallback: rediriger vers l'URL de téléchargement
         window.location.href = downloadInfo.downloadUrl;
@@ -288,7 +300,13 @@ export default function TransferPage() {
         ).catch(() => {}); // Fire and forget
       }
 
-      toast.success("Fichier téléchargé avec succès");
+      // iOS demande une confirmation pour enregistrer un fichier fourni
+      // par la page (instantané : le contenu est déjà téléchargé)
+      toast.success(
+        /iPhone|iPad|iPod/i.test(navigator.userAgent)
+          ? "Appuyez sur « Télécharger » pour enregistrer le fichier"
+          : "Fichier téléchargé avec succès",
+      );
     } catch (error) {
       // Si c'est une annulation, ne pas afficher d'erreur
       if (error.name === "AbortError") {
@@ -415,12 +433,7 @@ export default function TransferPage() {
 
         const zipUrl = `${apiUrl}file-transfer/download-all?link=${shareLink}&key=${accessKey}`;
 
-        // Au-delà de cette taille, garder le ZIP en mémoire dans la page
-        // peut faire planter le navigateur sur certains téléphones : on
-        // délègue au téléchargement natif (progression affichée par le
-        // navigateur, le ZIP annonce sa taille exacte)
-        const IN_PAGE_ZIP_LIMIT = 150 * 1024 * 1024;
-        if (totalSize > IN_PAGE_ZIP_LIMIT) {
+        if (totalSize > IN_PAGE_DOWNLOAD_LIMIT) {
           triggerMobileDownload(zipUrl);
           toast.info(
             "Acceptez le téléchargement — la progression s'affiche dans les téléchargements de votre navigateur",
