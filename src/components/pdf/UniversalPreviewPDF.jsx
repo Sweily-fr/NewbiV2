@@ -2583,55 +2583,51 @@ const UniversalPreviewPDF = ({
           data-no-break
           data-position="bottom"
         >
-          {/* Afficher les coordonnées bancaires uniquement si showBankDetails est vrai ET que ce n'est pas un devis NI un avoir */}
-          {data.showBankDetails === true &&
-            type !== "quote" &&
-            !isCreditNote && (
-              <div className="mb-3">
-                <div className="font-medium text-xs mb-2 dark:text-[#0A0A0A]">
-                  Détails du paiement
+          {/* Afficher les coordonnées bancaires uniquement si showBankDetails est vrai ET que ce n'est pas un avoir */}
+          {data.showBankDetails === true && !isCreditNote && (
+            <div className="mb-3">
+              <div className="font-medium text-xs mb-2 dark:text-[#0A0A0A]">
+                Détails du paiement
+              </div>
+              <div className="flex flex-col gap-1 mt-2 text-[10px] dark:text-[#0A0A0A]">
+                <div className="flex">
+                  <span className="font-medium w-32">Nom du bénéficiaire</span>
+                  <span className="font-normal">
+                    {resolvedBeneficiaryName || "Sweily"}
+                  </span>
                 </div>
-                <div className="flex flex-col gap-1 mt-2 text-[10px] dark:text-[#0A0A0A]">
-                  <div className="flex">
-                    <span className="font-medium w-32">
-                      Nom du bénéficiaire
-                    </span>
-                    <span className="font-normal">
-                      {resolvedBeneficiaryName || "Sweily"}
-                    </span>
-                  </div>
-                  <div className="flex">
-                    <span className="font-medium w-32">Nom de la banque</span>
-                    <span className="font-normal">
-                      {data.bankDetails?.bankName ||
-                        data.userBankDetails?.bankName ||
-                        data.companyInfo?.bankDetails?.bankName ||
-                        ""}
-                    </span>
-                  </div>
-                  <div className="flex">
-                    <span className="font-medium w-32">BIC</span>
-                    <span className="font-normal">
-                      {data.bankDetails?.bic ||
-                        data.userBankDetails?.bic ||
-                        data.companyInfo?.bankDetails?.bic ||
-                        ""}
-                    </span>
-                  </div>
-                  <div className="flex">
-                    <span className="font-medium w-32">IBAN</span>
-                    <span className="font-normal">
-                      {formatIban(
-                        data.bankDetails?.iban ||
-                          data.userBankDetails?.iban ||
-                          data.companyInfo?.bankDetails?.iban ||
-                          "",
-                      )}
-                    </span>
-                  </div>
+                <div className="flex">
+                  <span className="font-medium w-32">Nom de la banque</span>
+                  <span className="font-normal">
+                    {data.bankDetails?.bankName ||
+                      data.userBankDetails?.bankName ||
+                      data.companyInfo?.bankDetails?.bankName ||
+                      ""}
+                  </span>
+                </div>
+                <div className="flex">
+                  <span className="font-medium w-32">BIC</span>
+                  <span className="font-normal">
+                    {data.bankDetails?.bic ||
+                      data.userBankDetails?.bic ||
+                      data.companyInfo?.bankDetails?.bic ||
+                      ""}
+                  </span>
+                </div>
+                <div className="flex">
+                  <span className="font-medium w-32">IBAN</span>
+                  <span className="font-normal">
+                    {formatIban(
+                      data.bankDetails?.iban ||
+                        data.userBankDetails?.iban ||
+                        data.companyInfo?.bankDetails?.iban ||
+                        "",
+                    )}
+                  </span>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
           {/* NOTES ET CONDITIONS - masquées pour les avoirs */}
           {data.footerNotes && !isCreditNote && (
@@ -2664,9 +2660,7 @@ const UniversalPreviewPDF = ({
           {/* Afficher le trait de séparation seulement si des coordonnées bancaires ou des notes sont présentes */}
           <div
             className={`text-[10px] dark:text-[#0A0A0A] whitespace-pre-line ${
-              (data.showBankDetails === true &&
-                type !== "quote" &&
-                !isCreditNote) ||
+              (data.showBankDetails === true && !isCreditNote) ||
               (data.footerNotes && !isCreditNote)
                 ? "border-t pt-2"
                 : "pt-2"

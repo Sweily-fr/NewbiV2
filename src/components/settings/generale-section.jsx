@@ -147,7 +147,7 @@ export function GeneraleSection({
                 Logo de l'entreprise
               </Label>
               <p className="text-xs text-muted-foreground">
-                Formats acceptés : PNG, JPEG et GIF (max 5MB)
+                Formats acceptés : PNG, JPEG, WebP ou SVG (max 5MB)
               </p>
               <div className="flex items-center gap-2 mt-1">
                 <Button

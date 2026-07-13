@@ -2975,18 +2975,20 @@ function transformInvoiceToFormData(invoice) {
     isVatExempt: invoice.isVatExempt || false,
     purchaseOrderNumber: invoice.purchaseOrderNumber || "",
     // Récupérer les données bancaires si elles existent dans la facture
+    // (priorité au champ top-level enregistré à la création, sinon le snapshot companyInfo)
     showBankDetails: invoice.showBankDetails || false,
-    bankDetails: invoice.companyInfo?.bankDetails
-      ? {
-          iban: invoice.companyInfo.bankDetails.iban || "",
-          bic: invoice.companyInfo.bankDetails.bic || "",
-          bankName: invoice.companyInfo.bankDetails.bankName || "",
-        }
-      : {
-          iban: "",
-          bic: "",
-          bankName: "",
-        },
+    bankDetails: {
+      iban:
+        invoice.bankDetails?.iban ||
+        invoice.companyInfo?.bankDetails?.iban ||
+        "",
+      bic:
+        invoice.bankDetails?.bic || invoice.companyInfo?.bankDetails?.bic || "",
+      bankName:
+        invoice.bankDetails?.bankName ||
+        invoice.companyInfo?.bankDetails?.bankName ||
+        "",
+    },
     userBankDetails: {
       iban: "",
       bic: "",
