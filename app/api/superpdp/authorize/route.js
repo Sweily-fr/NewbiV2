@@ -15,6 +15,9 @@ import {
 async function handler(request) {
   const { searchParams } = new URL(request.url);
   const organizationId = searchParams.get("organizationId");
+  // Origine de l'activation : "mobile" fait rediriger le callback OAuth vers le
+  // deep link newbi:// au lieu du dashboard desktop (cf. superpdp-oauth.js).
+  const source = searchParams.get("source");
 
   if (!organizationId) {
     return apiError(400, "organizationId est requis");
@@ -29,6 +32,9 @@ async function handler(request) {
 
   const url = new URL(`${backendUrl}/api/superpdp/authorize`);
   url.searchParams.set("organizationId", organizationId);
+  if (source) {
+    url.searchParams.set("source", source);
+  }
   if (user.email) {
     // Pré-remplit l'email côté SuperPDP (KYC/KYB)
     url.searchParams.set("login_hint", user.email);
