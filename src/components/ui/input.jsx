@@ -32,9 +32,10 @@ const inputVariants = cva(
       variant: "default",
       size: "default",
     },
-  }
+  },
 );
 
+/** @type {React.ForwardRefExoticComponent<any>} */
 const Input = React.forwardRef(
   ({ className, variant, size, type = "text", ...props }, ref) => {
     return (
@@ -46,7 +47,7 @@ const Input = React.forwardRef(
         {...props}
       />
     );
-  }
+  },
 );
 Input.displayName = "Input";
 
