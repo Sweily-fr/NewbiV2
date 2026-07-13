@@ -120,6 +120,9 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
       - run: npm ci
+      # Les routes API instancient leurs clients (Resend, Stripe…) au chargement
+      # du module : les placeholders de .env.example suffisent pour le build
+      - run: cp .env.example .env
       - run: npm run build
         env:
           NEXT_TELEMETRY_DISABLED: "1"
