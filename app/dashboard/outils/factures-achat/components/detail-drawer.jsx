@@ -358,17 +358,21 @@ export function PurchaseInvoiceDetailDrawer({
       paymentMethod: form.paymentMethod || undefined,
     };
     try {
+      // Les hooks fournissent onError à useMutation : en cas d'échec la
+      // promesse se résout avec un résultat vide au lieu de throw.
+      let saved;
       if (isCreate) {
-        await createInvoice({
+        saved = await createInvoice({
           ...data,
           paymentDate: form.paymentDate || undefined,
         });
       } else {
-        await updateInvoice(invoice.id, {
+        saved = await updateInvoice(invoice.id, {
           ...data,
           paymentDate: form.paymentDate || null,
         });
       }
+      if (!saved) return;
       onSaved?.();
     } catch {
       // Error toast is handled by the hook's onError callback
@@ -388,11 +392,12 @@ export function PurchaseInvoiceDetailDrawer({
     const paymentDateIso = form.paymentDate
       ? new Date(form.paymentDate + "T00:00:00").toISOString()
       : new Date().toISOString();
-    await markAsPaid(
+    const marked = await markAsPaid(
       invoice.id,
       paymentDateIso,
       form.paymentMethod || undefined,
     );
+    if (!marked) return;
     onSaved?.();
   };
 

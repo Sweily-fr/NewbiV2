@@ -114,11 +114,14 @@ export const useCreatePurchaseInvoice = () => {
   // `silent` permet de couper le toast unitaire pour les flux groupés
   // (ex. import OCR multi-factures) qui affichent leur propre récap.
   const createInvoice = async (input, { silent = false } = {}) => {
+    // Avec `onError` fourni à useMutation, Apollo ne rejette pas la promesse :
+    // il faut vérifier result.data avant d'annoncer un succès.
     const result = await createMutation({
       variables: { input: { ...input, workspaceId } },
     });
-    if (!silent) toast.success("Facture d'achat créée");
-    return result?.data?.createPurchaseInvoice;
+    const created = result?.data?.createPurchaseInvoice;
+    if (created && !silent) toast.success("Facture d'achat créée");
+    return created;
   };
 
   return { createInvoice, loading };
