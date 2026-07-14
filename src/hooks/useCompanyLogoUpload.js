@@ -7,7 +7,6 @@ import {
 } from "../graphql/mutations/documentUpload";
 import { UPDATE_COMPANY_LOGO } from "../graphql/mutations/user";
 import { toast } from "@/src/components/ui/sonner";
-import { useWorkspace } from "./useWorkspace";
 
 /**
  * Hook simplifié pour l'upload de logo d'entreprise sur Cloudflare uniquement
@@ -15,9 +14,11 @@ import { useWorkspace } from "./useWorkspace";
  * - Suppression automatique de l'ancienne image
  * - Gestion des erreurs simplifiée
  */
-export const useCompanyLogoUpload = ({ onUploadSuccess, onOrganizationUpdate }) => {
+export const useCompanyLogoUpload = ({
+  onUploadSuccess,
+  onOrganizationUpdate,
+}) => {
   const { data: session } = useSession();
-  const { workspaceId } = useWorkspace();
   const fileInputRef = useRef(null);
 
   // États locaux
@@ -103,6 +104,11 @@ export const useCompanyLogoUpload = ({ onUploadSuccess, onOrganizationUpdate }) 
         });
 
         const uploadData = result.data.uploadDocument;
+
+        if (!uploadData?.success || !uploadData?.url) {
+          throw new Error(uploadData?.message || "Erreur lors de l'upload");
+        }
+
         setCurrentImageUrl(uploadData.url);
         setCurrentFileKey(uploadData.key);
 
@@ -111,14 +117,14 @@ export const useCompanyLogoUpload = ({ onUploadSuccess, onOrganizationUpdate }) 
 
         toast.success("Logo uploadé avec succès !");
         onUploadSuccess?.(uploadData.url);
-        
+
         // Sauvegarder automatiquement dans l'organisation si la fonction est fournie
         if (onOrganizationUpdate) {
           onOrganizationUpdate(uploadData.url);
         }
       } catch (error) {
         console.error("Erreur upload:", error);
-        toast.error("Erreur lors de l'upload");
+        toast.error(error.message || "Erreur lors de l'upload");
 
         if (previewUrl) {
           URL.revokeObjectURL(previewUrl);
@@ -141,7 +147,7 @@ export const useCompanyLogoUpload = ({ onUploadSuccess, onOrganizationUpdate }) 
       onUploadSuccess,
       onOrganizationUpdate,
       previewUrl,
-    ]
+    ],
   );
 
   /**

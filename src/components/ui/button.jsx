@@ -28,7 +28,8 @@ const buttonVariants = cva(
         link: "bg-transparent text-[#5A50FF] underline-offset-4 hover:underline dark:text-[#8b7fff]",
       },
       size: {
-        default: "h-8 gap-1.5 py-1.5 px-2.5 rounded-[9px] text-sm leading-5 font-medium tracking-tight",
+        default:
+          "h-8 gap-1.5 py-1.5 px-2.5 rounded-[9px] text-sm leading-5 font-medium tracking-tight",
         sm: "h-8 gap-1.5 py-1.5 px-2.5 rounded-[9px] text-sm leading-5 font-medium tracking-tight",
         lg: "gap-2 py-[7px] pr-3 pl-2.5 rounded-lg text-sm leading-5 font-medium tracking-tight",
         md: "h-8 gap-1.5 py-1.5 px-2.5 rounded-[9px] text-sm leading-5 font-medium tracking-tight",
@@ -39,10 +40,16 @@ const buttonVariants = cva(
       variant: "default",
       size: "default",
     },
-  }
+  },
 );
 
-function Button({ className, variant, size, asChild = false, ...props }) {
+function Button({
+  className = "",
+  variant = "default",
+  size = "default",
+  asChild = false,
+  ...props
+}) {
   const Comp = asChild ? Slot : "button";
 
   return (

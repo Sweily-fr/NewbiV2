@@ -4,10 +4,15 @@ import {
   phoneNumber,
   twoFactor,
   multiSession,
+  emailOTP,
 } from "better-auth/plugins";
 import { stripe } from "@better-auth/stripe";
 import Stripe from "stripe";
-import { send2FAEmail, sendOrganizationInvitationEmail } from "./auth-utils";
+import {
+  send2FAEmail,
+  sendOrganizationInvitationEmail,
+  sendVerificationOtpEmail,
+} from "./auth-utils";
 // Import dynamique pour éviter le bundling Edge Runtime (Node.js only)
 const loadMetaCapi = () => import("../utils/metaCapiServer.js");
 import {
@@ -107,6 +112,21 @@ export const twoFactorPlugin = twoFactor({
       await send2FAEmail(user, otp);
       console.log("[2FA OTP] Email envoyé avec succès");
     },
+  },
+});
+
+// Vérification d'email par CODE OTP (flux mobile app-newbi). Cohabite avec la
+// vérification par lien (sendOnSignUp) utilisée côté desktop : le mobile appelle
+// explicitement authClient.emailOtp.sendVerificationOtp + verifyEmail.
+export const emailOTPPlugin = emailOTP({
+  otpLength: 6,
+  expiresIn: 300, // 5 minutes
+  // On n'envoie un code que pour la vérification d'email (pas sign-in/reset ici).
+  async sendVerificationOTP({ email, otp, type }) {
+    if (type !== "email-verification") return;
+    console.log("[EMAIL OTP] Envoi code de vérification à:", email);
+    await sendVerificationOtpEmail(email, otp);
+    console.log("[EMAIL OTP] Email envoyé avec succès");
   },
 });
 

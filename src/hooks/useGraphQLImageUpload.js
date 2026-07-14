@@ -34,7 +34,7 @@ export function useGraphQLImageUpload({
 
   // Mutations GraphQL
   const [uploadImageMutation] = useMutation(UPLOAD_USER_PROFILE_IMAGE, {
-    refetchQueries: ['GetCurrentUser'],
+    refetchQueries: ["GetCurrentUser"],
     awaitRefetchQueries: true,
     onCompleted: async (data) => {
       if (data.uploadUserProfileImage.success) {
@@ -55,7 +55,7 @@ export function useGraphQLImageUpload({
         }
       } else {
         toast.error(
-          data.uploadUserProfileImage.message || "Erreur lors de l'upload"
+          data.uploadUserProfileImage.message || "Erreur lors de l'upload",
         );
         onUploadError(new Error(data.uploadUserProfileImage.message));
       }
@@ -75,7 +75,7 @@ export function useGraphQLImageUpload({
     onCompleted: async (data) => {
       if (data.deleteUserProfileImage.success) {
         // Ne pas modifier l'état local ici car c'est déjà fait dans deleteImage()
-        
+
         // Synchroniser avec Better Auth
         try {
           await syncUserAvatarDeletion();
@@ -89,7 +89,8 @@ export function useGraphQLImageUpload({
         }
       } else {
         toast.error(
-          data.deleteUserProfileImage.message || "Erreur lors de la suppression"
+          data.deleteUserProfileImage.message ||
+            "Erreur lors de la suppression",
         );
         onDeleteError(new Error(data.deleteUserProfileImage.message));
       }
@@ -102,7 +103,7 @@ export function useGraphQLImageUpload({
       setIsDeleting(false);
     },
     // Forcer le refetch du cache Apollo après suppression
-    refetchQueries: ['GetCurrentUser'],
+    refetchQueries: ["GetCurrentUser"],
     awaitRefetchQueries: true,
   });
 
@@ -178,7 +179,7 @@ export function useGraphQLImageUpload({
       maxHeight,
       onUploadError,
       previewUrl,
-    ]
+    ],
   );
 
   /**
@@ -187,15 +188,21 @@ export function useGraphQLImageUpload({
   const deleteImage = useCallback(async () => {
     try {
       setIsDeleting(true);
-      
+
       // Supprimer immédiatement de l'interface pour un feedback instantané
       const previousImageUrl = currentImageUrl;
       const previousPreviewUrl = previewUrl;
       setCurrentImageUrl(null);
       setPreviewUrl(null);
-      
+
       try {
-        await deleteImageMutation();
+        // onError étant fourni à useMutation, une erreur GraphQL ne rejette
+        // pas la promesse : vérifier le résultat pour restaurer l'image.
+        const res = await deleteImageMutation();
+        if (!res?.data?.deleteUserProfileImage?.success) {
+          setCurrentImageUrl(previousImageUrl);
+          setPreviewUrl(previousPreviewUrl);
+        }
       } catch (mutationError) {
         // En cas d'erreur, restaurer l'image
         setCurrentImageUrl(previousImageUrl);

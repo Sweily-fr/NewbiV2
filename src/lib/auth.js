@@ -10,6 +10,7 @@ import {
   stripePlugin,
   organizationPlugin,
   multiSessionPlugin,
+  emailOTPPlugin,
 } from "./auth-plugins";
 import { beforeSignInHook, afterHook } from "./auth-hooks";
 import {
@@ -253,6 +254,7 @@ export const auth = betterAuth({
     stripePlugin,
     organizationPlugin,
     multiSessionPlugin,
+    emailOTPPlugin,
     expo(),
   ],
 
@@ -288,7 +290,19 @@ export const auth = betterAuth({
   },
 
   emailVerification: {
-    sendVerificationEmail: async ({ user, url }) => {
+    sendVerificationEmail: async ({ user, url }, request) => {
+      // Le flux MOBILE (app-newbi) vérifie l'email par CODE OTP (plugin emailOTP),
+      // pas par lien. Pour éviter un DOUBLE email sur mobile, on n'envoie pas le
+      // lien quand la requête vient de l'app (origin "newbi://" posé par
+      // l'auth-client mobile) → l'app enverra elle-même le code. Le DESKTOP
+      // (origin https://…) reçoit le lien comme avant, inchangé.
+      const origin = request?.headers?.get?.("origin") || "";
+      if (origin.startsWith("newbi://")) {
+        console.log(
+          "[EMAIL VERIFICATION] Origine mobile → pas de lien (vérif par code OTP côté app)",
+        );
+        return;
+      }
       await sendVerificationEmail(user, url);
     },
     sendOnSignUp: true,
