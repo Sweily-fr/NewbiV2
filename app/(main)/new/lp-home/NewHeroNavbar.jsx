@@ -160,6 +160,7 @@ const menuItems = [
       },
     ],
   },
+  { name: "Contact", href: "/contact" },
 ];
 
 export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
@@ -176,7 +177,8 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
   React.useEffect(() => {
     const handleBannerClosed = () => setBannerVisible(false);
     window.addEventListener("banner-closed", handleBannerClosed);
-    return () => window.removeEventListener("banner-closed", handleBannerClosed);
+    return () =>
+      window.removeEventListener("banner-closed", handleBannerClosed);
   }, []);
 
   // Lock body scroll when mobile menu is open
@@ -186,7 +188,9 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
     } else {
       document.body.style.overflow = "";
     }
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [menuState]);
 
   React.useEffect(() => {
@@ -217,7 +221,7 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
           className={cn(
             "w-full px-6 lg:px-12 transition-all duration-300",
             (isScrolled || solidBackground) &&
-              "bg-[#FDFDFD] dark:bg-background border-b border-gray-200 dark:border-neutral-800"
+              "bg-[#FDFDFD] dark:bg-background border-b border-gray-200 dark:border-neutral-800",
           )}
         >
           <div className="relative flex flex-wrap items-center justify-between gap-6 lg:gap-0 py-4 max-w-6xl mx-auto">
@@ -418,7 +422,7 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                           <button
                             onClick={() =>
                               setMobileDropdownOpen(
-                                mobileDropdownOpen === index ? null : index
+                                mobileDropdownOpen === index ? null : index,
                               )
                             }
                             className="flex items-center justify-between w-full px-6 py-3.5 text-left"

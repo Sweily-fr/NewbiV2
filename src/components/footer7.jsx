@@ -226,6 +226,14 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/contact"
+                    >
+                      Contactez-nous
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
                       href="https://chat.whatsapp.com/FGLms8EYhpv1o5rkrnIldL?mode=ems_copy_h_t"
                       target="_blank"
                       rel="noopener noreferrer"
