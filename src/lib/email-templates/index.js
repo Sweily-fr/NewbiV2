@@ -33,6 +33,9 @@ import { additionalSeatAdded } from "./seats/additional-added.js";
 // Leads templates
 import { guideLeadNotification } from "./leads/guide-notification.js";
 
+// Contact templates
+import { contactNotification } from "./contact/notification.js";
+
 // Export all templates as a single object for backward compatibility
 export const emailTemplates = {
   // Auth
@@ -69,6 +72,9 @@ export const emailTemplates = {
 
   // Leads
   guideLeadNotification,
+
+  // Contact
+  contactNotification,
 };
 
 export default emailTemplates;
