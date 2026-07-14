@@ -17,8 +17,17 @@ const questions = [
     id: "item-2",
     title:
       "Quelle est la taille maximale des fichiers que je peux transférer ?",
-    content:
-      "Vous pouvez transférer des fichiers jusqu'à 5 Go par envoi avec newbi. Il n'y a aucune limite sur le nombre de transferts que vous pouvez effectuer. Pour des fichiers encore plus volumineux, contactez notre équipe pour une solution sur mesure.",
+    content: (
+      <>
+        Vous pouvez transférer des fichiers jusqu'à 5 Go par envoi avec newbi.
+        Il n'y a aucune limite sur le nombre de transferts que vous pouvez
+        effectuer. Pour des fichiers encore plus volumineux,{" "}
+        <a href="/contact" className="underline underline-offset-4">
+          contactez notre équipe
+        </a>{" "}
+        pour une solution sur mesure.
+      </>
+    ),
   },
   {
     id: "item-3",
@@ -61,7 +70,11 @@ export default function FAQ() {
         </h2>
         <p className="text-muted-foreground max-w-2xl mx-auto">
           Nous sommes là pour répondre à toutes vos questions. Si vous ne
-          trouvez pas l'information recherchée, n'hésitez pas à nous contacter.
+          trouvez pas l'information recherchée, n'hésitez pas à{" "}
+          <a href="/contact" className="underline underline-offset-4">
+            nous contacter
+          </a>
+          .
         </p>
       </div>
       <Accordion
@@ -88,8 +101,8 @@ export default function FAQ() {
       <p className="text-muted-foreground">
         Vous ne trouvez pas ce que vous cherchez ? Contactez notre{" "}
         <a
-          href="mailto:contact@newbi.fr"
-          className="text-primary hover:underline"
+          href="/contact"
+          className="text-primary underline underline-offset-4"
         >
           équipe support
         </a>
