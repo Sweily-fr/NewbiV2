@@ -1135,26 +1135,10 @@ export function TransactionDetailDrawer({
                     </div>
                   )}
 
-                  {/* Montant — input bg gris sans border/shadow, € à droite */}
-                  {isEditingForm ? (
-                    <div className="inline-flex items-baseline gap-2 px-3 py-1.5 rounded-lg bg-muted/60 w-fit">
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={formData.amount}
-                        onChange={(e) => handleChange("amount")(e.target.value)}
-                        className="text-2xl font-medium h-auto py-0 px-0 bg-transparent border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 hover:border-0 field-sizing-content min-w-[2ch] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        placeholder="0.00"
-                      />
-                      <span className="text-2xl font-medium text-muted-foreground">
-                        €
-                      </span>
-                    </div>
-                  ) : (
-                    <p className="text-2xl font-medium">
-                      {formatAmount(transaction?.amount)}
-                    </p>
-                  )}
+                  {/* Montant — lecture seule (issu du flux bancaire Bridge) */}
+                  <p className="text-2xl font-medium">
+                    {formatAmount(transaction?.amount)}
+                  </p>
                 </div>
               </div>
             </div>
@@ -1166,18 +1150,7 @@ export function TransactionDetailDrawer({
                   ? "Source du revenu"
                   : "Fournisseur"}
               </p>
-              {isEditingForm ? (
-                <Input
-                  value={formData.vendor}
-                  onChange={(e) => handleChange("vendor")(e.target.value)}
-                  placeholder={
-                    formData.type === "INCOME"
-                      ? "Client / Source"
-                      : "Nom du fournisseur"
-                  }
-                  className="w-full"
-                />
-              ) : (
+              {
                 <div className="flex items-center gap-3">
                   {merchant?.logo ? (
                     <div className="h-10 w-10 rounded-full overflow-hidden border bg-white flex-shrink-0">
@@ -1210,7 +1183,7 @@ export function TransactionDetailDrawer({
                     )}
                   </div>
                 </div>
-              )}
+              }
             </div>
 
             {/* Informations — style Attio (cards compactes, icône carrée) */}
@@ -1229,37 +1202,9 @@ export function TransactionDetailDrawer({
                       Date
                     </span>
                   </div>
-                  {isEditingForm ? (
-                    <DatePicker
-                      value={formData.date ? parseDate(formData.date) : null}
-                      onChange={(date) => {
-                        if (date) handleChange("date")(date.toString());
-                      }}
-                      className="w-40"
-                    >
-                      <div className="flex">
-                        <Group className="w-full pointer-events-none">
-                          <DateInput className="h-8 rounded-[9px] pe-9 ps-2.5 py-0 text-sm border-none shadow-none bg-transparent hover:bg-[rgba(0,0,0,0.04)] dark:bg-[#171717] dark:hover:bg-[#222] [box-shadow:rgba(255,255,255,0)_0_0_0_1px_inset,rgba(28,40,64,0.18)_0_0_2px_0,rgba(24,41,75,0.04)_0_1px_3px_0] dark:[box-shadow:rgba(255,255,255,0.08)_0_0_0_1px_inset,rgba(255,255,255,0.1)_0_0_2px_0,rgba(0,0,0,0.2)_0_1px_3px_0] data-focus-within:ring-0 data-focus-within:border-none" />
-                        </Group>
-                        <RACButton className="z-10 -ms-8 -me-px flex w-8 h-8 items-center justify-center rounded-e-[9px] text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground pointer-events-auto">
-                          <CalendarIcon size={14} />
-                        </RACButton>
-                      </div>
-                      <RACPopover
-                        className="z-[100] rounded-lg border bg-background text-popover-foreground shadow-lg outline-hidden"
-                        offset={4}
-                        UNSTABLE_portalContainer={calendarContainer}
-                      >
-                        <Dialog className="max-h-[inherit] overflow-auto p-2">
-                          <Calendar />
-                        </Dialog>
-                      </RACPopover>
-                    </DatePicker>
-                  ) : (
-                    <span className="text-sm font-medium text-foreground">
-                      {formatDate(transaction?.date)}
-                    </span>
-                  )}
+                  <span className="text-sm font-medium text-foreground">
+                    {formatDate(transaction?.date)}
+                  </span>
                 </div>
 
                 {/* Moyen de paiement */}
@@ -1272,30 +1217,10 @@ export function TransactionDetailDrawer({
                       Paiement
                     </span>
                   </div>
-                  {isEditingForm ? (
-                    <Select
-                      value={formData.paymentMethod}
-                      onValueChange={handleChange("paymentMethod")}
-                    >
-                      <SelectTrigger className="w-40">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="CARD">Carte</SelectItem>
-                        <SelectItem value="TRANSFER">Virement</SelectItem>
-                        <SelectItem value="CASH">Espèces</SelectItem>
-                        <SelectItem value="CHECK">Chèque</SelectItem>
-                        <SelectItem value="DIRECT_DEBIT">
-                          Prélèvement
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <span className="text-sm font-medium text-foreground">
-                      {paymentMethodLabels[transaction?.paymentMethod] ||
-                        "Non spécifié"}
-                    </span>
-                  )}
+                  <span className="text-sm font-medium text-foreground">
+                    {paymentMethodLabels[transaction?.paymentMethod] ||
+                      "Non spécifié"}
+                  </span>
                 </div>
 
                 {/* Statut (seulement en mode visualisation pour les transactions bancaires) */}
@@ -1309,26 +1234,8 @@ export function TransactionDetailDrawer({
                         Statut
                       </span>
                     </div>
-                    {isEditingForm ? (
-                      <Select
-                        value={formData.status}
-                        onValueChange={handleChange("status")}
-                      >
-                        <SelectTrigger className="w-40">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="COMPLETED">
-                            {formData.type === "INCOME" ? "Encaissée" : "Payée"}
-                          </SelectItem>
-                          <SelectItem value="PENDING">En attente</SelectItem>
-                          <SelectItem value="CANCELLED">Annulée</SelectItem>
-                          <SelectItem value="REFUNDED">Remboursée</SelectItem>
-                          <SelectItem value="FAILED">Échouée</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : transaction?.status === "PAID" ||
-                      transaction?.status === "COMPLETED" ? (
+                    {transaction?.status === "PAID" ||
+                    transaction?.status === "COMPLETED" ? (
                       <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
                         <CheckCircle2 className="w-3 h-3" />
                         {transaction?.amount > 0 ? "Encaissée" : "Payée"}
