@@ -469,12 +469,6 @@ export default function PurchaseInvoiceTable({
 
           <div className="flex items-center gap-2">
             {/* Bulk actions — toujours visibles, désactivées sans sélection */}
-            {hasSelection && (
-              <span className="text-xs text-muted-foreground">
-                {selectedRows.length} sélectionnée
-                {selectedRows.length > 1 ? "s" : ""}
-              </span>
-            )}
             <Button
               variant="outline"
               disabled={!hasSelection}
