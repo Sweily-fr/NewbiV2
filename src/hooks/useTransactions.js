@@ -1,8 +1,5 @@
 import { useMutation } from "@apollo/client";
-import {
-  UPDATE_TRANSACTION,
-  DELETE_TRANSACTION,
-} from "../graphql/mutations/banking";
+import { UPDATE_TRANSACTION } from "../graphql/mutations/banking";
 import { GET_TRANSACTIONS } from "../graphql/queries/banking";
 import { toast } from "@/src/components/ui/sonner";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
@@ -52,57 +49,6 @@ export const useUpdateTransaction = () => {
 
   return {
     updateTransaction,
-    loading,
-  };
-};
-
-/**
- * Hook pour supprimer une transaction manuelle
- */
-export const useDeleteTransaction = () => {
-  const { workspaceId } = useRequiredWorkspace();
-
-  const [deleteTransactionMutation, { loading }] = useMutation(
-    DELETE_TRANSACTION,
-    {
-      refetchQueries: [
-        {
-          query: GET_TRANSACTIONS,
-          variables: { workspaceId, limit: REFETCH_LIMIT },
-        },
-      ],
-    },
-  );
-
-  const deleteTransaction = async (id) => {
-    try {
-      const result = await deleteTransactionMutation({
-        variables: { id },
-      });
-
-      if (result.data?.deleteTransaction) {
-        toast.success("Transaction supprimée avec succès");
-        return { success: true };
-      } else {
-        throw new Error("Erreur lors de la suppression de la transaction");
-      }
-    } catch (error) {
-      console.error("❌ [DELETE TRANSACTION] Erreur:", error);
-      let errorMessage = "Erreur lors de la suppression de la transaction";
-      if (error.graphQLErrors && error.graphQLErrors.length > 0) {
-        errorMessage = error.graphQLErrors[0].message;
-      } else if (error.networkError) {
-        errorMessage = "Erreur de connexion au serveur";
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      toast.error(errorMessage);
-      return { success: false, error };
-    }
-  };
-
-  return {
-    deleteTransaction,
     loading,
   };
 };

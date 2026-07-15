@@ -34,12 +34,3 @@ export const UPDATE_TRANSACTION = gql`
     }
   }
 `;
-
-/**
- * Supprimer une transaction manuelle
- */
-export const DELETE_TRANSACTION = gql`
-  mutation DeleteTransaction($id: ID!) {
-    deleteTransaction(id: $id)
-  }
-`;
