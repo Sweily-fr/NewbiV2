@@ -529,7 +529,7 @@ export function PurchaseInvoiceDetailDrawer({
                       handleChange("supplierName", e.target.value)
                     }
                     placeholder="Nom du fournisseur"
-                    className="w-44 h-8 text-sm text-right"
+                    className="w-40 h-8 text-sm text-right"
                   />
                 </div>
                 <div className="flex items-center justify-between">
@@ -752,7 +752,7 @@ export function PurchaseInvoiceDetailDrawer({
                       value={form.amountHT}
                       onChange={(e) => handleChange("amountHT", e.target.value)}
                       placeholder="0.00"
-                      className="w-32 h-8 text-sm text-right"
+                      className="w-40 h-8 text-sm text-right"
                     />
                   </div>
                   <div className="flex items-center justify-between">
@@ -762,7 +762,7 @@ export function PurchaseInvoiceDetailDrawer({
                     <VatRateSelect
                       value={form.vatRate}
                       onChange={(v) => handleChange("vatRate", String(v))}
-                      className="w-44 h-8 text-sm [&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:block"
+                      className="w-40 h-8 text-sm [&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:block"
                     />
                   </div>
                   <div className="flex items-center justify-between">
