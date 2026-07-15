@@ -120,9 +120,6 @@ function SortableHeader({ column, children }) {
 
 function RowActions({ invoice, onViewInvoice, onDeleteInvoice }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
-  // Les lignes "dépense" (transactions) se gèrent dans le drawer transaction :
-  // pas de suppression "facture d'achat" ici.
-  const isTransaction = invoice.sourceKind === "TRANSACTION";
   return (
     <div data-no-row-click>
       <DropdownMenu>
@@ -144,21 +141,17 @@ function RowActions({ invoice, onViewInvoice, onDeleteInvoice }) {
               Voir le justificatif
             </DropdownMenuItem>
           )}
-          {!isTransaction && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                variant="destructive"
-                onSelect={(e) => {
-                  e.preventDefault();
-                  setConfirmOpen(true);
-                }}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Supprimer
-              </DropdownMenuItem>
-            </>
-          )}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            variant="destructive"
+            onSelect={(e) => {
+              e.preventDefault();
+              setConfirmOpen(true);
+            }}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Supprimer
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
@@ -201,18 +194,15 @@ export const getColumns = ({ onViewInvoice, onDeleteInvoice } = {}) => [
         />
       </div>
     ),
-    cell: ({ row }) =>
-      // Les lignes "dépense" (transactions) ne sont pas sélectionnables : les
-      // actions groupées s'appliquent aux factures d'achat uniquement.
-      row.original.sourceKind === "TRANSACTION" ? null : (
-        <div data-no-row-click>
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Sélectionner"
-          />
-        </div>
-      ),
+    cell: ({ row }) => (
+      <div data-no-row-click>
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Sélectionner"
+        />
+      </div>
+    ),
     enableSorting: false,
     enableHiding: false,
   },
@@ -235,25 +225,6 @@ export const getColumns = ({ onViewInvoice, onDeleteInvoice } = {}) => [
       );
     },
     enableHiding: false,
-  },
-  {
-    id: "type",
-    size: 90,
-    meta: { label: "Type" },
-    header: "Type",
-    cell: ({ row }) => {
-      const isTransaction = row.original.sourceKind === "TRANSACTION";
-      if (!isTransaction) return null;
-      return (
-        <span
-          className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300"
-          title="Dépense saisie dans la page Transactions"
-        >
-          Dépense
-        </span>
-      );
-    },
-    enableSorting: false,
   },
   {
     accessorKey: "invoiceNumber",
