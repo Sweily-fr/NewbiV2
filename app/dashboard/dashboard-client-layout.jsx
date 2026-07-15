@@ -22,6 +22,7 @@ import { SettingsModal } from "@/src/components/settings-modal";
 import { OrgActivationHandler } from "@/src/components/org-activation-handler";
 import { StripeConnectUrlHandler } from "@/src/components/stripe-connect-url-handler";
 import { ReconciliationToastProvider } from "@/src/components/reconciliation/ReconciliationToast";
+import { PurchaseInvoiceReconciliationToastProvider } from "@/src/components/reconciliation/PurchaseInvoiceReconciliationToast";
 import {
   ToastProvider,
   ToastManagerInitializer,
@@ -494,7 +495,9 @@ export default function DashboardClientLayout({ children }) {
           <ToastProvider>
             <ToastManagerInitializer />
             <ReconciliationToastProvider>
-              <DashboardContent>{children}</DashboardContent>
+              <PurchaseInvoiceReconciliationToastProvider>
+                <DashboardContent>{children}</DashboardContent>
+              </PurchaseInvoiceReconciliationToastProvider>
             </ReconciliationToastProvider>
           </ToastProvider>
         </TutorialProvider>
