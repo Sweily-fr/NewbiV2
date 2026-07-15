@@ -9,12 +9,9 @@ import { usePurchaseInvoices } from "@/src/hooks/usePurchaseInvoices";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import {
-  Plus,
   Settings,
   Eye,
   EyeOff,
-  Edit3,
-  Upload,
   Building2,
   Landmark,
   ChevronsUpDown,
@@ -24,19 +21,13 @@ import {
   FileText,
   Repeat2,
 } from "lucide-react";
-import {
-  ExportIcon as Download,
-  MoneyReciveIcon as MoneyRecive,
-  Edit2Icon,
-  ImportIcon,
-} from "@/src/components/icons";
+import { ExportIcon as Download } from "@/src/components/icons";
 import * as XLSX from "xlsx";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
@@ -188,14 +179,12 @@ const getSmartCategory = (transaction) => {
 function GestionDepensesContent() {
   const searchParams = useSearchParams();
   const [isBalanceHidden, setIsBalanceHidden] = useState(false);
-  const [triggerAddManual, setTriggerAddManual] = useState(false);
   const { isReadOnly, isOwner } = useSubscriptionAccess();
   const readOnlyTooltip = isReadOnly
     ? isOwner
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
-  const [triggerAddOcr, setTriggerAddOcr] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState("all");
   const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
 
@@ -623,49 +612,11 @@ function GestionDepensesContent() {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider> */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="primary"
-                  className="self-start cursor-pointer"
-                  disabled={isReadOnly}
-                  title={readOnlyTooltip}
-                >
-                  <MoneyRecive className="w-3.5 h-3.5" aria-hidden="true" />
-                  Nouvelle transaction
-                  <ChevronDown
-                    size={12}
-                    className="ml-0.5 opacity-70"
-                    aria-hidden="true"
-                  />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="[--radius:0.625rem]">
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-                    Créer une transaction
-                  </DropdownMenuLabel>
-                  <DropdownMenuItem
-                    onClick={() => setTriggerAddManual(true)}
-                    className="rounded-[0.5rem]"
-                  >
-                    <Edit2Icon className="w-4 h-4 text-sidebar-foreground" />
-                    Saisie manuelle
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setTriggerAddOcr(true)}
-                    className="rounded-[0.5rem]"
-                  >
-                    <ImportIcon className="w-4 h-4 text-sidebar-foreground" />
-                    Scanner un reçu (OCR)
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </div>
 
-        {/* Table */}
+        {/* Table — les transactions proviennent uniquement du flux bancaire
+            Bridge : plus de création manuelle/OCR. */}
         <Suspense fallback={<TransactionTableSkeleton />}>
           <TransactionTable
             expenses={expenses}
@@ -674,10 +625,6 @@ function GestionDepensesContent() {
             initialTransactionId={searchParams.get("transactionId")}
             openOcr={searchParams.get("openOcr") === "true"}
             initialTab={searchParams.get("filter")}
-            triggerAddManual={triggerAddManual}
-            onAddManualTriggered={() => setTriggerAddManual(false)}
-            triggerAddOcr={triggerAddOcr}
-            onAddOcrTriggered={() => setTriggerAddOcr(false)}
             bankAccounts={bankAccounts}
           />
         </Suspense>
@@ -806,35 +753,6 @@ function GestionDepensesContent() {
                   </Command>
                 </PopoverContent>
               </Popover>
-            </div>
-            <div className="flex gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    size="icon"
-                    className="cursor-pointer rounded-full bg-[#0A0A0A] text-white hover:bg-[#0A0A0A]/90"
-                    disabled={isReadOnly}
-                    title={readOnlyTooltip}
-                  >
-                    <Plus className="h-5 w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="[--radius:1rem]">
-                  <DropdownMenuGroup>
-                    <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-                      Créer une transaction
-                    </DropdownMenuLabel>
-                    <DropdownMenuItem onClick={() => setTriggerAddManual(true)}>
-                      <Edit3 size={16} />
-                      Saisie manuelle
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setTriggerAddOcr(true)}>
-                      <Upload size={16} />
-                      Scanner un reçu (OCR)
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
           </div>
         </div>
