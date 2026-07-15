@@ -89,7 +89,6 @@ import {
 } from "@/src/hooks/useReconciliationGraphQL";
 import { useRouter } from "next/navigation";
 import { PreviewImage } from "@/src/components/ui/preview-image";
-import { getAllPCGAccounts, PCG_ACCOUNTS } from "@/lib/pcg-mapping";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
@@ -281,93 +280,11 @@ const categoryApiToForm = {
   GRANTS: "subventions",
 };
 
-// Sélecteur PCG inline pour le formulaire de transaction
-const pcgAccountsList = getAllPCGAccounts();
-
-function PCGInlineSelect({ value, onChange }) {
-  const [search, setSearch] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
-
-  const filtered = search
-    ? pcgAccountsList.filter(
-        (a) =>
-          a.numero.includes(search) ||
-          a.intitule.toLowerCase().includes(search.toLowerCase()),
-      )
-    : pcgAccountsList;
-
-  const selectedLabel = value ? `${value} - ${PCG_ACCOUNTS[value] || ""}` : "";
-
-  return (
-    <div className="relative">
-      <div
-        className="flex items-center gap-2 border rounded-md px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 transition-colors"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        {value ? (
-          <>
-            <code className="font-mono font-semibold text-xs bg-muted px-1 py-0.5 rounded">
-              {value}
-            </code>
-            <span className="truncate text-muted-foreground">
-              {PCG_ACCOUNTS[value] || ""}
-            </span>
-          </>
-        ) : (
-          <span className="text-muted-foreground">
-            Selectionner un compte PCG...
-          </span>
-        )}
-      </div>
-      {isOpen && (
-        <div className="absolute z-50 mt-1 w-full bg-background border rounded-lg shadow-lg max-h-[250px] flex flex-col">
-          <div className="p-2 border-b">
-            <Input
-              placeholder="Rechercher..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-8 text-sm"
-              autoFocus
-            />
-          </div>
-          <div className="overflow-y-auto flex-1">
-            {filtered.length === 0 ? (
-              <div className="text-center py-4 text-sm text-muted-foreground">
-                Aucun compte
-              </div>
-            ) : (
-              filtered.map((acc) => (
-                <button
-                  key={acc.numero}
-                  className={`flex items-center gap-2 w-full text-left px-3 py-1.5 text-sm hover:bg-muted/50 transition-colors cursor-pointer ${
-                    value === acc.numero ? "bg-primary/5" : ""
-                  }`}
-                  onClick={() => {
-                    onChange(acc.numero);
-                    setIsOpen(false);
-                    setSearch("");
-                  }}
-                >
-                  <code className="font-mono text-xs min-w-[45px]">
-                    {acc.numero}
-                  </code>
-                  <span className="truncate">{acc.intitule}</span>
-                </button>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 export function TransactionDetailDrawer({
   transaction,
   open,
   onOpenChange,
   onEdit,
-  onDelete,
   onAttachReceipt,
   onRefresh,
   onSubmit,
@@ -494,7 +411,6 @@ export function TransactionDetailDrawer({
         paymentMethod: "CARD",
         vendor: "",
         receiptImage: null,
-        pcgAccountNumero: "",
       });
       setIsEditMode(true);
       setPendingFiles([]);
@@ -578,7 +494,6 @@ export function TransactionDetailDrawer({
         paymentMethod: formPaymentMethod,
         vendor: transaction.vendor || "",
         receiptImage: transaction.receiptImage || null,
-        pcgAccountNumero: transaction.pcgAccount?.numero || "",
         status: (transaction.status || "COMPLETED").toUpperCase(),
       });
       // Les transactions bancaires s'ouvrent directement en mode édition
@@ -1242,34 +1157,6 @@ export function TransactionDetailDrawer({
                   )}
                 </div>
               </div>
-            </div>
-
-            {/* Compte PCG */}
-            <div className="space-y-2">
-              <p className="text-sm font-normal text-muted-foreground">
-                Compte PCG
-              </p>
-              {isEditingForm ? (
-                <PCGInlineSelect
-                  value={formData.pcgAccountNumero}
-                  onChange={handleChange("pcgAccountNumero")}
-                />
-              ) : (
-                <div className="px-3 py-2 rounded-lg bg-muted/40 hover:bg-muted/60 transition-colors duration-[120ms] text-sm">
-                  {transaction?.pcgAccount?.numero ? (
-                    <span>
-                      <code className="font-mono font-semibold bg-background border border-border/60 px-1.5 py-0.5 rounded text-xs">
-                        {transaction.pcgAccount.numero}
-                      </code>{" "}
-                      <span className="text-muted-foreground">
-                        {transaction.pcgAccount.intitule}
-                      </span>
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">Non affecte</span>
-                  )}
-                </div>
-              )}
             </div>
 
             {/* Fournisseur */}
