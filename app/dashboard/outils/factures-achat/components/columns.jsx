@@ -10,12 +10,18 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  CheckCircle2,
+  Archive,
+  Tag,
 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import {
@@ -118,7 +124,14 @@ function SortableHeader({ column, children }) {
   );
 }
 
-function RowActions({ invoice, onViewInvoice, onDeleteInvoice }) {
+function RowActions({
+  invoice,
+  onViewInvoice,
+  onDeleteInvoice,
+  onMarkStatus,
+  onCategorize,
+  categoryLabels = {},
+}) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   return (
     <div data-no-row-click>
@@ -141,6 +154,37 @@ function RowActions({ invoice, onViewInvoice, onDeleteInvoice }) {
               Voir le justificatif
             </DropdownMenuItem>
           )}
+          <DropdownMenuSeparator />
+          {invoice.status !== "PAID" && (
+            <DropdownMenuItem
+              onClick={() => onMarkStatus?.(invoice.id, "PAID")}
+            >
+              <CheckCircle2 className="h-4 w-4 mr-2" />
+              Marquer payée
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem
+            onClick={() => onMarkStatus?.(invoice.id, "ARCHIVED")}
+          >
+            <Archive className="h-4 w-4 mr-2" />
+            Archiver
+          </DropdownMenuItem>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger className="gap-2">
+              <Tag className="h-4 w-4" />
+              Catégoriser
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent className="w-52">
+              {Object.entries(categoryLabels).map(([key, label]) => (
+                <DropdownMenuItem
+                  key={key}
+                  onClick={() => onCategorize?.(invoice.id, key)}
+                >
+                  {label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             variant="destructive"
@@ -178,7 +222,13 @@ function RowActions({ invoice, onViewInvoice, onDeleteInvoice }) {
   );
 }
 
-export const getColumns = ({ onViewInvoice, onDeleteInvoice } = {}) => [
+export const getColumns = ({
+  onViewInvoice,
+  onDeleteInvoice,
+  onMarkStatus,
+  onCategorize,
+  categoryLabels = {},
+} = {}) => [
   {
     id: "select",
     size: 50,
@@ -412,6 +462,9 @@ export const getColumns = ({ onViewInvoice, onDeleteInvoice } = {}) => [
         invoice={row.original}
         onViewInvoice={onViewInvoice}
         onDeleteInvoice={onDeleteInvoice}
+        onMarkStatus={onMarkStatus}
+        onCategorize={onCategorize}
+        categoryLabels={categoryLabels}
       />
     ),
     enableSorting: false,

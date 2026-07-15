@@ -259,11 +259,27 @@ export default function PurchaseInvoiceTable({
     }
   };
 
+  // Actions sur une seule facture (menu "⋮" de la row) — réutilisent les
+  // mutations bulk avec un seul id. Définies avant le useMemo des colonnes.
+  const handleRowStatus = async (id, status) => {
+    await bulkUpdateStatus([id], status);
+    refetch?.();
+    refetchStats?.();
+  };
+
+  const handleRowCategorize = async (id, category) => {
+    await bulkCategorize([id], category);
+    refetch?.();
+  };
+
   const columns = useMemo(
     () =>
       getColumns({
         onViewInvoice: onRowClick,
         onDeleteInvoice: handleDeleteInvoice,
+        onMarkStatus: handleRowStatus,
+        onCategorize: handleRowCategorize,
+        categoryLabels: CATEGORY_LABELS,
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [onRowClick],
