@@ -524,7 +524,7 @@ export default function PurchaseInvoiceTable({
                     <Tag size={14} />
                     Catégoriser
                   </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent>
+                  <DropdownMenuSubContent className="w-52">
                     {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
                       <DropdownMenuItem
                         key={key}
