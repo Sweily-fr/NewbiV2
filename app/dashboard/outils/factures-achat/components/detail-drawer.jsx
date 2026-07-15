@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Textarea } from "@/src/components/ui/textarea";
@@ -47,11 +47,13 @@ import {
   Plus,
   Tag,
   AlertCircle,
+  Upload,
 } from "lucide-react";
 import {
   useCreatePurchaseInvoice,
   useUpdatePurchaseInvoice,
   useDeletePurchaseInvoice,
+  useAddPurchaseInvoiceFile,
   useMarkAsPaid,
   useReconciliationSuggestions,
   useReconcilePurchaseInvoice,
@@ -187,10 +189,14 @@ export function PurchaseInvoiceDetailDrawer({
   // Tracks which amount field was last edited ("ht" or "ttc") so vatRate
   // changes recalculate from the correct source field.
   const [amountSource, setAmountSource] = useState("ht");
+  // Justificatif ajouté à la création (uploadé après createInvoice).
+  const [pendingFile, setPendingFile] = useState(null);
+  const fileInputRef = useRef(null);
 
   const { createInvoice, loading: createLoading } = useCreatePurchaseInvoice();
   const { updateInvoice, loading: updateLoading } = useUpdatePurchaseInvoice();
   const { deleteInvoice } = useDeletePurchaseInvoice();
+  const { addFile } = useAddPurchaseInvoiceFile();
   const { markAsPaid, loading: markLoading } = useMarkAsPaid();
   const { reconcile } = useReconcilePurchaseInvoice();
   const { acknowledge, loading: ackLoading } =
@@ -278,6 +284,7 @@ export function PurchaseInvoiceDetailDrawer({
       });
       setIsEditMode(true);
       setAmountSource("ht");
+      setPendingFile(null);
     }
   }, [invoice, isCreate, open]);
 
@@ -372,6 +379,15 @@ export function PurchaseInvoiceDetailDrawer({
         });
       }
       if (!saved) return;
+      // Justificatif ajouté à la création : uploadé une fois la facture créée
+      // (addFile gère l'upload du fichier brut, sans OCR).
+      if (isCreate && pendingFile && saved.id) {
+        try {
+          await addFile(saved.id, { file: pendingFile, processOCR: false });
+        } catch (err) {
+          console.error("Erreur upload justificatif (création):", err);
+        }
+      }
       onSaved?.();
     } catch {
       // Error toast is handled by the hook's onError callback
@@ -443,6 +459,54 @@ export function PurchaseInvoiceDetailDrawer({
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-6 space-y-6">
+          {/* Zone d'upload du justificatif (création uniquement) */}
+          {isCreate && (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                Justificatif
+              </p>
+              {pendingFile ? (
+                <div className="flex items-center justify-between gap-2 p-3 border rounded-lg bg-muted/30">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="text-sm truncate">{pendingFile.name}</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0"
+                    onClick={() => setPendingFile(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full flex flex-col items-center justify-center gap-1.5 p-6 border border-dashed rounded-lg text-muted-foreground hover:bg-muted/40 hover:border-muted-foreground/40 transition-colors cursor-pointer"
+                >
+                  <Upload className="h-5 w-5" />
+                  <span className="text-sm">Ajouter un justificatif</span>
+                  <span className="text-xs text-muted-foreground/70">
+                    PDF, JPG, PNG
+                  </span>
+                </button>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/pdf,image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) setPendingFile(f);
+                  e.target.value = "";
+                }}
+              />
+            </div>
+          )}
+
           {/* Amount Section */}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
