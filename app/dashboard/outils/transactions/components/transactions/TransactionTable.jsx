@@ -20,7 +20,6 @@ import {
 import { toast } from "@/src/components/ui/sonner";
 import { TransactionDetailDrawer } from "../transaction-detail-drawer";
 import { PurchaseInvoiceDetailDrawer } from "../../../factures-achat/components/detail-drawer";
-import { ReceiptUploadDrawer } from "../receipt-upload-drawer";
 import { ExportDialog } from "../export-dialog";
 import {
   useCreateExpense,
@@ -28,17 +27,13 @@ import {
   useDeleteExpense,
   useAddExpenseFile,
 } from "@/src/hooks/useExpenses";
-import {
-  useCreateTransaction,
-  useUpdateTransaction,
-} from "@/src/hooks/useTransactions";
+import { useUpdateTransaction } from "@/src/hooks/useTransactions";
 import { useMutation } from "@apollo/client";
 import { UPLOAD_TRANSACTION_RECEIPT } from "@/src/graphql/queries/banking";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import { useActiveOrganization } from "@/src/lib/organization-client";
 import { useSession } from "@/src/lib/auth-client";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
-import { usePromoteTemporaryFile } from "@/src/hooks/usePromoteTemporaryFile";
 import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
 
 import { columns } from "./columns/transactionColumns";
@@ -124,10 +119,6 @@ export default function TransactionTable({
   refetchExpenses: refetchExpensesProp,
   initialTransactionId = null,
   openOcr = false,
-  triggerAddManual = false,
-  onAddManualTriggered,
-  triggerAddOcr = false,
-  onAddOcrTriggered,
   bankAccounts = [],
   initialTab = null,
 }) {
@@ -160,10 +151,6 @@ export default function TransactionTable({
   // la liste des transactions (lignes sourceKind === "PURCHASE_INVOICE").
   const [selectedPurchaseInvoice, setSelectedPurchaseInvoice] = useState(null);
   const [isPIDrawerOpen, setIsPIDrawerOpen] = useState(false);
-  const [isAddTransactionDrawerOpen, setIsAddTransactionDrawerOpen] =
-    useState(false);
-  const [isReceiptUploadDrawerOpen, setIsReceiptUploadDrawerOpen] =
-    useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState(resolvedInitialTab);
@@ -255,21 +242,6 @@ export default function TransactionTable({
   const clearAllFilters = () => {
     setAdvancedFilters([]);
   };
-
-  // Réagir aux triggers depuis le header de la page
-  useEffect(() => {
-    if (triggerAddManual) {
-      setIsAddTransactionDrawerOpen(true);
-      onAddManualTriggered?.();
-    }
-  }, [triggerAddManual, onAddManualTriggered]);
-
-  useEffect(() => {
-    if (triggerAddOcr) {
-      setIsReceiptUploadDrawerOpen(true);
-      onAddOcrTriggered?.();
-    }
-  }, [triggerAddOcr, onAddOcrTriggered]);
 
   const { getAllCollaborators } = useOrganizationInvitations();
   const { organization: activeOrg } = useActiveOrganization();
@@ -370,30 +342,12 @@ export default function TransactionTable({
   const refetchExpenses = refetchExpensesProp;
 
   const { createExpense, loading: createExpenseLoading } = useCreateExpense();
-  const { createTransaction, loading: createTransactionLoading } =
-    useCreateTransaction();
   const { updateTransaction, loading: updateTransactionLoading } =
     useUpdateTransaction();
   const { updateExpense, loading: updateExpenseLoading } = useUpdateExpense();
   const { deleteExpense, loading: deleteExpenseLoading } = useDeleteExpense();
   const { addExpenseFile, loading: addExpenseFileLoading } =
     useAddExpenseFile();
-  const { promoteTemporaryFile, promoteResult } = usePromoteTemporaryFile();
-  const pendingTransactionRef = useRef(null);
-
-  useEffect(() => {
-    if (
-      promoteResult?.success &&
-      promoteResult?.url &&
-      pendingTransactionRef.current
-    ) {
-      const transaction = pendingTransactionRef.current;
-      transaction.receiptImage = promoteResult.url;
-      pendingTransactionRef.current = null;
-
-      handleAddTransaction(transaction);
-    }
-  }, [promoteResult]);
 
   const loading = expensesLoading;
   const error = expensesError;
@@ -627,106 +581,6 @@ export default function TransactionTable({
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false);
     setEditingTransaction(null);
-  };
-
-  const handleAddTransaction = async (transaction) => {
-    try {
-      let promotedReceiptUrl = transaction.receiptImage;
-
-      // Promotion du fichier temporaire si nécessaire
-      if (
-        transaction.receiptImage &&
-        transaction.receiptImage.includes("/temp/")
-      ) {
-        try {
-          const urlParts = transaction.receiptImage.split("/");
-          const tempKey = urlParts.slice(-3).join("/");
-
-          pendingTransactionRef.current = transaction;
-          await promoteTemporaryFile(tempKey);
-          return;
-        } catch (promoteError) {
-          promotedReceiptUrl = transaction.receiptImage;
-        }
-      }
-
-      transaction.receiptImage = promotedReceiptUrl;
-
-      // Déterminer le type de transaction (DEBIT pour dépense, CREDIT pour revenu)
-      const isIncome = transaction.type === "INCOME";
-      const transactionType = isIncome ? "CREDIT" : "DEBIT";
-
-      // Montant : négatif pour les dépenses, positif pour les revenus
-      const amount = isIncome
-        ? Math.abs(parseFloat(transaction.amount))
-        : -Math.abs(parseFloat(transaction.amount));
-
-      // Envoyer la sous-catégorie fine directement (le backend fait le mapping vers expenseCategory)
-      const category = transaction.category || "OTHER";
-
-      // Mapper le moyen de paiement
-      const paymentMethod = mapPaymentMethodToEnum(transaction.paymentMethod);
-
-      // Construire l'input pour createTransaction
-      const transactionInput = {
-        workspaceId,
-        amount: amount,
-        currency: "EUR",
-        description:
-          transaction.description ||
-          (isIncome ? "Revenu manuel" : "Dépense manuelle"),
-        type: transactionType,
-        date: transaction.date,
-        category: category,
-        vendor: transaction.vendor || "",
-        paymentMethod: paymentMethod,
-        notes: transaction.description || "",
-      };
-
-      const result = await createTransaction(transactionInput);
-
-      if (result.success) {
-        // Upload des justificatifs si des fichiers ont été sélectionnés
-        const filesToUpload =
-          (Array.isArray(transaction.receiptFiles) &&
-            transaction.receiptFiles) ||
-          (transaction.receiptFile ? [transaction.receiptFile] : null);
-        if (filesToUpload?.length && result.transaction?.id) {
-          try {
-            await uploadReceiptMutation({
-              variables: {
-                transactionId: result.transaction.id,
-                workspaceId,
-                files: filesToUpload,
-              },
-            });
-          } catch (uploadError) {
-            console.error("Erreur upload justificatif:", uploadError);
-            toast.error(
-              "Transaction créée mais erreur lors de l'upload du justificatif",
-            );
-          }
-        }
-
-        setIsAddTransactionDrawerOpen(false);
-        await refetchExpenses();
-      }
-    } catch (error) {
-      console.error("Erreur lors de l'ajout de la transaction:", error);
-    }
-  };
-
-  const handleReceiptUploadSuccess = (receiptData) => {
-    setIsReceiptUploadDrawerOpen(false);
-
-    // Toujours rafraîchir les données après un upload de reçu réussi
-    refetch();
-
-    if (receiptData.action === "linked") {
-      toast.success(`Justificatif lié à la transaction`);
-    } else {
-      toast.success(`Reçu "${receiptData.fileName}" traité avec succès`);
-    }
   };
 
   // Attacher un (ou plusieurs) reçu(s) à une transaction bancaire (upload via GraphQL)
@@ -1744,19 +1598,6 @@ export default function TransactionTable({
         )}
       </AnimatePresence>
 
-      {/* Drawer unifié pour création */}
-      <AnimatePresence>
-        {isAddTransactionDrawerOpen && (
-          <TransactionDetailDrawer
-            open={isAddTransactionDrawerOpen}
-            onOpenChange={setIsAddTransactionDrawerOpen}
-            onSubmit={handleAddTransaction}
-            onRefresh={refetch}
-            isCreating={true}
-          />
-        )}
-      </AnimatePresence>
-
       {/* Drawer unifié pour édition */}
       <AnimatePresence>
         {isEditModalOpen && (
@@ -1789,12 +1630,6 @@ export default function TransactionTable({
           setSelectedPurchaseInvoice(null);
           refetch();
         }}
-      />
-
-      <ReceiptUploadDrawer
-        open={isReceiptUploadDrawerOpen}
-        onOpenChange={setIsReceiptUploadDrawerOpen}
-        onUploadSuccess={handleReceiptUploadSuccess}
       />
     </div>
   );
