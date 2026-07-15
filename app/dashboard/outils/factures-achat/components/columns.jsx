@@ -143,14 +143,14 @@ function RowActions({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => onViewInvoice?.(invoice)}>
-            <Eye className="h-4 w-4 mr-2" />
+            <Eye className="h-4 w-4" />
             Voir
           </DropdownMenuItem>
           {invoice.files?.[0]?.url && (
             <DropdownMenuItem
               onClick={() => window.open(invoice.files[0].url, "_blank")}
             >
-              <Paperclip className="h-4 w-4 mr-2" />
+              <Paperclip className="h-4 w-4" />
               Voir le justificatif
             </DropdownMenuItem>
           )}
@@ -159,14 +159,14 @@ function RowActions({
             <DropdownMenuItem
               onClick={() => onMarkStatus?.(invoice.id, "PAID")}
             >
-              <CheckCircle2 className="h-4 w-4 mr-2" />
+              <CheckCircle2 className="h-4 w-4" />
               Marquer payée
             </DropdownMenuItem>
           )}
           <DropdownMenuItem
             onClick={() => onMarkStatus?.(invoice.id, "ARCHIVED")}
           >
-            <Archive className="h-4 w-4 mr-2" />
+            <Archive className="h-4 w-4" />
             Archiver
           </DropdownMenuItem>
           <DropdownMenuSub>
@@ -193,7 +193,7 @@ function RowActions({
               setConfirmOpen(true);
             }}
           >
-            <Trash2 className="h-4 w-4 mr-2" />
+            <Trash2 className="h-4 w-4" />
             Supprimer
           </DropdownMenuItem>
         </DropdownMenuContent>

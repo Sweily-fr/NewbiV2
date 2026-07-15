@@ -45,7 +45,6 @@ import {
   Save,
   Edit,
   Plus,
-  Hash,
   Tag,
   AlertCircle,
 } from "lucide-react";
@@ -517,12 +516,9 @@ export function PurchaseInvoiceDetailDrawer({
             {isEditMode ? (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-normal text-muted-foreground">
-                      Fournisseur *
-                    </span>
-                  </div>
+                  <span className="text-sm font-normal text-muted-foreground">
+                    Fournisseur *
+                  </span>
                   <Input
                     value={form.supplierName}
                     onChange={(e) =>
@@ -533,12 +529,9 @@ export function PurchaseInvoiceDetailDrawer({
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Hash className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-normal text-muted-foreground">
-                      N° Facture
-                    </span>
-                  </div>
+                  <span className="text-sm font-normal text-muted-foreground">
+                    N° Facture
+                  </span>
                   <Input
                     value={form.invoiceNumber}
                     onChange={(e) =>
@@ -550,7 +543,6 @@ export function PurchaseInvoiceDetailDrawer({
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-normal text-muted-foreground">
                       Date d'émission
                     </span>
@@ -608,7 +600,6 @@ export function PurchaseInvoiceDetailDrawer({
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-normal text-muted-foreground">
                       Date d&apos;échéance
                     </span>
@@ -668,7 +659,6 @@ export function PurchaseInvoiceDetailDrawer({
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-normal text-muted-foreground">
                       Référence
                     </span>
@@ -686,19 +676,15 @@ export function PurchaseInvoiceDetailDrawer({
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Hash className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-normal text-muted-foreground">
-                      N° Facture
-                    </span>
-                  </div>
+                  <span className="text-sm font-normal text-muted-foreground">
+                    N° Facture
+                  </span>
                   <span className="text-sm font-normal">
                     {invoice?.invoiceNumber || "—"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-normal text-muted-foreground">
                       Date d&apos;émission
                     </span>
@@ -709,7 +695,6 @@ export function PurchaseInvoiceDetailDrawer({
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-normal text-muted-foreground">
                       Date d&apos;échéance
                     </span>
@@ -720,7 +705,6 @@ export function PurchaseInvoiceDetailDrawer({
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-normal text-muted-foreground">
                       Référence
                     </span>
@@ -864,7 +848,6 @@ export function PurchaseInvoiceDetailDrawer({
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-normal text-muted-foreground">
                       Date de paiement
                     </span>
@@ -948,7 +931,6 @@ export function PurchaseInvoiceDetailDrawer({
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-normal text-muted-foreground">
                         Date de paiement
                       </span>
@@ -1296,12 +1278,13 @@ export function PurchaseInvoiceDetailDrawer({
               Annuler
             </Button>
             <Button
-              className="flex-1 font-normal bg-primary hover:bg-primary/90"
+              variant="primary"
+              className="flex-1 font-normal"
               onClick={handleSave}
               disabled={saving || !form.supplierName || !form.amountTTC}
             >
               <Plus className="h-4 w-4 mr-2" />
-              {saving ? "Création..." : "Créer"}
+              {saving ? "Création..." : "Nouvelle facture d'achat"}
             </Button>
           </div>
         ) : isEditMode ? (
