@@ -64,6 +64,7 @@ import {
   Mail,
   XCircle,
   Loader2,
+  EllipsisVertical,
 } from "lucide-react";
 import {
   useConvertImportedInvoice,
@@ -469,40 +470,6 @@ export default function PurchaseInvoiceTable({
 
           <div className="flex items-center gap-2">
             {/* Bulk actions — toujours visibles, désactivées sans sélection */}
-            <Button
-              variant="outline"
-              disabled={!hasSelection}
-              onClick={() => handleBulkStatus("PAID")}
-            >
-              <CheckCircle2 size={14} />
-              Payées
-            </Button>
-            <Button
-              variant="outline"
-              disabled={!hasSelection}
-              onClick={() => handleBulkStatus("ARCHIVED")}
-            >
-              <Archive size={14} />
-              Archiver
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" disabled={!hasSelection}>
-                  <Tag size={14} />
-                  Catégoriser
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-                  <DropdownMenuItem
-                    key={key}
-                    onClick={() => handleBulkCategorize(key)}
-                  >
-                    {label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="danger" disabled={!hasSelection}>
@@ -531,6 +498,45 @@ export default function PurchaseInvoiceTable({
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+            {/* Autres actions groupées regroupées dans un menu "⋮" */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  disabled={!hasSelection}
+                  aria-label="Actions groupées"
+                >
+                  <EllipsisVertical size={14} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleBulkStatus("PAID")}>
+                  <CheckCircle2 size={14} />
+                  Marquer payées
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleBulkStatus("ARCHIVED")}>
+                  <Archive size={14} />
+                  Archiver
+                </DropdownMenuItem>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <Tag size={14} />
+                    Catégoriser
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+                      <DropdownMenuItem
+                        key={key}
+                        onClick={() => handleBulkCategorize(key)}
+                      >
+                        {label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
