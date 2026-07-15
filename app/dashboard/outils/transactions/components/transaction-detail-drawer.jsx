@@ -21,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import {
   Calendar as CalendarIcon,
   CreditCard,
@@ -1072,37 +1071,6 @@ export function TransactionDetailDrawer({
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-6 space-y-6">
-            {/* Mode création ou édition manuelle: Type de transaction
-                  (tabs style de la table transactions, sans label "Type") */}
-            {isEditingForm && (
-              <div className="border-b border-[#eeeff1] dark:border-[#232323] pt-2 pb-[9px] transaction-tabs">
-                <style>{`
-                    .transaction-tabs [data-slot="tabs-trigger"][data-state="active"] {
-                      text-shadow: 0.015em 0 currentColor, -0.015em 0 currentColor;
-                    }
-                  `}</style>
-                <Tabs
-                  value={formData.type}
-                  onValueChange={handleChange("type")}
-                >
-                  <TabsList className="h-auto rounded-none bg-transparent p-0 w-full justify-start gap-1.5">
-                    <TabsTrigger
-                      value="EXPENSE"
-                      className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
-                    >
-                      Dépense
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="INCOME"
-                      className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
-                    >
-                      Revenu
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
-            )}
-
             {/* Montant principal */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
