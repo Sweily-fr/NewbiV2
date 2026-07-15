@@ -652,30 +652,22 @@ export default function QuoteMobileFullscreen({
 
             {(quote.status === QUOTE_STATUS.PENDING ||
               quote.status === QUOTE_STATUS.IMPORTED) && (
-              <div
-                className={
-                  quote.status === QUOTE_STATUS.IMPORTED
-                    ? "grid grid-cols-2 gap-1.5"
-                    : ""
-                }
-              >
-                {/* Accepter : uniquement les devis importés. Les devis natifs sont
-                    acceptés via la signature électronique. */}
-                {quote.status === QUOTE_STATUS.IMPORTED && (
-                  <Button
-                    onClick={handleAccept}
-                    disabled={isLoading}
-                    size="sm"
-                    className="font-normal"
-                  >
-                    {changingStatus ? (
-                      <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <CheckCircle className="mr-2 h-4 w-4" />
-                    )}
-                    Accepter
-                  </Button>
-                )}
+              <div className="grid grid-cols-2 gap-1.5">
+                {/* Accepter : acceptation manuelle possible, la signature
+                    électronique accepte aussi le devis automatiquement. */}
+                <Button
+                  onClick={handleAccept}
+                  disabled={isLoading}
+                  size="sm"
+                  className="font-normal"
+                >
+                  {changingStatus ? (
+                    <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                  )}
+                  Accepter
+                </Button>
                 <Button
                   onClick={handleReject}
                   variant="destructive"

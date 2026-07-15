@@ -815,20 +815,17 @@ export default function QuoteSidebar({
                   ? "Refuser le devis"
                   : "Annuler le devis"}
               </Button>
-              {/* Accepter : UNIQUEMENT les devis importés. Les devis natifs sont
-                  acceptés automatiquement via la signature électronique (pas de
-                  bouton d'acceptation manuelle). */}
-              {quote.status === QUOTE_STATUS.IMPORTED && (
-                <Button
-                  variant="primary"
-                  onClick={handleAccept}
-                  disabled={isLoading}
-                  className="flex-1 font-normal"
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Accepter le devis
-                </Button>
-              )}
+              {/* Accepter : acceptation manuelle possible, la signature
+                  électronique accepte aussi le devis automatiquement. */}
+              <Button
+                variant="primary"
+                onClick={handleAccept}
+                disabled={isLoading}
+                className="flex-1 font-normal"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Accepter le devis
+              </Button>
             </div>
           )}
 
