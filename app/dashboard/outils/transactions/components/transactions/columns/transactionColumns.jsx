@@ -6,7 +6,6 @@ import {
   PenLine,
   Landmark,
   CheckCircle2,
-  BookOpen,
   Sparkles,
 } from "lucide-react";
 import { Link2Icon as Link2, MoneyReciveIcon } from "@/src/components/icons";
@@ -17,7 +16,6 @@ import { multiColumnFilterFn } from "../filters/multiColumnFilterFn";
 import { findMerchant } from "@/lib/merchants-config";
 import { MerchantLogo } from "../../merchant-logo";
 import { getCategoryConfig } from "@/lib/category-icons-config";
-import { CONFIDENCE_CONFIG } from "@/lib/pcg-mapping";
 import {
   Tooltip,
   TooltipContent,
@@ -207,28 +205,6 @@ export const columns = [
       const isBank = source === "BANK" || source === "BANK_TRANSACTION";
       const isManual = source === "MANUAL" || source === "MANUAL_EXPENSE";
       const isOcr = source === "OCR";
-      const isPurchaseInvoice =
-        row.original.sourceKind === "PURCHASE_INVOICE" ||
-        source === "PURCHASE_INVOICE";
-
-      // Affichage unifié : ligne provenant d'une facture d'achat
-      if (isPurchaseInvoice) {
-        return (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
-                  <BookOpen size={12} />
-                  Facture
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                Facture d&apos;achat (saisie dans Factures d&apos;achat)
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        );
-      }
 
       // Récupérer le nom de la banque depuis les données de la transaction
       const bankName =
@@ -430,75 +406,6 @@ export const columns = [
       );
     },
     size: 90,
-  },
-  {
-    header: "Compte PCG",
-    accessorKey: "pcgAccount",
-    meta: {
-      label: "Compte PCG",
-    },
-    cell: ({ row, table }) => {
-      const pcgAccount = row.original.pcgAccount;
-      const hasPCG = pcgAccount?.numero;
-
-      if (!hasPCG) {
-        return (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-500 dark:bg-gray-900/20 dark:text-gray-400 cursor-pointer hover:opacity-80 transition-opacity"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    table.options.meta?.onEditPCG?.(row.original);
-                  }}
-                >
-                  Non affecté
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>Affecter un compte PCG</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        );
-      }
-
-      const confidence =
-        CONFIDENCE_CONFIG[pcgAccount.confidence?.toLowerCase()] ||
-        CONFIDENCE_CONFIG.low;
-
-      return (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 cursor-pointer hover:opacity-80 transition-opacity"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  table.options.meta?.onEditPCG?.(row.original);
-                }}
-              >
-                {pcgAccount.numero}
-                {pcgAccount.isManual && <PenLine size={10} />}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <div className="text-center">
-                <div className="font-medium">
-                  {pcgAccount.numero} - {pcgAccount.intitule}
-                </div>
-                <div className="text-xs text-muted-foreground mt-0.5">
-                  {pcgAccount.isManual
-                    ? "Affecté manuellement"
-                    : `Auto (${confidence.label.toLowerCase()})`}
-                </div>
-                <div className="text-xs mt-1">Cliquer pour modifier</div>
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      );
-    },
-    size: 130,
   },
   {
     id: "actions",

@@ -21,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import {
   Calendar as CalendarIcon,
   CreditCard,
@@ -87,9 +86,9 @@ import {
   useUnlinkTransactionFromInvoice,
   useReconciliationGraphQL,
 } from "@/src/hooks/useReconciliationGraphQL";
+import { useUnreconcilePurchaseInvoice } from "@/src/hooks/usePurchaseInvoices";
 import { useRouter } from "next/navigation";
 import { PreviewImage } from "@/src/components/ui/preview-image";
-import { getAllPCGAccounts, PCG_ACCOUNTS } from "@/lib/pcg-mapping";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
@@ -281,93 +280,11 @@ const categoryApiToForm = {
   GRANTS: "subventions",
 };
 
-// Sélecteur PCG inline pour le formulaire de transaction
-const pcgAccountsList = getAllPCGAccounts();
-
-function PCGInlineSelect({ value, onChange }) {
-  const [search, setSearch] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
-
-  const filtered = search
-    ? pcgAccountsList.filter(
-        (a) =>
-          a.numero.includes(search) ||
-          a.intitule.toLowerCase().includes(search.toLowerCase()),
-      )
-    : pcgAccountsList;
-
-  const selectedLabel = value ? `${value} - ${PCG_ACCOUNTS[value] || ""}` : "";
-
-  return (
-    <div className="relative">
-      <div
-        className="flex items-center gap-2 border rounded-md px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 transition-colors"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        {value ? (
-          <>
-            <code className="font-mono font-semibold text-xs bg-muted px-1 py-0.5 rounded">
-              {value}
-            </code>
-            <span className="truncate text-muted-foreground">
-              {PCG_ACCOUNTS[value] || ""}
-            </span>
-          </>
-        ) : (
-          <span className="text-muted-foreground">
-            Selectionner un compte PCG...
-          </span>
-        )}
-      </div>
-      {isOpen && (
-        <div className="absolute z-50 mt-1 w-full bg-background border rounded-lg shadow-lg max-h-[250px] flex flex-col">
-          <div className="p-2 border-b">
-            <Input
-              placeholder="Rechercher..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-8 text-sm"
-              autoFocus
-            />
-          </div>
-          <div className="overflow-y-auto flex-1">
-            {filtered.length === 0 ? (
-              <div className="text-center py-4 text-sm text-muted-foreground">
-                Aucun compte
-              </div>
-            ) : (
-              filtered.map((acc) => (
-                <button
-                  key={acc.numero}
-                  className={`flex items-center gap-2 w-full text-left px-3 py-1.5 text-sm hover:bg-muted/50 transition-colors cursor-pointer ${
-                    value === acc.numero ? "bg-primary/5" : ""
-                  }`}
-                  onClick={() => {
-                    onChange(acc.numero);
-                    setIsOpen(false);
-                    setSearch("");
-                  }}
-                >
-                  <code className="font-mono text-xs min-w-[45px]">
-                    {acc.numero}
-                  </code>
-                  <span className="truncate">{acc.intitule}</span>
-                </button>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 export function TransactionDetailDrawer({
   transaction,
   open,
   onOpenChange,
   onEdit,
-  onDelete,
   onAttachReceipt,
   onRefresh,
   onSubmit,
@@ -389,6 +306,7 @@ export function TransactionDetailDrawer({
   // Index du justificatif actif dans le pane preview gauche (navigation prev/next)
   const [activeReceiptIndex, setActiveReceiptIndex] = useState(0);
   const [isUnlinking, setIsUnlinking] = useState(false);
+  const [isUnlinkingPI, setIsUnlinkingPI] = useState(false);
   const [calendarContainer, setCalendarContainer] = useState(null);
   const [receiptViewerOpen, setReceiptViewerOpen] = useState(false);
   const [receiptViewerUrl, setReceiptViewerUrl] = useState(null);
@@ -432,6 +350,9 @@ export function TransactionDetailDrawer({
 
   // Hook pour délier une transaction d'une facture
   const { unlinkTransaction } = useUnlinkTransactionFromInvoice();
+  // Hook pour détacher la facture d'achat liée
+  const { unreconcile: unreconcilePurchaseInvoice } =
+    useUnreconcilePurchaseInvoice();
 
   // Suggestions de rapprochement : on affiche la/les facture(s) rapprochable(s)
   // pour cette transaction (au lieu d'un statut "ignoré"/"suggéré").
@@ -475,6 +396,10 @@ export function TransactionDetailDrawer({
   // n'en affiche qu'une → on prend la 1re. À faire évoluer si on veut lister
   // toutes les factures liées dans le drawer.
   const linkedInvoice = transaction?.linkedInvoices?.[0] || null;
+  // Facture d'achat liée (lien par référence — le justificatif est sur la
+  // facture, accessible via ce lien).
+  const linkedPurchaseInvoice =
+    transaction?.linkedPurchaseInvoices?.[0] || null;
 
   // Initialiser le formulaire uniquement quand le drawer s'ouvre (transition false → true)
   useEffect(() => {
@@ -494,7 +419,6 @@ export function TransactionDetailDrawer({
         paymentMethod: "CARD",
         vendor: "",
         receiptImage: null,
-        pcgAccountNumero: "",
       });
       setIsEditMode(true);
       setPendingFiles([]);
@@ -578,7 +502,6 @@ export function TransactionDetailDrawer({
         paymentMethod: formPaymentMethod,
         vendor: transaction.vendor || "",
         receiptImage: transaction.receiptImage || null,
-        pcgAccountNumero: transaction.pcgAccount?.numero || "",
         status: (transaction.status || "COMPLETED").toUpperCase(),
       });
       // Les transactions bancaires s'ouvrent directement en mode édition
@@ -836,6 +759,40 @@ export function TransactionDetailDrawer({
         `/dashboard/outils/factures?id=${linkedInvoice.id}&returnTo=transactions`,
       );
       onOpenChange(false);
+    }
+  };
+
+  // Ouvrir la facture d'achat liée (page Factures d'achat)
+  const handleViewPurchaseInvoice = () => {
+    if (linkedPurchaseInvoice?.id) {
+      router.push(
+        `/dashboard/outils/factures-achat?id=${linkedPurchaseInvoice.id}`,
+      );
+      onOpenChange(false);
+    }
+  };
+
+  // Voir le justificatif de la facture d'achat liée (via le lien, sans copie)
+  const handleViewPurchaseInvoiceReceipt = () => {
+    const file = linkedPurchaseInvoice?.files?.[0];
+    if (file?.url) openReceiptViewer(file.url, file.mimetype);
+  };
+
+  // Détacher la facture d'achat de la transaction
+  const handleUnlinkPurchaseInvoice = async () => {
+    if (!linkedPurchaseInvoice?.id) return;
+    setIsUnlinkingPI(true);
+    try {
+      const result = await unreconcilePurchaseInvoice(linkedPurchaseInvoice.id);
+      if (result) {
+        toast.success("Facture d'achat détachée avec succès");
+        onRefresh?.();
+      }
+    } catch (error) {
+      console.error("Erreur lors du détachement (facture d'achat):", error);
+      toast.error("Erreur lors du détachement de la facture d'achat");
+    } finally {
+      setIsUnlinkingPI(false);
     }
   };
 
@@ -1157,37 +1114,6 @@ export function TransactionDetailDrawer({
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-6 space-y-6">
-            {/* Mode création ou édition manuelle: Type de transaction
-                  (tabs style de la table transactions, sans label "Type") */}
-            {isEditingForm && (
-              <div className="border-b border-[#eeeff1] dark:border-[#232323] pt-2 pb-[9px] transaction-tabs">
-                <style>{`
-                    .transaction-tabs [data-slot="tabs-trigger"][data-state="active"] {
-                      text-shadow: 0.015em 0 currentColor, -0.015em 0 currentColor;
-                    }
-                  `}</style>
-                <Tabs
-                  value={formData.type}
-                  onValueChange={handleChange("type")}
-                >
-                  <TabsList className="h-auto rounded-none bg-transparent p-0 w-full justify-start gap-1.5">
-                    <TabsTrigger
-                      value="EXPENSE"
-                      className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
-                    >
-                      Dépense
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="INCOME"
-                      className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
-                    >
-                      Revenu
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
-            )}
-
             {/* Montant principal */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
@@ -1220,56 +1146,12 @@ export function TransactionDetailDrawer({
                     </div>
                   )}
 
-                  {/* Montant — input bg gris sans border/shadow, € à droite */}
-                  {isEditingForm ? (
-                    <div className="inline-flex items-baseline gap-2 px-3 py-1.5 rounded-lg bg-muted/60 w-fit">
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={formData.amount}
-                        onChange={(e) => handleChange("amount")(e.target.value)}
-                        className="text-2xl font-medium h-auto py-0 px-0 bg-transparent border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 hover:border-0 field-sizing-content min-w-[2ch] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        placeholder="0.00"
-                      />
-                      <span className="text-2xl font-medium text-muted-foreground">
-                        €
-                      </span>
-                    </div>
-                  ) : (
-                    <p className="text-2xl font-medium">
-                      {formatAmount(transaction?.amount)}
-                    </p>
-                  )}
+                  {/* Montant — lecture seule (issu du flux bancaire Bridge) */}
+                  <p className="text-2xl font-medium">
+                    {formatAmount(transaction?.amount)}
+                  </p>
                 </div>
               </div>
-            </div>
-
-            {/* Compte PCG */}
-            <div className="space-y-2">
-              <p className="text-sm font-normal text-muted-foreground">
-                Compte PCG
-              </p>
-              {isEditingForm ? (
-                <PCGInlineSelect
-                  value={formData.pcgAccountNumero}
-                  onChange={handleChange("pcgAccountNumero")}
-                />
-              ) : (
-                <div className="px-3 py-2 rounded-lg bg-muted/40 hover:bg-muted/60 transition-colors duration-[120ms] text-sm">
-                  {transaction?.pcgAccount?.numero ? (
-                    <span>
-                      <code className="font-mono font-semibold bg-background border border-border/60 px-1.5 py-0.5 rounded text-xs">
-                        {transaction.pcgAccount.numero}
-                      </code>{" "}
-                      <span className="text-muted-foreground">
-                        {transaction.pcgAccount.intitule}
-                      </span>
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">Non affecte</span>
-                  )}
-                </div>
-              )}
             </div>
 
             {/* Fournisseur */}
@@ -1279,18 +1161,7 @@ export function TransactionDetailDrawer({
                   ? "Source du revenu"
                   : "Fournisseur"}
               </p>
-              {isEditingForm ? (
-                <Input
-                  value={formData.vendor}
-                  onChange={(e) => handleChange("vendor")(e.target.value)}
-                  placeholder={
-                    formData.type === "INCOME"
-                      ? "Client / Source"
-                      : "Nom du fournisseur"
-                  }
-                  className="w-full"
-                />
-              ) : (
+              {
                 <div className="flex items-center gap-3">
                   {merchant?.logo ? (
                     <div className="h-10 w-10 rounded-full overflow-hidden border bg-white flex-shrink-0">
@@ -1323,7 +1194,7 @@ export function TransactionDetailDrawer({
                     )}
                   </div>
                 </div>
-              )}
+              }
             </div>
 
             {/* Informations — style Attio (cards compactes, icône carrée) */}
@@ -1342,37 +1213,9 @@ export function TransactionDetailDrawer({
                       Date
                     </span>
                   </div>
-                  {isEditingForm ? (
-                    <DatePicker
-                      value={formData.date ? parseDate(formData.date) : null}
-                      onChange={(date) => {
-                        if (date) handleChange("date")(date.toString());
-                      }}
-                      className="w-40"
-                    >
-                      <div className="flex">
-                        <Group className="w-full pointer-events-none">
-                          <DateInput className="h-8 rounded-[9px] pe-9 ps-2.5 py-0 text-sm border-none shadow-none bg-transparent hover:bg-[rgba(0,0,0,0.04)] dark:bg-[#171717] dark:hover:bg-[#222] [box-shadow:rgba(255,255,255,0)_0_0_0_1px_inset,rgba(28,40,64,0.18)_0_0_2px_0,rgba(24,41,75,0.04)_0_1px_3px_0] dark:[box-shadow:rgba(255,255,255,0.08)_0_0_0_1px_inset,rgba(255,255,255,0.1)_0_0_2px_0,rgba(0,0,0,0.2)_0_1px_3px_0] data-focus-within:ring-0 data-focus-within:border-none" />
-                        </Group>
-                        <RACButton className="z-10 -ms-8 -me-px flex w-8 h-8 items-center justify-center rounded-e-[9px] text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground pointer-events-auto">
-                          <CalendarIcon size={14} />
-                        </RACButton>
-                      </div>
-                      <RACPopover
-                        className="z-[100] rounded-lg border bg-background text-popover-foreground shadow-lg outline-hidden"
-                        offset={4}
-                        UNSTABLE_portalContainer={calendarContainer}
-                      >
-                        <Dialog className="max-h-[inherit] overflow-auto p-2">
-                          <Calendar />
-                        </Dialog>
-                      </RACPopover>
-                    </DatePicker>
-                  ) : (
-                    <span className="text-sm font-medium text-foreground">
-                      {formatDate(transaction?.date)}
-                    </span>
-                  )}
+                  <span className="text-sm font-medium text-foreground">
+                    {formatDate(transaction?.date)}
+                  </span>
                 </div>
 
                 {/* Moyen de paiement */}
@@ -1385,30 +1228,10 @@ export function TransactionDetailDrawer({
                       Paiement
                     </span>
                   </div>
-                  {isEditingForm ? (
-                    <Select
-                      value={formData.paymentMethod}
-                      onValueChange={handleChange("paymentMethod")}
-                    >
-                      <SelectTrigger className="w-40">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="CARD">Carte</SelectItem>
-                        <SelectItem value="TRANSFER">Virement</SelectItem>
-                        <SelectItem value="CASH">Espèces</SelectItem>
-                        <SelectItem value="CHECK">Chèque</SelectItem>
-                        <SelectItem value="DIRECT_DEBIT">
-                          Prélèvement
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <span className="text-sm font-medium text-foreground">
-                      {paymentMethodLabels[transaction?.paymentMethod] ||
-                        "Non spécifié"}
-                    </span>
-                  )}
+                  <span className="text-sm font-medium text-foreground">
+                    {paymentMethodLabels[transaction?.paymentMethod] ||
+                      "Non spécifié"}
+                  </span>
                 </div>
 
                 {/* Statut (seulement en mode visualisation pour les transactions bancaires) */}
@@ -1422,26 +1245,8 @@ export function TransactionDetailDrawer({
                         Statut
                       </span>
                     </div>
-                    {isEditingForm ? (
-                      <Select
-                        value={formData.status}
-                        onValueChange={handleChange("status")}
-                      >
-                        <SelectTrigger className="w-40">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="COMPLETED">
-                            {formData.type === "INCOME" ? "Encaissée" : "Payée"}
-                          </SelectItem>
-                          <SelectItem value="PENDING">En attente</SelectItem>
-                          <SelectItem value="CANCELLED">Annulée</SelectItem>
-                          <SelectItem value="REFUNDED">Remboursée</SelectItem>
-                          <SelectItem value="FAILED">Échouée</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : transaction?.status === "PAID" ||
-                      transaction?.status === "COMPLETED" ? (
+                    {transaction?.status === "PAID" ||
+                    transaction?.status === "COMPLETED" ? (
                       <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
                         <CheckCircle2 className="w-3 h-3" />
                         {transaction?.amount > 0 ? "Encaissée" : "Payée"}
@@ -1826,6 +1631,92 @@ export function TransactionDetailDrawer({
                     Rapprochée le {formatDate(transaction.reconciliationDate)}
                   </p>
                 )}
+              </div>
+            )}
+
+            {/* Section Facture d'achat liée (lien par référence — le
+                justificatif reste sur la facture, accessible via ce lien) */}
+            {!isCreateMode && linkedPurchaseInvoice && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-sm font-normal text-muted-foreground">
+                      Facture d&apos;achat liée
+                    </p>
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
+                    <Link2 className="w-3 h-3" />
+                    Rapprochée
+                  </span>
+                </div>
+
+                <div className="p-3 border rounded-lg bg-muted/30">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-medium truncate">
+                          Facture d&apos;achat
+                          {linkedPurchaseInvoice.invoiceNumber
+                            ? ` ${linkedPurchaseInvoice.invoiceNumber}`
+                            : ""}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {linkedPurchaseInvoice.supplierName || "Fournisseur"}
+                      </p>
+                      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                        <span>
+                          {formatAmount(linkedPurchaseInvoice.amountTTC)}
+                        </span>
+                        {linkedPurchaseInvoice.issueDate && (
+                          <>
+                            <span>•</span>
+                            <span>
+                              {formatDate(linkedPurchaseInvoice.issueDate)}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      {linkedPurchaseInvoice.files?.[0]?.url && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={handleViewPurchaseInvoiceReceipt}
+                          title="Voir le justificatif"
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={handleViewPurchaseInvoice}
+                        title="Voir la facture d'achat"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={handleUnlinkPurchaseInvoice}
+                        disabled={isReadOnly || isUnlinkingPI}
+                        title={readOnlyTooltip || "Détacher la facture d'achat"}
+                      >
+                        {isUnlinkingPI ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Unlink className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 

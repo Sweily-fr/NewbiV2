@@ -132,6 +132,20 @@ export const GET_TRANSACTIONS = gql`
         issueDate
         dueDate
       }
+      linkedPurchaseInvoiceIds
+      linkedPurchaseInvoices {
+        id
+        invoiceNumber
+        supplierName
+        status
+        amountTTC
+        issueDate
+        files {
+          url
+          filename
+          mimetype
+        }
+      }
       reconciliationStatus
       reconciliationDate
       createdAt
@@ -194,6 +208,20 @@ export const GET_TRANSACTION = gql`
         totalTTC
         issueDate
         dueDate
+      }
+      linkedPurchaseInvoiceIds
+      linkedPurchaseInvoices {
+        id
+        invoiceNumber
+        supplierName
+        status
+        amountTTC
+        issueDate
+        files {
+          url
+          filename
+          mimetype
+        }
       }
       reconciliationStatus
       reconciliationDate
@@ -410,32 +438,6 @@ export const GET_PCG_ACCOUNTS = gql`
     pcgAccounts {
       numero
       intitule
-    }
-  }
-`;
-
-/**
- * Mettre à jour le compte PCG d'une transaction
- */
-export const UPDATE_TRANSACTION_PCG = gql`
-  mutation UpdateTransactionPCG(
-    $transactionId: ID!
-    $pcgNumero: String!
-    $workspaceId: ID!
-  ) {
-    updateTransactionPCG(
-      transactionId: $transactionId
-      pcgNumero: $pcgNumero
-      workspaceId: $workspaceId
-    ) {
-      id
-      pcgAccount {
-        numero
-        intitule
-        confidence
-        isManual
-        manuallySetAt
-      }
     }
   }
 `;

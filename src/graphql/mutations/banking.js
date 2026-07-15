@@ -1,39 +1,6 @@
 import { gql } from "@apollo/client";
 
 /**
- * Créer une transaction manuelle
- */
-export const CREATE_TRANSACTION = gql`
-  mutation CreateTransaction($input: CreateTransactionInput!) {
-    createTransaction(input: $input) {
-      id
-      externalId
-      provider
-      type
-      status
-      amount
-      currency
-      description
-      category
-      expenseCategory
-      date
-      metadata
-      receiptFiles {
-        id
-        url
-        key
-        filename
-        mimetype
-        size
-        uploadedAt
-      }
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
-/**
  * Mettre à jour une transaction
  */
 export const UPDATE_TRANSACTION = gql`
@@ -65,14 +32,5 @@ export const UPDATE_TRANSACTION = gql`
       }
       updatedAt
     }
-  }
-`;
-
-/**
- * Supprimer une transaction manuelle
- */
-export const DELETE_TRANSACTION = gql`
-  mutation DeleteTransaction($id: ID!) {
-    deleteTransaction(id: $id)
   }
 `;
