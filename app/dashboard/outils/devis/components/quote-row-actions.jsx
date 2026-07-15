@@ -371,9 +371,10 @@ export default function QuoteRowActions({
                 </DropdownMenuItem>
               )}
 
-              {/* Accepter : uniquement les devis importés. Les devis natifs sont
-                  acceptés via la signature électronique. */}
-              {quote.status === QUOTE_STATUS.IMPORTED && (
+              {/* Accepter : acceptation manuelle possible, la signature
+                  électronique accepte aussi le devis automatiquement. */}
+              {(quote.status === QUOTE_STATUS.PENDING ||
+                quote.status === QUOTE_STATUS.IMPORTED) && (
                 <>
                   <DropdownMenuItem
                     onClick={handleAccept}
@@ -405,16 +406,13 @@ export default function QuoteRowActions({
                 </DropdownMenuItem>
               )}
 
-              {/* Faire signer - visible pour les devis non brouillon (hors importés) et sans signature en cours/terminée */}
-              {quote.status !== QUOTE_STATUS.DRAFT &&
-                quote.status !== QUOTE_STATUS.IMPORTED &&
+              {/* Faire signer - uniquement les devis en attente (un devis accepté
+                  ou refusé ne peut plus être signé), sans signature en cours/terminée */}
+              {quote.status === QUOTE_STATUS.PENDING &&
                 (!quote.signatureStatus ||
                   quote.signatureStatus === "ERROR" ||
                   quote.signatureStatus === "CANCELLED") && (
                   <>
-                    {quote.status === QUOTE_STATUS.DRAFT && (
-                      <DropdownMenuSeparator />
-                    )}
                     {esignatureAccess ? (
                       <DropdownMenuItem
                         onClick={(e) => {
