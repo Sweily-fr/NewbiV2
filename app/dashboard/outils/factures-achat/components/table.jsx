@@ -468,77 +468,75 @@ export default function PurchaseInvoiceTable({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Bulk actions */}
+            {/* Bulk actions — toujours visibles, désactivées sans sélection */}
             {hasSelection && (
-              <>
-                <span className="text-xs text-muted-foreground">
-                  {selectedRows.length} sélectionnée
-                  {selectedRows.length > 1 ? "s" : ""}
-                </span>
-                <Button
-                  variant="outline"
-                  onClick={() => handleBulkStatus("PAID")}
-                >
-                  <CheckCircle2 size={14} />
-                  Payées
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => handleBulkStatus("ARCHIVED")}
-                >
-                  <Archive size={14} />
-                  Archiver
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline">
-                      <Tag size={14} />
-                      Catégoriser
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-                      <DropdownMenuItem
-                        key={key}
-                        onClick={() => handleBulkCategorize(key)}
-                      >
-                        {label}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="danger">
-                      <TrashIcon size={14} />
-                      Supprimer ({selectedRows.length})
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Confirmer la suppression
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
-                        facture{selectedRows.length > 1 ? "s" : ""} sélectionnée
-                        {selectedRows.length > 1 ? "s" : ""} ? Cette action ne
-                        peut pas être annulée.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Annuler</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={handleBulkDelete}
-                        className="bg-destructive text-white hover:bg-destructive/90"
-                      >
-                        Supprimer
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </>
+              <span className="text-xs text-muted-foreground">
+                {selectedRows.length} sélectionnée
+                {selectedRows.length > 1 ? "s" : ""}
+              </span>
             )}
+            <Button
+              variant="outline"
+              disabled={!hasSelection}
+              onClick={() => handleBulkStatus("PAID")}
+            >
+              <CheckCircle2 size={14} />
+              Payées
+            </Button>
+            <Button
+              variant="outline"
+              disabled={!hasSelection}
+              onClick={() => handleBulkStatus("ARCHIVED")}
+            >
+              <Archive size={14} />
+              Archiver
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" disabled={!hasSelection}>
+                  <Tag size={14} />
+                  Catégoriser
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+                  <DropdownMenuItem
+                    key={key}
+                    onClick={() => handleBulkCategorize(key)}
+                  >
+                    {label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="danger" disabled={!hasSelection}>
+                  <TrashIcon size={14} />
+                  Supprimer{hasSelection ? ` (${selectedRows.length})` : ""}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
+                    facture{selectedRows.length > 1 ? "s" : ""} sélectionnée
+                    {selectedRows.length > 1 ? "s" : ""} ? Cette action ne peut
+                    pas être annulée.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleBulkDelete}
+                    className="bg-destructive text-white hover:bg-destructive/90"
+                  >
+                    Supprimer
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
 
