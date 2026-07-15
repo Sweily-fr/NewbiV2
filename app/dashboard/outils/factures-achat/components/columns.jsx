@@ -10,7 +10,6 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  Wallet as WalletIcon,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -226,28 +225,35 @@ export const getColumns = ({ onViewInvoice, onDeleteInvoice } = {}) => [
     cell: ({ row }) => {
       const name = row.getValue("supplierName");
       const merchant = findMerchant(name || "");
-      const isTransaction = row.original.sourceKind === "TRANSACTION";
       return (
         <div className="flex items-center gap-3">
           <MerchantLogo merchant={merchant} fallbackText={name} size="sm" />
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="font-normal truncate max-w-[200px]" title={name}>
-              {merchant?.name || name || "Fournisseur"}
-            </div>
-            {isTransaction && (
-              <span
-                className="inline-flex items-center gap-1 rounded-md border border-violet-200 dark:border-violet-800 px-1.5 py-0.5 text-[11px] font-medium bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300 shrink-0"
-                title="Dépense saisie dans la page Transactions"
-              >
-                <WalletIcon className="h-3 w-3" />
-                Dépense
-              </span>
-            )}
+          <div className="font-normal truncate max-w-[200px]" title={name}>
+            {merchant?.name || name || "Fournisseur"}
           </div>
         </div>
       );
     },
     enableHiding: false,
+  },
+  {
+    id: "type",
+    size: 90,
+    meta: { label: "Type" },
+    header: "Type",
+    cell: ({ row }) => {
+      const isTransaction = row.original.sourceKind === "TRANSACTION";
+      if (!isTransaction) return null;
+      return (
+        <span
+          className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300"
+          title="Dépense saisie dans la page Transactions"
+        >
+          Dépense
+        </span>
+      );
+    },
+    enableSorting: false,
   },
   {
     accessorKey: "invoiceNumber",
@@ -397,7 +403,7 @@ export const getColumns = ({ onViewInvoice, onDeleteInvoice } = {}) => [
       return (
         <div className="flex flex-col items-start gap-1">
           <span
-            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${config.className}`}
+            className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap ${config.className}`}
           >
             {config.label}
           </span>
@@ -412,8 +418,9 @@ export const getColumns = ({ onViewInvoice, onDeleteInvoice } = {}) => [
   },
   {
     id: "files",
-    size: 60,
-    header: "",
+    size: 100,
+    meta: { label: "Justificatif" },
+    header: "Justificatif",
     cell: ({ row }) => {
       const files = row.original.files || [];
       if (files.length === 0) return null;
