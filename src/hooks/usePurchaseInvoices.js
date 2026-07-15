@@ -17,6 +17,7 @@ import {
   BULK_DELETE_PURCHASE_INVOICES,
   BULK_CATEGORIZE_PURCHASE_INVOICES,
   RECONCILE_PURCHASE_INVOICE,
+  UNRECONCILE_PURCHASE_INVOICE,
   CREATE_SUPPLIER,
   DELETE_SUPPLIER,
   SYNC_PURCHASE_INVOICES_FROM_SUPERPDP,
@@ -366,6 +367,31 @@ export const useReconcilePurchaseInvoice = () => {
   };
 
   return { reconcile, loading };
+};
+
+export const useUnreconcilePurchaseInvoice = () => {
+  const { workspaceId } = useRequiredWorkspace();
+
+  const [unreconcileMutation, { loading }] = useMutation(
+    UNRECONCILE_PURCHASE_INVOICE,
+    {
+      refetchQueries: [
+        { query: GET_PURCHASE_INVOICE_STATS, variables: { workspaceId } },
+      ],
+      awaitRefetchQueries: false,
+      onError: (error) =>
+        toast.error(error.message || "Erreur lors du détachement"),
+    },
+  );
+
+  const unreconcile = async (purchaseInvoiceId) => {
+    const result = await unreconcileMutation({
+      variables: { purchaseInvoiceId },
+    });
+    return result?.data?.unreconcilePurchaseInvoice;
+  };
+
+  return { unreconcile, loading };
 };
 
 export const useReconciliationSuggestions = (purchaseInvoiceId) => {

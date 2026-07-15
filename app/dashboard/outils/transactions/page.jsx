@@ -247,15 +247,18 @@ function GestionDepensesContent() {
       date: tx.processedAt || tx.date || tx.createdAt,
       category: getSmartCategory(tx),
       vendor: tx.metadata?.vendor || null,
-      // N↔N : "a une facture liée" = array non vide.
+      // N↔N : "a une facture liée" = array non vide (facture client OU facture
+      // d'achat — le justificatif d'une facture d'achat liée vaut justification).
       hasReceipt:
         (Array.isArray(tx.receiptFiles) && tx.receiptFiles.length > 0) ||
-        (tx.linkedInvoices?.length || 0) > 0,
+        (tx.linkedInvoices?.length || 0) > 0 ||
+        (tx.linkedPurchaseInvoices?.length || 0) > 0,
       receiptFiles: tx.receiptFiles || [],
       receiptRequired:
         tx.amount < 0 &&
         !(Array.isArray(tx.receiptFiles) && tx.receiptFiles.length > 0) &&
-        (tx.linkedInvoices?.length || 0) === 0,
+        (tx.linkedInvoices?.length || 0) === 0 &&
+        (tx.linkedPurchaseInvoices?.length || 0) === 0,
       status: tx.status === "completed" ? "PAID" : tx.status?.toUpperCase(),
       paymentMethod:
         tx.metadata?.paymentMethod ||
@@ -270,6 +273,8 @@ function GestionDepensesContent() {
       },
       linkedInvoiceIds: tx.linkedInvoiceIds || [],
       linkedInvoices: tx.linkedInvoices || [],
+      linkedPurchaseInvoiceIds: tx.linkedPurchaseInvoiceIds || [],
+      linkedPurchaseInvoices: tx.linkedPurchaseInvoices || [],
       reconciliationStatus: tx.reconciliationStatus || null,
       reconciliationDate: tx.reconciliationDate || null,
       pcgAccount: tx.pcgAccount || null,

@@ -421,10 +421,12 @@ export default function TransactionTable({
         hasReceipt:
           expense.hasReceipt ||
           (expense.files && expense.files.length > 0) ||
-          (expense.linkedInvoices?.length || 0) > 0,
+          (expense.linkedInvoices?.length || 0) > 0 ||
+          (expense.linkedPurchaseInvoices?.length || 0) > 0,
         receiptRequired:
           expense.receiptRequired !== false &&
-          (expense.linkedInvoices?.length || 0) === 0,
+          (expense.linkedInvoices?.length || 0) === 0 &&
+          (expense.linkedPurchaseInvoices?.length || 0) === 0,
         expenseType: expense.expenseType || "ORGANIZATION",
         assignedMember: expense.assignedMember || null,
         // Données originales de la transaction bancaire si disponibles
@@ -432,6 +434,8 @@ export default function TransactionTable({
         // Champs de rapprochement bancaire (N↔N)
         linkedInvoiceIds: expense.linkedInvoiceIds || [],
         linkedInvoices: expense.linkedInvoices || [],
+        linkedPurchaseInvoiceIds: expense.linkedPurchaseInvoiceIds || [],
+        linkedPurchaseInvoices: expense.linkedPurchaseInvoices || [],
         reconciliationStatus: expense.reconciliationStatus || null,
         reconciliationDate: expense.reconciliationDate || null,
         // Compte PCG et métadonnées (pour affichage et suggestion dans le dialog)

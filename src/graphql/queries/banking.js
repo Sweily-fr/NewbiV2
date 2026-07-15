@@ -132,6 +132,20 @@ export const GET_TRANSACTIONS = gql`
         issueDate
         dueDate
       }
+      linkedPurchaseInvoiceIds
+      linkedPurchaseInvoices {
+        id
+        invoiceNumber
+        supplierName
+        status
+        amountTTC
+        issueDate
+        files {
+          url
+          filename
+          mimetype
+        }
+      }
       reconciliationStatus
       reconciliationDate
       createdAt
@@ -194,6 +208,20 @@ export const GET_TRANSACTION = gql`
         totalTTC
         issueDate
         dueDate
+      }
+      linkedPurchaseInvoiceIds
+      linkedPurchaseInvoices {
+        id
+        invoiceNumber
+        supplierName
+        status
+        amountTTC
+        issueDate
+        files {
+          url
+          filename
+          mimetype
+        }
       }
       reconciliationStatus
       reconciliationDate
