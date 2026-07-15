@@ -1165,7 +1165,7 @@ export function PurchaseInvoiceDetailDrawer({
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-[#5A50FF]/10 text-[#5A50FF] dark:bg-[#5A50FF]/20">
                     <CheckCircle2 className="w-3 h-3" />
                     Rapprochée avec {invoice.linkedTransactionIds?.length ||
                       0}{" "}
