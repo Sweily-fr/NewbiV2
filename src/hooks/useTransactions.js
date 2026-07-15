@@ -1,6 +1,5 @@
 import { useMutation } from "@apollo/client";
 import {
-  CREATE_TRANSACTION,
   UPDATE_TRANSACTION,
   DELETE_TRANSACTION,
 } from "../graphql/mutations/banking";
@@ -11,55 +10,6 @@ import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 // Limite raisonnable pour le refetch après mutation (pas besoin de tout recharger)
 // Doit correspondre à la variable limit utilisée dans useDashboardData (limit: 0 = pas de limite)
 const REFETCH_LIMIT = 0;
-
-/**
- * Hook pour créer une transaction manuelle
- */
-export const useCreateTransaction = () => {
-  const { workspaceId } = useRequiredWorkspace();
-
-  const [createTransactionMutation, { loading }] = useMutation(
-    CREATE_TRANSACTION,
-    {
-      refetchQueries: [
-        {
-          query: GET_TRANSACTIONS,
-          variables: { workspaceId, limit: REFETCH_LIMIT },
-        },
-      ],
-    },
-  );
-
-  const createTransaction = async (input) => {
-    try {
-      const result = await createTransactionMutation({
-        variables: { input },
-      });
-
-      if (result.data?.createTransaction) {
-        toast.success("Transaction créée avec succès");
-        return { success: true, transaction: result.data.createTransaction };
-      } else {
-        throw new Error("Erreur lors de la création de la transaction");
-      }
-    } catch (error) {
-      let errorMessage = "Erreur lors de la création de la transaction";
-      if (error.graphQLErrors && error.graphQLErrors.length > 0) {
-        errorMessage = error.graphQLErrors[0].message;
-      } else if (error.networkError) {
-        errorMessage = "Erreur de connexion au serveur";
-      }
-
-      toast.error(errorMessage);
-      return { success: false, error };
-    }
-  };
-
-  return {
-    createTransaction,
-    loading,
-  };
-};
 
 /**
  * Hook pour mettre à jour une transaction
