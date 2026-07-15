@@ -520,7 +520,7 @@ export default function PurchaseInvoiceTable({
                   Archiver
                 </DropdownMenuItem>
                 <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>
+                  <DropdownMenuSubTrigger className="gap-2">
                     <Tag size={14} />
                     Catégoriser
                   </DropdownMenuSubTrigger>
