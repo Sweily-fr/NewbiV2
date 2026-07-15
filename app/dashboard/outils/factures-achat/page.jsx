@@ -36,7 +36,9 @@ import {
   Download,
   Info,
   Mail,
+  Check,
 } from "lucide-react";
+import { GoogleIcon } from "./components/google-icon";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -186,6 +188,21 @@ function PurchaseInvoicesContent() {
             <h1 className="text-2xl font-medium mb-2">Factures d&apos;achat</h1>
           </div>
           <div className="flex gap-2">
+            {/* Bouton Gmail (affiché si connecté) — à gauche d'Exporter */}
+            {gmailConnection && gmailConnection.status !== "disconnected" && (
+              <Button
+                variant="outline"
+                className="gap-1.5 cursor-pointer"
+                onClick={handleOpenGmailDialog}
+              >
+                <GoogleIcon className="size-3.5" />
+                <span className="text-sm">Gmail connecté</span>
+                <Check
+                  className="size-3 text-muted-foreground/60"
+                  strokeWidth={2.5}
+                />
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setIsExportOpen(true)}>
               <Download size={14} strokeWidth={1.5} aria-hidden="true" />
               Exporter
@@ -330,8 +347,6 @@ function PurchaseInvoicesContent() {
                 importedInvoices={importedInvoices}
                 importedLoading={importedLoading}
                 onImportedConverted={handleImportedConverted}
-                gmailConnection={gmailConnection}
-                onOpenGmailDialog={handleOpenGmailDialog}
               />
             </Suspense>
           </div>
@@ -413,8 +428,6 @@ function PurchaseInvoicesContent() {
             importedInvoices={importedInvoices}
             importedLoading={importedLoading}
             onImportedConverted={handleImportedConverted}
-            gmailConnection={gmailConnection}
-            onOpenGmailDialog={handleOpenGmailDialog}
           />
         </Suspense>
       </div>

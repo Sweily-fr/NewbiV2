@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Textarea } from "@/src/components/ui/textarea";
@@ -45,14 +45,15 @@ import {
   Save,
   Edit,
   Plus,
-  Hash,
   Tag,
   AlertCircle,
+  Upload,
 } from "lucide-react";
 import {
   useCreatePurchaseInvoice,
   useUpdatePurchaseInvoice,
   useDeletePurchaseInvoice,
+  useAddPurchaseInvoiceFile,
   useMarkAsPaid,
   useReconciliationSuggestions,
   useReconcilePurchaseInvoice,
@@ -188,10 +189,14 @@ export function PurchaseInvoiceDetailDrawer({
   // Tracks which amount field was last edited ("ht" or "ttc") so vatRate
   // changes recalculate from the correct source field.
   const [amountSource, setAmountSource] = useState("ht");
+  // Justificatif ajouté à la création (uploadé après createInvoice).
+  const [pendingFile, setPendingFile] = useState(null);
+  const fileInputRef = useRef(null);
 
   const { createInvoice, loading: createLoading } = useCreatePurchaseInvoice();
   const { updateInvoice, loading: updateLoading } = useUpdatePurchaseInvoice();
   const { deleteInvoice } = useDeletePurchaseInvoice();
+  const { addFile } = useAddPurchaseInvoiceFile();
   const { markAsPaid, loading: markLoading } = useMarkAsPaid();
   const { reconcile } = useReconcilePurchaseInvoice();
   const { acknowledge, loading: ackLoading } =
@@ -279,6 +284,7 @@ export function PurchaseInvoiceDetailDrawer({
       });
       setIsEditMode(true);
       setAmountSource("ht");
+      setPendingFile(null);
     }
   }, [invoice, isCreate, open]);
 
@@ -373,6 +379,15 @@ export function PurchaseInvoiceDetailDrawer({
         });
       }
       if (!saved) return;
+      // Justificatif ajouté à la création : uploadé une fois la facture créée
+      // (addFile gère l'upload du fichier brut, sans OCR).
+      if (isCreate && pendingFile && saved.id) {
+        try {
+          await addFile(saved.id, { file: pendingFile, processOCR: false });
+        } catch (err) {
+          console.error("Erreur upload justificatif (création):", err);
+        }
+      }
       onSaved?.();
     } catch {
       // Error toast is handled by the hook's onError callback
@@ -444,6 +459,54 @@ export function PurchaseInvoiceDetailDrawer({
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-6 space-y-6">
+          {/* Zone d'upload du justificatif (création uniquement) */}
+          {isCreate && (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                Justificatif
+              </p>
+              {pendingFile ? (
+                <div className="flex items-center justify-between gap-2 p-3 border rounded-lg bg-muted/30">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="text-sm truncate">{pendingFile.name}</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0"
+                    onClick={() => setPendingFile(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full flex flex-col items-center justify-center gap-1.5 p-6 border border-dashed rounded-lg text-muted-foreground hover:bg-muted/40 hover:border-muted-foreground/40 transition-colors cursor-pointer"
+                >
+                  <Upload className="h-5 w-5" />
+                  <span className="text-sm">Ajouter un justificatif</span>
+                  <span className="text-xs text-muted-foreground/70">
+                    PDF, JPG, PNG
+                  </span>
+                </button>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/pdf,image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) setPendingFile(f);
+                  e.target.value = "";
+                }}
+              />
+            </div>
+          )}
+
           {/* Amount Section */}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
@@ -517,28 +580,22 @@ export function PurchaseInvoiceDetailDrawer({
             {isEditMode ? (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-normal text-muted-foreground">
-                      Fournisseur *
-                    </span>
-                  </div>
+                  <span className="text-sm font-normal text-muted-foreground">
+                    Fournisseur *
+                  </span>
                   <Input
                     value={form.supplierName}
                     onChange={(e) =>
                       handleChange("supplierName", e.target.value)
                     }
                     placeholder="Nom du fournisseur"
-                    className="w-44 h-8 text-sm text-right"
+                    className="w-40 h-8 text-sm text-right"
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Hash className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-normal text-muted-foreground">
-                      N° Facture
-                    </span>
-                  </div>
+                  <span className="text-sm font-normal text-muted-foreground">
+                    N° Facture
+                  </span>
                   <Input
                     value={form.invoiceNumber}
                     onChange={(e) =>
@@ -550,7 +607,6 @@ export function PurchaseInvoiceDetailDrawer({
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-normal text-muted-foreground">
                       Date d'émission
                     </span>
@@ -608,7 +664,6 @@ export function PurchaseInvoiceDetailDrawer({
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-normal text-muted-foreground">
                       Date d&apos;échéance
                     </span>
@@ -668,7 +723,6 @@ export function PurchaseInvoiceDetailDrawer({
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-normal text-muted-foreground">
                       Référence
                     </span>
@@ -686,19 +740,15 @@ export function PurchaseInvoiceDetailDrawer({
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Hash className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-normal text-muted-foreground">
-                      N° Facture
-                    </span>
-                  </div>
+                  <span className="text-sm font-normal text-muted-foreground">
+                    N° Facture
+                  </span>
                   <span className="text-sm font-normal">
                     {invoice?.invoiceNumber || "—"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-normal text-muted-foreground">
                       Date d&apos;émission
                     </span>
@@ -709,7 +759,6 @@ export function PurchaseInvoiceDetailDrawer({
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-normal text-muted-foreground">
                       Date d&apos;échéance
                     </span>
@@ -720,7 +769,6 @@ export function PurchaseInvoiceDetailDrawer({
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-normal text-muted-foreground">
                       Référence
                     </span>
@@ -752,7 +800,7 @@ export function PurchaseInvoiceDetailDrawer({
                       value={form.amountHT}
                       onChange={(e) => handleChange("amountHT", e.target.value)}
                       placeholder="0.00"
-                      className="w-32 h-8 text-sm text-right"
+                      className="w-40 h-8 text-sm text-right"
                     />
                   </div>
                   <div className="flex items-center justify-between">
@@ -762,7 +810,7 @@ export function PurchaseInvoiceDetailDrawer({
                     <VatRateSelect
                       value={form.vatRate}
                       onChange={(v) => handleChange("vatRate", String(v))}
-                      className="w-44 h-8 text-sm [&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:block"
+                      className="w-40 h-8 text-sm [&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:block"
                     />
                   </div>
                   <div className="flex items-center justify-between">
@@ -864,7 +912,6 @@ export function PurchaseInvoiceDetailDrawer({
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-normal text-muted-foreground">
                       Date de paiement
                     </span>
@@ -948,7 +995,6 @@ export function PurchaseInvoiceDetailDrawer({
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-normal text-muted-foreground">
                         Date de paiement
                       </span>
@@ -1165,7 +1211,7 @@ export function PurchaseInvoiceDetailDrawer({
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-[#5A50FF]/10 text-[#5A50FF] dark:bg-[#5A50FF]/20">
                     <CheckCircle2 className="w-3 h-3" />
                     Rapprochée avec {invoice.linkedTransactionIds?.length ||
                       0}{" "}
@@ -1296,12 +1342,13 @@ export function PurchaseInvoiceDetailDrawer({
               Annuler
             </Button>
             <Button
-              className="flex-1 font-normal bg-primary hover:bg-primary/90"
+              variant="primary"
+              className="flex-1 font-normal"
               onClick={handleSave}
               disabled={saving || !form.supplierName || !form.amountTTC}
             >
               <Plus className="h-4 w-4 mr-2" />
-              {saving ? "Création..." : "Créer"}
+              {saving ? "Création..." : "Nouvelle facture d'achat"}
             </Button>
           </div>
         ) : isEditMode ? (
@@ -1334,8 +1381,8 @@ export function PurchaseInvoiceDetailDrawer({
             </Button>
             {invoice?.status !== "PAID" && (
               <Button
-                variant="outline"
-                className="flex-1 font-normal text-green-600 hover:text-green-700 hover:bg-green-50"
+                variant="primary"
+                className="flex-1 font-normal"
                 onClick={handleMarkAsPaid}
                 disabled={markLoading}
               >

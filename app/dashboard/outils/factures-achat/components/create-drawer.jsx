@@ -8,19 +8,17 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/src/components/ui/drawer";
-import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import { Button } from "@/src/components/ui/button";
-import { X, Edit3, Upload } from "lucide-react";
+import { X } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { PurchaseInvoiceDetailDrawer } from "./detail-drawer";
 import { PurchaseInvoiceUploadDrawer } from "./upload-drawer";
 
 /**
- * Drawer unifié de création d'une facture d'achat.
- * Combine la saisie manuelle et l'import OCR sous un seul drawer avec des
- * onglets en haut. Les deux flux existants sont réutilisés en mode `embedded`
- * (rendu sans leur propre coquille Drawer). L'onglet "Saisie manuelle" est
- * actif par défaut.
+ * Drawer de création d'une facture d'achat.
+ * Affiche soit la saisie manuelle, soit l'import OCR selon `initialTab`
+ * (déterminé par l'entrée de menu utilisée). Les deux flux sont réutilisés en
+ * mode `embedded` (rendu sans leur propre coquille Drawer), sans switcher.
  */
 export function PurchaseInvoiceCreateDrawer({
   open,
@@ -41,10 +39,10 @@ export function PurchaseInvoiceCreateDrawer({
         className="w-full h-full md:w-[500px] md:max-w-[500px] md:min-w-[500px] md:h-auto"
         style={{ width: "100vw", height: "100vh" }}
       >
-        {/* Header + onglets */}
-        <DrawerHeader className="px-6 py-4 border-b gap-3">
+        {/* Header */}
+        <DrawerHeader className="px-6 py-4 border-b">
           <div className="flex flex-row items-center justify-between">
-            <DrawerTitle className="text-base font-medium">
+            <DrawerTitle className="text-lg font-medium">
               Nouvelle facture d&apos;achat
             </DrawerTitle>
             <DrawerClose asChild>
@@ -53,18 +51,6 @@ export function PurchaseInvoiceCreateDrawer({
               </Button>
             </DrawerClose>
           </div>
-          <Tabs value={tab} onValueChange={setTab}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="manual">
-                <Edit3 className="h-4 w-4" />
-                Saisie manuelle
-              </TabsTrigger>
-              <TabsTrigger value="ocr">
-                <Upload className="h-4 w-4" />
-                Importer (OCR)
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
         </DrawerHeader>
 
         {/* Corps — les deux flux restent montés (état préservé entre onglets),
