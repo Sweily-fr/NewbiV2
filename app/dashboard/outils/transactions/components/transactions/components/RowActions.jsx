@@ -19,15 +19,7 @@ export function RowActions({ row, onEdit, onDownloadAttachment }) {
   const transaction = row.original;
   const { isReadOnly, isOwner } = useSubscriptionAccess();
 
-  const isPurchaseInvoice = transaction.sourceKind === "PURCHASE_INVOICE";
-
   const handleEdit = () => {
-    if (isPurchaseInvoice) {
-      toast.error(
-        "Modifiez cette facture d'achat depuis la page Factures d'achat",
-      );
-      return;
-    }
     if (onEdit) {
       onEdit(transaction);
     }
@@ -56,11 +48,7 @@ export function RowActions({ row, onEdit, onDownloadAttachment }) {
         <DropdownMenuGroup>
           <DropdownMenuItem
             onClick={handleEdit}
-            disabled={
-              transaction.source === "invoice" ||
-              isPurchaseInvoice ||
-              isReadOnly
-            }
+            disabled={transaction.source === "invoice" || isReadOnly}
           >
             <span>Modifier</span>
             <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>

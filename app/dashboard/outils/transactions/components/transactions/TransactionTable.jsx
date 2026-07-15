@@ -19,7 +19,6 @@ import {
 } from "@tanstack/react-table";
 import { toast } from "@/src/components/ui/sonner";
 import { TransactionDetailDrawer } from "../transaction-detail-drawer";
-import { PurchaseInvoiceDetailDrawer } from "../../../factures-achat/components/detail-drawer";
 import { ExportDialog } from "../export-dialog";
 import {
   useCreateExpense,
@@ -147,10 +146,6 @@ export default function TransactionTable({
   const [expenseTypeFilter, setExpenseTypeFilter] = useState(null);
   const [assignedMemberFilter, setAssignedMemberFilter] = useState(null);
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
-  // Affichage unifié : drawer de détail d'une facture d'achat ouverte depuis
-  // la liste des transactions (lignes sourceKind === "PURCHASE_INVOICE").
-  const [selectedPurchaseInvoice, setSelectedPurchaseInvoice] = useState(null);
-  const [isPIDrawerOpen, setIsPIDrawerOpen] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState(resolvedInitialTab);
@@ -434,9 +429,6 @@ export default function TransactionTable({
         assignedMember: expense.assignedMember || null,
         // Données originales de la transaction bancaire si disponibles
         originalTransaction: expense.originalTransaction || null,
-        // Affichage unifié : ligne issue d'une facture d'achat (sourceKind)
-        sourceKind: expense.sourceKind || null,
-        originalPurchaseInvoice: expense.originalPurchaseInvoice || null,
         // Champs de rapprochement bancaire (N↔N)
         linkedInvoiceIds: expense.linkedInvoiceIds || [],
         linkedInvoices: expense.linkedInvoices || [],
@@ -554,14 +546,6 @@ export default function TransactionTable({
   };
 
   const handleViewTransaction = (transaction) => {
-    // Ligne issue d'une facture d'achat : ouvrir le drawer facture d'achat en place
-    if (transaction?.sourceKind === "PURCHASE_INVOICE") {
-      setSelectedPurchaseInvoice(
-        transaction.originalPurchaseInvoice || transaction,
-      );
-      setIsPIDrawerOpen(true);
-      return;
-    }
     setSelectedTransaction(transaction);
     setIsDetailDrawerOpen(true);
   };
@@ -733,8 +717,7 @@ export default function TransactionTable({
     onSortingChange: setSorting,
     enableSortingRemoval: false,
     manualPagination: false,
-    // Lignes facture d'achat (affichage unifié) : non sélectionnables
-    enableRowSelection: (row) => row.original.sourceKind !== "PURCHASE_INVOICE",
+    enableRowSelection: true,
     onPaginationChange: setPagination,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
@@ -916,8 +899,7 @@ export default function TransactionTable({
     onSortingChange: setSorting,
     enableSortingRemoval: false,
     manualPagination: false,
-    // Lignes facture d'achat (affichage unifié) : non sélectionnables
-    enableRowSelection: (row) => row.original.sourceKind !== "PURCHASE_INVOICE",
+    enableRowSelection: true,
     onPaginationChange: setPagination,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
@@ -1610,27 +1592,6 @@ export default function TransactionTable({
           />
         )}
       </AnimatePresence>
-
-      {/* Drawer facture d'achat (affichage unifié) — lignes sourceKind PURCHASE_INVOICE */}
-      <PurchaseInvoiceDetailDrawer
-        open={isPIDrawerOpen}
-        onOpenChange={(open) => {
-          setIsPIDrawerOpen(open);
-          if (!open) setSelectedPurchaseInvoice(null);
-        }}
-        invoice={selectedPurchaseInvoice}
-        mode="view"
-        onSaved={() => {
-          setIsPIDrawerOpen(false);
-          setSelectedPurchaseInvoice(null);
-          refetch();
-        }}
-        onDeleted={() => {
-          setIsPIDrawerOpen(false);
-          setSelectedPurchaseInvoice(null);
-          refetch();
-        }}
-      />
     </div>
   );
 }
