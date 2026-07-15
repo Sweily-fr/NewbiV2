@@ -1334,8 +1334,8 @@ export function PurchaseInvoiceDetailDrawer({
             </Button>
             {invoice?.status !== "PAID" && (
               <Button
-                variant="outline"
-                className="flex-1 font-normal text-green-600 hover:text-green-700 hover:bg-green-50"
+                variant="primary"
+                className="flex-1 font-normal"
                 onClick={handleMarkAsPaid}
                 disabled={markLoading}
               >
