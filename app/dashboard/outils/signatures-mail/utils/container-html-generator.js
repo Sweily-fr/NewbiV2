@@ -603,7 +603,7 @@ export function generateSignatureHTMLFromContainer(
 
     // Wrap in outer table for email clients
     return `
-      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; font-family: ${fontFamily}; max-width: 600px;">
+      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; font-family: ${fontFamily}; max-width: 600px; background-color: transparent; color-scheme: light dark;">
         <tr>
           <td style="padding: 0;">
             ${containerHTML}
