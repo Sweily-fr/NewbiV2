@@ -1432,6 +1432,12 @@ export const organizationPlugin = organization({
           input: true,
           required: false,
         },
+        // Nom commercial (affiché sur les documents si showCommercialName est activé)
+        commercialName: {
+          type: "string",
+          input: true,
+          required: false,
+        },
         companyEmail: {
           type: "string",
           input: true,
@@ -1700,6 +1706,43 @@ export const organizationPlugin = organization({
         // Bank details display setting
         showBankDetails: {
           type: "boolean",
+          input: true,
+          required: false,
+        },
+        // Commercial name display setting (devis, factures, bons de commande, avoirs)
+        showCommercialName: {
+          type: "boolean",
+          input: true,
+          required: false,
+        },
+        // Activité réglementée
+        isRegulatedActivity: {
+          type: "boolean",
+          input: true,
+          required: false,
+        },
+        professionalTitle: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        regulatoryBody: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        professionalNumber: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        decennialInsurance: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        professionalLiabilityInsurance: {
+          type: "string",
           input: true,
           required: false,
         },

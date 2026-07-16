@@ -17,6 +17,7 @@ import { useInvoiceNumber } from "./use-invoice-number";
 import { useUser } from "@/src/lib/auth/hooks";
 import { formatLocalDate, refreshDraftDates } from "@/src/utils/dateFormatter";
 import { refreshPrefixDate } from "@/src/utils/invoiceUtils";
+import { getOrganizationCompanyExtras } from "@/src/utils/organizationCompanyInfo";
 import {
   updateOrganization,
   getActiveOrganization,
@@ -223,6 +224,7 @@ export function useInvoiceEditor({
     if (organization && !formData.companyInfo?.legalForm) {
       // Fallback sur la valeur sauvegardée (logo, etc.) si l'org active ne la fournit pas.
       const updatedCompanyInfo = {
+        ...getOrganizationCompanyExtras(organization),
         name: organization?.companyName || formData.companyInfo?.name || "",
         address: {
           street:
@@ -1181,6 +1183,7 @@ export function useInvoiceEditor({
   useEffect(() => {
     if (mode === "create" && organization) {
       const autoFilledCompanyInfo = {
+        ...getOrganizationCompanyExtras(organization),
         name: organization?.companyName || "",
         address: {
           street: organization?.addressStreet || "",
@@ -1258,7 +1261,7 @@ export function useInvoiceEditor({
       setValue(
         "beneficiaryNameType",
         organization.beneficiaryNameType ||
-          (organization.legalForm === "Auto-entrepreneur"
+          (["EI", "Auto-entrepreneur"].includes(organization.legalForm)
             ? "fullName"
             : "companyName"),
       );
@@ -2687,6 +2690,7 @@ function buildValidationReasons(errors) {
 function getInitialFormData(mode, initialData, session, organization) {
   // Auto-remplissage du companyInfo avec les données d'organisation
   const autoFilledCompanyInfo = {
+    ...getOrganizationCompanyExtras(organization),
     name: organization?.companyName || "",
     address: {
       street: organization?.addressStreet || "",
@@ -2741,7 +2745,7 @@ function getInitialFormData(mode, initialData, session, organization) {
     // Nom du bénéficiaire
     beneficiaryNameType:
       organization?.beneficiaryNameType ||
-      (organization?.legalForm === "Auto-entrepreneur"
+      (["EI", "Auto-entrepreneur"].includes(organization?.legalForm)
         ? "fullName"
         : "companyName"),
     userName: session?.user?.name || "",
@@ -2865,6 +2869,13 @@ function transformInvoiceToFormData(invoice) {
     companyInfo: invoice.companyInfo
       ? {
           name: invoice.companyInfo.name || "",
+          commercialName: invoice.companyInfo.commercialName || "",
+          professionalTitle: invoice.companyInfo.professionalTitle || "",
+          regulatoryBody: invoice.companyInfo.regulatoryBody || "",
+          professionalNumber: invoice.companyInfo.professionalNumber || "",
+          decennialInsurance: invoice.companyInfo.decennialInsurance || "",
+          professionalLiabilityInsurance:
+            invoice.companyInfo.professionalLiabilityInsurance || "",
           // Formatage cohérent de l'adresse avec les devis
           address: (() => {
             if (!invoice.companyInfo.address) return "";

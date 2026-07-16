@@ -20,6 +20,7 @@ import { useClient } from "@/src/graphql/clientQueries";
 import { usePurchaseOrderNumber } from "./use-purchase-order-number";
 import { formatLocalDate, refreshDraftDates } from "@/src/utils/dateFormatter";
 import { refreshPrefixDate } from "@/src/utils/invoiceUtils";
+import { getOrganizationCompanyExtras } from "@/src/utils/organizationCompanyInfo";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
@@ -1052,6 +1053,7 @@ export function usePurchaseOrderEditor({
   useEffect(() => {
     if (mode === "create" && organization) {
       const updatedCompanyInfo = {
+        ...getOrganizationCompanyExtras(organization),
         name: organization.companyName || organization.name || "",
         email: organization.companyEmail || "",
         phone: organization.companyPhone || "",
@@ -2559,6 +2561,13 @@ function transformPurchaseOrderToFormData(purchaseOrder) {
 
     companyInfo: {
       name: purchaseOrder.companyInfo?.name || "",
+      commercialName: purchaseOrder.companyInfo?.commercialName || "",
+      professionalTitle: purchaseOrder.companyInfo?.professionalTitle || "",
+      regulatoryBody: purchaseOrder.companyInfo?.regulatoryBody || "",
+      professionalNumber: purchaseOrder.companyInfo?.professionalNumber || "",
+      decennialInsurance: purchaseOrder.companyInfo?.decennialInsurance || "",
+      professionalLiabilityInsurance:
+        purchaseOrder.companyInfo?.professionalLiabilityInsurance || "",
       email: purchaseOrder.companyInfo?.email || "",
       phone: purchaseOrder.companyInfo?.phone || "",
       website: purchaseOrder.companyInfo?.website || "",

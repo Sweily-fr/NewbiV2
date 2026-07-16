@@ -58,6 +58,7 @@ import {
 } from "@/src/graphql/invoiceQueries";
 import { useMutation } from "@apollo/client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { getOrganizationCompanyExtras } from "@/src/utils/organizationCompanyInfo";
 import {
   Select,
   SelectContent,
@@ -387,6 +388,7 @@ export default function ModernInvoiceEditor({
     return {
       client: v.client,
       companyInfo: {
+        ...getOrganizationCompanyExtras(organization),
         name: organization?.companyName || "",
         address: {
           street: organization?.addressStreet || "",

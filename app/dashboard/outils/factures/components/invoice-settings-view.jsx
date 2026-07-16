@@ -355,9 +355,13 @@ export default function InvoiceSettingsView({
     if (initialValuesRef.current) {
       // Numérotation : restaurer le mode AVANT préfixe/numéro pour neutraliser
       // l'effet de resynchronisation, puis remettre le numéro initial.
-      setValue("autoNumbering", initialValuesRef.current.autoNumbering ?? false, {
-        shouldValidate: false,
-      });
+      setValue(
+        "autoNumbering",
+        initialValuesRef.current.autoNumbering ?? false,
+        {
+          shouldValidate: false,
+        },
+      );
       setValue("prefix", initialValuesRef.current.prefix ?? "", {
         shouldValidate: false,
       });
@@ -848,7 +852,9 @@ export default function InvoiceSettingsView({
                     </p>
 
                     {/* Choix du nom du bénéficiaire pour les auto-entrepreneurs */}
-                    {organization?.legalForm === "Auto-entrepreneur" && (
+                    {["EI", "Auto-entrepreneur"].includes(
+                      organization?.legalForm,
+                    ) && (
                       <div className="flex items-center justify-between p-4 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
                         <div className="grid gap-1.5 leading-none">
                           <Label

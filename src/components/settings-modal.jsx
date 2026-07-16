@@ -91,6 +91,13 @@ export function SettingsModal({
     defaultValues: {
       // Informations générales
       name: "",
+      commercialName: "",
+      isRegulatedActivity: false,
+      professionalTitle: "",
+      regulatoryBody: "",
+      professionalNumber: "",
+      decennialInsurance: "",
+      professionalLiabilityInsurance: "",
       email: "",
       phone: "",
       website: "",
@@ -140,6 +147,13 @@ export function SettingsModal({
   const buildFormData = (org) => ({
     // Informations générales
     name: org.companyName || "",
+    commercialName: org.commercialName || "",
+    isRegulatedActivity: org.isRegulatedActivity || false,
+    professionalTitle: org.professionalTitle || "",
+    regulatoryBody: org.regulatoryBody || "",
+    professionalNumber: org.professionalNumber || "",
+    decennialInsurance: org.decennialInsurance || "",
+    professionalLiabilityInsurance: org.professionalLiabilityInsurance || "",
     email: org.companyEmail || "",
     phone: org.companyPhone || "",
     website: org.website || "",
@@ -163,7 +177,10 @@ export function SettingsModal({
       siret: org.siret || "",
       vatNumber: org.vatNumber || "",
       rcs: org.rcs || "",
-      legalForm: org.legalForm || "",
+      // "Auto-entrepreneur" est l'ancien nom de l'EI (même forme juridique,
+      // seul le régime micro les distingue) — normalisé vers "EI" à l'affichage
+      legalForm:
+        org.legalForm === "Auto-entrepreneur" ? "EI" : org.legalForm || "",
       capital: org.capitalSocial || "",
       regime: org.fiscalRegime || "",
       category: org.activityCategory || "",
@@ -231,6 +248,16 @@ export function SettingsModal({
         name: sanitizeInput(formData.name || ""),
         // Informations générales
         companyName: sanitizeInput(formData.name || ""),
+        commercialName: sanitizeInput(formData.commercialName || ""),
+        // Activité réglementée
+        isRegulatedActivity: formData.isRegulatedActivity || false,
+        professionalTitle: sanitizeInput(formData.professionalTitle || ""),
+        regulatoryBody: sanitizeInput(formData.regulatoryBody || ""),
+        professionalNumber: sanitizeInput(formData.professionalNumber || ""),
+        decennialInsurance: sanitizeInput(formData.decennialInsurance || ""),
+        professionalLiabilityInsurance: sanitizeInput(
+          formData.professionalLiabilityInsurance || "",
+        ),
         companyEmail: sanitizeInput(formData.email || ""),
         companyPhone: sanitizeInput(formData.phone || ""),
         website: sanitizeInput(formData.website || ""),

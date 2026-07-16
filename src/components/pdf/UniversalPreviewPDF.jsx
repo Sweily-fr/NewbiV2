@@ -129,7 +129,7 @@ const UniversalPreviewPDF = ({
     const nameType =
       data.beneficiaryNameType ||
       organization?.beneficiaryNameType ||
-      (organization?.legalForm === "Auto-entrepreneur"
+      (["EI", "Auto-entrepreneur"].includes(organization?.legalForm)
         ? "fullName"
         : "companyName");
     // Déterminer le nom complet de l'utilisateur
@@ -808,6 +808,18 @@ const UniversalPreviewPDF = ({
                 style={{ fontSize: "10px" }}
               >
                 {data.companyInfo?.name || "Sweily"}
+                {/* Nom commercial (si l'affichage est activé dans les paramètres) */}
+                {data.companyInfo?.commercialName && (
+                  <div className="font-normal dark:text-[#0A0A0A]">
+                    {data.companyInfo.commercialName}
+                  </div>
+                )}
+                {/* Titre professionnel (activité réglementée) */}
+                {data.companyInfo?.professionalTitle && (
+                  <div className="font-normal dark:text-[#0A0A0A]">
+                    {data.companyInfo.professionalTitle}
+                  </div>
+                )}
               </div>
               <div className="font-normal" style={{ fontSize: "10px" }}>
                 {isPurchaseOrder ? (
@@ -2668,6 +2680,31 @@ const UniversalPreviewPDF = ({
           >
             {generateDynamicFooter(data.companyInfo)}
           </div>
+
+          {/* Activité réglementée : organisme de rattachement, numéro professionnel et assurances */}
+          {(data.companyInfo?.regulatoryBody ||
+            data.companyInfo?.professionalNumber ||
+            data.companyInfo?.decennialInsurance ||
+            data.companyInfo?.professionalLiabilityInsurance) && (
+            <div className="text-[10px] dark:text-[#0A0A0A] whitespace-pre-line">
+              {[
+                data.companyInfo?.regulatoryBody
+                  ? `Organisme de rattachement : ${data.companyInfo.regulatoryBody}`
+                  : "",
+                data.companyInfo?.professionalNumber
+                  ? `Numéro professionnel : ${data.companyInfo.professionalNumber}`
+                  : "",
+                data.companyInfo?.decennialInsurance
+                  ? `Assurance décennale : ${data.companyInfo.decennialInsurance}`
+                  : "",
+                data.companyInfo?.professionalLiabilityInsurance
+                  ? `Assurance RC Pro : ${data.companyInfo.professionalLiabilityInsurance}`
+                  : "",
+              ]
+                .filter(Boolean)
+                .join(" • ")}
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -79,6 +79,12 @@ export const INVOICE_FRAGMENT = gql`
     }
     companyInfo {
       name
+      commercialName
+      professionalTitle
+      regulatoryBody
+      professionalNumber
+      decennialInsurance
+      professionalLiabilityInsurance
       email
       phone
       website

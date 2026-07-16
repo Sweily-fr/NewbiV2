@@ -8,7 +8,9 @@ import { Switch } from "@/src/components/ui/switch";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
@@ -37,21 +39,64 @@ import {
 import { useFormContext } from "react-hook-form";
 import { Callout } from "@/src/components/ui/callout";
 
-const LEGAL_FORMS = [
-  { value: "SARL", label: "SARL - Société à Responsabilité Limitée" },
-  { value: "SAS", label: "SAS - Société par Actions Simplifiée" },
+const LEGAL_FORM_GROUPS = [
   {
-    value: "SASU",
-    label: "SASU - Société par Actions Simplifiée Unipersonnelle",
+    label: "Sociétés commerciales",
+    forms: [
+      { value: "SARL", label: "SARL - Société à responsabilité limitée" },
+      {
+        value: "EURL",
+        label: "EURL - Entreprise unipersonnelle à responsabilité limitée",
+      },
+      { value: "SAS", label: "SAS - Société par actions simplifiée" },
+      {
+        value: "SASU",
+        label: "SASU - Société par actions simplifiée unipersonnelle",
+      },
+      { value: "SA", label: "SA - Société anonyme" },
+      { value: "SCA", label: "SCA - Société en commandite par actions" },
+      { value: "SNC", label: "SNC - Société en nom collectif" },
+      { value: "SCS", label: "SCS - Société en commandite simple" },
+    ],
   },
   {
-    value: "EURL",
-    label: "EURL - Entreprise Unipersonnelle à Responsabilité Limitée",
+    label: "Sociétés d'exercice libéral",
+    forms: [
+      {
+        value: "SELARL",
+        label: "SELARL - Société d'exercice libéral à responsabilité limitée",
+      },
+      {
+        value: "SELAS",
+        label: "SELAS - Société d'exercice libéral par actions simplifiée",
+      },
+      {
+        value: "SELAFA",
+        label: "SELAFA - Société d'exercice libéral à forme anonyme",
+      },
+      {
+        value: "SELCA",
+        label: "SELCA - Société d'exercice libéral en commandite par actions",
+      },
+    ],
   },
-  { value: "SA", label: "SA - Société Anonyme" },
-  { value: "SNC", label: "SNC - Société en Nom Collectif" },
-  { value: "Auto-entrepreneur", label: "Auto-entrepreneur / Micro-entreprise" },
-  { value: "EI", label: "EI - Entreprise Individuelle" },
+  {
+    label: "Sociétés civiles",
+    forms: [
+      { value: "SCI", label: "SCI - Société civile immobilière" },
+      { value: "SCM", label: "SCM - Société civile de moyens" },
+      { value: "SCP", label: "SCP - Société civile professionnelle" },
+    ],
+  },
+  {
+    label: "Entreprise individuelle",
+    forms: [
+      {
+        value: "EI",
+        label: "EI - Entreprise individuelle (auto-entrepreneur)",
+      },
+    ],
+  },
 ];
 
 const ALL_TAX_REGIMES = [
@@ -65,7 +110,7 @@ const ALL_TAX_REGIMES = [
 // Filtrage des régimes fiscaux selon la forme juridique
 // - Auto-entrepreneur : uniquement micro (micro-entreprise, micro-BIC, micro-BNC)
 // - EI / EURL : tous les régimes (micro possible sous conditions + réel)
-// - Sociétés (SARL, SAS, SASU, SA, SNC) : réel uniquement (IS, pas de micro)
+// - Sociétés (commerciales, d'exercice libéral, civiles) : réel uniquement (pas de micro)
 function getAvailableTaxRegimes(legalForm) {
   const microOnly = ["micro-entreprise", "micro-bic", "micro-bnc"];
   const reelOnly = ["reel-normal", "reel-simplifie"];
@@ -80,7 +125,16 @@ function getAvailableTaxRegimes(legalForm) {
     case "SAS":
     case "SASU":
     case "SA":
+    case "SCA":
     case "SNC":
+    case "SCS":
+    case "SELARL":
+    case "SELAS":
+    case "SELAFA":
+    case "SELCA":
+    case "SCI":
+    case "SCM":
+    case "SCP":
       return ALL_TAX_REGIMES.filter((r) => reelOnly.includes(r.value));
     default:
       return ALL_TAX_REGIMES;
@@ -93,6 +147,7 @@ const ACTIVITY_CATEGORIES = [
   { value: "liberale", label: "Profession libérale" },
   { value: "agricole", label: "Activité agricole" },
   { value: "industrielle", label: "Activité industrielle" },
+  { value: "mixte", label: "Activité mixte" },
 ];
 
 const VAT_REGIMES = [
@@ -220,11 +275,13 @@ export function InformationsLegalesSection({
     selectedLegalForm,
     isVatSubject,
     hasCommercialActivity,
+    selectedCategory,
   );
   const visibleFields = getVisibleFields(
     selectedLegalForm,
     isVatSubject,
     hasCommercialActivity,
+    selectedCategory,
   );
 
   return (
@@ -288,10 +345,15 @@ export function InformationsLegalesSection({
                 <SelectValue placeholder="Sélectionnez la forme juridique" />
               </SelectTrigger>
               <SelectContent>
-                {LEGAL_FORMS.map((form) => (
-                  <SelectItem key={form.value} value={form.value}>
-                    {form.label}
-                  </SelectItem>
+                {LEGAL_FORM_GROUPS.map((group) => (
+                  <SelectGroup key={group.label}>
+                    <SelectLabel>{group.label}</SelectLabel>
+                    {group.forms.map((form) => (
+                      <SelectItem key={form.value} value={form.value}>
+                        {form.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 ))}
               </SelectContent>
             </Select>
