@@ -22,6 +22,7 @@ import { useQuoteNumber } from "./use-quote-number";
 import posthog from "posthog-js";
 import { formatLocalDate, refreshDraftDates } from "@/src/utils/dateFormatter";
 import { refreshPrefixDate } from "@/src/utils/invoiceUtils";
+import { getOrganizationCompanyExtras } from "@/src/utils/organizationCompanyInfo";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
@@ -1031,7 +1032,32 @@ export function useQuoteEditor({
 
           if (organization) {
             // Mettre à jour les informations de l'entreprise
+            const companyExtras = getOrganizationCompanyExtras(organization);
             setValue("companyInfo.name", organization.companyName || "");
+            setValue(
+              "companyInfo.commercialName",
+              companyExtras.commercialName,
+            );
+            setValue(
+              "companyInfo.professionalTitle",
+              companyExtras.professionalTitle,
+            );
+            setValue(
+              "companyInfo.regulatoryBody",
+              companyExtras.regulatoryBody,
+            );
+            setValue(
+              "companyInfo.professionalNumber",
+              companyExtras.professionalNumber,
+            );
+            setValue(
+              "companyInfo.decennialInsurance",
+              companyExtras.decennialInsurance,
+            );
+            setValue(
+              "companyInfo.professionalLiabilityInsurance",
+              companyExtras.professionalLiabilityInsurance,
+            );
             setValue("companyInfo.email", organization.companyEmail || "");
             setValue("companyInfo.phone", organization.companyPhone || "");
             setValue("companyInfo.website", organization.website || "");
@@ -2503,6 +2529,13 @@ function transformQuoteToFormData(quote) {
 
     companyInfo: {
       name: quote.companyInfo?.name || "",
+      commercialName: quote.companyInfo?.commercialName || "",
+      professionalTitle: quote.companyInfo?.professionalTitle || "",
+      regulatoryBody: quote.companyInfo?.regulatoryBody || "",
+      professionalNumber: quote.companyInfo?.professionalNumber || "",
+      decennialInsurance: quote.companyInfo?.decennialInsurance || "",
+      professionalLiabilityInsurance:
+        quote.companyInfo?.professionalLiabilityInsurance || "",
       email: quote.companyInfo?.email || "",
       phone: quote.companyInfo?.phone || "",
       website: quote.companyInfo?.website || "",

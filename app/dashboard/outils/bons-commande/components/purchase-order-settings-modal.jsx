@@ -62,6 +62,26 @@ const getDemoPurchaseOrderData = (formData, organization) => {
         formData?.companyName ||
         organization?.companyName ||
         "Votre Entreprise",
+      // Nom commercial : visible dans l'aperçu uniquement si la case est cochée
+      commercialName: formData?.showCommercialName
+        ? formData?.commercialName || organization?.commercialName || ""
+        : "",
+      // Activité réglementée (configurée dans Paramètres > Informations légales)
+      professionalTitle: organization?.isRegulatedActivity
+        ? organization?.professionalTitle || ""
+        : "",
+      regulatoryBody: organization?.isRegulatedActivity
+        ? organization?.regulatoryBody || ""
+        : "",
+      professionalNumber: organization?.isRegulatedActivity
+        ? organization?.professionalNumber || ""
+        : "",
+      decennialInsurance: organization?.isRegulatedActivity
+        ? organization?.decennialInsurance || ""
+        : "",
+      professionalLiabilityInsurance: organization?.isRegulatedActivity
+        ? organization?.professionalLiabilityInsurance || ""
+        : "",
       email:
         formData?.companyEmail ||
         organization?.companyEmail ||
@@ -172,6 +192,16 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
             autoNumbering: org?.purchaseOrderAutoNumbering || false,
             // Informations de l'entreprise
             companyName: org?.companyName || "",
+            commercialName: org?.commercialName || "",
+            showCommercialName: org?.showCommercialName || false,
+            // Activité réglementée — lecture seule ici, se configure dans Paramètres > Générale
+            isRegulatedActivity: org?.isRegulatedActivity || false,
+            professionalTitle: org?.professionalTitle || "",
+            regulatoryBody: org?.regulatoryBody || "",
+            professionalNumber: org?.professionalNumber || "",
+            decennialInsurance: org?.decennialInsurance || "",
+            professionalLiabilityInsurance:
+              org?.professionalLiabilityInsurance || "",
             companyEmail: org?.companyEmail || "",
             companyPhone: org?.companyPhone || "",
             website: org?.website || "",
@@ -330,6 +360,8 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
       const updateData = {
         // Informations de l'entreprise
         companyName: formValues.companyName || "",
+        commercialName: formValues.commercialName || "",
+        showCommercialName: formValues.showCommercialName || false,
         companyEmail: formValues.companyEmail || "",
         companyPhone: formValues.companyPhone || "",
         website: formValues.website || "",

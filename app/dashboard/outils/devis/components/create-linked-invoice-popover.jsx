@@ -126,7 +126,11 @@ export default function CreateLinkedInvoicePopover({
           Créer une facture liée
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80" align="end">
+      <PopoverContent
+        className="w-80 max-h-[var(--radix-popover-content-available-height)] overflow-y-auto"
+        align="end"
+        collisionPadding={12}
+      >
         <div className="space-y-4">
           <div className="space-y-2">
             <h4 className="font-medium leading-none">

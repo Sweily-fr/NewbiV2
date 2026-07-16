@@ -8,7 +8,16 @@ export const LEGAL_FORMS_WITH_RCS = [
   "SASU",
   "EURL",
   "SA",
+  "SCA",
   "SNC",
+  "SCS",
+  "SELARL",
+  "SELAS",
+  "SELAFA",
+  "SELCA",
+  "SCI",
+  "SCM",
+  "SCP",
 ];
 export const LEGAL_FORMS_WITH_CAPITAL = [
   "SARL",
@@ -16,16 +25,29 @@ export const LEGAL_FORMS_WITH_CAPITAL = [
   "SASU",
   "EURL",
   "SA",
+  "SCA",
   "SNC",
+  "SCS",
+  "SELARL",
+  "SELAS",
+  "SELAFA",
+  "SELCA",
 ];
 export const LEGAL_FORMS_WITHOUT_CAPITAL = ["Auto-entrepreneur", "EI"];
 export const LEGAL_FORMS_EI_MICRO = ["EI", "Auto-entrepreneur"];
+// Catégories d'activité qui imposent le numéro RCS aux entreprises individuelles
+export const ACTIVITY_CATEGORIES_WITH_RCS = [
+  "commerciale",
+  "industrielle",
+  "mixte",
+];
 
 // Function to determine if a field is required based on legal form and other conditions
 export const getRequiredFields = (
   legalForm,
   isVatSubject = false,
   hasCommercialActivity = false,
+  activityCategory = "",
 ) => {
   const required = {
     // Only required if legal form is selected
@@ -46,7 +68,8 @@ export const getRequiredFields = (
     required.rcs = true;
   } else if (
     LEGAL_FORMS_EI_MICRO.includes(legalForm) &&
-    hasCommercialActivity
+    (hasCommercialActivity ||
+      ACTIVITY_CATEGORIES_WITH_RCS.includes(activityCategory))
   ) {
     required.rcs = true;
   }
@@ -69,6 +92,7 @@ export const getVisibleFields = (
   legalForm,
   isVatSubject = false,
   hasCommercialActivity = false,
+  activityCategory = "",
 ) => {
   const visible = {
     // Always visible fields
@@ -81,7 +105,9 @@ export const getVisibleFields = (
     // Conditionally visible fields
     rcs:
       LEGAL_FORMS_WITH_RCS.includes(legalForm) ||
-      (LEGAL_FORMS_EI_MICRO.includes(legalForm) && hasCommercialActivity),
+      (LEGAL_FORMS_EI_MICRO.includes(legalForm) &&
+        (hasCommercialActivity ||
+          ACTIVITY_CATEGORIES_WITH_RCS.includes(activityCategory))),
     vatNumber: isVatSubject,
     capital: !LEGAL_FORMS_WITHOUT_CAPITAL.includes(legalForm),
     vatSubjectCheckbox: true,
@@ -288,11 +314,13 @@ export const validateSettingsForm = (formData) => {
   const legalForm = formData.legal?.legalForm || "";
   const isVatSubject = formData.legal?.isVatSubject || false;
   const hasCommercialActivity = formData.legal?.hasCommercialActivity || false;
+  const activityCategory = formData.legal?.category || "";
 
   const requiredFields = getRequiredFields(
     legalForm,
     isVatSubject,
     hasCommercialActivity,
+    activityCategory,
   );
 
   // Validation des champs entreprise
