@@ -3,6 +3,7 @@
 import React, { useEffect, useRef } from "react";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
+import { Checkbox } from "@/src/components/ui/checkbox";
 import { Separator } from "@/src/components/ui/separator";
 import { Button } from "@/src/components/ui/button";
 import { CompanyLogoUpload } from "@/src/components/profile/CompanyLogoUpload";
@@ -217,11 +218,12 @@ export function GeneraleSection({
                 htmlFor="name"
                 className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
               >
-                Nom de l'entreprise <span className="text-red-500 ml-1">*</span>
+                Dénomination sociale{" "}
+                <span className="text-red-500 ml-1">*</span>
               </Label>
               <Input
                 id="name"
-                placeholder="Nom de votre entreprise"
+                placeholder="Dénomination sociale de votre entreprise"
                 className="w-full"
                 disabled={!canManageOrgSettings}
                 {...register("name", {
@@ -274,6 +276,220 @@ export function GeneraleSection({
                 <p className="text-sm text-red-500">{errors.email.message}</p>
               )}
             </div>
+          </div>
+
+          {/* Nom commercial */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label
+                htmlFor="commercialName"
+                className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+              >
+                Nom commercial
+              </Label>
+              <Input
+                id="commercialName"
+                placeholder="Nom commercial"
+                className="w-full"
+                disabled={!canManageOrgSettings}
+                {...register("commercialName", {
+                  validate: (value) => {
+                    if (value && detectInjectionAttempt(value)) {
+                      return "Caractères non autorisés détectés";
+                    }
+                    return true;
+                  },
+                })}
+              />
+              <p className="text-xs text-gray-400">
+                Affiché sur vos devis, factures, bons de commande et avoirs si
+                l'option est activée dans leurs paramètres.
+              </p>
+              {errors.commercialName && (
+                <p className="text-sm text-red-500">
+                  {errors.commercialName.message}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Activité réglementée */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-3">
+              <Checkbox
+                id="is-regulated-activity"
+                checked={watchedValues.isRegulatedActivity || false}
+                onCheckedChange={(checked) => {
+                  setValue("isRegulatedActivity", checked, {
+                    shouldDirty: true,
+                  });
+                }}
+                disabled={!canManageOrgSettings}
+              />
+              <div className="grid gap-1.5 leading-none">
+                <Label
+                  htmlFor="is-regulated-activity"
+                  className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55 peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Activité réglementée
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Le titre professionnel apparaîtra dans les informations de vos
+                  documents, l'organisme de rattachement, le numéro
+                  professionnel et les assurances en bas de page.
+                </p>
+              </div>
+            </div>
+
+            {watchedValues.isRegulatedActivity && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="professionalTitle"
+                      className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                    >
+                      Titre professionnel
+                    </Label>
+                    <Input
+                      id="professionalTitle"
+                      placeholder="Ex : Infirmier D.E., Expert-comptable"
+                      className="w-full"
+                      disabled={!canManageOrgSettings}
+                      {...register("professionalTitle", {
+                        validate: (value) => {
+                          if (value && detectInjectionAttempt(value)) {
+                            return "Caractères non autorisés détectés";
+                          }
+                          return true;
+                        },
+                      })}
+                    />
+                    {errors.professionalTitle && (
+                      <p className="text-sm text-red-500">
+                        {errors.professionalTitle.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="regulatoryBody"
+                      className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                    >
+                      Organisme de rattachement
+                    </Label>
+                    <Input
+                      id="regulatoryBody"
+                      placeholder="Ex : Ordre des experts-comptables"
+                      className="w-full"
+                      disabled={!canManageOrgSettings}
+                      {...register("regulatoryBody", {
+                        validate: (value) => {
+                          if (value && detectInjectionAttempt(value)) {
+                            return "Caractères non autorisés détectés";
+                          }
+                          return true;
+                        },
+                      })}
+                    />
+                    {errors.regulatoryBody && (
+                      <p className="text-sm text-red-500">
+                        {errors.regulatoryBody.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="professionalNumber"
+                      className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                    >
+                      Numéro professionnel
+                    </Label>
+                    <Input
+                      id="professionalNumber"
+                      placeholder="Ex : 12345678"
+                      className="w-full"
+                      disabled={!canManageOrgSettings}
+                      {...register("professionalNumber", {
+                        validate: (value) => {
+                          if (value && detectInjectionAttempt(value)) {
+                            return "Caractères non autorisés détectés";
+                          }
+                          return true;
+                        },
+                      })}
+                    />
+                    {errors.professionalNumber && (
+                      <p className="text-sm text-red-500">
+                        {errors.professionalNumber.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="decennialInsurance"
+                      className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                    >
+                      Assurance décennale (si applicable)
+                    </Label>
+                    <Input
+                      id="decennialInsurance"
+                      placeholder="Ex : AXA, police n° 123456"
+                      className="w-full"
+                      disabled={!canManageOrgSettings}
+                      {...register("decennialInsurance", {
+                        validate: (value) => {
+                          if (value && detectInjectionAttempt(value)) {
+                            return "Caractères non autorisés détectés";
+                          }
+                          return true;
+                        },
+                      })}
+                    />
+                    {errors.decennialInsurance && (
+                      <p className="text-sm text-red-500">
+                        {errors.decennialInsurance.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="professionalLiabilityInsurance"
+                      className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                    >
+                      Assurance RC Pro (si applicable)
+                    </Label>
+                    <Input
+                      id="professionalLiabilityInsurance"
+                      placeholder="Ex : MAAF, police n° 654321"
+                      className="w-full"
+                      disabled={!canManageOrgSettings}
+                      {...register("professionalLiabilityInsurance", {
+                        validate: (value) => {
+                          if (value && detectInjectionAttempt(value)) {
+                            return "Caractères non autorisés détectés";
+                          }
+                          return true;
+                        },
+                      })}
+                    />
+                    {errors.professionalLiabilityInsurance && (
+                      <p className="text-sm text-red-500">
+                        {errors.professionalLiabilityInsurance.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Téléphone et Site web */}

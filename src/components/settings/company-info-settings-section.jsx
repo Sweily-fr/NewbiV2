@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
+import { Checkbox } from "@/src/components/ui/checkbox";
 import { useFormContext } from "react-hook-form";
 import {
   VALIDATION_PATTERNS,
@@ -38,6 +39,8 @@ export default function CompanyInfoSettingsSection() {
   } = useFormContext();
 
   const country = watch("addressCountry");
+  const showCommercialName = watch("showCommercialName");
+  const isRegulatedActivity = watch("isRegulatedActivity");
 
   return (
     <Card className="shadow-none border-none bg-transparent p-0">
@@ -56,7 +59,7 @@ export default function CompanyInfoSettingsSection() {
               htmlFor="company-name"
               className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
             >
-              Nom de l'entreprise
+              Dénomination sociale
             </Label>
             <Input
               id="company-name"
@@ -82,6 +85,138 @@ export default function CompanyInfoSettingsSection() {
               </p>
             )}
           </div>
+
+          {/* Nom commercial — lecture seule, se renseigne dans Paramètres > Générale */}
+          <div className="space-y-1.5">
+            <Label
+              htmlFor="company-commercial-name"
+              className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+            >
+              Nom commercial
+            </Label>
+            <Input
+              id="company-commercial-name"
+              {...register("commercialName")}
+              placeholder="Nom commercial"
+              disabled
+              className="bg-muted/50 cursor-not-allowed"
+            />
+            <p className="text-xs text-muted-foreground">
+              Se renseigne dans les paramètres de l'entreprise (Paramètres →
+              Générale).
+            </p>
+            <div className="flex items-center space-x-3 pt-1">
+              <Checkbox
+                id="show-commercial-name"
+                checked={showCommercialName || false}
+                onCheckedChange={(checked) => {
+                  setValue("showCommercialName", checked, {
+                    shouldDirty: true,
+                  });
+                }}
+              />
+              <div className="grid gap-1.5 leading-none">
+                <Label
+                  htmlFor="show-commercial-name"
+                  className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55 peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Afficher le nom commercial sur les documents
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Le nom commercial apparaîtra sur vos devis, factures, bons de
+                  commande et avoirs
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Activité réglementée — lecture seule, se configure dans Paramètres > Générale */}
+          {isRegulatedActivity && (
+            <div className="space-y-4 p-4 rounded-xl border bg-[#F5F5F5] dark:bg-neutral-900">
+              <div>
+                <p className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                  Activité réglementée
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Ces informations apparaissent sur vos documents. Elles se
+                  renseignent dans les paramètres de l'entreprise (Paramètres →
+                  Générale).
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="regulated-professional-title"
+                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                  >
+                    Titre professionnel
+                  </Label>
+                  <Input
+                    id="regulated-professional-title"
+                    {...register("professionalTitle")}
+                    disabled
+                    className="bg-muted/50 cursor-not-allowed"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="regulated-regulatory-body"
+                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                  >
+                    Organisme de rattachement
+                  </Label>
+                  <Input
+                    id="regulated-regulatory-body"
+                    {...register("regulatoryBody")}
+                    disabled
+                    className="bg-muted/50 cursor-not-allowed"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="regulated-professional-number"
+                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                  >
+                    Numéro professionnel
+                  </Label>
+                  <Input
+                    id="regulated-professional-number"
+                    {...register("professionalNumber")}
+                    disabled
+                    className="bg-muted/50 cursor-not-allowed"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="regulated-decennial-insurance"
+                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                  >
+                    Assurance décennale
+                  </Label>
+                  <Input
+                    id="regulated-decennial-insurance"
+                    {...register("decennialInsurance")}
+                    disabled
+                    className="bg-muted/50 cursor-not-allowed"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="regulated-rc-pro-insurance"
+                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                  >
+                    Assurance RC Pro
+                  </Label>
+                  <Input
+                    id="regulated-rc-pro-insurance"
+                    {...register("professionalLiabilityInsurance")}
+                    disabled
+                    className="bg-muted/50 cursor-not-allowed"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Email & Téléphone */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

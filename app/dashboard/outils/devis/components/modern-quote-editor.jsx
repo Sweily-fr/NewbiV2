@@ -58,6 +58,7 @@ import {
 } from "@/src/graphql/quoteQueries";
 import { useMutation } from "@apollo/client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { getOrganizationCompanyExtras } from "@/src/utils/organizationCompanyInfo";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -330,6 +331,7 @@ export default function ModernQuoteEditor({
     return {
       client: v.client,
       companyInfo: {
+        ...getOrganizationCompanyExtras(organization),
         name: organization?.companyName || "",
         address: {
           street: organization?.addressStreet || "",
