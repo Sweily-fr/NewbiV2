@@ -2053,8 +2053,11 @@ const UniversalPreviewPDF = ({
         {data.invoiceType === "situation" && (
           <div
             className={
+              // Même padding horizontal (px-14) que le corps et le footer, y
+              // compris en mobile : sinon la section récap déborde à gauche et
+              // à droite par rapport au reste de la facture (désalignement).
               isMobile
-                ? "w-full bg-white px-6 pt-4 pb-4"
+                ? "w-full bg-white px-14 pt-4 pb-4"
                 : "w-full bg-white px-14 pt-10 pb-4"
             }
             data-pdf-section="situation-recap"
@@ -2517,33 +2520,31 @@ const UniversalPreviewPDF = ({
 
                     return (
                       <>
-                        <div className="flex justify-between py-2 text-[11px] dark:text-[#0A0A0A]">
+                        <div className="flex justify-between py-2 px-3 text-[11px] dark:text-[#0A0A0A]">
                           <span>Montant marché (HT)</span>
                           <span className="font-medium">
                             {formatCurrency(totalMarcheHT)}
                           </span>
                         </div>
-                        <div className="flex justify-between py-2 text-[11px] dark:text-[#0A0A0A]">
+                        <div className="flex justify-between py-2 px-3 text-[11px] dark:text-[#0A0A0A]">
                           <span>Montant facturé à ce jour (HT)</span>
                           <span className="font-medium">
                             {formatCurrency(montantFactureHT)}
                           </span>
                         </div>
-                        <div className="flex justify-between py-2 text-[11px] dark:text-[#0A0A0A]">
+                        <div className="flex justify-between py-2 px-3 text-[11px] dark:text-[#0A0A0A]">
                           <span>Avancement cumulé</span>
                           <span className="font-medium">
                             {avancementCumule.toFixed(0)} %
                           </span>
                         </div>
                         <div
-                          className="flex justify-between py-2 text-[11px] font-medium"
+                          className="flex justify-between py-2 px-3 text-[11px] font-medium"
                           style={{
                             backgroundColor:
                               data.appearance?.headerBgColor || "#1d1d1b",
                             color:
                               data.appearance?.headerTextColor || "#FFFFFF",
-                            margin: "0 -12px",
-                            padding: "8px 12px",
                           }}
                         >
                           <span>Solde à facturer (HT)</span>
