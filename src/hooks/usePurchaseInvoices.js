@@ -83,6 +83,8 @@ export const usePurchaseInvoiceStats = () => {
     stats: data?.purchaseInvoiceStats || {
       totalToPay: 0,
       totalToPayCount: 0,
+      totalUnpaid: 0,
+      totalUnpaidCount: 0,
       totalOverdue: 0,
       totalOverdueCount: 0,
       paidThisMonth: 0,
