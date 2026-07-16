@@ -69,22 +69,33 @@ const getDemoInvoiceData = (formData, organization, userName) => {
       commercialName: formData?.showCommercialName
         ? formData?.commercialName || organization?.commercialName || ""
         : "",
-      // Activité réglementée (configurée dans Paramètres > Informations légales)
-      professionalTitle: organization?.isRegulatedActivity
-        ? organization?.professionalTitle || ""
-        : "",
-      regulatoryBody: organization?.isRegulatedActivity
-        ? organization?.regulatoryBody || ""
-        : "",
-      professionalNumber: organization?.isRegulatedActivity
-        ? organization?.professionalNumber || ""
-        : "",
-      decennialInsurance: organization?.isRegulatedActivity
-        ? organization?.decennialInsurance || ""
-        : "",
-      professionalLiabilityInsurance: organization?.isRegulatedActivity
-        ? organization?.professionalLiabilityInsurance || ""
-        : "",
+      // Activité réglementée : le formulaire prime (aperçu en direct), fallback organisation
+      professionalTitle:
+        (formData?.isRegulatedActivity ?? organization?.isRegulatedActivity)
+          ? formData?.professionalTitle || organization?.professionalTitle || ""
+          : "",
+      regulatoryBody:
+        (formData?.isRegulatedActivity ?? organization?.isRegulatedActivity)
+          ? formData?.regulatoryBody || organization?.regulatoryBody || ""
+          : "",
+      professionalNumber:
+        (formData?.isRegulatedActivity ?? organization?.isRegulatedActivity)
+          ? formData?.professionalNumber ||
+            organization?.professionalNumber ||
+            ""
+          : "",
+      decennialInsurance:
+        (formData?.isRegulatedActivity ?? organization?.isRegulatedActivity)
+          ? formData?.decennialInsurance ||
+            organization?.decennialInsurance ||
+            ""
+          : "",
+      professionalLiabilityInsurance:
+        (formData?.isRegulatedActivity ?? organization?.isRegulatedActivity)
+          ? formData?.professionalLiabilityInsurance ||
+            organization?.professionalLiabilityInsurance ||
+            ""
+          : "",
       email:
         formData?.companyEmail ||
         organization?.companyEmail ||
@@ -114,7 +125,7 @@ const getDemoInvoiceData = (formData, organization, userName) => {
         organization?.activityCategory ||
         organization?.transactionCategory ||
         "",
-      logo: organization?.logo || null,
+      logo: formData?.logo || organization?.logo || null,
       bankDetails: {
         iban: bankDetails?.iban || "",
         bic: bankDetails?.bic || "",
@@ -209,7 +220,8 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
             companyName: org?.companyName || "",
             commercialName: org?.commercialName || "",
             showCommercialName: org?.showCommercialName || false,
-            // Activité réglementée — lecture seule ici, se configure dans Paramètres > Générale
+            logo: org?.logo || "",
+            // Activité réglementée
             isRegulatedActivity: org?.isRegulatedActivity || false,
             professionalTitle: org?.professionalTitle || "",
             regulatoryBody: org?.regulatoryBody || "",
@@ -385,6 +397,15 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
         companyName: formValues.companyName || "",
         commercialName: formValues.commercialName || "",
         showCommercialName: formValues.showCommercialName || false,
+        logo: formValues.logo || "",
+        // Activité réglementée
+        isRegulatedActivity: formValues.isRegulatedActivity || false,
+        professionalTitle: formValues.professionalTitle || "",
+        regulatoryBody: formValues.regulatoryBody || "",
+        professionalNumber: formValues.professionalNumber || "",
+        decennialInsurance: formValues.decennialInsurance || "",
+        professionalLiabilityInsurance:
+          formValues.professionalLiabilityInsurance || "",
         companyEmail: formValues.companyEmail || "",
         companyPhone: formValues.companyPhone || "",
         website: formValues.website || "",
