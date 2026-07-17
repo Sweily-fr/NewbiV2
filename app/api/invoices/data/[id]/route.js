@@ -95,6 +95,15 @@ async function handler(request, { params }) {
     isDeposit: invoice.isDeposit,
     depositAmount: invoice.depositAmount,
 
+    // Type de facture + champs des factures de situation. Sans invoiceType,
+    // UniversalPreviewPDF retombe sur le rendu "standard" (colonnes classiques,
+    // pas de récapitulatif d'avancement) → le PDF archivé ne correspondait plus
+    // à l'aperçu d'une facture de situation.
+    invoiceType: invoice.invoiceType,
+    situationReference: invoice.situationReference,
+    situationNumber: invoice.situationNumber,
+    contractTotal: invoice.contractTotal,
+
     showBankDetails: invoice.showBankDetails,
     isReverseCharge: invoice.isReverseCharge,
     clientPositionRight: invoice.clientPositionRight,
