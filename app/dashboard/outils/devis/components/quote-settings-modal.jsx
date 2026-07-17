@@ -173,6 +173,8 @@ const getDemoQuoteData = (formData, organization) => {
     },
     // Position du client dans le PDF
     clientPositionRight: clientPositionRight,
+    // Nom du bénéficiaire (pour auto-entrepreneurs)
+    beneficiaryNameType: formData?.beneficiaryNameType || "companyName",
   };
 };
 
@@ -264,6 +266,12 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
                 "#5b4fff",
             },
             clientPositionRight: org?.quoteClientPositionRight || false,
+            // Nom du bénéficiaire (pour auto-entrepreneurs, défaut: fullName)
+            beneficiaryNameType:
+              org?.beneficiaryNameType ||
+              (["EI", "Auto-entrepreneur"].includes(org?.legalForm)
+                ? "fullName"
+                : "companyName"),
           };
 
           setInitialValues(formValues);
@@ -312,6 +320,7 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
         headerBgColor: "#5b4fff",
       },
       clientPositionRight: false,
+      beneficiaryNameType: "companyName",
     },
   });
 
@@ -422,6 +431,9 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
         bankBic: formValues.bankDetails?.bic || "",
         bankName: formValues.bankDetails?.bankName || "",
         showBankDetails: formValues.showBankDetails,
+
+        // Nom du bénéficiaire
+        beneficiaryNameType: formValues.beneficiaryNameType || "companyName",
       };
 
       await updateOrganization(organization.id, updateData);
@@ -438,10 +450,20 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
     }
   };
 
+  // Watcher direct (sans debounce) pour que le switch mette à jour la preview instantanément
+  const liveBeneficiaryNameType = form.watch("beneficiaryNameType");
+
   if (!open) return null;
 
   const demoData = debouncedFormData
-    ? getDemoQuoteData(debouncedFormData, organization)
+    ? {
+        ...getDemoQuoteData(debouncedFormData, organization),
+        // Écraser avec la valeur live (pas debounced) pour réactivité immédiate du switch
+        beneficiaryNameType:
+          liveBeneficiaryNameType ||
+          debouncedFormData?.beneficiaryNameType ||
+          "companyName",
+      }
     : null;
 
   return (
@@ -484,6 +506,7 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
                       canEdit={true}
                       onCancel={() => onOpenChange(false)}
                       onSave={handleSave}
+                      organization={organization}
                       isGlobalSettings={true}
                     />
                   </FormProvider>

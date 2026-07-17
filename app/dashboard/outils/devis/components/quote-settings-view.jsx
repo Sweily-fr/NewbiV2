@@ -300,11 +300,19 @@ export default function QuoteSettingsView({
   ]);
 
   // Exposer la fonction de gestion de fermeture au parent
+  // Enregistré UNE seule fois via une ref stable : ré-enregistrer à chaque
+  // changement de hasUnsavedChanges provoquait un setState du parent en
+  // cascade (risque de "Maximum update depth exceeded"), et le handler
+  // capturé était figé sur une valeur périmée de hasUnsavedChanges.
+  const handleCancelClickRef = React.useRef(null);
+  React.useEffect(() => {
+    handleCancelClickRef.current = handleCancelClick;
+  });
   React.useEffect(() => {
     if (onCloseAttempt) {
-      onCloseAttempt(() => handleCancelClick);
+      onCloseAttempt(() => () => handleCancelClickRef.current?.());
     }
-  }, [hasUnsavedChanges]);
+  }, [onCloseAttempt]);
 
   // Sauvegarder les valeurs initiales au montage
   useEffect(() => {
@@ -324,6 +332,15 @@ export default function QuoteSettingsView({
         showBankDetails: data.showBankDetails,
         // Infos entreprise (flat + companyInfo nested pour la preview)
         companyName: data.companyName,
+        commercialName: data.commercialName,
+        showCommercialName: data.showCommercialName,
+        isRegulatedActivity: data.isRegulatedActivity,
+        professionalTitle: data.professionalTitle,
+        regulatoryBody: data.regulatoryBody,
+        professionalNumber: data.professionalNumber,
+        decennialInsurance: data.decennialInsurance,
+        professionalLiabilityInsurance: data.professionalLiabilityInsurance,
+        logo: data.logo,
         companyEmail: data.companyEmail,
         companyPhone: data.companyPhone,
         website: data.website,
@@ -356,6 +373,17 @@ export default function QuoteSettingsView({
         initialValuesRef.current.clientPositionRight ||
       data.showBankDetails !== initialValuesRef.current.showBankDetails ||
       data.companyName !== initialValuesRef.current.companyName ||
+      data.commercialName !== initialValuesRef.current.commercialName ||
+      data.showCommercialName !== initialValuesRef.current.showCommercialName ||
+      data.isRegulatedActivity !==
+        initialValuesRef.current.isRegulatedActivity ||
+      data.professionalTitle !== initialValuesRef.current.professionalTitle ||
+      data.regulatoryBody !== initialValuesRef.current.regulatoryBody ||
+      data.professionalNumber !== initialValuesRef.current.professionalNumber ||
+      data.decennialInsurance !== initialValuesRef.current.decennialInsurance ||
+      data.professionalLiabilityInsurance !==
+        initialValuesRef.current.professionalLiabilityInsurance ||
+      data.logo !== initialValuesRef.current.logo ||
       data.companyEmail !== initialValuesRef.current.companyEmail ||
       data.companyPhone !== initialValuesRef.current.companyPhone ||
       data.website !== initialValuesRef.current.website ||
@@ -380,9 +408,13 @@ export default function QuoteSettingsView({
     if (initialValuesRef.current) {
       // Numérotation : restaurer le mode AVANT préfixe/numéro pour neutraliser
       // l'effet de resynchronisation, puis remettre le numéro initial.
-      setValue("autoNumbering", initialValuesRef.current.autoNumbering ?? false, {
-        shouldValidate: false,
-      });
+      setValue(
+        "autoNumbering",
+        initialValuesRef.current.autoNumbering ?? false,
+        {
+          shouldValidate: false,
+        },
+      );
       setValue("prefix", initialValuesRef.current.prefix ?? "", {
         shouldValidate: false,
       });
@@ -417,6 +449,33 @@ export default function QuoteSettingsView({
       );
       // Infos entreprise — restaurer les champs plats et l'objet companyInfo
       setValue("companyName", initialValuesRef.current.companyName ?? "");
+      setValue("commercialName", initialValuesRef.current.commercialName ?? "");
+      setValue(
+        "showCommercialName",
+        initialValuesRef.current.showCommercialName ?? false,
+      );
+      setValue(
+        "isRegulatedActivity",
+        initialValuesRef.current.isRegulatedActivity ?? false,
+      );
+      setValue(
+        "professionalTitle",
+        initialValuesRef.current.professionalTitle ?? "",
+      );
+      setValue("regulatoryBody", initialValuesRef.current.regulatoryBody ?? "");
+      setValue(
+        "professionalNumber",
+        initialValuesRef.current.professionalNumber ?? "",
+      );
+      setValue(
+        "decennialInsurance",
+        initialValuesRef.current.decennialInsurance ?? "",
+      );
+      setValue(
+        "professionalLiabilityInsurance",
+        initialValuesRef.current.professionalLiabilityInsurance ?? "",
+      );
+      setValue("logo", initialValuesRef.current.logo ?? "");
       setValue("companyEmail", initialValuesRef.current.companyEmail ?? "");
       setValue("companyPhone", initialValuesRef.current.companyPhone ?? "");
       setValue("website", initialValuesRef.current.website ?? "");
@@ -450,6 +509,15 @@ export default function QuoteSettingsView({
       clientPositionRight: data.clientPositionRight,
       showBankDetails: data.showBankDetails,
       companyName: data.companyName,
+      commercialName: data.commercialName,
+      showCommercialName: data.showCommercialName,
+      isRegulatedActivity: data.isRegulatedActivity,
+      professionalTitle: data.professionalTitle,
+      regulatoryBody: data.regulatoryBody,
+      professionalNumber: data.professionalNumber,
+      decennialInsurance: data.decennialInsurance,
+      professionalLiabilityInsurance: data.professionalLiabilityInsurance,
+      logo: data.logo,
       companyEmail: data.companyEmail,
       companyPhone: data.companyPhone,
       website: data.website,
@@ -799,8 +867,10 @@ export default function QuoteSettingsView({
                       de votre entreprise.
                     </p>
 
-                    {/* TODO: Choix du nom du bénéficiaire pour les auto-entrepreneurs — désactivé pour devis/bons de commande, à réactiver si besoin */}
-                    {/* {organization?.legalForm === "Auto-entrepreneur" && (
+                    {/* Choix du nom du bénéficiaire pour les auto-entrepreneurs */}
+                    {["EI", "Auto-entrepreneur"].includes(
+                      organization?.legalForm,
+                    ) && (
                       <div className="flex items-center justify-between p-4 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
                         <div className="grid gap-1.5 leading-none">
                           <Label
@@ -828,14 +898,14 @@ export default function QuoteSettingsView({
                               setValue(
                                 "beneficiaryNameType",
                                 checked ? "fullName" : "companyName",
-                                { shouldDirty: true }
+                                { shouldDirty: true },
                               );
                             }}
                             disabled={!canEdit}
                           />
                         </div>
                       </div>
-                    )} */}
+                    )}
 
                     <Alert>
                       <AlertDescription>

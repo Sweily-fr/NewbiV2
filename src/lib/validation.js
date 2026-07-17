@@ -46,7 +46,6 @@ export const ACTIVITY_CATEGORIES_WITH_RCS = [
 export const getRequiredFields = (
   legalForm,
   isVatSubject = false,
-  hasCommercialActivity = false,
   activityCategory = "",
 ) => {
   const required = {
@@ -63,13 +62,12 @@ export const getRequiredFields = (
     capital: false,
   };
 
-  // RCS logic
+  // RCS logic : pour les EI, déterminé par la catégorie d'activité
   if (LEGAL_FORMS_WITH_RCS.includes(legalForm)) {
     required.rcs = true;
   } else if (
     LEGAL_FORMS_EI_MICRO.includes(legalForm) &&
-    (hasCommercialActivity ||
-      ACTIVITY_CATEGORIES_WITH_RCS.includes(activityCategory))
+    ACTIVITY_CATEGORIES_WITH_RCS.includes(activityCategory)
   ) {
     required.rcs = true;
   }
@@ -91,7 +89,6 @@ export const getRequiredFields = (
 export const getVisibleFields = (
   legalForm,
   isVatSubject = false,
-  hasCommercialActivity = false,
   activityCategory = "",
 ) => {
   const visible = {
@@ -106,12 +103,10 @@ export const getVisibleFields = (
     rcs:
       LEGAL_FORMS_WITH_RCS.includes(legalForm) ||
       (LEGAL_FORMS_EI_MICRO.includes(legalForm) &&
-        (hasCommercialActivity ||
-          ACTIVITY_CATEGORIES_WITH_RCS.includes(activityCategory))),
+        ACTIVITY_CATEGORIES_WITH_RCS.includes(activityCategory)),
     vatNumber: isVatSubject,
     capital: !LEGAL_FORMS_WITHOUT_CAPITAL.includes(legalForm),
     vatSubjectCheckbox: true,
-    commercialActivityCheckbox: LEGAL_FORMS_EI_MICRO.includes(legalForm),
   };
 
   return visible;
@@ -313,13 +308,11 @@ export const validateSettingsForm = (formData) => {
   // Get conditional requirements based on legal form
   const legalForm = formData.legal?.legalForm || "";
   const isVatSubject = formData.legal?.isVatSubject || false;
-  const hasCommercialActivity = formData.legal?.hasCommercialActivity || false;
   const activityCategory = formData.legal?.category || "";
 
   const requiredFields = getRequiredFields(
     legalForm,
     isVatSubject,
-    hasCommercialActivity,
     activityCategory,
   );
 

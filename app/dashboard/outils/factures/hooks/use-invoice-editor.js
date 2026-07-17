@@ -1211,6 +1211,18 @@ export function useInvoiceEditor({
       };
 
       setValue("companyInfo", autoFilledCompanyInfo);
+      setValue(
+        "showCommercialName",
+        organization?.showCommercialName || false,
+        {
+          shouldDirty: false,
+        },
+      );
+      setValue(
+        "isRegulatedActivity",
+        organization?.isRegulatedActivity || false,
+        { shouldDirty: false },
+      );
     }
   }, [mode, organization, setValue]);
 
@@ -1347,6 +1359,29 @@ export function useInvoiceEditor({
           shouldDirty: false,
         });
         setValue("website", companyInfo.website || "", { shouldDirty: false });
+        setValue("commercialName", companyInfo.commercialName || "", {
+          shouldDirty: false,
+        });
+        setValue("professionalTitle", companyInfo.professionalTitle || "", {
+          shouldDirty: false,
+        });
+        setValue("regulatoryBody", companyInfo.regulatoryBody || "", {
+          shouldDirty: false,
+        });
+        setValue("professionalNumber", companyInfo.professionalNumber || "", {
+          shouldDirty: false,
+        });
+        setValue("decennialInsurance", companyInfo.decennialInsurance || "", {
+          shouldDirty: false,
+        });
+        setValue(
+          "professionalLiabilityInsurance",
+          companyInfo.professionalLiabilityInsurance || "",
+          { shouldDirty: false },
+        );
+        if (companyInfo.logo) {
+          setValue("logo", companyInfo.logo, { shouldDirty: false });
+        }
         if (typeof companyInfo.address === "object" && companyInfo.address) {
           setValue("addressStreet", companyInfo.address.street || "", {
             shouldDirty: false,
@@ -1383,6 +1418,48 @@ export function useInvoiceEditor({
     const nextCountry =
       formData.addressCountry ?? currentAddress.country ?? "France";
 
+    // Nom commercial, activité réglementée, logo — tri-état : la case cochée
+    // (true/false) pilote l'inclusion, undefined conserve le snapshot
+    const nextLogo = formData.logo ?? current.logo ?? "";
+    const showCommercial =
+      formData.showCommercialName ??
+      (current.commercialName ? true : undefined);
+    const nextCommercialName =
+      showCommercial === false
+        ? ""
+        : (formData.commercialName ?? current.commercialName ?? "");
+    const isRegulated =
+      formData.isRegulatedActivity ??
+      (current.professionalTitle ||
+      current.regulatoryBody ||
+      current.professionalNumber ||
+      current.decennialInsurance ||
+      current.professionalLiabilityInsurance
+        ? true
+        : undefined);
+    const regulatedValue = (flat, curr) =>
+      isRegulated === false ? "" : (flat ?? curr ?? "");
+    const nextProfessionalTitle = regulatedValue(
+      formData.professionalTitle,
+      current.professionalTitle,
+    );
+    const nextRegulatoryBody = regulatedValue(
+      formData.regulatoryBody,
+      current.regulatoryBody,
+    );
+    const nextProfessionalNumber = regulatedValue(
+      formData.professionalNumber,
+      current.professionalNumber,
+    );
+    const nextDecennialInsurance = regulatedValue(
+      formData.decennialInsurance,
+      current.decennialInsurance,
+    );
+    const nextProfessionalLiabilityInsurance = regulatedValue(
+      formData.professionalLiabilityInsurance,
+      current.professionalLiabilityInsurance,
+    );
+
     if (
       nextName !== (current.name || "") ||
       nextEmail !== (current.email || "") ||
@@ -1391,7 +1468,15 @@ export function useInvoiceEditor({
       nextStreet !== (currentAddress.street || "") ||
       nextCity !== (currentAddress.city || "") ||
       nextPostalCode !== (currentAddress.postalCode || "") ||
-      nextCountry !== (currentAddress.country || "France")
+      nextCountry !== (currentAddress.country || "France") ||
+      nextLogo !== (current.logo || "") ||
+      nextCommercialName !== (current.commercialName || "") ||
+      nextProfessionalTitle !== (current.professionalTitle || "") ||
+      nextRegulatoryBody !== (current.regulatoryBody || "") ||
+      nextProfessionalNumber !== (current.professionalNumber || "") ||
+      nextDecennialInsurance !== (current.decennialInsurance || "") ||
+      nextProfessionalLiabilityInsurance !==
+        (current.professionalLiabilityInsurance || "")
     ) {
       setValue(
         "companyInfo",
@@ -1408,6 +1493,13 @@ export function useInvoiceEditor({
             postalCode: nextPostalCode,
             country: nextCountry,
           },
+          logo: nextLogo,
+          commercialName: nextCommercialName,
+          professionalTitle: nextProfessionalTitle,
+          regulatoryBody: nextRegulatoryBody,
+          professionalNumber: nextProfessionalNumber,
+          decennialInsurance: nextDecennialInsurance,
+          professionalLiabilityInsurance: nextProfessionalLiabilityInsurance,
         },
         { shouldDirty: true },
       );
@@ -1422,6 +1514,15 @@ export function useInvoiceEditor({
     formData.addressCity,
     formData.addressZipCode,
     formData.addressCountry,
+    formData.logo,
+    formData.commercialName,
+    formData.showCommercialName,
+    formData.isRegulatedActivity,
+    formData.professionalTitle,
+    formData.regulatoryBody,
+    formData.professionalNumber,
+    formData.decennialInsurance,
+    formData.professionalLiabilityInsurance,
     getValues,
     setValue,
   ]);
@@ -2866,6 +2967,15 @@ function transformInvoiceToFormData(invoice) {
     dueDate: transformDate(invoice.dueDate, "dueDate"),
     status: invoice.status || "DRAFT",
     client: invoice.client || null,
+    // Toggles dérivés du snapshot companyInfo (pour la vue paramètres)
+    showCommercialName: !!invoice.companyInfo?.commercialName,
+    isRegulatedActivity: !!(
+      invoice.companyInfo?.professionalTitle ||
+      invoice.companyInfo?.regulatoryBody ||
+      invoice.companyInfo?.professionalNumber ||
+      invoice.companyInfo?.decennialInsurance ||
+      invoice.companyInfo?.professionalLiabilityInsurance
+    ),
     companyInfo: invoice.companyInfo
       ? {
           name: invoice.companyInfo.name || "",

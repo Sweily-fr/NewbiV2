@@ -58,7 +58,11 @@ import {
 } from "@/src/graphql/quoteQueries";
 import { useMutation } from "@apollo/client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
-import { getOrganizationCompanyExtras } from "@/src/utils/organizationCompanyInfo";
+import { updateOrganization as updateOrganizationSettings } from "@/src/lib/organization-client";
+import {
+  getOrganizationCompanyExtras,
+  buildCompanyOrganizationUpdate,
+} from "@/src/utils/organizationCompanyInfo";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -660,9 +664,26 @@ export default function ModernQuoteEditor({
                       setFormData={setFormData}
                       onCancel={() => setShowSettings(false)}
                       onCloseAttempt={setCloseSettingsHandler}
-                      onSave={() => {
+                      onSave={async () => {
                         setShowSettings(false);
-                        toast.success("Paramètres appliqués à ce devis");
+                        // Les champs généraux (infos entreprise, nom commercial,
+                        // activité réglementée, logo) sont propagés à
+                        // l'organisation pour changer partout — la numérotation
+                        // et l'apparence restent locales à ce devis.
+                        try {
+                          if (organization?.id) {
+                            await updateOrganizationSettings(
+                              organization.id,
+                              buildCompanyOrganizationUpdate(
+                                form.getValues(),
+                                organization,
+                              ),
+                            );
+                          }
+                          toast.success("Paramètres appliqués");
+                        } catch {
+                          toast.success("Paramètres appliqués à ce devis");
+                        }
                       }}
                       canEdit={!isReadOnly}
                       saveLabel="Appliquer à ce devis"

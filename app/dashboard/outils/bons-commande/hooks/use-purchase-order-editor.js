@@ -1081,6 +1081,16 @@ export function usePurchaseOrderEditor({
       };
 
       setValue("companyInfo", updatedCompanyInfo, { shouldDirty: false });
+      setValue("showCommercialName", organization.showCommercialName || false, {
+        shouldDirty: false,
+      });
+      setValue(
+        "isRegulatedActivity",
+        organization.isRegulatedActivity || false,
+        {
+          shouldDirty: false,
+        },
+      );
 
       // Mettre à jour les paramètres d'apparence (couleurs spécifiques aux bons de commande avec fallback)
       setValue(
@@ -1129,6 +1139,15 @@ export function usePurchaseOrderEditor({
       setValue("showBankDetails", organization.showBankDetails || false, {
         shouldDirty: false,
       });
+      // Nom du bénéficiaire (pour auto-entrepreneurs)
+      setValue(
+        "beneficiaryNameType",
+        organization.beneficiaryNameType ||
+          (["EI", "Auto-entrepreneur"].includes(organization.legalForm)
+            ? "fullName"
+            : "companyName"),
+        { shouldDirty: false },
+      );
       // Synchroniser les bankDetails au niveau top-level (utilisé par la preview)
       if (
         organization.bankIban ||
@@ -1223,6 +1242,29 @@ export function usePurchaseOrderEditor({
           shouldDirty: false,
         });
         setValue("website", companyInfo.website || "", { shouldDirty: false });
+        setValue("commercialName", companyInfo.commercialName || "", {
+          shouldDirty: false,
+        });
+        setValue("professionalTitle", companyInfo.professionalTitle || "", {
+          shouldDirty: false,
+        });
+        setValue("regulatoryBody", companyInfo.regulatoryBody || "", {
+          shouldDirty: false,
+        });
+        setValue("professionalNumber", companyInfo.professionalNumber || "", {
+          shouldDirty: false,
+        });
+        setValue("decennialInsurance", companyInfo.decennialInsurance || "", {
+          shouldDirty: false,
+        });
+        setValue(
+          "professionalLiabilityInsurance",
+          companyInfo.professionalLiabilityInsurance || "",
+          { shouldDirty: false },
+        );
+        if (companyInfo.logo) {
+          setValue("logo", companyInfo.logo, { shouldDirty: false });
+        }
         if (typeof companyInfo.address === "object" && companyInfo.address) {
           setValue("addressStreet", companyInfo.address.street || "", {
             shouldDirty: false,
@@ -1262,6 +1304,48 @@ export function usePurchaseOrderEditor({
     const nextCountry =
       formData.addressCountry ?? currentAddress.country ?? "France";
 
+    // Nom commercial, activité réglementée, logo — tri-état : la case cochée
+    // (true/false) pilote l'inclusion, undefined conserve le snapshot
+    const nextLogo = formData.logo ?? current.logo ?? "";
+    const showCommercial =
+      formData.showCommercialName ??
+      (current.commercialName ? true : undefined);
+    const nextCommercialName =
+      showCommercial === false
+        ? ""
+        : (formData.commercialName ?? current.commercialName ?? "");
+    const isRegulated =
+      formData.isRegulatedActivity ??
+      (current.professionalTitle ||
+      current.regulatoryBody ||
+      current.professionalNumber ||
+      current.decennialInsurance ||
+      current.professionalLiabilityInsurance
+        ? true
+        : undefined);
+    const regulatedValue = (flat, curr) =>
+      isRegulated === false ? "" : (flat ?? curr ?? "");
+    const nextProfessionalTitle = regulatedValue(
+      formData.professionalTitle,
+      current.professionalTitle,
+    );
+    const nextRegulatoryBody = regulatedValue(
+      formData.regulatoryBody,
+      current.regulatoryBody,
+    );
+    const nextProfessionalNumber = regulatedValue(
+      formData.professionalNumber,
+      current.professionalNumber,
+    );
+    const nextDecennialInsurance = regulatedValue(
+      formData.decennialInsurance,
+      current.decennialInsurance,
+    );
+    const nextProfessionalLiabilityInsurance = regulatedValue(
+      formData.professionalLiabilityInsurance,
+      current.professionalLiabilityInsurance,
+    );
+
     if (
       nextName !== (current.name || "") ||
       nextEmail !== (current.email || "") ||
@@ -1270,7 +1354,15 @@ export function usePurchaseOrderEditor({
       nextStreet !== (currentAddress.street || "") ||
       nextCity !== (currentAddress.city || "") ||
       nextPostalCode !== (currentAddress.postalCode || "") ||
-      nextCountry !== (currentAddress.country || "France")
+      nextCountry !== (currentAddress.country || "France") ||
+      nextLogo !== (current.logo || "") ||
+      nextCommercialName !== (current.commercialName || "") ||
+      nextProfessionalTitle !== (current.professionalTitle || "") ||
+      nextRegulatoryBody !== (current.regulatoryBody || "") ||
+      nextProfessionalNumber !== (current.professionalNumber || "") ||
+      nextDecennialInsurance !== (current.decennialInsurance || "") ||
+      nextProfessionalLiabilityInsurance !==
+        (current.professionalLiabilityInsurance || "")
     ) {
       setValue(
         "companyInfo",
@@ -1287,6 +1379,13 @@ export function usePurchaseOrderEditor({
             postalCode: nextPostalCode,
             country: nextCountry,
           },
+          logo: nextLogo,
+          commercialName: nextCommercialName,
+          professionalTitle: nextProfessionalTitle,
+          regulatoryBody: nextRegulatoryBody,
+          professionalNumber: nextProfessionalNumber,
+          decennialInsurance: nextDecennialInsurance,
+          professionalLiabilityInsurance: nextProfessionalLiabilityInsurance,
         },
         { shouldDirty: true },
       );
@@ -1301,6 +1400,15 @@ export function usePurchaseOrderEditor({
     formData.addressCity,
     formData.addressZipCode,
     formData.addressCountry,
+    formData.logo,
+    formData.commercialName,
+    formData.showCommercialName,
+    formData.isRegulatedActivity,
+    formData.professionalTitle,
+    formData.regulatoryBody,
+    formData.professionalNumber,
+    formData.decennialInsurance,
+    formData.professionalLiabilityInsurance,
     getValues,
     setValue,
   ]);
@@ -2354,6 +2462,11 @@ function getInitialFormData(mode, initialData, session, organization) {
 
     // Coordonnées bancaires
     showBankDetails: false,
+    beneficiaryNameType:
+      organization?.beneficiaryNameType ||
+      (["EI", "Auto-entrepreneur"].includes(organization?.legalForm)
+        ? "fullName"
+        : "companyName"),
     bankDetails: {
       iban: "",
       bic: "",
@@ -2559,6 +2672,15 @@ function transformPurchaseOrderToFormData(purchaseOrder) {
         }
       : null,
 
+    // Toggles dérivés du snapshot companyInfo (pour la vue paramètres)
+    showCommercialName: !!purchaseOrder.companyInfo?.commercialName,
+    isRegulatedActivity: !!(
+      purchaseOrder.companyInfo?.professionalTitle ||
+      purchaseOrder.companyInfo?.regulatoryBody ||
+      purchaseOrder.companyInfo?.professionalNumber ||
+      purchaseOrder.companyInfo?.decennialInsurance ||
+      purchaseOrder.companyInfo?.professionalLiabilityInsurance
+    ),
     companyInfo: {
       name: purchaseOrder.companyInfo?.name || "",
       commercialName: purchaseOrder.companyInfo?.commercialName || "",

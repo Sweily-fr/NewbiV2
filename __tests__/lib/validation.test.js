@@ -41,14 +41,15 @@ describe("getRequiredFields", () => {
     expect(r.capital).toBe(true);
   });
 
-  it("does NOT require RCS for EI without commercial activity", () => {
-    const r = getRequiredFields("EI", false, false);
-    expect(r.rcs).toBe(false);
+  it("does NOT require RCS for EI with a non-commercial activity", () => {
+    expect(getRequiredFields("EI", false, "liberale").rcs).toBe(false);
+    expect(getRequiredFields("EI", false, "").rcs).toBe(false);
   });
 
-  it("requires RCS for EI WITH commercial activity", () => {
-    const r = getRequiredFields("EI", false, true);
-    expect(r.rcs).toBe(true);
+  it("requires RCS for EI with commercial, industrial or mixed activity", () => {
+    expect(getRequiredFields("EI", false, "commerciale").rcs).toBe(true);
+    expect(getRequiredFields("EI", false, "industrielle").rcs).toBe(true);
+    expect(getRequiredFields("EI", false, "mixte").rcs).toBe(true);
   });
 
   it("requires VAT number when isVatSubject=true", () => {
@@ -62,18 +63,25 @@ describe("getRequiredFields", () => {
 });
 
 describe("getVisibleFields", () => {
-  it("hides RCS for SAS but shows it for SAS commercial", () => {
-    expect(getVisibleFields("Auto-entrepreneur", false, false).rcs).toBe(false);
-    expect(getVisibleFields("Auto-entrepreneur", false, true).rcs).toBe(true);
+  it("shows RCS for Auto-entrepreneur only with a commercial-type activity", () => {
+    expect(getVisibleFields("Auto-entrepreneur", false, "liberale").rcs).toBe(
+      false,
+    );
+    expect(
+      getVisibleFields("Auto-entrepreneur", false, "commerciale").rcs,
+    ).toBe(true);
+    expect(getVisibleFields("Auto-entrepreneur", false, "mixte").rcs).toBe(
+      true,
+    );
   });
 
   it("hides capital for Auto-entrepreneur", () => {
     expect(getVisibleFields("Auto-entrepreneur").capital).toBe(false);
   });
 
-  it("shows commercialActivityCheckbox only for EI/Auto-entrepreneur", () => {
-    expect(getVisibleFields("EI").commercialActivityCheckbox).toBe(true);
-    expect(getVisibleFields("SARL").commercialActivityCheckbox).toBe(false);
+  it("no longer exposes the commercialActivityCheckbox (driven by activity category)", () => {
+    expect(getVisibleFields("EI").commercialActivityCheckbox).toBeUndefined();
+    expect(getVisibleFields("SARL").commercialActivityCheckbox).toBeUndefined();
   });
 
   it("shows VAT number only when subject", () => {
