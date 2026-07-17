@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { Checkbox } from "@/src/components/ui/checkbox";
+import { Switch } from "@/src/components/ui/switch";
 import { CompanyLogoUpload } from "@/src/components/profile/CompanyLogoUpload";
 import { useFormContext } from "react-hook-form";
 import {
@@ -34,6 +34,16 @@ const COUNTRIES = [
   { value: "Canada", label: "Canada", flag: "🇨🇦" },
   { value: "Luxembourg", label: "Luxembourg", flag: "🇱🇺" },
 ];
+
+const FIELD_LABEL_CLASS =
+  "text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55";
+
+const noInjection = (value) => {
+  if (value && detectInjectionAttempt(value)) {
+    return "Caractères non autorisés détectés";
+  }
+  return true;
+};
 
 export default function CompanyInfoSettingsSection() {
   const {
@@ -71,7 +81,7 @@ export default function CompanyInfoSettingsSection() {
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Logo de l'entreprise */}
           <div className="flex items-center gap-5">
             <CompanyLogoUpload
@@ -83,21 +93,16 @@ export default function CompanyInfoSettingsSection() {
               showDescription={false}
             />
             <div className="flex flex-col gap-1">
-              <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
-                Logo de l'entreprise
-              </Label>
+              <Label className={FIELD_LABEL_CLASS}>Logo de l'entreprise</Label>
               <p className="text-xs text-muted-foreground">
                 Formats acceptés : PNG, JPEG, WebP ou SVG (max 5MB)
               </p>
             </div>
           </div>
 
-          {/* Nom de l'entreprise */}
+          {/* Dénomination sociale */}
           <div className="space-y-1.5">
-            <Label
-              htmlFor="company-name"
-              className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-            >
+            <Label htmlFor="company-name" className={FIELD_LABEL_CLASS}>
               Dénomination sociale
             </Label>
             <Input
@@ -108,12 +113,7 @@ export default function CompanyInfoSettingsSection() {
                   value: VALIDATION_PATTERNS.companyName.pattern,
                   message: VALIDATION_PATTERNS.companyName.message,
                 },
-                validate: (value) => {
-                  if (value && detectInjectionAttempt(value)) {
-                    return "Caractères non autorisés détectés";
-                  }
-                  return true;
-                },
+                validate: noInjection,
               })}
               placeholder="Nom de votre entreprise"
               className={errors.companyName ? "border-destructive" : ""}
@@ -125,197 +125,10 @@ export default function CompanyInfoSettingsSection() {
             )}
           </div>
 
-          {/* Nom commercial */}
-          <div className="space-y-1.5">
-            <Label
-              htmlFor="company-commercial-name"
-              className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-            >
-              Nom commercial
-            </Label>
-            <Input
-              id="company-commercial-name"
-              {...register("commercialName", {
-                validate: (value) => {
-                  if (value && detectInjectionAttempt(value)) {
-                    return "Caractères non autorisés détectés";
-                  }
-                  return true;
-                },
-              })}
-              placeholder="Nom commercial"
-              className={errors.commercialName ? "border-destructive" : ""}
-            />
-            {errors.commercialName && (
-              <p className="text-xs text-destructive">
-                {errors.commercialName.message}
-              </p>
-            )}
-            <div className="flex items-center space-x-3 pt-1">
-              <Checkbox
-                id="show-commercial-name"
-                checked={showCommercialName || false}
-                onCheckedChange={(checked) => {
-                  setValue("showCommercialName", checked, {
-                    shouldDirty: true,
-                  });
-                }}
-              />
-              <div className="grid gap-1.5 leading-none">
-                <Label
-                  htmlFor="show-commercial-name"
-                  className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55 peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Afficher le nom commercial sur les documents
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  Le nom commercial apparaîtra sur vos devis, factures, bons de
-                  commande et avoirs
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Activité réglementée */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-3">
-              <Checkbox
-                id="is-regulated-activity"
-                checked={isRegulatedActivity || false}
-                onCheckedChange={(checked) => {
-                  setValue("isRegulatedActivity", checked, {
-                    shouldDirty: true,
-                  });
-                }}
-              />
-              <div className="grid gap-1.5 leading-none">
-                <Label
-                  htmlFor="is-regulated-activity"
-                  className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55 peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Activité réglementée
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  Le titre professionnel apparaîtra dans les informations de vos
-                  documents, l'organisme de rattachement, le numéro
-                  professionnel et les assurances en bas de page.
-                </p>
-              </div>
-            </div>
-
-            {isRegulatedActivity && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label
-                    htmlFor="regulated-professional-title"
-                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-                  >
-                    Titre professionnel
-                  </Label>
-                  <Input
-                    id="regulated-professional-title"
-                    {...register("professionalTitle", {
-                      validate: (value) => {
-                        if (value && detectInjectionAttempt(value)) {
-                          return "Caractères non autorisés détectés";
-                        }
-                        return true;
-                      },
-                    })}
-                    placeholder="Ex : Infirmier D.E., Expert-comptable"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label
-                    htmlFor="regulated-regulatory-body"
-                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-                  >
-                    Organisme de rattachement
-                  </Label>
-                  <Input
-                    id="regulated-regulatory-body"
-                    {...register("regulatoryBody", {
-                      validate: (value) => {
-                        if (value && detectInjectionAttempt(value)) {
-                          return "Caractères non autorisés détectés";
-                        }
-                        return true;
-                      },
-                    })}
-                    placeholder="Ex : Ordre des experts-comptables"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label
-                    htmlFor="regulated-professional-number"
-                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-                  >
-                    Numéro professionnel
-                  </Label>
-                  <Input
-                    id="regulated-professional-number"
-                    {...register("professionalNumber", {
-                      validate: (value) => {
-                        if (value && detectInjectionAttempt(value)) {
-                          return "Caractères non autorisés détectés";
-                        }
-                        return true;
-                      },
-                    })}
-                    placeholder="Ex : 12345678"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label
-                    htmlFor="regulated-decennial-insurance"
-                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-                  >
-                    Assurance décennale (si applicable)
-                  </Label>
-                  <Input
-                    id="regulated-decennial-insurance"
-                    {...register("decennialInsurance", {
-                      validate: (value) => {
-                        if (value && detectInjectionAttempt(value)) {
-                          return "Caractères non autorisés détectés";
-                        }
-                        return true;
-                      },
-                    })}
-                    placeholder="Ex : AXA, police n° 123456"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label
-                    htmlFor="regulated-rc-pro-insurance"
-                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-                  >
-                    Assurance RC Pro (si applicable)
-                  </Label>
-                  <Input
-                    id="regulated-rc-pro-insurance"
-                    {...register("professionalLiabilityInsurance", {
-                      validate: (value) => {
-                        if (value && detectInjectionAttempt(value)) {
-                          return "Caractères non autorisés détectés";
-                        }
-                        return true;
-                      },
-                    })}
-                    placeholder="Ex : MAAF, police n° 654321"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
           {/* Email & Téléphone */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label
-                htmlFor="company-email"
-                className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-              >
+              <Label htmlFor="company-email" className={FIELD_LABEL_CLASS}>
                 Email professionnel
               </Label>
               <Input
@@ -326,12 +139,7 @@ export default function CompanyInfoSettingsSection() {
                     value: VALIDATION_PATTERNS.email.pattern,
                     message: VALIDATION_PATTERNS.email.message,
                   },
-                  validate: (value) => {
-                    if (value && detectInjectionAttempt(value)) {
-                      return "Caractères non autorisés détectés";
-                    }
-                    return true;
-                  },
+                  validate: noInjection,
                 })}
                 placeholder="contact@entreprise.fr"
                 className={errors.companyEmail ? "border-destructive" : ""}
@@ -343,10 +151,7 @@ export default function CompanyInfoSettingsSection() {
               )}
             </div>
             <div className="space-y-1.5">
-              <Label
-                htmlFor="company-phone"
-                className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-              >
+              <Label htmlFor="company-phone" className={FIELD_LABEL_CLASS}>
                 Téléphone
               </Label>
               <Input
@@ -356,12 +161,7 @@ export default function CompanyInfoSettingsSection() {
                     value: VALIDATION_PATTERNS.phone.pattern,
                     message: VALIDATION_PATTERNS.phone.message,
                   },
-                  validate: (value) => {
-                    if (value && detectInjectionAttempt(value)) {
-                      return "Caractères non autorisés détectés";
-                    }
-                    return true;
-                  },
+                  validate: noInjection,
                 })}
                 placeholder="+33 6 12 34 56 78"
                 className={errors.companyPhone ? "border-destructive" : ""}
@@ -376,10 +176,7 @@ export default function CompanyInfoSettingsSection() {
 
           {/* Site web */}
           <div className="space-y-1.5">
-            <Label
-              htmlFor="company-website"
-              className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-            >
+            <Label htmlFor="company-website" className={FIELD_LABEL_CLASS}>
               Site web
             </Label>
             <Input
@@ -389,12 +186,7 @@ export default function CompanyInfoSettingsSection() {
                   value: VALIDATION_PATTERNS.website.pattern,
                   message: VALIDATION_PATTERNS.website.message,
                 },
-                validate: (value) => {
-                  if (value && detectInjectionAttempt(value)) {
-                    return "Caractères non autorisés détectés";
-                  }
-                  return true;
-                },
+                validate: noInjection,
               })}
               placeholder="https://www.entreprise.com"
               className={errors.website ? "border-destructive" : ""}
@@ -408,10 +200,7 @@ export default function CompanyInfoSettingsSection() {
 
           {/* Adresse */}
           <div className="space-y-1.5">
-            <Label
-              htmlFor="company-street"
-              className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-            >
+            <Label htmlFor="company-street" className={FIELD_LABEL_CLASS}>
               Adresse
             </Label>
             <Input
@@ -421,12 +210,7 @@ export default function CompanyInfoSettingsSection() {
                   value: VALIDATION_PATTERNS.street.pattern,
                   message: VALIDATION_PATTERNS.street.message,
                 },
-                validate: (value) => {
-                  if (value && detectInjectionAttempt(value)) {
-                    return "Caractères non autorisés détectés";
-                  }
-                  return true;
-                },
+                validate: noInjection,
               })}
               placeholder="123 Rue de la République"
               className={errors.addressStreet ? "border-destructive" : ""}
@@ -440,10 +224,7 @@ export default function CompanyInfoSettingsSection() {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <Label
-                htmlFor="company-city"
-                className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-              >
+              <Label htmlFor="company-city" className={FIELD_LABEL_CLASS}>
                 Ville
               </Label>
               <Input
@@ -453,12 +234,7 @@ export default function CompanyInfoSettingsSection() {
                     value: VALIDATION_PATTERNS.city.pattern,
                     message: VALIDATION_PATTERNS.city.message,
                   },
-                  validate: (value) => {
-                    if (value && detectInjectionAttempt(value)) {
-                      return "Caractères non autorisés détectés";
-                    }
-                    return true;
-                  },
+                  validate: noInjection,
                 })}
                 placeholder="Paris"
                 className={errors.addressCity ? "border-destructive" : ""}
@@ -470,10 +246,7 @@ export default function CompanyInfoSettingsSection() {
               )}
             </div>
             <div className="space-y-1.5">
-              <Label
-                htmlFor="company-postalCode"
-                className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-              >
+              <Label htmlFor="company-postalCode" className={FIELD_LABEL_CLASS}>
                 Code postal
               </Label>
               <Input
@@ -483,12 +256,7 @@ export default function CompanyInfoSettingsSection() {
                     value: VALIDATION_PATTERNS.postalCode.pattern,
                     message: VALIDATION_PATTERNS.postalCode.message,
                   },
-                  validate: (value) => {
-                    if (value && detectInjectionAttempt(value)) {
-                      return "Caractères non autorisés détectés";
-                    }
-                    return true;
-                  },
+                  validate: noInjection,
                 })}
                 placeholder="75001"
                 className={errors.addressZipCode ? "border-destructive" : ""}
@@ -500,10 +268,7 @@ export default function CompanyInfoSettingsSection() {
               )}
             </div>
             <div className="space-y-1.5">
-              <Label
-                htmlFor="company-country"
-                className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-              >
+              <Label htmlFor="company-country" className={FIELD_LABEL_CLASS}>
                 Pays
               </Label>
               <Select
@@ -544,6 +309,165 @@ export default function CompanyInfoSettingsSection() {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          {/* Nom commercial */}
+          <div className="p-4 rounded-xl border bg-[#F5F5F5] dark:bg-neutral-900 space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="space-y-0.5">
+                <Label
+                  htmlFor="show-commercial-name"
+                  className="text-sm font-medium"
+                >
+                  Nom commercial
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Affiché sous la dénomination sociale sur vos devis, factures,
+                  bons de commande et avoirs.
+                </p>
+              </div>
+              <Switch
+                id="show-commercial-name"
+                checked={showCommercialName || false}
+                onCheckedChange={(checked) => {
+                  setValue("showCommercialName", checked, {
+                    shouldDirty: true,
+                  });
+                }}
+                className="shrink-0 data-[state=checked]:bg-[#5b4fff]"
+              />
+            </div>
+            {showCommercialName && (
+              <div className="space-y-1.5">
+                <Input
+                  id="company-commercial-name"
+                  {...register("commercialName", {
+                    validate: noInjection,
+                  })}
+                  placeholder="Nom commercial"
+                  className={`bg-white dark:bg-neutral-800 ${
+                    errors.commercialName ? "border-destructive" : ""
+                  }`}
+                />
+                {errors.commercialName && (
+                  <p className="text-xs text-destructive">
+                    {errors.commercialName.message}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Activité réglementée */}
+          <div className="p-4 rounded-xl border bg-[#F5F5F5] dark:bg-neutral-900 space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="space-y-0.5">
+                <Label
+                  htmlFor="is-regulated-activity"
+                  className="text-sm font-medium"
+                >
+                  Activité réglementée
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Titre professionnel dans les informations du document ;
+                  organisme, numéro professionnel et assurances en bas de page.
+                </p>
+              </div>
+              <Switch
+                id="is-regulated-activity"
+                checked={isRegulatedActivity || false}
+                onCheckedChange={(checked) => {
+                  setValue("isRegulatedActivity", checked, {
+                    shouldDirty: true,
+                  });
+                }}
+                className="shrink-0 data-[state=checked]:bg-[#5b4fff]"
+              />
+            </div>
+            {isRegulatedActivity && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="regulated-professional-title"
+                    className={FIELD_LABEL_CLASS}
+                  >
+                    Titre professionnel
+                  </Label>
+                  <Input
+                    id="regulated-professional-title"
+                    {...register("professionalTitle", {
+                      validate: noInjection,
+                    })}
+                    placeholder="Ex : Expert-comptable"
+                    className="bg-white dark:bg-neutral-800"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="regulated-regulatory-body"
+                    className={FIELD_LABEL_CLASS}
+                  >
+                    Organisme de rattachement
+                  </Label>
+                  <Input
+                    id="regulated-regulatory-body"
+                    {...register("regulatoryBody", {
+                      validate: noInjection,
+                    })}
+                    placeholder="Ex : Ordre des experts-comptables"
+                    className="bg-white dark:bg-neutral-800"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="regulated-professional-number"
+                    className={FIELD_LABEL_CLASS}
+                  >
+                    Numéro professionnel
+                  </Label>
+                  <Input
+                    id="regulated-professional-number"
+                    {...register("professionalNumber", {
+                      validate: noInjection,
+                    })}
+                    placeholder="Ex : 12345678"
+                    className="bg-white dark:bg-neutral-800"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="regulated-decennial-insurance"
+                    className={FIELD_LABEL_CLASS}
+                  >
+                    Assurance décennale (si applicable)
+                  </Label>
+                  <Input
+                    id="regulated-decennial-insurance"
+                    {...register("decennialInsurance", {
+                      validate: noInjection,
+                    })}
+                    placeholder="Ex : AXA, police n° 123456"
+                    className="bg-white dark:bg-neutral-800"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="regulated-rc-pro-insurance"
+                    className={FIELD_LABEL_CLASS}
+                  >
+                    Assurance RC Pro (si applicable)
+                  </Label>
+                  <Input
+                    id="regulated-rc-pro-insurance"
+                    {...register("professionalLiabilityInsurance", {
+                      validate: noInjection,
+                    })}
+                    placeholder="Ex : MAAF, police n° 654321"
+                    className="bg-white dark:bg-neutral-800"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </CardContent>

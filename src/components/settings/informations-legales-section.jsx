@@ -213,8 +213,6 @@ export function InformationsLegalesSection({
   const watchedValues = watch();
 
   const isVatSubject = watchedValues.legal?.isVatSubject || false;
-  const hasCommercialActivity =
-    watchedValues.legal?.hasCommercialActivity || false;
   const selectedLegalForm = watchedValues.legal?.legalForm || "";
   const selectedRegime = watchedValues.legal?.regime || "";
   const selectedCategory = watchedValues.legal?.category || "";
@@ -224,10 +222,6 @@ export function InformationsLegalesSection({
 
   const handleVatSubjectChange = (checked) => {
     setValue("legal.isVatSubject", checked, { shouldDirty: true });
-  };
-
-  const handleCommercialActivityChange = (checked) => {
-    setValue("legal.hasCommercialActivity", checked, { shouldDirty: true });
   };
 
   const availableTaxRegimes = getAvailableTaxRegimes(selectedLegalForm);
@@ -274,13 +268,11 @@ export function InformationsLegalesSection({
   const requiredFields = getRequiredFields(
     selectedLegalForm,
     isVatSubject,
-    hasCommercialActivity,
     selectedCategory,
   );
   const visibleFields = getVisibleFields(
     selectedLegalForm,
     isVatSubject,
-    hasCommercialActivity,
     selectedCategory,
   );
 
@@ -307,28 +299,6 @@ export function InformationsLegalesSection({
           </div>
         )}
 
-        {/* Switch activité commerciale - visible seulement pour EI et Auto-entrepreneur */}
-        <div className="space-y-6 mt-4 md:mt-12">
-          {visibleFields.commercialActivityCheckbox && (
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h3 className="text-sm font-medium text-gray-600 mb-1">
-                  Exercez-vous une activité commerciale ?
-                </h3>
-                <p className="text-xs text-gray-400">
-                  Cette information détermine si le numéro RCS est requis pour
-                  votre forme juridique.
-                </p>
-              </div>
-              <Switch
-                checked={hasCommercialActivity}
-                onCheckedChange={handleCommercialActivityChange}
-                className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
-              />
-            </div>
-          )}
-        </div>
-
         {/* Formulaire des informations légales */}
         <div className="space-y-6 mt-8">
           {/* Forme juridique */}
@@ -344,7 +314,12 @@ export function InformationsLegalesSection({
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Sélectionnez la forme juridique" />
               </SelectTrigger>
-              <SelectContent>
+              {/* Liste longue : plafonnée avec marge en bas de viewport pour ne
+                  jamais coller au bord sur petit écran (scroll interne) */}
+              <SelectContent
+                collisionPadding={{ top: 16, bottom: 32 }}
+                className="max-h-[min(420px,var(--radix-select-content-available-height))]"
+              >
                 {LEGAL_FORM_GROUPS.map((group) => (
                   <SelectGroup key={group.label}>
                     <SelectLabel>{group.label}</SelectLabel>

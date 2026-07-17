@@ -52,7 +52,11 @@ import {
 } from "@/src/graphql/purchaseOrderQueries";
 import { useMutation } from "@apollo/client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
-import { getOrganizationCompanyExtras } from "@/src/utils/organizationCompanyInfo";
+import { updateOrganization as updateOrganizationSettings } from "@/src/lib/organization-client";
+import {
+  getOrganizationCompanyExtras,
+  buildCompanyOrganizationUpdate,
+} from "@/src/utils/organizationCompanyInfo";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -649,11 +653,25 @@ export default function ModernPurchaseOrderEditor({
                       setFormData={setFormData}
                       onCancel={() => setShowSettings(false)}
                       onCloseAttempt={setCloseSettingsHandler}
-                      onSave={() => {
+                      onSave={async () => {
                         setShowSettings(false);
-                        toast.success(
-                          "Paramètres appliqués à ce bon de commande",
-                        );
+                        // Champs généraux propagés à l'organisation (voir devis)
+                        try {
+                          if (organization?.id) {
+                            await updateOrganizationSettings(
+                              organization.id,
+                              buildCompanyOrganizationUpdate(
+                                form.getValues(),
+                                organization,
+                              ),
+                            );
+                          }
+                          toast.success("Paramètres appliqués");
+                        } catch {
+                          toast.success(
+                            "Paramètres appliqués à ce bon de commande",
+                          );
+                        }
                       }}
                       canEdit={!isReadOnly}
                       saveLabel="Appliquer à ce bon de commande"

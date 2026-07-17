@@ -168,6 +168,8 @@ const getDemoPurchaseOrderData = (formData, organization) => {
       primaryColor: headerBgColor,
     },
     clientPositionRight: clientPositionRight,
+    // Nom du bénéficiaire (pour auto-entrepreneurs)
+    beneficiaryNameType: formData?.beneficiaryNameType || "companyName",
   };
 };
 
@@ -261,6 +263,12 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
                 "#5b4fff",
             },
             clientPositionRight: org?.purchaseOrderClientPositionRight || false,
+            // Nom du bénéficiaire (pour auto-entrepreneurs, défaut: fullName)
+            beneficiaryNameType:
+              org?.beneficiaryNameType ||
+              (["EI", "Auto-entrepreneur"].includes(org?.legalForm)
+                ? "fullName"
+                : "companyName"),
           };
 
           setInitialValues(formValues);
@@ -308,6 +316,7 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
         headerBgColor: "#5b4fff",
       },
       clientPositionRight: false,
+      beneficiaryNameType: "companyName",
     },
   });
 
@@ -419,6 +428,9 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
         bankBic: formValues.bankDetails?.bic || "",
         bankName: formValues.bankDetails?.bankName || "",
         showBankDetails: formValues.showBankDetails,
+
+        // Nom du bénéficiaire
+        beneficiaryNameType: formValues.beneficiaryNameType || "companyName",
       };
 
       await updateOrganization(organization.id, updateData);
@@ -435,10 +447,20 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
     }
   };
 
+  // Watcher direct (sans debounce) pour que le switch mette à jour la preview instantanément
+  const liveBeneficiaryNameType = form.watch("beneficiaryNameType");
+
   if (!open) return null;
 
   const demoData = debouncedFormData
-    ? getDemoPurchaseOrderData(debouncedFormData, organization)
+    ? {
+        ...getDemoPurchaseOrderData(debouncedFormData, organization),
+        // Écraser avec la valeur live (pas debounced) pour réactivité immédiate du switch
+        beneficiaryNameType:
+          liveBeneficiaryNameType ||
+          debouncedFormData?.beneficiaryNameType ||
+          "companyName",
+      }
     : null;
 
   return (
@@ -482,6 +504,7 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
                       onCancel={() => onOpenChange(false)}
                       onSave={handleSave}
                       documentType="purchaseOrder"
+                      organization={organization}
                       isGlobalSettings={true}
                     />
                   </FormProvider>

@@ -1709,6 +1709,13 @@ export const organizationPlugin = organization({
           input: true,
           required: false,
         },
+        // Nom affiché dans les coordonnées bancaires des documents
+        // ("companyName" ou "fullName", pour les EI / auto-entrepreneurs)
+        beneficiaryNameType: {
+          type: "string",
+          input: true,
+          required: false,
+        },
         // Commercial name display setting (devis, factures, bons de commande, avoirs)
         showCommercialName: {
           type: "boolean",

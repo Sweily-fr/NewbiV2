@@ -275,11 +275,19 @@ export default function InvoiceSettingsView({
   }, [setValue]);
 
   // Exposer la fonction de gestion de fermeture au parent
+  // Enregistré UNE seule fois via une ref stable : ré-enregistrer à chaque
+  // changement de hasUnsavedChanges provoquait un setState du parent en
+  // cascade (risque de "Maximum update depth exceeded"), et le handler
+  // capturé était figé sur une valeur périmée de hasUnsavedChanges.
+  const handleCancelClickRef = React.useRef(null);
+  React.useEffect(() => {
+    handleCancelClickRef.current = handleCancelClick;
+  });
   React.useEffect(() => {
     if (onCloseAttempt) {
-      onCloseAttempt(() => handleCancelClick);
+      onCloseAttempt(() => () => handleCancelClickRef.current?.());
     }
-  }, [hasUnsavedChanges]);
+  }, [onCloseAttempt]);
 
   // Sauvegarder les valeurs initiales au montage
   useEffect(() => {
@@ -299,6 +307,15 @@ export default function InvoiceSettingsView({
         clientPositionRight: data.clientPositionRight,
         // Infos entreprise (flat + companyInfo nested pour la preview)
         companyName: data.companyName,
+        commercialName: data.commercialName,
+        showCommercialName: data.showCommercialName,
+        isRegulatedActivity: data.isRegulatedActivity,
+        professionalTitle: data.professionalTitle,
+        regulatoryBody: data.regulatoryBody,
+        professionalNumber: data.professionalNumber,
+        decennialInsurance: data.decennialInsurance,
+        professionalLiabilityInsurance: data.professionalLiabilityInsurance,
+        logo: data.logo,
         companyEmail: data.companyEmail,
         companyPhone: data.companyPhone,
         website: data.website,
@@ -331,6 +348,17 @@ export default function InvoiceSettingsView({
       data.clientPositionRight !==
         initialValuesRef.current.clientPositionRight ||
       data.companyName !== initialValuesRef.current.companyName ||
+      data.commercialName !== initialValuesRef.current.commercialName ||
+      data.showCommercialName !== initialValuesRef.current.showCommercialName ||
+      data.isRegulatedActivity !==
+        initialValuesRef.current.isRegulatedActivity ||
+      data.professionalTitle !== initialValuesRef.current.professionalTitle ||
+      data.regulatoryBody !== initialValuesRef.current.regulatoryBody ||
+      data.professionalNumber !== initialValuesRef.current.professionalNumber ||
+      data.decennialInsurance !== initialValuesRef.current.decennialInsurance ||
+      data.professionalLiabilityInsurance !==
+        initialValuesRef.current.professionalLiabilityInsurance ||
+      data.logo !== initialValuesRef.current.logo ||
       data.companyEmail !== initialValuesRef.current.companyEmail ||
       data.companyPhone !== initialValuesRef.current.companyPhone ||
       data.website !== initialValuesRef.current.website ||
@@ -396,6 +424,33 @@ export default function InvoiceSettingsView({
       );
       // Infos entreprise — restaurer les champs plats et l'objet companyInfo
       setValue("companyName", initialValuesRef.current.companyName ?? "");
+      setValue("commercialName", initialValuesRef.current.commercialName ?? "");
+      setValue(
+        "showCommercialName",
+        initialValuesRef.current.showCommercialName ?? false,
+      );
+      setValue(
+        "isRegulatedActivity",
+        initialValuesRef.current.isRegulatedActivity ?? false,
+      );
+      setValue(
+        "professionalTitle",
+        initialValuesRef.current.professionalTitle ?? "",
+      );
+      setValue("regulatoryBody", initialValuesRef.current.regulatoryBody ?? "");
+      setValue(
+        "professionalNumber",
+        initialValuesRef.current.professionalNumber ?? "",
+      );
+      setValue(
+        "decennialInsurance",
+        initialValuesRef.current.decennialInsurance ?? "",
+      );
+      setValue(
+        "professionalLiabilityInsurance",
+        initialValuesRef.current.professionalLiabilityInsurance ?? "",
+      );
+      setValue("logo", initialValuesRef.current.logo ?? "");
       setValue("companyEmail", initialValuesRef.current.companyEmail ?? "");
       setValue("companyPhone", initialValuesRef.current.companyPhone ?? "");
       setValue("website", initialValuesRef.current.website ?? "");
@@ -429,6 +484,15 @@ export default function InvoiceSettingsView({
       showBankDetails: data.showBankDetails,
       clientPositionRight: data.clientPositionRight,
       companyName: data.companyName,
+      commercialName: data.commercialName,
+      showCommercialName: data.showCommercialName,
+      isRegulatedActivity: data.isRegulatedActivity,
+      professionalTitle: data.professionalTitle,
+      regulatoryBody: data.regulatoryBody,
+      professionalNumber: data.professionalNumber,
+      decennialInsurance: data.decennialInsurance,
+      professionalLiabilityInsurance: data.professionalLiabilityInsurance,
+      logo: data.logo,
       companyEmail: data.companyEmail,
       companyPhone: data.companyPhone,
       website: data.website,
