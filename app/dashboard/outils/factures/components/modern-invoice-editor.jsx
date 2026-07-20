@@ -58,11 +58,7 @@ import {
 } from "@/src/graphql/invoiceQueries";
 import { useMutation } from "@apollo/client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
-import { updateOrganization as updateOrganizationSettings } from "@/src/lib/organization-client";
-import {
-  getOrganizationCompanyExtras,
-  buildCompanyOrganizationUpdate,
-} from "@/src/utils/organizationCompanyInfo";
+import { getOrganizationCompanyExtras } from "@/src/utils/organizationCompanyInfo";
 import {
   Select,
   SelectContent,
@@ -745,23 +741,12 @@ export default function ModernInvoiceEditor({
                       validationErrors={validationErrors}
                       setValidationErrors={setValidationErrors}
                       organization={organization}
-                      onSave={async () => {
+                      onSave={() => {
+                        // Ne reste ici que ce qui est propre à la facture. Les
+                        // informations de l'entreprise et les coordonnées
+                        // bancaires sont enregistrées par leurs modales.
                         setShowSettings(false);
-                        // Champs généraux propagés à l'organisation (voir devis)
-                        try {
-                          if (organization?.id) {
-                            await updateOrganizationSettings(
-                              organization.id,
-                              buildCompanyOrganizationUpdate(
-                                form.getValues(),
-                                organization,
-                              ),
-                            );
-                          }
-                          toast.success("Paramètres appliqués");
-                        } catch {
-                          toast.success("Paramètres appliqués à cette facture");
-                        }
+                        toast.success("Paramètres appliqués");
                       }}
                       saveLabel="Appliquer à cette facture"
                     />
