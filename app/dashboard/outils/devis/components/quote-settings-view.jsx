@@ -44,13 +44,6 @@ import { Switch } from "@/src/components/ui/switch";
 import { BankDetailsDialog } from "@/src/components/bank-details-dialog";
 import CompanyInfoSettingsSection from "@/src/components/settings/company-info-settings-section";
 
-// Fonction de formatage de l'IBAN avec espaces
-const formatIban = (iban) => {
-  if (!iban) return "";
-  const cleanIban = iban.replace(/\s/g, "").toUpperCase();
-  return cleanIban.replace(/(.{4})/g, "$1 ").trim();
-};
-
 export default function QuoteSettingsView({
   canEdit,
   onCancel,
@@ -232,7 +225,14 @@ export default function QuoteSettingsView({
   // Écouter l'événement personnalisé émis par BankDetailsDialog
   useEffect(() => {
     const handleOrganizationUpdated = (event) => {
-      const { bankName, bankIban, bankBic } = event.detail;
+      const { bankName, bankIban, bankBic, beneficiaryNameType } = event.detail;
+
+      if (beneficiaryNameType !== undefined) {
+        // Déjà enregistré dans l'organisation : shouldDirty inutile.
+        setValue("beneficiaryNameType", beneficiaryNameType, {
+          shouldDirty: false,
+        });
+      }
 
       if (bankIban || bankBic || bankName) {
         setValue("bankDetails.iban", bankIban || "", { shouldDirty: true });
@@ -330,25 +330,10 @@ export default function QuoteSettingsView({
         termsAndConditions: data.termsAndConditions,
         clientPositionRight: data.clientPositionRight,
         showBankDetails: data.showBankDetails,
-        // Infos entreprise (flat + companyInfo nested pour la preview)
-        companyName: data.companyName,
-        commercialName: data.commercialName,
-        showCommercialName: data.showCommercialName,
-        isRegulatedActivity: data.isRegulatedActivity,
-        professionalTitle: data.professionalTitle,
-        regulatoryBody: data.regulatoryBody,
-        professionalNumber: data.professionalNumber,
-        decennialInsurance: data.decennialInsurance,
-        professionalLiabilityInsurance: data.professionalLiabilityInsurance,
-        logo: data.logo,
-        companyEmail: data.companyEmail,
-        companyPhone: data.companyPhone,
-        website: data.website,
-        addressStreet: data.addressStreet,
-        addressCity: data.addressCity,
-        addressZipCode: data.addressZipCode,
-        addressCountry: data.addressCountry,
-        companyInfo: data.companyInfo,
+        // Les informations de l'entreprise ne sont pas suivies ici : elles
+        // appartiennent à l'organisation et sont enregistrées immédiatement
+        // par leur modale, donc elles ne constituent jamais une modification
+        // en attente de ce document.
       };
     }
   }, []);
@@ -371,29 +356,17 @@ export default function QuoteSettingsView({
       data.termsAndConditions !== initialValuesRef.current.termsAndConditions ||
       data.clientPositionRight !==
         initialValuesRef.current.clientPositionRight ||
-      data.showBankDetails !== initialValuesRef.current.showBankDetails ||
-      data.companyName !== initialValuesRef.current.companyName ||
-      data.commercialName !== initialValuesRef.current.commercialName ||
-      data.showCommercialName !== initialValuesRef.current.showCommercialName ||
-      data.isRegulatedActivity !==
-        initialValuesRef.current.isRegulatedActivity ||
-      data.professionalTitle !== initialValuesRef.current.professionalTitle ||
-      data.regulatoryBody !== initialValuesRef.current.regulatoryBody ||
-      data.professionalNumber !== initialValuesRef.current.professionalNumber ||
-      data.decennialInsurance !== initialValuesRef.current.decennialInsurance ||
-      data.professionalLiabilityInsurance !==
-        initialValuesRef.current.professionalLiabilityInsurance ||
-      data.logo !== initialValuesRef.current.logo ||
-      data.companyEmail !== initialValuesRef.current.companyEmail ||
-      data.companyPhone !== initialValuesRef.current.companyPhone ||
-      data.website !== initialValuesRef.current.website ||
-      data.addressStreet !== initialValuesRef.current.addressStreet ||
-      data.addressCity !== initialValuesRef.current.addressCity ||
-      data.addressZipCode !== initialValuesRef.current.addressZipCode ||
-      data.addressCountry !== initialValuesRef.current.addressCountry;
+      data.showBankDetails !== initialValuesRef.current.showBankDetails;
 
     setHasUnsavedChanges(hasChanges);
   }, [data]);
+
+  // Des coordonnées bancaires existent-elles au niveau de l'organisation ?
+  const hasBankDetails = Boolean(
+    data.userBankDetails?.iban ||
+    data.userBankDetails?.bic ||
+    data.userBankDetails?.bankName,
+  );
 
   const handleCancelClick = () => {
     if (hasUnsavedChanges) {
@@ -447,48 +420,9 @@ export default function QuoteSettingsView({
         "showBankDetails",
         initialValuesRef.current.showBankDetails || false,
       );
-      // Infos entreprise — restaurer les champs plats et l'objet companyInfo
-      setValue("companyName", initialValuesRef.current.companyName ?? "");
-      setValue("commercialName", initialValuesRef.current.commercialName ?? "");
-      setValue(
-        "showCommercialName",
-        initialValuesRef.current.showCommercialName ?? false,
-      );
-      setValue(
-        "isRegulatedActivity",
-        initialValuesRef.current.isRegulatedActivity ?? false,
-      );
-      setValue(
-        "professionalTitle",
-        initialValuesRef.current.professionalTitle ?? "",
-      );
-      setValue("regulatoryBody", initialValuesRef.current.regulatoryBody ?? "");
-      setValue(
-        "professionalNumber",
-        initialValuesRef.current.professionalNumber ?? "",
-      );
-      setValue(
-        "decennialInsurance",
-        initialValuesRef.current.decennialInsurance ?? "",
-      );
-      setValue(
-        "professionalLiabilityInsurance",
-        initialValuesRef.current.professionalLiabilityInsurance ?? "",
-      );
-      setValue("logo", initialValuesRef.current.logo ?? "");
-      setValue("companyEmail", initialValuesRef.current.companyEmail ?? "");
-      setValue("companyPhone", initialValuesRef.current.companyPhone ?? "");
-      setValue("website", initialValuesRef.current.website ?? "");
-      setValue("addressStreet", initialValuesRef.current.addressStreet ?? "");
-      setValue("addressCity", initialValuesRef.current.addressCity ?? "");
-      setValue("addressZipCode", initialValuesRef.current.addressZipCode ?? "");
-      setValue(
-        "addressCountry",
-        initialValuesRef.current.addressCountry ?? "France",
-      );
-      if (initialValuesRef.current.companyInfo) {
-        setValue("companyInfo", initialValuesRef.current.companyInfo);
-      }
+      // Les informations de l'entreprise ne sont pas restaurées : déjà
+      // enregistrées dans l'organisation, annuler ici les remettrait dans un
+      // état incohérent avec ce qui est réellement sauvegardé.
     }
     setShowConfirmDialog(false);
     onCancel();
@@ -508,24 +442,6 @@ export default function QuoteSettingsView({
       termsAndConditions: data.termsAndConditions,
       clientPositionRight: data.clientPositionRight,
       showBankDetails: data.showBankDetails,
-      companyName: data.companyName,
-      commercialName: data.commercialName,
-      showCommercialName: data.showCommercialName,
-      isRegulatedActivity: data.isRegulatedActivity,
-      professionalTitle: data.professionalTitle,
-      regulatoryBody: data.regulatoryBody,
-      professionalNumber: data.professionalNumber,
-      decennialInsurance: data.decennialInsurance,
-      professionalLiabilityInsurance: data.professionalLiabilityInsurance,
-      logo: data.logo,
-      companyEmail: data.companyEmail,
-      companyPhone: data.companyPhone,
-      website: data.website,
-      addressStreet: data.addressStreet,
-      addressCity: data.addressCity,
-      addressZipCode: data.addressZipCode,
-      addressCountry: data.addressCountry,
-      companyInfo: data.companyInfo,
     };
     setHasUnsavedChanges(false);
     onSave();
@@ -565,7 +481,65 @@ export default function QuoteSettingsView({
           )}
 
           {/* Section Informations de l'entreprise */}
-          <CompanyInfoSettingsSection />
+          <CompanyInfoSettingsSection organization={organization} />
+
+          {/* Coordonnées bancaires */}
+          <Card className="shadow-none border-none bg-transparent p-0">
+            <CardHeader className="p-0">
+              <CardTitle className="flex items-center gap-2 font-medium text-lg">
+                Coordonnées bancaires
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 p-0">
+              {/* Les valeurs elles-mêmes sont éditées dans la modale : seule
+                  l'option d'affichage est propre au document. */}
+              <div className="text-sm text-muted-foreground p-3 rounded-xl border bg-[#F5F5F5] dark:bg-neutral-900">
+                <p className="mb-2">
+                  {hasBankDetails
+                    ? "Votre IBAN, votre BIC et le nom de votre banque sont communs à tous vos documents."
+                    : "Aucune coordonnée bancaire n'est configurée pour votre entreprise."}
+                </p>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="p-0 h-auto font-medium flex items-center gap-1 underline"
+                  onClick={() => setShowBankDetailsDialog(true)}
+                >
+                  <Settings className="h-4 w-4" />
+                  {hasBankDetails
+                    ? "Modifier vos coordonnées bancaires"
+                    : "Configurer les coordonnées bancaires"}
+                </Button>
+              </div>
+
+              {hasBankDetails && (
+                <div className="flex items-center space-x-3">
+                  <Checkbox
+                    id="show-bank-details"
+                    checked={data.showBankDetails || false}
+                    onCheckedChange={(checked) => {
+                      setValue("showBankDetails", checked, {
+                        shouldDirty: true,
+                      });
+                    }}
+                    disabled={!canEdit}
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <Label
+                      htmlFor="show-bank-details"
+                      className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55 peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Afficher les coordonnées bancaires
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Cochez pour inclure vos coordonnées bancaires sur le{" "}
+                      {documentLabel}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Section Numérotation */}
           <Card className="shadow-none border-none bg-transparent p-0">
@@ -763,159 +737,6 @@ export default function QuoteSettingsView({
                   saut dans la numérotation.
                 </p>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Coordonnées bancaires */}
-          <Card className="shadow-none border-none bg-transparent p-0">
-            <CardHeader className="p-0">
-              <CardTitle className="flex items-center gap-2 font-medium text-lg">
-                Coordonnées bancaires
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 p-0">
-              {/* Vérifier si des coordonnées bancaires sont disponibles */}
-              {data.userBankDetails?.iban ||
-              data.userBankDetails?.bic ||
-              data.userBankDetails?.bankName ? (
-                <div className="flex items-center space-x-3">
-                  <Checkbox
-                    id="show-bank-details"
-                    checked={data.showBankDetails || false}
-                    onCheckedChange={(checked) => {
-                      setValue("showBankDetails", checked, {
-                        shouldDirty: true,
-                      });
-                    }}
-                    disabled={!canEdit}
-                  />
-                  <div className="grid gap-1.5 leading-none">
-                    <Label
-                      htmlFor="show-bank-details"
-                      className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55 peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Afficher les coordonnées bancaires
-                    </Label>
-                    <p className="text-xs text-muted-foreground">
-                      Cochez pour inclure vos coordonnées bancaires sur le{" "}
-                      {documentLabel}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-sm text-muted-foreground p-3 rounded-xl border bg-[#F5F5F5] dark:bg-neutral-900">
-                  <p className="mb-2">
-                    Aucune coordonnée bancaire n&apos;est configurée pour votre
-                    entreprise.
-                  </p>
-                  <Button
-                    type="button"
-                    variant="link"
-                    className="p-0 h-auto font-medium flex items-center gap-1 underline"
-                    onClick={() => setShowBankDetailsDialog(true)}
-                  >
-                    <Settings className="h-4 w-4" />
-                    Configurer les coordonnées bancaires
-                  </Button>
-                </div>
-              )}
-
-              {/* Afficher les détails bancaires si activé et disponibles */}
-              {data.showBankDetails &&
-                (data.userBankDetails?.iban ||
-                  data.userBankDetails?.bic ||
-                  data.userBankDetails?.bankName) && (
-                  <div className="space-y-4 p-4 rounded-xl border bg-[#F5F5F5] dark:bg-neutral-900">
-                    {/* Nom de la banque */}
-                    <div>
-                      <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
-                        Nom de la banque
-                      </Label>
-                      <div className="mt-2 p-2 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                        <p className="text-sm">
-                          {data.bankDetails?.bankName || "Non spécifié"}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* IBAN */}
-                    <div>
-                      <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
-                        IBAN
-                      </Label>
-                      <div className="mt-2 p-2 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                        <p className="text-sm font-mono">
-                          {formatIban(data.bankDetails?.iban) || "Non spécifié"}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* BIC/SWIFT */}
-                    <div>
-                      <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
-                        BIC/SWIFT
-                      </Label>
-                      <div className="mt-2 p-2 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                        <p className="text-sm font-mono">
-                          {data.bankDetails?.bic || "Non spécifié"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Les coordonnées bancaires sont gérées dans les paramètres
-                      de votre entreprise.
-                    </p>
-
-                    {/* Choix du nom du bénéficiaire pour les auto-entrepreneurs */}
-                    {["EI", "Auto-entrepreneur"].includes(
-                      organization?.legalForm,
-                    ) && (
-                      <div className="flex items-center justify-between p-4 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                        <div className="grid gap-1.5 leading-none">
-                          <Label
-                            htmlFor="beneficiary-name-type"
-                            className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-                          >
-                            Nom du bénéficiaire
-                          </Label>
-                          <p className="text-xs text-muted-foreground">
-                            {data.beneficiaryNameType === "fullName"
-                              ? "Nom complet affiché sur le document"
-                              : "Nom d'entreprise affiché sur le document"}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">
-                            {data.beneficiaryNameType === "fullName"
-                              ? "Nom complet"
-                              : "Nom d'entreprise"}
-                          </span>
-                          <Switch
-                            id="beneficiary-name-type"
-                            checked={data.beneficiaryNameType === "fullName"}
-                            onCheckedChange={(checked) => {
-                              setValue(
-                                "beneficiaryNameType",
-                                checked ? "fullName" : "companyName",
-                                { shouldDirty: true },
-                              );
-                            }}
-                            disabled={!canEdit}
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    <Alert>
-                      <AlertDescription>
-                        Ces coordonnées bancaires apparaîtront sur votre{" "}
-                        {documentLabel} pour faciliter les paiements de vos
-                        clients.
-                      </AlertDescription>
-                    </Alert>
-                  </div>
-                )}
             </CardContent>
           </Card>
 

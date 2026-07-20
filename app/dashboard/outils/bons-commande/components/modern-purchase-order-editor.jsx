@@ -52,11 +52,7 @@ import {
 } from "@/src/graphql/purchaseOrderQueries";
 import { useMutation } from "@apollo/client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
-import { updateOrganization as updateOrganizationSettings } from "@/src/lib/organization-client";
-import {
-  getOrganizationCompanyExtras,
-  buildCompanyOrganizationUpdate,
-} from "@/src/utils/organizationCompanyInfo";
+import { getOrganizationCompanyExtras } from "@/src/utils/organizationCompanyInfo";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -653,25 +649,12 @@ export default function ModernPurchaseOrderEditor({
                       setFormData={setFormData}
                       onCancel={() => setShowSettings(false)}
                       onCloseAttempt={setCloseSettingsHandler}
-                      onSave={async () => {
+                      onSave={() => {
+                        // Ne reste ici que ce qui est propre au bon de commande.
+                        // Les informations de l'entreprise et les coordonnées
+                        // bancaires sont enregistrées par leurs modales.
                         setShowSettings(false);
-                        // Champs généraux propagés à l'organisation (voir devis)
-                        try {
-                          if (organization?.id) {
-                            await updateOrganizationSettings(
-                              organization.id,
-                              buildCompanyOrganizationUpdate(
-                                form.getValues(),
-                                organization,
-                              ),
-                            );
-                          }
-                          toast.success("Paramètres appliqués");
-                        } catch {
-                          toast.success(
-                            "Paramètres appliqués à ce bon de commande",
-                          );
-                        }
+                        toast.success("Paramètres appliqués");
                       }}
                       canEdit={!isReadOnly}
                       saveLabel="Appliquer à ce bon de commande"
