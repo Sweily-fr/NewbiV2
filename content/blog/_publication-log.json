@@ -190,5 +190,13 @@
       "gestion-devis-commerce-en-ligne",
       "facture-e-commerce-boutique-en-ligne"
     ]
+  },
+  {
+    "date": "2026-07-20",
+    "articles": [
+      "gestion-projet-kanban-independant",
+      "meilleures-pratiques-relance-client",
+      "sellsy-vs-newbi-comparatif"
+    ]
   }
 ]
