@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import {
   Dialog,
@@ -10,9 +10,11 @@ import {
 } from "@/src/components/ui/dialog";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
+import { Switch } from "@/src/components/ui/switch";
 import { LoaderCircle, CreditCard, CornerDownLeft } from "lucide-react";
 import { toast } from "sonner";
 import { updateOrganization } from "@/src/lib/organization-client";
+import { useSession } from "@/src/lib/auth-client";
 import {
   VALIDATION_PATTERNS,
   sanitizeInput,
@@ -53,8 +55,24 @@ export function BankDetailsDialog({
       bankName: organization?.bankName || "",
       iban: organization?.bankIban || "",
       bic: organization?.bankBic || "",
+      beneficiaryNameType: organization?.beneficiaryNameType || "companyName",
     },
   });
+
+  // Le nom du bénéficiaire ne concerne que les entrepreneurs individuels, dont
+  // le compte est souvent au nom propre plutôt qu'au nom de l'entreprise.
+  const showBeneficiaryChoice = ["EI", "Auto-entrepreneur"].includes(
+    organization?.legalForm,
+  );
+  const beneficiaryNameType = watch("beneficiaryNameType");
+
+  // Nom réellement imprimé sur les documents, affiché entre parenthèses pour
+  // que le choix soit explicite. Même résolution que UniversalPreviewPDF.
+  const { data: session } = useSession();
+  const beneficiaryPreview =
+    beneficiaryNameType === "fullName"
+      ? session?.user?.name || ""
+      : organization?.companyName || "";
 
   const ibanValue = watch("iban") || "";
   const bicValue = watch("bic") || "";
@@ -72,17 +90,23 @@ export function BankDetailsDialog({
     }
   }, [ibanValue]);
 
-  // Réinitialiser le formulaire quand le dialog s'ouvre
+  // Réinitialiser le formulaire à l'ouverture uniquement. La dépendance porte
+  // sur `open` et non sur `organization` : si le parent recrée cet objet à
+  // chaque rendu, l'effet effacerait la saisie en cours.
+  const organizationRef = useRef(organization);
+  organizationRef.current = organization;
   useEffect(() => {
-    if (open && organization) {
-      reset({
-        bankName: organization.bankName || "",
-        iban: organization.bankIban || "",
-        bic: organization.bankBic || "",
-      });
-      setDisplayIban(formatIban(organization.bankIban || ""));
-    }
-  }, [open, organization, reset]);
+    if (!open) return;
+    const org = organizationRef.current;
+    if (!org) return;
+    reset({
+      bankName: org.bankName || "",
+      iban: org.bankIban || "",
+      bic: org.bankBic || "",
+      beneficiaryNameType: org.beneficiaryNameType || "companyName",
+    });
+    setDisplayIban(formatIban(org.bankIban || ""));
+  }, [open, reset]);
 
   // Fonction utilitaire pour traiter l'IBAN (saisie ou collage)
   const handleIbanInput = (inputValue) => {
@@ -157,6 +181,9 @@ export function BankDetailsDialog({
 
       const cleanedIban = cleanIban(formData.iban || "");
       const cleanedBic = (formData.bic || "").toUpperCase();
+      const nextBeneficiaryNameType = showBeneficiaryChoice
+        ? formData.beneficiaryNameType || "companyName"
+        : organization.beneficiaryNameType || "companyName";
 
       await updateOrganization(
         organization.id,
@@ -164,6 +191,7 @@ export function BankDetailsDialog({
           bankName: formData.bankName || "",
           bankIban: cleanedIban,
           bankBic: cleanedBic,
+          beneficiaryNameType: nextBeneficiaryNameType,
         },
         {
           onSuccess: () => {
@@ -177,6 +205,7 @@ export function BankDetailsDialog({
                     bankName: formData.bankName || "",
                     bankIban: cleanedIban,
                     bankBic: cleanedBic,
+                    beneficiaryNameType: nextBeneficiaryNameType,
                   },
                 }),
               );
@@ -346,6 +375,45 @@ export function BankDetailsDialog({
                   Nom de votre établissement bancaire
                 </p>
               </div>
+
+              {/* Nom du bénéficiaire — entrepreneurs individuels uniquement */}
+              {showBeneficiaryChoice && (
+                <div className="flex items-center justify-between gap-4 p-3 rounded-xl border bg-[#F5F5F5] dark:bg-neutral-900">
+                  <div className="grid gap-1.5 leading-none">
+                    <label
+                      htmlFor="dialog-beneficiary-name-type"
+                      className="text-sm font-medium"
+                    >
+                      Nom du bénéficiaire
+                    </label>
+                    <p className="text-xs text-muted-foreground">
+                      {beneficiaryNameType === "fullName"
+                        ? "Nom complet affiché sur vos documents"
+                        : "Nom d'entreprise affiché sur vos documents"}
+                      {beneficiaryPreview ? ` (${beneficiaryPreview})` : ""}
+                    </p>
+                    {!beneficiaryPreview && (
+                      <p className="text-xs text-destructive">
+                        {beneficiaryNameType === "fullName"
+                          ? "Aucun nom sur votre compte : la ligne sera vide sur vos documents."
+                          : "Aucune dénomination sociale : la ligne sera vide sur vos documents."}
+                      </p>
+                    )}
+                  </div>
+                  <Switch
+                    id="dialog-beneficiary-name-type"
+                    checked={beneficiaryNameType === "fullName"}
+                    onCheckedChange={(checked) =>
+                      setValue(
+                        "beneficiaryNameType",
+                        checked ? "fullName" : "companyName",
+                        { shouldDirty: true },
+                      )
+                    }
+                    className="shrink-0 data-[state=checked]:bg-[#5b4fff]"
+                  />
+                </div>
+              )}
 
               {/* Footer aligné droite */}
               <div className="flex justify-end border-t border-border/40 mt-3 px-5 py-3 -mx-5">

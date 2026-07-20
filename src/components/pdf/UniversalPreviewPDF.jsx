@@ -2605,9 +2605,7 @@ const UniversalPreviewPDF = ({
               <div className="flex flex-col gap-1 mt-2 text-[10px] dark:text-[#0A0A0A]">
                 <div className="flex">
                   <span className="font-medium w-32">Nom du bénéficiaire</span>
-                  <span className="font-normal">
-                    {resolvedBeneficiaryName || "Sweily"}
-                  </span>
+                  <span className="font-normal">{resolvedBeneficiaryName}</span>
                 </div>
                 <div className="flex">
                   <span className="font-medium w-32">Nom de la banque</span>

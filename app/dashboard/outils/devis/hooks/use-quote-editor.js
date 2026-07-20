@@ -462,14 +462,18 @@ export function useQuoteEditor({
     return () => clearTimeout(timeoutId);
   }, [watchedNumber, watch, checkQuoteNumber, quoteId, isFormInitialized]);
 
-  // Re-valider quand les informations entreprise changent
+  // Re-valider quand les informations entreprise changent.
+  // On dépend des valeurs et non de l'objet companyInfo : setValue le remplace
+  // par un clone à chaque écriture, donc son identité change en permanence.
+  const companyInfoName = formData.companyInfo?.name;
+  const companyInfoEmail = formData.companyInfo?.email;
   useEffect(() => {
     // Ne pas valider si le formulaire n'est pas encore initialisé
     if (!isFormInitialized) return;
 
     setValidationErrors((prevErrors) => {
       if (prevErrors.companyInfo) {
-        if (formData.companyInfo?.name && formData.companyInfo?.email) {
+        if (companyInfoName && companyInfoEmail) {
           const newErrors = { ...prevErrors };
           delete newErrors.companyInfo;
           return newErrors;
@@ -477,7 +481,7 @@ export function useQuoteEditor({
       }
       return prevErrors;
     });
-  }, [formData.companyInfo, isFormInitialized]);
+  }, [companyInfoName, companyInfoEmail, isFormInitialized]);
 
   // Re-valider quand la date d'émission change (avec debounce)
   useEffect(() => {
@@ -1232,55 +1236,83 @@ export function useQuoteEditor({
     }
   }, [mode, setValue]);
 
+  // Nom complet de l'utilisateur, utilisé comme nom du bénéficiaire quand
+  // l'option "Nom complet" est active (entrepreneurs individuels). Sans lui,
+  // basculer l'option n'a aucun effet visible sur le document.
+  useEffect(() => {
+    if (session?.user?.name) {
+      setValue("userName", session.user.name, { shouldDirty: false });
+    }
+  }, [session?.user?.name, setValue]);
+
+  // Coordonnées bancaires de l'organisation, en création comme en édition.
+  // Sans cela le panneau de paramètres annonce "aucune coordonnée bancaire
+  // configurée" alors qu'elles existent : la valeur par défaut ne provient que
+  // de session.user.company, qui n'est plus la source de vérité.
+  useEffect(() => {
+    if (organization?.bankIban || organization?.bankBic) {
+      setValue("userBankDetails", {
+        iban: organization.bankIban || "",
+        bic: organization.bankBic || "",
+        bankName: organization.bankName || "",
+      });
+    }
+  }, [organization, setValue]);
+
+  // Écriture gardée : n'appelle setValue que si la valeur change réellement.
+  // Indispensable ici car cet effet et le "sync inverse" ci-dessous se
+  // répondent mutuellement ; sans garde, chaque écriture relance l'autre effet
+  // et React finit par lever "Maximum update depth exceeded".
+  const setFlatIfChanged = useCallback(
+    (field, value) => {
+      if (getValues(field) !== value) {
+        setValue(field, value, { shouldDirty: false });
+      }
+    },
+    [getValues, setValue],
+  );
+
   // Synchroniser les champs plats pour CompanyInfoSettingsSection
   useEffect(() => {
     if (isFormInitialized) {
       const companyInfo = formData.companyInfo;
       if (companyInfo) {
-        setValue("companyName", companyInfo.name || "", { shouldDirty: false });
-        setValue("companyEmail", companyInfo.email || "", {
-          shouldDirty: false,
-        });
-        setValue("companyPhone", companyInfo.phone || "", {
-          shouldDirty: false,
-        });
-        setValue("website", companyInfo.website || "", { shouldDirty: false });
-        setValue("commercialName", companyInfo.commercialName || "", {
-          shouldDirty: false,
-        });
-        setValue("professionalTitle", companyInfo.professionalTitle || "", {
-          shouldDirty: false,
-        });
-        setValue("regulatoryBody", companyInfo.regulatoryBody || "", {
-          shouldDirty: false,
-        });
-        setValue("professionalNumber", companyInfo.professionalNumber || "", {
-          shouldDirty: false,
-        });
-        setValue("decennialInsurance", companyInfo.decennialInsurance || "", {
-          shouldDirty: false,
-        });
-        setValue(
+        setFlatIfChanged("companyName", companyInfo.name || "");
+        setFlatIfChanged("companyEmail", companyInfo.email || "");
+        setFlatIfChanged("companyPhone", companyInfo.phone || "");
+        setFlatIfChanged("website", companyInfo.website || "");
+        setFlatIfChanged("commercialName", companyInfo.commercialName || "");
+        setFlatIfChanged(
+          "professionalTitle",
+          companyInfo.professionalTitle || "",
+        );
+        setFlatIfChanged("regulatoryBody", companyInfo.regulatoryBody || "");
+        setFlatIfChanged(
+          "professionalNumber",
+          companyInfo.professionalNumber || "",
+        );
+        setFlatIfChanged(
+          "decennialInsurance",
+          companyInfo.decennialInsurance || "",
+        );
+        setFlatIfChanged(
           "professionalLiabilityInsurance",
           companyInfo.professionalLiabilityInsurance || "",
-          { shouldDirty: false },
         );
         if (companyInfo.logo) {
-          setValue("logo", companyInfo.logo, { shouldDirty: false });
+          setFlatIfChanged("logo", companyInfo.logo);
         }
         if (typeof companyInfo.address === "object" && companyInfo.address) {
-          setValue("addressStreet", companyInfo.address.street || "", {
-            shouldDirty: false,
-          });
-          setValue("addressCity", companyInfo.address.city || "", {
-            shouldDirty: false,
-          });
-          setValue("addressZipCode", companyInfo.address.postalCode || "", {
-            shouldDirty: false,
-          });
-          setValue("addressCountry", companyInfo.address.country || "France", {
-            shouldDirty: false,
-          });
+          setFlatIfChanged("addressStreet", companyInfo.address.street || "");
+          setFlatIfChanged("addressCity", companyInfo.address.city || "");
+          setFlatIfChanged(
+            "addressZipCode",
+            companyInfo.address.postalCode || "",
+          );
+          setFlatIfChanged(
+            "addressCountry",
+            companyInfo.address.country || "France",
+          );
         } else if (
           typeof companyInfo.address === "string" &&
           companyInfo.address
@@ -1290,28 +1322,24 @@ export function useQuoteEditor({
             .split("\n")
             .map((l) => l.trim())
             .filter(Boolean);
-          if (lines.length >= 1)
-            setValue("addressStreet", lines[0], { shouldDirty: false });
+          if (lines.length >= 1) setFlatIfChanged("addressStreet", lines[0]);
           if (lines.length >= 2) {
             // Ligne 2 peut être "75001 Paris" ou juste "Paris"
             const cityLine = lines[1];
             const postalMatch = cityLine.match(/^(\d{4,5})\s+(.+)$/);
             if (postalMatch) {
-              setValue("addressZipCode", postalMatch[1], {
-                shouldDirty: false,
-              });
-              setValue("addressCity", postalMatch[2], { shouldDirty: false });
+              setFlatIfChanged("addressZipCode", postalMatch[1]);
+              setFlatIfChanged("addressCity", postalMatch[2]);
             } else {
-              setValue("addressCity", cityLine, { shouldDirty: false });
+              setFlatIfChanged("addressCity", cityLine);
             }
           }
-          if (lines.length >= 3)
-            setValue("addressCountry", lines[2], { shouldDirty: false });
-          else setValue("addressCountry", "France", { shouldDirty: false });
+          if (lines.length >= 3) setFlatIfChanged("addressCountry", lines[2]);
+          else setFlatIfChanged("addressCountry", "France");
         }
       }
     }
-  }, [isFormInitialized, formData.companyInfo, setValue]);
+  }, [isFormInitialized, formData.companyInfo, setFlatIfChanged]);
 
   // Sync inverse : propager les champs plats édités dans la vue paramètres
   // vers companyInfo.* pour que la preview (qui lit companyInfo) se mette à jour

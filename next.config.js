@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Dossier de build isolable via NEXT_DIST_DIR. Deux processus Next qui
+  // partagent le meme .next (dev + build, ou dev + serveur e2e) se marchent
+  // dessus et provoquent des ENOENT sur .next/static/development/*.tmp.*
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   reactStrictMode: true,
   // Masque l'indicateur de mode dev de Next.js (le logo "N" en bas à gauche),
   // visible dans les aperçus PDF chargés en WebView. Cosmétique, dev uniquement.
