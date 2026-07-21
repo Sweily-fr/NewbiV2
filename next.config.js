@@ -111,6 +111,15 @@ const nextConfig = {
 
   async redirects() {
     return [
+      // Canonique : apex → www. Le cookie de session est host-only sur
+      // www.newbi.fr ; sans cette redirection, un accès via newbi.fr
+      // (lien, favori, email) paraît déconnecté.
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "newbi.fr" }],
+        destination: "https://www.newbi.fr/:path*",
+        permanent: true,
+      },
       // Redirections des anciens articles de blog vers la page d'accueil
       {
         source: "/blog/envoyer-fichiers-contre-paiement",
