@@ -368,8 +368,24 @@ const errorLink = onError(
         // Retourner un Observable pour retry l'operation au lieu de propager l'erreur
         return new Observable((observer) => {
           authClient
-            .getSession()
+            .getSession({ query: { disableCookieCache: true } })
             .then(async (session) => {
+              if (session?.error) {
+                // Réponse non fiable (500, indispo, redirection) : incident
+                // transitoire — propager l'erreur SANS déconnecter. Le retry
+                // suivant repassera par ici avec une session revérifiée.
+                console.error(
+                  "[Auth Retry] getSession() en erreur (transitoire), pas de redirection:",
+                  session.error?.message || session.error,
+                );
+                observer.error(graphQLErrors[0]);
+                _pendingRetryQueue.forEach((pending) =>
+                  pending.observer.error(graphQLErrors[0]),
+                );
+                _pendingRetryQueue = [];
+                return;
+              }
+
               if (!session?.data?.user) {
                 // Session reellement expiree — rediriger
                 console.error(

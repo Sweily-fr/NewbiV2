@@ -25,8 +25,15 @@ export function SessionValidityDetector({ intervalMs = 30000 }) {
     const check = async () => {
       if (cancelled || redirectingRef.current) return;
       try {
-        const { data } = await authClient.getSession();
-        if (!cancelled && !data?.user) {
+        // disableCookieCache : interroger la base directement, sinon le
+        // cookieCache peut masquer une révocation pendant sa durée de vie.
+        const { data, error } = await authClient.getSession({
+          query: { disableCookieCache: true },
+        });
+        // Ne rediriger que sur une réponse formelle "pas de session".
+        // Une erreur (500, indispo, redirection) est transitoire : on
+        // retentera à la prochaine itération plutôt que déconnecter à tort.
+        if (!cancelled && !error && !data?.user) {
           redirect();
         }
       } catch {
