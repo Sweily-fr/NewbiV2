@@ -74,7 +74,9 @@ export const auth = betterAuth({
     updateAge: 60 * 60, // 1 heure - Renouvellement automatique si utilisateur actif
     cookieCache: {
       enabled: true,
-      maxAge: 5 * 60, // 5 minutes — révocation de session effective rapidement
+      // 1 minute : fenêtre max pendant laquelle une session révoquée en base
+      // reste utilisable (get-session et /api/auth/token lisent ce cache).
+      maxAge: 60,
     },
     // Ajouter activeOrganizationId aux champs de session
     additionalFields: {
@@ -236,6 +238,25 @@ export const auth = betterAuth({
           } catch (error) {
             console.error("❌ [SESSION CREATE] Erreur:", error);
             return { data: session };
+          }
+        },
+        after: async (session) => {
+          // Limite de sessions simultanées (réglage org, défaut 1) appliquée à
+          // CHAQUE création de session, quel que soit le flux (email, OAuth,
+          // mobile). Au-delà de la limite, les sessions les moins récemment
+          // actives sont révoquées ; la session qui vient d'être créée est
+          // toujours conservée.
+          try {
+            const { enforceSessionLimitForUser } =
+              await import("./enforce-session-limit.js");
+            await enforceSessionLimitForUser({
+              userId: session.userId,
+              orgId: session.activeOrganizationId || null,
+              currentSessionToken: session.token,
+            });
+          } catch (error) {
+            // Non bloquant : ne jamais faire échouer un login pour ça
+            console.error("❌ [SESSION CREATE] enforceSessionLimit:", error);
           }
         },
       },
