@@ -725,7 +725,10 @@ export default function PurchaseOrderSidebar({
                         }}
                       >
                         <span className="text-muted-foreground">
-                          Facture {invoice.number}
+                          Facture{" "}
+                          {invoice.prefix
+                            ? `${invoice.prefix}-${invoice.number}`
+                            : invoice.number}
                         </span>
                         <span>
                           {formatCurrency(invoice.finalTotalTTC || 0)}
