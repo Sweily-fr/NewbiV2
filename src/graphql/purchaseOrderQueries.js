@@ -139,6 +139,7 @@ export const PURCHASE_ORDER_FRAGMENT = gql`
     }
     linkedInvoices {
       id
+      prefix
       number
       status
       finalTotalTTC
@@ -270,6 +271,7 @@ export const PURCHASE_ORDER_LIST_FRAGMENT = gql`
     }
     linkedInvoices {
       id
+      prefix
       number
       status
       finalTotalTTC
