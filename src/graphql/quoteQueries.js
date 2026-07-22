@@ -149,6 +149,7 @@ export const QUOTE_FRAGMENT = gql`
     }
     linkedInvoices {
       id
+      prefix
       number
       status
       finalTotalTTC
@@ -261,6 +262,7 @@ export const QUOTE_LIST_FRAGMENT = gql`
     }
     linkedInvoices {
       id
+      prefix
       number
       status
       finalTotalTTC

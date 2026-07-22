@@ -558,6 +558,7 @@ export const CREATE_LINKED_INVOICE = gql`
         id
         linkedInvoices {
           id
+          prefix
           number
           status
           finalTotalTTC

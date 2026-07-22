@@ -107,7 +107,11 @@ const LinkedInvoicesList = ({ quote }) => {
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-sm">{invoice.number}</span>
+                  <span className="font-medium text-sm">
+                    {invoice.prefix
+                      ? `${invoice.prefix}-${invoice.number}`
+                      : invoice.number}
+                  </span>
                   {invoice.isDeposit && (
                     <Badge variant="outline" className="text-xs">
                       Acompte
