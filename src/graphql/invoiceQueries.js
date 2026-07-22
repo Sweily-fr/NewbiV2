@@ -166,6 +166,18 @@ export const INVOICE_FRAGMENT = gql`
     archivedPdfKey
     archivedPdfStoredAt
     archivedPdfSource
+    sourceQuote {
+      id
+      prefix
+      number
+      status
+    }
+    sourcePurchaseOrder {
+      id
+      prefix
+      number
+      status
+    }
   }
 `;
 
