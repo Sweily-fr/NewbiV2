@@ -1,10 +1,16 @@
 "use client";
 import React from "react";
 import { useSession } from "@/src/lib/auth-client";
-import { Heart, Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
+import { Heart } from "lucide-react";
+
+// Logos officiels des réseaux sociaux (SVG servis depuis /public/social/*.svg).
+// Ces glyphs sont les logos officiels fournis par les plateformes elles-mêmes,
+// et non des icônes de librairie — plus reconnaissables par les utilisateurs
+// qu'un pictogramme générique. Rendus via <img> pour préserver leur design
+// natif (couleurs officielles, formes exactes).
+const SOCIAL_ICON_CLASS = "size-6 object-contain";
 import { Button } from "@/src/components/ui/button";
 import { getAssetUrl } from "@/src/lib/image-utils";
-import TrustpilotWidget from "@/src/components/cookies/TrustpilotWidget";
 import Link from "next/link";
 // import { useCookieConsent } from "@/src/hooks/useCookieConsent";
 
@@ -39,11 +45,37 @@ const defaultSections = [
   },
 ];
 
+// Réseaux sociaux par défaut — non utilisés dans le rendu actuel (les vraies
+// icônes sont rendues inline dans la colonne brand du footer avec les URLs
+// officielles Newbi). Gardé exporté pour compat si un consommateur override
+// la prop socialLinks. Retiré Facebook + Twitter car aucun compte officiel.
 const defaultSocialLinks = [
-  { icon: <Instagram className="size-5" />, href: "#", label: "Instagram" },
-  { icon: <Facebook className="size-5" />, href: "#", label: "Facebook" },
-  { icon: <Twitter className="size-5" />, href: "#", label: "Twitter" },
-  { icon: <Linkedin className="size-5" />, href: "#", label: "LinkedIn" },
+  {
+    icon: (
+      <img src="/social/instagram.svg" alt="" className={SOCIAL_ICON_CLASS} />
+    ),
+    href: "https://www.instagram.com/newbi_fr",
+    label: "Instagram",
+  },
+  {
+    icon: <img src="/social/tiktok.svg" alt="" className={SOCIAL_ICON_CLASS} />,
+    href: "https://www.tiktok.com/@newbi.fr",
+    label: "TikTok",
+  },
+  {
+    icon: (
+      <img src="/social/linkedin.svg" alt="" className={SOCIAL_ICON_CLASS} />
+    ),
+    href: "https://fr.linkedin.com/company/newbi-france",
+    label: "LinkedIn",
+  },
+  {
+    icon: (
+      <img src="/social/youtube.svg" alt="" className={SOCIAL_ICON_CLASS} />
+    ),
+    href: "https://www.youtube.com/@Newbi_fr",
+    label: "YouTube",
+  },
 ];
 
 const defaultLegalLinks = [
@@ -109,7 +141,7 @@ const Footer7 = ({
               <div className="absolute inset-x-0 top-2 border-t border-black/5"></div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 sm:gap-y-8 md:gap-y-10 pt-4 md:pt-6 pb-4 md:pb-6 lg:grid-cols-6 lg:gap-8 px-4 md:px-0">
-              <div className="col-span-1 sm:col-span-2 md:col-span-2 flex justify-center md:justify-start mb-6 sm:mb-4 md:mb-0">
+              <div className="col-span-1 sm:col-span-2 md:col-span-2 flex flex-col items-center md:items-start mb-6 sm:mb-4 md:mb-0">
                 <div className="lg:pb-6 group/item relative">
                   <img
                     src="/newbiLetter.png"
@@ -118,6 +150,129 @@ const Footer7 = ({
                     height="40"
                     className="object-contain"
                   />
+                </div>
+                {/* Réseaux sociaux — sous le logo dans la colonne brand du
+                    footer. Comptes officiels Newbi confirmés (schema.org
+                    sameAs sur newbi.fr + comptes fournis par le user). */}
+                <div className="flex items-center gap-5 mt-3">
+                  <a
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Suivez Newbi sur Instagram"
+                    className="opacity-90 hover:opacity-100 transition-opacity duration-200 p-1"
+                    href="https://www.instagram.com/newbi_fr"
+                  >
+                    <img
+                      src="/social/instagram.svg"
+                      alt=""
+                      className={SOCIAL_ICON_CLASS}
+                    />
+                  </a>
+                  <a
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Suivez Newbi sur TikTok"
+                    className="opacity-90 hover:opacity-100 transition-opacity duration-200 p-1"
+                    href="https://www.tiktok.com/@newbi.fr"
+                  >
+                    <img
+                      src="/social/tiktok.svg"
+                      alt=""
+                      className={SOCIAL_ICON_CLASS}
+                    />
+                  </a>
+                  <a
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Suivez Newbi sur LinkedIn"
+                    className="opacity-90 hover:opacity-100 transition-opacity duration-200 p-1"
+                    href="https://fr.linkedin.com/company/newbi-france"
+                  >
+                    <img
+                      src="/social/linkedin.svg"
+                      alt=""
+                      className={SOCIAL_ICON_CLASS}
+                    />
+                  </a>
+                  <a
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Suivez Newbi sur YouTube"
+                    className="opacity-90 hover:opacity-100 transition-opacity duration-200 p-1"
+                    href="https://www.youtube.com/@Newbi_fr"
+                  >
+                    <img
+                      src="/social/youtube.svg"
+                      alt=""
+                      className={SOCIAL_ICON_CLASS}
+                    />
+                  </a>
+                </div>
+                {/* Lien Trustpilot — sous la row des réseaux sociaux dans la
+                    colonne brand. Simple lien externe (aucun cookie déposé)
+                    avec l'étoile officielle Trustpilot en vert #00B67A. Le
+                    texte est en gris foncé #202020 (charte Newbi), seule
+                    l'étoile porte l'accent vert Trustpilot. */}
+                {/* Bloc d'évaluations et téléchargements — tous les liens
+                    suivent le pattern "icône + texte" pour uniformité visuelle.
+                    Le texte est en gris foncé #202020 (charte Newbi), l'accent
+                    couleur est porté uniquement par l'icône. */}
+                <div className="flex flex-col gap-5 mt-8">
+                  <a
+                    href="https://fr.trustpilot.com/review/newbi.fr"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm font-medium leading-none text-[#202020] hover:text-gray-700 transition-colors"
+                  >
+                    <img
+                      src="/social/trustpilot-star.svg"
+                      alt=""
+                      className="size-5 object-contain shrink-0"
+                    />
+                    <span>Évaluez-nous sur Trustpilot</span>
+                  </a>
+                  <a
+                    href="https://www.google.com/search?q=newbi+facturation+avis"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm font-medium leading-none text-[#202020] hover:text-gray-700 transition-colors"
+                  >
+                    <img
+                      src="/social/google.svg"
+                      alt=""
+                      className="size-5 object-contain shrink-0"
+                    />
+                    <span>Évaluez-nous sur Google</span>
+                  </a>
+                  {/* Badges stores mobiles — URLs standard des stores :
+                      fonctionneront dès que les apps seront publiques.
+                      Aujourd'hui iOS en TestFlight, Android en Internal Test. */}
+                  <a
+                    href="https://apps.apple.com/app/id6772126520"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm font-medium leading-none text-[#202020] hover:text-gray-700 transition-colors"
+                  >
+                    <img
+                      src="/social/app-store.svg"
+                      alt=""
+                      className="size-5 object-contain shrink-0 rounded-[5px]"
+                    />
+                    <span>Télécharger sur l'App Store</span>
+                  </a>
+                  <a
+                    href="https://play.google.com/store/apps/details?id=fr.newbi.app"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm font-medium leading-none text-[#202020] hover:text-gray-700 transition-colors"
+                  >
+                    <img
+                      src="/social/google-play.svg"
+                      alt=""
+                      className="size-5 object-contain shrink-0"
+                    />
+                    <span>Télécharger sur Google Play</span>
+                  </a>
                 </div>
               </div>
               <div className="col-span-1">
@@ -154,7 +309,7 @@ const Footer7 = ({
                       className="font-regular text-gray-950 hover:text-gray-700"
                       href={"/produits/kanban"}
                     >
-                      Tableau Kanban
+                      Gestion de projet
                     </a>
                   </li>
                   <li>
@@ -272,6 +427,14 @@ const Footer7 = ({
                       CGV
                     </a>
                   </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/supprimer-compte"
+                    >
+                      Supprimer mon compte
+                    </a>
+                  </li>
                   {/* <li>
                     <button
                       className="font-regular text-gray-950 hover:text-gray-700 cursor-pointer"
@@ -293,11 +456,10 @@ const Footer7 = ({
             <img
               src="/logo_Compatible_Facturation_electronique-footer.png"
               alt="Solution compatible Facturation électronique"
-              className="h-14 w-auto object-contain"
+              className="h-16 w-auto object-contain rounded-lg"
             />
           </Link>
         </div>
-        <TrustpilotWidget className="px-4 md:px-0 pt-4 pb-2" />
         <div className="flex flex-col sm:flex-row sm:justify-between group/row relative isolate pt-[calc(--spacing(2)+1px)] last:pb-[calc(--spacing(2)+1px)] px-4 md:px-0 gap-4 sm:gap-0">
           <div
             aria-hidden="true"
@@ -324,32 +486,10 @@ const Footer7 = ({
               </div>
             </div>
           </div>
-          <div className="flex items-center justify-center sm:justify-end gap-4 sm:gap-6 md:gap-8 py-2 sm:py-3 group/item relative">
-            <a
-              target="_blank"
-              aria-label="Visit us on Facebook"
-              className="text-gray-950 hover:text-gray-700 transition-colors duration-200 p-1"
-              href="https://facebook.com"
-            >
-              {/* Facebook Icon SVG */}
-            </a>
-            <a
-              target="_blank"
-              aria-label="Visit us on Twitter"
-              className="text-gray-950 hover:text-gray-700 transition-colors duration-200 p-1"
-              href="https://x.com"
-            >
-              {/* Twitter Icon SVG */}
-            </a>
-            <a
-              target="_blank"
-              aria-label="Visit us on LinkedIn"
-              className="text-gray-950 hover:text-gray-700 transition-colors duration-200 p-1"
-              href="https://linkedin.com"
-            >
-              {/* LinkedIn Icon SVG */}
-            </a>
-          </div>
+          {/* Anciennement : row de réseaux sociaux dupliquée en bas du footer.
+              Retirée car les mêmes liens sont maintenant sous le logo Newbi
+              (colonne brand). Éviter la duplication qui doublait le poids
+              visuel de la même info. */}
         </div>
       </div>
     </div>
