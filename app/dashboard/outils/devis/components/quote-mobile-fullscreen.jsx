@@ -29,6 +29,7 @@ import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDFDownloaderWithFacturX";
 import LinkedInvoicesList from "./linked-invoices-list";
 import CreateLinkedInvoicePopover from "./create-linked-invoice-popover";
+import { LinkedDocumentRow } from "@/src/components/documents/linked-document-row";
 
 export default function QuoteMobileFullscreen({
   isOpen,
@@ -601,11 +602,34 @@ export default function QuoteMobileFullscreen({
                   <ArrowRight className="h-4 w-4" />
                 </Button>
 
+                {/* Bons de commande liés (créés à partir de ce devis) */}
+                {quote.linkedPurchaseOrders &&
+                  quote.linkedPurchaseOrders.length > 0 && (
+                    <div className="space-y-2.5">
+                      <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Bons de commande liés
+                      </h3>
+                      <div className="space-y-1">
+                        {quote.linkedPurchaseOrders.map((po) => (
+                          <LinkedDocumentRow
+                            key={po.id}
+                            type="purchaseOrder"
+                            document={po}
+                            onClick={() => {
+                              router.push(
+                                `/dashboard/outils/bons-commande?id=${po.id}`,
+                              );
+                              onClose();
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                 {/* Factures liées */}
                 {quote.status === QUOTE_STATUS.COMPLETED && (
-                  <div className="space-y-3">
-                    <LinkedInvoicesList quote={quote} />
-                  </div>
+                  <LinkedInvoicesList quote={quote} />
                 )}
               </div>
             )}
