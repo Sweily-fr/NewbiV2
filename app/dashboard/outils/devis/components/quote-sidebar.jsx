@@ -49,6 +49,7 @@ import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDF
 
 import CreateLinkedInvoicePopover from "./create-linked-invoice-popover";
 import LinkedInvoicesList from "./linked-invoices-list";
+import { LinkedDocumentRow } from "@/src/components/documents/linked-document-row";
 import { SignatureStatusBadge } from "@/src/components/esignature/signature-status-badge";
 import {
   useDocumentSignatureStatus,
@@ -737,17 +738,39 @@ export default function QuoteSidebar({
             </div>
           </div>
 
+          {/* Bons de commande liés (créés à partir de ce devis) */}
+          {quote.linkedPurchaseOrders &&
+            quote.linkedPurchaseOrders.length > 0 && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                    Bons de commande liés
+                  </p>
+                  <div className="space-y-1">
+                    {quote.linkedPurchaseOrders.map((po) => (
+                      <LinkedDocumentRow
+                        key={po.id}
+                        type="purchaseOrder"
+                        document={po}
+                        onClick={() => {
+                          router.push(
+                            `/dashboard/outils/bons-commande?id=${po.id}`,
+                          );
+                          onClose();
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
           {/* Liste des factures liées */}
           {quote.status === QUOTE_STATUS.COMPLETED && (
             <>
               <Separator />
-              <div className="space-y-3">
-                <LinkedInvoicesList
-                  quote={quote}
-                  onCreateLinkedInvoice={handleCreateLinkedInvoice}
-                  isLoading={isLoading}
-                />
-              </div>
+              <LinkedInvoicesList quote={quote} />
             </>
           )}
         </div>

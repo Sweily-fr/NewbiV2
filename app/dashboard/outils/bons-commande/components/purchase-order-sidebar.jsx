@@ -47,6 +47,7 @@ import { getDraftEffectiveDates } from "@/src/utils/dateFormatter";
 import { toast } from "@/src/components/ui/sonner";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDFDownloaderWithFacturX";
+import { LinkedDocumentRow } from "@/src/components/documents/linked-document-row";
 
 export default function PurchaseOrderSidebar({
   isOpen,
@@ -584,24 +585,6 @@ export default function PurchaseOrderSidebar({
             </div>
           </div>
 
-          {/* Source Quote */}
-          {purchaseOrder.sourceQuote && (
-            <>
-              <Separator />
-              <div className="space-y-3">
-                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                  Devis source
-                </p>
-                <div className="text-sm">
-                  <span className="text-muted-foreground">
-                    {purchaseOrder.sourceQuote.prefix}-
-                    {purchaseOrder.sourceQuote.number}
-                  </span>
-                </div>
-              </div>
-            </>
-          )}
-
           <Separator />
 
           {/* Articles */}
@@ -703,6 +686,30 @@ export default function PurchaseOrderSidebar({
             </div>
           </div>
 
+          {/* Devis lié (devis à l'origine de ce bon de commande) */}
+          {purchaseOrder.sourceQuote && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                  Devis lié
+                </p>
+                <div className="space-y-1">
+                  <LinkedDocumentRow
+                    type="quote"
+                    document={purchaseOrder.sourceQuote}
+                    onClick={() => {
+                      router.push(
+                        `/dashboard/outils/devis?id=${purchaseOrder.sourceQuote.id}`,
+                      );
+                      onClose();
+                    }}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
           {/* Linked Invoices */}
           {purchaseOrder.linkedInvoices &&
             purchaseOrder.linkedInvoices.length > 0 && (
@@ -712,28 +719,19 @@ export default function PurchaseOrderSidebar({
                   <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
                     Factures liées
                   </p>
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     {purchaseOrder.linkedInvoices.map((invoice) => (
-                      <div
+                      <LinkedDocumentRow
                         key={invoice.id}
-                        className="flex justify-between items-center text-sm cursor-pointer hover:bg-muted/50 rounded px-2 py-1 -mx-2"
+                        type="invoice"
+                        document={invoice}
                         onClick={() => {
                           router.push(
-                            `/dashboard/outils/factures/${invoice.id}`,
+                            `/dashboard/outils/factures?id=${invoice.id}`,
                           );
                           onClose();
                         }}
-                      >
-                        <span className="text-muted-foreground">
-                          Facture{" "}
-                          {invoice.prefix
-                            ? `${invoice.prefix}-${invoice.number}`
-                            : invoice.number}
-                        </span>
-                        <span>
-                          {formatCurrency(invoice.finalTotalTTC || 0)}
-                        </span>
-                      </div>
+                      />
                     ))}
                   </div>
                 </div>

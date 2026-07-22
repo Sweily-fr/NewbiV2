@@ -31,6 +31,7 @@ import { useRouter } from "next/navigation";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDFDownloaderWithFacturX";
+import { LinkedDocumentRow } from "@/src/components/documents/linked-document-row";
 import {
   EInvoiceStatusBadge,
   EReportingErrorBadge,
@@ -858,6 +859,48 @@ export default function InvoiceMobileFullscreen({
                           </div>
                         </div>
                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Devis lié (devis à l'origine de cette facture) */}
+                {invoice.sourceQuote && (
+                  <div className="space-y-2.5">
+                    <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Devis lié
+                    </h3>
+                    <div className="space-y-1">
+                      <LinkedDocumentRow
+                        type="quote"
+                        document={invoice.sourceQuote}
+                        onClick={() => {
+                          router.push(
+                            `/dashboard/outils/devis?id=${invoice.sourceQuote.id}`,
+                          );
+                          onClose();
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Bon de commande lié (BC à l'origine de cette facture) */}
+                {invoice.sourcePurchaseOrder && (
+                  <div className="space-y-2.5">
+                    <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Bon de commande lié
+                    </h3>
+                    <div className="space-y-1">
+                      <LinkedDocumentRow
+                        type="purchaseOrder"
+                        document={invoice.sourcePurchaseOrder}
+                        onClick={() => {
+                          router.push(
+                            `/dashboard/outils/bons-commande?id=${invoice.sourcePurchaseOrder.id}`,
+                          );
+                          onClose();
+                        }}
+                      />
                     </div>
                   </div>
                 )}

@@ -66,6 +66,7 @@ import { hasReachedCreditNoteLimit } from "@/src/utils/creditNoteUtils";
 import { toast } from "@/src/components/ui/sonner";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDFDownloaderWithFacturX";
+import { LinkedDocumentRow } from "@/src/components/documents/linked-document-row";
 import CreditNoteMobileFullscreen from "./credit-note-mobile-fullscreen";
 import { useReconciliationForSidebar } from "@/src/hooks/useReconciliation";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
@@ -1504,6 +1505,54 @@ export default function InvoiceSidebar({
                 </div>
               </>
             )}
+
+          {/* Devis lié (devis à l'origine de cette facture) */}
+          {invoice.sourceQuote && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                  Devis lié
+                </p>
+                <div className="space-y-1">
+                  <LinkedDocumentRow
+                    type="quote"
+                    document={invoice.sourceQuote}
+                    onClick={() => {
+                      router.push(
+                        `/dashboard/outils/devis?id=${invoice.sourceQuote.id}`,
+                      );
+                      onClose();
+                    }}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Bon de commande lié (BC à l'origine de cette facture) */}
+          {invoice.sourcePurchaseOrder && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                  Bon de commande lié
+                </p>
+                <div className="space-y-1">
+                  <LinkedDocumentRow
+                    type="purchaseOrder"
+                    document={invoice.sourcePurchaseOrder}
+                    onClick={() => {
+                      router.push(
+                        `/dashboard/outils/bons-commande?id=${invoice.sourcePurchaseOrder.id}`,
+                      );
+                      onClose();
+                    }}
+                  />
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Preview Thumbnail */}
           {/* <div className="space-y-3">

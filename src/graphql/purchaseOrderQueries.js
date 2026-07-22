@@ -136,6 +136,7 @@ export const PURCHASE_ORDER_FRAGMENT = gql`
       id
       number
       prefix
+      status
     }
     linkedInvoices {
       id
@@ -268,6 +269,7 @@ export const PURCHASE_ORDER_LIST_FRAGMENT = gql`
       id
       number
       prefix
+      status
     }
     linkedInvoices {
       id

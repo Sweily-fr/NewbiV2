@@ -155,6 +155,13 @@ export const QUOTE_FRAGMENT = gql`
       finalTotalTTC
       isDeposit
     }
+    linkedPurchaseOrders {
+      id
+      prefix
+      number
+      status
+      finalTotalTTC
+    }
     hasPurchaseOrderInvoices
     emailTracking {
       emailSentAt
