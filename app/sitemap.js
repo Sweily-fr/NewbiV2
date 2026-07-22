@@ -84,6 +84,12 @@ export default function sitemap() {
       changeFrequency: "monthly",
       priority: 0.3,
     },
+    {
+      url: `${baseUrl}/supprimer-compte`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.3,
+    },
   ];
 
   const posts = getAllPosts();
