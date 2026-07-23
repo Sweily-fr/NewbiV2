@@ -50,6 +50,7 @@ export const QUOTE_FRAGMENT = gql`
       lastName
       siret
       vatNumber
+      isInternational
       hasDifferentShippingAddress
       address {
         street
@@ -229,6 +230,7 @@ export const QUOTE_LIST_FRAGMENT = gql`
       type
       siret
       vatNumber
+      isInternational
       address {
         street
         city
@@ -413,6 +415,7 @@ export const GET_QUOTE_BY_NUMBER = gql`
         email
         type
         vatNumber
+        isInternational
         siret
         address {
           fullName

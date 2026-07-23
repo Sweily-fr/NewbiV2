@@ -43,6 +43,7 @@ export const CREDIT_NOTE_FRAGMENT = gql`
       lastName
       siret
       vatNumber
+      isInternational
       hasDifferentShippingAddress
       address {
         street

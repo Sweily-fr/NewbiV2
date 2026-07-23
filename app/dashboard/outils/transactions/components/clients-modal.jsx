@@ -66,7 +66,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
   });
 
   const [hasDifferentShipping, setHasDifferentShipping] = useState(
-    client?.hasDifferentShippingAddress || false
+    client?.hasDifferentShippingAddress || false,
   );
   const clientType = watch("type");
   const isInternational = watch("isInternational");
@@ -95,7 +95,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
       }
 
       toast.success(
-        isEditing ? "Client modifié avec succès" : "Client créé avec succès"
+        isEditing ? "Client modifié avec succès" : "Client créé avec succès",
       );
       reset();
       onOpenChange(false);
@@ -351,30 +351,27 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                   <div className="space-y-2">
                     <Label>
                       {isInternational
-                        ? "Numéro d'identification"
-                        : "SIREN/SIRET"}{" "}
-                      *
+                        ? "Numéro fiscal (optionnel)"
+                        : "SIREN/SIRET *"}
                     </Label>
                     <Input
                       placeholder={
                         isInternational
-                          ? "Numéro d'identification (ex: VAT, EIN, etc.)"
+                          ? "123456789"
                           : "123456789 ou 12345678901234"
                       }
                       {...register("siret", {
                         validate: (value) => {
                           const currentIsInternational =
                             watch("isInternational");
+                          // Hors France : numéro fiscal local, optionnel et format libre
+                          if (currentIsInternational) return true;
                           if (!value || value.trim() === "") {
-                            return currentIsInternational
-                              ? "Le numéro d'identification est obligatoire"
-                              : "Le SIREN/SIRET est obligatoire";
+                            return "Le SIREN/SIRET est obligatoire";
                           }
-                          if (!currentIsInternational) {
-                            const siretRegex = /^\d{9}$|^\d{14}$/;
-                            if (!siretRegex.test(value)) {
-                              return "Le SIREN doit contenir 9 chiffres ou le SIRET 14 chiffres";
-                            }
+                          const siretRegex = /^\d{9}$|^\d{14}$/;
+                          if (!siretRegex.test(value)) {
+                            return "Le SIREN doit contenir 9 chiffres ou le SIRET 14 chiffres";
                           }
                           return true;
                         },
@@ -385,21 +382,17 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                         {errors.siret.message}
                       </p>
                     )}
-                    {isInternational && (
-                      <p className="text-xs text-muted-foreground">
-                        Numéro d'identification fiscale ou équivalent local (ex:
-                        VAT, EIN, etc.)
-                      </p>
-                    )}
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Numéro de TVA</Label>
+                    <Label>
+                      {isInternational
+                        ? "Numéro de TVA (optionnel)"
+                        : "Numéro de TVA"}
+                    </Label>
                     <Input
                       placeholder={
-                        isInternational
-                          ? "Numéro de TVA (format libre)"
-                          : "FR12345678901"
+                        isInternational ? "SE123456789012" : "FR12345678901"
                       }
                       {...register("vatNumber", {
                         validate: (value) => {
@@ -423,7 +416,8 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                     )}
                     {isInternational && (
                       <p className="text-xs text-muted-foreground">
-                        Optionnel - Format libre pour les entreprises hors UE
+                        Saisissez le numéro de TVA en commençant par le code
+                        pays.
                       </p>
                     )}
                   </div>
