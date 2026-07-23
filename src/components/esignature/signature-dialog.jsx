@@ -167,6 +167,13 @@ async function generatePdfBase64FromRef(componentRef) {
     while (currentY < img.height) {
       const sliceHeight = Math.min(pageHeightPixels, img.height - currentY);
 
+      // Le conteneur de capture (min-height 1123px) dépasse d'une fraction de
+      // pixel la hauteur A4 exacte (1122,93px à 794px de large) : sans garde,
+      // ce résidu génère une page blanche supplémentaire que le signataire
+      // doit faire défiler (signerMustRead). On ignore toute tranche finale
+      // inférieure à ~10px de contenu réel (20px à scale 2).
+      if (pageNumber > 0 && sliceHeight < 20) break;
+
       canvas.height = sliceHeight;
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
