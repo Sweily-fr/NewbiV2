@@ -111,6 +111,12 @@ async function handler(request, { params }) {
           email: client_data.email,
           phone: client_data.phone,
           address: client_data.address,
+          type: client_data.type,
+          firstName: client_data.firstName,
+          lastName: client_data.lastName,
+          siret: client_data.siret,
+          vatNumber: client_data.vatNumber,
+          isInternational: client_data.isInternational,
         }
       : quote.client || quote.clientInfo,
 

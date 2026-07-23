@@ -62,6 +62,7 @@ export const INVOICE_FRAGMENT = gql`
       lastName
       siret
       vatNumber
+      isInternational
       hasDifferentShippingAddress
       address {
         street
@@ -234,6 +235,7 @@ export const INVOICE_LIST_FRAGMENT = gql`
       type
       siret
       vatNumber
+      isInternational
       address {
         street
         city
@@ -408,6 +410,7 @@ export const GET_SITUATION_INVOICES_BY_QUOTE_REF = gql`
         email
         type
         vatNumber
+        isInternational
         siret
         address {
           fullName

@@ -39,6 +39,7 @@ export const PURCHASE_ORDER_FRAGMENT = gql`
       lastName
       siret
       vatNumber
+      isInternational
       hasDifferentShippingAddress
       address {
         street
@@ -231,6 +232,7 @@ export const PURCHASE_ORDER_LIST_FRAGMENT = gql`
       lastName
       siret
       vatNumber
+      isInternational
       address {
         street
         city

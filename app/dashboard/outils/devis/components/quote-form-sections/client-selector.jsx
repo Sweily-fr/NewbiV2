@@ -484,13 +484,8 @@ export default function ClientSelector({
         email: newClientForm.email.trim(),
         firstName: newClientForm.firstName || undefined,
         lastName: newClientForm.lastName || undefined,
-        // Client hors France : pas de SIREN/TVA (notions franco-françaises) → rien en base
-        siret: newClientForm.isInternational
-          ? undefined
-          : newClientForm.siret || undefined,
-        vatNumber: newClientForm.isInternational
-          ? undefined
-          : newClientForm.vatNumber || undefined,
+        siret: newClientForm.siret || undefined,
+        vatNumber: newClientForm.vatNumber || undefined,
         isInternational: newClientForm.isInternational || false,
         hasDifferentShippingAddress: Boolean(
           newClientForm.hasDifferentShippingAddress,
@@ -1279,19 +1274,22 @@ export default function ClientSelector({
                 </div>
               </div>
 
-              {/* SIRET / TVA - entreprises françaises uniquement (notions FR, masquées hors France) */}
-              {newClientForm.type === "COMPANY" &&
-                !newClientForm.isInternational && (
+              {/* SIRET / TVA - labels FR ou neutres selon le pays (à la Qonto) */}
+              {newClientForm.type === "COMPANY" && (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label
                       htmlFor="client-siret"
                       className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
                     >
-                      {newClientForm.isInternational
-                        ? "N° d'identification"
-                        : "SIREN/SIRET"}
-                      <span className="text-red-500"> *</span>
+                      {newClientForm.isInternational ? (
+                        "Numéro fiscal (optionnel)"
+                      ) : (
+                        <>
+                          SIREN/SIRET
+                          <span className="text-red-500"> *</span>
+                        </>
+                      )}
                     </Label>
                     <Input
                       id="client-siret"
@@ -1304,7 +1302,7 @@ export default function ClientSelector({
                       }
                       placeholder={
                         newClientForm.isInternational
-                          ? "N° d'identification"
+                          ? "123456789"
                           : "123456789 ou 12345678901234"
                       }
                       disabled={disabled}
@@ -1315,7 +1313,7 @@ export default function ClientSelector({
                     />
                     <p className="text-xs text-muted-foreground mt-1.5">
                       {newClientForm.isInternational
-                        ? "N° d'identification fiscale ou équivalent local"
+                        ? "Numéro d'identification fiscale local"
                         : "SIREN (9 chiffres) ou SIRET (14 chiffres)"}
                     </p>
                     {formErrors.siret && (
@@ -1329,7 +1327,9 @@ export default function ClientSelector({
                       htmlFor="client-vat"
                       className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
                     >
-                      N° TVA
+                      {newClientForm.isInternational
+                        ? "Numéro de TVA (optionnel)"
+                        : "N° TVA"}
                     </Label>
                     <Input
                       id="client-vat"
@@ -1342,10 +1342,16 @@ export default function ClientSelector({
                       }
                       placeholder={
                         newClientForm.isInternational
-                          ? "TVA intracommunautaire"
+                          ? "SE123456789012"
                           : "FR12345678901"
                       }
                     />
+                    {newClientForm.isInternational && (
+                      <p className="text-xs text-muted-foreground mt-1.5">
+                        Saisissez le numéro de TVA en commençant par le code
+                        pays.
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
