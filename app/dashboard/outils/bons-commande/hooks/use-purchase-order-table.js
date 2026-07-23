@@ -313,7 +313,13 @@ export function usePurchaseOrderTable({
           label: "Référence",
         },
         cell: ({ row }) => {
-          const reference = row.original.purchaseOrderNumber;
+          const sourceQuote = row.original.sourceQuote;
+          const sourceQuoteRef = sourceQuote
+            ? sourceQuote.prefix
+              ? `${sourceQuote.prefix.replace(/-$/, "")}-${sourceQuote.number}`
+              : sourceQuote.number
+            : null;
+          const reference = row.original.purchaseOrderNumber || sourceQuoteRef;
           if (!reference) {
             return <span className="text-muted-foreground">—</span>;
           }

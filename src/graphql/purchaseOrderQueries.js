@@ -190,6 +190,7 @@ export const PURCHASE_ORDER_LIST_FRAGMENT = gql`
     id
     number
     prefix
+    purchaseOrderNumber
     status
     issueDate
     validUntil
