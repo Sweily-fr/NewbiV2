@@ -24,16 +24,24 @@ const LAST_ACTIVITY_KEY = "newbi_last_activity";
  *
  * @param {Object} options
  * @param {number} options.timeoutHours - Timeout en heures (default: 12)
+ * @param {string|Date} options.sessionCreatedAt - Date de création de la session
+ *   Better Auth. Sert de plancher au timestamp d'activité : un timestamp
+ *   resté en localStorage après un logout ne peut pas déconnecter une
+ *   session fraîchement créée.
  * @param {boolean} options.enabled - Activer/désactiver la détection (default: true)
  */
 export function useInactivityDetector({
   timeoutHours = 12,
+  sessionCreatedAt = null,
   enabled = true,
 } = {}) {
   const timerRef = useRef(null);
   const isLoggingOutRef = useRef(false);
 
   const timeoutMs = timeoutHours * 60 * 60 * 1000;
+  const sessionCreatedAtMs = sessionCreatedAt
+    ? new Date(sessionCreatedAt).getTime()
+    : 0;
 
   const handleLogout = useCallback(async () => {
     if (isLoggingOutRef.current) return;
@@ -62,13 +70,36 @@ export function useInactivityDetector({
   useEffect(() => {
     if (!enabled || typeof window === "undefined") return;
 
-    // Initialiser le timestamp d'activité
+    // Reprendre le décompte là où il en était : si l'app a été fermée puis
+    // rouverte, le timestamp en localStorage permet de détecter une
+    // inactivité qui a dépassé le timeout pendant la fermeture (avant ce
+    // check, le timestamp était écrasé au mount et le timeout ne
+    // s'appliquait jamais après réouverture). La date de création de la
+    // session sert de plancher pour ne pas déconnecter un login tout frais
+    // sur la base d'un timestamp d'une session précédente.
+    let initialDelay = timeoutMs;
     try {
-      localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
+      const stored = parseInt(
+        localStorage.getItem(LAST_ACTIVITY_KEY) || "0",
+        10,
+      );
+      if (stored > 0) {
+        const lastActivity = Math.max(stored, sessionCreatedAtMs);
+        const elapsed = Date.now() - lastActivity;
+        if (elapsed >= timeoutMs) {
+          handleLogout();
+          return;
+        }
+        initialDelay = timeoutMs - elapsed;
+      } else {
+        // Pas de timestamp (premier lancement ou storage nettoyé) : on ne
+        // peut rien déduire, on repart de maintenant.
+        localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
+      }
     } catch {}
 
     // Démarrer le timer
-    timerRef.current = setTimeout(handleLogout, timeoutMs);
+    timerRef.current = setTimeout(handleLogout, initialDelay);
 
     // Throttle les événements d'activité (1 reset max par 30s)
     let lastReset = Date.now();
@@ -102,10 +133,11 @@ export function useInactivityDetector({
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
         try {
-          const lastActivity = parseInt(
+          const stored = parseInt(
             localStorage.getItem(LAST_ACTIVITY_KEY) || "0",
             10,
           );
+          const lastActivity = Math.max(stored || 0, sessionCreatedAtMs);
           const elapsed = Date.now() - lastActivity;
           if (elapsed >= timeoutMs) {
             handleLogout();
@@ -130,5 +162,5 @@ export function useInactivityDetector({
       window.removeEventListener("storage", handleStorage);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [enabled, timeoutMs, handleLogout, resetTimer]);
+  }, [enabled, timeoutMs, sessionCreatedAtMs, handleLogout, resetTimer]);
 }
