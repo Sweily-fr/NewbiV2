@@ -971,6 +971,8 @@ export function usePurchaseOrderEditor({
       currentClient.lastName !== freshClient.lastName ||
       currentClient.siret !== freshClient.siret ||
       currentClient.vatNumber !== freshClient.vatNumber ||
+      (currentClient.isInternational || false) !==
+        (freshClient.isInternational || false) ||
       JSON.stringify({
         street: currentClient.address?.street,
         city: currentClient.address?.city,
@@ -2868,6 +2870,7 @@ function transformFormDataToInput(
         lastName: formData.client.lastName,
         siret: formData.client.siret,
         vatNumber: formData.client.vatNumber,
+        isInternational: formData.client.isInternational || false,
         hasDifferentShippingAddress:
           formData.client.hasDifferentShippingAddress,
         address: formData.client.address

@@ -145,9 +145,11 @@ const UniversalPreviewPDF = ({
   const isPurchaseOrder = type === "purchaseOrder";
 
   // Client étranger : pays renseigné et différent de la France.
-  // Dans ce cas, SIREN et N° TVA (terminologie franco-française) ne sont pas
-  // affichés sur le document car ils n'ont pas d'équivalent direct à l'étranger.
+  // Dans ce cas, le terme SIREN (franco-français) est remplacé par le label
+  // neutre « N° fiscal », affiché tel quel (format libre à l'étranger).
+  // Le label « N° TVA » reste identique pour tous les pays.
   const isClientForeign = (() => {
+    if (data.client?.isInternational === true) return true;
     const country = String(data.client?.address?.country || "")
       .trim()
       .toLowerCase();
@@ -949,13 +951,14 @@ const UniversalPreviewPDF = ({
                           {formatAddress(data.client.address) || ""}
                         </div>
                       )}
-                      {!isClientForeign && data.client?.siret && (
+                      {data.client?.siret && (
                         <div className="dark:text-[#0A0A0A]">
-                          SIREN:{" "}
-                          {data.client.siret.replace(/\D/g, "").slice(0, 9)}
+                          {isClientForeign
+                            ? `N° fiscal: ${data.client.siret}`
+                            : `SIREN: ${data.client.siret.replace(/\D/g, "").slice(0, 9)}`}
                         </div>
                       )}
-                      {!isClientForeign && data.client?.vatNumber && (
+                      {data.client?.vatNumber && (
                         <div className="dark:text-[#0A0A0A]">
                           N° TVA: {data.client.vatNumber}
                         </div>
@@ -983,10 +986,11 @@ const UniversalPreviewPDF = ({
                           {data.client.email}
                         </div>
                       )}
-                      {!isClientForeign && data.client?.siret && (
+                      {data.client?.siret && (
                         <div className="dark:text-[#0A0A0A]">
-                          SIREN:{" "}
-                          {data.client.siret.replace(/\D/g, "").slice(0, 9)}
+                          {isClientForeign
+                            ? `N° fiscal: ${data.client.siret}`
+                            : `SIREN: ${data.client.siret.replace(/\D/g, "").slice(0, 9)}`}
                         </div>
                       )}
                       {data.client?.phone && (
@@ -994,7 +998,7 @@ const UniversalPreviewPDF = ({
                           {data.client.phone}
                         </div>
                       )}
-                      {!isClientForeign && data.client?.vatNumber && (
+                      {data.client?.vatNumber && (
                         <div className="dark:text-[#0A0A0A]">
                           N° TVA: {data.client.vatNumber}
                         </div>
