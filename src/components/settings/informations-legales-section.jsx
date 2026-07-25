@@ -161,8 +161,8 @@ const VAT_FREQUENCIES = [
 ];
 
 const VAT_MODES = [
-  { value: "debits", label: "Débits" },
-  { value: "encaissements", label: "Encaissements" },
+  { value: "debits", label: "Sur les débits" },
+  { value: "encaissements", label: "Sur les encaissements" },
 ];
 
 const RequiredLabel = ({ htmlFor, children, isRequired, tooltip }) => (
@@ -599,10 +599,10 @@ export function InformationsLegalesSection({
                     </div>
                   )}
 
-                  {/* Mode de TVA */}
+                  {/* Régime de la TVA */}
                   <div className="flex flex-col gap-1">
                     <RequiredLabel htmlFor="vatMode" isRequired={false}>
-                      Mode de TVA
+                      Régime de la TVA
                     </RequiredLabel>
                     <Select
                       value={selectedVatMode}
@@ -610,7 +610,7 @@ export function InformationsLegalesSection({
                       disabled={!canManageOrgSettings}
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Sélectionnez le mode de TVA" />
+                        <SelectValue placeholder="Sélectionnez le régime de la TVA" />
                       </SelectTrigger>
                       <SelectContent>
                         {VAT_MODES.map((mode) => (

@@ -1071,7 +1071,8 @@ export function usePurchaseOrderEditor({
         rcs: organization.rcs || "",
         companyStatus: organization.legalForm || "",
         capitalSocial: organization.capitalSocial || "",
-        vatPaymentCondition: organization.fiscalRegime || "",
+        vatPaymentCondition:
+          organization.vatMode || organization.fiscalRegime || "",
         transactionCategory: organization.activityCategory || "",
         address: {
           street: organization.addressStreet || "",

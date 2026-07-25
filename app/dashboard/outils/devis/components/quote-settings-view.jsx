@@ -484,7 +484,7 @@ export default function QuoteSettingsView({
           <CompanyInfoSettingsSection organization={organization} />
 
           {/* Coordonnées bancaires */}
-          <Card className="shadow-none border-none bg-transparent p-0">
+          <Card className="shadow-none border-none bg-transparent p-0 py-0!">
             <CardHeader className="p-0">
               <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 Coordonnées bancaires
@@ -542,7 +542,7 @@ export default function QuoteSettingsView({
           </Card>
 
           {/* Section Numérotation */}
-          <Card className="shadow-none border-none bg-transparent p-0">
+          <Card className="shadow-none border-none bg-transparent p-0 py-0!">
             <CardHeader className="p-0">
               <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 Numérotation
@@ -741,7 +741,7 @@ export default function QuoteSettingsView({
           </Card>
 
           {/* Section Apparence */}
-          <Card className="shadow-none border-none bg-transparent p-0">
+          <Card className="shadow-none border-none bg-transparent p-0 py-0!">
             <CardHeader className="p-0">
               <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 Apparence
@@ -814,7 +814,7 @@ export default function QuoteSettingsView({
           </Card>
 
           {/* Position du client */}
-          <Card className="shadow-none border-none bg-transparent p-0">
+          <Card className="shadow-none border-none bg-transparent p-0 py-0!">
             <CardHeader className="p-0">
               <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 Position du client dans le PDF
@@ -898,7 +898,7 @@ export default function QuoteSettingsView({
           </Card>
 
           {/* Notes et bas de page */}
-          <Card className="shadow-none border-none bg-transparent p-0">
+          <Card className="shadow-none border-none bg-transparent p-0 py-0!">
             <CardHeader className="p-0">
               <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 Notes et bas de page
