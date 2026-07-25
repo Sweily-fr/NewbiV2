@@ -84,12 +84,15 @@ async function handler(request, { params }) {
     prefix: creditNote.prefix,
     issueDate: creditNote.issueDate || creditNote.date,
     status: creditNote.status,
+    reason: creditNote.reason,
+    creditType: creditNote.creditType,
 
     originalInvoice: originalInvoiceData
       ? {
           id: originalInvoiceData._id.toString(),
           number: originalInvoiceData.number,
           prefix: originalInvoiceData.prefix,
+          issueDate: originalInvoiceData.issueDate || originalInvoiceData.date,
         }
       : null,
     originalInvoiceNumber:

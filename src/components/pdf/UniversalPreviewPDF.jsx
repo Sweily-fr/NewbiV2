@@ -15,7 +15,11 @@ const calculateItemTotal = (
   discountType,
   progressPercentage = 100,
 ) => {
-  let subtotal = (quantity || 1) * (unitPrice || 0);
+  // Valeur absolue : sur un avoir la quantité (et parfois le PU) porte un
+  // signe négatif, et la remise fixe (Math.max(0, ...)) casserait sur un
+  // sous-total négatif. Le signe est appliqué par l'appelant (-Math.abs
+  // pour les avoirs).
+  let subtotal = Math.abs((quantity || 1) * (unitPrice || 0));
 
   // Appliquer le pourcentage d'avancement
   const progress = Math.min(Math.max(progressPercentage ?? 100, 0), 100);
@@ -31,6 +35,15 @@ const calculateItemTotal = (
   }
 
   return subtotal;
+};
+
+// Libellés des types d'avoir (repris de creditNoteQueries) pour afficher le
+// motif sur le PDF quand aucun motif libre n'a été saisi
+const CREDIT_TYPE_PDF_LABELS = {
+  CORRECTION: "Correction de facture",
+  COMMERCIAL_GESTURE: "Geste commercial",
+  REFUND: "Remboursement",
+  STOCK_SHORTAGE: "Rupture de stock",
 };
 
 // Fonction utilitaire pour appliquer une opacité à une couleur HSL
@@ -228,7 +241,19 @@ const UniversalPreviewPDF = ({
   }, [isMobile, data]);
 
   // Calcul des totaux basé sur les articles
-  const calculateTotals = (items = []) => {
+  const calculateTotals = (rawItems = []) => {
+    // Avoirs : calcul en valeur absolue (le signe est appliqué au retour via
+    // -Math.abs). Les données peuvent porter le signe négatif sur la quantité
+    // et/ou le PU selon leur provenance (formulaire ou base), et les remises
+    // fixes utilisent Math.max(0, ...) qui casserait sur des intermédiaires
+    // négatifs.
+    const items = isCreditNote
+      ? rawItems.map((item) => ({
+          ...item,
+          quantity: Math.abs(parseFloat(item.quantity) || 0),
+          unitPrice: Math.abs(parseFloat(item.unitPrice) || 0),
+        }))
+      : rawItems;
     let subtotal = 0;
     let subtotalAfterItemDiscounts = 0;
     let totalTax = 0;
@@ -769,18 +794,46 @@ const UniversalPreviewPDF = ({
                   </div>
                 )}
                 {isCreditNote && data.originalInvoice && (
-                  <div className="flex gap-1" style={{ fontSize: "10px" }}>
-                    <span className="font-medium dark:text-[#0A0A0A]">
-                      Facture d'origine:
-                    </span>
-                    <span className="dark:text-[#0A0A0A]">
-                      {data.originalInvoice.prefix &&
-                      data.originalInvoice.number
-                        ? `${data.originalInvoice.prefix}-${data.originalInvoice.number}`
-                        : data.originalInvoice.number || data.originalInvoice}
-                    </span>
-                  </div>
+                  <>
+                    <div className="flex gap-1" style={{ fontSize: "10px" }}>
+                      <span className="font-medium dark:text-[#0A0A0A]">
+                        Facture d'origine:
+                      </span>
+                      <span className="dark:text-[#0A0A0A]">
+                        {data.originalInvoice.prefix &&
+                        data.originalInvoice.number
+                          ? `${data.originalInvoice.prefix}-${data.originalInvoice.number}`
+                          : data.originalInvoice.number || data.originalInvoice}
+                      </span>
+                    </div>
+                    {formatDate(data.originalInvoice.issueDate) && (
+                      <div className="flex gap-1" style={{ fontSize: "10px" }}>
+                        <span className="font-medium dark:text-[#0A0A0A]">
+                          Date facture d'origine:
+                        </span>
+                        <span className="dark:text-[#0A0A0A]">
+                          {formatDate(data.originalInvoice.issueDate)}
+                        </span>
+                      </div>
+                    )}
+                  </>
                 )}
+                {isCreditNote &&
+                  (data.reason?.trim() ||
+                    CREDIT_TYPE_PDF_LABELS[data.creditType]) && (
+                    <div
+                      className="flex gap-1 justify-end"
+                      style={{ fontSize: "10px", maxWidth: "260px" }}
+                    >
+                      <span className="font-medium dark:text-[#0A0A0A]">
+                        Motif:
+                      </span>
+                      <span className="dark:text-[#0A0A0A] text-right break-words">
+                        {data.reason?.trim() ||
+                          CREDIT_TYPE_PDF_LABELS[data.creditType]}
+                      </span>
+                    </div>
+                  )}
                 {data.purchaseOrderNumber && (
                   <div className="flex gap-1" style={{ fontSize: "10px" }}>
                     <span className="font-medium dark:text-[#0A0A0A]">
@@ -1398,7 +1451,13 @@ const UniversalPreviewPDF = ({
                                   : "15%",
                             }}
                           >
-                            {formatCurrency(item.unitPrice)}
+                            {/* Sur un avoir le prix unitaire s'affiche en positif,
+                                seuls Qté, totaux HT/TVA/TTC restent négatifs */}
+                            {formatCurrency(
+                              isCreditNote
+                                ? Math.abs(parseFloat(item.unitPrice) || 0)
+                                : item.unitPrice,
+                            )}
                           </td>
                           {isSituationInvoice ? (
                             <>
@@ -1625,10 +1684,10 @@ const UniversalPreviewPDF = ({
                               width: showProgressColumn ? "13%" : "15%",
                             }}
                           >
+                            {/* Prix unitaire toujours positif, y compris sur
+                                un avoir (la Qté -1 et le total portent le signe) */}
                             {formatCurrency(
-                              isCreditNote
-                                ? -Math.abs(shippingData.shippingAmountHT)
-                                : shippingData.shippingAmountHT,
+                              Math.abs(shippingData.shippingAmountHT),
                             )}
                           </td>
                           {showProgressColumn && (
@@ -2083,8 +2142,8 @@ const UniversalPreviewPDF = ({
               );
             })()}
 
-          {/* CONDITIONS GÉNÉRALES - masquées pour les avoirs */}
-          {(data.termsAndConditions || data.terms) && !isCreditNote && (
+          {/* CONDITIONS GÉNÉRALES - y compris sur les avoirs (reprises de la facture d'origine) */}
+          {(data.termsAndConditions || data.terms) && (
             <div className="mb-4 text-[10px] pt-4" data-pdf-section="terms">
               {(data.termsAndConditions || data.terms)
                 .split("\n")

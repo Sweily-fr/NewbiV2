@@ -39,8 +39,11 @@ export function useCreditNoteEditor({
   // GraphQL hooks
   const { creditNote: existingCreditNote, loading: loadingCreditNote } =
     useCreditNote(creditNoteId);
-  const { invoice: originalInvoice, loading: loadingInvoice } =
-    useInvoice(invoiceId);
+  const {
+    invoice: originalInvoice,
+    loading: loadingInvoice,
+    error: invoiceError,
+  } = useInvoice(invoiceId);
   const {
     creditNotes: existingCreditNotes,
     loading: loadingExistingCreditNotes,
@@ -126,7 +129,10 @@ export function useCreditNoteEditor({
               ? parseFloat(item.progressPercentage)
               : 100;
 
-          let itemTotal = quantity * unitPrice * (progressPercentage / 100);
+          // Magnitude de ligne, robuste quel que soit le signe porté par la
+          // quantité ou le PU (formulaire : qté négative, PU positif)
+          let itemTotal =
+            Math.abs(quantity * unitPrice) * (progressPercentage / 100);
 
           // Apply item discount
           if (itemDiscount > 0) {
@@ -342,6 +348,7 @@ export function useCreditNoteEditor({
     form,
     formData,
     originalInvoice,
+    invoiceError,
     existingCreditNote,
     loading:
       loadingCreditNote ||
@@ -451,8 +458,10 @@ function transformInvoiceToCreditNoteFormData(
     items:
       invoice.items?.map((item) => ({
         ...item,
-        quantity: -Math.abs(item.quantity), // Convertir en négatif pour l'avoir
-        unitPrice: -Math.abs(item.unitPrice), // Convertir en négatif pour l'avoir
+        quantity: -Math.abs(item.quantity), // Quantité négative pour l'avoir
+        // Dans le formulaire le PU vit en positif ; il est re-négativé à
+        // l'enregistrement (transformFormDataToInput) pour le stockage.
+        unitPrice: Math.abs(item.unitPrice),
         vatRate: item.vatRate,
         discount: item.discount || 0,
         discountType: item.discountType || "PERCENTAGE",
@@ -498,7 +507,11 @@ function transformCreditNoteToFormData(creditNote) {
     showBankDetails: creditNote.showBankDetails || false,
     client: creditNote.client,
     companyInfo: creditNote.companyInfo || {},
-    items: creditNote.items || [],
+    // En base le PU est stocké en négatif ; dans le formulaire il vit en positif
+    items: (creditNote.items || []).map((item) => ({
+      ...item,
+      unitPrice: Math.abs(parseFloat(item.unitPrice) || 0),
+    })),
     customFields: creditNote.customFields || [],
     bankDetails: creditNote.bankDetails || {
       iban: "",
@@ -545,23 +558,23 @@ function transformFormDataToInput(formData, originalInvoiceId) {
     // Remove calculated fields that are not part of ItemInput schema
     delete cleanedItem.total;
 
-    // For credit notes, quantities can be negative (representing credits)
-    // But we still need to ensure it's a valid number
+    // Convention de stockage des avoirs : quantité ET prix unitaire négatifs,
+    // pour que qté × PU reste positif. Le calcul backend
+    // (calculateCreditNoteTotals) force les totaux en négatif à la fin et met
+    // la TVA finale à zéro si le total HT intermédiaire est négatif.
     const quantity = parseFloat(cleanedItem.quantity);
     if (isNaN(quantity)) {
       throw new Error("La quantité doit être un nombre valide");
     }
-    cleanedItem.quantity = quantity;
+    cleanedItem.quantity = -Math.abs(quantity);
 
-    // For credit notes, unit prices can be negative (representing credits)
-    // But we still need to ensure it's a valid number and not zero
     const unitPrice = parseFloat(cleanedItem.unitPrice);
     if (isNaN(unitPrice) || unitPrice === 0) {
       throw new Error(
         "Le prix unitaire doit être un nombre valide différent de zéro",
       );
     }
-    cleanedItem.unitPrice = unitPrice;
+    cleanedItem.unitPrice = -Math.abs(unitPrice);
 
     // Ensure vatRate is a valid number
     const vatRate = parseFloat(cleanedItem.vatRate);
