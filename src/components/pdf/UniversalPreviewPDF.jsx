@@ -134,10 +134,35 @@ const UniversalPreviewPDF = ({
         : "companyName");
     // Déterminer le nom complet de l'utilisateur
     const fullName = data.userName || session?.user?.name || "";
-    if (nameType === "fullName" && fullName) {
-      return fullName;
+    const showsEntrepreneurName = nameType === "fullName" && !!fullName;
+    const baseName = showsEntrepreneurName
+      ? fullName
+      : data.companyInfo?.name || "";
+
+    // Mention légale « EI » sur les factures (art. R. 526-27 du Code de
+    // commerce) : uniquement devant le nom et prénom de l'entrepreneur, pas
+    // devant un nom d'entreprise ou commercial.
+    // legalForm vient du formulaire (éditeur), companyStatus du document
+    // persisté (génération PDF headless, sans session/organisation).
+    const sellerLegalForm =
+      data.companyInfo?.legalForm ||
+      data.companyInfo?.companyStatus ||
+      organization?.legalForm ||
+      "";
+    const isEntrepreneurIndividuel = [
+      "EI",
+      "Auto-entrepreneur",
+      "AUTO_ENTREPRENEUR",
+    ].includes(sellerLegalForm);
+    if (
+      type === "invoice" &&
+      showsEntrepreneurName &&
+      isEntrepreneurIndividuel &&
+      !/^EI\b/.test(baseName.trim())
+    ) {
+      return `EI ${baseName}`;
     }
-    return data.companyInfo?.name || "";
+    return baseName;
   })();
 
   // Déterminer si c'est un avoir (credit note)
