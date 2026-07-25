@@ -132,6 +132,8 @@ export const CREDIT_NOTE_FRAGMENT = gql`
     originalInvoice {
       id
       number
+      prefix
+      issueDate
       status
       shipping {
         billShipping
