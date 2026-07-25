@@ -103,6 +103,26 @@ const calculateItemTotal = (
   return subtotal;
 };
 
+// Unités proposées dans le select. Une valeur hors liste (produit du
+// catalogue, données importées : "semaine", "eur", ...) est affichée telle
+// quelle via une option de secours, au lieu d'un select vide.
+const UNIT_OPTIONS = [
+  { value: "none", label: "Aucune unité" },
+  { value: "unité", label: "Unité" },
+  { value: "pièce", label: "Pièce" },
+  { value: "heure", label: "Heure" },
+  { value: "jour", label: "Jour" },
+  { value: "mois", label: "Mois" },
+  { value: "kg", label: "Kilogramme" },
+  { value: "m", label: "Mètre" },
+  { value: "m²", label: "Mètre carré" },
+  { value: "m³", label: "Mètre cube" },
+  { value: "litre", label: "Litre" },
+  { value: "forfait", label: "Forfait" },
+  { value: "ensemble", label: "Ensemble" },
+  { value: "personne(s)", label: "Personne(s)" },
+];
+
 // Fonction utilitaire pour formater les montants en euros
 const formatCurrency = (amount) => {
   return new Intl.NumberFormat("fr-FR", {
@@ -292,7 +312,10 @@ export default function ItemsSection({
   };
 
   const addItem = (productData = {}) => {
-    const quantity = productData.quantity || 1;
+    // Sur un avoir la quantité vit en négatif dans le formulaire
+    // (le PU reste positif, re-négativé à l'enregistrement)
+    const rawQuantity = productData.quantity || 1;
+    const quantity = isCreditNoteContext ? -Math.abs(rawQuantity) : rawQuantity;
     const unitPrice = productData.unitPrice || 0;
     const discount = productData.discount || 0;
     const discountType =
@@ -505,8 +528,11 @@ export default function ItemsSection({
                     const description =
                       currentItem.description || `Article ${index + 1}`;
 
-                    // Calculer le total en temps réel avec avancement
-                    let subtotal = quantity * unitPrice;
+                    // Calculer le total en temps réel avec avancement.
+                    // Calcul en valeur absolue puis signe appliqué à la fin :
+                    // sur un avoir (qté négative, PU positif) les totaux
+                    // s'affichent en négatif.
+                    let subtotal = Math.abs(quantity * unitPrice);
 
                     // Appliquer le pourcentage d'avancement
                     subtotal = subtotal * (progressPercentage / 100);
@@ -521,6 +547,9 @@ export default function ItemsSection({
                       } else {
                         subtotal = Math.max(0, subtotal - discount);
                       }
+                    }
+                    if (isCreditNoteContext) {
+                      subtotal = -subtotal;
                     }
                     const totalTTC = subtotal * (1 + vatRate / 100);
 
@@ -1030,67 +1059,49 @@ export default function ItemsSection({
                                       <Controller
                                         name={`items.${index}.unit`}
                                         defaultValue="none"
-                                        render={({ field }) => (
-                                          <Select
-                                            value={field.value || "none"}
-                                            onValueChange={(value) =>
-                                              field.onChange(
-                                                value === "none" ? "" : value,
-                                              )
-                                            }
-                                            disabled={
-                                              !canEdit || isItemFieldLocked
-                                            }
-                                          >
-                                            <SelectTrigger className="w-full">
-                                              <SelectValue placeholder="Aucune unité" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                              <SelectItem value="none">
-                                                Aucune unité
-                                              </SelectItem>
-                                              <SelectItem value="unité">
-                                                Unité
-                                              </SelectItem>
-                                              <SelectItem value="pièce">
-                                                Pièce
-                                              </SelectItem>
-                                              <SelectItem value="heure">
-                                                Heure
-                                              </SelectItem>
-                                              <SelectItem value="jour">
-                                                Jour
-                                              </SelectItem>
-                                              <SelectItem value="mois">
-                                                Mois
-                                              </SelectItem>
-                                              <SelectItem value="kg">
-                                                Kilogramme
-                                              </SelectItem>
-                                              <SelectItem value="m">
-                                                Mètre
-                                              </SelectItem>
-                                              <SelectItem value="m²">
-                                                Mètre carré
-                                              </SelectItem>
-                                              <SelectItem value="m³">
-                                                Mètre cube
-                                              </SelectItem>
-                                              <SelectItem value="litre">
-                                                Litre
-                                              </SelectItem>
-                                              <SelectItem value="forfait">
-                                                Forfait
-                                              </SelectItem>
-                                              <SelectItem value="ensemble">
-                                                Ensemble
-                                              </SelectItem>
-                                              <SelectItem value="personne(s)">
-                                                Personne(s)
-                                              </SelectItem>
-                                            </SelectContent>
-                                          </Select>
-                                        )}
+                                        render={({ field }) => {
+                                          const currentUnit =
+                                            field.value || "none";
+                                          const isCustomUnit =
+                                            !UNIT_OPTIONS.some(
+                                              (option) =>
+                                                option.value === currentUnit,
+                                            );
+                                          return (
+                                            <Select
+                                              value={currentUnit}
+                                              onValueChange={(value) =>
+                                                field.onChange(
+                                                  value === "none" ? "" : value,
+                                                )
+                                              }
+                                              disabled={
+                                                !canEdit || isItemFieldLocked
+                                              }
+                                            >
+                                              <SelectTrigger className="w-full">
+                                                <SelectValue placeholder="Aucune unité" />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                {isCustomUnit && (
+                                                  <SelectItem
+                                                    value={currentUnit}
+                                                  >
+                                                    {currentUnit}
+                                                  </SelectItem>
+                                                )}
+                                                {UNIT_OPTIONS.map((option) => (
+                                                  <SelectItem
+                                                    key={option.value}
+                                                    value={option.value}
+                                                  >
+                                                    {option.label}
+                                                  </SelectItem>
+                                                ))}
+                                              </SelectContent>
+                                            </Select>
+                                          );
+                                        }}
                                       />
                                     </div>
                                   </div>
