@@ -393,7 +393,11 @@ const errorLink = onError(
                   "\n  session.data:",
                   JSON.stringify(session?.data || null),
                 );
-                forceSessionExpiredRedirect("inactivity");
+                // "revoked" et non "inactivity" : ici la session a disparu
+                // côté serveur (révocation par limite de sessions, nettoyage,
+                // logout distant). La déconnexion pour inactivité réelle passe
+                // par useInactivityDetector, qui pose lui-même son reason.
+                forceSessionExpiredRedirect("revoked");
                 observer.error(graphQLErrors[0]);
                 // Vider la file d'attente avec erreur
                 _pendingRetryQueue.forEach((pending) =>
