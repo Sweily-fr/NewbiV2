@@ -39,9 +39,18 @@ async function handler() {
     }
   }
 
-  // Seuil d'inactivité : supprimer les sessions sans activité depuis X heures
+  // Seuil d'inactivité : supprimer les sessions sans activité depuis X heures.
+  // IMPORTANT : Better Auth ne rafraîchit session.updatedAt qu'une fois par
+  // updateAge (1h, cf. session.updateAge dans src/lib/auth.js). Une session
+  // activement utilisée peut donc avoir un updatedAt vieux de presque 1h :
+  // sans la marge ci-dessous, tout timeout ≤ 1h supprimait des sessions
+  // actives à chaque login (déconnexions "fantômes" sur les autres
+  // appareils). Le timeout d'inactivité réel est appliqué côté client par
+  // useInactivityDetector ; ce nettoyage n'est qu'un filet de sécurité.
+  const SESSION_UPDATE_AGE_MS = 60 * 60 * 1000;
   const inactivityThreshold = new Date(
-    now.getTime() - inactivityTimeoutHours * 60 * 60 * 1000,
+    now.getTime() -
+      (inactivityTimeoutHours * 60 * 60 * 1000 + SESSION_UPDATE_AGE_MS),
   );
 
   const currentSessionToken = session.session?.token || null;
