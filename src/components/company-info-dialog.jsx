@@ -242,7 +242,7 @@ export function CompanyInfoDialog({
               </div>
 
               {/* Dénomination sociale */}
-              <div className="space-y-2">
+              <div className="flex flex-col gap-2">
                 <Label
                   htmlFor="dialog-company-name"
                   className={FIELD_LABEL_CLASS}
@@ -270,7 +270,7 @@ export function CompanyInfoDialog({
 
               {/* Email / Téléphone */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
+                <div className="flex flex-col gap-2">
                   <Label
                     htmlFor="dialog-company-email"
                     className={FIELD_LABEL_CLASS}
@@ -296,7 +296,7 @@ export function CompanyInfoDialog({
                     </p>
                   )}
                 </div>
-                <div className="space-y-2">
+                <div className="flex flex-col gap-2">
                   <Label
                     htmlFor="dialog-company-phone"
                     className={FIELD_LABEL_CLASS}
@@ -317,7 +317,7 @@ export function CompanyInfoDialog({
               </div>
 
               {/* Site web */}
-              <div className="space-y-2">
+              <div className="flex flex-col gap-2">
                 <Label htmlFor="dialog-website" className={FIELD_LABEL_CLASS}>
                   Site web
                 </Label>
@@ -334,7 +334,7 @@ export function CompanyInfoDialog({
               </div>
 
               {/* Adresse */}
-              <div className="space-y-2">
+              <div className="flex flex-col gap-2">
                 <Label
                   htmlFor="dialog-address-street"
                   className={FIELD_LABEL_CLASS}
@@ -354,7 +354,7 @@ export function CompanyInfoDialog({
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-2">
+                <div className="flex flex-col gap-2">
                   <Label
                     htmlFor="dialog-address-zip"
                     className={FIELD_LABEL_CLASS}
@@ -367,7 +367,7 @@ export function CompanyInfoDialog({
                     {...register("addressZipCode", { validate: noInjection })}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="flex flex-col gap-2">
                   <Label
                     htmlFor="dialog-address-city"
                     className={FIELD_LABEL_CLASS}
@@ -380,7 +380,7 @@ export function CompanyInfoDialog({
                     {...register("addressCity", { validate: noInjection })}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="flex flex-col gap-2">
                   <Label className={FIELD_LABEL_CLASS}>Pays</Label>
                   <Select
                     value={country || "France"}
@@ -430,7 +430,7 @@ export function CompanyInfoDialog({
                   />
                 </div>
                 {showCommercialName && (
-                  <div className="space-y-2">
+                  <div className="flex flex-col gap-2">
                     <Label
                       htmlFor="dialog-commercial-name"
                       className={FIELD_LABEL_CLASS}
@@ -481,7 +481,7 @@ export function CompanyInfoDialog({
                 </div>
                 {isRegulatedActivity && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
+                    <div className="flex flex-col gap-2">
                       <Label
                         htmlFor="dialog-professional-title"
                         className={FIELD_LABEL_CLASS}
@@ -497,7 +497,7 @@ export function CompanyInfoDialog({
                         })}
                       />
                     </div>
-                    <div className="space-y-2">
+                    <div className="flex flex-col gap-2">
                       <Label
                         htmlFor="dialog-regulatory-body"
                         className={FIELD_LABEL_CLASS}
@@ -513,7 +513,7 @@ export function CompanyInfoDialog({
                         })}
                       />
                     </div>
-                    <div className="space-y-2">
+                    <div className="flex flex-col gap-2">
                       <Label
                         htmlFor="dialog-professional-number"
                         className={FIELD_LABEL_CLASS}
@@ -529,7 +529,7 @@ export function CompanyInfoDialog({
                         })}
                       />
                     </div>
-                    <div className="space-y-2">
+                    <div className="flex flex-col gap-2">
                       <Label
                         htmlFor="dialog-decennial-insurance"
                         className={FIELD_LABEL_CLASS}
@@ -545,7 +545,7 @@ export function CompanyInfoDialog({
                         })}
                       />
                     </div>
-                    <div className="space-y-2">
+                    <div className="flex flex-col gap-2">
                       <Label
                         htmlFor="dialog-rc-pro-insurance"
                         className={FIELD_LABEL_CLASS}

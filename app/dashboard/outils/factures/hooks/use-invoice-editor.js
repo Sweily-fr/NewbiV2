@@ -261,6 +261,11 @@ export function useInvoiceEditor({
           organization?.fiscalRegime ||
           formData.companyInfo?.fiscalRegime ||
           "",
+        vatPaymentCondition:
+          organization?.vatMode ||
+          organization?.fiscalRegime ||
+          formData.companyInfo?.vatPaymentCondition ||
+          "",
         website: organization?.website || formData.companyInfo?.website || "",
         logo: organization?.logo || formData.companyInfo?.logo || "",
         bankDetails: {
@@ -1204,7 +1209,8 @@ export function useInvoiceEditor({
         rcs: organization?.rcs || "",
         companyStatus: organization?.legalForm || "",
         capitalSocial: organization?.capitalSocial || "",
-        vatPaymentCondition: organization?.fiscalRegime || "",
+        vatPaymentCondition:
+          organization?.vatMode || organization?.fiscalRegime || "",
         transactionCategory: organization?.activityCategory || "",
         website: organization?.website || "",
         logo: organization?.logo || "",

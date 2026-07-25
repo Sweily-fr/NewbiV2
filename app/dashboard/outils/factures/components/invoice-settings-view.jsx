@@ -38,6 +38,7 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { BankDetailsDialog } from "@/src/components/bank-details-dialog";
 import CompanyInfoSettingsSection from "@/src/components/settings/company-info-settings-section";
+import LegalInfoSettingsSection from "@/src/components/settings/legal-info-settings-section";
 import { Switch } from "@/src/components/ui/switch";
 
 // Fonction de validation de l'IBAN
@@ -515,8 +516,11 @@ export default function InvoiceSettingsView({
           {/* Section Informations de l'entreprise */}
           <CompanyInfoSettingsSection organization={organization} />
 
+          {/* Section Informations légales */}
+          <LegalInfoSettingsSection organization={organization} />
+
           {/* Coordonnées bancaires */}
-          <Card className="shadow-none border-none bg-transparent p-0">
+          <Card className="shadow-none border-none bg-transparent p-0 py-0!">
             <CardHeader className="p-0">
               <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 Coordonnées bancaires
@@ -574,7 +578,7 @@ export default function InvoiceSettingsView({
           </Card>
 
           {/* Section Numérotation */}
-          <Card className="shadow-none border-none bg-transparent p-0">
+          <Card className="shadow-none border-none bg-transparent p-0 py-0!">
             <CardHeader className="p-0">
               <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 Numérotation
@@ -784,7 +788,7 @@ export default function InvoiceSettingsView({
           </Card>
 
           {/* Section Apparence */}
-          <Card className="shadow-none border-none bg-transparent p-0">
+          <Card className="shadow-none border-none bg-transparent p-0 py-0!">
             <CardHeader className="p-0">
               <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 Apparence
@@ -854,7 +858,7 @@ export default function InvoiceSettingsView({
           </Card>
 
           {/* Position du client */}
-          <Card className="shadow-none border-none bg-transparent p-0">
+          <Card className="shadow-none border-none bg-transparent p-0 py-0!">
             <CardHeader className="p-0">
               <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 Position du client dans le PDF
@@ -938,7 +942,7 @@ export default function InvoiceSettingsView({
           </Card>
 
           {/* Notes et bas de page */}
-          <Card className="shadow-none border-none bg-transparent p-0">
+          <Card className="shadow-none border-none bg-transparent p-0 py-0!">
             <CardHeader className="p-0">
               <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 Notes et bas de page

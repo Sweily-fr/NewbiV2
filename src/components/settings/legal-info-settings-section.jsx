@@ -10,36 +10,16 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Settings } from "lucide-react";
 import { useFormContext } from "react-hook-form";
-import { CompanyInfoDialog } from "@/src/components/company-info-dialog";
-
-// Champs du document alimentés par la modale, pour que l'aperçu suive sans
-// recharger l'organisation.
-const SYNCED_FIELDS = [
-  "logo",
-  "companyName",
-  "companyEmail",
-  "companyPhone",
-  "website",
-  "addressStreet",
-  "addressCity",
-  "addressZipCode",
-  "addressCountry",
-  "showCommercialName",
-  "commercialName",
-  "isRegulatedActivity",
-  "professionalTitle",
-  "regulatoryBody",
-  "professionalNumber",
-  "decennialInsurance",
-  "professionalLiabilityInsurance",
-];
+import { LegalInfoDialog } from "@/src/components/legal-info-dialog";
 
 /**
- * Les informations de l'entreprise appartiennent à l'organisation et non au
- * document : elles sont éditées dans une modale qui les enregistre
- * immédiatement, comme les coordonnées bancaires.
+ * Les informations légales appartiennent à l'organisation et non au document :
+ * elles sont éditées dans une modale qui les enregistre immédiatement, comme
+ * les informations entreprise et les coordonnées bancaires. Elles vivent dans
+ * companyInfo (pas de champs plats) : l'écouteur les répercute directement
+ * pour que le pied de page de l'aperçu suive sans recharger.
  */
-export default function CompanyInfoSettingsSection({ organization }) {
+export default function LegalInfoSettingsSection({ organization }) {
   const { setValue } = useFormContext();
   const [showDialog, setShowDialog] = useState(false);
   // L'organisation reçue en prop est chargée une fois par l'éditeur : on garde
@@ -55,22 +35,41 @@ export default function CompanyInfoSettingsSection({ organization }) {
   );
 
   // Répercuter dans le formulaire du document ce que la modale vient
-  // d'enregistrer. L'événement est aussi émis par BankDetailsDialog, d'où le
-  // test sur la présence d'un champ entreprise.
+  // d'enregistrer. L'événement est aussi émis par CompanyInfoDialog et
+  // BankDetailsDialog, d'où le test sur la présence d'un champ légal.
   useEffect(() => {
     const handleOrganizationUpdated = (event) => {
       const detail = event.detail || {};
-      if (detail.companyName === undefined) return;
+      if (detail.siret === undefined && detail.vatMode === undefined) return;
 
       setOrgOverride((prev) => ({ ...prev, ...detail }));
 
-      SYNCED_FIELDS.forEach((field) => {
-        if (detail[field] !== undefined) {
-          // shouldDirty: false — c'est déjà enregistré côté organisation, le
-          // panneau ne doit pas réclamer un "Appliquer" pour autant.
-          setValue(field, detail[field], { shouldDirty: false });
-        }
-      });
+      // shouldDirty: false — c'est déjà enregistré côté organisation, le
+      // panneau ne doit pas réclamer un "Appliquer" pour autant.
+      const opts = { shouldDirty: false };
+      if (detail.siret !== undefined) {
+        setValue("companyInfo.siret", detail.siret, opts);
+      }
+      if (detail.siren !== undefined) {
+        setValue("companyInfo.siren", detail.siren, opts);
+      }
+      if (detail.rcs !== undefined) {
+        setValue("companyInfo.rcs", detail.rcs, opts);
+      }
+      if (detail.capitalSocial !== undefined) {
+        setValue("companyInfo.capitalSocial", detail.capitalSocial, opts);
+      }
+      if (detail.vatNumber !== undefined) {
+        setValue("companyInfo.vatNumber", detail.vatNumber, opts);
+      }
+      if (detail.legalForm !== undefined) {
+        // Le pied de page lit legalForm, le reste du document companyStatus.
+        setValue("companyInfo.legalForm", detail.legalForm, opts);
+        setValue("companyInfo.companyStatus", detail.legalForm, opts);
+      }
+      if (detail.vatMode !== undefined) {
+        setValue("companyInfo.vatPaymentCondition", detail.vatMode, opts);
+      }
     };
 
     window.addEventListener("organizationUpdated", handleOrganizationUpdated);
@@ -86,14 +85,15 @@ export default function CompanyInfoSettingsSection({ organization }) {
     <Card className="shadow-none border-none bg-transparent p-0 py-0!">
       <CardHeader className="p-0">
         <CardTitle className="flex items-center gap-2 font-medium text-lg">
-          Informations de l&apos;entreprise
+          Informations légales
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 p-0">
         <div className="text-sm text-muted-foreground p-3 rounded-xl border bg-[#F5F5F5] dark:bg-neutral-900">
           <p className="mb-2">
-            Votre logo, votre dénomination, votre adresse, votre nom commercial
-            et votre activité réglementée sont communs à tous vos documents.
+            Votre forme juridique, votre capital social, votre SIRET, votre RCS,
+            votre numéro de TVA et votre régime de TVA sont communs à tous vos
+            documents.
           </p>
           <Button
             type="button"
@@ -102,12 +102,12 @@ export default function CompanyInfoSettingsSection({ organization }) {
             onClick={() => setShowDialog(true)}
           >
             <Settings className="h-4 w-4" />
-            Modifier vos informations entreprise
+            Modifier vos informations légales
           </Button>
         </div>
       </CardContent>
 
-      <CompanyInfoDialog
+      <LegalInfoDialog
         open={showDialog}
         onOpenChange={setShowDialog}
         organization={currentOrganization}
