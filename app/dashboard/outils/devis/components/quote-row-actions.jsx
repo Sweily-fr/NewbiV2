@@ -269,9 +269,12 @@ export default function QuoteRowActions({
 
   // Logique pour déterminer quelles actions sont disponibles
   const canConvertToPO = quote.status === QUOTE_STATUS.COMPLETED;
+  // Un devis déjà facturé via un bon de commande ne peut plus être converti
+  // directement en facture (même message que dans la sidebar).
   const canConvertToInvoice =
     quote.status === QUOTE_STATUS.COMPLETED &&
-    (!quote.linkedInvoices || quote.linkedInvoices.length === 0);
+    (!quote.linkedInvoices || quote.linkedInvoices.length === 0) &&
+    !quote.hasPurchaseOrderInvoices;
   const hasStatusActions =
     quote.status === QUOTE_STATUS.DRAFT || // Envoyer le devis
     quote.status === QUOTE_STATUS.PENDING || // Accepter/Rejeter

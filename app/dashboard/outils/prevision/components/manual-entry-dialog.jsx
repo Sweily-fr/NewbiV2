@@ -146,11 +146,21 @@ const formatDateLabel = (str) => {
   });
 };
 
+// "YYYY-MM" → « juillet 2026 » (titre de l'onglet Détails ciblé sur un mois).
+const formatMonthLabel = (month) =>
+  new Date(month + "-01").toLocaleDateString("fr-FR", {
+    month: "long",
+    year: "numeric",
+  });
+
 // Onglet « Détails prévisions » : liste chronologique des occurrences de
-// prévision (saisies manuelles + récurrences détectées) sur l'horizon courant,
-// avec suppression par occurrence (un seul mois, sans toucher aux autres).
+// prévision (saisies manuelles + récurrences détectées), avec suppression par
+// occurrence (un seul mois, sans toucher aux autres). Plage = l'horizon courant,
+// ou un seul mois quand la modal a été ouverte depuis un « + » du tableau
+// (rangeStart === rangeEnd).
 function ForecastDetailsList({ rangeStart, rangeEnd }) {
   const { occurrences, loading } = useForecastOccurrences(rangeStart, rangeEnd);
+  const singleMonth = Boolean(rangeStart) && rangeStart === rangeEnd;
   const { excludeOccurrence, loading: excluding } =
     useExcludeForecastOccurrence();
   const [toDelete, setToDelete] = useState(null);
@@ -166,9 +176,11 @@ function ForecastDetailsList({ rangeStart, rangeEnd }) {
     if (result.success) setToDelete(null);
   };
 
+  // min-h aligné sur la hauteur du formulaire Sortie/Entrée pour que le
+  // passage d'un onglet à l'autre ne fasse pas « sauter » la modal.
   if (loading && occurrences.length === 0) {
     return (
-      <div className="py-10 text-center text-xs text-muted-foreground">
+      <div className="flex min-h-[380px] items-center justify-center text-center text-xs text-muted-foreground">
         Chargement des prévisions…
       </div>
     );
@@ -176,14 +188,16 @@ function ForecastDetailsList({ rangeStart, rangeEnd }) {
 
   if (occurrences.length === 0) {
     return (
-      <div className="py-10 text-center text-xs text-muted-foreground">
-        Aucune prévision sur la période affichée.
+      <div className="flex min-h-[380px] items-center justify-center text-center text-xs text-muted-foreground">
+        {singleMonth
+          ? "Aucune prévision pour ce mois."
+          : "Aucune prévision sur la période affichée."}
       </div>
     );
   }
 
   return (
-    <div className="-mx-1">
+    <div className="-mx-1 min-h-[380px]">
       <div className="max-h-[52vh] overflow-y-auto divide-y divide-border/40 px-1">
         {occurrences.map((occ, i) => {
           const isIncome = occ.type === "INCOME";
@@ -360,6 +374,10 @@ export function ManualEntryDialog({
   // Onglet « Détails prévisions » disponible seulement quand l'horizon est connu
   // (modal ouverte depuis la page, pas en édition isolée depuis la liste du bas).
   const showDetailsTab = Boolean(rangeStart && rangeEnd) && !entry;
+  // Ouverture depuis un « + » du tableau : l'onglet Détails ne montre que le
+  // mois cliqué. Sans mois sélectionné (bouton « Ajouter une prévision »),
+  // il couvre toute la période affichée.
+  const detailsMonth = !entry && defaults?.month ? defaults.month : null;
 
   const selectTab = (tab) => {
     if (tab === "DETAILS") {
@@ -417,7 +435,9 @@ export function ManualEntryDialog({
                 <ArrowDownRight className="size-4" />
               )}
               {activeTab === "DETAILS"
-                ? "Détails des prévisions"
+                ? detailsMonth
+                  ? `Détails des prévisions · ${formatMonthLabel(detailsMonth)}`
+                  : "Détails des prévisions"
                 : entry
                   ? "Modifier la saisie"
                   : "Nouvelle saisie"}
@@ -470,8 +490,8 @@ export function ManualEntryDialog({
             {activeTab === "DETAILS" ? (
               <div className="pb-4">
                 <ForecastDetailsList
-                  rangeStart={rangeStart}
-                  rangeEnd={rangeEnd}
+                  rangeStart={detailsMonth || rangeStart}
+                  rangeEnd={detailsMonth || rangeEnd}
                 />
               </div>
             ) : (
