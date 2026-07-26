@@ -193,8 +193,11 @@ export default function PrevisionPage() {
   const [manualEntryDefaults, setManualEntryDefaults] = useState(null);
   const [activeScenarioId, setActiveScenarioId] = useState(null);
 
-  const handleCellClick = (category, type, month) => {
-    setManualEntryDefaults({ category, type, month });
+  // Le « + » d'une cellule pré-remplit l'onglet (Entrée/Sortie) et le mois,
+  // mais pas la catégorie de la ligne : le champ reste vide au choix de
+  // l'utilisateur.
+  const handleCellClick = (_category, type, month) => {
+    setManualEntryDefaults({ type, month });
     setManualEntryOpen(true);
   };
 
