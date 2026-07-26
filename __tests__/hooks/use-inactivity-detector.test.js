@@ -117,6 +117,20 @@ describe("useInactivityDetector", () => {
     expect(performLogout).not.toHaveBeenCalled();
   });
 
+  it("écrit un breadcrumb de diagnostic au moment de la déconnexion", () => {
+    renderDetector();
+
+    vi.setSystemTime(Date.now() + 2 * 60 * 60 * 1000);
+    window.dispatchEvent(new Event("mousedown"));
+
+    const breadcrumb = JSON.parse(
+      localStorage.getItem("newbi_last_inactivity_logout"),
+    );
+    expect(breadcrumb.source).toBe("activity-after-timeout");
+    expect(breadcrumb.timeoutHours).toBe(0.25);
+    expect(breadcrumb.elapsedMinutes).toBeGreaterThanOrEqual(120);
+  });
+
   it("ne fait rien quand la détection est désactivée", () => {
     renderDetector({ enabled: false });
 

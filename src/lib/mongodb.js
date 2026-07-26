@@ -71,6 +71,14 @@ async function ensureIndexes(db) {
       idx: { expiresAt: 1 },
       opts: { expireAfterSeconds: 0, background: true },
     },
+    // Journal des révocations de sessions : purge auto après 30 jours.
+    // NB: ajouter les nouveaux index EN FIN de tableau — la migration
+    // referenceId plus bas référence results[4] par position.
+    {
+      coll: "session_revocation_log",
+      idx: { at: 1 },
+      opts: { expireAfterSeconds: 30 * 24 * 60 * 60, background: true },
+    },
   ];
 
   const results = await Promise.allSettled(
