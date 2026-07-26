@@ -15,6 +15,8 @@ export function SessionValidityDetector({ intervalMs = 30000 }) {
 
   useEffect(() => {
     let cancelled = false;
+    let consecutiveNulls = 0;
+    let recheckTimeoutId = null;
 
     const redirect = () => {
       if (redirectingRef.current) return;
@@ -30,11 +32,25 @@ export function SessionValidityDetector({ intervalMs = 30000 }) {
         const { data, error } = await authClient.getSession({
           query: { disableCookieCache: true },
         });
+        if (cancelled) return;
         // Ne rediriger que sur une réponse formelle "pas de session".
         // Une erreur (500, indispo, redirection) est transitoire : on
         // retentera à la prochaine itération plutôt que déconnecter à tort.
-        if (!cancelled && !error && !data?.user) {
-          redirect();
+        if (!error && !data?.user) {
+          // Exiger DEUX réponses vides consécutives avant de rediriger :
+          // une seule réponse 200-sans-session peut être un blip transitoire
+          // (cookie non joint, instant serverless) et déconnectait à tort.
+          consecutiveNulls += 1;
+          if (consecutiveNulls >= 2) {
+            console.warn(
+              "[SessionValidityDetector] Session absente confirmée par 2 vérifications, redirection.",
+            );
+            redirect();
+          } else {
+            recheckTimeoutId = setTimeout(check, 3000);
+          }
+        } else if (data?.user) {
+          consecutiveNulls = 0;
         }
       } catch {
         // Erreur réseau : ignorer, on retentera à la prochaine itération.
@@ -48,6 +64,7 @@ export function SessionValidityDetector({ intervalMs = 30000 }) {
     return () => {
       cancelled = true;
       clearInterval(id);
+      if (recheckTimeoutId) clearTimeout(recheckTimeoutId);
       window.removeEventListener("focus", onFocus);
     };
   }, [intervalMs]);

@@ -253,6 +253,13 @@ export const auth = betterAuth({
               userId: session.userId,
               orgId: session.activeOrganizationId || null,
               currentSessionToken: session.token,
+              trigger: "login_session_create",
+              // UA/IP de la session qui vient d'être créée : identifie QUI a
+              // déclenché la révocation des autres sessions (journal).
+              meta: {
+                newSessionUserAgent: session.userAgent || null,
+                newSessionIp: session.ipAddress || null,
+              },
             });
           } catch (error) {
             // Non bloquant : ne jamais faire échouer un login pour ça

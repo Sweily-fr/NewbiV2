@@ -387,24 +387,39 @@ const errorLink = onError(
               }
 
               if (!session?.data?.user) {
-                // Session reellement expiree — rediriger
-                console.error(
-                  "[Auth Retry] getSession() n'a pas retourné de user — session expirée.",
-                  "\n  session.data:",
-                  JSON.stringify(session?.data || null),
-                );
-                // "revoked" et non "inactivity" : ici la session a disparu
-                // côté serveur (révocation par limite de sessions, nettoyage,
-                // logout distant). La déconnexion pour inactivité réelle passe
-                // par useInactivityDetector, qui pose lui-même son reason.
-                forceSessionExpiredRedirect("revoked");
-                observer.error(graphQLErrors[0]);
-                // Vider la file d'attente avec erreur
-                _pendingRetryQueue.forEach((pending) =>
-                  pending.observer.error(graphQLErrors[0]),
-                );
-                _pendingRetryQueue = [];
-                return;
+                // Une seule réponse 200-sans-session peut être un blip
+                // transitoire : re-vérifier une fois après 2s avant de
+                // déconnecter. Un vrai révoqué reste vide au 2e check.
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+                const secondCheck = await authClient
+                  .getSession({ query: { disableCookieCache: true } })
+                  .catch(() => null);
+
+                if (secondCheck?.data?.user) {
+                  console.warn(
+                    "[Auth Retry] Session absente au 1er check mais présente au 2e (blip transitoire), reprise sans déconnexion.",
+                  );
+                  session = secondCheck;
+                } else {
+                  // Session reellement expiree — rediriger
+                  console.error(
+                    "[Auth Retry] getSession() sans user, confirmé par 2 vérifications — session révoquée/expirée.",
+                    "\n  session.data:",
+                    JSON.stringify(secondCheck?.data || null),
+                  );
+                  // "revoked" et non "inactivity" : ici la session a disparu
+                  // côté serveur (révocation par limite de sessions, nettoyage,
+                  // logout distant). La déconnexion pour inactivité réelle passe
+                  // par useInactivityDetector, qui pose lui-même son reason.
+                  forceSessionExpiredRedirect("revoked");
+                  observer.error(graphQLErrors[0]);
+                  // Vider la file d'attente avec erreur
+                  _pendingRetryQueue.forEach((pending) =>
+                    pending.observer.error(graphQLErrors[0]),
+                  );
+                  _pendingRetryQueue = [];
+                  return;
+                }
               }
 
               // Session valide — generer un nouveau JWT et l'injecter dans l'operation.

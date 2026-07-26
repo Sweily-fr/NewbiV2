@@ -43,15 +43,6 @@ export function useInactivityDetector({
     ? new Date(sessionCreatedAt).getTime()
     : 0;
 
-  const handleLogout = useCallback(async () => {
-    if (isLoggingOutRef.current) return;
-    isLoggingOutRef.current = true;
-
-    await performLogout({
-      redirectTo: "/auth/session-expired?reason=inactivity",
-    });
-  }, []);
-
   // Dernier timestamp d'activité connu (partagé entre onglets), avec la
   // création de session comme plancher. Retourne 0 si aucun timestamp.
   const readLastActivityMs = useCallback(() => {
@@ -65,6 +56,44 @@ export function useInactivityDetector({
     return 0;
   }, [sessionCreatedAtMs]);
 
+  const handleLogout = useCallback(
+    async (source = "timer") => {
+      if (isLoggingOutRef.current) return;
+      isLoggingOutRef.current = true;
+
+      // Breadcrumb de diagnostic : survit à la redirection via localStorage.
+      // À lire après coup avec :
+      //   localStorage.getItem("newbi_last_inactivity_logout")
+      try {
+        const lastActivity = readLastActivityMs();
+        const details = {
+          at: new Date().toISOString(),
+          source,
+          timeoutHours,
+          elapsedMinutes:
+            lastActivity > 0
+              ? Math.round((Date.now() - lastActivity) / 60000)
+              : null,
+          lastActivity:
+            lastActivity > 0 ? new Date(lastActivity).toISOString() : null,
+          sessionCreatedAt: sessionCreatedAtMs
+            ? new Date(sessionCreatedAtMs).toISOString()
+            : null,
+        };
+        console.warn("[InactivityDetector] Déconnexion inactivité:", details);
+        localStorage.setItem(
+          "newbi_last_inactivity_logout",
+          JSON.stringify(details),
+        );
+      } catch {}
+
+      await performLogout({
+        redirectTo: "/auth/session-expired?reason=inactivity",
+      });
+    },
+    [readLastActivityMs, timeoutHours, sessionCreatedAtMs],
+  );
+
   const resetTimer = useCallback(() => {
     if (!enabled || isLoggingOutRef.current) return;
 
@@ -75,7 +104,7 @@ export function useInactivityDetector({
     // au réveil annule la déconnexion attendue).
     const lastActivity = readLastActivityMs();
     if (lastActivity > 0 && Date.now() - lastActivity >= timeoutMs) {
-      handleLogout();
+      handleLogout("activity-after-timeout");
       return;
     }
 
@@ -88,7 +117,7 @@ export function useInactivityDetector({
       clearTimeout(timerRef.current);
     }
 
-    timerRef.current = setTimeout(handleLogout, timeoutMs);
+    timerRef.current = setTimeout(() => handleLogout("timer"), timeoutMs);
   }, [enabled, timeoutMs, handleLogout, readLastActivityMs]);
 
   useEffect(() => {
@@ -106,7 +135,7 @@ export function useInactivityDetector({
     if (lastActivityAtMount > 0) {
       const elapsed = Date.now() - lastActivityAtMount;
       if (elapsed >= timeoutMs) {
-        handleLogout();
+        handleLogout("mount-check");
         return;
       }
       initialDelay = timeoutMs - elapsed;
@@ -119,7 +148,7 @@ export function useInactivityDetector({
     }
 
     // Démarrer le timer
-    timerRef.current = setTimeout(handleLogout, initialDelay);
+    timerRef.current = setTimeout(() => handleLogout("timer"), initialDelay);
 
     // Throttle les événements d'activité (1 reset max par 30s)
     let lastReset = Date.now();
@@ -143,7 +172,7 @@ export function useInactivityDetector({
         if (timerRef.current) {
           clearTimeout(timerRef.current);
         }
-        timerRef.current = setTimeout(handleLogout, timeoutMs);
+        timerRef.current = setTimeout(() => handleLogout("timer"), timeoutMs);
       }
     };
 
@@ -153,22 +182,25 @@ export function useInactivityDetector({
     // temps restant réel. Utilisé au retour de visibilité/focus et par le
     // watchdog : c'est l'horloge murale qui fait foi, pas le setTimeout
     // (suspendu pendant la veille machine, throttlé onglet caché).
-    const checkExpired = () => {
+    const checkExpired = (source) => {
       if (isLoggingOutRef.current) return;
       const lastActivity = readLastActivityMs();
       if (lastActivity <= 0) return;
       const elapsed = Date.now() - lastActivity;
       if (elapsed >= timeoutMs) {
-        handleLogout();
+        handleLogout(source);
       } else {
         if (timerRef.current) clearTimeout(timerRef.current);
-        timerRef.current = setTimeout(handleLogout, timeoutMs - elapsed);
+        timerRef.current = setTimeout(
+          () => handleLogout("timer"),
+          timeoutMs - elapsed,
+        );
       }
     };
 
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
-        checkExpired();
+        checkExpired("visibility-return");
       }
     };
 
@@ -176,12 +208,13 @@ export function useInactivityDetector({
 
     // Le focus peut revenir sans changement de visibilité (fenêtre restée
     // affichée pendant qu'une autre app était au premier plan).
-    window.addEventListener("focus", checkExpired);
+    const handleFocus = () => checkExpired("focus-return");
+    window.addEventListener("focus", handleFocus);
 
     // Watchdog : filet de sécurité périodique pour déclencher la déconnexion
     // proche de la durée configurée même sans interaction ni changement de
     // visibilité (ex: timer étiré par une mise en veille, onglet visible).
-    const watchdogId = setInterval(checkExpired, 30_000);
+    const watchdogId = setInterval(() => checkExpired("watchdog"), 30_000);
 
     return () => {
       if (timerRef.current) {
@@ -192,7 +225,7 @@ export function useInactivityDetector({
       });
       window.removeEventListener("storage", handleStorage);
       document.removeEventListener("visibilitychange", handleVisibility);
-      window.removeEventListener("focus", checkExpired);
+      window.removeEventListener("focus", handleFocus);
       clearInterval(watchdogId);
     };
   }, [enabled, timeoutMs, readLastActivityMs, handleLogout, resetTimer]);

@@ -6,6 +6,7 @@
 
 import { ObjectId } from "mongodb";
 import { mongoDb } from "@/src/lib/mongodb";
+import { logSessionRevocation } from "@/src/lib/session-revocation-log";
 
 const DEFAULT_MAX_SESSIONS = 1;
 
@@ -19,6 +20,8 @@ export async function enforceSessionLimitForUser({
   userId,
   orgId,
   currentSessionToken,
+  trigger,
+  meta,
 }) {
   let maxSessions = DEFAULT_MAX_SESSIONS;
 
@@ -40,6 +43,8 @@ export async function enforceSessionLimitForUser({
     userObjectId: new ObjectId(userId),
     currentSessionToken,
     maxSessions: Math.max(1, maxSessions),
+    trigger,
+    meta,
   });
 }
 
@@ -47,6 +52,8 @@ export async function enforceSessionLimit({
   userObjectId,
   currentSessionToken,
   maxSessions,
+  trigger,
+  meta,
 }) {
   const now = new Date();
 
@@ -82,6 +89,19 @@ export async function enforceSessionLimit({
     userId: userObjectId,
     token: { $in: tokensToRevoke },
   });
+
+  if (result.deletedCount > 0) {
+    await logSessionRevocation({
+      mechanism: "max_sessions_limit",
+      trigger,
+      userId: userObjectId,
+      revokedSessions: activeSessions.filter((s) =>
+        tokensToRevoke.includes(s.token),
+      ),
+      keptToken: currentSessionToken,
+      meta: { ...meta, maxSessions },
+    });
+  }
 
   const remaining = activeSessions.filter((s) => toKeep.has(s.token));
   return { revokedCount: result.deletedCount, activeSessions: remaining };
