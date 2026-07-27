@@ -23,6 +23,7 @@ import {
   Unlink,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
 import {
@@ -69,6 +70,7 @@ import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDF
 import { LinkedDocumentRow } from "@/src/components/documents/linked-document-row";
 import CreditNoteMobileFullscreen from "./credit-note-mobile-fullscreen";
 import { useReconciliationForSidebar } from "@/src/hooks/useReconciliation";
+import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
 import {
   formatLocalDate,
@@ -194,6 +196,8 @@ export default function InvoiceSidebar({
   const [availableTransactions, setAvailableTransactions] = useState([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
   const [showTransactionPicker, setShowTransactionPicker] = useState(false);
+  const [transactionSearch, setTransactionSearch] = useState("");
+  const debouncedTransactionSearch = useDebouncedValue(transactionSearch, 300);
   const [linkingTransaction, setLinkingTransaction] = useState(false);
 
   // Ref pour éviter les race conditions et les updates sur composant démonté
@@ -210,33 +214,37 @@ export default function InvoiceSidebar({
 
   // Charger les transactions disponibles pour cette facture
   // OPTIMISÉ: Utiliser useRef pour éviter les race conditions
-  const loadAvailableTransactions = useCallback(async () => {
-    if (!initialInvoice?.id || !isMountedRef.current) return;
+  const loadAvailableTransactions = useCallback(
+    async (search = "") => {
+      if (!initialInvoice?.id || !isMountedRef.current) return;
 
-    // Annuler la requête précédente si elle existe
-    if (fetchAbortRef.current) {
-      fetchAbortRef.current = false;
-    }
-    fetchAbortRef.current = true;
+      // Annuler la requête précédente si elle existe
+      if (fetchAbortRef.current) {
+        fetchAbortRef.current = false;
+      }
+      fetchAbortRef.current = true;
 
-    setLoadingTransactions(true);
-    try {
-      const { transactions } = await fetchTransactionsForInvoice(
-        initialInvoice.id,
-      );
-      // Vérifier si le composant est toujours monté et si cette requête est toujours valide
-      if (isMountedRef.current && fetchAbortRef.current) {
-        setAvailableTransactions(transactions || []);
+      setLoadingTransactions(true);
+      try {
+        const { transactions } = await fetchTransactionsForInvoice(
+          initialInvoice.id,
+          search,
+        );
+        // Vérifier si le composant est toujours monté et si cette requête est toujours valide
+        if (isMountedRef.current && fetchAbortRef.current) {
+          setAvailableTransactions(transactions || []);
+        }
+      } catch (err) {
+        // Ignorer les erreurs silencieusement pour éviter les re-renders
+        console.error("[SIDEBAR] Erreur chargement transactions:", err);
+      } finally {
+        if (isMountedRef.current) {
+          setLoadingTransactions(false);
+        }
       }
-    } catch (err) {
-      // Ignorer les erreurs silencieusement pour éviter les re-renders
-      console.error("[SIDEBAR] Erreur chargement transactions:", err);
-    } finally {
-      if (isMountedRef.current) {
-        setLoadingTransactions(false);
-      }
-    }
-  }, [initialInvoice?.id, fetchTransactionsForInvoice]);
+    },
+    [initialInvoice?.id, fetchTransactionsForInvoice],
+  );
 
   // Charger automatiquement les transactions suggérées quand le drawer s'ouvre
   // OPTIMISÉ: Dépendances minimales pour éviter les re-renders
@@ -251,6 +259,19 @@ export default function InvoiceSidebar({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, initialInvoice?.id]);
+
+  // Recherche serveur dans le sélecteur de transactions (débouncée)
+  useEffect(() => {
+    if (showTransactionPicker) {
+      loadAvailableTransactions(debouncedTransactionSearch);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showTransactionPicker, debouncedTransactionSearch]);
+
+  // Reset de la recherche à la fermeture du sélecteur
+  useEffect(() => {
+    if (!showTransactionPicker) setTransactionSearch("");
+  }, [showTransactionPicker]);
 
   // Filtrer les transactions avec un bon score de correspondance
   const suggestedTransactions = useMemo(
@@ -1336,6 +1357,12 @@ export default function InvoiceSidebar({
                         <X className="h-3 w-3" />
                       </Button>
                     </div>
+                    <Input
+                      value={transactionSearch}
+                      onChange={(e) => setTransactionSearch(e.target.value)}
+                      placeholder="Description, libellé, montant..."
+                      className="h-8 text-sm"
+                    />
                     {loadingTransactions ? (
                       <div className="flex items-center justify-center py-4">
                         <LoaderCircle className="h-4 w-4 animate-spin" />
@@ -1380,7 +1407,9 @@ export default function InvoiceSidebar({
                       </ScrollArea>
                     ) : (
                       <p className="text-center py-4 text-xs text-muted-foreground">
-                        Aucune transaction disponible.
+                        {transactionSearch.trim()
+                          ? "Aucune transaction ne correspond à cette recherche."
+                          : "Aucune transaction disponible."}
                       </p>
                     )}
                   </div>
@@ -1447,6 +1476,13 @@ export default function InvoiceSidebar({
                         </Button>
                       </div>
 
+                      <Input
+                        value={transactionSearch}
+                        onChange={(e) => setTransactionSearch(e.target.value)}
+                        placeholder="Description, libellé, montant..."
+                        className="h-8 text-sm"
+                      />
+
                       {loadingTransactions ? (
                         <div className="flex items-center justify-center py-4">
                           <LoaderCircle className="h-4 w-4 animate-spin" />
@@ -1493,11 +1529,19 @@ export default function InvoiceSidebar({
                         </ScrollArea>
                       ) : (
                         <div className="text-center py-4 text-sm text-muted-foreground">
-                          <p>Aucune transaction disponible</p>
-                          <p className="text-xs mt-1">
-                            Connectez un compte bancaire pour voir les
-                            transactions
-                          </p>
+                          {transactionSearch.trim() ? (
+                            <p>
+                              Aucune transaction ne correspond à cette recherche
+                            </p>
+                          ) : (
+                            <>
+                              <p>Aucune transaction disponible</p>
+                              <p className="text-xs mt-1">
+                                Connectez un compte bancaire pour voir les
+                                transactions
+                              </p>
+                            </>
+                          )}
                         </div>
                       )}
                     </div>

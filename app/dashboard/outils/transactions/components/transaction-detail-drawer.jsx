@@ -91,6 +91,7 @@ import { useRouter } from "next/navigation";
 import { PreviewImage } from "@/src/components/ui/preview-image";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 
 const paymentMethodIcons = {
   CARD: CardVuesax,
@@ -360,15 +361,58 @@ export function TransactionDetailDrawer({
     suggestions: reconciliationSuggestions,
     linkTransaction,
     isLinking,
+    fetchInvoicesForTransaction,
   } = useReconciliationGraphQL();
   const matchingInvoices =
     reconciliationSuggestions?.find(
       (s) => s.transaction?.id === transaction?.id,
     )?.matchingInvoices || [];
 
+  // Rattachement manuel : sélecteur de factures PENDING avec recherche serveur,
+  // pour les entrées d'argent sans suggestion automatique.
+  const [showInvoicePicker, setShowInvoicePicker] = useState(false);
+  const [invoiceSearch, setInvoiceSearch] = useState("");
+  const debouncedInvoiceSearch = useDebouncedValue(invoiceSearch, 300);
+  const [availableInvoices, setAvailableInvoices] = useState([]);
+  const [loadingInvoices, setLoadingInvoices] = useState(false);
+
+  useEffect(() => {
+    if (!showInvoicePicker || !transaction?.id) return;
+    let cancelled = false;
+    setLoadingInvoices(true);
+    fetchInvoicesForTransaction(transaction.id, debouncedInvoiceSearch)
+      .then(({ invoices }) => {
+        if (!cancelled) setAvailableInvoices(invoices);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingInvoices(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    showInvoicePicker,
+    debouncedInvoiceSearch,
+    transaction?.id,
+    fetchInvoicesForTransaction,
+  ]);
+
+  // Reset du sélecteur à la fermeture du drawer
+  useEffect(() => {
+    if (!open) {
+      setShowInvoicePicker(false);
+      setInvoiceSearch("");
+      setAvailableInvoices([]);
+    }
+  }, [open]);
+
   const handleReconcileInvoice = async (invoiceId) => {
     if (!transaction?.id || !invoiceId) return;
-    await linkTransaction(transaction.id, invoiceId);
+    const result = await linkTransaction(transaction.id, invoiceId);
+    if (result?.success) {
+      setShowInvoicePicker(false);
+      setInvoiceSearch("");
+    }
     onRefresh?.();
   };
 
@@ -400,6 +444,11 @@ export function TransactionDetailDrawer({
   // facture, accessible via ce lien).
   const linkedPurchaseInvoice =
     transaction?.linkedPurchaseInvoices?.[0] || null;
+  // Rattachement manuel possible : entrée d'argent non liée. Les transactions
+  // manuelles de type EXPENSE (montant positif possible) sont exclues.
+  const canPickInvoice =
+    transaction?.amount > 0 &&
+    (!isManualTransaction || transaction?.type === "INCOME");
 
   // Initialiser le formulaire uniquement quand le drawer s'ouvre (transition false → true)
   useEffect(() => {
@@ -1722,65 +1771,178 @@ export function TransactionDetailDrawer({
 
             {/* Factures rapprochables : si la transaction n'est pas encore liée
                 mais qu'une ou plusieurs factures correspondent, on les propose
-                directement (pas de statut "ignoré"/"suggéré"). */}
-            {!isCreateMode && !linkedInvoice && matchingInvoices.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-sm font-normal text-muted-foreground">
-                    {matchingInvoices.length > 1
-                      ? "Factures à rapprocher"
-                      : "Facture à rapprocher"}
-                  </p>
-                </div>
-
-                {matchingInvoices.map((invoice) => (
-                  <div
-                    key={invoice.id}
-                    className="p-3 border rounded-lg bg-muted/30"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm font-medium">
-                          Facture {invoice.number || "N/A"}
-                        </span>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {invoice.clientName}
-                        </p>
-                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                          <span>{formatAmount(invoice.totalTTC)}</span>
-                          {invoice.dueDate && (
-                            <>
-                              <span>•</span>
-                              <span>
-                                Échéance: {formatDate(invoice.dueDate)}
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </div>
+                directement (pas de statut "ignoré"/"suggéré"). Pour les entrées
+                d'argent sans suggestion, un sélecteur avec recherche permet le
+                rattachement manuel. */}
+            {!isCreateMode &&
+              !linkedInvoice &&
+              (matchingInvoices.length > 0 || canPickInvoice) && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-sm font-normal text-muted-foreground">
+                        {matchingInvoices.length > 1
+                          ? "Factures à rapprocher"
+                          : "Facture à rapprocher"}
+                      </p>
+                    </div>
+                    {canPickInvoice && !showInvoicePicker && (
                       <Button
                         variant="outline"
                         size="sm"
-                        className="flex-shrink-0"
-                        onClick={() => handleReconcileInvoice(invoice.id)}
-                        disabled={isReadOnly || isLinking}
-                        title={readOnlyTooltip || "Rapprocher cette facture"}
+                        className="h-7 px-2 text-xs"
+                        onClick={() => setShowInvoicePicker(true)}
+                        disabled={isReadOnly}
+                        title={readOnlyTooltip || "Rechercher une facture"}
                       >
-                        {isLinking ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <>
-                            <Link2 className="h-4 w-4 mr-1.5" />
-                            Rapprocher
-                          </>
-                        )}
+                        <Link2 className="h-3 w-3 mr-1" />
+                        Rattacher
                       </Button>
-                    </div>
+                    )}
                   </div>
-                ))}
-              </div>
-            )}
+
+                  {matchingInvoices.map((invoice) => (
+                    <div
+                      key={invoice.id}
+                      className="p-3 border rounded-lg bg-muted/30"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-medium">
+                            Facture {invoice.number || "N/A"}
+                          </span>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {invoice.clientName}
+                          </p>
+                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                            <span>{formatAmount(invoice.totalTTC)}</span>
+                            {invoice.dueDate && (
+                              <>
+                                <span>•</span>
+                                <span>
+                                  Échéance: {formatDate(invoice.dueDate)}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-shrink-0"
+                          onClick={() => handleReconcileInvoice(invoice.id)}
+                          disabled={isReadOnly || isLinking}
+                          title={readOnlyTooltip || "Rapprocher cette facture"}
+                        >
+                          {isLinking ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <>
+                              <Link2 className="h-4 w-4 mr-1.5" />
+                              Rapprocher
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {matchingInvoices.length === 0 && !showInvoicePicker && (
+                    <p className="text-sm text-muted-foreground">
+                      Aucune correspondance automatique. Utilisez « Rattacher »
+                      pour rechercher une facture.
+                    </p>
+                  )}
+
+                  {/* Sélecteur manuel de facture (recherche serveur) */}
+                  {showInvoicePicker && (
+                    <div className="border rounded-lg p-3 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">
+                          Sélectionner une facture
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => {
+                            setShowInvoicePicker(false);
+                            setInvoiceSearch("");
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+
+                      <Input
+                        value={invoiceSearch}
+                        onChange={(e) => setInvoiceSearch(e.target.value)}
+                        placeholder="N° de facture, client, montant..."
+                        className="h-8 text-sm"
+                      />
+
+                      {loadingInvoices ? (
+                        <div className="flex items-center justify-center py-4">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        </div>
+                      ) : availableInvoices.length > 0 ? (
+                        <div className="max-h-[240px] overflow-y-auto space-y-2">
+                          {availableInvoices.map((invoice) => (
+                            <div
+                              key={invoice.id}
+                              className={`p-2 border rounded cursor-pointer hover:bg-muted/50 transition-colors ${
+                                invoice.score >= 80
+                                  ? "border-[#5a50ff]/30 bg-[#5a50ff]/5"
+                                  : ""
+                              }`}
+                              onClick={() =>
+                                !isLinking && handleReconcileInvoice(invoice.id)
+                              }
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium truncate">
+                                    Facture {invoice.number || "N/A"}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    {invoice.clientName}
+                                  </p>
+                                  <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+                                    <span>
+                                      {formatAmount(invoice.totalTTC)}
+                                    </span>
+                                    {invoice.dueDate && (
+                                      <>
+                                        <span>•</span>
+                                        <span>
+                                          Échéance:{" "}
+                                          {formatDate(invoice.dueDate)}
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                                {invoice.score >= 80 && (
+                                  <span className="flex-shrink-0 text-xs px-2 py-0.5 rounded-full bg-[#5a50ff]/10 text-[#5a50ff] border border-[#5a50ff]/30">
+                                    Correspondance
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-center py-4 text-xs text-muted-foreground">
+                          {invoiceSearch.trim()
+                            ? "Aucune facture ne correspond à cette recherche."
+                            : "Aucune facture en attente de paiement."}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
             {/* Dates de création/modification */}
             {!isCreateMode && (
