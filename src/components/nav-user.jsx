@@ -42,7 +42,13 @@ import { performLogout } from "../lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { SettingsModal } from "./settings-modal";
+import dynamic from "next/dynamic";
+
+// Chunk chargé à la première ouverture seulement
+const SettingsModal = dynamic(
+  () => import("@/src/components/settings-modal").then((m) => m.SettingsModal),
+  { ssr: false },
+);
 import { useTheme } from "@/src/components/theme-provider";
 
 export function NavUser({ user }) {
@@ -323,11 +329,13 @@ export function NavUser({ user }) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <SettingsModal
-          open={settingsModalOpen}
-          onOpenChange={setSettingsModalOpen}
-          initialTab={settingsInitialTab}
-        />
+        {settingsModalOpen && (
+          <SettingsModal
+            open={settingsModalOpen}
+            onOpenChange={setSettingsModalOpen}
+            initialTab={settingsInitialTab}
+          />
+        )}
       </SidebarMenuItem>
     </SidebarMenu>
   );

@@ -12,8 +12,6 @@ import {
 } from "@/src/components/ui/dialog";
 import { useRequestSignature } from "@/src/hooks/useESignature";
 import { toast } from "@/src/components/ui/sonner";
-import { domToJpeg } from "modern-screenshot";
-import jsPDF from "jspdf";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import { useQuery } from "@apollo/client";
 import { GET_QUOTE } from "@/src/graphql/quoteQueries";
@@ -107,6 +105,12 @@ async function generatePdfBase64FromRef(componentRef) {
   if (!componentRef.current) {
     throw new Error("Référence du composant non trouvée");
   }
+
+  // Chargés à la génération uniquement (sort jspdf du chunk de la page devis)
+  const [{ default: jsPDF }, { domToJpeg }] = await Promise.all([
+    import("jspdf"),
+    import("modern-screenshot"),
+  ]);
 
   const images = componentRef.current.querySelectorAll("img");
   await Promise.all(

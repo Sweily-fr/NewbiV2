@@ -1,9 +1,20 @@
 "use client";
+
+import dynamic from "next/dynamic";
 import React from "react";
 import { Button } from "@/src/components/ui/button";
 import Link from "next/link";
-import { Avatar, AvatarImage, AvatarFallback, AvatarGroup } from "@/src/components/ui/avatar";
-import { KanbanBoard } from "./KanbanBoard";
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+  AvatarGroup,
+} from "@/src/components/ui/avatar";
+// Animation gsap chargée dans son propre chunk (hors chemin critique SEO)
+const KanbanBoard = dynamic(
+  () => import("./KanbanBoard").then((m) => m.KanbanBoard),
+  { ssr: false },
+);
 
 export function HeroSection() {
   return (
@@ -22,7 +33,8 @@ export function HeroSection() {
                   <strong className="font-medium text-gray-900">
                     suivez l&apos;avancement en temps réel
                   </strong>{" "}
-                  et gardez le contrôle sur chaque projet d&apos;un seul coup d&apos;œil.
+                  et gardez le contrôle sur chaque projet d&apos;un seul coup
+                  d&apos;œil.
                 </h2>
 
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2 lg:pt-4 justify-center lg:justify-start">
@@ -59,12 +71,16 @@ export function HeroSection() {
                   </p>
                 </div>
                 <p className="text-gray-400 text-xs pt-3 text-center lg:text-left">
-                  Plusieurs entreprises nous font déjà confiance · Collaboration illimitée
+                  Plusieurs entreprises nous font déjà confiance · Collaboration
+                  illimitée
                 </p>
               </div>
 
               <div className="relative flex items-center justify-center lg:items-end lg:justify-end pt-8 lg:pt-4 lg:overflow-visible overflow-hidden -mb-[250px] sm:-mb-[200px] lg:mb-0">
-                <div className="relative w-[900px] xl:w-[950px] lg:-mr-64 xl:-mr-80 scale-[0.45] sm:scale-[0.55] lg:scale-[0.85] origin-top-left lg:origin-top -translate-x-[15%] sm:-translate-x-[10%] lg:translate-x-0" style={{ translateY: "30px", transformOrigin: "top right" }}>
+                <div
+                  className="relative w-[900px] xl:w-[950px] lg:-mr-64 xl:-mr-80 scale-[0.45] sm:scale-[0.55] lg:scale-[0.85] origin-top-left lg:origin-top -translate-x-[15%] sm:-translate-x-[10%] lg:translate-x-0"
+                  style={{ translateY: "30px", transformOrigin: "top right" }}
+                >
                   <KanbanBoard />
                 </div>
               </div>

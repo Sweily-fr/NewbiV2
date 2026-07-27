@@ -17,6 +17,8 @@ export const usePurchaseInvoiceReconciliationSuggestions = () => {
       variables: { workspaceId },
       skip: !workspaceId || workspaceLoading,
       pollInterval: 60000,
+      // Suspendre le polling quand l'onglet est en arrière-plan
+      skipPollAttempt: () => typeof document !== "undefined" && document.hidden,
       errorPolicy: "all",
     },
   );

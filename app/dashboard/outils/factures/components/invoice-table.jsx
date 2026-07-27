@@ -168,9 +168,12 @@ export default function InvoiceTable({
     refetch: refetchImported,
   } = useImportedInvoices(workspaceId);
 
-  // Hook pour les avoirs (count pour le badge du tab)
-  const { creditNotes } = useCreditNotes();
-  const creditNotesCount = creditNotes?.length || 0;
+  // Hook pour les avoirs (count pour le badge du tab) : seul le total sert,
+  // limit 1 évite de rapatrier toute la liste d'avoirs.
+  const { totalCount: creditNotesCount } = useCreditNotes({
+    page: 1,
+    limit: 1,
+  });
 
   // Récupérer les paramètres de relance automatique
   const { data: reminderSettingsData } = useInvoiceReminderSettings();

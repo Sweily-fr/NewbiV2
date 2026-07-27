@@ -68,12 +68,26 @@ export function SessionGateProvider({ children }) {
   // Identifier l'user PostHog quand la session est restaurée (reload, retour app)
   // Si pas de consent analytics, opt_out_capturing_by_default empêche l'envoi.
   useEffect(() => {
-    if (session?.user?.id) {
+    if (!session?.user?.id) return;
+    let cancelled = false;
+    let attempts = 0;
+    const identify = () => {
+      if (cancelled) return;
+      // L'init PostHog est différée à l'idle (instrumentation-client) :
+      // attendre qu'elle soit faite avant d'identifier.
+      if (!posthog.__loaded) {
+        if (attempts++ < 10) setTimeout(identify, 500);
+        return;
+      }
       posthog.identify(session.user.id, {
         email: session.user.email,
         name: session.user.name,
       });
-    }
+    };
+    identify();
+    return () => {
+      cancelled = true;
+    };
   }, [session?.user?.id]);
 
   if (!isReady) {

@@ -35,6 +35,8 @@ export function FloatingTimer() {
     variables: { workspaceId },
     skip: !workspaceId,
     pollInterval: 30000,
+    // Suspendre le polling quand l'onglet est en arrière-plan
+    skipPollAttempt: () => typeof document !== "undefined" && document.hidden,
     context: { isBackgroundPoll: true },
   });
 

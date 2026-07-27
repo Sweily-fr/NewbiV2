@@ -28,7 +28,13 @@ import {
 } from "@/src/components/icons";
 import { cn } from "@/src/lib/utils";
 import { useUser } from "@/src/lib/auth/hooks";
-import { SettingsModal } from "@/src/components/settings-modal";
+import dynamic from "next/dynamic";
+
+// Chunk chargé à la première ouverture seulement
+const SettingsModal = dynamic(
+  () => import("@/src/components/settings-modal").then((m) => m.SettingsModal),
+  { ssr: false },
+);
 import { EInvoicingPromoModal } from "@/src/components/e-invoicing-promo-modal";
 
 import {
@@ -219,11 +225,13 @@ function SettingsDropdownMenu() {
           </DropdownMenuItem> */}
         </DropdownMenuContent>
       </DropdownMenu>
-      <SettingsModal
-        open={settingsModalOpen}
-        onOpenChange={setSettingsModalOpen}
-        initialTab={settingsInitialTab}
-      />
+      {settingsModalOpen && (
+        <SettingsModal
+          open={settingsModalOpen}
+          onOpenChange={setSettingsModalOpen}
+          initialTab={settingsInitialTab}
+        />
+      )}
     </SidebarMenuItem>
   );
 }

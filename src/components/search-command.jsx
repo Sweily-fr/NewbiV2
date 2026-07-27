@@ -3,7 +3,13 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useLazyQuery } from "@apollo/client";
-import { SettingsModal } from "@/src/components/settings-modal";
+import dynamic from "next/dynamic";
+
+// Chunk chargé à la première ouverture seulement (~11 000 lignes de sections)
+const SettingsModal = dynamic(
+  () => import("@/src/components/settings-modal").then((m) => m.SettingsModal),
+  { ssr: false },
+);
 import {
   Command,
   CommandEmpty,
@@ -1006,11 +1012,13 @@ export function SearchCommand() {
         </DialogContent>
       </Dialog>
 
-      <SettingsModal
-        open={settingsModalOpen}
-        onOpenChange={setSettingsModalOpen}
-        initialTab={settingsInitialTab}
-      />
+      {settingsModalOpen && (
+        <SettingsModal
+          open={settingsModalOpen}
+          onOpenChange={setSettingsModalOpen}
+          initialTab={settingsInitialTab}
+        />
+      )}
     </>
   );
 }
