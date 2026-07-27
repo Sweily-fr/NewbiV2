@@ -32,7 +32,6 @@ import {
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/src/lib/utils";
-import * as XLSX from "xlsx";
 import {
   Avatar,
   AvatarFallback,
@@ -233,7 +232,9 @@ export function ExportDialog({
   };
 
   // Export Excel
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
+    // xlsx (~800 KB) chargé au clic uniquement
+    const XLSX = await import("xlsx");
     const data = prepareExportData();
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();

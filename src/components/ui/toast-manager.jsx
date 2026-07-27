@@ -1,8 +1,22 @@
 "use client";
 
-import { useState, useCallback, createContext, useContext, useRef } from "react";
+import {
+  useState,
+  useCallback,
+  createContext,
+  useContext,
+  useMemo,
+  useRef,
+} from "react";
 import { Button } from "@/src/components/ui/button";
-import { X, CheckCircle, AlertCircle, Info, Landmark, FileText } from "lucide-react";
+import {
+  X,
+  CheckCircle,
+  AlertCircle,
+  Info,
+  Landmark,
+  FileText,
+} from "lucide-react";
 import { cn } from "@/src/lib/utils";
 
 // Context pour le toast manager
@@ -49,7 +63,7 @@ function Toast({ toast, onClose }) {
       className={cn(
         "pointer-events-auto w-[360px] overflow-hidden rounded-lg border shadow-lg",
         "animate-in slide-in-from-right-full duration-300",
-        TOAST_COLORS[toast.type] || TOAST_COLORS.info
+        TOAST_COLORS[toast.type] || TOAST_COLORS.info,
       )}
     >
       <div className="px-3 py-2.5">
@@ -64,7 +78,9 @@ function Toast({ toast, onClose }) {
                   <p
                     className={cn(
                       "text-sm font-medium leading-tight",
-                      isDarkBg ? "text-white" : "text-gray-900 dark:text-gray-100"
+                      isDarkBg
+                        ? "text-white"
+                        : "text-gray-900 dark:text-gray-100",
                     )}
                   >
                     {toast.title}
@@ -76,7 +92,7 @@ function Toast({ toast, onClose }) {
                       "text-xs leading-tight mt-0.5 line-clamp-2",
                       isDarkBg
                         ? "text-gray-300"
-                        : "text-gray-600 dark:text-gray-400"
+                        : "text-gray-600 dark:text-gray-400",
                     )}
                   >
                     {toast.description}
@@ -89,7 +105,7 @@ function Toast({ toast, onClose }) {
                   "flex-shrink-0",
                   isDarkBg
                     ? "text-gray-400 hover:text-white"
-                    : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300",
                 )}
               >
                 <X className="h-3.5 w-3.5" />
@@ -104,7 +120,7 @@ function Toast({ toast, onClose }) {
                     className={cn(
                       "h-7 text-xs px-2",
                       isDarkBg &&
-                        "text-gray-400 hover:text-white hover:bg-gray-700"
+                        "text-gray-400 hover:text-white hover:bg-gray-700",
                     )}
                     onClick={toast.dismissProps.onClick}
                   >
@@ -117,7 +133,7 @@ function Toast({ toast, onClose }) {
                     variant="outline"
                     className={cn(
                       "h-7 text-xs px-2",
-                      isDarkBg && "border-gray-600 text-gray-700 dark:bg-white"
+                      isDarkBg && "border-gray-600 text-gray-700 dark:bg-white",
                     )}
                     onClick={toast.secondaryActionProps.onClick}
                   >
@@ -129,7 +145,7 @@ function Toast({ toast, onClose }) {
                     size="sm"
                     className={cn(
                       "h-7 text-xs px-2",
-                      isDarkBg && "bg-[#5a50ff] hover:bg-[#4a40ef] text-white"
+                      isDarkBg && "bg-[#5a50ff] hover:bg-[#4a40ef] text-white",
                     )}
                     onClick={toast.actionProps.onClick}
                   >
@@ -208,8 +224,15 @@ export function ToastProvider({ children }) {
   const expandedGap = 16; // Espace entre les toasts quand déplié
   const stackOffset = isExpanded ? toastHeight + expandedGap : 6;
 
+  // Provider monté au-dessus de tout le dashboard : add/close/closeAll sont
+  // déjà stables (useCallback), la value doit l'être aussi.
+  const contextValue = useMemo(
+    () => ({ add, close, closeAll }),
+    [add, close, closeAll],
+  );
+
   return (
-    <ToastContext.Provider value={{ add, close, closeAll }}>
+    <ToastContext.Provider value={contextValue}>
       {children}
       {/* Toast Container - en haut à droite, effet de pile superposée */}
       {toasts.length > 0 && (
@@ -225,7 +248,7 @@ export function ToastProvider({ children }) {
               minHeight: isExpanded
                 ? `${visibleToasts.length * (toastHeight + expandedGap)}px`
                 : `${Math.min(visibleToasts.length * 6 + toastHeight, 130)}px`,
-              transition: 'min-height 0.3s ease-out',
+              transition: "min-height 0.3s ease-out",
             }}
           >
             {visibleToasts.map((toast, index) => {
@@ -240,12 +263,19 @@ export function ToastProvider({ children }) {
                       ? `${index * (toastHeight + expandedGap)}px`
                       : `${index * stackOffset}px`,
                     transform: isExpanded
-                      ? 'scale(1) translateX(0)'
+                      ? "scale(1) translateX(0)"
                       : `scale(${1 - index * 0.02})`,
-                    opacity: isExpanded ? 1 : (isFirst ? 1 : Math.max(0.5, 1 - index * 0.2)),
+                    opacity: isExpanded
+                      ? 1
+                      : isFirst
+                        ? 1
+                        : Math.max(0.5, 1 - index * 0.2),
                     zIndex: 100 - index,
-                    transformOrigin: 'top right',
-                    filter: !isExpanded && index > 0 ? `brightness(${1 - index * 0.08})` : 'none',
+                    transformOrigin: "top right",
+                    filter:
+                      !isExpanded && index > 0
+                        ? `brightness(${1 - index * 0.08})`
+                        : "none",
                   }}
                 >
                   <Toast toast={toast} onClose={close} />
@@ -254,20 +284,19 @@ export function ToastProvider({ children }) {
             })}
           </div>
 
-
           {/* Indicateur de toasts cachés (quand étendu) */}
           {hiddenCount > 0 && isExpanded && (
             <div
               className="text-center pointer-events-auto"
               style={{
                 marginTop: `${visibleToasts.length * (toastHeight + expandedGap) + 12}px`,
-                position: 'absolute',
+                position: "absolute",
                 right: 0,
                 left: 0,
               }}
             >
               <span className="text-xs text-muted-foreground bg-background/95 px-3 py-1.5 rounded-full border shadow-sm">
-                +{hiddenCount} autre{hiddenCount > 1 ? 's' : ''} en attente
+                +{hiddenCount} autre{hiddenCount > 1 ? "s" : ""} en attente
               </span>
             </div>
           )}

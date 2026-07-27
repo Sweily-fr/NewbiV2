@@ -621,7 +621,7 @@ import { useErrorHandler } from "@/src/hooks/useErrorHandler";
 import { GET_RECONCILIATION_SUGGESTIONS } from "@/src/graphql/queries/reconciliation";
 
 // Hook optimisé pour récupérer la liste des factures
-export const useInvoices = () => {
+export const useInvoices = ({ skip = false } = {}) => {
   // Récupérer le workspace actuel
   const {
     workspaceId,
@@ -664,7 +664,7 @@ export const useInvoices = () => {
     errorPolicy: "all",
     fetchPolicy: "cache-and-network",
     notifyOnNetworkStatusChange: true,
-    skip: !workspaceId, // Ne pas exécuter la query sans workspaceId
+    skip: skip || !workspaceId, // Ne pas exécuter la query sans workspaceId
   });
 
   // Fonction pour charger plus de données

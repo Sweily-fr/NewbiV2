@@ -97,7 +97,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/src/components/ui/popover";
-import * as XLSX from "xlsx";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useMutation } from "@apollo/client";
@@ -232,7 +231,9 @@ function KanbanPageContent() {
   }, [boards]);
 
   // Export Excel
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
+    // xlsx (~800 KB) chargé au clic uniquement
+    const XLSX = await import("xlsx");
     const rows = (boards || []).map((b) => ({
       Nom: b.title || "",
       Description: b.description || "",

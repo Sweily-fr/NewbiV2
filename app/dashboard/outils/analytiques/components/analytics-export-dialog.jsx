@@ -49,7 +49,12 @@ const TAB_OPTIONS = [
   { value: "detail", label: "Taxes" },
 ];
 
-export function AnalyticsExportDialog({ open, onOpenChange, analyticsData, dateRange }) {
+export function AnalyticsExportDialog({
+  open,
+  onOpenChange,
+  analyticsData,
+  dateRange,
+}) {
   const [format, setFormat] = useState("excel");
   const [tab, setTab] = useState("all");
   const [exporting, setExporting] = useState(false);
@@ -68,10 +73,10 @@ export function AnalyticsExportDialog({ open, onOpenChange, analyticsData, dateR
           exportAnalyticsCSV(analyticsData, tab, period);
           break;
         case "excel":
-          exportAnalyticsExcel(analyticsData, tab, period);
+          await exportAnalyticsExcel(analyticsData, tab, period);
           break;
         case "pdf":
-          exportAnalyticsPDF(analyticsData, tab, period);
+          await exportAnalyticsPDF(analyticsData, tab, period);
           break;
       }
       toast.success("Export terminé");

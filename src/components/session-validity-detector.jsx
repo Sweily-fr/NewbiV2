@@ -26,6 +26,9 @@ export function SessionValidityDetector({ intervalMs = 30000 }) {
 
     const check = async () => {
       if (cancelled || redirectingRef.current) return;
+      // Onglet en arrière-plan : inutile d'interroger la base toutes les
+      // 30 s, le check au retour de focus couvre la reprise.
+      if (document.hidden) return;
       try {
         // disableCookieCache : interroger la base directement, sinon le
         // cookieCache peut masquer une révocation pendant sa durée de vie.

@@ -45,8 +45,18 @@ import {
 } from "@/src/graphql/purchaseOrderQueries";
 import { getDraftEffectiveDates } from "@/src/utils/dateFormatter";
 import { toast } from "@/src/components/ui/sonner";
-import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
-import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDFDownloaderWithFacturX";
+import dynamic from "next/dynamic";
+
+// Chargés à l'ouverture de la sidebar uniquement : sort jspdf/pdf-lib (~1 Mo)
+// du chunk de la page liste.
+const UniversalPreviewPDF = dynamic(
+  () => import("@/src/components/pdf/UniversalPreviewPDF"),
+  { ssr: false },
+);
+const UniversalPDFDownloaderWithFacturX = dynamic(
+  () => import("@/src/components/pdf/UniversalPDFDownloaderWithFacturX"),
+  { ssr: false },
+);
 import { LinkedDocumentRow } from "@/src/components/documents/linked-document-row";
 
 export default function PurchaseOrderSidebar({

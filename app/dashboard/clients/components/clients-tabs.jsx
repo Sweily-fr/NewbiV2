@@ -20,14 +20,21 @@ import { Loader2, Search, CircleXIcon } from "lucide-react";
 import { Input } from "@/src/components/ui/input";
 import { cn } from "@/src/lib/utils";
 
-export default function ClientsTabs({ activeTab, onTabChange, createListDialogOpen, onCreateListDialogChange }) {
+export default function ClientsTabs({
+  activeTab,
+  onTabChange,
+  createListDialogOpen,
+  onCreateListDialogChange,
+}) {
   const { workspaceId } = useWorkspace();
   const {
     lists,
     loading: listsLoading,
     refetch: refetchLists,
   } = useClientLists(workspaceId);
-  const { clients, loading: clientsLoading } = useClients(1, 1000);
+  // Seul le total sert (badge d'onglet) : limit 1 au lieu de rapatrier
+  // 1000 clients complets en plus de la requête paginée de la table.
+  const { totalItems: clientsTotal } = useClients(1, 1);
   const [selectedList, setSelectedList] = useState(null);
   const [globalFilter, setGlobalFilter] = useState("");
   const [selectedTypes, setSelectedTypes] = useState([]);
@@ -36,11 +43,11 @@ export default function ClientsTabs({ activeTab, onTabChange, createListDialogOp
   // Compter les clients par type
   const clientCounts = useMemo(() => {
     const counts = {
-      all: (clients || []).length,
+      all: clientsTotal || 0,
       lists: (lists || []).length,
     };
     return counts;
-  }, [clients, lists]);
+  }, [clientsTotal, lists]);
 
   if (!workspaceId) {
     return (
@@ -77,11 +84,17 @@ export default function ClientsTabs({ activeTab, onTabChange, createListDialogOp
             ref={inputRef}
             className={cn(
               "w-full sm:w-[300px] ps-9",
-              Boolean(globalFilter) && "pe-9"
+              Boolean(globalFilter) && "pe-9",
             )}
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
-            placeholder={activeTab === "lists" ? (selectedList ? "Rechercher un contact..." : "Rechercher une liste...") : "Recherchez par nom, email ou SIRET..."}
+            placeholder={
+              activeTab === "lists"
+                ? selectedList
+                  ? "Rechercher un contact..."
+                  : "Rechercher une liste..."
+                : "Recherchez par nom, email ou SIRET..."
+            }
             type="text"
             aria-label="Filter by name or email"
           />

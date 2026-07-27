@@ -8,13 +8,36 @@ let _listeners = new Set();
 let _interval = null;
 let _lastVerified = true;
 
+function _stopPolling() {
+  if (_interval) {
+    clearInterval(_interval);
+    _interval = null;
+  }
+}
+
 async function _pollSession() {
+  // Onglet en arrière-plan : ne pas interroger la session, mais garder un
+  // tick pour revérifier quand l'onglet redeviendra visible.
+  if (typeof document !== "undefined" && document.hidden) {
+    if (!_interval && _listeners.size > 0) {
+      _interval = setInterval(_pollSession, 30000);
+    }
+    return;
+  }
   try {
     const { data: session } = await authClient.getSession();
     const verified = session?.user?.emailVerified ?? true;
     if (verified !== _lastVerified) {
       _lastVerified = verified;
       _listeners.forEach((fn) => fn(verified));
+    }
+    if (verified) {
+      // Email vérifié : l'état ne peut plus régresser, inutile de continuer
+      // à interroger la session toutes les 30 s.
+      _stopPolling();
+    } else if (!_interval && _listeners.size > 0) {
+      // Email non vérifié : polling jusqu'à vérification
+      _interval = setInterval(_pollSession, 30000);
     }
   } catch {
     // Silencieux en cas d'erreur réseau
@@ -23,18 +46,12 @@ async function _pollSession() {
 
 function _subscribe(listener) {
   _listeners.add(listener);
-  // Premier appel immédiat
+  // Premier appel immédiat ; le polling ne démarre que si l'email n'est pas
+  // vérifié (cas minoritaire), au lieu de tourner en permanence pour tous.
   _pollSession();
-  // Démarrer le polling s'il n'est pas déjà actif
-  if (!_interval) {
-    _interval = setInterval(_pollSession, 30000);
-  }
   return () => {
     _listeners.delete(listener);
-    if (_listeners.size === 0 && _interval) {
-      clearInterval(_interval);
-      _interval = null;
-    }
+    if (_listeners.size === 0) _stopPolling();
   };
 }
 

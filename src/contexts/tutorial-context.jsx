@@ -6,6 +6,7 @@ import React, {
   useState,
   useCallback,
   useEffect,
+  useMemo,
 } from "react";
 import { useSession } from "@/src/lib/auth-client";
 
@@ -104,18 +105,33 @@ export function TutorialProvider({ children }) {
     }, 300);
   }, []);
 
-  const value = {
-    isRunning,
-    stepIndex,
-    setStepIndex,
-    hasCompletedTutorial,
-    isLoading,
-    runKey,
-    startTutorial,
-    stopTutorial,
-    completeTutorial,
-    resetTutorial,
-  };
+  // Provider monté au-dessus de tout le dashboard : la value doit rester
+  // stable entre deux changements d'état réels.
+  const value = useMemo(
+    () => ({
+      isRunning,
+      stepIndex,
+      setStepIndex,
+      hasCompletedTutorial,
+      isLoading,
+      runKey,
+      startTutorial,
+      stopTutorial,
+      completeTutorial,
+      resetTutorial,
+    }),
+    [
+      isRunning,
+      stepIndex,
+      hasCompletedTutorial,
+      isLoading,
+      runKey,
+      startTutorial,
+      stopTutorial,
+      completeTutorial,
+      resetTutorial,
+    ],
+  );
 
   return (
     <TutorialContext.Provider value={value}>

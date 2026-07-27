@@ -19,10 +19,13 @@ const CACHE_KEY = "dashboard_last_fetch";
  * @param {boolean} options.skipTransactions - Si true, ne charge pas les transactions brutes.
  *   Le dashboard utilise ce mode car les graphiques font leurs propres queries backend.
  *   Les pages analytics et transactions gardent skipTransactions=false (défaut).
+ * @param {boolean} options.skipInvoices - Si true, ne charge pas la liste des factures.
+ *   La page Transactions n'affiche aucune facture : inutile de rapatrier la liste.
  * @param {string} options.accountId - Filtre optionnel par compte bancaire (pour le summary backend).
  */
 export function useDashboardData({
   skipTransactions = false,
+  skipInvoices = false,
   accountId = null,
 } = {}) {
   const { workspaceId } = useRequiredWorkspace();
@@ -46,12 +49,12 @@ export function useDashboardData({
     }
   }, [workspaceId]);
 
-  // Factures (toujours chargées)
+  // Factures (sauf si skipInvoices)
   const {
     invoices,
     loading: invoicesLoading,
     refetch: refetchInvoices,
-  } = useInvoices();
+  } = useInvoices({ skip: skipInvoices });
 
   // Comptes bancaires (toujours chargés - pour le sélecteur de compte)
   const {
@@ -173,7 +176,10 @@ export function useDashboardData({
   ]);
 
   const refreshData = useCallback(async () => {
-    const promises = [refetchInvoices?.(), refetchBankAccounts?.()];
+    const promises = [refetchBankAccounts?.()];
+    // Un refetch Apollo s'exécute même sur une query "skip" : ne pas relancer
+    // la liste des factures quand elle n'est pas chargée sur cette page.
+    if (!skipInvoices) promises.push(refetchInvoices?.());
     if (skipTransactions) {
       promises.push(refetchSummary?.());
     } else {
@@ -187,6 +193,7 @@ export function useDashboardData({
     refetchSummary,
     refetchBankTransactions,
     skipTransactions,
+    skipInvoices,
     updateCacheTimestamp,
   ]);
 
