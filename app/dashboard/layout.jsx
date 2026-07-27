@@ -20,6 +20,12 @@ import DashboardClientLayout from "./dashboard-client-layout";
  *   - "none"     : aucun abonnement → redirection signup
  */
 async function getOrgSubscriptionState(orgId) {
+  // Les deux lookups sont indépendants : on les lance en parallèle pour ne
+  // payer qu'un aller-retour Mongo au lieu de deux séquentiels.
+  const subscriptionPromise = mongoDb.collection("subscription").findOne({
+    $or: [{ referenceId: orgId }, { organizationId: orgId }],
+  });
+
   // App-managed trial check (feature-flagged). When ENABLE_APP_TRIAL is OFF
   // (default), this block is skipped and the legacy Stripe-based logic below
   // runs unchanged.
@@ -35,6 +41,8 @@ async function getOrgSubscriptionState(orgId) {
             )
         : null;
       if (isTrialAppActive(orgDoc)) {
+        // Éviter une rejection non gérée si la requête abonnement échoue
+        subscriptionPromise.catch(() => {});
         return "full";
       }
     } catch (err) {
@@ -46,9 +54,7 @@ async function getOrgSubscriptionState(orgId) {
     }
   }
 
-  const subscription = await mongoDb.collection("subscription").findOne({
-    $or: [{ referenceId: orgId }, { organizationId: orgId }],
-  });
+  const subscription = await subscriptionPromise;
 
   if (!subscription) return "none";
 
@@ -141,7 +147,9 @@ async function checkSubscription(userId, activeOrgId) {
       return {
         access: activeState === "readonly" ? "readonly" : "none",
         reason:
-          activeState === "readonly" ? "subscription_expired" : "no_subscription",
+          activeState === "readonly"
+            ? "subscription_expired"
+            : "no_subscription",
         organizationId,
       };
     }

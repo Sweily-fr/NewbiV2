@@ -26,6 +26,8 @@ export const useReconciliationSuggestions = () => {
       variables: { workspaceId },
       skip: !workspaceId || workspaceLoading,
       pollInterval: 60000, // Rafraîchir toutes les 60 secondes (au lieu de 30)
+      // Suspendre le polling quand l'onglet est en arrière-plan
+      skipPollAttempt: () => typeof document !== "undefined" && document.hidden,
       errorPolicy: "all",
     },
   );

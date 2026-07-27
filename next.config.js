@@ -37,6 +37,31 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
 
+  experimental: {
+    // Transforme les imports "barrel" en imports directs pour les libs
+    // ci-dessous (lucide-react, date-fns et recharts sont déjà couverts par
+    // la liste par défaut de Next).
+    optimizePackageImports: [
+      "radix-ui",
+      "react-aria-components",
+      "@tanstack/react-table",
+      "framer-motion",
+      "@dnd-kit/core",
+      "@dnd-kit/sortable",
+      "@dnd-kit/modifiers",
+      "@dnd-kit/utilities",
+      "@ark-ui/react",
+      "@internationalized/date",
+    ],
+    // Conserve 30 s en cache client (Router Cache) le payload RSC des routes
+    // dynamiques : un retour arrière ou une re-navigation rapide vers une
+    // page déjà visitée ne refait plus l'aller-retour serveur.
+    staleTimes: {
+      dynamic: 30,
+      static: 180,
+    },
+  },
+
   async headers() {
     return [
       {

@@ -18,7 +18,13 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { useDashboardLayoutContext } from "@/src/contexts/dashboard-layout-context";
 import { isCompanyInfoComplete } from "@/src/hooks/useCompanyInfoGuard";
-import { SettingsModal } from "@/src/components/settings-modal";
+import dynamic from "next/dynamic";
+
+// Chunk chargé à la première ouverture seulement
+const SettingsModal = dynamic(
+  () => import("@/src/components/settings-modal").then((m) => m.SettingsModal),
+  { ssr: false },
+);
 import { cn } from "@/src/lib/utils";
 
 /**
@@ -258,23 +264,25 @@ export function CompanyInfoGuard({ children }) {
         </Dialog>
 
         {/* Modal de paramètres */}
-        <SettingsModal
-          open={isSettingsModalOpen}
-          onOpenChange={(open) => {
-            setIsSettingsModalOpen(open);
-            // Quand le modal se ferme, revérifier les informations
-            if (!open) {
-              // Petit délai pour laisser le temps à l'organisation de se mettre à jour
-              setTimeout(() => {
-                const isComplete = isCompanyInfoComplete(organization);
-                if (!isComplete) {
-                  setShowDialog(true);
-                }
-              }, 500);
-            }
-          }}
-          initialTab={settingsInitialTab}
-        />
+        {isSettingsModalOpen && (
+          <SettingsModal
+            open={isSettingsModalOpen}
+            onOpenChange={(open) => {
+              setIsSettingsModalOpen(open);
+              // Quand le modal se ferme, revérifier les informations
+              if (!open) {
+                // Petit délai pour laisser le temps à l'organisation de se mettre à jour
+                setTimeout(() => {
+                  const isComplete = isCompanyInfoComplete(organization);
+                  if (!isComplete) {
+                    setShowDialog(true);
+                  }
+                }, 500);
+              }
+            }}
+            initialTab={settingsInitialTab}
+          />
+        )}
 
         {/* Afficher un loader pendant que le dialog est ouvert */}
         <div className="flex items-center justify-center min-h-screen">

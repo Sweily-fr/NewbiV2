@@ -473,9 +473,15 @@ export function AppSidebar({
   // Utiliser offcanvas pour les pages d'outils (sauf signature), icon pour les autres
   const collapsibleMode = isToolPage ? "offcanvas" : "icon";
 
-  // Récupérer le nombre de notifications
+  // Nombre d'invitations non lues, rafraîchi par polling. Séparé du total
+  // affiché : dépendre de activityUnreadCount ici recréait l'intervalle et
+  // relançait 2 requêtes réseau à chaque notification d'activité.
+  const [invitationsUnread, setInvitationsUnread] = React.useState(0);
+
   React.useEffect(() => {
-    const fetchNotifications = async () => {
+    const fetchInvitations = async () => {
+      // Onglet en arrière-plan : inutile de rafraîchir un badge invisible
+      if (typeof document !== "undefined" && document.hidden) return;
       try {
         // Récupérer les IDs déjà lus depuis le localStorage
         const readNotifications =
@@ -501,12 +507,7 @@ export function AppSidebar({
             ) || []
           : [];
 
-        // Total des notifications (invitations non lues + activité non lue)
-        const total =
-          pendingReceived.length +
-          pendingSent.length +
-          (activityUnreadCount || 0);
-        setNotificationCount(total);
+        setInvitationsUnread(pendingReceived.length + pendingSent.length);
       } catch (error) {
         console.error(
           "Erreur lors de la récupération des notifications:",
@@ -516,13 +517,13 @@ export function AppSidebar({
     };
 
     if (session?.user) {
-      fetchNotifications();
+      fetchInvitations();
 
       // Rafraîchir toutes les 30 secondes
-      const interval = setInterval(fetchNotifications, 30000);
+      const interval = setInterval(fetchInvitations, 30000);
 
       // Écouter les marquages "lu" depuis le panneau de notifications
-      const handleNotificationsRead = () => fetchNotifications();
+      const handleNotificationsRead = () => fetchInvitations();
       window.addEventListener("notificationsRead", handleNotificationsRead);
 
       return () => {
@@ -534,7 +535,12 @@ export function AppSidebar({
       };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.user?.id, activityUnreadCount]); // Dépendre de l'ID utilisateur et des notifications d'activité
+  }, [session?.user?.id]);
+
+  // Total affiché : invitations non lues + activité non lue
+  React.useEffect(() => {
+    setNotificationCount(invitationsUnread + (activityUnreadCount || 0));
+  }, [invitationsUnread, activityUnreadCount]);
 
   // Effet pour détecter le thème depuis localStorage au chargement du composant
   React.useEffect(() => {
@@ -553,11 +559,23 @@ export function AppSidebar({
       // Ajouter un écouteur pour les changements de localStorage
       window.addEventListener("storage", handleStorageChange);
 
-      // Écouter également les changements de classe sur l'élément html pour détecter les changements de thème
+      // Écouter également les changements de classe sur l'élément html pour
+      // détecter les changements de thème. L'attribut class de <html> mute
+      // aussi pour d'autres raisons (scroll-lock des modales Radix...) : ne
+      // réagir que si le thème a réellement changé.
+      let lastObservedTheme = document.documentElement.classList.contains(
+        "dark",
+      )
+        ? "dark"
+        : "light";
       const observer = new MutationObserver(() => {
-        const isDark = document.documentElement.classList.contains("dark");
-        setTheme(isDark ? "dark" : "light");
-        localStorage.setItem("vite-ui-theme", isDark ? "dark" : "light");
+        const nextTheme = document.documentElement.classList.contains("dark")
+          ? "dark"
+          : "light";
+        if (nextTheme === lastObservedTheme) return;
+        lastObservedTheme = nextTheme;
+        setTheme(nextTheme);
+        localStorage.setItem("vite-ui-theme", nextTheme);
       });
 
       observer.observe(document.documentElement, {

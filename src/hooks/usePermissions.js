@@ -20,14 +20,27 @@ import { useState, useEffect, useRef, useCallback } from "react";
  * // Obtenir le rôle
  * const role = getUserRole();
  */
+// Cache module-level de l'organisation avec membres, partagé entre les ~25
+// sites qui montent usePermissions. Sans lui, chaque montage repartait de
+// null (spinner plein écran des gardes) et relançait getFullOrganization.
+// Les entrées plus vieilles que le TTL sont revalidées en arrière-plan sans
+// repasser par un état de chargement.
+const orgWithMembersCache = new Map(); // orgId -> { org, fetchedAt }
+const ORG_MEMBERS_CACHE_TTL = 60_000;
+
 export function usePermissions() {
   // ✅ FIX: useUser exporte "isPending" (pas isLoading)
   const { session, isPending: isSessionLoading } = useUser();
   // ✅ FIX: useWorkspace exporte "loading" et "organization" (pas isLoading et activeOrganization)
   const { organization: activeOrganization, loading: isOrgLoading } =
     useWorkspace();
-  const [orgWithMembers, setOrgWithMembers] = useState(null);
-  const [isLoadingMembers, setIsLoadingMembers] = useState(true);
+  const cachedEntry = activeOrganization?.id
+    ? orgWithMembersCache.get(activeOrganization.id)
+    : null;
+  const [orgWithMembers, setOrgWithMembers] = useState(
+    cachedEntry?.org || null,
+  );
+  const [isLoadingMembers, setIsLoadingMembers] = useState(!cachedEntry);
   const hasLoadedRef = useRef(false);
   const permissionCacheRef = useRef(new Map()); // Cache des permissions
 
@@ -37,8 +50,11 @@ export function usePermissions() {
   // Réinitialiser le flag quand l'organisation change
   useEffect(() => {
     hasLoadedRef.current = false;
-    setOrgWithMembers(null);
-    setIsLoadingMembers(true); // ✅ FIX: Réinitialiser l'état de chargement
+    const cached = activeOrganization?.id
+      ? orgWithMembersCache.get(activeOrganization.id)
+      : null;
+    setOrgWithMembers(cached?.org || null);
+    setIsLoadingMembers(!cached);
   }, [activeOrganization?.id]);
 
   // Charger l'organisation complète avec les membres
@@ -47,25 +63,48 @@ export function usePermissions() {
 
     hasLoadedRef.current = true;
 
+    const cached = orgWithMembersCache.get(activeOrganization.id);
+    if (cached) {
+      setOrgWithMembers(cached.org);
+      setIsLoadingMembers(false);
+      // Entrée encore fraîche : pas d'appel réseau
+      if (Date.now() - cached.fetchedAt < ORG_MEMBERS_CACHE_TTL) return;
+    }
+
     // Si l'organisation a déjà les membres, l'utiliser directement
-    if (activeOrganization.members) {
+    if (!cached && activeOrganization.members) {
+      orgWithMembersCache.set(activeOrganization.id, {
+        org: activeOrganization,
+        fetchedAt: Date.now(),
+      });
       setOrgWithMembers(activeOrganization);
       setIsLoadingMembers(false); // ✅ FIX: Marquer comme chargé
       return;
     }
 
-    // Sinon, charger l'organisation complète
-    setIsLoadingMembers(true);
+    // Sinon, charger l'organisation complète (en arrière-plan si un cache
+    // périmé est déjà affiché)
+    if (!cached) setIsLoadingMembers(true);
     authClient.organization
       .getFullOrganization({
         organizationId: activeOrganization.id,
       })
       .then(({ data }) => {
-        setOrgWithMembers(data);
+        if (data) {
+          orgWithMembersCache.set(activeOrganization.id, {
+            org: data,
+            fetchedAt: Date.now(),
+          });
+          setOrgWithMembers(data);
+        } else if (!cached) {
+          setOrgWithMembers({ ...activeOrganization, members: [] });
+        }
       })
       .catch((error) => {
         console.error("Error loading organization members:", error);
-        setOrgWithMembers({ ...activeOrganization, members: [] });
+        if (!cached) {
+          setOrgWithMembers({ ...activeOrganization, members: [] });
+        }
       })
       .finally(() => {
         setIsLoadingMembers(false); // ✅ FIX: Toujours marquer comme terminé

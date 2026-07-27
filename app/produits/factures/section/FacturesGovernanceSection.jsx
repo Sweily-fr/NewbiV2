@@ -1,8 +1,23 @@
 "use client";
+
+import dynamic from "next/dynamic";
 import React from "react";
-import { Eye, CircleDollarSign, Mail, Printer, Download, Trash2 } from "lucide-react";
-import InvoiceEditorAnimation from "./InvoiceEditorAnimation";
-import InvoiceSpeedAnimation from "./InvoiceSpeedAnimation";
+import {
+  Eye,
+  CircleDollarSign,
+  Mail,
+  Printer,
+  Download,
+  Trash2,
+} from "lucide-react";
+// Animations gsap chargées dans leur propre chunk (hors chemin critique SEO)
+const InvoiceEditorAnimation = dynamic(
+  () => import("./InvoiceEditorAnimation"),
+  { ssr: false },
+);
+const InvoiceSpeedAnimation = dynamic(() => import("./InvoiceSpeedAnimation"), {
+  ssr: false,
+});
 
 export default function FacturesGovernanceSection() {
   return (
@@ -57,9 +72,9 @@ export default function FacturesGovernanceSection() {
                 Zéro erreur sur vos documents
               </h2>
               <p className="text-neutral-600 mt-2 max-w-md text-balance">
-                Mentions légales, numérotation, calcul de TVA : tout est
-                vérifié automatiquement pour que vos factures et devis soient
-                toujours irréprochables.
+                Mentions légales, numérotation, calcul de TVA : tout est vérifié
+                automatiquement pour que vos factures et devis soient toujours
+                irréprochables.
               </p>
             </div>
             <div className="relative flex-1 min-h-[280px] sm:min-h-[200px] md:min-h-0 overflow-hidden">
@@ -88,21 +103,83 @@ export default function FacturesGovernanceSection() {
                 <div className="flex-1 overflow-hidden relative flex flex-col gap-1.5 pt-1">
                   {/* Lignes de factures */}
                   {[
-                    { amount: "1 000 €", status: "En attente dans 20 jours", statusColor: "text-orange-500 bg-orange-50 border-orange-200", date: "23/02/2026", action: "Envoyer", actionColor: "text-[#5A50FF]" },
-                    { amount: "795 €", status: "En attente dans 2 jours", statusColor: "text-red-500 bg-red-50 border-red-200", date: "05/02/2026", action: "Enregistrer", actionColor: "text-[#5A50FF]" },
-                    { amount: "1 250 €", status: "Payée", statusColor: "text-green-600 bg-green-50 border-green-200", date: "28/12/2025", action: "Envoyer", actionColor: "text-neutral-400" },
-                    { amount: "580 €", status: "Payée", statusColor: "text-green-600 bg-green-50 border-green-200", date: "14/11/2025", action: "Envoyer", actionColor: "text-neutral-400" },
-                    { amount: "1 185 €", status: "Payée", statusColor: "text-green-600 bg-green-50 border-green-200", date: "03/11/2025", action: "Envoyer", actionColor: "text-neutral-400" },
-                    { amount: "990 €", status: "Payée", statusColor: "text-green-600 bg-green-50 border-green-200", date: "18/10/2025", action: "Envoyer", actionColor: "text-neutral-400" },
+                    {
+                      amount: "1 000 €",
+                      status: "En attente dans 20 jours",
+                      statusColor:
+                        "text-orange-500 bg-orange-50 border-orange-200",
+                      date: "23/02/2026",
+                      action: "Envoyer",
+                      actionColor: "text-[#5A50FF]",
+                    },
+                    {
+                      amount: "795 €",
+                      status: "En attente dans 2 jours",
+                      statusColor: "text-red-500 bg-red-50 border-red-200",
+                      date: "05/02/2026",
+                      action: "Enregistrer",
+                      actionColor: "text-[#5A50FF]",
+                    },
+                    {
+                      amount: "1 250 €",
+                      status: "Payée",
+                      statusColor:
+                        "text-green-600 bg-green-50 border-green-200",
+                      date: "28/12/2025",
+                      action: "Envoyer",
+                      actionColor: "text-neutral-400",
+                    },
+                    {
+                      amount: "580 €",
+                      status: "Payée",
+                      statusColor:
+                        "text-green-600 bg-green-50 border-green-200",
+                      date: "14/11/2025",
+                      action: "Envoyer",
+                      actionColor: "text-neutral-400",
+                    },
+                    {
+                      amount: "1 185 €",
+                      status: "Payée",
+                      statusColor:
+                        "text-green-600 bg-green-50 border-green-200",
+                      date: "03/11/2025",
+                      action: "Envoyer",
+                      actionColor: "text-neutral-400",
+                    },
+                    {
+                      amount: "990 €",
+                      status: "Payée",
+                      statusColor:
+                        "text-green-600 bg-green-50 border-green-200",
+                      date: "18/10/2025",
+                      action: "Envoyer",
+                      actionColor: "text-neutral-400",
+                    },
                   ].map((row, i) => (
-                    <div key={i} className="flex items-center justify-between px-4 py-3 bg-white rounded-xl ring-1 ring-black/5 text-xs mx-1">
-                      <span className="w-16 font-medium text-neutral-800">{row.amount}</span>
-                      <span className={`px-2 py-0.5 rounded-md border text-[10px] font-medium ${row.statusColor}`}>
-                        {row.status === "Payée" && <span className="mr-0.5">●</span>}
+                    <div
+                      key={i}
+                      className="flex items-center justify-between px-4 py-3 bg-white rounded-xl ring-1 ring-black/5 text-xs mx-1"
+                    >
+                      <span className="w-16 font-medium text-neutral-800">
+                        {row.amount}
+                      </span>
+                      <span
+                        className={`px-2 py-0.5 rounded-md border text-[10px] font-medium ${row.statusColor}`}
+                      >
+                        {row.status === "Payée" && (
+                          <span className="mr-0.5">●</span>
+                        )}
                         {row.status}
                       </span>
-                      <span className="text-neutral-400 w-20 text-right">{row.date}</span>
-                      <span className={`w-20 text-right font-medium ${row.actionColor}`}>{row.action}</span>
+                      <span className="text-neutral-400 w-20 text-right">
+                        {row.date}
+                      </span>
+                      <span
+                        className={`w-20 text-right font-medium ${row.actionColor}`}
+                      >
+                        {row.action}
+                      </span>
                       <span className="text-neutral-300 ml-2">⋮</span>
                     </div>
                   ))}
@@ -111,13 +188,32 @@ export default function FacturesGovernanceSection() {
                   <div className="absolute top-[72px] right-6 bg-white rounded-xl shadow-lg border border-neutral-200 py-2 px-1 w-[200px] z-10">
                     {[
                       { icon: <Eye className="w-4 h-4" />, label: "Aperçu" },
-                      { icon: <CircleDollarSign className="w-4 h-4" />, label: "Créer un avoir", bold: true },
-                      { icon: <Mail className="w-4 h-4" />, label: "Envoyer par e-mail" },
-                      { icon: <Printer className="w-4 h-4" />, label: "Imprimer" },
-                      { icon: <Download className="w-4 h-4" />, label: "Télécharger" },
-                      { icon: <Trash2 className="w-4 h-4" />, label: "Supprimer" },
+                      {
+                        icon: <CircleDollarSign className="w-4 h-4" />,
+                        label: "Créer un avoir",
+                        bold: true,
+                      },
+                      {
+                        icon: <Mail className="w-4 h-4" />,
+                        label: "Envoyer par e-mail",
+                      },
+                      {
+                        icon: <Printer className="w-4 h-4" />,
+                        label: "Imprimer",
+                      },
+                      {
+                        icon: <Download className="w-4 h-4" />,
+                        label: "Télécharger",
+                      },
+                      {
+                        icon: <Trash2 className="w-4 h-4" />,
+                        label: "Supprimer",
+                      },
                     ].map((item, i) => (
-                      <div key={i} className={`flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-neutral-50 cursor-pointer ${item.bold ? "font-semibold text-neutral-900" : "text-neutral-600"}`}>
+                      <div
+                        key={i}
+                        className={`flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-neutral-50 cursor-pointer ${item.bold ? "font-semibold text-neutral-900" : "text-neutral-600"}`}
+                      >
                         {item.icon}
                         <span className="text-xs">{item.label}</span>
                       </div>

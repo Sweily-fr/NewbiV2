@@ -94,7 +94,14 @@ import {
 } from "@/src/components/ui/dialog";
 import Link from "next/link";
 import { InviteMemberModal } from "./invite-member-modal";
-import { SettingsModal } from "./settings-modal";
+import dynamic from "next/dynamic";
+import { fetchOrganizationsWithOrder } from "@/src/lib/organizations-with-order";
+
+// Chunk chargé à la première ouverture seulement (~11 000 lignes de sections)
+const SettingsModal = dynamic(
+  () => import("./settings-modal").then((m) => m.SettingsModal),
+  { ssr: false },
+);
 import {
   PeopleIcon as Users,
   SettingIcon as Settings,
@@ -154,39 +161,43 @@ export function TeamSwitcher() {
     refetch: refetchActiveOrg,
   } = authClient.useActiveOrganization();
 
-  // Fonction pour charger les organisations avec leur ordre
-  const loadOrganizations = React.useCallback(async () => {
-    try {
-      setOrganizationsLoading(true);
-      const response = await fetch("/api/organization/list-with-order");
+  // Fonction pour charger les organisations avec leur ordre (fetch partagé
+  // et mis en cache : le header monte le même appel).
+  const loadOrganizations = React.useCallback(
+    async ({ force = false } = {}) => {
+      try {
+        setOrganizationsLoading(true);
+        const result = await fetchOrganizationsWithOrder({ force });
 
-      // Si non authentifié (401), ne pas throw d'erreur - laisser le composant gérer
-      if (response.status === 401) {
-        console.warn("Session expirée ou non authentifié");
-        setSortedOrganizations([]);
-        return;
+        // Si non authentifié (401), ne pas throw d'erreur - laisser le composant gérer
+        if (result.status === 401) {
+          console.warn("Session expirée ou non authentifié");
+          setSortedOrganizations([]);
+          return;
+        }
+
+        if (!result.ok) {
+          console.error("Erreur API:", result.status);
+          setSortedOrganizations([]);
+          return;
+        }
+
+        setSortedOrganizations(result.organizations);
+      } catch (error) {
+        console.error("Erreur chargement organisations:", error);
+        // Ne pas vider les organisations en cas d'erreur réseau temporaire
+        // pour éviter le clignotement
+      } finally {
+        setOrganizationsLoading(false);
       }
-
-      if (!response.ok) {
-        console.error("Erreur API:", response.status, response.statusText);
-        setSortedOrganizations([]);
-        return;
-      }
-
-      const data = await response.json();
-      setSortedOrganizations(data.organizations || []);
-    } catch (error) {
-      console.error("Erreur chargement organisations:", error);
-      // Ne pas vider les organisations en cas d'erreur réseau temporaire
-      // pour éviter le clignotement
-    } finally {
-      setOrganizationsLoading(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
   // Charger les organisations au montage et après certaines actions
   React.useEffect(() => {
-    loadOrganizations();
+    // forceUpdate > 0 = action utilisateur (réordonnancement...) : bypass cache
+    loadOrganizations({ force: forceUpdate > 0 });
   }, [loadOrganizations, forceUpdate]);
 
   // Sensors pour le drag & drop
@@ -467,21 +478,23 @@ export function TeamSwitcher() {
         onOpenChange={setInviteDialogOpen}
         onSuccess={() => {
           // Rafraîchir les organisations
-          loadOrganizations();
+          loadOrganizations({ force: true });
         }}
       />
-      <SettingsModal
-        open={settingsModalOpen}
-        onOpenChange={setSettingsModalOpen}
-        initialTab={settingsInitialTab}
-      />
+      {settingsModalOpen && (
+        <SettingsModal
+          open={settingsModalOpen}
+          onOpenChange={setSettingsModalOpen}
+          initialTab={settingsInitialTab}
+        />
+      )}
       <RenameOrganizationModal
         open={renameModalOpen}
         onOpenChange={setRenameModalOpen}
         organization={selectedOrganization}
         onSuccess={() => {
           // Rafraîchir les organisations
-          loadOrganizations();
+          loadOrganizations({ force: true });
           if (refetchActiveOrg) {
             refetchActiveOrg();
           }

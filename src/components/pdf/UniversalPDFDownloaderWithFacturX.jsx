@@ -6,10 +6,8 @@ import { LoaderCircle, FileCheck } from "lucide-react";
 import { DownloadIcon } from "@/src/components/icons";
 import { cn } from "@/src/lib/utils";
 import { toast } from "@/src/components/ui/sonner";
-import { domToJpeg } from "modern-screenshot";
-import jsPDF from "jspdf";
 import UniversalPreviewPDF from "./UniversalPreviewPDF";
-import { validateFacturXData } from "@/src/utils/facturx-generator";
+import { validateFacturXData } from "@/src/utils/facturx-validation";
 
 /**
  * Analyseur de structure PDF pour pagination intelligente
@@ -556,6 +554,11 @@ const UniversalPDFDownloaderWithFacturX = ({
     setIsGenerating(true);
 
     try {
+      // jspdf et modern-screenshot (~600 KB) ne sont chargés qu'au clic
+      const [{ default: jsPDF }, { domToJpeg }] = await Promise.all([
+        import("jspdf"),
+        import("modern-screenshot"),
+      ]);
       console.log("\n" + "=".repeat(70));
       console.log("🚀 DÉBUT GÉNÉRATION PDF AVEC PAGINATION PRÉCISE");
       console.log("=".repeat(70));

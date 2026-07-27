@@ -21,7 +21,6 @@ import {
   Repeat2,
 } from "lucide-react";
 import { ExportIcon as Download } from "@/src/components/icons";
-import * as XLSX from "xlsx";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
@@ -71,7 +70,7 @@ function GestionDepensesContent() {
     bankAccounts,
     isLoading: bankLoading,
     refreshData,
-  } = useDashboardData({ skipTransactions: true });
+  } = useDashboardData({ skipTransactions: true, skipInvoices: true });
 
   // Compte sélectionné (le sélecteur stocke account.id)
   const selectedAccount = useMemo(() => {
@@ -134,6 +133,8 @@ function GestionDepensesContent() {
 
   // Export Excel
   const exportToExcel = async () => {
+    // xlsx (~800 KB) chargé au clic uniquement
+    const XLSX = await import("xlsx");
     let expenses;
     try {
       expenses = await loadAllExpenses();

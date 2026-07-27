@@ -25,7 +25,13 @@ import { useRouter } from "next/navigation";
 import { useDashboardLayoutContext } from "@/src/contexts/dashboard-layout-context";
 import { isCompanyInfoComplete } from "@/src/hooks/useCompanyInfoGuard";
 import { useSettingsModal } from "@/src/hooks/useSettingsModal";
-import { SettingsModal } from "@/src/components/settings-modal";
+import dynamic from "next/dynamic";
+
+// Chunk chargé à la première ouverture seulement
+const SettingsModal = dynamic(
+  () => import("@/src/components/settings-modal").then((m) => m.SettingsModal),
+  { ssr: false },
+);
 import { GridBackground } from "@/src/components/ui/grid-background";
 import { SectionCardsSkeleton } from "@/src/components/section-cards-skeleton";
 import {
@@ -335,7 +341,7 @@ export function SectionCards({ className, activeFilter = "outline" }) {
     <div
       className={cn(
         "grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 w-full",
-        className
+        className,
       )}
     >
       {filteredCards.map((card, index) => {
@@ -366,7 +372,7 @@ export function SectionCards({ className, activeFilter = "outline" }) {
               !hasCompanyInfoAccess &&
                 requiresCompanyInfo &&
                 "opacity-75 grayscale-[0.3]",
-              !hasSubscriptionAccess && "opacity-75 grayscale-[0.3]"
+              !hasSubscriptionAccess && "opacity-75 grayscale-[0.3]",
             )}
             onClick={
               !hasSubscriptionAccess
@@ -470,11 +476,13 @@ export function SectionCards({ className, activeFilter = "outline" }) {
       })}
 
       {/* Modal de paramètres */}
-      <SettingsModal
-        open={isOpen}
-        onOpenChange={closeSettings}
-        initialTab={initialTab}
-      />
+      {isOpen && (
+        <SettingsModal
+          open={isOpen}
+          onOpenChange={closeSettings}
+          initialTab={initialTab}
+        />
+      )}
 
       {/* Modal d'information sur l'outil */}
       <AlertDialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>

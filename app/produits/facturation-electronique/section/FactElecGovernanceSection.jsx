@@ -1,7 +1,15 @@
 "use client";
+
+import dynamic from "next/dynamic";
 import React from "react";
-import InvoiceEditorAnimation from "@/app/produits/factures/section/InvoiceEditorAnimation";
-import OcrScanAnimation from "./OcrScanAnimation";
+// Animations gsap chargées dans leur propre chunk (hors chemin critique SEO)
+const InvoiceEditorAnimation = dynamic(
+  () => import("@/app/produits/factures/section/InvoiceEditorAnimation"),
+  { ssr: false },
+);
+const OcrScanAnimation = dynamic(() => import("./OcrScanAnimation"), {
+  ssr: false,
+});
 
 export default function FactElecGovernanceSection() {
   return (
@@ -31,9 +39,9 @@ export default function FactElecGovernanceSection() {
                 Créez et envoyez vos factures simplement
               </h2>
               <p className="text-neutral-600 mt-2 max-w-md text-balance">
-                Newbi s&apos;occupe de la conformité pour vous. Créez votre facture,
-                envoyez-la et suivez son statut jusqu&apos;au paiement — sans
-                vous soucier des formats techniques.
+                Newbi s&apos;occupe de la conformité pour vous. Créez votre
+                facture, envoyez-la et suivez son statut jusqu&apos;au paiement
+                — sans vous soucier des formats techniques.
               </p>
             </div>
             <div className="relative flex-1 min-h-[320px] overflow-hidden perspective-distant">
@@ -81,8 +89,8 @@ export default function FactElecGovernanceSection() {
                 Facilitez votre comptabilité
               </h2>
               <p className="text-neutral-600 mt-2 max-w-md text-balance">
-                Toutes vos données de facturation sont structurées et prêtes
-                à être exportées vers votre comptable. Formats FEC, CSV et
+                Toutes vos données de facturation sont structurées et prêtes à
+                être exportées vers votre comptable. Formats FEC, CSV et
                 intégration directe avec votre expert-comptable.
               </p>
             </div>
@@ -92,10 +100,18 @@ export default function FactElecGovernanceSection() {
                   {/* Header */}
                   <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
                     <div className="flex items-center gap-2">
-                      <img src="/newbi-icon.svg" alt="Newbi" className="w-5 h-5" />
-                      <span className="text-[11px] font-semibold text-neutral-800">Exports comptables</span>
+                      <img
+                        src="/newbi-icon.svg"
+                        alt="Newbi"
+                        className="w-5 h-5"
+                      />
+                      <span className="text-[11px] font-semibold text-neutral-800">
+                        Exports comptables
+                      </span>
                     </div>
-                    <span className="text-[9px] text-neutral-400">3 formats disponibles</span>
+                    <span className="text-[9px] text-neutral-400">
+                      3 formats disponibles
+                    </span>
                   </div>
 
                   {/* Export cards */}
@@ -106,10 +122,30 @@ export default function FactElecGovernanceSection() {
                         desc: "Fichier des Écritures Comptables",
                         color: "#5A50FF",
                         icon: (
-                          <svg width="22" height="26" viewBox="0 0 22 26" fill="none">
-                            <path d="M0 3C0 1.34 1.34 0 3 0h10l9 9v14c0 1.66-1.34 3-3 3H3c-1.66 0-3-1.34-3-3V3z" fill="#EEF2FF" />
-                            <path d="M13 0l9 9h-6c-1.66 0-3-1.34-3-3V0z" fill="#C7D2FE" />
-                            <text x="5" y="20" fontSize="7" fontWeight="700" fill="#5A50FF" fontFamily="system-ui">FEC</text>
+                          <svg
+                            width="22"
+                            height="26"
+                            viewBox="0 0 22 26"
+                            fill="none"
+                          >
+                            <path
+                              d="M0 3C0 1.34 1.34 0 3 0h10l9 9v14c0 1.66-1.34 3-3 3H3c-1.66 0-3-1.34-3-3V3z"
+                              fill="#EEF2FF"
+                            />
+                            <path
+                              d="M13 0l9 9h-6c-1.66 0-3-1.34-3-3V0z"
+                              fill="#C7D2FE"
+                            />
+                            <text
+                              x="5"
+                              y="20"
+                              fontSize="7"
+                              fontWeight="700"
+                              fill="#5A50FF"
+                              fontFamily="system-ui"
+                            >
+                              FEC
+                            </text>
                           </svg>
                         ),
                       },
@@ -118,10 +154,30 @@ export default function FactElecGovernanceSection() {
                         desc: "Tableur compatible Excel",
                         color: "#22C55E",
                         icon: (
-                          <svg width="22" height="26" viewBox="0 0 22 26" fill="none">
-                            <path d="M0 3C0 1.34 1.34 0 3 0h10l9 9v14c0 1.66-1.34 3-3 3H3c-1.66 0-3-1.34-3-3V3z" fill="#F0FDF4" />
-                            <path d="M13 0l9 9h-6c-1.66 0-3-1.34-3-3V0z" fill="#BBF7D0" />
-                            <text x="4" y="20" fontSize="7" fontWeight="700" fill="#22C55E" fontFamily="system-ui">CSV</text>
+                          <svg
+                            width="22"
+                            height="26"
+                            viewBox="0 0 22 26"
+                            fill="none"
+                          >
+                            <path
+                              d="M0 3C0 1.34 1.34 0 3 0h10l9 9v14c0 1.66-1.34 3-3 3H3c-1.66 0-3-1.34-3-3V3z"
+                              fill="#F0FDF4"
+                            />
+                            <path
+                              d="M13 0l9 9h-6c-1.66 0-3-1.34-3-3V0z"
+                              fill="#BBF7D0"
+                            />
+                            <text
+                              x="4"
+                              y="20"
+                              fontSize="7"
+                              fontWeight="700"
+                              fill="#22C55E"
+                              fontFamily="system-ui"
+                            >
+                              CSV
+                            </text>
                           </svg>
                         ),
                       },
@@ -130,24 +186,60 @@ export default function FactElecGovernanceSection() {
                         desc: "Document récapitulatif",
                         color: "#EF4444",
                         icon: (
-                          <svg width="22" height="26" viewBox="0 0 22 26" fill="none">
-                            <path d="M0 3C0 1.34 1.34 0 3 0h10l9 9v14c0 1.66-1.34 3-3 3H3c-1.66 0-3-1.34-3-3V3z" fill="#FEF2F2" />
-                            <path d="M13 0l9 9h-6c-1.66 0-3-1.34-3-3V0z" fill="#FECACA" />
-                            <text x="4" y="20" fontSize="7" fontWeight="700" fill="#EF4444" fontFamily="system-ui">PDF</text>
+                          <svg
+                            width="22"
+                            height="26"
+                            viewBox="0 0 22 26"
+                            fill="none"
+                          >
+                            <path
+                              d="M0 3C0 1.34 1.34 0 3 0h10l9 9v14c0 1.66-1.34 3-3 3H3c-1.66 0-3-1.34-3-3V3z"
+                              fill="#FEF2F2"
+                            />
+                            <path
+                              d="M13 0l9 9h-6c-1.66 0-3-1.34-3-3V0z"
+                              fill="#FECACA"
+                            />
+                            <text
+                              x="4"
+                              y="20"
+                              fontSize="7"
+                              fontWeight="700"
+                              fill="#EF4444"
+                              fontFamily="system-ui"
+                            >
+                              PDF
+                            </text>
                           </svg>
                         ),
                       },
                     ].map((item, i) => (
-                      <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-neutral-50/80 border border-neutral-100">
+                      <div
+                        key={i}
+                        className="flex items-center gap-3 p-3 rounded-xl bg-neutral-50/80 border border-neutral-100"
+                      >
                         <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0">
                           {item.icon}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[11px] font-medium text-neutral-800">{item.format}</p>
-                          <p className="text-[9px] text-neutral-400">{item.desc}</p>
+                          <p className="text-[11px] font-medium text-neutral-800">
+                            {item.format}
+                          </p>
+                          <p className="text-[9px] text-neutral-400">
+                            {item.desc}
+                          </p>
                         </div>
                         <div className="w-5 h-5 rounded-full bg-[#22C55E]/10 flex items-center justify-center shrink-0">
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <svg
+                            width="10"
+                            height="10"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="#22C55E"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
                             <path d="M20 6L9 17l-5-5" />
                           </svg>
                         </div>
@@ -159,9 +251,13 @@ export default function FactElecGovernanceSection() {
                   <div className="flex items-center justify-between pt-2 border-t border-neutral-100">
                     <div className="flex items-center gap-1.5">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#22C55E]" />
-                      <span className="text-[9px] text-neutral-400">Prêt pour votre expert-comptable</span>
+                      <span className="text-[9px] text-neutral-400">
+                        Prêt pour votre expert-comptable
+                      </span>
                     </div>
-                    <span className="text-[9px] font-medium text-[#5A50FF]">Exporter →</span>
+                    <span className="text-[9px] font-medium text-[#5A50FF]">
+                      Exporter →
+                    </span>
                   </div>
                 </div>
               </div>
@@ -184,22 +280,63 @@ export default function FactElecGovernanceSection() {
               {/* Document rows */}
               <div className="flex flex-col gap-2.5">
                 {[
-                  { name: "FA-2026-0042.pdf", date: "15/03/2026", status: "Archivée", report: "Transmis" },
-                  { name: "FA-2026-0041.pdf", date: "12/03/2026", status: "Archivée", report: "Transmis" },
-                  { name: "FA-2026-0040.pdf", date: "08/03/2026", status: "Archivée", report: "Transmis" },
-                  { name: "FA-2026-0039.pdf", date: "01/03/2026", status: "Archivée", report: "Transmis" },
+                  {
+                    name: "FA-2026-0042.pdf",
+                    date: "15/03/2026",
+                    status: "Archivée",
+                    report: "Transmis",
+                  },
+                  {
+                    name: "FA-2026-0041.pdf",
+                    date: "12/03/2026",
+                    status: "Archivée",
+                    report: "Transmis",
+                  },
+                  {
+                    name: "FA-2026-0040.pdf",
+                    date: "08/03/2026",
+                    status: "Archivée",
+                    report: "Transmis",
+                  },
+                  {
+                    name: "FA-2026-0039.pdf",
+                    date: "01/03/2026",
+                    status: "Archivée",
+                    report: "Transmis",
+                  },
                 ].map((doc, i) => (
-                  <div key={i} className="flex items-center gap-3 py-2.5 px-3 rounded-xl border border-neutral-100 bg-white shadow-sm">
-                    <svg width="14" height="17" viewBox="0 0 22 26" fill="none" className="shrink-0">
-                      <path d="M0 3C0 1.34 1.34 0 3 0h10l9 9v14c0 1.66-1.34 3-3 3H3c-1.66 0-3-1.34-3-3V3z" fill="#FEF2F2" />
-                      <path d="M13 0l9 9h-6c-1.66 0-3-1.34-3-3V0z" fill="#FECACA" />
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 py-2.5 px-3 rounded-xl border border-neutral-100 bg-white shadow-sm"
+                  >
+                    <svg
+                      width="14"
+                      height="17"
+                      viewBox="0 0 22 26"
+                      fill="none"
+                      className="shrink-0"
+                    >
+                      <path
+                        d="M0 3C0 1.34 1.34 0 3 0h10l9 9v14c0 1.66-1.34 3-3 3H3c-1.66 0-3-1.34-3-3V3z"
+                        fill="#FEF2F2"
+                      />
+                      <path
+                        d="M13 0l9 9h-6c-1.66 0-3-1.34-3-3V0z"
+                        fill="#FECACA"
+                      />
                     </svg>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-medium text-neutral-700 truncate">{doc.name}</p>
+                      <p className="text-[10px] font-medium text-neutral-700 truncate">
+                        {doc.name}
+                      </p>
                       <p className="text-[8px] text-neutral-400">{doc.date}</p>
                     </div>
-                    <span className="text-[9px] font-medium text-[#22C55E] bg-[#22C55E]/8 px-2.5 py-1 rounded-md shrink-0">{doc.status}</span>
-                    <span className="text-[9px] font-medium text-[#5A50FF] bg-[#5A50FF]/8 px-2.5 py-1 rounded-md shrink-0">{doc.report}</span>
+                    <span className="text-[9px] font-medium text-[#22C55E] bg-[#22C55E]/8 px-2.5 py-1 rounded-md shrink-0">
+                      {doc.status}
+                    </span>
+                    <span className="text-[9px] font-medium text-[#5A50FF] bg-[#5A50FF]/8 px-2.5 py-1 rounded-md shrink-0">
+                      {doc.report}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -208,13 +345,19 @@ export default function FactElecGovernanceSection() {
               <div className="flex items-center gap-4 mt-4 pt-3 border-t border-neutral-100">
                 <div className="flex items-center gap-1.5">
                   <div className="w-2 h-2 rounded-full bg-[#22C55E]" />
-                  <span className="text-[9px] text-neutral-500">Archivage 10 ans</span>
+                  <span className="text-[9px] text-neutral-500">
+                    Archivage 10 ans
+                  </span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-2 h-2 rounded-full bg-[#5A50FF]" />
-                  <span className="text-[9px] text-neutral-500">E-reporting auto</span>
+                  <span className="text-[9px] text-neutral-500">
+                    E-reporting auto
+                  </span>
                 </div>
-                <span className="text-[8px] text-neutral-300 ml-auto">NF Z42-013</span>
+                <span className="text-[8px] text-neutral-300 ml-auto">
+                  NF Z42-013
+                </span>
               </div>
             </div>
           </div>
