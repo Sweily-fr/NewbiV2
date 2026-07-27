@@ -3,10 +3,12 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { cn } from "@/src/lib/utils";
 
+// Mêmes onglets serveur que le desktop (les compteurs viennent de tabCounts,
+// calculés côté serveur sur toute la base)
 const tabs = [
   { id: "all", label: "Toutes" },
-  { id: "last_month", label: "Dernier mois" },
-  { id: "missing_receipt", label: "Sans justificatif" },
+  { id: "lastMonth", label: "Dernier mois" },
+  { id: "missingReceipt", label: "Sans justificatif" },
 ];
 
 export function MobileToolbar({
@@ -21,14 +23,22 @@ export function MobileToolbar({
   tabCounts,
 }) {
   return (
-    <div className={cn("md:hidden flex-shrink-0 transition-shadow", isScrolled && "shadow-xs")}>
+    <div
+      className={cn(
+        "md:hidden flex-shrink-0 transition-shadow",
+        isScrolled && "shadow-xs",
+      )}
+    >
       {/* Search + Filter */}
       <div className="px-4 pb-3">
         <div className="flex items-center gap-2">
           <div className="flex-1 relative">
             <Input
               ref={inputRef}
-              className={cn("peer w-full ps-9", Boolean(globalFilter) && "pe-9")}
+              className={cn(
+                "peer w-full ps-9",
+                Boolean(globalFilter) && "pe-9",
+              )}
               value={globalFilter}
               onChange={(e) => {
                 setGlobalFilter(e.target.value);
@@ -89,17 +99,19 @@ export function MobileToolbar({
                   "whitespace-nowrap text-xs h-8 px-3 transition-all duration-200",
                   activeTab === tab.id
                     ? "bg-gray-100 text-foreground dark:bg-gray-800"
-                    : "bg-gray-50 text-muted-foreground dark:bg-gray-900"
+                    : "bg-gray-50 text-muted-foreground dark:bg-gray-900",
                 )}
               >
                 {tab.label}
                 {count != null && count > 0 && (
-                  <span className={cn(
-                    "ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-medium transition-colors duration-200",
-                    activeTab === tab.id
-                      ? "bg-foreground/10 text-foreground"
-                      : "bg-foreground/5 text-muted-foreground"
-                  )}>
+                  <span
+                    className={cn(
+                      "ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-medium transition-colors duration-200",
+                      activeTab === tab.id
+                        ? "bg-foreground/10 text-foreground"
+                        : "bg-foreground/5 text-muted-foreground",
+                    )}
+                  >
                     {count}
                   </span>
                 )}

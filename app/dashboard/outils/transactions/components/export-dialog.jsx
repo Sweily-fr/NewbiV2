@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -39,7 +39,12 @@ import {
   AvatarImage,
 } from "@/src/components/ui/avatar";
 
-export function ExportDialog({ open, onOpenChange, transactions, members }) {
+export function ExportDialog({
+  open,
+  onOpenChange,
+  fetchTransactions,
+  members,
+}) {
   const [exportType, setExportType] = useState("excel");
   const [expenseTypeFilter, setExpenseTypeFilter] = useState("all");
   const [memberFilter, setMemberFilter] = useState("all");
@@ -48,9 +53,34 @@ export function ExportDialog({ open, onOpenChange, transactions, members }) {
     to: undefined,
   });
 
+  // Historique complet chargé à la demande à l'ouverture du dialog :
+  // l'export ne dépend pas de la page affichée dans le tableau
+  const [transactions, setTransactions] = useState([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
+
+  useEffect(() => {
+    if (!open || !fetchTransactions) return;
+    let cancelled = false;
+    setLoadingTransactions(true);
+    fetchTransactions()
+      .then((rows) => {
+        if (!cancelled) setTransactions(rows || []);
+      })
+      .catch((error) => {
+        console.error("Erreur lors du chargement des transactions:", error);
+        if (!cancelled) setTransactions([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingTransactions(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, fetchTransactions]);
+
   // Filtrer les transactions selon les critères
   const getFilteredTransactions = () => {
-    let filtered = [...transactions];
+    let filtered = [...(transactions || [])];
 
     // Filtre par type de dépense
     if (expenseTypeFilter !== "all") {
@@ -65,7 +95,7 @@ export function ExportDialog({ open, onOpenChange, transactions, members }) {
     // Filtre par membre
     if (memberFilter !== "all" && expenseTypeFilter === "EXPENSE_REPORT") {
       filtered = filtered.filter(
-        (t) => t.assignedMember?.userId === memberFilter
+        (t) => t.assignedMember?.userId === memberFilter,
       );
     }
 
@@ -117,7 +147,7 @@ export function ExportDialog({ open, onOpenChange, transactions, members }) {
             "dateRange:",
             dateRange,
             "t.date:",
-            t.date
+            t.date,
           );
           return true;
         }
@@ -253,7 +283,7 @@ export function ExportDialog({ open, onOpenChange, transactions, members }) {
             }
             return value;
           })
-          .join(";")
+          .join(";"),
       ),
     ].join("\n");
 
@@ -268,7 +298,7 @@ export function ExportDialog({ open, onOpenChange, transactions, members }) {
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `depenses_${format(new Date(), "yyyy-MM-dd_HH-mm")}.csv`
+      `depenses_${format(new Date(), "yyyy-MM-dd_HH-mm")}.csv`,
     );
     link.style.visibility = "hidden";
     document.body.appendChild(link);
@@ -380,7 +410,7 @@ export function ExportDialog({ open, onOpenChange, transactions, members }) {
                     variant="outline"
                     className={cn(
                       "justify-start text-left font-normal",
-                      !dateRange?.from && "text-muted-foreground"
+                      !dateRange?.from && "text-muted-foreground",
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
@@ -431,10 +461,17 @@ export function ExportDialog({ open, onOpenChange, transactions, members }) {
           {/* Compteur de transactions filtrées */}
           <div className="rounded-lg bg-muted p-3 text-sm">
             <p className="text-muted-foreground">
-              <span className="font-semibold text-foreground">
-                {filteredCount}
-              </span>{" "}
-              {filteredCount > 1 ? "transactions" : "transaction"} à exporter
+              {loadingTransactions ? (
+                "Chargement des transactions..."
+              ) : (
+                <>
+                  <span className="font-semibold text-foreground">
+                    {filteredCount}
+                  </span>{" "}
+                  {filteredCount > 1 ? "transactions" : "transaction"} à
+                  exporter
+                </>
+              )}
             </p>
           </div>
         </div>
@@ -443,7 +480,10 @@ export function ExportDialog({ open, onOpenChange, transactions, members }) {
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Annuler
           </Button>
-          <Button onClick={handleExport} disabled={filteredCount === 0}>
+          <Button
+            onClick={handleExport}
+            disabled={loadingTransactions || filteredCount === 0}
+          >
             <Download className="mr-2 h-4 w-4" />
             Exporter
           </Button>

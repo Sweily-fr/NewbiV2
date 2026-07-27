@@ -1,5 +1,5 @@
 "use client";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useCallback, useMemo, useState } from "react";
 import TransactionTable from "./components/table";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
@@ -44,136 +44,11 @@ import {
   CommandList,
 } from "@/src/components/ui/command";
 import { cn } from "@/src/lib/utils";
-import { getTransactionCategory } from "@/lib/bank-categories-config";
-
-// Mapping des noms de catégories (bank-categories-config) vers les clés (category-icons-config)
-const categoryNameToKey = {
-  // Alimentation
-  Alimentation: "MEALS",
-  Restaurants: "MEALS",
-  Courses: "MEALS",
-
-  // Transport
-  Transport: "TRAVEL",
-  Carburant: "TRAVEL",
-  "Transports en commun": "TRAVEL",
-  "Taxi/VTC": "TRAVEL",
-  Parking: "TRAVEL",
-
-  // Logement
-  Logement: "ACCOMMODATION",
-  Loyer: "RENT",
-  Charges: "UTILITIES",
-  "Assurance habitation": "INSURANCE",
-
-  // Loisirs
-  Loisirs: "OTHER",
-  Sorties: "OTHER",
-  Voyages: "TRAVEL",
-  Sport: "OTHER",
-
-  // Santé
-  Santé: "SERVICES",
-  Médecin: "SERVICES",
-  Pharmacie: "SERVICES",
-  Mutuelle: "INSURANCE",
-
-  // Shopping
-  Shopping: "OFFICE_SUPPLIES",
-  Vêtements: "OTHER",
-  "High-tech": "HARDWARE",
-  Maison: "OFFICE_SUPPLIES",
-
-  // Services
-  Services: "SERVICES",
-  "Téléphone/Internet": "SUBSCRIPTIONS",
-  Abonnements: "SUBSCRIPTIONS",
-  Banque: "SERVICES",
-
-  // Impôts
-  "Impôts & Taxes": "TAXES",
-  "Impôt sur le revenu": "TAXES",
-  "Taxe foncière": "TAXES",
-
-  // Éducation
-  Éducation: "TRAINING",
-  Formation: "TRAINING",
-  Livres: "TRAINING",
-
-  // Revenus (pour les transactions positives)
-  Salaire: "OTHER",
-  Prime: "OTHER",
-  Remboursement: "OTHER",
-  "Revenus professionnels": "SERVICES",
-  Facturation: "SERVICES",
-  Honoraires: "SERVICES",
-  "Aides & Allocations": "OTHER",
-  CAF: "OTHER",
-  "Pôle Emploi": "OTHER",
-  Investissements: "OTHER",
-  Dividendes: "OTHER",
-  Intérêts: "OTHER",
-  "Virements reçus": "OTHER",
-  "Virement interne": "OTHER",
-  "Autre revenu": "OTHER",
-
-  // Autre
-  Autre: "OTHER",
-  "Non catégorisé": "OTHER",
-};
-
-// Clés de catégories valides (hors "OTHER")
-const SPECIFIC_CATEGORY_KEYS = [
-  "OFFICE_SUPPLIES",
-  "TRAVEL",
-  "MEALS",
-  "ACCOMMODATION",
-  "SOFTWARE",
-  "HARDWARE",
-  "SERVICES",
-  "MARKETING",
-  "TAXES",
-  "RENT",
-  "UTILITIES",
-  "SALARIES",
-  "INSURANCE",
-  "MAINTENANCE",
-  "TRAINING",
-  "SUBSCRIPTIONS",
-];
-
-// Fonction pour obtenir la catégorie compatible avec category-icons-config
-// Supporte les catégories larges API (TRAVEL) ET les sous-catégories fines (parking, carburant, etc.)
-const getSmartCategory = (transaction) => {
-  // Si la catégorie est une valeur spécifique (pas "OTHER"/"other"/null)
-  // getCategoryConfig supporte les deux formats (large et fine)
-  if (
-    transaction.category &&
-    transaction.category !== "OTHER" &&
-    transaction.category !== "other"
-  ) {
-    return transaction.category;
-  }
-
-  // Fallback: utiliser expenseCategory si spécifique
-  if (
-    transaction.expenseCategory &&
-    SPECIFIC_CATEGORY_KEYS.includes(transaction.expenseCategory)
-  ) {
-    return transaction.expenseCategory;
-  }
-  if (
-    transaction.metadata?.bridgeCategoryMapped &&
-    SPECIFIC_CATEGORY_KEYS.includes(transaction.metadata.bridgeCategoryMapped)
-  ) {
-    return transaction.metadata.bridgeCategoryMapped;
-  }
-
-  // Si category est "OTHER" ou null, utiliser l'analyse intelligente basée sur la description
-  const categoryInfo = getTransactionCategory(transaction);
-  const categoryName = categoryInfo?.name || "Autre";
-  return categoryNameToKey[categoryName] || "OTHER";
-};
+import { useLazyQuery } from "@apollo/client";
+import { GET_TRANSACTIONS } from "@/src/graphql/queries/banking";
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import { toast } from "@/src/components/ui/sonner";
+import { mapTransactionToExpense } from "./components/transactions/utils/mapTransactionToExpense";
 
 function GestionDepensesContent() {
   const searchParams = useSearchParams();
@@ -187,118 +62,86 @@ function GestionDepensesContent() {
   const [selectedAccountId, setSelectedAccountId] = useState("all");
   const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
 
-  // Récupération des transactions (bancaires + manuelles) depuis la collection transactions
+  const { workspaceId } = useRequiredWorkspace();
+
+  // Comptes bancaires + solde (summary backend) : les transactions elles-mêmes
+  // sont paginées côté serveur dans TransactionTable (useTransactionsPage).
   const {
-    transactions,
     bankBalance,
     bankAccounts,
     isLoading: bankLoading,
     refreshData,
-  } = useDashboardData();
+  } = useDashboardData({ skipTransactions: true });
+
+  // Compte sélectionné (le sélecteur stocke account.id)
+  const selectedAccount = useMemo(() => {
+    if (selectedAccountId === "all") return null;
+    return (
+      (bankAccounts || []).find(
+        (a) => a.id === selectedAccountId || a.externalId === selectedAccountId,
+      ) || null
+    );
+  }, [selectedAccountId, bankAccounts]);
+
+  // Filtre serveur par compte : externalId (même valeur que tx.fromAccount)
+  const accountFilterId =
+    selectedAccountId === "all"
+      ? null
+      : selectedAccount?.externalId || selectedAccountId;
 
   // Solde affiché selon le compte sélectionné
   const displayedBalance = useMemo(() => {
     if (selectedAccountId === "all") return bankBalance || 0;
-    const account = (bankAccounts || []).find(
-      (a) => a.id === selectedAccountId || a.externalId === selectedAccountId,
-    );
-    return account?.balance?.current ?? 0;
-  }, [selectedAccountId, bankAccounts, bankBalance]);
+    return selectedAccount?.balance?.current ?? 0;
+  }, [selectedAccountId, selectedAccount, bankBalance]);
 
   // Label du compte sélectionné
   const selectedAccountLabel = useMemo(() => {
-    if (selectedAccountId === "all") return "Tous les comptes";
-    const account = (bankAccounts || []).find(
-      (a) => a.id === selectedAccountId || a.externalId === selectedAccountId,
-    );
-    if (!account) return "Tous les comptes";
+    if (!selectedAccount) return "Tous les comptes";
     const name =
-      account.name || account.institutionName || account.bankName || "Compte";
-    const lastIban = account.iban ? ` ···${account.iban.slice(-4)}` : "";
+      selectedAccount.name ||
+      selectedAccount.institutionName ||
+      selectedAccount.bankName ||
+      "Compte";
+    const lastIban = selectedAccount.iban
+      ? ` ···${selectedAccount.iban.slice(-4)}`
+      : "";
     return `${name}${lastIban}`;
-  }, [selectedAccountId, bankAccounts]);
-
-  // Transformer les transactions pour le format attendu par le tableau (mémorisé)
-  const expenses = useMemo(() => {
-    let txList = transactions || [];
-
-    // Filtrer par compte bancaire si un compte est sélectionné
-    if (selectedAccountId !== "all") {
-      const account = (bankAccounts || []).find(
-        (a) => a.id === selectedAccountId || a.externalId === selectedAccountId,
-      );
-      if (account) {
-        txList = txList.filter(
-          (tx) =>
-            tx.fromAccount === account.externalId ||
-            tx.fromAccount === account.id,
-        );
-      }
-    }
-
-    const txRows = txList.map((tx) => ({
-      id: tx.id,
-      type: tx.amount > 0 ? "INCOME" : "BANK_TRANSACTION",
-      source: tx.provider === "manual" ? "MANUAL" : "BANK",
-      title: tx.description,
-      description: tx.description,
-      amount: tx.amount,
-      currency: tx.currency,
-      date: tx.processedAt || tx.date || tx.createdAt,
-      category: getSmartCategory(tx),
-      vendor: tx.metadata?.vendor || null,
-      // N↔N : "a une facture liée" = array non vide (facture client OU facture
-      // d'achat — le justificatif d'une facture d'achat liée vaut justification).
-      hasReceipt:
-        (Array.isArray(tx.receiptFiles) && tx.receiptFiles.length > 0) ||
-        (tx.linkedInvoices?.length || 0) > 0 ||
-        (tx.linkedPurchaseInvoices?.length || 0) > 0,
-      receiptFiles: tx.receiptFiles || [],
-      receiptRequired:
-        tx.amount < 0 &&
-        !(Array.isArray(tx.receiptFiles) && tx.receiptFiles.length > 0) &&
-        (tx.linkedInvoices?.length || 0) === 0 &&
-        (tx.linkedPurchaseInvoices?.length || 0) === 0,
-      status: tx.status === "completed" ? "PAID" : tx.status?.toUpperCase(),
-      paymentMethod:
-        tx.metadata?.paymentMethod ||
-        (tx.type === "debit" ? "CARD" : "BANK_TRANSFER"),
-      bankName: tx.metadata?.bankName || null,
-      provider: tx.provider,
-      originalTransaction: {
-        id: tx.id,
-        externalId: tx.externalId,
-        provider: tx.provider,
-        fromAccount: tx.fromAccount,
-      },
-      linkedInvoiceIds: tx.linkedInvoiceIds || [],
-      linkedInvoices: tx.linkedInvoices || [],
-      linkedPurchaseInvoiceIds: tx.linkedPurchaseInvoiceIds || [],
-      linkedPurchaseInvoices: tx.linkedPurchaseInvoices || [],
-      reconciliationStatus: tx.reconciliationStatus || null,
-      reconciliationDate: tx.reconciliationDate || null,
-      pcgAccount: tx.pcgAccount || null,
-      metadata: tx.metadata || {},
-      createdAt: tx.createdAt,
-      updatedAt: tx.updatedAt,
-    }));
-
-    // Source de vérité unique : le flux bancaire Bridge. Les factures d'achat
-    // ne sont plus injectées dans la liste des transactions.
-    return txRows;
-  }, [transactions, selectedAccountId, bankAccounts]);
+  }, [selectedAccount]);
 
   const loading = bankLoading;
-  const error = null;
-  const refetchExpenses = useMemo(
-    () => async () => {
-      await refreshData?.();
-    },
-    [refreshData],
-  );
+
+  // Export : fetch à la demande de l'historique complet (indépendant de la
+  // page affichée), puis mapping vers le format "expense".
+  const [fetchAllTransactions] = useLazyQuery(GET_TRANSACTIONS, {
+    fetchPolicy: "network-only",
+  });
+
+  const loadAllExpenses = useCallback(async () => {
+    const { data } = await fetchAllTransactions({
+      variables: { workspaceId, limit: 0 },
+    });
+    let txList = data?.transactions || [];
+    if (selectedAccount) {
+      txList = txList.filter(
+        (tx) =>
+          tx.fromAccount === selectedAccount.externalId ||
+          tx.fromAccount === selectedAccount.id,
+      );
+    }
+    return txList.map(mapTransactionToExpense);
+  }, [fetchAllTransactions, workspaceId, selectedAccount]);
 
   // Export Excel
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
+    let expenses;
+    try {
+      expenses = await loadAllExpenses();
+    } catch (error) {
+      console.error("Erreur lors de l'export des transactions:", error);
+      toast.error("Erreur lors de l'export des transactions");
+      return;
+    }
     const data = expenses.map((t) => ({
       Date: t.date
         ? typeof t.date === "string" && t.date.match(/^\d{4}-\d{2}-\d{2}/)
@@ -331,7 +174,15 @@ function GestionDepensesContent() {
   };
 
   // Export CSV
-  const exportToCSV = () => {
+  const exportToCSV = async () => {
+    let expenses;
+    try {
+      expenses = await loadAllExpenses();
+    } catch (error) {
+      console.error("Erreur lors de l'export des transactions:", error);
+      toast.error("Erreur lors de l'export des transactions");
+      return;
+    }
     const data = expenses.map((t) => ({
       Date: t.date
         ? typeof t.date === "string" && t.date.match(/^\d{4}-\d{2}-\d{2}/)
@@ -379,39 +230,6 @@ function GestionDepensesContent() {
       maximumFractionDigits: 2,
     }).format(amount);
   };
-
-  // Calculer les statistiques des transactions
-  const transactionStats = useMemo(() => {
-    if (!expenses || expenses.length === 0) {
-      return {
-        totalExpenses: 0,
-        totalIncome: 0,
-        pendingCount: 0,
-      };
-    }
-
-    let totalExpenses = 0;
-    let totalIncome = 0;
-    let pendingCount = 0;
-
-    expenses.forEach((expense) => {
-      const amount = expense.amount || 0;
-      if (expense.type === "INCOME" || amount > 0) {
-        totalIncome += Math.abs(amount);
-      } else {
-        totalExpenses += Math.abs(amount);
-      }
-      if (expense.status === "PENDING" || expense.status === "DRAFT") {
-        pendingCount++;
-      }
-    });
-
-    return {
-      totalExpenses,
-      totalIncome,
-      pendingCount,
-    };
-  }, [expenses]);
 
   return (
     <>
@@ -577,9 +395,8 @@ function GestionDepensesContent() {
             Bridge : plus de création manuelle/OCR. */}
         <Suspense fallback={<TransactionTableSkeleton />}>
           <TransactionTable
-            expenses={expenses}
-            loading={loading}
-            refetchExpenses={refetchExpenses}
+            accountId={accountFilterId}
+            onRefresh={refreshData}
             initialTransactionId={searchParams.get("transactionId")}
             openOcr={searchParams.get("openOcr") === "true"}
             initialTab={searchParams.get("filter")}
@@ -718,12 +535,12 @@ function GestionDepensesContent() {
         {/* Table */}
         <Suspense fallback={<TransactionTableSkeleton />}>
           <TransactionTable
-            expenses={expenses}
-            loading={loading}
-            refetchExpenses={refetchExpenses}
+            accountId={accountFilterId}
+            onRefresh={refreshData}
             initialTransactionId={searchParams.get("transactionId")}
             openOcr={searchParams.get("openOcr") === "true"}
             initialTab={searchParams.get("filter")}
+            bankAccounts={bankAccounts}
           />
         </Suspense>
       </div>

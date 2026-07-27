@@ -44,12 +44,17 @@ const emptyStates = {
       "Connectez votre banque pour importer automatiquement vos transactions.",
     showConnect: true,
   },
-  last_month: {
+  lastMonth: {
     icon: CheckCircle2,
-    title: "Aucune dépense ce dernier mois",
-    description: "Vos prochaines dépenses bancaires apparaîtront ici.",
+    title: "Aucune transaction ce dernier mois",
+    description: "Vos prochaines transactions bancaires apparaîtront ici.",
   },
-  missing_receipt: {
+  toReconcile: {
+    icon: CheckCircle2,
+    title: "Aucune transaction à rapprocher",
+    description: "Toutes vos entrées d'argent sont rapprochées.",
+  },
+  missingReceipt: {
     icon: Receipt,
     title: "Tous vos justificatifs sont en ordre",
     description: "Aucune transaction n'attend de justificatif.",
@@ -64,6 +69,8 @@ export function MobileTable({
   onRowClick,
   onScrollChange,
   activeTab,
+  hasNextPage = false,
+  onLoadMore,
 }) {
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -76,9 +83,10 @@ export function MobileTable({
   const allRows = table.getPrePaginationRowModel().rows;
   const headers = table.getHeaderGroups()[0]?.headers || [];
 
-  // Reset visible count when data changes (filters, tabs, search)
+  // Reset visible count when the dataset shrinks (filters, tabs, search) but
+  // keep scroll progress when more rows arrive from the server (load more)
   useEffect(() => {
-    setVisibleCount(BATCH_SIZE);
+    setVisibleCount((prev) => (allRows.length < prev ? BATCH_SIZE : prev));
   }, [allRows.length]);
 
   // Scroll to top + fade transition on tab change
@@ -102,16 +110,25 @@ export function MobileTable({
   }, [activeTab, onScrollChange]);
 
   const visibleRows = allRows.slice(0, visibleCount);
-  const hasMore = visibleCount < allRows.length;
+  const hasMoreLocal = visibleCount < allRows.length;
+  // Plus de lignes localement OU une page serveur suivante à charger
+  const hasMore = hasMoreLocal || hasNextPage;
 
   const loadMore = useCallback(() => {
-    if (!hasMore || isLoadingMore) return;
-    setIsLoadingMore(true);
-    setTimeout(() => {
-      setVisibleCount((prev) => Math.min(prev + BATCH_SIZE, allRows.length));
-      setIsLoadingMore(false);
-    }, 300);
-  }, [hasMore, isLoadingMore, allRows.length]);
+    if (isLoadingMore) return;
+    if (hasMoreLocal) {
+      setIsLoadingMore(true);
+      setTimeout(() => {
+        setVisibleCount((prev) => Math.min(prev + BATCH_SIZE, allRows.length));
+        setIsLoadingMore(false);
+      }, 300);
+    } else if (hasNextPage) {
+      // Page serveur suivante : élargir la fenêtre visible pour afficher les
+      // nouvelles lignes dès leur arrivée
+      setVisibleCount((prev) => prev + BATCH_SIZE);
+      onLoadMore?.();
+    }
+  }, [hasMoreLocal, hasNextPage, isLoadingMore, allRows.length, onLoadMore]);
 
   // IntersectionObserver on sentinel
   useEffect(() => {

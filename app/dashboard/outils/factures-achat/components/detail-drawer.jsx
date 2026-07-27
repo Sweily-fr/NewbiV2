@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useQuery } from "@apollo/client";
+import { GET_TRANSACTION } from "@/src/graphql/queries/banking";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Textarea } from "@/src/components/ui/textarea";
@@ -156,6 +159,45 @@ function formatDate(date, withTime = false) {
   return d.toLocaleDateString("fr-FR");
 }
 
+// Ligne cliquable vers une transaction rapprochée (ouvre le détail de la
+// transaction via ?transactionId= sur la page transactions)
+function LinkedTransactionLink({ transactionId }) {
+  const { data, loading } = useQuery(GET_TRANSACTION, {
+    variables: { id: transactionId },
+  });
+  const tx = data?.transaction;
+
+  return (
+    <Link
+      href={`/dashboard/outils/transactions?transactionId=${transactionId}`}
+      className="flex items-center justify-between gap-3 p-3 border rounded-lg bg-muted/30 hover:bg-muted/60 transition-colors group"
+    >
+      <div className="flex-1 min-w-0">
+        {loading ? (
+          <p className="text-xs text-muted-foreground">
+            Chargement de la transaction...
+          </p>
+        ) : tx ? (
+          <>
+            <span className="text-sm font-medium">
+              {formatAmount(Math.abs(tx.amount))} €
+            </span>
+            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+              {tx.description && (
+                <span className="truncate">{tx.description}</span>
+              )}
+              <span className="shrink-0">{formatDate(tx.date)}</span>
+            </div>
+          </>
+        ) : (
+          <p className="text-sm">Voir la transaction</p>
+        )}
+      </div>
+      <LinkIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground group-hover:text-foreground" />
+    </Link>
+  );
+}
+
 export function PurchaseInvoiceDetailDrawer({
   open,
   onOpenChange,
@@ -198,7 +240,8 @@ export function PurchaseInvoiceDetailDrawer({
   const { deleteInvoice } = useDeletePurchaseInvoice();
   const { addFile } = useAddPurchaseInvoiceFile();
   const { markAsPaid, loading: markLoading } = useMarkAsPaid();
-  const { reconcile } = useReconcilePurchaseInvoice();
+  const { reconcile, loading: reconcileLoading } =
+    useReconcilePurchaseInvoice();
   const { acknowledge, loading: ackLoading } =
     useAcknowledgePurchaseInvoiceEInvoice();
   const { refuse, loading: refuseLoading } = useRefusePurchaseInvoiceEInvoice();
@@ -418,7 +461,10 @@ export function PurchaseInvoiceDetailDrawer({
 
   const handleReconcile = async (transactionId) => {
     if (!invoice?.id) return;
-    await reconcile(invoice.id, [transactionId]);
+    // Le hook retourne undefined en cas d'erreur (toast déjà affiché) :
+    // ne pas fermer/rafraîchir comme si le rapprochement avait réussi.
+    const result = await reconcile(invoice.id, [transactionId]);
+    if (!result) return;
     onSaved?.();
   };
 
@@ -1187,6 +1233,7 @@ export function PurchaseInvoiceDetailDrawer({
                           variant="outline"
                           size="sm"
                           className="text-green-600 border-green-200 hover:bg-green-50"
+                          disabled={reconcileLoading}
                           onClick={() => handleReconcile(s.transactionId)}
                         >
                           <LinkIcon className="h-3.5 w-3.5 mr-1" />
@@ -1218,6 +1265,13 @@ export function PurchaseInvoiceDetailDrawer({
                     transaction(s)
                   </span>
                 </div>
+                {(invoice.linkedTransactionIds || []).length > 0 && (
+                  <div className="space-y-2">
+                    {invoice.linkedTransactionIds.map((txId) => (
+                      <LinkedTransactionLink key={txId} transactionId={txId} />
+                    ))}
+                  </div>
+                )}
               </div>
             </>
           )}
