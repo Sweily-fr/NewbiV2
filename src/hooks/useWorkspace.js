@@ -6,6 +6,11 @@ import {
   resetOrganizationIdForApollo,
   apolloClient,
 } from "@/src/lib/apolloClient";
+import {
+  getFullOrganizationCached,
+  peekFullOrganization,
+  invalidateFullOrganizationCache,
+} from "@/src/lib/full-organization-cache";
 
 /**
  * Hook pour obtenir les informations du workspace actuel
@@ -45,6 +50,7 @@ export const useWorkspace = () => {
       // L'utilisateur a changé → reset tout pour éviter les fuites cross-compte
       resetOrganizationIdForApollo();
       apolloClient.clearStore(); // Vider le cache Apollo pour éviter les données stale
+      invalidateFullOrganizationCache();
       localStorage.removeItem("active_organization_id");
       localStorage.removeItem("user_role");
       setFullOrganization(null);
@@ -55,8 +61,10 @@ export const useWorkspace = () => {
 
   const loading = sessionLoading || orgsLoading || activeLoading || loadingFull;
 
-  // Charger l'organisation complète si elle n'a pas de membres
-  // OPTIMISÉ: Utiliser une ref pour éviter les appels multiples
+  // Charger l'organisation complète si elle n'a pas de membres.
+  // L'appel passe par le cache partagé (full-organization-cache) : les ~255
+  // instances de useWorkspace montées partagent une seule promesse réseau au
+  // lieu de lancer chacune leur propre getFullOrganization.
   useEffect(() => {
     const orgId = activeOrganization?.id;
 
@@ -72,20 +80,21 @@ export const useWorkspace = () => {
       return;
     }
 
+    // Cache partagé encore frais : pas d'état de chargement, pas de réseau
+    const cached = peekFullOrganization(orgId);
+    if (cached?.isFresh) {
+      setFullOrganization(cached.org);
+      lastFetchedOrgId.current = orgId;
+      return;
+    }
+
     isFetching.current = true;
     setLoadingFull(true);
 
-    authClient.organization
-      .getFullOrganization({
-        organizationId: orgId,
-      })
-      .then(({ data }) => {
-        setFullOrganization(data);
-        lastFetchedOrgId.current = orgId;
-      })
-      .catch((error) => {
-        console.error("Error loading full organization:", error);
-        // Marquer comme fetché même en cas d'erreur pour éviter une boucle de retry
+    getFullOrganizationCached(orgId)
+      .then((data) => {
+        if (data) setFullOrganization(data);
+        // Marquer comme fetché même sans données pour éviter une boucle de retry
         lastFetchedOrgId.current = orgId;
       })
       .finally(() => {
