@@ -155,6 +155,107 @@ export const GET_TRANSACTIONS = gql`
 `;
 
 /**
+ * Liste paginée côté serveur pour la page Transactions : items de la page
+ * demandée + total + compteurs d'onglets calculés sur toute la base.
+ * Même sélection de champs que GET_TRANSACTIONS pour les items.
+ */
+export const GET_TRANSACTIONS_PAGE = gql`
+  query GetTransactionsPage(
+    $workspaceId: ID!
+    $filters: TransactionPageFiltersInput
+    $tab: TransactionListTab
+    $page: Int
+    $limit: Int
+  ) {
+    transactionsPage(
+      workspaceId: $workspaceId
+      filters: $filters
+      tab: $tab
+      page: $page
+      limit: $limit
+    ) {
+      totalCount
+      hasNextPage
+      tabCounts {
+        all
+        lastMonth
+        toReconcile
+        missingReceipt
+      }
+      items {
+        id
+        externalId
+        provider
+        type
+        status
+        amount
+        currency
+        description
+        category
+        expenseCategory
+        pcgAccount {
+          numero
+          intitule
+          confidence
+          isManual
+          manuallySetAt
+        }
+        fromAccount
+        toAccount
+        date
+        processedAt
+        failureReason
+        fees {
+          amount
+          currency
+          provider
+        }
+        metadata
+        receiptFiles {
+          id
+          url
+          key
+          filename
+          mimetype
+          size
+          uploadedAt
+        }
+        receiptRequired
+        # Champs de rapprochement bancaire (N↔N)
+        linkedInvoiceIds
+        linkedInvoices {
+          id
+          number
+          status
+          clientName
+          totalTTC
+          issueDate
+          dueDate
+        }
+        linkedPurchaseInvoiceIds
+        linkedPurchaseInvoices {
+          id
+          invoiceNumber
+          supplierName
+          status
+          amountTTC
+          issueDate
+          files {
+            url
+            filename
+            mimetype
+          }
+        }
+        reconciliationStatus
+        reconciliationDate
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;
+
+/**
  * Récupérer une transaction par ID
  */
 export const GET_TRANSACTION = gql`

@@ -100,11 +100,10 @@ export const useCreatePurchaseInvoice = () => {
   const { workspaceId } = useRequiredWorkspace();
 
   const [createMutation, { loading }] = useMutation(CREATE_PURCHASE_INVOICE, {
+    // Nom d'opération en string : refetch la query active avec ses variables
+    // courantes (la page utilise limit 200, pas 50).
     refetchQueries: [
-      {
-        query: GET_PURCHASE_INVOICES,
-        variables: { workspaceId, page: 1, limit: 50 },
-      },
+      "GetPurchaseInvoices",
       { query: GET_PURCHASE_INVOICE_STATS, variables: { workspaceId } },
     ],
     awaitRefetchQueries: false,
@@ -267,10 +266,7 @@ export const useBulkUpdateStatus = () => {
     BULK_UPDATE_PURCHASE_INVOICE_STATUS,
     {
       refetchQueries: [
-        {
-          query: GET_PURCHASE_INVOICES,
-          variables: { workspaceId, page: 1, limit: 50 },
-        },
+        "GetPurchaseInvoices",
         { query: GET_PURCHASE_INVOICE_STATS, variables: { workspaceId } },
       ],
       awaitRefetchQueries: false,
@@ -295,10 +291,7 @@ export const useBulkDelete = () => {
     BULK_DELETE_PURCHASE_INVOICES,
     {
       refetchQueries: [
-        {
-          query: GET_PURCHASE_INVOICES,
-          variables: { workspaceId, page: 1, limit: 50 },
-        },
+        "GetPurchaseInvoices",
         { query: GET_PURCHASE_INVOICE_STATS, variables: { workspaceId } },
       ],
       awaitRefetchQueries: false,
@@ -317,17 +310,10 @@ export const useBulkDelete = () => {
 };
 
 export const useBulkCategorize = () => {
-  const { workspaceId } = useRequiredWorkspace();
-
   const [bulkMutation, { loading }] = useMutation(
     BULK_CATEGORIZE_PURCHASE_INVOICES,
     {
-      refetchQueries: [
-        {
-          query: GET_PURCHASE_INVOICES,
-          variables: { workspaceId, page: 1, limit: 50 },
-        },
-      ],
+      refetchQueries: ["GetPurchaseInvoices"],
       awaitRefetchQueries: false,
       onCompleted: (data) =>
         toast.success(data.bulkCategorizePurchaseInvoices.message),
@@ -349,8 +335,15 @@ export const useReconcilePurchaseInvoice = () => {
   const [reconcileMutation, { loading }] = useMutation(
     RECONCILE_PURCHASE_INVOICE,
     {
+      // Noms d'opérations en string : Apollo refetch les queries actives avec
+      // leurs variables courantes (suggestions, matches et transactions
+      // affichent l'état de rapprochement).
       refetchQueries: [
         { query: GET_PURCHASE_INVOICE_STATS, variables: { workspaceId } },
+        "GetPurchaseInvoiceReconciliationSuggestions",
+        "GetPurchaseInvoiceReconciliationMatches",
+        "GetTransactions",
+        "GetTransactionsPage",
       ],
       awaitRefetchQueries: false,
       onCompleted: () => toast.success("Rapprochement effectué"),
@@ -375,8 +368,14 @@ export const useUnreconcilePurchaseInvoice = () => {
   const [unreconcileMutation, { loading }] = useMutation(
     UNRECONCILE_PURCHASE_INVOICE,
     {
+      // Mêmes refetchs que le rapprochement : les vues actives doivent voir
+      // la transaction redevenir disponible.
       refetchQueries: [
         { query: GET_PURCHASE_INVOICE_STATS, variables: { workspaceId } },
+        "GetPurchaseInvoiceReconciliationSuggestions",
+        "GetPurchaseInvoiceReconciliationMatches",
+        "GetTransactions",
+        "GetTransactionsPage",
       ],
       awaitRefetchQueries: false,
       onError: (error) =>
@@ -400,6 +399,9 @@ export const useReconciliationSuggestions = (purchaseInvoiceId) => {
     {
       variables: { purchaseInvoiceId },
       skip: !purchaseInvoiceId,
+      // Toujours revalider côté serveur : les matches changent après chaque
+      // rapprochement/détachement.
+      fetchPolicy: "cache-and-network",
     },
   );
 

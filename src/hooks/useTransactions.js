@@ -1,28 +1,17 @@
 import { useMutation } from "@apollo/client";
 import { UPDATE_TRANSACTION } from "../graphql/mutations/banking";
-import { GET_TRANSACTIONS } from "../graphql/queries/banking";
 import { toast } from "@/src/components/ui/sonner";
-import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
-
-// Limite raisonnable pour le refetch après mutation (pas besoin de tout recharger)
-// Doit correspondre à la variable limit utilisée dans useDashboardData (limit: 0 = pas de limite)
-const REFETCH_LIMIT = 0;
 
 /**
  * Hook pour mettre à jour une transaction
  */
 export const useUpdateTransaction = () => {
-  const { workspaceId } = useRequiredWorkspace();
-
   const [updateTransactionMutation, { loading }] = useMutation(
     UPDATE_TRANSACTION,
     {
-      refetchQueries: [
-        {
-          query: GET_TRANSACTIONS,
-          variables: { workspaceId, limit: REFETCH_LIMIT },
-        },
-      ],
+      // Noms d'opérations en string : Apollo refetch les queries actives avec
+      // leurs variables courantes (liste paginée et historique complet).
+      refetchQueries: ["GetTransactions", "GetTransactionsPage"],
     },
   );
 

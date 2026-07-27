@@ -1,5 +1,5 @@
 "use client";
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@apollo/client";
 import PurchaseInvoiceTable from "./components/table";
@@ -158,6 +158,28 @@ function PurchaseInvoicesContent() {
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, [searchParams]);
+
+  // Deep link "Voir la facture d'achat" (?id=<invoiceId> depuis le drawer
+  // transaction) : ouvrir le drawer de détail quand les factures sont chargées.
+  // Le ref garantit une seule ouverture par valeur d'id (pas de réouverture
+  // après fermeture quand la liste est refetchée).
+  const processedInitialInvoiceIdRef = useRef(null);
+  useEffect(() => {
+    const initialInvoiceId = searchParams.get("id");
+    if (
+      !initialInvoiceId ||
+      processedInitialInvoiceIdRef.current === initialInvoiceId ||
+      !invoices?.length
+    ) {
+      return;
+    }
+    const invoice = invoices.find((inv) => inv.id === initialInvoiceId);
+    if (invoice) {
+      processedInitialInvoiceIdRef.current = initialInvoiceId;
+      setSelectedInvoice(invoice);
+      setIsDetailDrawerOpen(true);
+    }
+  }, [searchParams, invoices]);
 
   const handleRowClick = (invoice) => {
     setSelectedInvoice(invoice);
