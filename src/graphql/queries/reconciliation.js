@@ -37,8 +37,8 @@ export const GET_RECONCILIATION_SUGGESTIONS = gql`
  * Récupérer les transactions pour une facture spécifique
  */
 export const GET_TRANSACTIONS_FOR_INVOICE = gql`
-  query GetTransactionsForInvoice($invoiceId: ID!) {
-    transactionsForInvoice(invoiceId: $invoiceId) {
+  query GetTransactionsForInvoice($invoiceId: ID!, $search: String) {
+    transactionsForInvoice(invoiceId: $invoiceId, search: $search) {
       success
       transactions {
         id
@@ -49,6 +49,28 @@ export const GET_TRANSACTIONS_FOR_INVOICE = gql`
         score
       }
       invoiceAmount
+    }
+  }
+`;
+
+/**
+ * Récupérer les factures PENDING rattachables à une transaction
+ * (rattachement manuel depuis le drawer transaction)
+ */
+export const GET_INVOICES_FOR_TRANSACTION = gql`
+  query GetInvoicesForTransaction($transactionId: ID!, $search: String) {
+    invoicesForTransaction(transactionId: $transactionId, search: $search) {
+      success
+      invoices {
+        id
+        number
+        clientName
+        totalTTC
+        dueDate
+        status
+        score
+      }
+      transactionAmount
     }
   }
 `;

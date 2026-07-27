@@ -5,6 +5,7 @@ import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import {
   GET_RECONCILIATION_SUGGESTIONS,
   GET_TRANSACTIONS_FOR_INVOICE,
+  GET_INVOICES_FOR_TRANSACTION,
   LINK_TRANSACTION_TO_INVOICE,
   UNLINK_TRANSACTION_FROM_INVOICE,
   IGNORE_TRANSACTION,
@@ -226,11 +227,11 @@ export const useReconciliationGraphQL = () => {
   // (utilisée par le drawer de facture)
   // OPTIMISÉ: Utiliser useCallback pour éviter les re-renders inutiles
   const fetchTransactionsForInvoice = useCallback(
-    async (invoiceId) => {
+    async (invoiceId, search) => {
       try {
         const { data } = await client.query({
           query: GET_TRANSACTIONS_FOR_INVOICE,
-          variables: { invoiceId },
+          variables: { invoiceId, search: search || null },
           fetchPolicy: "network-only",
         });
 
@@ -245,6 +246,33 @@ export const useReconciliationGraphQL = () => {
           error,
         );
         return { transactions: [], invoiceAmount: 0 };
+      }
+    },
+    [client],
+  );
+
+  // Factures PENDING rattachables à une transaction (rattachement manuel
+  // depuis le drawer transaction, avec recherche serveur)
+  const fetchInvoicesForTransaction = useCallback(
+    async (transactionId, search) => {
+      try {
+        const { data } = await client.query({
+          query: GET_INVOICES_FOR_TRANSACTION,
+          variables: { transactionId, search: search || null },
+          fetchPolicy: "network-only",
+        });
+
+        const result = data?.invoicesForTransaction;
+        return {
+          invoices: result?.invoices || [],
+          transactionAmount: result?.transactionAmount || 0,
+        };
+      } catch (error) {
+        console.error(
+          "[RECONCILIATION] Erreur fetchInvoicesForTransaction:",
+          error,
+        );
+        return { invoices: [], transactionAmount: 0 };
       }
     },
     [client],
@@ -269,6 +297,7 @@ export const useReconciliationGraphQL = () => {
     unlinkTransaction,
     ignoreTransaction,
     fetchTransactionsForInvoice,
+    fetchInvoicesForTransaction,
   };
 };
 
@@ -310,11 +339,11 @@ export const useReconciliationForSidebar = () => {
   // Fonction pour récupérer les transactions pour une facture spécifique
   // OPTIMISÉ: Utiliser useCallback pour éviter les re-renders inutiles
   const fetchTransactionsForInvoice = useCallback(
-    async (invoiceId) => {
+    async (invoiceId, search) => {
       try {
         const { data } = await client.query({
           query: GET_TRANSACTIONS_FOR_INVOICE,
-          variables: { invoiceId },
+          variables: { invoiceId, search: search || null },
           fetchPolicy: "network-only",
         });
 
