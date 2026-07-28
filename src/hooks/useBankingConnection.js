@@ -6,8 +6,7 @@ import { useState, useEffect } from "react";
 // automatiquement via credentials: "include" sur les routes same-origin.
 
 /**
- * Hook pour gérer la connexion bancaire
- * Supporte GoCardless (par défaut) et Bridge (legacy)
+ * Hook pour gérer la connexion bancaire via Bridge
  */
 export function useBankingConnection(workspaceId) {
   const [isConnected, setIsConnected] = useState(false);
@@ -65,10 +64,10 @@ export function useBankingConnection(workspaceId) {
       setError(null);
 
       const response = await fetch(
-        `/api/banking-connect/gocardless/institutions?country=${country}`,
+        `/api/banking-connect/bridge/institutions?country=${country}`,
         {
           headers: {},
-        }
+        },
       );
 
       if (response.ok) {
@@ -89,8 +88,8 @@ export function useBankingConnection(workspaceId) {
   };
 
   /**
-   * Connecte un compte bancaire via GoCardless
-   * @param {string} institutionId - ID de l'institution bancaire
+   * Connecte un compte bancaire via Bridge
+   * @param {string} institutionId - ID de la banque (provider Bridge)
    */
   const connectBank = async (institutionId) => {
     if (!workspaceId) {
@@ -108,12 +107,12 @@ export function useBankingConnection(workspaceId) {
       setError(null);
 
       const response = await fetch(
-        `/api/banking-connect/gocardless/connect?institutionId=${institutionId}`,
+        `/api/banking-connect/bridge/connect?providerId=${institutionId}`,
         {
           headers: {
             "x-workspace-id": workspaceId,
-            },
-        }
+          },
+        },
       );
 
       if (response.ok) {
