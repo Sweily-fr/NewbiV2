@@ -553,12 +553,10 @@ export function TransactionDetailDrawer({
         receiptImage: transaction.receiptImage || null,
         status: (transaction.status || "COMPLETED").toUpperCase(),
       });
-      // Les transactions bancaires s'ouvrent directement en mode édition
-      const txIsBankTransaction =
-        transaction.source === "BANK" ||
-        transaction.source === "BANK_TRANSACTION" ||
-        transaction.type === "BANK_TRANSACTION";
-      setIsEditMode(txIsBankTransaction);
+      // Les transactions bancaires s'ouvrent en mode visualisation : leurs
+      // informations viennent du compte bancaire et ne sont pas modifiables.
+      // Seules la description et la catégorie s'éditent, directement en vue.
+      setIsEditMode(false);
       setPendingFiles([]);
       setActiveReceiptIndex(0);
     }
@@ -617,6 +615,32 @@ export function TransactionDetailDrawer({
     }
   };
 
+  // Enregistrer la description au blur (transaction bancaire, mode vue).
+  // Seule la description part dans la mutation : le reste des informations
+  // vient du compte bancaire et n'est pas modifiable.
+  const handleDescriptionSave = async () => {
+    const transactionId =
+      transaction?.originalTransaction?.id || transaction?.id;
+    const newDescription = (formData.description || "").trim();
+    if (
+      !transactionId ||
+      !newDescription ||
+      newDescription === (transaction?.description || "")
+    )
+      return;
+
+    try {
+      await updateTransaction({
+        variables: {
+          id: transactionId,
+          input: { description: newDescription },
+        },
+      });
+    } catch (error) {
+      console.error("Erreur mise à jour description:", error);
+    }
+  };
+
   // Gérer les changements de formulaire
   const handleChange = (field) => (value) => {
     setFormData((prev) => {
@@ -641,7 +665,8 @@ export function TransactionDetailDrawer({
       onSubmit?.(submissionData);
       onOpenChange(false);
     } else if (isEditMode) {
-      // Mode édition (manuelle ou bancaire) — envoyer la sous-catégorie fine
+      // Mode édition (transaction manuelle uniquement — les transactions
+      // bancaires n'ont plus de mode édition) — envoyer la sous-catégorie fine
       const transactionId =
         transaction?.originalTransaction?.id || transaction?.id;
       const submissionData = {
@@ -1357,6 +1382,26 @@ export function TransactionDetailDrawer({
                 )}
               </div>
             </div>
+
+            {/* Description : seul champ texte modifiable d'une transaction
+                bancaire (enregistrée au blur) */}
+            {!isCreateMode && isBankTransaction && !isEditingForm && (
+              <div className="space-y-3">
+                <p className="text-sm font-normal text-muted-foreground">
+                  Description
+                </p>
+                <Textarea
+                  value={formData.description}
+                  onChange={(e) => handleChange("description")(e.target.value)}
+                  onBlur={handleDescriptionSave}
+                  placeholder="Description de la transaction"
+                  rows={3}
+                  className="rounded-xl"
+                  disabled={isReadOnly}
+                  title={readOnlyTooltip}
+                />
+              </div>
+            )}
 
             {/* Description (mode création/édition) */}
             {isEditingForm && (
