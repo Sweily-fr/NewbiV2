@@ -49,6 +49,10 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import { toast } from "@/src/components/ui/sonner";
+import {
+  PurchaseInvoicePageSkeleton,
+  PurchaseInvoiceTableSkeleton,
+} from "./components/purchase-invoice-page-skeleton";
 
 const formatAmount = (amount) => {
   return new Intl.NumberFormat("fr-FR", {
@@ -359,7 +363,7 @@ function PurchaseInvoicesContent() {
             </div>
 
             {/* Table */}
-            <Suspense fallback={<TableSkeleton />}>
+            <Suspense fallback={<PurchaseInvoiceTableSkeleton />}>
               <PurchaseInvoiceTable
                 invoices={invoices || []}
                 loading={loading}
@@ -440,7 +444,7 @@ function PurchaseInvoicesContent() {
         </div>
 
         {/* Table */}
-        <Suspense fallback={<TableSkeleton />}>
+        <Suspense fallback={<PurchaseInvoiceTableSkeleton />}>
           <PurchaseInvoiceTable
             invoices={invoices || []}
             loading={loading}
@@ -510,35 +514,11 @@ function PurchaseInvoicesContent() {
 
 export default function PurchaseInvoicesPage() {
   return (
-    <ProRouteGuard pageName="Factures d'achat">
+    <ProRouteGuard
+      pageName="Factures d'achat"
+      fallback={<PurchaseInvoicePageSkeleton />}
+    >
       <PurchaseInvoicesContent />
     </ProRouteGuard>
-  );
-}
-
-function TableSkeleton() {
-  return (
-    <div className="space-y-4 p-4 sm:p-6">
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-10 w-[300px]" />
-        <div className="flex gap-2">
-          <Skeleton className="h-10 w-[100px]" />
-        </div>
-      </div>
-      <div className="rounded-md border">
-        <div className="p-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex items-center space-x-4 py-4">
-              <Skeleton className="h-4 w-4" />
-              <Skeleton className="h-4 w-[150px]" />
-              <Skeleton className="h-4 w-[200px]" />
-              <Skeleton className="h-4 w-[100px]" />
-              <Skeleton className="h-4 w-[80px]" />
-              <Skeleton className="h-4 w-[120px]" />
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
   );
 }

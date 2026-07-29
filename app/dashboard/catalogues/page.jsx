@@ -14,6 +14,7 @@ import ProductImportDialog from "./components/product-import-dialog";
 import ProductExportButton from "./components/product-export-button";
 import ProductCustomFieldsManager from "./components/product-custom-fields-manager";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
+import { CataloguesPageSkeleton } from "./components/catalogues-page-skeleton";
 import { useProducts } from "@/src/hooks/useProducts";
 
 function CataloguesContent() {
@@ -148,7 +149,11 @@ function CataloguesContent() {
 
 export default function Catalogues() {
   return (
-    <ProRouteGuard pageName="Catalogues" requirePaidSubscription={false}>
+    <ProRouteGuard
+      pageName="Catalogues"
+      requirePaidSubscription={false}
+      fallback={<CataloguesPageSkeleton />}
+    >
       <CataloguesContent />
     </ProRouteGuard>
   );
