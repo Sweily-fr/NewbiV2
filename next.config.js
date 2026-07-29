@@ -9,12 +9,14 @@ const isDev = process.env.NODE_ENV === "development";
 // couvre déjà le clickjacking.
 const cspReportOnly = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://www.googletagmanager.com https://*.googletagmanager.com https://connect.facebook.net`,
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://www.googletagmanager.com https://*.googletagmanager.com https://connect.facebook.net https://challenges.cloudflare.com`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  `connect-src 'self'${isDev ? " http://localhost:* ws://localhost:*" : ""} https://api.newbi.fr wss://api.newbi.fr https://*.r2.dev https://api.cloudinary.com https://www.google-analytics.com https://*.googletagmanager.com https://www.facebook.com`,
-  "frame-src 'self' https://www.googletagmanager.com https://www.facebook.com",
+  // *.google-analytics.com : GA4 utilise des endpoints régionaux (region1.…).
+  // *.r2.cloudflarestorage.com : URLs présignées d'upload des transferts de fichiers.
+  `connect-src 'self'${isDev ? " http://localhost:* ws://localhost:*" : ""} https://api.newbi.fr wss://api.newbi.fr https://*.r2.dev https://*.r2.cloudflarestorage.com https://api.cloudinary.com https://*.google-analytics.com https://*.googletagmanager.com https://www.facebook.com https://www.googleapis.com https://challenges.cloudflare.com`,
+  "frame-src 'self' https://www.googletagmanager.com https://www.facebook.com https://challenges.cloudflare.com",
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",
