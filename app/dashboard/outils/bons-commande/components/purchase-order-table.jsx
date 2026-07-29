@@ -81,7 +81,7 @@ import { SavePurchaseOrderTemplateDialog } from "./SavePurchaseOrderTemplateDial
 import { ImportPurchaseOrderModal } from "./import-purchase-order-modal";
 import { ImportedPurchaseOrderSidebar } from "./imported-purchase-order-sidebar";
 import { useImportedPurchaseOrders } from "@/src/graphql/importedPurchaseOrderQueries";
-import { Skeleton } from "@/src/components/ui/skeleton";
+import { PurchaseOrderTableSkeleton } from "./purchase-order-page-skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import { TableEmptyState } from "@/src/components/ui/table-empty-state";
 import { ClipboardImportIcon } from "@/src/components/icons";
@@ -236,7 +236,9 @@ export default function PurchaseOrderTable({
     }
   }, [triggerImport, onImportTriggered]);
 
-  if (loading) {
+  // Skeleton uniquement au premier chargement : si le cache Apollo a déjà des
+  // bons de commande, on les affiche pendant le refetch silencieux
+  if (loading && (!purchaseOrders || purchaseOrders.length === 0)) {
     return <PurchaseOrderTableSkeleton />;
   }
 
@@ -927,79 +929,6 @@ export default function PurchaseOrderTable({
           }}
         />
       )}
-    </div>
-  );
-}
-
-function PurchaseOrderTableSkeleton() {
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-9 w-60" />
-          <Skeleton className="h-9 w-20" />
-        </div>
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-9 w-32" />
-        </div>
-      </div>
-
-      <div className="bg-background overflow-hidden rounded-md border">
-        <Table className="table-fixed">
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="h-11 w-7">
-                <Skeleton className="h-4 w-4 rounded" />
-              </TableHead>
-              <TableHead className="h-11 w-[200px]">
-                <Skeleton className="h-4 w-20" />
-              </TableHead>
-              <TableHead className="h-11 w-[120px]">
-                <Skeleton className="h-4 w-16" />
-              </TableHead>
-              <TableHead className="h-11 w-[120px]">
-                <Skeleton className="h-4 w-16" />
-              </TableHead>
-              <TableHead className="h-11 w-[100px]">
-                <Skeleton className="h-4 w-12" />
-              </TableHead>
-              <TableHead className="h-11 w-[120px]">
-                <Skeleton className="h-4 w-16" />
-              </TableHead>
-              <TableHead className="h-11 w-[60px]"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {Array.from({ length: 10 }).map((_, index) => (
-              <TableRow key={`skeleton-${index}`}>
-                <TableCell>
-                  <Skeleton className="h-4 w-4 rounded" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-4 w-40" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-4 w-20" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-4 w-20" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-5 w-20 rounded-full" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-4 w-24" />
-                </TableCell>
-                <TableCell>
-                  <div className="flex justify-end">
-                    <Skeleton className="h-8 w-8 rounded" />
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
     </div>
   );
 }

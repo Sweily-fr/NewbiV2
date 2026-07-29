@@ -1,30 +1,16 @@
-"use client";
-
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/src/components/ui/card";
-import { useState, useEffect } from "react";
 
 // Hauteurs pré-définies pour éviter Math.random() pendant le rendu (hydratation)
 const CHART_HEIGHTS_1 = [65, 42, 78, 35, 90, 55, 48, 72, 38, 85, 60, 45];
 const CHART_HEIGHTS_2 = [50, 70, 40, 82, 58, 45, 75, 38, 68, 52, 88, 43];
 
 export function DashboardSkeleton() {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
-  const chartBarsCount = isMobile ? 8 : 12;
-  const chartBars1 = CHART_HEIGHTS_1.slice(0, chartBarsCount).map((h, i) => ({ id: i, height: h }));
-  const chartBars2 = CHART_HEIGHTS_2.slice(0, chartBarsCount).map((h, i) => ({ id: i, height: h }));
+  // 8 barres sur mobile, 12 sur desktop : géré en CSS (hidden md:block) plutôt
+  // qu'avec un check window.innerWidth, pour éviter un re-rendu visible après
+  // le premier paint et rester rendable côté serveur (loading.jsx).
+  const chartBars1 = CHART_HEIGHTS_1.map((h, i) => ({ id: i, height: h }));
+  const chartBars2 = CHART_HEIGHTS_2.map((h, i) => ({ id: i, height: h }));
 
   return (
     <div className="flex flex-col gap-4 py-8 sm:p-6 md:gap-6 md:py-6 p-4 md:p-6">
@@ -109,7 +95,7 @@ export function DashboardSkeleton() {
               {chartBars1.map((bar) => (
                 <Skeleton
                   key={bar.id}
-                  className="rounded-t-sm flex-1 animate-pulse"
+                  className={`rounded-t-sm flex-1 animate-pulse ${bar.id >= 8 ? "hidden md:block" : ""}`}
                   style={{
                     height: `${bar.height}%`,
                     minHeight: "20px",
@@ -134,7 +120,7 @@ export function DashboardSkeleton() {
               {chartBars2.map((bar) => (
                 <Skeleton
                   key={bar.id}
-                  className="rounded-t-sm flex-1 animate-pulse"
+                  className={`rounded-t-sm flex-1 animate-pulse ${bar.id >= 8 ? "hidden md:block" : ""}`}
                   style={{
                     height: `${bar.height}%`,
                     minHeight: "20px",
