@@ -4,6 +4,12 @@ import { sendEmail } from "@/src/lib/auth-utils";
 import { withErrorHandler } from "@/src/lib/security";
 
 async function handler(request) {
+  // Outil de dev uniquement : envoie de vrais emails via Resend sans
+  // authentification, donc jamais joignable en production.
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   const { template, email, params } = await request.json();
 
   if (!email || !template) {
