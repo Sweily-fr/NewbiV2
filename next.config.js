@@ -1,13 +1,18 @@
 const isDev = process.env.NODE_ENV === "development";
 
-// CSP en Report-Only le temps de valider qu'aucun usage légitime n'est bloqué
-// (violations visibles dans la console navigateur), puis basculer la clé vers
-// "Content-Security-Policy". Domaines tiers couverts : GTM + Meta Pixel
+// CSP stricte en prod, Report-Only en dev (les violations restent visibles en
+// console sans gêner le développement). Policy validée le 30/07/2026 par
+// balayage Playwright : 16 pages publiques + 19 pages dashboard authentifiées,
+// zéro violation résiduelle. Domaines tiers couverts : GTM + Meta Pixel
 // (MarketingPixels.jsx), API GraphQL + WebSocket, buckets R2 (transferts de
-// fichiers), Cloudinary. Les polices passent par next/font (auto-hébergées).
-// frame-ancestors est omis : ignoré en Report-Only, et X-Frame-Options DENY
-// couvre déjà le clickjacking.
-const cspReportOnly = [
+// fichiers), Cloudinary, Turnstile. Les polices passent par next/font
+// (auto-hébergées). frame-ancestors est omis : X-Frame-Options DENY couvre
+// déjà le clickjacking. Si un flux casse en prod : repasser cspHeaderKey en
+// Report-Only, redéployer, corriger la policy, rebasculer.
+const cspHeaderKey = isDev
+  ? "Content-Security-Policy-Report-Only"
+  : "Content-Security-Policy";
+const cspValue = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://www.googletagmanager.com https://*.googletagmanager.com https://connect.facebook.net https://challenges.cloudflare.com`,
   "style-src 'self' 'unsafe-inline'",
@@ -135,8 +140,8 @@ const nextConfig = {
             value: "camera=(), microphone=(), geolocation=()",
           },
           {
-            key: "Content-Security-Policy-Report-Only",
-            value: cspReportOnly,
+            key: cspHeaderKey,
+            value: cspValue,
           },
         ],
       },
