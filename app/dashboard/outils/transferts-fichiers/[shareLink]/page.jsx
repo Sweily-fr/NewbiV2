@@ -50,7 +50,7 @@ function TransferPageContent() {
 
   // Mutation pour générer un lien de paiement
   const [generatePaymentLink, { loading: paymentLoading }] = useMutation(
-    GENERATE_FILE_TRANSFER_PAYMENT_LINK
+    GENERATE_FILE_TRANSFER_PAYMENT_LINK,
   );
 
   const transfer = data?.getFileTransferByLink?.fileTransfer;
@@ -182,10 +182,7 @@ function TransferPageContent() {
       <div className="min-h-screen flex items-center justify-center p-6">
         <Card className="w-full max-w-md">
           <CardContent className="p-6 text-center">
-            <CircleAlert
-              className="mx-auto mb-4 text-destructive"
-              size={48}
-            />
+            <CircleAlert className="mx-auto mb-4 text-destructive" size={48} />
             <h2 className="text-xl font-semibold mb-2">
               Transfert introuvable
             </h2>
@@ -240,7 +237,7 @@ function TransferPageContent() {
                         year: "numeric",
                         month: "long",
                         day: "numeric",
-                      }
+                      },
                     )}
                   </p>
                 </div>
@@ -405,7 +402,7 @@ function TransferPageContent() {
                   <p className="text-sm text-red-700">
                     Ce transfert a expiré le{" "}
                     {new Date(transferData.expiryDate).toLocaleDateString(
-                      "fr-FR"
+                      "fr-FR",
                     )}
                     .
                   </p>
@@ -441,7 +438,13 @@ function TransferPageContent() {
 // Composant wrapper avec Suspense
 export default function TransferPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><LoaderCircle className="animate-spin" /></div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      }
+    >
       <TransferPageContent />
     </Suspense>
   );

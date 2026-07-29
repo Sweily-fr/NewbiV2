@@ -49,7 +49,9 @@ export function ClientsPageSkeleton() {
   );
 }
 
-function TableSkeleton({ rows }) {
+// Exporté pour être réutilisé par les vues qui affichent le même tableau
+// de contacts (ex : contacts d'une liste dans list-clients-view.jsx).
+export function TableSkeleton({ rows }) {
   return (
     <div className="flex-1 overflow-hidden">
       <table className="w-full">

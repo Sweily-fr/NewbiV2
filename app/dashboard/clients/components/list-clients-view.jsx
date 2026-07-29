@@ -46,6 +46,7 @@ import {
   buildBlockedDeletionMessage,
 } from "@/src/utils/clientDeletion";
 import ClientsTable from "./clients-table";
+import { TableSkeleton } from "./clients-page-skeleton";
 import AddClientsToListDialog from "./add-clients-to-list-dialog";
 
 export default function ListClientsView({
@@ -114,8 +115,7 @@ export default function ListClientsView({
 
   // Contacts sélectionnés liés à des documents (non supprimables)
   const selectedBlockedCount = useMemo(
-    () =>
-      selectedIds.filter((id) => clientsById.get(id)?.hasDocuments).length,
+    () => selectedIds.filter((id) => clientsById.get(id)?.hasDocuments).length,
     [selectedIds, clientsById],
   );
 
@@ -405,10 +405,10 @@ export default function ListClientsView({
 
       {/* Tableau */}
       <div className="flex flex-col flex-1 min-h-0">
-        {loading ? (
-          <div className="flex items-center justify-center h-96">
-            <Loader2 className="w-8 h-8 animate-spin" />
-          </div>
+        {loading && !clients?.length ? (
+          // Lignes skeleton cohérentes avec le tableau de contacts,
+          // uniquement au premier chargement (cache Apollo ensuite)
+          <TableSkeleton rows={8} />
         ) : clients.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-96 px-6 text-center">
             <Users className="w-12 h-12 text-muted-foreground mb-4" />

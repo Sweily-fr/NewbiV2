@@ -1,26 +1,8 @@
-import { Skeleton } from "@/src/components/ui/skeleton";
+import { AutomationPageSkeleton } from "./components/automation-page-skeleton";
 
-export default function loader() {
-  return (
-    <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 p-6">
-      <Skeleton className="h-[40px] w-[100px] rounded-xl" />
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-[40px] w-[300px] rounded-xl" />
-        <Skeleton className="h-[40px] w-[300px] rounded-xl" />
-      </div>
-      <div className="grid grid-cols-3 gap-6 w-full">
-        <Skeleton className="h-[200px] w-full rounded-xl" />
-        <Skeleton className="h-[200px] w-full rounded-xl" />
-        <Skeleton className="h-[200px] w-full rounded-xl" />
-
-        <Skeleton className="h-[200px] w-full rounded-xl" />
-        <Skeleton className="h-[200px] w-full rounded-xl" />
-        <Skeleton className="h-[200px] w-full rounded-xl" />
-
-        <Skeleton className="h-[200px] w-full rounded-xl" />
-        <Skeleton className="h-[200px] w-full rounded-xl" />
-        <Skeleton className="h-[200px] w-full rounded-xl" />
-      </div>
-    </div>
-  );
+// Skeleton affiché pendant le chargement du chunk de la page Intégrations.
+// Réutilise le skeleton fidèle à la page pour que la transition soit
+// invisible (pas de doublon de loader).
+export default function AutomationLoading() {
+  return <AutomationPageSkeleton />;
 }

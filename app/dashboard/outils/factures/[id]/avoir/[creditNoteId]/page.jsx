@@ -2,6 +2,7 @@
 
 import { useParams } from "next/navigation";
 import ModernCreditNoteEditor from "../../../components/modern-credit-note-editor";
+import { InvoiceEditorSkeleton } from "../../../components/invoice-editor-skeleton";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 
 function CreditNoteContent() {
@@ -20,7 +21,7 @@ function CreditNoteContent() {
 
 export default function CreditNotePage() {
   return (
-    <ProRouteGuard pageName="Avoir">
+    <ProRouteGuard pageName="Avoir" fallback={<InvoiceEditorSkeleton />}>
       <CreditNoteContent />
     </ProRouteGuard>
   );

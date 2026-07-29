@@ -41,6 +41,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { CONFIDENCE_CONFIG } from "@/lib/pcg-mapping";
+import { PcgTableSkeleton } from "./components/analytics-skeleton";
 
 const PARENT_CATEGORIES = [
   "Tous",
@@ -158,12 +159,10 @@ function PCGMappingTable() {
     };
   }, [data]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
+  // Skeleton uniquement au premier chargement : si la table est déjà en
+  // cache Apollo, on affiche directement les données pendant le refetch
+  if (loading && !data?.pcgMappingTable) {
+    return <PcgTableSkeleton />;
   }
 
   if (error) {
