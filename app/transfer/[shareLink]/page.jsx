@@ -154,12 +154,26 @@ export default function TransferPage() {
   const accessKey = searchParams.get("key");
   const paymentStatus = searchParams.get("payment_status");
 
+  // 🔐 Query d'autorisation pour les routes /api/files (secret de partage +
+  // mot de passe éventuel) — remplace le simple transferId devinable.
+  const buildFileAuthQuery = () => {
+    const p = new URLSearchParams();
+    if (shareLink) p.set("link", shareLink);
+    if (accessKey) p.set("key", accessKey);
+    if (verifiedPassword) p.set("password", verifiedPassword);
+    const qs = p.toString();
+    return qs ? `?${qs}` : "";
+  };
+
   const [isDownloading, setIsDownloading] = useState(false);
   const [isBulkDownloading, setIsBulkDownloading] = useState(false);
   // Progression par fichier : { [fileId]: pourcentage } — chaque bouton de
   // ligne affiche la sienne, plusieurs téléchargements peuvent coexister
   const [downloadProgressMap, setDownloadProgressMap] = useState({});
   const [isPasswordVerified, setIsPasswordVerified] = useState(false);
+  // Mot de passe vérifié, conservé pour autoriser les téléchargements côté API
+  // (le backend exige désormais link + key + mot de passe éventuel).
+  const [verifiedPassword, setVerifiedPassword] = useState("");
   const [previewFile, setPreviewFile] = useState(null);
   const [previewFileIndex, setPreviewFileIndex] = useState(0);
   const [thumbnailError, setThumbnailError] = useState(false);
@@ -246,7 +260,7 @@ export default function TransferPage() {
     const apiUrl = (
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
     ).replace(/\/$/, "");
-    return `${apiUrl}/api/files/preview/${transfer.fileTransfer.id}/${zipContainer.fileId || zipContainer.id}`;
+    return `${apiUrl}/api/files/preview/${transfer.fileTransfer.id}/${zipContainer.fileId || zipContainer.id}${buildFileAuthQuery()}`;
   }, [zipContainer, transfer?.fileTransfer?.id]);
 
   const {
@@ -288,7 +302,7 @@ export default function TransferPage() {
   const streamFileWithProgress = async (fileId, fileSize, signal) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
     const response = await fetch(
-      `${apiUrl}api/files/download/${transfer?.fileTransfer?.id}/${fileId}`,
+      `${apiUrl}api/files/download/${transfer?.fileTransfer?.id}/${fileId}${buildFileAuthQuery()}`,
       { signal },
     );
 
@@ -346,7 +360,12 @@ export default function TransferPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       keepalive: true,
-      body: JSON.stringify({ duration: Date.now() - startTime, isLastFile }),
+      body: JSON.stringify({
+        duration: Date.now() - startTime,
+        isLastFile,
+        link: shareLink,
+        key: accessKey,
+      }),
     }).catch(() => {});
   };
 
@@ -378,6 +397,8 @@ export default function TransferPage() {
           body: JSON.stringify({
             fileId,
             email: `guest-${Date.now()}@newbi.fr`,
+            link: shareLink,
+            key: accessKey,
           }),
           signal: abortController.signal,
         },
@@ -410,7 +431,7 @@ export default function TransferPage() {
         // Laisser le navigateur mobile gérer le téléchargement nativement,
         // sans quitter la page de transfert
         triggerMobileDownload(
-          `${apiUrl}api/files/download/${transfer?.fileTransfer?.id}/${fileId}`,
+          `${apiUrl}api/files/download/${transfer?.fileTransfer?.id}/${fileId}${buildFileAuthQuery()}`,
         );
         toast.info(
           "Acceptez le téléchargement — la progression s'affiche dans les téléchargements de votre navigateur",
@@ -482,6 +503,8 @@ export default function TransferPage() {
           },
           body: JSON.stringify({
             email: `guest-${Date.now()}@newbi.fr`, // Email unique pour traçabilité
+            link: shareLink,
+            key: accessKey,
           }),
           signal: abortController.signal,
         },
@@ -648,7 +671,7 @@ export default function TransferPage() {
     const apiUrl = (
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
     ).replace(/\/$/, "");
-    const previewUrl = `${apiUrl}/api/files/preview/${transfer?.fileTransfer?.id}/${file.fileId || file.id || file._id}`;
+    const previewUrl = `${apiUrl}/api/files/preview/${transfer?.fileTransfer?.id}/${file.fileId || file.id || file._id}${buildFileAuthQuery()}`;
     setPreviewFile({
       ...file,
       previewUrl,
@@ -854,7 +877,10 @@ export default function TransferPage() {
       {needsPasswordVerification && (
         <PasswordModal
           transferId={transfer?.fileTransfer?.id}
-          onPasswordVerified={() => setIsPasswordVerified(true)}
+          onPasswordVerified={(pwd) => {
+            setIsPasswordVerified(true);
+            setVerifiedPassword(pwd || "");
+          }}
         />
       )}
 
@@ -1012,7 +1038,7 @@ export default function TransferPage() {
                         if (thumbFile?.isZipEntry) {
                           previewSrc = zipBlobUrls[thumbFile.path] || null;
                         } else if (thumbFile) {
-                          previewSrc = `${(process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "")}/api/files/preview/${transfer?.fileTransfer?.id}/${thumbFile?.fileId || thumbFile?.id}`;
+                          previewSrc = `${(process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "")}/api/files/preview/${transfer?.fileTransfer?.id}/${thumbFile?.fileId || thumbFile?.id}${buildFileAuthQuery()}`;
                         }
 
                         const ext = thumbFile?.originalName

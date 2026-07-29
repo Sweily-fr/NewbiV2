@@ -130,12 +130,21 @@ function formatFileSize(bytes) {
   return `${(bytes / (k * k * k)).toFixed(1)} Go`;
 }
 
+// 🔐 Query d'autorisation pour /api/files : secret de partage du transfert.
+function transferAuthQuery(transfer) {
+  const p = new URLSearchParams();
+  if (transfer?.shareLink) p.set("link", transfer.shareLink);
+  if (transfer?.accessKey) p.set("key", transfer.accessKey);
+  const qs = p.toString();
+  return qs ? `?${qs}` : "";
+}
+
 // Construire l'URL de preview
-function getPreviewUrl(transferId, file) {
+function getPreviewUrl(transfer, file) {
   const apiUrl = (
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
   ).replace(/\/$/, "");
-  return `${apiUrl}/api/files/preview/${transferId}/${file.fileId || file.id}`;
+  return `${apiUrl}/api/files/preview/${transfer.id}/${file.fileId || file.id}${transferAuthQuery(transfer)}`;
 }
 
 export function TransferDetailDrawer({
@@ -175,7 +184,7 @@ export function TransferDetailDrawer({
 
   const zipPreviewUrl = useMemo(() => {
     if (!zipContainer || !transfer?.id) return null;
-    return getPreviewUrl(transfer.id, zipContainer);
+    return getPreviewUrl(transfer, zipContainer);
   }, [zipContainer, transfer?.id]);
 
   const {
@@ -238,7 +247,7 @@ export function TransferDetailDrawer({
     if (file?.isZipEntry) {
       return zipBlobUrls[file.path] || null;
     }
-    return getPreviewUrl(transfer.id, file);
+    return getPreviewUrl(transfer, file);
   };
 
   const openLightbox = (file, _index) => {
@@ -291,7 +300,7 @@ export function TransferDetailDrawer({
       const apiUrl = (
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
       ).replace(/\/$/, "");
-      const downloadUrl = `${apiUrl}/api/files/download/${transfer.id}/${file.fileId || file.id}`;
+      const downloadUrl = `${apiUrl}/api/files/download/${transfer.id}/${file.fileId || file.id}${transferAuthQuery(transfer)}`;
 
       // Créer un lien temporaire pour déclencher le téléchargement
       const link = document.createElement("a");
