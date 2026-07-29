@@ -38,7 +38,9 @@ export function PasswordModal({ transferId, onPasswordVerified }) {
 
       if (data.success) {
         toast.success("Accès autorisé");
-        onPasswordVerified();
+        // Transmettre le mot de passe vérifié : le backend l'exige désormais
+        // pour autoriser le téléchargement des transferts protégés.
+        onPasswordVerified(passwordInput);
       } else {
         toast.error(data.message || "Mot de passe incorrect");
       }

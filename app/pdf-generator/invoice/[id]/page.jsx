@@ -18,14 +18,13 @@ export default function PDFGeneratorPage() {
       try {
         console.log("🔍 Récupération facture:", params.id);
 
-        // Récupérer les données de la facture depuis l'API
-        const fetchHeaders = {};
-        if (window.__PREVIEW_MODE === "visual") {
-          fetchHeaders["x-internal-secret"] =
-            process.env.NEXT_PUBLIC_INTERNAL_API_SECRET || "";
-        }
+        // Récupérer les données de la facture depuis l'API.
+        // 🔐 Ne JAMAIS injecter le secret interne côté client (une variable
+        // NEXT_PUBLIC_* serait inlinée dans le bundle JS servi au navigateur).
+        // Flux Puppeteer : le header x-internal-secret est déjà posé par le
+        // serveur (setExtraHTTPHeaders). Flux visuel mobile : cookie de session.
         const response = await fetch(`/api/invoices/data/${params.id}`, {
-          headers: fetchHeaders,
+          credentials: "include",
         });
         console.log("📡 Réponse API:", response.status);
 

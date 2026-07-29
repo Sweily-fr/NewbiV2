@@ -18,14 +18,12 @@ export default function PDFGeneratorPage() {
       try {
         console.log("🔍 Récupération avoir:", params.id);
 
-        // Récupérer les données de l'avoir depuis l'API
-        const fetchHeaders = {};
-        if (window.__PREVIEW_MODE === "visual") {
-          fetchHeaders["x-internal-secret"] =
-            process.env.NEXT_PUBLIC_INTERNAL_API_SECRET || "";
-        }
+        // Récupérer les données de l'avoir depuis l'API.
+        // 🔐 Ne JAMAIS injecter le secret interne côté client (NEXT_PUBLIC_*
+        // serait inliné dans le bundle). Puppeteer pose déjà x-internal-secret ;
+        // le mode visuel mobile s'authentifie par cookie de session.
         const response = await fetch(`/api/credit-notes/data/${params.id}`, {
-          headers: fetchHeaders,
+          credentials: "include",
         });
         console.log("📡 Réponse API:", response.status);
 
