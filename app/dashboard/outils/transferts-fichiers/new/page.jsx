@@ -2,6 +2,7 @@
 
 import FileUploadNew from "../components/file-upload-new";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
+import { TransferUploadSkeleton } from "../components/transfer-upload-skeleton";
 
 function NewTransfertsContent() {
   return (
@@ -24,7 +25,10 @@ function NewTransfertsContent() {
 
 export default function NewTransfertsFichiers() {
   return (
-    <ProRouteGuard pageName="Nouveau transfert">
+    <ProRouteGuard
+      pageName="Nouveau transfert"
+      fallback={<TransferUploadSkeleton />}
+    >
       <NewTransfertsContent />
     </ProRouteGuard>
   );

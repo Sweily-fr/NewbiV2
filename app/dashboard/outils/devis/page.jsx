@@ -297,7 +297,7 @@ export default function QuotesPage() {
   // Page liste des devis - accessible en Pro avec informations d'entreprise complètes
   return (
     <ProRouteGuard pageName="Devis" fallback={<QuotePageSkeleton />}>
-      <CompanyInfoGuard>
+      <CompanyInfoGuard fallback={<QuotePageSkeleton />}>
         <QuotesContent />
       </CompanyInfoGuard>
     </ProRouteGuard>

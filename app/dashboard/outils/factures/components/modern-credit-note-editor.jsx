@@ -203,7 +203,13 @@ export default function ModernCreditNoteEditor({
     return <Badge variant="default">Créé</Badge>;
   };
 
-  if (loading) {
+  // Donnée principale selon le mode : l'avoir existant en édition, la facture
+  // d'origine en création. Les requêtes Apollo sont en cache-and-network :
+  // quand la donnée est déjà en cache, on affiche directement l'éditeur au
+  // lieu d'un loader plein écran pendant le refetch.
+  const mainDocument = isCreating ? originalInvoice : existingCreditNote;
+
+  if (loading && !mainDocument) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center">

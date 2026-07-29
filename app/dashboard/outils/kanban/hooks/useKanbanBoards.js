@@ -33,7 +33,6 @@ export const useKanbanBoards = () => {
     category: null,
     color: null,
   });
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
 
   // Ouvrir la modal de création si ?new=true est dans l'URL
@@ -250,19 +249,11 @@ export const useKanbanBoards = () => {
 
   const boards = data?.boards || [];
 
-  // Gérer l'état de chargement initial
-  useEffect(() => {
-    // Si on a un workspaceId et que la requête n'est plus en loading, on peut arrêter le loading initial
-    if (workspaceId && !queryLoading && data !== undefined) {
-      // Petit délai pour éviter les flashs trop rapides
-      const timer = setTimeout(() => {
-        setIsInitialLoading(false);
-      }, 100);
-
-      return () => clearTimeout(timer);
-    }
-    // Si on n'a pas de workspaceId, on continue d'afficher le skeleton jusqu'à ce qu'il soit disponible
-  }, [workspaceId, queryLoading, data]);
+  // Skeleton uniquement tant qu'on n'a ni workspaceId ni données : si le cache
+  // Apollo a déjà les tableaux (retour sur la page), ils s'affichent
+  // immédiatement pendant le refetch silencieux. L'ancien useState + délai de
+  // 100ms forçait un flash de skeleton à chaque visite.
+  const isInitialLoading = !workspaceId || data === undefined;
 
   // Filter boards based on search term
   const filteredBoards = boards.filter(

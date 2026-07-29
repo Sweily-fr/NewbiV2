@@ -41,6 +41,10 @@ import {
 import { TableEmptyState } from "@/src/components/ui/table-empty-state";
 import { MicroscopeIcon } from "@/src/components/icons";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
+import {
+  SegmentsPageSkeleton,
+  SegmentsGridSkeleton,
+} from "./components/segments-page-skeleton";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { getPlanLimits } from "@/src/lib/plan-limits";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
@@ -555,8 +559,8 @@ function SegmentDetailView({ segment, onBack }) {
         </div>
       </div>
 
-      {/* Table */}
-      {loading ? (
+      {/* Table : skeleton uniquement au premier chargement (cache Apollo ensuite) */}
+      {loading && !clients?.length ? (
         <div className="flex-1 overflow-auto px-4 sm:px-6">
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="flex items-center gap-3 py-3 border-b">
@@ -794,19 +798,9 @@ function SegmentsContent() {
 
       {/* Content */}
       <div className="flex-1 overflow-auto px-4 sm:px-6 py-6">
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="rounded-lg border p-4 space-y-3">
-                <Skeleton className="h-4 w-[120px] rounded" />
-                <Skeleton className="h-3 w-[180px] rounded" />
-                <div className="flex gap-1.5">
-                  <Skeleton className="h-5 w-[80px] rounded-full" />
-                  <Skeleton className="h-5 w-[60px] rounded-full" />
-                </div>
-              </div>
-            ))}
-          </div>
+        {/* Skeleton uniquement au premier chargement (cache Apollo ensuite) */}
+        {loading && !segments?.length ? (
+          <SegmentsGridSkeleton />
         ) : segments.length === 0 ? (
           <TableEmptyState
             icon={MicroscopeIcon}
@@ -978,7 +972,7 @@ function SegmentsContent() {
 
 export default function SegmentsPage() {
   return (
-    <ProRouteGuard pageName="Clients">
+    <ProRouteGuard pageName="Clients" fallback={<SegmentsPageSkeleton />}>
       <SegmentsContent />
     </ProRouteGuard>
   );

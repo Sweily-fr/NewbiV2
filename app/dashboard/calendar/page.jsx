@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { addDays, setHours, setMinutes, subDays } from "date-fns";
-import Loading from "./loading";
+import { CalendarPageSkeleton } from "./components/calendar-page-skeleton";
 
 import { EventCalendar } from "./components";
 import { useEvents, useEventOperations } from "@/src/hooks/useEvents";
@@ -149,8 +149,11 @@ export default function Component() {
     }
   };
 
+  // Skeleton uniquement au premier chargement : useEvents est en cache-first
+  // et ne remonte loading=true que si le cache Apollo est vide
+  // (queryLoading && !data), donc pas de skeleton lors des visites suivantes.
   if (loading) {
-    return <Loading />;
+    return <CalendarPageSkeleton />;
   }
 
   if (error) {

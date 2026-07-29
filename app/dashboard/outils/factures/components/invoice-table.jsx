@@ -697,7 +697,7 @@ export default function InvoiceTable({
       >
         <table className="w-full table-fixed">
           <tbody>
-            {loading ? (
+            {loading && !invoices?.length ? (
               Array.from({ length: 8 }).map((_, i) => (
                 <tr key={`skeleton-${i}`} className="border-b">
                   <td className="p-2 pl-4 sm:pl-6">

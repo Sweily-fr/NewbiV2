@@ -3,7 +3,10 @@
 import { Suspense } from "react";
 import { ArrowLeft, Send, MoreHorizontal } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import { Skeleton } from "@/src/components/ui/skeleton";
+import {
+  InvoiceEditorSkeleton,
+  InvoiceDetailsSkeleton,
+} from "../components/invoice-editor-skeleton";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -121,72 +124,13 @@ function InvoiceDetailsContent() {
 
 export default function InvoiceDetailsPage() {
   return (
-    <ProRouteGuard pageName="Détails facture">
-      <CompanyInfoGuard>
+    <ProRouteGuard
+      pageName="Détails facture"
+      fallback={<InvoiceDetailsSkeleton />}
+    >
+      <CompanyInfoGuard fallback={<InvoiceDetailsSkeleton />}>
         <InvoiceDetailsContent />
       </CompanyInfoGuard>
     </ProRouteGuard>
-  );
-}
-
-function InvoiceDetailsSkeleton() {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-8 w-8" />
-          <div>
-            <Skeleton className="h-8 w-[200px] mb-2" />
-            <Skeleton className="h-4 w-[150px]" />
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Skeleton className="h-10 w-[80px]" />
-          <Skeleton className="h-10 w-[100px]" />
-          <Skeleton className="h-10 w-10" />
-        </div>
-      </div>
-      <InvoiceEditorSkeleton />
-    </div>
-  );
-}
-
-function InvoiceEditorSkeleton() {
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Editor skeleton */}
-      <div className="space-y-6">
-        <div className="rounded-lg border p-6">
-          <Skeleton className="h-6 w-[200px] mb-4" />
-          <div className="space-y-4">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-20 w-full" />
-          </div>
-        </div>
-        <div className="rounded-lg border p-6">
-          <Skeleton className="h-6 w-[150px] mb-4" />
-          <div className="space-y-4">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="flex gap-4">
-                <Skeleton className="h-10 flex-1" />
-                <Skeleton className="h-10 w-20" />
-                <Skeleton className="h-10 w-20" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Preview skeleton */}
-      <div className="rounded-lg border p-6">
-        <Skeleton className="h-6 w-[100px] mb-4" />
-        <div className="space-y-4">
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-40 w-full" />
-        </div>
-      </div>
-    </div>
   );
 }
