@@ -2,8 +2,8 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
+import { ClientDetailSkeleton } from "./components/client-detail-skeleton";
 import {
   useClient,
   useClients,
@@ -70,11 +70,8 @@ function ClientDetailContent() {
 
   if (!isValid) {
     router.replace("/dashboard/clients");
-    return (
-      <div className="flex items-center justify-center h-[calc(100vh-64px)]">
-        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    // Skeleton pendant la redirection pour éviter une rupture visuelle
+    return <ClientDetailSkeleton />;
   }
 
   const currentIndex = allClients?.findIndex((c) => c.id === id) ?? -1;
@@ -141,12 +138,10 @@ function ClientDetailContent() {
     }
   };
 
-  if (clientLoading) {
-    return (
-      <div className="flex items-center justify-center h-[calc(100vh-64px)]">
-        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+  // Skeleton uniquement au premier chargement : si le client est déjà en
+  // cache Apollo, on affiche directement les données pendant le refetch
+  if (clientLoading && !client) {
+    return <ClientDetailSkeleton />;
   }
 
   if (clientError || !client) {
@@ -297,7 +292,7 @@ function ClientDetailContent() {
 
 export default function ClientDetailPage() {
   return (
-    <ProRouteGuard pageName="Clients">
+    <ProRouteGuard pageName="Clients" fallback={<ClientDetailSkeleton />}>
       <ClientDetailContent />
     </ProRouteGuard>
   );

@@ -335,7 +335,7 @@ export default function PurchaseOrdersPage() {
       pageName="Bons de commande"
       fallback={<PurchaseOrderPageSkeleton />}
     >
-      <CompanyInfoGuard>
+      <CompanyInfoGuard fallback={<PurchaseOrderPageSkeleton />}>
         <PurchaseOrdersContent />
       </CompanyInfoGuard>
     </ProRouteGuard>

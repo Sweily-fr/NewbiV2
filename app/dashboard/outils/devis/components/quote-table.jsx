@@ -686,7 +686,7 @@ export default function QuoteTable({
       <div className="hidden md:flex md:flex-col flex-1">
         <table className="w-full table-fixed">
           <tbody>
-            {loading ? (
+            {loading && !quotes?.length ? (
               Array.from({ length: 8 }).map((_, i) => (
                 <tr key={`skeleton-${i}`} className="border-b">
                   <td className="p-2 pl-4 sm:pl-6">

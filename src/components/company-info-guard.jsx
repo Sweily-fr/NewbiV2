@@ -31,7 +31,10 @@ import { cn } from "@/src/lib/utils";
  * Composant Guard pour protéger les pages nécessitant des informations d'entreprise complètes
  * Affiche un dialog détaillé avec les champs manquants puis ouvre la modal de paramètres
  */
-export function CompanyInfoGuard({ children }) {
+// fallback : skeleton de la page à afficher pendant les états d'attente,
+// pour rester visuellement aligné avec le loading.jsx de la route au lieu
+// d'intercaler un spinner plein écran entre deux skeletons.
+export function CompanyInfoGuard({ children, fallback = null }) {
   const { organization, isLoading } = useDashboardLayoutContext();
   const router = useRouter();
   const [showDialog, setShowDialog] = useState(false);
@@ -104,9 +107,11 @@ export function CompanyInfoGuard({ children }) {
   // perdre l'état local des enfants (panneau de paramètres, formulaires…)
   if (isLoading && !organization) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      fallback ?? (
+        <div className="flex items-center justify-center min-h-screen">
+          <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      )
     );
   }
 
@@ -284,28 +289,33 @@ export function CompanyInfoGuard({ children }) {
           />
         )}
 
-        {/* Afficher un loader pendant que le dialog est ouvert */}
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center space-y-4">
-            <LoaderCircle className="h-8 w-8 animate-spin text-primary mx-auto" />
-            <p className="text-sm text-muted-foreground">
-              Vérification des informations...
-            </p>
+        {/* Arrière-plan pendant que le dialog est ouvert : le skeleton de la
+            page si fourni, sinon le loader historique */}
+        {fallback ?? (
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center space-y-4">
+              <LoaderCircle className="h-8 w-8 animate-spin text-primary mx-auto" />
+              <p className="text-sm text-muted-foreground">
+                Vérification des informations...
+              </p>
+            </div>
           </div>
-        </div>
+        )}
       </>
     );
   }
 
-  // Fallback : si pas d'organisation, afficher un loader
+  // Fallback : si pas d'organisation, afficher le skeleton ou un loader
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="text-center space-y-4">
-        <LoaderCircle className="h-8 w-8 animate-spin text-primary mx-auto" />
-        <p className="text-sm text-muted-foreground">
-          Chargement de l'organisation...
-        </p>
+    fallback ?? (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-4">
+          <LoaderCircle className="h-8 w-8 animate-spin text-primary mx-auto" />
+          <p className="text-sm text-muted-foreground">
+            Chargement de l'organisation...
+          </p>
+        </div>
       </div>
-    </div>
+    )
   );
 }

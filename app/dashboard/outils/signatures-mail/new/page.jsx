@@ -19,6 +19,7 @@ import SignatureTemplate from "../components/preview/SignatureTemplate";
 import SignatureEditor from "../components/preview/SignatureEditor";
 import { SignatureSidebar } from "@/src/components/signature-sidebar";
 import { SignatureToolbar } from "../components/SignatureToolbar";
+import { SignatureEditorSkeleton } from "../components/signature-editor-skeleton";
 import SaveSignatureModal from "../components/modals/SaveSignatureModal";
 
 // Aperçu de l'email avec édition inline
@@ -1943,14 +1944,9 @@ export default function NewSignaturePage() {
   // 1. loadingSignature soit terminé (network-only → toujours true pendant le fetch)
   // 2. signatureData.id soit défini (preuve que les données GraphQL ont été mergées)
   if (isEditMode && (loadingSignature || !signatureData?.id)) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center space-y-4">
-          <LoaderCircle className="h-8 w-8 animate-spin text-primary mx-auto" />
-          <p className="text-muted-foreground">Chargement de la signature...</p>
-        </div>
-      </div>
-    );
+    // Skeleton de l'éditeur : évite l'écran blanc + spinner entre la page
+    // des signatures et l'éditeur chargé
+    return <SignatureEditorSkeleton />;
   }
 
   // Note: Le templateId est maintenant toujours défini via le preset (dans use-signature-data.js)

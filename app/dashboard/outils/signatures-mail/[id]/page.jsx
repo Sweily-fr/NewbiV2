@@ -8,6 +8,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useParams } from "next/navigation";
+import { SignaturePageSkeleton } from "../components/signature-page-skeleton";
 
 export default function EditSignaturePage() {
   const router = useRouter();
@@ -17,9 +18,13 @@ export default function EditSignaturePage() {
   useEffect(() => {
     if (signatureId) {
       // Rediriger vers la page /new avec le paramètre edit=true et l'ID de la signature
-      router.push(`/dashboard/outils/signatures-mail/new?edit=true&id=${signatureId}`);
+      router.push(
+        `/dashboard/outils/signatures-mail/new?edit=true&id=${signatureId}`,
+      );
     }
   }, [signatureId, router]);
 
-  return null;
+  // Skeleton pendant la redirection : évite un écran blanc entre le
+  // loading.jsx de la route et la page /new en mode édition
+  return <SignaturePageSkeleton />;
 }

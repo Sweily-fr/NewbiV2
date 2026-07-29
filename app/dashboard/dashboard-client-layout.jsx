@@ -11,7 +11,6 @@ import {
   useOnboarding,
   useDashboardLayoutContext,
 } from "@/src/contexts/dashboard-layout-context";
-import { SiteHeaderSkeleton } from "@/src/components/site-header-skeleton";
 import { OrgActivationHandler } from "@/src/components/org-activation-handler";
 import { StripeConnectUrlHandler } from "@/src/components/stripe-connect-url-handler";
 import { ReconciliationToastProvider } from "@/src/components/reconciliation/ReconciliationToast";

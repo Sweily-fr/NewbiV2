@@ -5,14 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { Input } from "@/src/components/ui/input";
-import {
-  Plus,
-  Search,
-  CircleXIcon,
-  Trash2,
-  Loader2,
-  LoaderCircle,
-} from "lucide-react";
+import { Plus, Search, CircleXIcon, Trash2, LoaderCircle } from "lucide-react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import {
   useClientLists,
@@ -32,6 +25,7 @@ import {
 import ClientListsView from "../components/client-lists-view";
 import CreateListDialog from "../components/create-list-dialog";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
+import { ListesPageSkeleton } from "./components/listes-page-skeleton";
 import { cn } from "@/src/lib/utils";
 
 function ListesContent() {
@@ -79,12 +73,10 @@ function ListesContent() {
     return null;
   }, [listIdFromUrl, lists]);
 
-  if (!workspaceId || listsLoading) {
-    return (
-      <div className="flex items-center justify-center h-[calc(100vh-64px)]">
-        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+  // Skeleton uniquement au premier chargement : si les listes sont déjà en
+  // cache Apollo, on affiche directement les données pendant le refetch
+  if (!workspaceId || (listsLoading && !lists?.length)) {
+    return <ListesPageSkeleton />;
   }
 
   return (
@@ -225,7 +217,7 @@ function ListesContent() {
 
 export default function ListesPage() {
   return (
-    <ProRouteGuard pageName="Clients">
+    <ProRouteGuard pageName="Clients" fallback={<ListesPageSkeleton />}>
       <ListesContent />
     </ProRouteGuard>
   );

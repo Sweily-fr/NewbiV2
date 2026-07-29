@@ -648,7 +648,7 @@ export default function TableProduct({
               ))}
             </thead>
             <tbody>
-              {loading ? (
+              {loading && !allProducts?.length ? (
                 Array.from({ length: pagination.pageSize }).map((_, index) => (
                   <tr key={`skeleton-${index}`} className="border-b">
                     {columns.map((col, colIndex, arr) => (
