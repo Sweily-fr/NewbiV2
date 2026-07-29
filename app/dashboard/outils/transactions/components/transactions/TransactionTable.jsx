@@ -1274,7 +1274,9 @@ export default function TransactionTable({
         <div className="flex-1 overflow-auto">
           <table className="w-full table-fixed">
             <tbody>
-              {loading ? (
+              {loading && transactions.length === 0 ? (
+                // Skeleton uniquement au premier chargement : si le cache a
+                // déjà des transactions, on les affiche pendant le refetch
                 Array.from({ length: 8 }).map((_, i) => (
                   <tr key={`skeleton-${i}`} className="border-b">
                     <td className="p-2 pl-4 sm:pl-6">

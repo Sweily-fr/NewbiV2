@@ -51,7 +51,7 @@ import {
 } from "../../hooks/use-signature-table";
 import SignatureRowActions from "./signature-row-actions";
 import SignaturePreviewModal from "../preview/signature-preview-modal";
-import { Skeleton } from "@/src/components/ui/skeleton";
+import { SignatureTableSkeleton } from "../signature-page-skeleton";
 import { TableEmptyState } from "@/src/components/ui/table-empty-state";
 import { BrushIcon } from "@/src/components/icons";
 import { Label } from "@/src/components/ui/label";
@@ -88,7 +88,9 @@ export default function SignatureTable() {
     actions: signatureActions,
   });
 
-  if (loading) {
+  // Skeleton uniquement au premier chargement : si le cache Apollo a déjà des
+  // signatures, on les affiche pendant le refetch silencieux
+  if (loading && (!signatures || signatures.length === 0)) {
     return <SignatureTableSkeleton />;
   }
 
@@ -561,67 +563,4 @@ function useSignatureTable({ data, onRefetch, actions }) {
 }
 
 // Ce hook est maintenant défini dans use-signature-table.js
-
-function SignatureTableSkeleton() {
-  return (
-    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-      {/* Search Bar Skeleton */}
-      <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 flex-shrink-0">
-        <Skeleton className="h-9 w-[400px]" />
-      </div>
-
-      {/* Table Skeleton */}
-      <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-        {/* Table Header Skeleton */}
-        <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800 py-3">
-          <div className="flex items-center gap-4 px-4">
-            <Skeleton className="h-4 w-4" />
-            <Skeleton className="h-4 w-[180px]" />
-            <Skeleton className="h-4 w-[140px]" />
-            <Skeleton className="h-4 w-[100px]" />
-            <Skeleton className="h-4 w-[160px]" />
-            <Skeleton className="h-4 w-[60px]" />
-          </div>
-        </div>
-
-        {/* Table Body Skeleton */}
-        <div className="flex-1 overflow-auto">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-4 py-4 px-4 border-b border-gray-100 dark:border-gray-800"
-            >
-              <Skeleton className="h-4 w-4" />
-              <div className="flex-1">
-                <Skeleton className="h-4 w-[200px] mb-2" />
-                <Skeleton className="h-3 w-[140px]" />
-              </div>
-              <Skeleton className="h-4 w-[120px]" />
-              <Skeleton className="h-4 w-[80px]" />
-              <Skeleton className="h-4 w-[140px]" />
-              <Skeleton className="h-8 w-8 rounded" />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Pagination Skeleton - Style identique à Transactions */}
-      <div className="flex items-center justify-between px-4 sm:px-6 py-2 border-t border-gray-200 dark:border-gray-800 flex-shrink-0">
-        <Skeleton className="h-4 w-[150px]" />
-        <div className="flex items-center space-x-4 lg:space-x-6">
-          <div className="flex items-center gap-1.5">
-            <Skeleton className="h-4 w-[80px]" />
-            <Skeleton className="h-7 w-[70px]" />
-          </div>
-          <Skeleton className="h-4 w-[80px]" />
-          <div className="flex gap-1">
-            <Skeleton className="h-7 w-7" />
-            <Skeleton className="h-7 w-7" />
-            <Skeleton className="h-7 w-7" />
-            <Skeleton className="h-7 w-7" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+// Le skeleton du tableau est partagé via ../signature-page-skeleton.jsx

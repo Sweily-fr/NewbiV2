@@ -55,6 +55,7 @@ import ClientsModal from "./components/clients-modal";
 import ClientFilters from "./components/client-filters";
 import AutomationsPopover from "./components/automations-popover";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
+import { ClientsPageSkeleton } from "./components/clients-page-skeleton";
 import ClientImportDialog from "./components/client-import-dialog";
 import ClientExportButton from "./components/client-export-button";
 import CreateListDialog from "./components/create-list-dialog";
@@ -694,7 +695,7 @@ function ClientsContent() {
 
 export default function Clients() {
   return (
-    <ProRouteGuard pageName="Clients">
+    <ProRouteGuard pageName="Clients" fallback={<ClientsPageSkeleton />}>
       <ClientsContent />
     </ProRouteGuard>
   );

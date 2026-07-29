@@ -890,8 +890,10 @@ export default function TableClients({
               ))}
             </thead>
             <tbody>
-              {loading ? (
-                // Skeleton loading state
+              {loading && !rawClients?.length ? (
+                // Skeleton uniquement au premier chargement : si le cache
+                // Apollo a déjà des contacts, on les affiche pendant le
+                // refetch silencieux
                 Array.from({ length: pagination.pageSize }).map((_, index) => (
                   <tr
                     key={`skeleton-${index}`}
@@ -1233,8 +1235,10 @@ export default function TableClients({
               ))}
             </TableHeader>
             <TableBody>
-              {loading ? (
-                // Skeleton loading state
+              {loading && !rawClients?.length ? (
+                // Skeleton uniquement au premier chargement : si le cache
+                // Apollo a déjà des contacts, on les affiche pendant le
+                // refetch silencieux
                 Array.from({ length: pagination.pageSize }).map((_, index) => (
                   <TableRow key={`skeleton-${index}`}>
                     <TableCell>

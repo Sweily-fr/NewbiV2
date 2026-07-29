@@ -1,13 +1,8 @@
-import { Skeleton } from "@/src/components/ui/skeleton";
+import { CataloguesPageSkeleton } from "./components/catalogues-page-skeleton";
 
-export default function loader() {
-  return (
-    <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 p-6">
-      <Skeleton className="h-[390px] w-full rounded-xl" />
-      <div className="flex items-center gap-4">
-        <Skeleton className="h-[390px] w-full" />
-        <Skeleton className="h-[390px] w-full" />
-      </div>
-    </div>
-  );
+// Skeleton affiché pendant le chargement du chunk de la page catalogues.
+// Réutilise le même composant que le fallback du ProRouteGuard pour que la
+// transition soit invisible (pas de doublon de loader).
+export default function CataloguesLoading() {
+  return <CataloguesPageSkeleton />;
 }

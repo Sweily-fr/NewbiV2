@@ -641,7 +641,9 @@ export default function PurchaseInvoiceTable({
                 </div>
                 {/* Body */}
                 <div className="flex flex-col">
-                  {loading ? (
+                  {/* Skeleton uniquement au premier chargement : si le cache a
+                      déjà des factures, on les affiche pendant le refetch */}
+                  {loading && invoices.length === 0 ? (
                     <div className="p-0">
                       {Array.from({ length: 8 }).map((_, i) => (
                         <div
@@ -881,7 +883,7 @@ export default function PurchaseInvoiceTable({
         {/* Mobile List */}
         {activeTab !== "imported" ? (
           <div className="flex-1 overflow-y-auto">
-            {loading ? (
+            {loading && invoices.length === 0 ? (
               <div className="px-4">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div
