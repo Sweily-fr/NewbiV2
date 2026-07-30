@@ -32,14 +32,13 @@ import {
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import { useRouter } from "next/navigation";
-import { useLazyQuery, useQuery } from "@apollo/client";
+import { useLazyQuery } from "@apollo/client";
 import {
   useChangeQuoteStatus,
   useQuote,
   QUOTE_STATUS,
   QUOTE_STATUS_LABELS,
   QUOTE_STATUS_COLORS,
-  QUOTE_DOCUMENT_URL,
 } from "@/src/graphql/quoteQueries";
 import { GET_CLIENT } from "@/src/graphql/clientQueries";
 import { getDraftEffectiveDates } from "@/src/utils/dateFormatter";
@@ -57,16 +56,8 @@ const UniversalPDFDownloaderWithFacturX = dynamic(
   () => import("@/src/components/pdf/UniversalPDFDownloaderWithFacturX"),
   { ssr: false },
 );
-// Rendu canvas (pdfjs) du PDF archivé : pas de visualiseur natif (fond sombre,
-// scroll interne), aperçu intégré au scroll de la page comme le rendu HTML.
-import { PdfPageSkeleton, prefetchPdf } from "@/src/components/pdf/pdf-preview";
-const PdfPreview = dynamic(
-  () =>
-    import("@/src/components/pdf/pdf-preview").then((m) => ({
-      default: m.PdfPreview,
-    })),
-  { ssr: false },
-);
+// Skeleton de page A4 affiché le temps de charger les données complètes.
+import { PdfPageSkeleton } from "@/src/components/pdf/pdf-preview";
 
 import CreateLinkedInvoicePopover from "./create-linked-invoice-popover";
 import LinkedInvoicesList from "./linked-invoices-list";
@@ -110,32 +101,6 @@ export default function QuoteSidebar({
     loading: loadingFullQuote,
     error: quoteError,
   } = useQuote(initialQuote?.id);
-
-  // URL du PDF archivé (R2) — uniquement hors brouillon. Signal d'existence
-  // de l'archive : l'affichage passe par le proxy /api/document-preview.
-  // cache-and-network : à la réouverture le signal vient du cache (bascule
-  // immédiate sur le PDF), tout en revalidant en arrière-plan.
-  const { data: quoteDocData } = useQuery(QUOTE_DOCUMENT_URL, {
-    variables: { workspaceId, quoteId: initialQuote?.id },
-    skip:
-      !workspaceId ||
-      !initialQuote?.id ||
-      initialQuote?.status === QUOTE_STATUS.DRAFT,
-    fetchPolicy: "cache-and-network",
-  });
-  const quoteDocumentUrl = quoteDocData?.quoteDocumentUrl || null;
-
-  // Précharge les octets du PDF en parallèle de la query signal ci-dessus :
-  // quand le signal arrive, le téléchargement est déjà fait (ou en vol).
-  useEffect(() => {
-    if (
-      isOpen &&
-      initialQuote?.id &&
-      initialQuote?.status !== QUOTE_STATUS.DRAFT
-    ) {
-      prefetchPdf(`/api/document-preview/quote/${initialQuote.id}`);
-    }
-  }, [isOpen, initialQuote?.id, initialQuote?.status]);
 
   // Statut de signature électronique
   const { signatureRequest: signatureStatus, refetch: refetchSignature } =
@@ -427,22 +392,6 @@ export default function QuoteSidebar({
               {/* Même skeleton que l'aperçu PDF : une seule attente visuelle,
                   pas de loader intermédiaire */}
               <PdfPageSkeleton />
-            </div>
-          ) : quoteDocumentUrl && quote.status !== QUOTE_STATUS.DRAFT ? (
-            <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">
-              {/* Proxy same-origin : un chargement direct depuis api.newbi.fr
-                  partirait sans cookie de session (cookie host-only) */}
-              <PdfPreview
-                src={`/api/document-preview/quote/${quote.id}`}
-                placeholder={<PdfPageSkeleton />}
-                fallback={
-                  <UniversalPreviewPDF
-                    data={quote}
-                    type="quote"
-                    recalcDraftDates
-                  />
-                }
-              />
             </div>
           ) : (
             <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">
