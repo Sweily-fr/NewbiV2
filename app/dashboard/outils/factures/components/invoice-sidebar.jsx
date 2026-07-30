@@ -639,8 +639,10 @@ export default function InvoiceSidebar({
           ) : documentPdfUrl && invoice.status !== "DRAFT" ? (
             // Document archivé (R2) ou servi par SuperPDP : on affiche le PDF faisant foi
             <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">
+              {/* Proxy same-origin : une iframe directe vers api.newbi.fr
+                  partirait sans cookie de session (cookie host-only) */}
               <iframe
-                src={`${documentPdfUrl}#toolbar=0&navpanes=0&view=FitH`}
+                src={`/api/document-preview/invoice/${invoice.id}#toolbar=0&navpanes=0&view=FitH`}
                 title={`Facture ${invoice.prefix || ""}${invoice.number || ""}`}
                 className="w-full h-full min-h-[297mm] border-0"
               />
@@ -1771,7 +1773,7 @@ export default function InvoiceSidebar({
               {selectedCreditNote &&
                 (creditNoteDocumentUrl ? (
                   <iframe
-                    src={`${creditNoteDocumentUrl}#toolbar=0&navpanes=0&view=FitH`}
+                    src={`/api/document-preview/creditNote/${selectedCreditNote.id}#toolbar=0&navpanes=0&view=FitH`}
                     title={`Avoir ${selectedCreditNote.prefix || ""}${selectedCreditNote.number || ""}`}
                     className="w-full h-full min-h-[297mm] border-0"
                   />
