@@ -52,17 +52,13 @@ import {
   INVOICE_STATUS_COLORS,
   GET_SITUATION_INVOICES_BY_QUOTE_REF,
 } from "@/src/graphql/invoiceQueries";
-import { useLazyQuery, useQuery } from "@apollo/client";
+import { useLazyQuery } from "@apollo/client";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
-import { INVOICE_DOCUMENT_URL } from "@/src/graphql/eInvoicingQueries";
 import {
   EInvoiceStatusBadge,
   EReportingErrorBadge,
 } from "./einvoice-status-badge";
-import {
-  useCreditNotesByInvoice,
-  CREDIT_NOTE_DOCUMENT_URL,
-} from "@/src/graphql/creditNoteQueries";
+import { useCreditNotesByInvoice } from "@/src/graphql/creditNoteQueries";
 import { hasReachedCreditNoteLimit } from "@/src/utils/creditNoteUtils";
 import { toast } from "@/src/components/ui/sonner";
 import dynamic from "next/dynamic";
@@ -77,16 +73,8 @@ const UniversalPDFDownloaderWithFacturX = dynamic(
   () => import("@/src/components/pdf/UniversalPDFDownloaderWithFacturX"),
   { ssr: false },
 );
-// Rendu canvas (pdfjs) du PDF archivé : pas de visualiseur natif (fond sombre,
-// scroll interne), aperçu intégré au scroll de la page comme le rendu HTML.
-import { PdfPageSkeleton, prefetchPdf } from "@/src/components/pdf/pdf-preview";
-const PdfPreview = dynamic(
-  () =>
-    import("@/src/components/pdf/pdf-preview").then((m) => ({
-      default: m.PdfPreview,
-    })),
-  { ssr: false },
-);
+// Skeleton de page A4 affiché le temps de charger les données complètes.
+import { PdfPageSkeleton } from "@/src/components/pdf/pdf-preview";
 import { LinkedDocumentRow } from "@/src/components/documents/linked-document-row";
 import CreditNoteMobileFullscreen from "./credit-note-mobile-fullscreen";
 import { useReconciliationForSidebar } from "@/src/hooks/useReconciliation";
@@ -123,39 +111,6 @@ export default function InvoiceSidebar({
   const { workspaceId } = useRequiredWorkspace();
   const { markAsPaid, loading: markingAsPaid } = useMarkInvoiceAsPaid();
   const { changeStatus, loading: changingStatus } = useChangeInvoiceStatus();
-
-  // URL du document PDF archivé (R2) ou servi par SuperPDP — uniquement hors
-  // brouillon. cache-and-network : à la réouverture le signal vient du cache
-  // (bascule immédiate sur le PDF), tout en revalidant en arrière-plan.
-  const { data: docUrlData } = useQuery(INVOICE_DOCUMENT_URL, {
-    variables: { workspaceId, invoiceId: initialInvoice?.id },
-    skip:
-      !workspaceId || !initialInvoice?.id || initialInvoice?.status === "DRAFT",
-    fetchPolicy: "cache-and-network",
-  });
-  const documentPdfUrl = docUrlData?.invoiceDocumentUrl || null;
-
-  // Précharge les octets du PDF en parallèle de la query signal ci-dessus :
-  // quand le signal arrive, le téléchargement est déjà fait (ou en vol).
-  useEffect(() => {
-    if (isOpen && initialInvoice?.id && initialInvoice?.status !== "DRAFT") {
-      prefetchPdf(`/api/document-preview/invoice/${initialInvoice.id}`);
-    }
-  }, [isOpen, initialInvoice?.id, initialInvoice?.status]);
-
-  // URL du PDF Factur-X archivé de l'avoir sélectionné (aperçu lecture seule)
-  const { data: cnDocData } = useQuery(CREDIT_NOTE_DOCUMENT_URL, {
-    variables: { workspaceId, creditNoteId: selectedCreditNote?.id },
-    skip: !workspaceId || !selectedCreditNote?.id,
-    fetchPolicy: "cache-and-network",
-  });
-  const creditNoteDocumentUrl = cnDocData?.creditNoteDocumentUrl || null;
-
-  useEffect(() => {
-    if (selectedCreditNote?.id) {
-      prefetchPdf(`/api/document-preview/creditNote/${selectedCreditNote.id}`);
-    }
-  }, [selectedCreditNote?.id]);
 
   // Fetch credit notes for this invoice
   const {
@@ -663,24 +618,6 @@ export default function InvoiceSidebar({
               {/* Même skeleton que l'aperçu PDF : une seule attente visuelle,
                   pas de loader intermédiaire */}
               <PdfPageSkeleton />
-            </div>
-          ) : documentPdfUrl && invoice.status !== "DRAFT" ? (
-            // Document archivé (R2) ou servi par SuperPDP : on affiche le PDF faisant foi
-            <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">
-              {/* Proxy same-origin : un chargement direct depuis api.newbi.fr
-                  partirait sans cookie de session (cookie host-only) */}
-              <PdfPreview
-                src={`/api/document-preview/invoice/${invoice.id}`}
-                placeholder={<PdfPageSkeleton />}
-                fallback={
-                  <UniversalPreviewPDF
-                    data={invoice}
-                    type="invoice"
-                    previousSituationInvoices={previousSituationInvoices}
-                    recalcDraftDates
-                  />
-                }
-              />
             </div>
           ) : (
             <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">
@@ -1805,24 +1742,12 @@ export default function InvoiceSidebar({
           <div className="fixed inset-0 overflow-y-auto">
             <div className="w-[210mm] mx-auto bg-white my-12">
               {/* Credit Note Content */}
-              {selectedCreditNote &&
-                (creditNoteDocumentUrl ? (
-                  <PdfPreview
-                    src={`/api/document-preview/creditNote/${selectedCreditNote.id}`}
-                    placeholder={<PdfPageSkeleton />}
-                    fallback={
-                      <UniversalPreviewPDF
-                        data={selectedCreditNote}
-                        type="creditNote"
-                      />
-                    }
-                  />
-                ) : (
-                  <UniversalPreviewPDF
-                    data={selectedCreditNote}
-                    type="creditNote"
-                  />
-                ))}
+              {selectedCreditNote && (
+                <UniversalPreviewPDF
+                  data={selectedCreditNote}
+                  type="creditNote"
+                />
+              )}
             </div>
           </div>
         </div>
