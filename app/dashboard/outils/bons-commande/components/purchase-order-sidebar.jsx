@@ -59,6 +59,7 @@ const UniversalPDFDownloaderWithFacturX = dynamic(
 );
 // Rendu canvas (pdfjs) du PDF archivé : pas de visualiseur natif (fond sombre,
 // scroll interne), aperçu intégré au scroll de la page comme le rendu HTML.
+import { PdfPageSkeleton } from "@/src/components/pdf/pdf-preview";
 const PdfPreview = dynamic(
   () =>
     import("@/src/components/pdf/pdf-preview").then((m) => ({
@@ -325,13 +326,7 @@ export default function PurchaseOrderSidebar({
                 // partirait sans cookie de session (cookie host-only)
                 <PdfPreview
                   src={`/api/document-preview/purchaseOrder/${purchaseOrder.id}`}
-                  placeholder={
-                    <UniversalPreviewPDF
-                      data={purchaseOrder}
-                      type="purchaseOrder"
-                      recalcDraftDates
-                    />
-                  }
+                  placeholder={<PdfPageSkeleton />}
                   fallback={
                     <UniversalPreviewPDF
                       data={purchaseOrder}
