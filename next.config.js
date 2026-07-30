@@ -21,11 +21,11 @@ const cspValue = [
   // *.google-analytics.com : GA4 utilise des endpoints régionaux (region1.…).
   // *.r2.cloudflarestorage.com : URLs présignées d'upload des transferts de fichiers.
   `connect-src 'self'${isDev ? " http://localhost:* ws://localhost:*" : ""} https://api.newbi.fr wss://api.newbi.fr https://*.r2.dev https://*.r2.cloudflarestorage.com https://api.cloudinary.com https://*.google-analytics.com https://*.googletagmanager.com https://www.facebook.com https://www.googleapis.com https://challenges.cloudflare.com`,
-  // api.newbi.fr : aperçus PDF des documents archivés (factures, devis, avoirs,
-  // BC) affichés en iframe via les routes /documents/*/document-pdf de l'API.
-  // Flux invisible du balayage du 30/07/2026 : aucun document n'avait encore
-  // d'archive R2 ce jour-là (backfill le soir même), l'iframe ne servait jamais.
-  "frame-src 'self' https://api.newbi.fr https://www.googletagmanager.com https://www.facebook.com https://challenges.cloudflare.com",
+  // Les aperçus PDF des documents archivés (factures, avoirs, BC) passent par
+  // le proxy same-origin /api/document-preview ('self') : le cookie de session
+  // host-only ne part jamais vers api.newbi.fr depuis une iframe (incident
+  // ERR_BLOCKED_BY_CSP puis ERR_BLOCKED_BY_RESPONSE du 30/07/2026).
+  "frame-src 'self' https://www.googletagmanager.com https://www.facebook.com https://challenges.cloudflare.com",
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",
@@ -117,7 +117,23 @@ const nextConfig = {
         ],
       },
       {
-        source: "/((?!api/shared-documents/preview-file).*)",
+        // Autoriser l'iframe same-origin pour l'aperçu des PDF archivés
+        // (factures, devis, avoirs, BC) servis par le proxy document-preview
+        source: "/api/document-preview/:path*",
+        headers: [
+          {
+            key: "X-Frame-Options",
+            value: "SAMEORIGIN",
+          },
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+        ],
+      },
+      {
+        source:
+          "/((?!api/shared-documents/preview-file|api/document-preview).*)",
         headers: [
           {
             key: "X-Frame-Options",
