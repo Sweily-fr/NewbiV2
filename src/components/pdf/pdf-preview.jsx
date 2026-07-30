@@ -34,6 +34,52 @@ function fetchPdfBytes(src) {
 }
 
 /**
+ * Squelette de page A4 affiché pendant le chargement d'un PDF archivé.
+ * Volontairement neutre : le rendu HTML du document ne peut pas servir de
+ * placeholder car il est reconstruit avec les données actuelles alors que le
+ * PDF archivé est figé à la finalisation — sur les anciens documents les deux
+ * diffèrent visiblement et la bascule ressemble à un bug.
+ */
+export function PdfPageSkeleton() {
+  return (
+    <div className="h-full w-full animate-pulse bg-white p-10">
+      <div className="flex items-start justify-between">
+        <div className="h-10 w-28 rounded bg-gray-200" />
+        <div className="flex flex-col items-end gap-2">
+          <div className="h-6 w-32 rounded bg-gray-200" />
+          <div className="h-3 w-44 rounded bg-gray-100" />
+          <div className="h-3 w-36 rounded bg-gray-100" />
+        </div>
+      </div>
+      <div className="mt-14 grid grid-cols-2 gap-10">
+        <div className="space-y-2">
+          <div className="h-3 w-24 rounded bg-gray-200" />
+          <div className="h-3 w-40 rounded bg-gray-100" />
+          <div className="h-3 w-36 rounded bg-gray-100" />
+          <div className="h-3 w-32 rounded bg-gray-100" />
+        </div>
+        <div className="space-y-2">
+          <div className="h-3 w-24 rounded bg-gray-200" />
+          <div className="h-3 w-40 rounded bg-gray-100" />
+          <div className="h-3 w-36 rounded bg-gray-100" />
+        </div>
+      </div>
+      <div className="mt-14 h-8 w-full rounded bg-gray-200" />
+      <div className="mt-3 space-y-2">
+        <div className="h-3 w-full rounded bg-gray-100" />
+        <div className="h-3 w-5/6 rounded bg-gray-100" />
+        <div className="h-3 w-2/3 rounded bg-gray-100" />
+      </div>
+      <div className="ml-auto mt-12 w-1/3 space-y-2">
+        <div className="h-3 w-full rounded bg-gray-100" />
+        <div className="h-3 w-full rounded bg-gray-100" />
+        <div className="h-4 w-full rounded bg-gray-200" />
+      </div>
+    </div>
+  );
+}
+
+/**
  * Rendu d'un PDF via pdfjs-dist (canvas), à la place d'une iframe
  * (illisible sur iOS : seul le coin haut-gauche non zoomé s'affiche ;
  * fond sombre du visualiseur natif sur desktop).
