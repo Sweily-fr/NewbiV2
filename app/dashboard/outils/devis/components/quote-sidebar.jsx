@@ -32,13 +32,14 @@ import {
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import { useRouter } from "next/navigation";
-import { useLazyQuery } from "@apollo/client";
+import { useLazyQuery, useQuery } from "@apollo/client";
 import {
   useChangeQuoteStatus,
   useQuote,
   QUOTE_STATUS,
   QUOTE_STATUS_LABELS,
   QUOTE_STATUS_COLORS,
+  QUOTE_DOCUMENT_URL,
 } from "@/src/graphql/quoteQueries";
 import { GET_CLIENT } from "@/src/graphql/clientQueries";
 import { getDraftEffectiveDates } from "@/src/utils/dateFormatter";
@@ -54,6 +55,15 @@ const UniversalPreviewPDF = dynamic(
 );
 const UniversalPDFDownloaderWithFacturX = dynamic(
   () => import("@/src/components/pdf/UniversalPDFDownloaderWithFacturX"),
+  { ssr: false },
+);
+// Rendu canvas (pdfjs) du PDF archivé : pas de visualiseur natif (fond sombre,
+// scroll interne), aperçu intégré au scroll de la page comme le rendu HTML.
+const PdfPreview = dynamic(
+  () =>
+    import("@/src/components/pdf/pdf-preview").then((m) => ({
+      default: m.PdfPreview,
+    })),
   { ssr: false },
 );
 
@@ -99,6 +109,18 @@ export default function QuoteSidebar({
     loading: loadingFullQuote,
     error: quoteError,
   } = useQuote(initialQuote?.id);
+
+  // URL du PDF archivé (R2) — uniquement hors brouillon. Signal d'existence
+  // de l'archive : l'affichage passe par le proxy /api/document-preview.
+  const { data: quoteDocData } = useQuery(QUOTE_DOCUMENT_URL, {
+    variables: { workspaceId, quoteId: initialQuote?.id },
+    skip:
+      !workspaceId ||
+      !initialQuote?.id ||
+      initialQuote?.status === QUOTE_STATUS.DRAFT,
+    fetchPolicy: "network-only",
+  });
+  const quoteDocumentUrl = quoteDocData?.quoteDocumentUrl || null;
 
   // Statut de signature électronique
   const { signatureRequest: signatureStatus, refetch: refetchSignature } =
@@ -381,12 +403,28 @@ export default function QuoteSidebar({
         }}
         transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
       >
-        {/* Aperçu : rendu HTML UniversalPreviewPDF, comme la sidebar facture.
-            On n'utilise PAS l'iframe du PDF en cache (visualiseur natif = scroll). */}
+        {/* Aperçu : PDF archivé (rendu canvas pdfjs, scroll intégré) si
+            disponible, sinon rendu HTML UniversalPreviewPDF — même logique
+            que les sidebars facture et bon de commande. */}
         <div className="absolute inset-0 p-0 flex items-start justify-center overflow-y-auto py-4 md:py-12 px-2 md:px-24">
           {loadingFullQuote && !fullQuote ? (
             <div className="flex items-center justify-center w-full min-h-[calc(100%-4rem)] pointer-events-auto">
               <LoaderCircle className="h-8 w-8 animate-spin text-white/80" />
+            </div>
+          ) : quoteDocumentUrl && quote.status !== QUOTE_STATUS.DRAFT ? (
+            <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">
+              {/* Proxy same-origin : un chargement direct depuis api.newbi.fr
+                  partirait sans cookie de session (cookie host-only) */}
+              <PdfPreview
+                src={`/api/document-preview/quote/${quote.id}`}
+                fallback={
+                  <UniversalPreviewPDF
+                    data={quote}
+                    type="quote"
+                    recalcDraftDates
+                  />
+                }
+              />
             </div>
           ) : (
             <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">

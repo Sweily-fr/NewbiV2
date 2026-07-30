@@ -57,6 +57,15 @@ const UniversalPDFDownloaderWithFacturX = dynamic(
   () => import("@/src/components/pdf/UniversalPDFDownloaderWithFacturX"),
   { ssr: false },
 );
+// Rendu canvas (pdfjs) du PDF archivé : pas de visualiseur natif (fond sombre,
+// scroll interne), aperçu intégré au scroll de la page comme le rendu HTML.
+const PdfPreview = dynamic(
+  () =>
+    import("@/src/components/pdf/pdf-preview").then((m) => ({
+      default: m.PdfPreview,
+    })),
+  { ssr: false },
+);
 import { LinkedDocumentRow } from "@/src/components/documents/linked-document-row";
 
 export default function PurchaseOrderSidebar({
@@ -312,12 +321,17 @@ export default function PurchaseOrderSidebar({
             <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">
               {purchaseOrderDocumentUrl &&
               purchaseOrder.status !== PURCHASE_ORDER_STATUS.DRAFT ? (
-                // Proxy same-origin : une iframe directe vers api.newbi.fr
+                // Proxy same-origin : un chargement direct depuis api.newbi.fr
                 // partirait sans cookie de session (cookie host-only)
-                <iframe
-                  src={`/api/document-preview/purchaseOrder/${purchaseOrder.id}#toolbar=0&navpanes=0&view=FitH`}
-                  title={`Bon de commande ${purchaseOrder.prefix || ""}${purchaseOrder.number || ""}`}
-                  className="w-full h-full min-h-[297mm] border-0"
+                <PdfPreview
+                  src={`/api/document-preview/purchaseOrder/${purchaseOrder.id}`}
+                  fallback={
+                    <UniversalPreviewPDF
+                      data={purchaseOrder}
+                      type="purchaseOrder"
+                      recalcDraftDates
+                    />
+                  }
                 />
               ) : (
                 <UniversalPreviewPDF
