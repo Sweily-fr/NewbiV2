@@ -312,8 +312,10 @@ export default function PurchaseOrderSidebar({
             <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">
               {purchaseOrderDocumentUrl &&
               purchaseOrder.status !== PURCHASE_ORDER_STATUS.DRAFT ? (
+                // Proxy same-origin : une iframe directe vers api.newbi.fr
+                // partirait sans cookie de session (cookie host-only)
                 <iframe
-                  src={`${purchaseOrderDocumentUrl}#toolbar=0&navpanes=0&view=FitH`}
+                  src={`/api/document-preview/purchaseOrder/${purchaseOrder.id}#toolbar=0&navpanes=0&view=FitH`}
                   title={`Bon de commande ${purchaseOrder.prefix || ""}${purchaseOrder.number || ""}`}
                   className="w-full h-full min-h-[297mm] border-0"
                 />
