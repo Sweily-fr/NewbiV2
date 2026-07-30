@@ -417,6 +417,13 @@ export default function QuoteSidebar({
                   partirait sans cookie de session (cookie host-only) */}
               <PdfPreview
                 src={`/api/document-preview/quote/${quote.id}`}
+                placeholder={
+                  <UniversalPreviewPDF
+                    data={quote}
+                    type="quote"
+                    recalcDraftDates
+                  />
+                }
                 fallback={
                   <UniversalPreviewPDF
                     data={quote}
