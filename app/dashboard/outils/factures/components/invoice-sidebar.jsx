@@ -652,6 +652,14 @@ export default function InvoiceSidebar({
                   partirait sans cookie de session (cookie host-only) */}
               <PdfPreview
                 src={`/api/document-preview/invoice/${invoice.id}`}
+                placeholder={
+                  <UniversalPreviewPDF
+                    data={invoice}
+                    type="invoice"
+                    previousSituationInvoices={previousSituationInvoices}
+                    recalcDraftDates
+                  />
+                }
                 fallback={
                   <UniversalPreviewPDF
                     data={invoice}
@@ -1789,6 +1797,12 @@ export default function InvoiceSidebar({
                 (creditNoteDocumentUrl ? (
                   <PdfPreview
                     src={`/api/document-preview/creditNote/${selectedCreditNote.id}`}
+                    placeholder={
+                      <UniversalPreviewPDF
+                        data={selectedCreditNote}
+                        type="creditNote"
+                      />
+                    }
                     fallback={
                       <UniversalPreviewPDF
                         data={selectedCreditNote}
