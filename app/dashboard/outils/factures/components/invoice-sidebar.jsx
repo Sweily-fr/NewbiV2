@@ -77,6 +77,15 @@ const UniversalPDFDownloaderWithFacturX = dynamic(
   () => import("@/src/components/pdf/UniversalPDFDownloaderWithFacturX"),
   { ssr: false },
 );
+// Rendu canvas (pdfjs) du PDF archivé : pas de visualiseur natif (fond sombre,
+// scroll interne), aperçu intégré au scroll de la page comme le rendu HTML.
+const PdfPreview = dynamic(
+  () =>
+    import("@/src/components/pdf/pdf-preview").then((m) => ({
+      default: m.PdfPreview,
+    })),
+  { ssr: false },
+);
 import { LinkedDocumentRow } from "@/src/components/documents/linked-document-row";
 import CreditNoteMobileFullscreen from "./credit-note-mobile-fullscreen";
 import { useReconciliationForSidebar } from "@/src/hooks/useReconciliation";
@@ -639,12 +648,18 @@ export default function InvoiceSidebar({
           ) : documentPdfUrl && invoice.status !== "DRAFT" ? (
             // Document archivé (R2) ou servi par SuperPDP : on affiche le PDF faisant foi
             <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">
-              {/* Proxy same-origin : une iframe directe vers api.newbi.fr
+              {/* Proxy same-origin : un chargement direct depuis api.newbi.fr
                   partirait sans cookie de session (cookie host-only) */}
-              <iframe
-                src={`/api/document-preview/invoice/${invoice.id}#toolbar=0&navpanes=0&view=FitH`}
-                title={`Facture ${invoice.prefix || ""}${invoice.number || ""}`}
-                className="w-full h-full min-h-[297mm] border-0"
+              <PdfPreview
+                src={`/api/document-preview/invoice/${invoice.id}`}
+                fallback={
+                  <UniversalPreviewPDF
+                    data={invoice}
+                    type="invoice"
+                    previousSituationInvoices={previousSituationInvoices}
+                    recalcDraftDates
+                  />
+                }
               />
             </div>
           ) : (
@@ -1772,10 +1787,14 @@ export default function InvoiceSidebar({
               {/* Credit Note Content */}
               {selectedCreditNote &&
                 (creditNoteDocumentUrl ? (
-                  <iframe
-                    src={`/api/document-preview/creditNote/${selectedCreditNote.id}#toolbar=0&navpanes=0&view=FitH`}
-                    title={`Avoir ${selectedCreditNote.prefix || ""}${selectedCreditNote.number || ""}`}
-                    className="w-full h-full min-h-[297mm] border-0"
+                  <PdfPreview
+                    src={`/api/document-preview/creditNote/${selectedCreditNote.id}`}
+                    fallback={
+                      <UniversalPreviewPDF
+                        data={selectedCreditNote}
+                        type="creditNote"
+                      />
+                    }
                   />
                 ) : (
                   <UniversalPreviewPDF
