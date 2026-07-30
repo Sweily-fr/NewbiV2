@@ -133,15 +133,31 @@ export function PdfPreview({
       className={`relative w-full h-full ${status === "loading" && !placeholder ? "min-h-[160px]" : ""}`}
     >
       {/* Toujours visible (jamais display:none) : clientWidth doit être
-          mesurable pendant le chargement. Vide tant qu'aucune page n'est
-          rendue, donc sans impact sur le placeholder affiché en dessous. */}
-      <div ref={containerRef} className="w-full" />
-      {status === "loading" &&
-        (placeholder || (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <LoaderCircle className="w-6 h-6 text-gray-300 animate-spin" />
+          mesurable pendant le chargement. En absolu sous l'overlay tant que
+          le placeholder est affiché : la page 1 peut s'y dessiner sans
+          modifier la hauteur du wrapper (zéro saut de mise en page). */}
+      <div
+        ref={containerRef}
+        className={`w-full ${status === "loading" && placeholder ? "absolute inset-x-0 top-0" : ""}`}
+      />
+      {status === "loading" && placeholder && (
+        <>
+          {/* Réserve la hauteur d'une page A4 pendant le chargement pour que
+              la bascule placeholder → canvas ne fasse pas sauter la mise en
+              page (le canvas d'une page fait exactement cette hauteur). */}
+          <div className="w-full" style={{ aspectRatio: "210 / 297" }} />
+          {/* Overlay au-dessus du canvas (même emplacement, pas d'empilement
+              vertical) : le placeholder recouvre la page le temps du rendu. */}
+          <div className="absolute inset-0 z-10 overflow-hidden bg-white">
+            {placeholder}
           </div>
-        ))}
+        </>
+      )}
+      {status === "loading" && !placeholder && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <LoaderCircle className="w-6 h-6 text-gray-300 animate-spin" />
+        </div>
+      )}
     </div>
   );
 }
