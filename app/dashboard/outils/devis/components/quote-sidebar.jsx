@@ -59,7 +59,7 @@ const UniversalPDFDownloaderWithFacturX = dynamic(
 );
 // Rendu canvas (pdfjs) du PDF archivé : pas de visualiseur natif (fond sombre,
 // scroll interne), aperçu intégré au scroll de la page comme le rendu HTML.
-import { PdfPageSkeleton } from "@/src/components/pdf/pdf-preview";
+import { PdfPageSkeleton, prefetchPdf } from "@/src/components/pdf/pdf-preview";
 const PdfPreview = dynamic(
   () =>
     import("@/src/components/pdf/pdf-preview").then((m) => ({
@@ -113,15 +113,29 @@ export default function QuoteSidebar({
 
   // URL du PDF archivé (R2) — uniquement hors brouillon. Signal d'existence
   // de l'archive : l'affichage passe par le proxy /api/document-preview.
+  // cache-and-network : à la réouverture le signal vient du cache (bascule
+  // immédiate sur le PDF), tout en revalidant en arrière-plan.
   const { data: quoteDocData } = useQuery(QUOTE_DOCUMENT_URL, {
     variables: { workspaceId, quoteId: initialQuote?.id },
     skip:
       !workspaceId ||
       !initialQuote?.id ||
       initialQuote?.status === QUOTE_STATUS.DRAFT,
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
   });
   const quoteDocumentUrl = quoteDocData?.quoteDocumentUrl || null;
+
+  // Précharge les octets du PDF en parallèle de la query signal ci-dessus :
+  // quand le signal arrive, le téléchargement est déjà fait (ou en vol).
+  useEffect(() => {
+    if (
+      isOpen &&
+      initialQuote?.id &&
+      initialQuote?.status !== QUOTE_STATUS.DRAFT
+    ) {
+      prefetchPdf(`/api/document-preview/quote/${initialQuote.id}`);
+    }
+  }, [isOpen, initialQuote?.id, initialQuote?.status]);
 
   // Statut de signature électronique
   const { signatureRequest: signatureStatus, refetch: refetchSignature } =

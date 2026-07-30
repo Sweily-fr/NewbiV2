@@ -58,7 +58,7 @@ const UniversalPDFDownloaderWithFacturX = dynamic(
 );
 // Rendu canvas (pdfjs) du PDF archivé : pas de visualiseur natif (fond sombre,
 // scroll interne), aperçu intégré au scroll de la page comme le rendu HTML.
-import { PdfPageSkeleton } from "@/src/components/pdf/pdf-preview";
+import { PdfPageSkeleton, prefetchPdf } from "@/src/components/pdf/pdf-preview";
 const PdfPreview = dynamic(
   () =>
     import("@/src/components/pdf/pdf-preview").then((m) => ({
@@ -81,16 +81,32 @@ export default function PurchaseOrderSidebar({
   const { deletePurchaseOrder, loading: deleting } = useDeletePurchaseOrder();
   const { workspaceId } = useRequiredWorkspace();
 
-  // URL du PDF archivé (R2) — uniquement hors brouillon
+  // URL du PDF archivé (R2) — uniquement hors brouillon. cache-and-network :
+  // à la réouverture le signal vient du cache (bascule immédiate sur le PDF),
+  // tout en revalidant en arrière-plan.
   const { data: poDocData } = useQuery(PURCHASE_ORDER_DOCUMENT_URL, {
     variables: { workspaceId, purchaseOrderId: initialPurchaseOrder?.id },
     skip:
       !workspaceId ||
       !initialPurchaseOrder?.id ||
       initialPurchaseOrder?.status === PURCHASE_ORDER_STATUS.DRAFT,
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
   });
   const purchaseOrderDocumentUrl = poDocData?.purchaseOrderDocumentUrl || null;
+
+  // Précharge les octets du PDF en parallèle de la query signal ci-dessus :
+  // quand le signal arrive, le téléchargement est déjà fait (ou en vol).
+  useEffect(() => {
+    if (
+      isOpen &&
+      initialPurchaseOrder?.id &&
+      initialPurchaseOrder?.status !== PURCHASE_ORDER_STATUS.DRAFT
+    ) {
+      prefetchPdf(
+        `/api/document-preview/purchaseOrder/${initialPurchaseOrder.id}`,
+      );
+    }
+  }, [isOpen, initialPurchaseOrder?.id, initialPurchaseOrder?.status]);
 
   const [showMobileDetails, setShowMobileDetails] = useState(false);
   const [isMobile, setIsMobile] = useState(() =>
