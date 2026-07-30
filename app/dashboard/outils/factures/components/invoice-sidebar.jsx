@@ -79,6 +79,7 @@ const UniversalPDFDownloaderWithFacturX = dynamic(
 );
 // Rendu canvas (pdfjs) du PDF archivé : pas de visualiseur natif (fond sombre,
 // scroll interne), aperçu intégré au scroll de la page comme le rendu HTML.
+import { PdfPageSkeleton } from "@/src/components/pdf/pdf-preview";
 const PdfPreview = dynamic(
   () =>
     import("@/src/components/pdf/pdf-preview").then((m) => ({
@@ -652,14 +653,7 @@ export default function InvoiceSidebar({
                   partirait sans cookie de session (cookie host-only) */}
               <PdfPreview
                 src={`/api/document-preview/invoice/${invoice.id}`}
-                placeholder={
-                  <UniversalPreviewPDF
-                    data={invoice}
-                    type="invoice"
-                    previousSituationInvoices={previousSituationInvoices}
-                    recalcDraftDates
-                  />
-                }
+                placeholder={<PdfPageSkeleton />}
                 fallback={
                   <UniversalPreviewPDF
                     data={invoice}
@@ -1797,12 +1791,7 @@ export default function InvoiceSidebar({
                 (creditNoteDocumentUrl ? (
                   <PdfPreview
                     src={`/api/document-preview/creditNote/${selectedCreditNote.id}`}
-                    placeholder={
-                      <UniversalPreviewPDF
-                        data={selectedCreditNote}
-                        type="creditNote"
-                      />
-                    }
+                    placeholder={<PdfPageSkeleton />}
                     fallback={
                       <UniversalPreviewPDF
                         data={selectedCreditNote}
