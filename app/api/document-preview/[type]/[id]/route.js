@@ -77,7 +77,10 @@ export async function GET(request, { params }) {
       headers.set("Content-Length", response.headers.get("Content-Length"));
     }
     // Document nominatif servi sous session : jamais de cache partagé
-    headers.set("Cache-Control", "private, no-store");
+    // (private). Le PDF archivé étant immuable, le navigateur peut en garder
+    // une copie locale 1 h : réouvertures instantanées, y compris après un
+    // rechargement de page.
+    headers.set("Cache-Control", "private, max-age=3600");
 
     return new NextResponse(response.body, { status: 200, headers });
   } catch (error) {
