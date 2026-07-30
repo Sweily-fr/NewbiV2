@@ -31,6 +31,7 @@ import {
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@apollo/client";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import {
   useChangePurchaseOrderStatus,
@@ -39,6 +40,7 @@ import {
   PURCHASE_ORDER_STATUS,
   PURCHASE_ORDER_STATUS_LABELS,
   PURCHASE_ORDER_STATUS_COLORS,
+  PURCHASE_ORDER_DOCUMENT_URL,
 } from "@/src/graphql/purchaseOrderQueries";
 import { getDraftEffectiveDates } from "@/src/utils/dateFormatter";
 import { toast } from "@/src/components/ui/sonner";
@@ -54,8 +56,16 @@ const UniversalPDFDownloaderWithFacturX = dynamic(
   () => import("@/src/components/pdf/UniversalPDFDownloaderWithFacturX"),
   { ssr: false },
 );
-// Skeleton de page A4 affiché le temps de charger les données complètes.
-import { PdfPageSkeleton } from "@/src/components/pdf/pdf-preview";
+// Rendu canvas (pdfjs) du PDF archivé : pas de visualiseur natif (fond sombre,
+// scroll interne), aperçu intégré au scroll de la page comme le rendu HTML.
+import { PdfPageSkeleton, prefetchPdf } from "@/src/components/pdf/pdf-preview";
+const PdfPreview = dynamic(
+  () =>
+    import("@/src/components/pdf/pdf-preview").then((m) => ({
+      default: m.PdfPreview,
+    })),
+  { ssr: false },
+);
 import { LinkedDocumentRow } from "@/src/components/documents/linked-document-row";
 
 export default function PurchaseOrderSidebar({
@@ -70,6 +80,33 @@ export default function PurchaseOrderSidebar({
     useChangePurchaseOrderStatus();
   const { deletePurchaseOrder, loading: deleting } = useDeletePurchaseOrder();
   const { workspaceId } = useRequiredWorkspace();
+
+  // URL du PDF archivé (R2) — uniquement hors brouillon. cache-and-network :
+  // à la réouverture le signal vient du cache (bascule immédiate sur le PDF),
+  // tout en revalidant en arrière-plan.
+  const { data: poDocData } = useQuery(PURCHASE_ORDER_DOCUMENT_URL, {
+    variables: { workspaceId, purchaseOrderId: initialPurchaseOrder?.id },
+    skip:
+      !workspaceId ||
+      !initialPurchaseOrder?.id ||
+      initialPurchaseOrder?.status === PURCHASE_ORDER_STATUS.DRAFT,
+    fetchPolicy: "cache-and-network",
+  });
+  const purchaseOrderDocumentUrl = poDocData?.purchaseOrderDocumentUrl || null;
+
+  // Précharge les octets du PDF en parallèle de la query signal ci-dessus :
+  // quand le signal arrive, le téléchargement est déjà fait (ou en vol).
+  useEffect(() => {
+    if (
+      isOpen &&
+      initialPurchaseOrder?.id &&
+      initialPurchaseOrder?.status !== PURCHASE_ORDER_STATUS.DRAFT
+    ) {
+      prefetchPdf(
+        `/api/document-preview/purchaseOrder/${initialPurchaseOrder.id}`,
+      );
+    }
+  }, [isOpen, initialPurchaseOrder?.id, initialPurchaseOrder?.status]);
 
   const [showMobileDetails, setShowMobileDetails] = useState(false);
   const [isMobile, setIsMobile] = useState(() =>
@@ -300,11 +337,28 @@ export default function PurchaseOrderSidebar({
             </div>
           ) : (
             <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">
-              <UniversalPreviewPDF
-                data={purchaseOrder}
-                type="purchaseOrder"
-                recalcDraftDates
-              />
+              {purchaseOrderDocumentUrl &&
+              purchaseOrder.status !== PURCHASE_ORDER_STATUS.DRAFT ? (
+                // Proxy same-origin : un chargement direct depuis api.newbi.fr
+                // partirait sans cookie de session (cookie host-only)
+                <PdfPreview
+                  src={`/api/document-preview/purchaseOrder/${purchaseOrder.id}`}
+                  placeholder={<PdfPageSkeleton />}
+                  fallback={
+                    <UniversalPreviewPDF
+                      data={purchaseOrder}
+                      type="purchaseOrder"
+                      recalcDraftDates
+                    />
+                  }
+                />
+              ) : (
+                <UniversalPreviewPDF
+                  data={purchaseOrder}
+                  type="purchaseOrder"
+                  recalcDraftDates
+                />
+              )}
             </div>
           )}
         </div>
