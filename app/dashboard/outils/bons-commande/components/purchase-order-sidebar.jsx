@@ -325,6 +325,13 @@ export default function PurchaseOrderSidebar({
                 // partirait sans cookie de session (cookie host-only)
                 <PdfPreview
                   src={`/api/document-preview/purchaseOrder/${purchaseOrder.id}`}
+                  placeholder={
+                    <UniversalPreviewPDF
+                      data={purchaseOrder}
+                      type="purchaseOrder"
+                      recalcDraftDates
+                    />
+                  }
                   fallback={
                     <UniversalPreviewPDF
                       data={purchaseOrder}
