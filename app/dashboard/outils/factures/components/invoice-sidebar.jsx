@@ -79,7 +79,7 @@ const UniversalPDFDownloaderWithFacturX = dynamic(
 );
 // Rendu canvas (pdfjs) du PDF archivé : pas de visualiseur natif (fond sombre,
 // scroll interne), aperçu intégré au scroll de la page comme le rendu HTML.
-import { PdfPageSkeleton } from "@/src/components/pdf/pdf-preview";
+import { PdfPageSkeleton, prefetchPdf } from "@/src/components/pdf/pdf-preview";
 const PdfPreview = dynamic(
   () =>
     import("@/src/components/pdf/pdf-preview").then((m) => ({
@@ -124,22 +124,38 @@ export default function InvoiceSidebar({
   const { markAsPaid, loading: markingAsPaid } = useMarkInvoiceAsPaid();
   const { changeStatus, loading: changingStatus } = useChangeInvoiceStatus();
 
-  // URL du document PDF archivé (R2) ou servi par SuperPDP — uniquement hors brouillon.
+  // URL du document PDF archivé (R2) ou servi par SuperPDP — uniquement hors
+  // brouillon. cache-and-network : à la réouverture le signal vient du cache
+  // (bascule immédiate sur le PDF), tout en revalidant en arrière-plan.
   const { data: docUrlData } = useQuery(INVOICE_DOCUMENT_URL, {
     variables: { workspaceId, invoiceId: initialInvoice?.id },
     skip:
       !workspaceId || !initialInvoice?.id || initialInvoice?.status === "DRAFT",
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
   });
   const documentPdfUrl = docUrlData?.invoiceDocumentUrl || null;
+
+  // Précharge les octets du PDF en parallèle de la query signal ci-dessus :
+  // quand le signal arrive, le téléchargement est déjà fait (ou en vol).
+  useEffect(() => {
+    if (isOpen && initialInvoice?.id && initialInvoice?.status !== "DRAFT") {
+      prefetchPdf(`/api/document-preview/invoice/${initialInvoice.id}`);
+    }
+  }, [isOpen, initialInvoice?.id, initialInvoice?.status]);
 
   // URL du PDF Factur-X archivé de l'avoir sélectionné (aperçu lecture seule)
   const { data: cnDocData } = useQuery(CREDIT_NOTE_DOCUMENT_URL, {
     variables: { workspaceId, creditNoteId: selectedCreditNote?.id },
     skip: !workspaceId || !selectedCreditNote?.id,
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
   });
   const creditNoteDocumentUrl = cnDocData?.creditNoteDocumentUrl || null;
+
+  useEffect(() => {
+    if (selectedCreditNote?.id) {
+      prefetchPdf(`/api/document-preview/creditNote/${selectedCreditNote.id}`);
+    }
+  }, [selectedCreditNote?.id]);
 
   // Fetch credit notes for this invoice
   const {
