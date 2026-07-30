@@ -643,8 +643,10 @@ export default function InvoiceSidebar({
       >
         <div className="absolute inset-0 p-0 flex items-start justify-center overflow-y-auto py-4 md:py-12 px-2 md:px-24">
           {loadingFullInvoice && !fullInvoice ? (
-            <div className="flex items-center justify-center w-full min-h-[calc(100%-4rem)] pointer-events-auto">
-              <LoaderCircle className="h-8 w-8 animate-spin text-white/80" />
+            <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">
+              {/* Même skeleton que l'aperçu PDF : une seule attente visuelle,
+                  pas de loader intermédiaire */}
+              <PdfPageSkeleton />
             </div>
           ) : documentPdfUrl && invoice.status !== "DRAFT" ? (
             // Document archivé (R2) ou servi par SuperPDP : on affiche le PDF faisant foi
