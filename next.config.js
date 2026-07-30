@@ -21,7 +21,11 @@ const cspValue = [
   // *.google-analytics.com : GA4 utilise des endpoints régionaux (region1.…).
   // *.r2.cloudflarestorage.com : URLs présignées d'upload des transferts de fichiers.
   `connect-src 'self'${isDev ? " http://localhost:* ws://localhost:*" : ""} https://api.newbi.fr wss://api.newbi.fr https://*.r2.dev https://*.r2.cloudflarestorage.com https://api.cloudinary.com https://*.google-analytics.com https://*.googletagmanager.com https://www.facebook.com https://www.googleapis.com https://challenges.cloudflare.com`,
-  "frame-src 'self' https://www.googletagmanager.com https://www.facebook.com https://challenges.cloudflare.com",
+  // api.newbi.fr : aperçus PDF des documents archivés (factures, devis, avoirs,
+  // BC) affichés en iframe via les routes /documents/*/document-pdf de l'API.
+  // Flux invisible du balayage du 30/07/2026 : aucun document n'avait encore
+  // d'archive R2 ce jour-là (backfill le soir même), l'iframe ne servait jamais.
+  "frame-src 'self' https://api.newbi.fr https://www.googletagmanager.com https://www.facebook.com https://challenges.cloudflare.com",
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",
