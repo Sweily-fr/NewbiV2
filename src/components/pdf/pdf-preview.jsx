@@ -34,6 +34,19 @@ function fetchPdfBytes(src) {
 }
 
 /**
+ * Lance le téléchargement des octets en tâche de fond (fire-and-forget).
+ * À appeler dès l'ouverture d'une sidebar, en parallèle de la query GraphQL
+ * qui sert de signal d'affichage : quand le signal arrive, les octets sont
+ * déjà là (ou en vol). Les échecs ne sont pas mis en cache.
+ */
+export function prefetchPdf(src) {
+  if (src) fetchPdfBytes(src).catch(() => {});
+  // Chauffe aussi le chunk pdfjs (coût unique par session) pour que le
+  // premier rendu ne paie pas son chargement.
+  import("pdfjs-dist").catch(() => {});
+}
+
+/**
  * Squelette de page A4 affiché pendant le chargement d'un PDF archivé.
  * Volontairement neutre : le rendu HTML du document ne peut pas servir de
  * placeholder car il est reconstruit avec les données actuelles alors que le
