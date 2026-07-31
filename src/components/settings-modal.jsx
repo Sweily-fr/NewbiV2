@@ -44,6 +44,7 @@ import {
   VALIDATION_PATTERNS,
   sanitizeInput,
   detectInjectionAttempt,
+  getVisibleFields,
 } from "@/src/lib/validation";
 import PreferencesSection from "./settings/preferences-section";
 import GeneraleSection from "./settings/generale-section";
@@ -114,6 +115,7 @@ export function SettingsModal({
         iban: "",
         bic: "",
         bankName: "",
+        beneficiaryNameType: "companyName",
       },
       // Informations légales
       legal: {
@@ -126,6 +128,7 @@ export function SettingsModal({
         regime: "",
         category: "",
         isVatSubject: false,
+        vatFranchise: false,
         hasCommercialActivity: false,
         vatRegime: "",
         vatFrequency: "",
@@ -138,7 +141,7 @@ export function SettingsModal({
 
   const {
     handleSubmit,
-    formState: { errors, isSubmitting: formIsSubmitting, isDirty, isValid },
+    formState: { errors, isSubmitting: formIsSubmitting, isDirty },
     reset,
     watch,
   } = formMethods;
@@ -170,6 +173,7 @@ export function SettingsModal({
       iban: org.bankIban || "",
       bic: org.bankBic || "",
       bankName: org.bankName || "",
+      beneficiaryNameType: org.beneficiaryNameType || "companyName",
     },
     // Informations légales
     legal: {
@@ -185,6 +189,7 @@ export function SettingsModal({
       regime: org.fiscalRegime || "",
       category: org.activityCategory || "",
       isVatSubject: org.isVatSubject || false,
+      vatFranchise: org.vatFranchise || false,
       hasCommercialActivity: org.hasCommercialActivity || false,
       vatRegime: org.vatRegime || "",
       vatFrequency: org.vatFrequency || "",
@@ -226,6 +231,16 @@ export function SettingsModal({
   // référence à chaque refetch/forceUpdateCounter.
   // Le chargement initial est déjà assuré par le useEffect ci-dessus (open).
 
+  // Appelé quand la validation échoue au submit : les erreurs sont affichées
+  // sous les champs concernés et le focus est mis sur le premier champ
+  // invalide. Le bouton reste cliquable pour que l'utilisateur comprenne ce
+  // qui bloque (un bouton grisé sans explication est un cul-de-sac).
+  const handleInvalidForm = () => {
+    toast.error(
+      "Certains champs sont invalides ou incomplets. Corrigez les champs signalés en rouge.",
+    );
+  };
+
   // Fonction de sauvegarde
   const handleSaveAll = async (formData) => {
     try {
@@ -241,6 +256,15 @@ export function SettingsModal({
         toast.error("Aucune organisation active trouvée");
         return;
       }
+
+      // Les champs masqués pour la forme juridique choisie (capital,
+      // catégorie d'activité...) sont vidés à l'enregistrement pour ne pas
+      // conserver une valeur périmée (ex: capital social d'une association).
+      const legalVisibleFields = getVisibleFields(
+        formData.legal?.legalForm || "",
+        formData.legal?.isVatSubject || false,
+        formData.legal?.category || "",
+      );
 
       // Transformer les données pour Better Auth
       const transformedData = {
@@ -273,21 +297,47 @@ export function SettingsModal({
           .replace(/\s/g, "")
           .toUpperCase(),
         bankBic: sanitizeInput(formData.bankDetails?.bic || ""),
+        // Le choix du nom du bénéficiaire n'existe que pour les entrepreneurs
+        // individuels ; pour les autres formes, on retombe sur le nom
+        // d'entreprise pour ne pas imprimer un nom propre périmé sur les
+        // documents.
+        beneficiaryNameType: ["EI", "Auto-entrepreneur"].includes(
+          formData.legal?.legalForm,
+        )
+          ? formData.bankDetails?.beneficiaryNameType || "companyName"
+          : "companyName",
 
         // Informations légales — le SIREN est dérivé des 9 premiers chiffres du SIRET
         siret: sanitizeInput(formData.legal?.siret || ""),
         siren: sanitizeInput(formData.legal?.siret || "").substring(0, 9),
-        vatNumber: sanitizeInput(formData.legal?.vatNumber || ""),
-        rcs: sanitizeInput(formData.legal?.rcs || ""),
+        vatNumber: legalVisibleFields.vatNumber
+          ? sanitizeInput(formData.legal?.vatNumber || "")
+          : "",
+        rcs: legalVisibleFields.rcs
+          ? sanitizeInput(formData.legal?.rcs || "")
+          : "",
         legalForm: formData.legal?.legalForm || "",
-        capitalSocial: sanitizeInput(formData.legal?.capital || ""),
+        capitalSocial: legalVisibleFields.capital
+          ? sanitizeInput(formData.legal?.capital || "")
+          : "",
         fiscalRegime: formData.legal?.regime || "",
-        activityCategory: formData.legal?.category || "",
+        activityCategory: legalVisibleFields.activityCategory
+          ? formData.legal?.category || ""
+          : "",
         isVatSubject: formData.legal?.isVatSubject || false,
+        vatFranchise: formData.legal?.vatFranchise || false,
         hasCommercialActivity: formData.legal?.hasCommercialActivity || false,
-        vatRegime: formData.legal?.vatRegime || "",
-        vatFrequency: formData.legal?.vatFrequency || "",
-        vatMode: formData.legal?.vatMode || "",
+        // Champs TVA vidés si non assujetti : ils sont masqués dans l'UI et ne
+        // doivent pas laisser de mention périmée sur les documents
+        vatRegime: formData.legal?.isVatSubject
+          ? formData.legal?.vatRegime || ""
+          : "",
+        vatFrequency: formData.legal?.isVatSubject
+          ? formData.legal?.vatFrequency || ""
+          : "",
+        vatMode: formData.legal?.isVatSubject
+          ? formData.legal?.vatMode || ""
+          : "",
         fiscalYearStartDate: formData.legal?.fiscalYearStartDate || "",
         fiscalYearEndDate: formData.legal?.fiscalYearEndDate || "",
       };
@@ -298,6 +348,20 @@ export function SettingsModal({
           // Forcer un refetch pour s'assurer que les données sont bien en BDD
           if (refetchOrg) {
             await refetchOrg();
+          }
+          // Prévenir les éditeurs de documents ouverts (même canal que les
+          // dialogs CompanyInfo/LegalInfo/BankDetails) : leurs modales lisent
+          // une organisation chargée au montage, cet événement la met à jour
+          // (ex: forme juridique changée ici → champs adaptés côté documents).
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(
+              new CustomEvent("organizationUpdated", {
+                detail: {
+                  organizationId: organization.id,
+                  ...transformedData,
+                },
+              }),
+            );
           }
           // L'exercice comptable borne l'encaissement/décaissement et les
           // analytics → invalider ces caches pour un rafraîchissement immédiat
@@ -364,6 +428,10 @@ export function SettingsModal({
 
   // Fonctions pour les modals de confirmation
   const handleForceClose = () => {
+    // Abandonner réellement les modifications : sans ce reset, le formulaire
+    // reste "dirty" et l'avertissement resurgit à chaque changement d'onglet
+    // ou fermeture alors que l'utilisateur a déjà choisi de ne pas sauvegarder.
+    reset();
     if (pendingTab) {
       setActiveTab(pendingTab);
       setPendingTab(null);
@@ -555,8 +623,7 @@ export function SettingsModal({
           refetchOrganization={refetchOrg}
           formIsSubmitting={formIsSubmitting}
           isDirty={isDirty}
-          isValid={isValid}
-          onSubmit={handleSubmit(handleSaveAll)}
+          onSubmit={handleSubmit(handleSaveAll, handleInvalidForm)}
         />
       </FormProvider>
     );
@@ -578,7 +645,7 @@ export function SettingsModal({
           </DialogTitle>
 
           <form
-            onSubmit={handleSubmit(handleSaveAll)}
+            onSubmit={handleSubmit(handleSaveAll, handleInvalidForm)}
             className="h-full overflow-hidden"
           >
             {/* Desktop Layout */}
@@ -701,18 +768,13 @@ export function SettingsModal({
                     <Button
                       type="submit"
                       disabled={
-                        formIsSubmitting ||
-                        !isDirty ||
-                        !isValid ||
-                        !canManageOrgSettings
+                        formIsSubmitting || !isDirty || !canManageOrgSettings
                       }
                       className="bg-[#5b4eff] cursor-pointer hover:bg-[#5b4eff] dark:text-white"
                       title={
                         !canManageOrgSettings
                           ? "Seuls les owners et admins peuvent modifier les paramètres"
-                          : !isValid
-                            ? "Corrigez les erreurs du formulaire pour continuer"
-                            : ""
+                          : ""
                       }
                     >
                       {formIsSubmitting ? "Sauvegarde..." : "Sauvegarder"}

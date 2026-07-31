@@ -1510,6 +1510,11 @@ export const organizationPlugin = organization({
           input: true,
           required: false,
         },
+        vatFranchise: {
+          type: "boolean",
+          input: true,
+          required: false,
+        },
         hasCommercialActivity: {
           type: "boolean",
           input: true,

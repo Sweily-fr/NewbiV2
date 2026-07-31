@@ -55,6 +55,7 @@ export function GeneraleSection({
     register,
     watch,
     setValue,
+    resetField,
     formState: { errors },
   } = useFormContext();
 
@@ -79,7 +80,11 @@ export function GeneraleSection({
     watchedValues.address?.country || organization?.addressCountry || "France";
 
   const handleLogoChange = (imageUrl) => {
-    setValue("logo", imageUrl);
+    // Le logo est enregistré immédiatement côté organisation (upload et
+    // suppression automatiques) : on met aussi à jour la valeur par défaut du
+    // champ, sinon le formulaire reste considéré comme modifié ("dirty") en
+    // permanence alors que rien n'attend d'être sauvegardé.
+    resetField("logo", { defaultValue: imageUrl });
   };
 
   const handleOrganizationUpdate = async (logoUrl) => {
@@ -106,7 +111,10 @@ export function GeneraleSection({
   };
 
   const handleCountryChange = (value) => {
-    setValue("address.country", value, { shouldValidate: true });
+    setValue("address.country", value, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
   };
 
   return (

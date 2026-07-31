@@ -26,6 +26,7 @@ import { updateOrganization } from "@/src/lib/organization-client";
 import {
   VALIDATION_PATTERNS,
   detectInjectionAttempt,
+  getVisibleFields,
 } from "@/src/lib/validation";
 
 // Mêmes groupes que l'onglet "Informations légales" des paramètres
@@ -87,6 +88,10 @@ const LEGAL_FORM_GROUPS = [
       },
     ],
   },
+  {
+    label: "Associations",
+    forms: [{ value: "Association", label: "Association déclarée" }],
+  },
 ];
 
 const VAT_REGIMES = [
@@ -143,6 +148,18 @@ export function LegalInfoDialog({ open, onOpenChange, organization }) {
   const legalForm = watch("legalForm");
   const vatMode = watch("vatMode");
 
+  // Même logique de visibilité que l'onglet "Informations légales" des
+  // paramètres : capital et RCS dépendent de la forme juridique (et de la
+  // catégorie d'activité pour les EI).
+  const visibleFields = getVisibleFields(
+    legalForm,
+    organization?.isVatSubject || false,
+    organization?.activityCategory || "",
+  );
+  // Champs TVA : uniquement si l'organisation est assujettie à la TVA
+  // (switch coché dans les paramètres, onglet "Informations légales").
+  const showVatFields = organization?.isVatSubject || false;
+
   // Repartir des valeurs de l'organisation à l'ouverture uniquement. La
   // dépendance porte sur `open` et non sur `organization` : si le parent
   // recrée cet objet à chaque rendu, l'effet effacerait la saisie en cours.
@@ -164,15 +181,19 @@ export function LegalInfoDialog({ open, onOpenChange, organization }) {
       }
 
       // Le SIREN est dérivé des 9 premiers chiffres du SIRET, comme dans le
-      // modal des paramètres.
+      // modal des paramètres. Les champs masqués (capital et RCS selon la
+      // forme juridique, TVA si non assujetti) sont vidés pour ne pas laisser
+      // une mention périmée en pied de page des documents.
       const payload = {
         legalForm: formData.legalForm || "",
-        capitalSocial: formData.capitalSocial || "",
+        capitalSocial: visibleFields.capital
+          ? formData.capitalSocial || ""
+          : "",
         siret: formData.siret || "",
         siren: (formData.siret || "").substring(0, 9),
-        rcs: formData.rcs || "",
-        vatNumber: formData.vatNumber || "",
-        vatMode: formData.vatMode || "",
+        rcs: visibleFields.rcs ? formData.rcs || "" : "",
+        vatNumber: showVatFields ? formData.vatNumber || "" : "",
+        vatMode: showVatFields ? formData.vatMode || "" : "",
       };
 
       await updateOrganization(organization.id, payload, {
@@ -250,29 +271,35 @@ export function LegalInfoDialog({ open, onOpenChange, organization }) {
                 </Select>
               </div>
 
-              {/* Capital social / SIRET */}
+              {/* Capital social / SIRET — le capital n'existe pas pour toutes
+                  les formes juridiques (association, EI...) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="dialog-capital" className={FIELD_LABEL_CLASS}>
-                    Capital social (€)
-                  </Label>
-                  <Input
-                    id="dialog-capital"
-                    placeholder="10000"
-                    {...register("capitalSocial", {
-                      pattern: {
-                        value: VALIDATION_PATTERNS.capital.pattern,
-                        message: VALIDATION_PATTERNS.capital.message,
-                      },
-                      validate: noInjection,
-                    })}
-                  />
-                  {errors.capitalSocial && (
-                    <p className="text-xs text-destructive">
-                      {errors.capitalSocial.message}
-                    </p>
-                  )}
-                </div>
+                {visibleFields.capital && (
+                  <div className="flex flex-col gap-2">
+                    <Label
+                      htmlFor="dialog-capital"
+                      className={FIELD_LABEL_CLASS}
+                    >
+                      Capital social (€)
+                    </Label>
+                    <Input
+                      id="dialog-capital"
+                      placeholder="10000"
+                      {...register("capitalSocial", {
+                        pattern: {
+                          value: VALIDATION_PATTERNS.capital.pattern,
+                          message: VALIDATION_PATTERNS.capital.message,
+                        },
+                        validate: noInjection,
+                      })}
+                    />
+                    {errors.capitalSocial && (
+                      <p className="text-xs text-destructive">
+                        {errors.capitalSocial.message}
+                      </p>
+                    )}
+                  </div>
+                )}
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="dialog-siret" className={FIELD_LABEL_CLASS}>
                     SIRET
@@ -296,86 +323,105 @@ export function LegalInfoDialog({ open, onOpenChange, organization }) {
                 </div>
               </div>
 
-              {/* RCS */}
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="dialog-rcs" className={FIELD_LABEL_CLASS}>
-                  RCS
-                </Label>
-                <Input
-                  id="dialog-rcs"
-                  placeholder="981 576 549 R.C.S. Paris"
-                  {...register("rcs", {
-                    pattern: {
-                      value: VALIDATION_PATTERNS.rcs.pattern,
-                      message: VALIDATION_PATTERNS.rcs.message,
-                    },
-                    validate: noInjection,
-                  })}
-                />
-                {errors.rcs && (
-                  <p className="text-xs text-destructive">
-                    {errors.rcs.message}
-                  </p>
-                )}
-              </div>
+              {/* RCS — uniquement pour les formes juridiques immatriculées au
+                  RCS (ou les EI à activité commerciale) */}
+              {visibleFields.rcs && (
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="dialog-rcs" className={FIELD_LABEL_CLASS}>
+                    RCS
+                  </Label>
+                  <Input
+                    id="dialog-rcs"
+                    placeholder="981 576 549 R.C.S. Paris"
+                    {...register("rcs", {
+                      pattern: {
+                        value: VALIDATION_PATTERNS.rcs.pattern,
+                        message: VALIDATION_PATTERNS.rcs.message,
+                      },
+                      validate: noInjection,
+                    })}
+                  />
+                  {errors.rcs && (
+                    <p className="text-xs text-destructive">
+                      {errors.rcs.message}
+                    </p>
+                  )}
+                </div>
+              )}
 
-              {/* Numéro de TVA intracommunautaire */}
-              <div className="flex flex-col gap-2">
-                <Label
-                  htmlFor="dialog-vat-number"
-                  className={FIELD_LABEL_CLASS}
-                >
-                  Numéro de TVA intracommunautaire
-                </Label>
-                <Input
-                  id="dialog-vat-number"
-                  placeholder="FR12345678901"
-                  {...register("vatNumber", {
-                    pattern: {
-                      value: VALIDATION_PATTERNS.vatNumber.pattern,
-                      message: VALIDATION_PATTERNS.vatNumber.message,
-                    },
-                    validate: noInjection,
-                  })}
-                />
-                {errors.vatNumber && (
-                  <p className="text-xs text-destructive">
-                    {errors.vatNumber.message}
-                  </p>
-                )}
-              </div>
+              {/* Champs TVA : sans objet pour une organisation non assujettie
+                  (sauf valeur existante à corriger ou retirer) */}
+              {showVatFields && (
+                <>
+                  {/* Numéro de TVA intracommunautaire */}
+                  <div className="flex flex-col gap-2">
+                    <Label
+                      htmlFor="dialog-vat-number"
+                      className={FIELD_LABEL_CLASS}
+                    >
+                      Numéro de TVA intracommunautaire
+                    </Label>
+                    <Input
+                      id="dialog-vat-number"
+                      placeholder="FR12345678901"
+                      {...register("vatNumber", {
+                        pattern: {
+                          value: VALIDATION_PATTERNS.vatNumber.pattern,
+                          message: VALIDATION_PATTERNS.vatNumber.message,
+                        },
+                        validate: noInjection,
+                      })}
+                    />
+                    {errors.vatNumber && (
+                      <p className="text-xs text-destructive">
+                        {errors.vatNumber.message}
+                      </p>
+                    )}
+                  </div>
 
-              {/* Régime de la TVA */}
-              <div className="flex flex-col gap-2">
-                <Label
-                  htmlFor="dialog-vat-regime"
-                  className={FIELD_LABEL_CLASS}
-                >
-                  Régime de la TVA
-                </Label>
-                <Select
-                  value={vatMode || ""}
-                  onValueChange={(value) =>
-                    setValue("vatMode", value, { shouldDirty: true })
-                  }
-                >
-                  <SelectTrigger id="dialog-vat-regime" className="w-full">
-                    <SelectValue placeholder="Sélectionnez le régime de la TVA" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {VAT_REGIMES.map((regime) => (
-                      <SelectItem key={regime.value} value={regime.value}>
-                        {regime.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Affiché en pied de page des factures : &quot;Paiement de la
-                  TVA: sur les encaissements&quot; ou &quot;sur les
-                  débits&quot;.
-                </p>
-              </div>
+                  {/* Régime de la TVA */}
+                  <div className="flex flex-col gap-2">
+                    <Label
+                      htmlFor="dialog-vat-regime"
+                      className={FIELD_LABEL_CLASS}
+                    >
+                      Régime de la TVA
+                    </Label>
+                    <Select
+                      value={vatMode || ""}
+                      onValueChange={(value) =>
+                        // "none" = sentinelle pour vider le champ (un Select
+                        // Radix ne peut pas avoir d'item à valeur vide)
+                        setValue("vatMode", value === "none" ? "" : value, {
+                          shouldDirty: true,
+                        })
+                      }
+                    >
+                      <SelectTrigger id="dialog-vat-regime" className="w-full">
+                        <SelectValue placeholder="Sélectionnez le régime de la TVA" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem
+                          value="none"
+                          className="text-muted-foreground"
+                        >
+                          Aucun
+                        </SelectItem>
+                        {VAT_REGIMES.map((regime) => (
+                          <SelectItem key={regime.value} value={regime.value}>
+                            {regime.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Affiché en pied de page des factures : &quot;Paiement de
+                      la TVA: sur les encaissements&quot; ou &quot;sur les
+                      débits&quot;.
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Footer aligné droite */}

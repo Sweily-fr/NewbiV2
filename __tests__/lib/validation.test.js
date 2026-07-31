@@ -19,8 +19,12 @@ describe("validation — legal form constants", () => {
     expect(LEGAL_FORMS_WITH_RCS).toContain("SASU");
   });
 
-  it("LEGAL_FORMS_WITHOUT_CAPITAL covers Auto-entrepreneur and EI", () => {
-    expect(LEGAL_FORMS_WITHOUT_CAPITAL).toEqual(["Auto-entrepreneur", "EI"]);
+  it("LEGAL_FORMS_WITHOUT_CAPITAL covers Auto-entrepreneur, EI and Association", () => {
+    expect(LEGAL_FORMS_WITHOUT_CAPITAL).toEqual([
+      "Auto-entrepreneur",
+      "EI",
+      "Association",
+    ]);
   });
 });
 
@@ -32,13 +36,20 @@ describe("getRequiredFields", () => {
     expect(r.legalForm).toBe(false);
   });
 
-  it("requires SIRET + fiscalRegime + activityCategory + RCS for SARL", () => {
+  it("requires SIRET + activityCategory + RCS for SARL (fiscalRegime optionnel)", () => {
     const r = getRequiredFields("SARL");
     expect(r.siret).toBe(true);
-    expect(r.fiscalRegime).toBe(true);
+    // Le régime fiscal n'est plus obligatoire, quelle que soit la forme
+    expect(r.fiscalRegime).toBe(false);
     expect(r.activityCategory).toBe(true);
     expect(r.rcs).toBe(true);
     expect(r.capital).toBe(true);
+  });
+
+  it("does NOT require activityCategory for Association (champ masqué)", () => {
+    const r = getRequiredFields("Association");
+    expect(r.activityCategory).toBe(false);
+    expect(r.capital).toBe(false);
   });
 
   it("does NOT require RCS for EI with a non-commercial activity", () => {
