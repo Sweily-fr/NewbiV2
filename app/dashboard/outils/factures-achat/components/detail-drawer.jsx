@@ -1,7 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
+// Miniature canvas (pdfjs) des justificatifs PDF : pas de visualiseur natif
+// en iframe (fond sombre autour de la page), même rendu que les documents.
+const PdfPreview = dynamic(
+  () =>
+    import("@/src/components/pdf/pdf-preview").then((m) => ({
+      default: m.PdfPreview,
+    })),
+  { ssr: false },
+);
 import { useQuery } from "@apollo/client";
 import { GET_TRANSACTION } from "@/src/graphql/queries/banking";
 import { Button } from "@/src/components/ui/button";
@@ -1150,13 +1160,19 @@ export function PurchaseInvoiceDetailDrawer({
                           />
                         ) : null}
                         {isPdf && file.url ? (
-                          // URL publique R2 interdite en iframe (CSP frame-src) :
-                          // aperçu via le proxy same-origin /api/document-preview.
-                          <iframe
-                            src={`/api/document-preview/purchaseInvoice/${invoice.id}?fileId=${file.id}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
-                            title={file.originalFilename}
-                            className="w-full h-full border-0 pointer-events-none"
-                          />
+                          // URL publique R2 interdite par la CSP : miniature
+                          // via le proxy same-origin /api/document-preview.
+                          <div className="w-full h-full overflow-hidden pointer-events-none bg-white">
+                            <PdfPreview
+                              src={`/api/document-preview/purchaseInvoice/${invoice.id}?fileId=${file.id}`}
+                              firstPageOnly
+                              fallback={
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <FileText className="h-10 w-10 text-red-400" />
+                                </div>
+                              }
+                            />
+                          </div>
                         ) : null}
                         <div
                           className={`preview-fallback items-center justify-center ${isImage || isPdf ? "hidden" : "flex"}`}
