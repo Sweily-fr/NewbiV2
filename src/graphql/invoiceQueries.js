@@ -95,6 +95,7 @@ export const INVOICE_FRAGMENT = gql`
       vatNumber
       transactionCategory
       vatPaymentCondition
+      vatFranchise
       companyStatus
       capitalSocial
       rcs

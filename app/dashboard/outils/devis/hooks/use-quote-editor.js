@@ -2480,6 +2480,7 @@ function getInitialFormData(mode, initialData, session, organization) {
       legalForm: userCompany.legalForm || "",
       capitalSocial: userCompany.capitalSocial || "",
       fiscalRegime: userCompany.fiscalRegime || "",
+      vatFranchise: userCompany.vatFranchise ?? false,
       address:
         typeof userCompany.address === "string"
           ? userCompany.address

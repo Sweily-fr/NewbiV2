@@ -261,6 +261,12 @@ export function useInvoiceEditor({
           organization?.fiscalRegime ||
           formData.companyInfo?.fiscalRegime ||
           "",
+        // Booléen : ?? et non || pour qu'un false explicite de l'organisation
+        // ne retombe pas sur la valeur du document.
+        vatFranchise:
+          organization?.vatFranchise ??
+          formData.companyInfo?.vatFranchise ??
+          false,
         vatPaymentCondition:
           organization?.vatMode ||
           organization?.fiscalRegime ||
@@ -2824,6 +2830,7 @@ function getInitialFormData(mode, initialData, session, organization) {
     legalForm: organization?.legalForm || "",
     capitalSocial: organization?.capitalSocial || "",
     fiscalRegime: organization?.fiscalRegime || "",
+    vatFranchise: organization?.vatFranchise || false,
     website: organization?.website || "",
     logo: organization?.logo || "",
     bankDetails: {

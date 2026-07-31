@@ -408,6 +408,7 @@ export default function ModernInvoiceEditor({
         legalForm: organization?.legalForm || "",
         capitalSocial: organization?.capitalSocial || "",
         fiscalRegime: organization?.fiscalRegime || "",
+        vatFranchise: organization?.vatFranchise || false,
         website: organization?.website || "",
         logo: organization?.logo || "",
         bankDetails: {
