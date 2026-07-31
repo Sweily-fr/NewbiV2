@@ -11,6 +11,7 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
+import { Switch } from "@/src/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -120,6 +121,8 @@ const valuesFromOrganization = (organization) => ({
   capitalSocial: organization?.capitalSocial || "",
   siret: organization?.siret || "",
   rcs: organization?.rcs || "",
+  isVatSubject: organization?.isVatSubject || false,
+  vatFranchise: organization?.vatFranchise || false,
   vatNumber: organization?.vatNumber || "",
   vatMode: organization?.vatMode || "",
 });
@@ -147,18 +150,27 @@ export function LegalInfoDialog({ open, onOpenChange, organization }) {
 
   const legalForm = watch("legalForm");
   const vatMode = watch("vatMode");
+  const isVatSubject = watch("isVatSubject");
+  const vatFranchise = watch("vatFranchise");
 
   // Même logique de visibilité que l'onglet "Informations légales" des
   // paramètres : capital et RCS dépendent de la forme juridique (et de la
   // catégorie d'activité pour les EI).
   const visibleFields = getVisibleFields(
     legalForm,
-    organization?.isVatSubject || false,
+    isVatSubject,
     organization?.activityCategory || "",
   );
-  // Champs TVA : uniquement si l'organisation est assujettie à la TVA
-  // (switch coché dans les paramètres, onglet "Informations légales").
-  const showVatFields = organization?.isVatSubject || false;
+  // Champs TVA : uniquement si assujetti. Les deux switches sont modifiables
+  // ici comme dans les paramètres, et restent mutuellement exclusifs.
+  const showVatFields = isVatSubject;
+
+  const handleVatSubjectChange = (checked) => {
+    setValue("isVatSubject", checked, { shouldDirty: true });
+    if (checked) {
+      setValue("vatFranchise", false, { shouldDirty: true });
+    }
+  };
 
   // Repartir des valeurs de l'organisation à l'ouverture uniquement. La
   // dépendance porte sur `open` et non sur `organization` : si le parent
@@ -192,6 +204,11 @@ export function LegalInfoDialog({ open, onOpenChange, organization }) {
         siret: formData.siret || "",
         siren: (formData.siret || "").substring(0, 9),
         rcs: visibleFields.rcs ? formData.rcs || "" : "",
+        isVatSubject: formData.isVatSubject || false,
+        // Franchise en base : sans objet si assujetti à la TVA
+        vatFranchise: formData.isVatSubject
+          ? false
+          : formData.vatFranchise || false,
         vatNumber: showVatFields ? formData.vatNumber || "" : "",
         vatMode: showVatFields ? formData.vatMode || "" : "",
       };
@@ -346,6 +363,54 @@ export function LegalInfoDialog({ open, onOpenChange, organization }) {
                       {errors.rcs.message}
                     </p>
                   )}
+                </div>
+              )}
+
+              {/* Assujettissement à la TVA */}
+              <div className="flex items-center justify-between gap-4 p-3 rounded-xl border bg-[#F5F5F5] dark:bg-neutral-900">
+                <div className="grid gap-1.5 leading-none">
+                  <label
+                    htmlFor="dialog-vat-subject"
+                    className="text-sm font-medium"
+                  >
+                    Êtes-vous assujetti à la TVA ?
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    Si oui, le numéro de TVA intracommunautaire sera requis.
+                  </p>
+                </div>
+                <Switch
+                  id="dialog-vat-subject"
+                  checked={isVatSubject}
+                  onCheckedChange={handleVatSubjectChange}
+                  className="shrink-0 data-[state=checked]:bg-[#5b4fff]"
+                />
+              </div>
+
+              {/* Franchise en base de TVA : pilote la mention « TVA non
+                  applicable, art. 293 B du CGI » en pied de page des documents */}
+              {!isVatSubject && (
+                <div className="flex items-center justify-between gap-4 p-3 rounded-xl border bg-[#F5F5F5] dark:bg-neutral-900">
+                  <div className="grid gap-1.5 leading-none">
+                    <label
+                      htmlFor="dialog-vat-franchise"
+                      className="text-sm font-medium"
+                    >
+                      Êtes-vous en franchise en base de TVA ?
+                    </label>
+                    <p className="text-xs text-muted-foreground">
+                      Ajoute la mention « TVA non applicable, art. 293 B du CGI
+                      » en pied de page de vos documents.
+                    </p>
+                  </div>
+                  <Switch
+                    id="dialog-vat-franchise"
+                    checked={vatFranchise}
+                    onCheckedChange={(checked) =>
+                      setValue("vatFranchise", checked, { shouldDirty: true })
+                    }
+                    className="shrink-0 data-[state=checked]:bg-[#5b4fff]"
+                  />
                 </div>
               )}
 

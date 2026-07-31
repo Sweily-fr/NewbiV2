@@ -72,6 +72,7 @@ export const PURCHASE_ORDER_FRAGMENT = gql`
       vatNumber
       transactionCategory
       vatPaymentCondition
+      vatFranchise
       companyStatus
       capitalSocial
       rcs

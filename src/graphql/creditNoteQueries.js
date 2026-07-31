@@ -76,6 +76,7 @@ export const CREDIT_NOTE_FRAGMENT = gql`
       vatNumber
       transactionCategory
       vatPaymentCondition
+      vatFranchise
       companyStatus
       address {
         street

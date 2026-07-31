@@ -92,9 +92,21 @@ export const generateDynamicFooter = (companyInfo, variant = "standard") => {
     addressZipCode = "",
     vatNumber = "",
     fiscalRegime = "",
+    // Franchise en base de TVA (art. 293 B du CGI) : source de vérité de la
+    // mention légale en pied de page.
+    vatFranchise,
     // Support pour l'adresse en format objet ou string
     address,
   } = companyInfo;
+
+  // La case dédiée fait foi. À défaut (documents ou organisations antérieurs à
+  // son introduction), un régime fiscal micro vaut franchise en base.
+  const isFranchiseEnBase =
+    typeof vatFranchise === "boolean"
+      ? vatFranchise
+      : fiscalRegime?.toLowerCase().includes("micro") ||
+        fiscalRegime?.toLowerCase().includes("franchise") ||
+        false;
 
   // Utiliser le SIRET complet (14 chiffres) pour le footer
   const siretNumber = siret || "";
@@ -112,11 +124,6 @@ export const generateDynamicFooter = (companyInfo, variant = "standard") => {
     // Si l'adresse est une string, on l'utilise telle quelle
     const adresseComplete = address;
     const villeRCS = rcs ? rcs.replace(/RCS\s*/i, "").trim() : "";
-
-    // Déterminer si c'est une micro-entreprise
-    const isMicroEntreprise =
-      fiscalRegime?.toLowerCase().includes("micro") ||
-      fiscalRegime?.toLowerCase().includes("franchise");
 
     // Utiliser directement l'adresse string dans les variantes
     switch (variant) {
@@ -151,7 +158,7 @@ export const generateDynamicFooter = (companyInfo, variant = "standard") => {
         return `${name}${legalForm ? ` • ${legalForm}` : ""}${capitalSocial ? ` au capital de ${capitalSocial}€` : ""}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""}\nMédiation à la consommation: [Nom du médiateur] • [Site/contact]`;
 
       default:
-        if (isMicroEntreprise) {
+        if (isFranchiseEnBase) {
           return generateDynamicFooter(companyInfo, "micro-lisible");
         }
         return generateDynamicFooter(companyInfo, "standard-lisible");
@@ -163,11 +170,6 @@ export const generateDynamicFooter = (companyInfo, variant = "standard") => {
 
   // Adresse complète à partir des champs séparés
   const adresseComplete = [street, zipCode, city].filter(Boolean).join(", ");
-
-  // Déterminer si c'est une micro-entreprise
-  const isMicroEntreprise =
-    fiscalRegime?.toLowerCase().includes("micro") ||
-    fiscalRegime?.toLowerCase().includes("franchise");
 
   switch (variant) {
     case "standard-compact":
@@ -213,7 +215,7 @@ export const generateDynamicFooter = (companyInfo, variant = "standard") => {
 
     default:
       // Auto-détection basée sur le régime fiscal
-      if (isMicroEntreprise) {
+      if (isFranchiseEnBase) {
         return generateDynamicFooter(companyInfo, "micro-lisible");
       }
       return generateDynamicFooter(companyInfo, "standard-lisible");
