@@ -81,6 +81,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
+import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
 
 export default function ModernInvoiceEditor({
   mode = "create",
@@ -94,6 +95,9 @@ export default function ModernInvoiceEditor({
   const { client: preselectedClient } = useClient(clientIdFromUrl);
   const [showSettings, setShowSettings] = useState(false);
   const [organization, setOrganization] = useState(null);
+  // Suivre les enregistrements faits par les modales (entreprise, légal,
+  // banque, paramètres) pour ne pas rouvrir sur des valeurs périmées.
+  useOrganizationUpdatedSync(setOrganization);
   const [showEditClient, setShowEditClient] = useState(false);
   const [showEditCompany, setShowEditCompany] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
