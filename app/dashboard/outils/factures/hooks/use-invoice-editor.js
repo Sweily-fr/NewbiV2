@@ -267,11 +267,13 @@ export function useInvoiceEditor({
           organization?.vatFranchise ??
           formData.companyInfo?.vatFranchise ??
           false,
-        vatPaymentCondition:
-          organization?.vatMode ||
-          organization?.fiscalRegime ||
-          formData.companyInfo?.vatPaymentCondition ||
-          "",
+        // Pas de repli sur le régime fiscal : il ressuscitait la mention
+        // « Paiement de la TVA » après un décochage de l'assujettissement.
+        vatPaymentCondition: organization?.isVatSubject
+          ? organization?.vatMode ||
+            formData.companyInfo?.vatPaymentCondition ||
+            ""
+          : "",
         website: organization?.website || formData.companyInfo?.website || "",
         logo: organization?.logo || formData.companyInfo?.logo || "",
         bankDetails: {
@@ -1215,8 +1217,9 @@ export function useInvoiceEditor({
         rcs: organization?.rcs || "",
         companyStatus: organization?.legalForm || "",
         capitalSocial: organization?.capitalSocial || "",
-        vatPaymentCondition:
-          organization?.vatMode || organization?.fiscalRegime || "",
+        vatPaymentCondition: organization?.isVatSubject
+          ? organization?.vatMode || ""
+          : "",
         transactionCategory: organization?.activityCategory || "",
         website: organization?.website || "",
         logo: organization?.logo || "",

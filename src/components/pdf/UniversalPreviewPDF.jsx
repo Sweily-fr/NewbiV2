@@ -919,7 +919,7 @@ const UniversalPreviewPDF = ({
                 className="font-medium mb-2 dark:text-[#0A0A0A]"
                 style={{ fontSize: "10px" }}
               >
-                {data.companyInfo?.name || "Sweily"}
+                {data.companyInfo?.name || ""}
                 {/* Nom commercial (si l'affichage est activé dans les paramètres) */}
                 {data.companyInfo?.commercialName && (
                   <div className="font-normal dark:text-[#0A0A0A]">
@@ -936,14 +936,13 @@ const UniversalPreviewPDF = ({
               <div className="font-normal" style={{ fontSize: "10px" }}>
                 {isPurchaseOrder ? (
                   <>
-                    {/* Adresse (rue, code postal + ville, pays) */}
-                    {data.companyInfo?.address ? (
+                    {/* Adresse (rue, code postal + ville, pays). Aucune valeur
+                        de démonstration en repli : imprimer une adresse qui
+                        n'est pas celle de l'émetteur est pire que ne rien
+                        imprimer. */}
+                    {data.companyInfo?.address && (
                       <div className="whitespace-pre-line dark:text-[#0A0A0A]">
                         {formatAddress(data.companyInfo.address)}
-                      </div>
-                    ) : (
-                      <div className="whitespace-pre-line dark:text-[#0A0A0A]">
-                        229 Rue Saint-Honoré\n75001 Paris, FR
                       </div>
                     )}
 
@@ -977,14 +976,12 @@ const UniversalPreviewPDF = ({
                   </>
                 ) : (
                   <>
-                    {/* Adresse de l'entreprise */}
-                    {data.companyInfo?.address ? (
+                    {/* Adresse de l'entreprise. Aucune valeur de démonstration
+                        en repli : imprimer une adresse qui n'est pas celle de
+                        l'émetteur est pire que ne rien imprimer. */}
+                    {data.companyInfo?.address && (
                       <div className="whitespace-pre-line dark:text-[#0A0A0A]">
                         {formatAddress(data.companyInfo.address)}
-                      </div>
-                    ) : (
-                      <div className="whitespace-pre-line dark:text-[#0A0A0A]">
-                        229 Rue Saint-Honoré\n75001 Paris, FR
                       </div>
                     )}
 

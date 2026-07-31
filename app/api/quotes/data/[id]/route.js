@@ -8,6 +8,7 @@ import {
   apiError,
   withErrorHandler,
 } from "@/src/lib/security";
+import { resolveCompanyInfo } from "@/src/lib/document-company-info";
 
 /**
  * GET /api/quotes/data/[id]
@@ -121,7 +122,7 @@ async function handler(request, { params }) {
       : quote.client || quote.clientInfo,
 
     items: quote.items,
-    companyInfo: quote.companyInfo,
+    companyInfo: await resolveCompanyInfo(quote),
     customFields: quote.customFields,
   };
 
