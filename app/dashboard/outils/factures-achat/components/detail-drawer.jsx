@@ -1150,8 +1150,10 @@ export function PurchaseInvoiceDetailDrawer({
                           />
                         ) : null}
                         {isPdf && file.url ? (
+                          // URL publique R2 interdite en iframe (CSP frame-src) :
+                          // aperçu via le proxy same-origin /api/document-preview.
                           <iframe
-                            src={`${file.url}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                            src={`/api/document-preview/purchaseInvoice/${invoice.id}?fileId=${file.id}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
                             title={file.originalFilename}
                             className="w-full h-full border-0 pointer-events-none"
                           />
