@@ -33,7 +33,13 @@ export const LEGAL_FORMS_WITH_CAPITAL = [
   "SELAFA",
   "SELCA",
 ];
-export const LEGAL_FORMS_WITHOUT_CAPITAL = ["Auto-entrepreneur", "EI"];
+export const LEGAL_FORMS_WITHOUT_CAPITAL = [
+  "Auto-entrepreneur",
+  "EI",
+  "Association",
+];
+// Formes juridiques sans catégorie d'activité (champ masqué)
+export const LEGAL_FORMS_WITHOUT_ACTIVITY_CATEGORY = ["Association"];
 export const LEGAL_FORMS_EI_MICRO = ["EI", "Auto-entrepreneur"];
 // Catégories d'activité qui imposent le numéro RCS aux entreprises individuelles
 export const ACTIVITY_CATEGORIES_WITH_RCS = [
@@ -52,8 +58,10 @@ export const getRequiredFields = (
     // Only required if legal form is selected
     // siren n'est plus saisi : il est dérivé automatiquement des 9 premiers chiffres du SIRET
     siret: !!legalForm,
-    fiscalRegime: !!legalForm,
-    activityCategory: !!legalForm,
+    // Le régime fiscal n'est plus obligatoire, quelle que soit la forme juridique
+    fiscalRegime: false,
+    activityCategory:
+      !!legalForm && !LEGAL_FORMS_WITHOUT_ACTIVITY_CATEGORY.includes(legalForm),
     legalForm: false,
 
     // Conditionally required fields
@@ -96,7 +104,8 @@ export const getVisibleFields = (
     // siren n'est plus affiché : il est dérivé du SIRET
     siret: true,
     fiscalRegime: true,
-    activityCategory: true,
+    activityCategory:
+      !LEGAL_FORMS_WITHOUT_ACTIVITY_CATEGORY.includes(legalForm),
     legalForm: true,
 
     // Conditionally visible fields

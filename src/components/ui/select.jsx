@@ -74,11 +74,21 @@ const SelectTrigger = React.memo(function SelectTrigger({
 
 // ─── Content ───
 
-function SelectContent({ className, children, position = "popper", ...props }) {
+function SelectContent({
+  className,
+  children,
+  position = "popper",
+  // Marge vis-à-vis des bords du viewport : la liste ne colle jamais le bas
+  // de l'écran (la hauteur max --radix-select-content-available-height en
+  // tient compte). Surchargée au cas par cas via la prop.
+  collisionPadding = { top: 16, bottom: 32 },
+  ...props
+}) {
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
         data-slot="select-content"
+        collisionPadding={collisionPadding}
         className={cn(
           "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative z-[200] max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-xl border shadow-md",
           position === "popper" &&

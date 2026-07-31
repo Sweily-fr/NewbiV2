@@ -1,7 +1,7 @@
 "use client";
 
 import { useFormContext } from "react-hook-form";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { Settings, Check, Info, Minus } from "lucide-react";
 import { useInvoiceNumber } from "../hooks/use-invoice-number";
 import {
@@ -197,6 +197,15 @@ export default function InvoiceSettingsView({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showBankDetailsDialog, setShowBankDetailsDialog] = useState(false);
   const [organizationRefreshKey, setOrganizationRefreshKey] = useState(0);
+  // L'organisation reçue en prop est chargée une fois par l'éditeur : on
+  // fusionne ce que les modales (entreprise, légal, banque) viennent
+  // d'enregistrer pour que les autres modales voient les valeurs à jour
+  // (ex: forme juridique passée en EI → choix du nom du bénéficiaire).
+  const [orgOverride, setOrgOverride] = useState({});
+  const currentOrganization = useMemo(
+    () => ({ ...(organization || {}), ...orgOverride }),
+    [organization, orgOverride],
+  );
   const [numberDuplicateError, setNumberDuplicateError] = useState(null);
   const [numberSequenceError, setNumberSequenceError] = useState(null);
   const [showAutoNumberingConfirm, setShowAutoNumberingConfirm] =
@@ -226,6 +235,9 @@ export default function InvoiceSettingsView({
   useEffect(() => {
     const handleOrganizationUpdated = (event) => {
       const { bankName, bankIban, bankBic, beneficiaryNameType } = event.detail;
+
+      // Garder l'organisation locale à jour, quel que soit le dialog émetteur
+      setOrgOverride((prev) => ({ ...prev, ...event.detail }));
 
       if (beneficiaryNameType !== undefined) {
         // Déjà enregistré dans l'organisation : shouldDirty inutile.
@@ -1164,7 +1176,7 @@ export default function InvoiceSettingsView({
       <BankDetailsDialog
         open={showBankDetailsDialog}
         onOpenChange={setShowBankDetailsDialog}
-        organization={organization}
+        organization={currentOrganization}
         onSuccess={handleBankDetailsSuccess}
       />
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useFormContext } from "react-hook-form";
 import { Check, Info, Settings, Minus } from "lucide-react";
 import { documentSuggestions } from "@/src/utils/document-suggestions";
@@ -203,6 +203,15 @@ export default function QuoteSettingsView({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showBankDetailsDialog, setShowBankDetailsDialog] = useState(false);
   const [numberDuplicateError, setNumberDuplicateError] = useState(null);
+  // L'organisation reçue en prop est chargée une fois par l'éditeur : on
+  // fusionne ce que les modales (entreprise, banque) viennent d'enregistrer
+  // pour que les autres modales voient les valeurs à jour (ex: forme
+  // juridique passée en EI → choix du nom du bénéficiaire).
+  const [orgOverride, setOrgOverride] = useState({});
+  const currentOrganization = useMemo(
+    () => ({ ...(organization || {}), ...orgOverride }),
+    [organization, orgOverride],
+  );
   const [showAutoNumberingConfirm, setShowAutoNumberingConfirm] =
     useState(false);
   const initialValuesRef = useRef(null);
@@ -226,6 +235,9 @@ export default function QuoteSettingsView({
   useEffect(() => {
     const handleOrganizationUpdated = (event) => {
       const { bankName, bankIban, bankBic, beneficiaryNameType } = event.detail;
+
+      // Garder l'organisation locale à jour, quel que soit le dialog émetteur
+      setOrgOverride((prev) => ({ ...prev, ...event.detail }));
 
       if (beneficiaryNameType !== undefined) {
         // Déjà enregistré dans l'organisation : shouldDirty inutile.
@@ -1038,7 +1050,7 @@ export default function QuoteSettingsView({
       <BankDetailsDialog
         open={showBankDetailsDialog}
         onOpenChange={setShowBankDetailsDialog}
-        organization={organization}
+        organization={currentOrganization}
         onSuccess={() => {}}
       />
 
