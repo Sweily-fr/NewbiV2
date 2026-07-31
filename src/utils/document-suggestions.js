@@ -83,7 +83,11 @@ export const generateDynamicFooter = (companyInfo, variant = "standard") => {
     companyName,
     // Format ancien
     name = companyName || "",
-    legalForm = "",
+    // Les documents persistés stockent la forme juridique sous companyStatus,
+    // l'organisation sous legalForm : sans ce repli, la forme juridique et le
+    // capital social disparaissaient du pied de page de tout document rouvert.
+    companyStatus = "",
+    legalForm = companyStatus || "",
     capitalSocial = "",
     siret = "",
     rcs = "",

@@ -8,6 +8,7 @@ import {
   apiError,
   withErrorHandler,
 } from "@/src/lib/security";
+import { resolveCompanyInfo } from "@/src/lib/document-company-info";
 
 /**
  * GET /api/invoices/data/[id]
@@ -134,7 +135,7 @@ async function handler(request, { params }) {
       : invoice.client || invoice.clientInfo,
 
     items: invoice.items,
-    companyInfo: invoice.companyInfo,
+    companyInfo: await resolveCompanyInfo(invoice),
     customFields: invoice.customFields,
   };
 

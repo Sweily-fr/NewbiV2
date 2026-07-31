@@ -8,6 +8,7 @@ import {
   apiError,
   withErrorHandler,
 } from "@/src/lib/security";
+import { resolveCompanyInfo } from "@/src/lib/document-company-info";
 
 /**
  * GET /api/credit-notes/data/[id]
@@ -146,7 +147,7 @@ async function handler(request, { params }) {
       : creditNote.client || creditNote.clientInfo,
 
     items: creditNote.items,
-    companyInfo: creditNote.companyInfo,
+    companyInfo: await resolveCompanyInfo(creditNote),
     customFields: creditNote.customFields,
   };
 
