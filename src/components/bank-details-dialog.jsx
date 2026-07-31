@@ -181,9 +181,12 @@ export function BankDetailsDialog({
 
       const cleanedIban = cleanIban(formData.iban || "");
       const cleanedBic = (formData.bic || "").toUpperCase();
+      // Le choix n'existe que pour les EI : pour les autres formes, on force
+      // le nom d'entreprise pour ne pas imprimer un nom propre périmé (même
+      // règle que le modal de paramètres).
       const nextBeneficiaryNameType = showBeneficiaryChoice
         ? formData.beneficiaryNameType || "companyName"
-        : organization.beneficiaryNameType || "companyName";
+        : "companyName";
 
       await updateOrganization(
         organization.id,

@@ -97,6 +97,10 @@ const LEGAL_FORM_GROUPS = [
       },
     ],
   },
+  {
+    label: "Associations",
+    forms: [{ value: "Association", label: "Association déclarée" }],
+  },
 ];
 
 const ALL_TAX_REGIMES = [
@@ -135,6 +139,7 @@ function getAvailableTaxRegimes(legalForm) {
     case "SCI":
     case "SCM":
     case "SCP":
+    case "Association":
       return ALL_TAX_REGIMES.filter((r) => reelOnly.includes(r.value));
     default:
       return ALL_TAX_REGIMES;
@@ -213,6 +218,7 @@ export function InformationsLegalesSection({
   const watchedValues = watch();
 
   const isVatSubject = watchedValues.legal?.isVatSubject || false;
+  const isVatFranchise = watchedValues.legal?.vatFranchise || false;
   const selectedLegalForm = watchedValues.legal?.legalForm || "";
   const selectedRegime = watchedValues.legal?.regime || "";
   const selectedCategory = watchedValues.legal?.category || "";
@@ -222,6 +228,14 @@ export function InformationsLegalesSection({
 
   const handleVatSubjectChange = (checked) => {
     setValue("legal.isVatSubject", checked, { shouldDirty: true });
+    // Assujetti à la TVA et franchise en base sont mutuellement exclusifs
+    if (checked) {
+      setValue("legal.vatFranchise", false, { shouldDirty: true });
+    }
+  };
+
+  const handleVatFranchiseChange = (checked) => {
+    setValue("legal.vatFranchise", checked, { shouldDirty: true });
   };
 
   const availableTaxRegimes = getAvailableTaxRegimes(selectedLegalForm);
@@ -239,7 +253,11 @@ export function InformationsLegalesSection({
   };
 
   const handleRegimeChange = (value) => {
-    setValue("legal.regime", value, { shouldDirty: true });
+    // "none" = sentinelle pour vider le champ (un Select Radix ne peut pas
+    // avoir d'item à valeur vide)
+    setValue("legal.regime", value === "none" ? "" : value, {
+      shouldDirty: true,
+    });
   };
 
   const handleCategoryChange = (value) => {
@@ -458,30 +476,32 @@ export function InformationsLegalesSection({
               </div>
             )}
 
-            <div className="flex flex-col gap-1">
-              <RequiredLabel
-                htmlFor="category"
-                isRequired={requiredFields.activityCategory}
-              >
-                Catégorie d'activité
-              </RequiredLabel>
-              <Select
-                value={selectedCategory}
-                onValueChange={handleCategoryChange}
-                disabled={!canManageOrgSettings}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Sélectionnez la catégorie d'activité" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ACTIVITY_CATEGORIES.map((category) => (
-                    <SelectItem key={category.value} value={category.value}>
-                      {category.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {visibleFields.activityCategory && (
+              <div className="flex flex-col gap-1">
+                <RequiredLabel
+                  htmlFor="category"
+                  isRequired={requiredFields.activityCategory}
+                >
+                  Catégorie d'activité
+                </RequiredLabel>
+                <Select
+                  value={selectedCategory}
+                  onValueChange={handleCategoryChange}
+                  disabled={!canManageOrgSettings}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Sélectionnez la catégorie d'activité" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ACTIVITY_CATEGORIES.map((category) => (
+                      <SelectItem key={category.value} value={category.value}>
+                        {category.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           {/* ══════════════════════════════════════════ */}
@@ -507,6 +527,9 @@ export function InformationsLegalesSection({
                     <SelectValue placeholder="Sélectionnez le régime fiscal" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none" className="text-muted-foreground">
+                      Aucun
+                    </SelectItem>
                     {availableTaxRegimes.map((regime) => (
                       <SelectItem key={regime.value} value={regime.value}>
                         {regime.label}
@@ -537,6 +560,7 @@ export function InformationsLegalesSection({
                 <Switch
                   checked={isVatSubject}
                   onCheckedChange={handleVatSubjectChange}
+                  disabled={!canManageOrgSettings}
                   className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
                 />
               </div>
@@ -662,10 +686,21 @@ export function InformationsLegalesSection({
                   )}
                 </div>
               ) : (
-                <div className="rounded-md bg-gray-50 dark:bg-gray-900 px-4 py-3">
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Franchise en base de TVA
-                  </p>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="text-sm font-medium text-gray-600 mb-1">
+                      Êtes-vous en franchise en base de TVA ?
+                    </h3>
+                    <p className="text-xs text-gray-400">
+                      TVA non applicable, article 293 B du CGI.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={isVatFranchise}
+                    onCheckedChange={handleVatFranchiseChange}
+                    disabled={!canManageOrgSettings}
+                    className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
+                  />
                 </div>
               )}
             </div>
