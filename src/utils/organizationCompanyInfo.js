@@ -128,9 +128,10 @@ export function mapOrganizationToCompanyInfo(organization) {
     transactionCategory: organization.activityCategory || "",
     // Cohérent avec l'API : pas de repli sur le régime fiscal, qui
     // ressuscitait la mention après un décochage de l'assujettissement.
-    vatPaymentCondition: organization.isVatSubject
-      ? organization.vatMode || ""
-      : "",
+    // vatMode suffit, les écrans de réglages le vident déjà dans ce cas ;
+    // isVatSubject est undefined pour les organisations ne l'ayant jamais
+    // enregistré et masquerait alors un régime pourtant valide.
+    vatPaymentCondition: organization.vatMode || "",
   };
 
   if (organization.bankIban || organization.bankBic || organization.bankName) {

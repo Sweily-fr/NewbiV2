@@ -28,25 +28,36 @@ describe("mapOrganizationToCompanyInfo", () => {
     expect(ci.companyStatus).toBe("SARL");
   });
 
-  it("ne pose aucun régime de TVA si l'organisation n'est pas assujettie", () => {
+  it("ne déduit aucun régime de TVA du régime fiscal", () => {
+    // Les réglages vident déjà vatMode au décochage de l'assujettissement :
+    // le régime fiscal ne doit pas ressusciter la mention.
     expect(
       mapOrganizationToCompanyInfo({
         ...org,
-        isVatSubject: false,
-        vatMode: "debits",
+        vatMode: "",
         fiscalRegime: "reel-normal",
       }).vatPaymentCondition,
     ).toBe("");
   });
 
-  it("conserve le régime de TVA si assujettie", () => {
+  it("conserve le régime de TVA choisi", () => {
     expect(
       mapOrganizationToCompanyInfo({
         ...org,
-        isVatSubject: true,
         vatMode: "encaissements",
       }).vatPaymentCondition,
     ).toBe("encaissements");
+  });
+
+  it("conserve le régime même si isVatSubject n'a jamais été enregistré", () => {
+    // isVatSubject n'a pas de valeur par défaut : le conditionner masquait
+    // un régime pourtant valide sur les organisations existantes.
+    expect(
+      mapOrganizationToCompanyInfo({
+        ...org,
+        vatMode: "debits",
+      }).vatPaymentCondition,
+    ).toBe("debits");
   });
 });
 
