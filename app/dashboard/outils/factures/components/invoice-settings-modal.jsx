@@ -17,6 +17,7 @@ import {
 } from "@/src/utils/invoiceUtils";
 import { useInvoiceNumber } from "../hooks/use-invoice-number";
 import { useSession } from "@/src/lib/auth-client";
+import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
 
 // Données de démonstration pour la preview
 const getDemoInvoiceData = (formData, organization, userName) => {
@@ -189,6 +190,9 @@ const getDemoInvoiceData = (formData, organization, userName) => {
 export function InvoiceSettingsModal({ open, onOpenChange }) {
   const [isSaving, setIsSaving] = useState(false);
   const [organization, setOrganization] = useState(null);
+  // Suivre les enregistrements faits par les modales (entreprise, légal,
+  // banque, paramètres) pour ne pas rouvrir sur des valeurs périmées.
+  useOrganizationUpdatedSync(setOrganization);
   const [debouncedFormData, setDebouncedFormData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [initialValues, setInitialValues] = useState(null);

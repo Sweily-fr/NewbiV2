@@ -63,6 +63,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
+import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
 
 export default function ModernPurchaseOrderEditor({
   mode = "create",
@@ -82,6 +83,9 @@ export default function ModernPurchaseOrderEditor({
   const [createdPurchaseOrderData, setCreatedPurchaseOrderData] =
     useState(null);
   const [organization, setOrganization] = useState(null);
+  // Suivre les enregistrements faits par les modales (entreprise, légal,
+  // banque, paramètres) pour ne pas rouvrir sur des valeurs périmées.
+  useOrganizationUpdatedSync(setOrganization);
   const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
   const [showManageTemplates, setShowManageTemplates] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState("none");

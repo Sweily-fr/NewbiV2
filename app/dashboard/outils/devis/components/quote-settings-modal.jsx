@@ -14,6 +14,7 @@ import {
 import { generateQuotePrefix } from "@/src/utils/quoteUtils";
 import { refreshPrefixDate } from "@/src/utils/invoiceUtils";
 import { useQuoteNumber } from "../hooks/use-quote-number";
+import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
 
 // Données de démonstration pour la preview
 const getDemoQuoteData = (formData, organization) => {
@@ -181,6 +182,9 @@ const getDemoQuoteData = (formData, organization) => {
 export function QuoteSettingsModal({ open, onOpenChange }) {
   const [isSaving, setIsSaving] = useState(false);
   const [organization, setOrganization] = useState(null);
+  // Suivre les enregistrements faits par les modales (entreprise, légal,
+  // banque, paramètres) pour ne pas rouvrir sur des valeurs périmées.
+  useOrganizationUpdatedSync(setOrganization);
   const [debouncedFormData, setDebouncedFormData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [initialValues, setInitialValues] = useState(null);

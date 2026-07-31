@@ -29,6 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
+import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
 
 export default function ModernCreditNoteEditor({
   mode = "create",
@@ -38,6 +39,9 @@ export default function ModernCreditNoteEditor({
 }) {
   const router = useRouter();
   const [organization, setOrganization] = useState(null);
+  // Suivre les enregistrements faits par les modales (entreprise, légal,
+  // banque, paramètres) pour ne pas rouvrir sur des valeurs périmées.
+  useOrganizationUpdatedSync(setOrganization);
   const [showSendEmailModal, setShowSendEmailModal] = useState(false);
   const [createdCreditNoteData, setCreatedCreditNoteData] = useState(null);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);

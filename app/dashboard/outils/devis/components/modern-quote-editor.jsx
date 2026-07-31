@@ -69,6 +69,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
+import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
 
 export default function ModernQuoteEditor({
   mode = "create",
@@ -83,6 +84,9 @@ export default function ModernQuoteEditor({
   const [showSettings, setShowSettings] = useState(false);
   const [showEditClient, setShowEditClient] = useState(false);
   const [organization, setOrganization] = useState(null);
+  // Suivre les enregistrements faits par les modales (entreprise, légal,
+  // banque, paramètres) pour ne pas rouvrir sur des valeurs périmées.
+  useOrganizationUpdatedSync(setOrganization);
   const [currentStep, setCurrentStep] = useState(1);
   const [debouncedFormData, setDebouncedFormData] = useState(null);
   const [showSendEmailModal, setShowSendEmailModal] = useState(false);
