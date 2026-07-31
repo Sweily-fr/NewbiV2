@@ -43,6 +43,7 @@ import { Checkbox } from "@/src/components/ui/checkbox";
 import { Switch } from "@/src/components/ui/switch";
 import { BankDetailsDialog } from "@/src/components/bank-details-dialog";
 import CompanyInfoSettingsSection from "@/src/components/settings/company-info-settings-section";
+import LegalInfoSettingsSection from "@/src/components/settings/legal-info-settings-section";
 
 export default function QuoteSettingsView({
   canEdit,
@@ -494,6 +495,9 @@ export default function QuoteSettingsView({
 
           {/* Section Informations de l'entreprise */}
           <CompanyInfoSettingsSection organization={organization} />
+
+          {/* Section Informations légales — même section que sur les factures */}
+          <LegalInfoSettingsSection organization={organization} />
 
           {/* Coordonnées bancaires */}
           <Card className="shadow-none border-none bg-transparent p-0 py-0!">
