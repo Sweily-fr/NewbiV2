@@ -2723,6 +2723,9 @@ function transformPurchaseOrderToFormData(purchaseOrder) {
       companyStatus: purchaseOrder.companyInfo?.companyStatus || "",
       capitalSocial: purchaseOrder.companyInfo?.capitalSocial || "",
       vatPaymentCondition: purchaseOrder.companyInfo?.vatPaymentCondition || "",
+      // Conservé tel quel (y compris undefined pour les documents antérieurs) :
+      // le pied de page retombe sinon sur l'organisation.
+      vatFranchise: purchaseOrder.companyInfo?.vatFranchise,
       transactionCategory: purchaseOrder.companyInfo?.transactionCategory || "",
       // Conserver l'adresse sous forme d'objet pour la synchronisation avec les champs plats
       address: (() => {
