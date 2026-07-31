@@ -8,6 +8,7 @@ import {
   apiError,
   withErrorHandler,
 } from "@/src/lib/security";
+import { resolveCompanyInfo } from "@/src/lib/document-company-info";
 
 /**
  * GET /api/purchase-orders/data/[id]
@@ -87,7 +88,7 @@ async function handler(request, { params }) {
 
     client: purchaseOrder.client,
     items: purchaseOrder.items,
-    companyInfo: purchaseOrder.companyInfo,
+    companyInfo: await resolveCompanyInfo(purchaseOrder),
     customFields: purchaseOrder.customFields,
   };
 

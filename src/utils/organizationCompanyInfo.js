@@ -89,3 +89,57 @@ export function getOrganizationCompanyExtras(organization) {
       : "",
   };
 }
+
+/**
+ * Construit un companyInfo complet à partir d'une organisation.
+ *
+ * L'organisation nomme ses champs companyName / companyEmail / addressStreet…,
+ * alors que les documents et le PDF lisent name / email / address. Recopier
+ * l'organisation telle quelle (spread) produit un objet dont aucune clé
+ * d'identité ne correspond : le PDF affichait alors un nom et une adresse
+ * vides. Cette fonction fait la traduction, en miroir de
+ * mapOrganizationToCompanyInfo côté API.
+ */
+export function mapOrganizationToCompanyInfo(organization) {
+  if (!organization) return {};
+
+  const companyInfo = {
+    ...getOrganizationCompanyExtras(organization),
+    name: organization.companyName || "",
+    email: organization.companyEmail || "",
+    phone: organization.companyPhone || "",
+    website: organization.website || "",
+    logo: organization.logo || "",
+    address: {
+      street: organization.addressStreet || "",
+      city: organization.addressCity || "",
+      postalCode: organization.addressZipCode || "",
+      country: organization.addressCountry || "France",
+    },
+    siren: organization.siren || "",
+    siret: organization.siret || "",
+    vatNumber: organization.vatNumber || "",
+    rcs: organization.rcs || "",
+    capitalSocial: organization.capitalSocial || "",
+    // Le pied de page lit legalForm, le reste du document companyStatus :
+    // les deux sont posés pour qu'aucun rendu ne se retrouve à court.
+    legalForm: organization.legalForm || "",
+    companyStatus: organization.legalForm || "",
+    transactionCategory: organization.activityCategory || "",
+    // Cohérent avec l'API : pas de repli sur le régime fiscal, qui
+    // ressuscitait la mention après un décochage de l'assujettissement.
+    vatPaymentCondition: organization.isVatSubject
+      ? organization.vatMode || ""
+      : "",
+  };
+
+  if (organization.bankIban || organization.bankBic || organization.bankName) {
+    companyInfo.bankDetails = {
+      iban: organization.bankIban || "",
+      bic: organization.bankBic || "",
+      bankName: organization.bankName || "",
+    };
+  }
+
+  return companyInfo;
+}

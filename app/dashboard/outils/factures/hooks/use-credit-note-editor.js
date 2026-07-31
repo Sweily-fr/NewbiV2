@@ -16,7 +16,7 @@ import { useArchiveDocumentPdf } from "@/src/hooks/useArchiveDocumentPdf";
 import { useUser } from "@/src/lib/auth/hooks";
 import { useCreditNoteNumber } from "./use-credit-note-number";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
-import { getOrganizationCompanyExtras } from "@/src/utils/organizationCompanyInfo";
+import { mapOrganizationToCompanyInfo } from "@/src/utils/organizationCompanyInfo";
 
 export function useCreditNoteEditor({
   mode,
@@ -406,9 +406,7 @@ function getInitialFormData(
     discountType: "PERCENTAGE",
     showBankDetails: false,
     client: null,
-    companyInfo: organization
-      ? { ...organization, ...getOrganizationCompanyExtras(organization) }
-      : {},
+    companyInfo: organization ? mapOrganizationToCompanyInfo(organization) : {},
     items: [],
     customFields: [],
     bankDetails: {
@@ -452,9 +450,7 @@ function transformInvoiceToCreditNoteFormData(
     client: invoice.client,
     companyInfo:
       invoice.companyInfo ||
-      (organization
-        ? { ...organization, ...getOrganizationCompanyExtras(organization) }
-        : {}),
+      (organization ? mapOrganizationToCompanyInfo(organization) : {}),
     items:
       invoice.items?.map((item) => ({
         ...item,

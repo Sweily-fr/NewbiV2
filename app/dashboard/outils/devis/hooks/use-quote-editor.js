@@ -1089,7 +1089,7 @@ export function useQuoteEditor({
             );
             setValue(
               "companyInfo.vatPaymentCondition",
-              organization.vatMode || organization.fiscalRegime || "",
+              organization.isVatSubject ? organization.vatMode || "" : "",
             );
             setValue(
               "companyInfo.transactionCategory",
