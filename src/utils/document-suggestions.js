@@ -200,7 +200,10 @@ export const generateDynamicFooter = (companyInfo, variant = "standard") => {
       } else if (capitalSocial) {
         microLegalInfo = ` • Capital: ${capitalSocial}€`;
       }
-      return `${name}${microLegalInfo}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""}`;
+      // La mention 293 B est le seul intérêt de cette variante : sans elle,
+      // le rendu était identique à "standard-lisible" et la franchise en base
+      // n'apparaissait nulle part sur les documents à adresse structurée.
+      return `${name}${microLegalInfo}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""}\nTVA non applicable, art. 293 B du CGI`;
 
     case "autoliquidation-compact":
       return `${name}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""} • Autoliquidation TVA, art. 283-2 CGI: TVA due par le client`;

@@ -3038,6 +3038,9 @@ function transformInvoiceToFormData(invoice) {
           companyStatus: invoice.companyInfo.companyStatus || "",
           capitalSocial: invoice.companyInfo.capitalSocial || "",
           vatPaymentCondition: invoice.companyInfo.vatPaymentCondition || "",
+          // Conservé tel quel (y compris undefined pour les documents
+          // antérieurs) : le pied de page retombe sinon sur l'organisation.
+          vatFranchise: invoice.companyInfo.vatFranchise,
           transactionCategory: invoice.companyInfo.transactionCategory || "",
           website: invoice.companyInfo.website || "",
           logo: invoice.companyInfo.logo || "",

@@ -178,6 +178,17 @@ const UniversalPreviewPDF = ({
     return baseName;
   })();
 
+  // Franchise en base de TVA (mention « art. 293 B du CGI » en pied de page).
+  // La valeur du document prime : elle est mise à jour explicitement quand on
+  // enregistre depuis les paramètres du document, alors que l'organisation de
+  // useWorkspace est mémoïsée sur l'id et reste figée après un changement de
+  // contenu. L'organisation ne sert donc que de repli pour les documents
+  // antérieurs à ce champ.
+  const companyInfoWithFranchise = {
+    ...data.companyInfo,
+    vatFranchise: data.companyInfo?.vatFranchise ?? organization?.vatFranchise,
+  };
+
   // Déterminer si c'est un avoir (credit note)
   const isCreditNote = type === "creditNote";
   const isPurchaseOrder = type === "purchaseOrder";
@@ -2786,7 +2797,7 @@ const UniversalPreviewPDF = ({
                 : "pt-2"
             }`}
           >
-            {generateDynamicFooter(data.companyInfo)}
+            {generateDynamicFooter(companyInfoWithFranchise)}
           </div>
 
           {/* Régime de TVA - factures uniquement */}
