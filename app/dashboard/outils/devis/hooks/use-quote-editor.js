@@ -2695,6 +2695,9 @@ function transformQuoteToFormData(quote) {
       companyStatus: quote.companyInfo?.companyStatus || "",
       capitalSocial: quote.companyInfo?.capitalSocial || "",
       vatPaymentCondition: quote.companyInfo?.vatPaymentCondition || "",
+      // Conservé tel quel (y compris undefined pour les documents antérieurs) :
+      // le pied de page retombe sinon sur l'organisation.
+      vatFranchise: quote.companyInfo?.vatFranchise,
       transactionCategory: quote.companyInfo?.transactionCategory || "",
       // Conserver l'adresse structurée pour la synchronisation avec les champs plats
       // Le PDF sait gérer les deux formats (string et object)
