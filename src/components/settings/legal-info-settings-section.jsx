@@ -40,7 +40,12 @@ export default function LegalInfoSettingsSection({ organization }) {
   useEffect(() => {
     const handleOrganizationUpdated = (event) => {
       const detail = event.detail || {};
-      if (detail.siret === undefined && detail.vatMode === undefined) return;
+      if (
+        detail.siret === undefined &&
+        detail.vatMode === undefined &&
+        detail.vatFranchise === undefined
+      )
+        return;
 
       setOrgOverride((prev) => ({ ...prev, ...detail }));
 
@@ -69,6 +74,11 @@ export default function LegalInfoSettingsSection({ organization }) {
       }
       if (detail.vatMode !== undefined) {
         setValue("companyInfo.vatPaymentCondition", detail.vatMode, opts);
+      }
+      if (detail.vatFranchise !== undefined) {
+        // Pilote la mention « TVA non applicable, art. 293 B du CGI » du
+        // pied de page : l'aperçu doit suivre sans recharger.
+        setValue("companyInfo.vatFranchise", detail.vatFranchise, opts);
       }
     };
 

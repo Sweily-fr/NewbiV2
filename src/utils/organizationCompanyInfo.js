@@ -66,6 +66,9 @@ export function buildCompanyOrganizationUpdate(values, organization) {
 
 export function getOrganizationCompanyExtras(organization) {
   return {
+    // Franchise en base de TVA (art. 293 B du CGI) : embarquée dans le
+    // document car elle pilote une mention obligatoire en pied de page.
+    vatFranchise: organization?.vatFranchise ?? false,
     commercialName: organization?.showCommercialName
       ? organization?.commercialName || ""
       : "",

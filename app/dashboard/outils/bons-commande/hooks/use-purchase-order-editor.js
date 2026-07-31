@@ -2431,6 +2431,7 @@ function getInitialFormData(mode, initialData, session, organization) {
     legalForm: organization?.legalForm || "",
     capitalSocial: organization?.capitalSocial || "",
     fiscalRegime: organization?.fiscalRegime || "",
+    vatFranchise: organization?.vatFranchise || false,
     address: addressString,
     bankDetails: {
       bankName: organization?.bankName || "",
