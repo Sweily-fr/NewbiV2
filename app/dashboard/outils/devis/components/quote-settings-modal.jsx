@@ -120,6 +120,16 @@ const getDemoQuoteData = (formData, organization) => {
         "987654321",
       siret: organization?.siret || "98765432109876",
       vatNumber: organization?.vatNumber || "FR98765432109",
+      // Mentions légales du pied de page : sans elles, l'aperçu ne
+      // pouvait jamais montrer le régime de TVA, la forme juridique, le
+      // RCS, le capital ni la franchise en base, quels que soient les
+      // réglages de l'utilisateur.
+      rcs: organization?.rcs || "",
+      capitalSocial: organization?.capitalSocial || "",
+      legalForm: organization?.legalForm || "",
+      companyStatus: organization?.legalForm || "",
+      vatPaymentCondition: organization?.vatMode || "",
+      vatFranchise: organization?.vatFranchise ?? false,
       logo: formData?.logo || organization?.logo || null,
       bankDetails: {
         iban: bankDetails?.iban || "",

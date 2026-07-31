@@ -184,9 +184,17 @@ const UniversalPreviewPDF = ({
   // useWorkspace est mémoïsée sur l'id et reste figée après un changement de
   // contenu. L'organisation ne sert donc que de repli pour les documents
   // antérieurs à ce champ.
-  const companyInfoWithFranchise = {
+  //
+  // Régime de TVA : même logique de repli. Un document dont la valeur n'a
+  // jamais été renseignée (créé avant que le régime soit choisi, ou snapshot
+  // vide) retombe sur le réglage courant de l'organisation, sinon la mention
+  // restait introuvable sans recréer le document. Une valeur enregistrée sur
+  // le document, « NONE » comprise, reste prioritaire.
+  const resolvedCompanyInfo = {
     ...data.companyInfo,
     vatFranchise: data.companyInfo?.vatFranchise ?? organization?.vatFranchise,
+    vatPaymentCondition:
+      data.companyInfo?.vatPaymentCondition || organization?.vatMode || "",
   };
 
   // Déterminer si c'est un avoir (credit note)
@@ -513,7 +521,9 @@ const UniversalPreviewPDF = ({
   // et le fallback régime fiscal (reel-normal/reel-simplifie -> débits),
   // aligné sur mapFiscalRegimeToVatCondition côté API.
   const vatPaymentMention = (() => {
-    const condition = (data.companyInfo?.vatPaymentCondition || "")
+    // resolvedCompanyInfo et non data.companyInfo : un document sans valeur
+    // enregistrée doit refléter le régime de TVA courant de l'organisation.
+    const condition = (resolvedCompanyInfo?.vatPaymentCondition || "")
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .toUpperCase()
@@ -2794,7 +2804,7 @@ const UniversalPreviewPDF = ({
                 : "pt-2"
             }`}
           >
-            {generateDynamicFooter(companyInfoWithFranchise)}
+            {generateDynamicFooter(resolvedCompanyInfo)}
           </div>
 
           {/* Régime de TVA - factures uniquement */}
