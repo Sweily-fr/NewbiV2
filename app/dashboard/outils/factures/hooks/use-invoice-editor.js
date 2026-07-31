@@ -269,11 +269,11 @@ export function useInvoiceEditor({
           false,
         // Pas de repli sur le régime fiscal : il ressuscitait la mention
         // « Paiement de la TVA » après un décochage de l'assujettissement.
-        vatPaymentCondition: organization?.isVatSubject
-          ? organization?.vatMode ||
-            formData.companyInfo?.vatPaymentCondition ||
-            ""
-          : "",
+        // vatMode suffit, les réglages le vident déjà dans ce cas.
+        vatPaymentCondition:
+          organization?.vatMode ||
+          formData.companyInfo?.vatPaymentCondition ||
+          "",
         website: organization?.website || formData.companyInfo?.website || "",
         logo: organization?.logo || formData.companyInfo?.logo || "",
         bankDetails: {
@@ -1217,9 +1217,7 @@ export function useInvoiceEditor({
         rcs: organization?.rcs || "",
         companyStatus: organization?.legalForm || "",
         capitalSocial: organization?.capitalSocial || "",
-        vatPaymentCondition: organization?.isVatSubject
-          ? organization?.vatMode || ""
-          : "",
+        vatPaymentCondition: organization?.vatMode || "",
         transactionCategory: organization?.activityCategory || "",
         website: organization?.website || "",
         logo: organization?.logo || "",
