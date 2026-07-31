@@ -92,11 +92,19 @@ export function ImportedInvoiceSidebar({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // L'URL publique R2 (invoice.file.url) n'est jamais chargée directement :
+  // la CSP de prod (frame-src) bloque les iframes vers des domaines externes.
+  // L'aperçu passe par le proxy same-origin, comme les documents natifs.
+  const previewUrl =
+    invoice?.id && invoice?.file?.url
+      ? `/api/document-preview/importedInvoice/${invoice.id}`
+      : null;
+
   // Calcule la hauteur totale du PDF (somme des pages mises à l'échelle
   // sur la largeur de la feuille) pour éviter le scroll interne de l'iframe.
   useEffect(() => {
     const isPDFFile = invoice?.file?.mimeType === "application/pdf";
-    if (!isPDFFile || !invoice?.file?.url) {
+    if (!isPDFFile || !previewUrl) {
       setPdfHeightMM(297);
       return;
     }
@@ -105,7 +113,7 @@ export function ImportedInvoiceSidebar({
     (async () => {
       try {
         const { PDFDocument } = await import("pdf-lib");
-        const res = await fetch(invoice.file.url);
+        const res = await fetch(previewUrl);
         if (!res.ok) throw new Error("fetch failed");
         const buffer = await res.arrayBuffer();
         const pdf = await PDFDocument.load(buffer, { ignoreEncryption: true });
@@ -125,7 +133,7 @@ export function ImportedInvoiceSidebar({
     return () => {
       cancelled = true;
     };
-  }, [invoice?.file?.url, invoice?.file?.mimeType]);
+  }, [previewUrl, invoice?.file?.mimeType]);
 
   const { updateImportedInvoice, loading: updateLoading } =
     useUpdateImportedInvoice();
@@ -265,17 +273,17 @@ export function ImportedInvoiceSidebar({
       >
         <div className="absolute inset-0 flex items-start justify-center overflow-y-auto py-4 md:py-12 px-2 md:px-24">
           <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">
-            {invoice.file?.url ? (
+            {previewUrl ? (
               isPDF ? (
                 <iframe
-                  src={`${invoice.file.url}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                  src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
                   title={invoice.file.originalFileName || "Facture importée"}
                   style={{ height: `${pdfHeightMM}mm` }}
                   className="w-full border-0 block"
                 />
               ) : isImage ? (
                 <img
-                  src={invoice.file.url}
+                  src={previewUrl}
                   alt={invoice.file.originalFileName || "Facture importée"}
                   className="w-full h-auto object-contain"
                 />
