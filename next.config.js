@@ -21,11 +21,13 @@ const cspValue = [
   // *.google-analytics.com : GA4 utilise des endpoints régionaux (region1.…).
   // *.r2.cloudflarestorage.com : URLs présignées d'upload des transferts de fichiers.
   `connect-src 'self'${isDev ? " http://localhost:* ws://localhost:*" : ""} https://api.newbi.fr wss://api.newbi.fr https://*.r2.dev https://*.r2.cloudflarestorage.com https://api.cloudinary.com https://*.google-analytics.com https://*.googletagmanager.com https://www.facebook.com https://www.googleapis.com https://challenges.cloudflare.com`,
-  // Les aperçus PDF des documents archivés (factures, avoirs, BC) passent par
-  // le proxy same-origin /api/document-preview ('self') : le cookie de session
-  // host-only ne part jamais vers api.newbi.fr depuis une iframe (incident
-  // ERR_BLOCKED_BY_CSP puis ERR_BLOCKED_BY_RESPONSE du 30/07/2026).
-  "frame-src 'self' https://www.googletagmanager.com https://www.facebook.com https://challenges.cloudflare.com",
+  // Les aperçus PDF des documents archivés (factures, avoirs, BC) et des
+  // documents importés passent par le proxy same-origin /api/document-preview
+  // ('self') : le cookie de session host-only ne part jamais vers api.newbi.fr
+  // depuis une iframe (incident ERR_BLOCKED_BY_CSP puis ERR_BLOCKED_BY_RESPONSE
+  // du 30/07/2026). blob: couvre les aperçus locaux de fichiers en cours
+  // d'upload (factures d'achat) ; un blob URL est lié à notre origine.
+  "frame-src 'self' blob: https://www.googletagmanager.com https://www.facebook.com https://challenges.cloudflare.com",
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",

@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 
 /**
- * Proxy same-origin des PDF archivés (factures, devis, avoirs, bons de commande).
+ * Proxy same-origin des PDF archivés (factures, devis, avoirs, bons de
+ * commande) et des fichiers originaux importés (documents importés,
+ * justificatifs de factures d'achat).
  *
  * Les sidebars affichent l'aperçu "document faisant foi" dans une iframe. Une
  * iframe pointant directement sur api.newbi.fr part SANS cookie de session
@@ -19,6 +21,15 @@ const UPSTREAM_PATHS = {
   quote: (id) => `/documents/quote/${id}/document-pdf`,
   creditNote: (id) => `/documents/creditNote/${id}/document-pdf`,
   purchaseOrder: (id) => `/documents/purchaseOrder/${id}/document-pdf`,
+  // Documents importés : le fichier original (R2) est streamé par l'API,
+  // jamais chargé via son URL publique (bloquée par frame-src en prod).
+  importedInvoice: (id) => `/documents/imported/importedInvoice/${id}/file`,
+  importedQuote: (id) => `/documents/imported/importedQuote/${id}/file`,
+  importedPurchaseOrder: (id) =>
+    `/documents/imported/importedPurchaseOrder/${id}/file`,
+  // Justificatifs des factures d'achat : plusieurs fichiers par document,
+  // sélection via ?fileId=<id>.
+  purchaseInvoice: (id) => `/documents/imported/purchaseInvoice/${id}/file`,
 };
 
 const OBJECT_ID_RE = /^[0-9a-f]{24}$/i;
@@ -35,6 +46,14 @@ export async function GET(request, { params }) {
       );
     }
 
+    const fileId = request.nextUrl.searchParams.get("fileId");
+    if (fileId && !OBJECT_ID_RE.test(fileId)) {
+      return NextResponse.json(
+        { error: "Identifiant de fichier invalide" },
+        { status: 400 },
+      );
+    }
+
     const cookie = request.headers.get("cookie");
     if (!cookie) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
@@ -44,7 +63,10 @@ export async function GET(request, { params }) {
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
     ).replace(/\/$/, "");
 
-    const response = await fetch(`${backendUrl}${buildPath(id)}`, {
+    const upstreamUrl = `${backendUrl}${buildPath(id)}${
+      fileId ? `?fileId=${fileId}` : ""
+    }`;
+    const response = await fetch(upstreamUrl, {
       headers: { cookie },
       signal: AbortSignal.timeout(30000),
     });
