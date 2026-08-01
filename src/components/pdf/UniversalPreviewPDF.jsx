@@ -983,6 +983,14 @@ const UniversalPreviewPDF = ({
                         {data.companyInfo.email}
                       </div>
                     )}
+
+                    {/* Site web — présent dans les paramètres de l'entreprise,
+                        il n'était rendu que pour les devis et les factures */}
+                    {data.companyInfo?.website && (
+                      <div className="dark:text-[#0A0A0A]">
+                        {data.companyInfo.website}
+                      </div>
+                    )}
                   </>
                 ) : (
                   <>
