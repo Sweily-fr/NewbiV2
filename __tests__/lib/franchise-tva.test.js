@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { generateDynamicFooter } from "@/src/utils/document-suggestions";
+import {
+  generateDynamicFooter,
+  getVatPaymentMention,
+  resolveVatPaymentCondition,
+} from "@/src/utils/document-suggestions";
 
 const base = {
   name: "Ma Boite",
@@ -34,5 +38,50 @@ describe("franchise en base de TVA — mention 293 B", () => {
     expect(
       generateDynamicFooter({ ...base, fiscalRegime: "micro-bic" }),
     ).toContain("TVA non applicable, art. 293 B du CGI");
+  });
+});
+
+describe("régime de TVA — résolution document / organisation", () => {
+  it("« Aucun » (chaîne vide) ne retombe pas sur le réglage de l'organisation", () => {
+    // Le cas signalé : régime passé à « Aucun » mais l'aperçu continuait
+    // d'imprimer « sur les débits », hérité de l'organisation.
+    expect(resolveVatPaymentCondition("", "debits")).toBe("");
+  });
+
+  it("assujettissement décoché (champs vidés) n'affiche aucune mention", () => {
+    expect(
+      getVatPaymentMention(resolveVatPaymentCondition("", "encaissements")),
+    ).toBe("");
+  });
+
+  it("un champ absent retombe sur le réglage de l'organisation", () => {
+    expect(resolveVatPaymentCondition(undefined, "debits")).toBe("debits");
+    expect(resolveVatPaymentCondition(null, "debits")).toBe("debits");
+  });
+
+  it("la valeur du document prime sur celle de l'organisation", () => {
+    expect(resolveVatPaymentCondition("encaissements", "debits")).toBe(
+      "encaissements",
+    );
+  });
+});
+
+describe("mention « Paiement de la TVA »", () => {
+  it("couvre la valeur des paramètres et l'enum backend", () => {
+    expect(getVatPaymentMention("debits")).toBe(
+      "Paiement de la TVA: sur les débits",
+    );
+    expect(getVatPaymentMention("DEBITS")).toBe(
+      "Paiement de la TVA: sur les débits",
+    );
+    expect(getVatPaymentMention("encaissements")).toBe(
+      "Paiement de la TVA: sur les encaissements",
+    );
+  });
+
+  it("n'affiche rien pour NONE, vide ou absent", () => {
+    expect(getVatPaymentMention("NONE")).toBe("");
+    expect(getVatPaymentMention("")).toBe("");
+    expect(getVatPaymentMention(undefined)).toBe("");
   });
 });
