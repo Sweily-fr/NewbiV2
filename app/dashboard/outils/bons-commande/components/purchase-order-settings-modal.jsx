@@ -59,10 +59,11 @@ const getDemoPurchaseOrderData = (formData, organization) => {
       type: "company",
     },
     companyInfo: {
-      name:
-        formData?.companyName ||
-        organization?.companyName ||
-        "Votre Entreprise",
+      // Aucune valeur de démonstration sur les champs venant de l'organisation :
+      // un champ vidé dans les paramètres doit disparaître de l'aperçu, sinon
+      // l'utilisateur croit que son enregistrement n'a pas pris (et un SIRET ou
+      // un N° TVA fictif affiché à la place d'un champ effacé est trompeur).
+      name: formData?.companyName || organization?.companyName || "",
       // Nom commercial : visible dans l'aperçu uniquement si la case est cochée
       commercialName: formData?.showCommercialName
         ? formData?.commercialName || organization?.commercialName || ""
@@ -94,34 +95,24 @@ const getDemoPurchaseOrderData = (formData, organization) => {
             organization?.professionalLiabilityInsurance ||
             ""
           : "",
-      email:
-        formData?.companyEmail ||
-        organization?.companyEmail ||
-        "contact@entreprise.fr",
-      phone:
-        formData?.companyPhone ||
-        organization?.companyPhone ||
-        "+33 1 23 45 67 89",
+      email: formData?.companyEmail || organization?.companyEmail || "",
+      phone: formData?.companyPhone || organization?.companyPhone || "",
       // Site web : rendu sur les documents, il manquait à l'aperçu des
       // paramètres — le champ semblait donc sans effet.
       website: formData?.website || organization?.website || "",
       address: {
-        street:
-          formData?.addressStreet ||
-          organization?.addressStreet ||
-          "1 Rue de la République",
+        street: formData?.addressStreet || organization?.addressStreet || "",
         postalCode:
-          formData?.addressZipCode || organization?.addressZipCode || "75001",
-        city: formData?.addressCity || organization?.addressCity || "Paris",
+          formData?.addressZipCode || organization?.addressZipCode || "",
+        city: formData?.addressCity || organization?.addressCity || "",
         country:
           formData?.addressCountry || organization?.addressCountry || "France",
       },
-      siren:
-        organization?.siren ||
-        organization?.siret?.substring(0, 9) ||
-        "987654321",
-      siret: organization?.siret || "98765432109876",
-      vatNumber: organization?.vatNumber || "FR98765432109",
+      siren: organization?.siren || organization?.siret?.substring(0, 9) || "",
+      siret: organization?.siret || "",
+      // Vidé dès que l'assujettissement à la TVA est décoché : le numéro ne
+      // doit alors plus apparaître nulle part.
+      vatNumber: organization?.vatNumber || "",
       // Mentions légales du pied de page : sans elles, l'aperçu ne
       // pouvait jamais montrer le régime de TVA, la forme juridique, le
       // RCS, le capital ni la franchise en base, quels que soient les

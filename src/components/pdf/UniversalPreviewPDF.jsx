@@ -3,7 +3,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSession } from "@/src/lib/auth-client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
-import { generateDynamicFooter } from "@/src/utils/document-suggestions";
+import {
+  generateDynamicFooter,
+  getVatPaymentMention,
+  resolveVatPaymentCondition,
+} from "@/src/utils/document-suggestions";
 import { stripHtml } from "@/src/utils/kanbanHelpers";
 import { getDraftEffectiveDates } from "@/src/utils/dateFormatter";
 
@@ -185,16 +189,15 @@ const UniversalPreviewPDF = ({
   // contenu. L'organisation ne sert donc que de repli pour les documents
   // antérieurs à ce champ.
   //
-  // Régime de TVA : même logique de repli. Un document dont la valeur n'a
-  // jamais été renseignée (créé avant que le régime soit choisi, ou snapshot
-  // vide) retombe sur le réglage courant de l'organisation, sinon la mention
-  // restait introuvable sans recréer le document. Une valeur enregistrée sur
-  // le document, « NONE » comprise, reste prioritaire.
+  // Régime de TVA : même logique de repli, voir resolveVatPaymentCondition
+  // (une chaîne vide y est un choix explicite, pas une absence).
   const resolvedCompanyInfo = {
     ...data.companyInfo,
     vatFranchise: data.companyInfo?.vatFranchise ?? organization?.vatFranchise,
-    vatPaymentCondition:
-      data.companyInfo?.vatPaymentCondition || organization?.vatMode || "",
+    vatPaymentCondition: resolveVatPaymentCondition(
+      data.companyInfo?.vatPaymentCondition,
+      organization?.vatMode,
+    ),
   };
 
   // Déterminer si c'est un avoir (credit note)
@@ -516,28 +519,11 @@ const UniversalPreviewPDF = ({
 
   const isInvoice = type === "invoice";
 
-  // Mention du régime de TVA (factures uniquement). Couvre l'enum backend
-  // (ENCAISSEMENTS/DEBITS), la valeur brute des paramètres (encaissements/debits)
-  // et le fallback régime fiscal (reel-normal/reel-simplifie -> débits),
-  // aligné sur mapFiscalRegimeToVatCondition côté API.
-  const vatPaymentMention = (() => {
-    // resolvedCompanyInfo et non data.companyInfo : un document sans valeur
-    // enregistrée doit refléter le régime de TVA courant de l'organisation.
-    const condition = (resolvedCompanyInfo?.vatPaymentCondition || "")
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toUpperCase()
-      .trim();
-    if (condition === "ENCAISSEMENTS")
-      return "Paiement de la TVA: sur les encaissements";
-    if (
-      condition === "DEBITS" ||
-      condition === "REEL-NORMAL" ||
-      condition === "REEL-SIMPLIFIE"
-    )
-      return "Paiement de la TVA: sur les débits";
-    return "";
-  })();
+  // resolvedCompanyInfo et non data.companyInfo : un document dont le champ est
+  // absent doit refléter le régime de TVA courant de l'organisation.
+  const vatPaymentMention = getVatPaymentMention(
+    resolvedCompanyInfo?.vatPaymentCondition,
+  );
 
   // Déterminer si une adresse de livraison existe (pour positionner le client au milieu)
   const hasDeliveryAddress = (() => {
@@ -2815,8 +2801,10 @@ const UniversalPreviewPDF = ({
             {generateDynamicFooter(resolvedCompanyInfo)}
           </div>
 
-          {/* Régime de TVA - factures uniquement */}
-          {isInvoice && vatPaymentMention && (
+          {/* Régime de TVA. Affiché sur factures, devis et bons de commande :
+              obligatoire sur les factures, et cohérent avec la mention de
+              franchise en base (art. 293 B) qui sort déjà sur les trois. */}
+          {!isCreditNote && vatPaymentMention && (
             <div className="text-[10px] dark:text-[#0A0A0A]">
               {vatPaymentMention}
             </div>
