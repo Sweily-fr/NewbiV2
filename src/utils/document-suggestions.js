@@ -69,6 +69,54 @@ export const documentSuggestions = {
 };
 
 /**
+ * Régime de TVA effectivement applicable à un document.
+ *
+ * `??` et non `||` : une chaîne vide est un choix explicite de l'utilisateur
+ * (« Aucun » dans les informations légales, ou assujettissement à la TVA
+ * décoché, qui vide le champ). La traiter comme une absence faisait ressortir
+ * le réglage précédent de l'organisation, et la mention « Paiement de la TVA:
+ * sur les débits » restait imprimée après un passage à « Aucun ».
+ *
+ * Seul un champ réellement absent (`undefined`/`null`, cas des documents
+ * antérieurs à son introduction) retombe sur le réglage de l'organisation.
+ *
+ * @param {string|null|undefined} documentValue - companyInfo.vatPaymentCondition
+ * @param {string|null|undefined} organizationValue - organization.vatMode
+ * @returns {string}
+ */
+export const resolveVatPaymentCondition = (documentValue, organizationValue) =>
+  documentValue ?? organizationValue ?? "";
+
+/**
+ * Mention « Paiement de la TVA » du pied de page, "" si aucun régime.
+ *
+ * Couvre l'enum backend (ENCAISSEMENTS/DEBITS), la valeur brute des paramètres
+ * (encaissements/debits) et le repli régime fiscal (reel-normal/reel-simplifie
+ * -> débits), aligné sur mapFiscalRegimeToVatCondition côté API. « NONE » et la
+ * chaîne vide ne produisent aucune mention.
+ *
+ * @param {string} condition - régime de TVA résolu
+ * @returns {string}
+ */
+export const getVatPaymentMention = (condition) => {
+  const normalized = String(condition || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .trim();
+
+  if (normalized === "ENCAISSEMENTS")
+    return "Paiement de la TVA: sur les encaissements";
+  if (
+    normalized === "DEBITS" ||
+    normalized === "REEL-NORMAL" ||
+    normalized === "REEL-SIMPLIFIE"
+  )
+    return "Paiement de la TVA: sur les débits";
+  return "";
+};
+
+/**
  * Forme juridique affichable en pied de page.
  *
  * Les documents finalisés embarquent l'enum backend (companyStatus) et non la
