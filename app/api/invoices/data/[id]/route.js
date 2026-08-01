@@ -8,7 +8,10 @@ import {
   apiError,
   withErrorHandler,
 } from "@/src/lib/security";
-import { resolveCompanyInfo } from "@/src/lib/document-company-info";
+import {
+  resolveCompanyInfo,
+  resolveBeneficiary,
+} from "@/src/lib/document-company-info";
 
 /**
  * GET /api/invoices/data/[id]
@@ -62,6 +65,11 @@ async function handler(request, { params }) {
       // Client ID may be an embedded object, not an ObjectId reference
     }
   }
+
+  // Nom du bénéficiaire du virement : réglage d'organisation, jamais
+  // recopié dans le document. Sans lui, le PDF headless (pas de session,
+  // pas d'organisation active) retombait sur la dénomination sociale.
+  const { beneficiaryNameType, userName } = await resolveBeneficiary(invoice);
 
   // Format response data
   const formattedData = {
@@ -136,6 +144,8 @@ async function handler(request, { params }) {
 
     items: invoice.items,
     companyInfo: await resolveCompanyInfo(invoice),
+    beneficiaryNameType,
+    userName,
     customFields: invoice.customFields,
   };
 

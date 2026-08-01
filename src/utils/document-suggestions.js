@@ -69,6 +69,30 @@ export const documentSuggestions = {
 };
 
 /**
+ * Forme juridique affichable en pied de page.
+ *
+ * Les documents finalisés embarquent l'enum backend (companyStatus) et non la
+ * valeur saisie dans les paramètres : sans traduction, le PDF archivé imprimait
+ * « AUTO_ENTREPRENEUR » ou « ASSOCIATION » là où l'aperçu affichait « EI » ou
+ * « Association ». « AUTRE » est la valeur de repli du mapper quand aucune forme
+ * juridique n'est renseignée : elle ne doit rien imprimer du tout.
+ * @param {string} value - forme juridique (saisie) ou companyStatus (enum)
+ * @returns {string}
+ */
+const formatLegalForm = (value) => {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const labels = {
+    AUTRE: "",
+    AUTO_ENTREPRENEUR: "EI",
+    "Auto-entrepreneur": "EI",
+    ASSOCIATION: "Association",
+  };
+  if (raw in labels) return labels[raw];
+  return raw;
+};
+
+/**
  * Génère le footer dynamique basé sur les informations de l'entreprise
  * @param {Object} companyInfo - Informations de l'entreprise (peut venir de organization ou de companyInfo)
  * @param {string} variant - Type de footer ('standard', 'micro', 'autoliquidation', 'btp', 'b2c')
@@ -87,7 +111,7 @@ export const generateDynamicFooter = (companyInfo, variant = "standard") => {
     // l'organisation sous legalForm : sans ce repli, la forme juridique et le
     // capital social disparaissaient du pied de page de tout document rouvert.
     companyStatus = "",
-    legalForm = companyStatus || "",
+    legalForm: rawLegalForm = companyStatus || "",
     capitalSocial = "",
     siret = "",
     rcs = "",
@@ -102,6 +126,9 @@ export const generateDynamicFooter = (companyInfo, variant = "standard") => {
     // Support pour l'adresse en format objet ou string
     address,
   } = companyInfo;
+
+  // Forme juridique lisible : les documents finalisés portent l'enum backend.
+  const legalForm = formatLegalForm(rawLegalForm);
 
   // La case dédiée fait foi. À défaut (documents ou organisations antérieurs à
   // son introduction), un régime fiscal micro vaut franchise en base.

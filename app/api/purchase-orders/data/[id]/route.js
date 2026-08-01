@@ -8,7 +8,10 @@ import {
   apiError,
   withErrorHandler,
 } from "@/src/lib/security";
-import { resolveCompanyInfo } from "@/src/lib/document-company-info";
+import {
+  resolveCompanyInfo,
+  resolveBeneficiary,
+} from "@/src/lib/document-company-info";
 
 /**
  * GET /api/purchase-orders/data/[id]
@@ -43,6 +46,12 @@ async function handler(request, { params }) {
   if (authenticatedUserId) {
     await requireOrgMembership(authenticatedUserId, purchaseOrder.workspaceId);
   }
+
+  // Nom du bénéficiaire du virement : réglage d'organisation, jamais
+  // recopié dans le document. Sans lui, le PDF headless (pas de session,
+  // pas d'organisation active) retombait sur la dénomination sociale.
+  const { beneficiaryNameType, userName } =
+    await resolveBeneficiary(purchaseOrder);
 
   // Format response data
   const formattedData = {
@@ -89,6 +98,8 @@ async function handler(request, { params }) {
     client: purchaseOrder.client,
     items: purchaseOrder.items,
     companyInfo: await resolveCompanyInfo(purchaseOrder),
+    beneficiaryNameType,
+    userName,
     customFields: purchaseOrder.customFields,
   };
 
