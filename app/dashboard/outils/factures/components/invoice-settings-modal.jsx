@@ -105,6 +105,9 @@ const getDemoInvoiceData = (formData, organization, userName) => {
         formData?.companyPhone ||
         organization?.companyPhone ||
         "+33 1 23 45 67 89",
+      // Site web : rendu sur les documents, il manquait à l'aperçu des
+      // paramètres — le champ semblait donc sans effet.
+      website: formData?.website || organization?.website || "",
       address: {
         street:
           formData?.addressStreet ||

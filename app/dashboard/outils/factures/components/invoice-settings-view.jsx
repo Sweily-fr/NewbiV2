@@ -246,30 +246,41 @@ export default function InvoiceSettingsView({
         });
       }
 
-      if (bankIban || bankBic || bankName) {
-        // Mettre à jour les données bancaires dans le formulaire
-        setValue("bankDetails.iban", bankIban || "", {
-          shouldDirty: true,
-        });
-        setValue("bankDetails.bic", bankBic || "", {
-          shouldDirty: true,
-        });
-        setValue("bankDetails.bankName", bankName || "", {
-          shouldDirty: true,
-        });
+      // L'événement est aussi émis par les modales entreprise et légal : on
+      // ne touche aux coordonnées bancaires que si elles sont dans le payload.
+      const carriesBankDetails =
+        bankIban !== undefined ||
+        bankBic !== undefined ||
+        bankName !== undefined;
+      if (!carriesBankDetails) return;
 
-        // Mettre à jour userBankDetails pour que la checkbox soit visible
-        setValue("userBankDetails", {
-          iban: bankIban || "",
-          bic: bankBic || "",
-          bankName: bankName || "",
-        });
+      const nextBankDetails = {
+        iban: bankIban || "",
+        bic: bankBic || "",
+        bankName: bankName || "",
+      };
 
-        // Cocher automatiquement la checkbox pour afficher les coordonnées bancaires
-        setValue("showBankDetails", true, {
-          shouldDirty: true,
-        });
-      }
+      // Sans le vide, un IBAN effacé dans la modale restait affiché sur
+      // l'aperçu et sur le document : la propagation est inconditionnelle.
+      setValue("bankDetails.iban", nextBankDetails.iban, { shouldDirty: true });
+      setValue("bankDetails.bic", nextBankDetails.bic, { shouldDirty: true });
+      setValue("bankDetails.bankName", nextBankDetails.bankName, {
+        shouldDirty: true,
+      });
+
+      // Pilote l'affichage de la case "Afficher les coordonnées bancaires"
+      setValue("userBankDetails", nextBankDetails);
+
+      // Renseignées → affichées d'office ; toutes vidées → plus rien à afficher.
+      setValue(
+        "showBankDetails",
+        Boolean(
+          nextBankDetails.iban ||
+          nextBankDetails.bic ||
+          nextBankDetails.bankName,
+        ),
+        { shouldDirty: true },
+      );
     };
 
     window.addEventListener("organizationUpdated", handleOrganizationUpdated);

@@ -106,6 +106,35 @@ describe("generateDynamicFooter", () => {
     expect(out).toContain("12345678901234");
   });
 
+  // Les documents finalisés embarquent companyStatus (enum backend) et non la
+  // forme juridique saisie : le pied de page doit rester lisible et identique
+  // à l'aperçu de l'éditeur.
+  it("translates the backend companyStatus enum into a readable legal form", () => {
+    const out = generateDynamicFooter(
+      { name: "Marc Auto", companyStatus: "AUTO_ENTREPRENEUR", siret: "1" },
+      "standard-lisible",
+    );
+    expect(out).toContain("EI");
+    expect(out).not.toContain("AUTO_ENTREPRENEUR");
+  });
+
+  it("prints no legal form when companyStatus is the 'AUTRE' fallback", () => {
+    const out = generateDynamicFooter(
+      { name: "Acme", companyStatus: "AUTRE", siret: "12345678901234" },
+      "standard-lisible",
+    );
+    expect(out).not.toContain("AUTRE");
+    expect(out).toContain("Acme");
+  });
+
+  it("keeps a real legal form untouched", () => {
+    const out = generateDynamicFooter(
+      { name: "Acme", companyStatus: "SASU", siret: "12345678901234" },
+      "standard-lisible",
+    );
+    expect(out).toContain("SASU");
+  });
+
   it("supports the legacy 'address' object shape", () => {
     const out = generateDynamicFooter({
       name: "X",
