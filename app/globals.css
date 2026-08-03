@@ -386,6 +386,16 @@
   }
 }
 
+/* Décalage global quand le banner d'installation app est affiché (mobile).
+   La hauteur est fournie par <AppInstallBanner /> via --app-banner-h (0px sinon).
+   Le contenu descend sous le banner ; la navbar fixed consomme la même variable. */
+:root {
+  --app-banner-h: 0px;
+}
+body {
+  padding-top: var(--app-banner-h);
+}
+
 /* Dropdown/Popover/Select border color */
 [data-slot="dropdown-menu-content"],
 [data-slot="dropdown-menu-sub-content"],

@@ -6,6 +6,7 @@ import { ApolloWrapper } from "@/src/providers/apollo-provider";
 import { Toaster } from "@/src/components/ui/sonner";
 import { DevAnimationTrigger } from "@/src/components/dev-animation-trigger";
 import { ForceDesktopViewport } from "@/src/components/force-desktop-viewport";
+import { AppInstallBanner } from "@/src/components/app-install-banner";
 import CookieWrapper from "@/src/components/cookies/CookieWrapper";
 import "@/src/utils/clearApolloCache"; // Nettoyage du cache Apollo
 
@@ -108,6 +109,9 @@ export default function RootLayout({ children }) {
           content="black-translucent"
         />
         <meta name="apple-mobile-web-app-title" content="Newbi" />
+        {/* Smart App Banner natif iOS (Safari) — pointe vers l'app App Store.
+            Le fallback custom (Android / iOS hors-Safari) est <AppInstallBanner />. */}
+        <meta name="apple-itunes-app" content="app-id=6772126520" />
         <meta name="theme-color" content="#5b4fff" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <script
@@ -164,6 +168,7 @@ export default function RootLayout({ children }) {
       </head>
       <body className="font-sans antialiased">
         <ForceDesktopViewport />
+        <AppInstallBanner />
         <ApolloWrapper>
           <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
             {children}
