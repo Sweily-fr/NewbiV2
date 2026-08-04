@@ -505,7 +505,21 @@ const UniversalPreviewPDF = ({
         taxDetails: [],
       };
 
-  const companyLogo = data.companyInfo?.logo || organization?.logo;
+  const rawCompanyLogo = data.companyInfo?.logo || organization?.logo;
+
+  // Le même fichier logo est aussi affiché sans `crossOrigin` par
+  // CompanyLogoUpload (paramètres, dialog infos entreprise). R2 ne renvoie
+  // ni `Access-Control-Allow-Origin` ni `Vary` quand la requête n'a pas
+  // d'en-tête `Origin` : la copie mise en cache par ce chargement no-cors
+  // matche ensuite n'importe quelle requête sur la même URL, y compris une
+  // requête CORS, qui échoue alors le contrôle d'origine et laisse le logo
+  // vide sur les aperçus. Le paramètre de version donne une clé de cache
+  // distincte, et l'absence de `crossOrigin` sur l'<img> ci-dessous rend
+  // l'affichage écran insensible au problème. À incrémenter uniquement si
+  // une nouvelle entrée de cache empoisonnée devait apparaître.
+  const companyLogo = rawCompanyLogo
+    ? `${rawCompanyLogo}${rawCompanyLogo.includes("?") ? "&" : "?"}v=2`
+    : rawCompanyLogo;
 
   if (!data) {
     return (
@@ -719,7 +733,6 @@ const UniversalPreviewPDF = ({
                   alt="Logo entreprise"
                   className="h-20 w-auto object-contain"
                   style={{ maxWidth: "150px" }}
-                  crossOrigin="anonymous"
                 />
               )}
             </div>
