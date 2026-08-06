@@ -158,12 +158,14 @@ async function handler(request) {
         `⚠️ [ONBOARDING STEP] ${sessionUser.email}: SIRET ${mergedData?.siret} refusé (${verification.reason})`,
       );
 
-      return apiError(
-        status,
-        siretVerificationMessage(verification.reason),
-        { siret: mergedData?.siret, reason: verification.reason },
-        { siretVerification: verification.reason },
-      );
+      // Pas de `details` public ici : le client mobile (lib/web-api.js) lit
+      // `data.details` AVANT `data.error`, donc un objet de détails écraserait
+      // le message lisible par un « [object Object] ». La cause précise est
+      // déjà portée par le message lui-même.
+      return apiError(status, siretVerificationMessage(verification.reason), {
+        siret: mergedData?.siret,
+        reason: verification.reason,
+      });
     }
 
     const verifiedCompany = verification.company;
