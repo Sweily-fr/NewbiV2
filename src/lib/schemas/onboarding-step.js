@@ -14,6 +14,10 @@ const onboardingDataSchema = z
   .object({
     // Workspace step data
     companyName: z.string().max(200).optional(),
+    // Un SIRET peut rester vide tant que l'onboarding est en cours (l'étape
+    // "workspace" enregistre des brouillons). Le passage à "completed" exige
+    // en revanche un SIRET plein et vérifié — contrainte portée par
+    // `onboardingStepSchema` ci-dessous, pas par ce sous-schéma.
     siret: z
       .string()
       .regex(/^\d{14}$/)
@@ -45,5 +49,33 @@ export const onboardingStepSchema = z
     // the only way to reach "completed" when the flag is OFF.
     step: z.enum(["workspace", "plan", "recap", "completed"]),
     data: onboardingDataSchema.optional(),
+    // Déclaration sur l'honneur d'usage professionnel. Obligatoire pour
+    // terminer l'onboarding : c'est la pièce qui relie explicitement le
+    // compte à une entreprise réelle et exclut l'usage personnel.
+    honorDeclarationAccepted: z.boolean().optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.step !== "completed") return;
+
+    // Le SIRET n'est plus facultatif au moment de terminer l'onboarding.
+    // Sans cette règle, `.optional().or(z.literal(""))` laissait créer un
+    // compte complet sans la moindre donnée d'entreprise.
+    if (!value.data?.siret || !/^\d{14}$/.test(value.data.siret)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["data", "siret"],
+        message:
+          "Un numéro SIRET valide (14 chiffres) est requis pour terminer l'inscription.",
+      });
+    }
+
+    if (value.honorDeclarationAccepted !== true) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["honorDeclarationAccepted"],
+        message:
+          "La déclaration d'usage professionnel doit être acceptée pour terminer l'inscription.",
+      });
+    }
+  });
