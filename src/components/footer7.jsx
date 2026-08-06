@@ -138,7 +138,6 @@ const Footer7 = ({
               className="absolute inset-y-0 left-1/2 -z-10 w-screen -translate-x-1/2"
             >
               <div className="absolute inset-x-0 top-0 border-t border-black/5"></div>
-              <div className="absolute inset-x-0 top-2 border-t border-black/5"></div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 sm:gap-y-8 md:gap-y-10 pt-4 md:pt-6 pb-4 md:pb-6 lg:grid-cols-6 lg:gap-8 px-4 md:px-0">
               <div className="col-span-1 sm:col-span-2 md:col-span-2 flex flex-col items-center md:items-start mb-6 sm:mb-4 md:mb-0">
@@ -448,7 +447,7 @@ const Footer7 = ({
             </div>
           </div>
         </div>
-        <div className="px-4 md:px-0 pt-4 pb-2">
+        <div className="px-4 md:px-0 pt-4 pb-5 flex flex-wrap items-center gap-4">
           <Link
             href="/produits/facturation-electronique"
             className="inline-block"
@@ -459,6 +458,34 @@ const Footer7 = ({
               className="h-16 w-auto object-contain rounded-lg"
             />
           </Link>
+          <a
+            href="https://francesaas.fr/saas/newbi"
+            target="_blank"
+            rel="noopener"
+            title="Profil du SaaS Newbi sur FranceSaaS.fr"
+            className="inline-block"
+          >
+            <img
+              src="https://francesaas.fr/badge-francesaas.svg"
+              alt="Badge FranceSaaS"
+              width="200"
+              height="44"
+              className="h-16 w-auto object-contain"
+            />
+          </a>
+          <a
+            href="https://www.francenum.gouv.fr/activateurs/sweily"
+            target="_blank"
+            rel="noopener"
+            title="Sweily, Activateur France Num"
+            className="inline-block"
+          >
+            <img
+              src="/logo-france-num-activateur.png"
+              alt="Activateur France Num"
+              className="h-16 w-auto object-contain"
+            />
+          </a>
         </div>
         <div className="flex flex-col sm:flex-row sm:justify-between group/row relative isolate pt-[calc(--spacing(2)+1px)] last:pb-[calc(--spacing(2)+1px)] px-4 md:px-0 gap-4 sm:gap-0">
           <div
@@ -466,7 +493,6 @@ const Footer7 = ({
             className="absolute inset-y-0 left-1/2 -z-10 w-screen -translate-x-1/2"
           >
             <div className="absolute inset-x-0 top-0 border-t border-black/5"></div>
-            <div className="absolute inset-x-0 top-2 border-t border-black/5"></div>
           </div>
           <div className="text-center sm:text-left">
             <div className="py-2 sm:py-3 group/item relative">
