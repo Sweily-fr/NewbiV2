@@ -14,6 +14,12 @@ import {
 } from "@/src/lib/onboarding";
 import { onboardingStepSchema } from "@/src/lib/schemas/onboarding-step";
 import { isAppTrialEnabled } from "@/src/lib/feature-flags";
+import {
+  verifySiret,
+  siretVerificationMessage,
+  SIRET_VERIFICATION_ERRORS,
+} from "@/src/lib/siret-verification";
+import { grantAppTrialIfEligible } from "@/src/lib/org-creation";
 
 /**
  * PATCH /api/onboarding/step
@@ -41,7 +47,11 @@ async function handler(request) {
     return apiError(400, "Données invalides", flat, flat);
   }
 
-  const { step: targetStep, data: incomingData } = validation.data;
+  const {
+    step: targetStep,
+    data: incomingData,
+    honorDeclarationAccepted,
+  } = validation.data;
 
   // The "completed" step shortcut is only available under the app-managed
   // trial flag. Without it, only the webhook path can mark a user completed —
@@ -121,26 +131,103 @@ async function handler(request) {
       );
     }
 
+    // Le schéma impose déjà `honorDeclarationAccepted === true` pour cette
+    // transition ; on le revérifie ici pour que la garantie ne dépende pas
+    // d'un seul point du code.
+    if (honorDeclarationAccepted !== true) {
+      return apiError(
+        400,
+        "La déclaration d'usage professionnel doit être acceptée pour terminer l'inscription.",
+      );
+    }
+
+    // Vérification du SIRET auprès du registre public, à la complétion et
+    // côté serveur. Le client fait déjà une recherche pour l'autocomplétion,
+    // mais elle est contournable : c'est ce contrôle-ci qui garantit qu'un
+    // compte terminé correspond à une entreprise réellement immatriculée et
+    // en activité.
+    const verification = await verifySiret(mergedData?.siret);
+
+    if (!verification.ok) {
+      const status =
+        verification.reason === SIRET_VERIFICATION_ERRORS.SERVICE_UNAVAILABLE
+          ? 503
+          : 400;
+
+      console.warn(
+        `⚠️ [ONBOARDING STEP] ${sessionUser.email}: SIRET ${mergedData?.siret} refusé (${verification.reason})`,
+      );
+
+      return apiError(
+        status,
+        siretVerificationMessage(verification.reason),
+        { siret: mergedData?.siret, reason: verification.reason },
+        { siretVerification: verification.reason },
+      );
+    }
+
+    const verifiedCompany = verification.company;
+    const now = new Date();
+    const clientIp =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      "unknown";
+
     const orgPatch = {
       // `name` is the Better Auth native field that the org switcher reads.
       // The Lot 3 placeholder ("Mon entreprise") is set at user.create.after
       // and must be overwritten here once the user picks their company.
-      name: mergedData?.companyName || "Mon entreprise",
-      companyName: mergedData?.companyName || "Mon entreprise",
-      siret: mergedData?.siret || "",
-      siren: mergedData?.siren || "",
-      legalForm: mergedData?.legalForm || "",
-      addressStreet: mergedData?.addressStreet || "",
-      addressCity: mergedData?.addressCity || "",
-      addressZipCode: mergedData?.addressZipCode || "",
+      name:
+        mergedData?.companyName ||
+        verifiedCompany.denominationUniteLegale ||
+        "Mon entreprise",
+      companyName:
+        mergedData?.companyName ||
+        verifiedCompany.denominationUniteLegale ||
+        "Mon entreprise",
+      // Les champs d'identité viennent du registre, pas du client : c'est la
+      // source vérifiée qui fait foi.
+      siret: verifiedCompany.siret,
+      siren: verifiedCompany.siren,
+      legalForm: mergedData?.legalForm || verifiedCompany.natureJuridique || "",
+      addressStreet:
+        mergedData?.addressStreet || verifiedCompany.addressStreet || "",
+      addressCity: mergedData?.addressCity || verifiedCompany.addressCity || "",
+      addressZipCode:
+        mergedData?.addressZipCode || verifiedCompany.addressZipCode || "",
       addressCountry: mergedData?.addressCountry || "France",
+
+      // Preuve de vérification, conservée pour pouvoir démontrer a posteriori
+      // que le compte a été rattaché à une entreprise immatriculée.
+      siretVerifiedAt: now,
+      siretVerificationSource: "recherche-entreprises.api.gouv.fr",
+      denominationUniteLegale: verifiedCompany.denominationUniteLegale,
+      activitePrincipale: verifiedCompany.activitePrincipale,
+      dateCreationUniteLegale: verifiedCompany.dateCreation,
+
+      // Déclaration sur l'honneur d'usage professionnel, horodatée.
+      professionalUseDeclaration: {
+        acceptedAt: now,
+        acceptedByUserId: sessionUser.id,
+        ip: clientIp,
+        userAgent: request.headers.get("user-agent") || "unknown",
+      },
+
       onboardingCompleted: true,
-      updatedAt: new Date(),
+      updatedAt: now,
     };
 
     await mongoDb
       .collection("organization")
       .updateOne({ _id: member.organizationId }, { $set: orgPatch });
+
+    // L'essai de 30 jours ne démarre qu'ici, une fois le SIRET vérifié et la
+    // déclaration signée — plus au moment du signup. Un compte non qualifié
+    // n'obtient donc jamais d'accès, même temporaire.
+    await grantAppTrialIfEligible({
+      mongoDb,
+      userId: sessionUser.id,
+      organizationId: member.organizationId,
+    });
 
     await mongoDb.collection("user").updateOne(
       { _id: toObjectId(sessionUser.id) },
@@ -148,14 +235,14 @@ async function handler(request) {
         $set: {
           onboardingStep: "completed",
           hasSeenOnboarding: true,
-          updatedAt: new Date(),
+          updatedAt: now,
         },
         $unset: { onboardingData: "" },
       },
     );
 
     console.log(
-      `✅ [ONBOARDING STEP] ${sessionUser.email}: workspace → completed (app-trial signup shortcut)`,
+      `✅ [ONBOARDING STEP] ${sessionUser.email}: workspace → completed (SIRET ${verifiedCompany.siret} vérifié, déclaration acceptée)`,
     );
 
     return NextResponse.json({
@@ -163,6 +250,10 @@ async function handler(request) {
       data: mergedData || null,
       changed: true,
       organizationId: member.organizationId.toString(),
+      company: {
+        siret: verifiedCompany.siret,
+        denomination: verifiedCompany.denominationUniteLegale,
+      },
     });
   }
 

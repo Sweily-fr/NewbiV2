@@ -118,6 +118,48 @@ export const auth = betterAuth({
                 `📨 [USER CREATE] Invitation pending trouvée pour ${user.email}`,
               );
 
+              // L'invitation dispense de l'étape SIRET, mais seulement parce
+              // que l'organisation qui invite est, elle, déjà qualifiée : le
+              // rattachement professionnel est alors transitif. Si elle ne
+              // l'est pas, la dispense créerait un chemin d'accès sans la
+              // moindre donnée d'entreprise — le contournement le plus simple
+              // de tout le dispositif.
+              const invitingOrg = await mongoDb
+                .collection("organization")
+                .findOne(
+                  { _id: pendingInvitation.organizationId },
+                  { projection: { siret: 1, siretVerifiedAt: 1 } },
+                );
+
+              const invitingOrgQualified = Boolean(invitingOrg?.siret);
+
+              if (!invitingOrgQualified) {
+                console.warn(
+                  `⚠️ [USER CREATE] ${user.email} invité par une org sans SIRET (${pendingInvitation.organizationId}) — onboarding requis`,
+                );
+                await mongoDb.collection("user").updateOne(
+                  { _id: new ObjectId(user.id) },
+                  {
+                    $set: {
+                      hasSeenOnboarding: false,
+                      isInvitedUser: true,
+                      pendingInvitationId: pendingInvitation._id.toString(),
+                      onboardingStep: "workspace",
+                    },
+                  },
+                );
+                return user;
+              }
+
+              if (!invitingOrg.siretVerifiedAt) {
+                // Organisation antérieure à la vérification au registre : on
+                // laisse passer (son SIRET a été saisi avant la mise en place
+                // du contrôle) mais on le trace pour le rattrapage.
+                console.warn(
+                  `⚠️ [USER CREATE] Org ${pendingInvitation.organizationId} a un SIRET non vérifié au registre (compte antérieur au contrôle)`,
+                );
+              }
+
               // Marquer l'utilisateur comme invité — skip onboarding complet
               await mongoDb.collection("user").updateOne(
                 { _id: new ObjectId(user.id) },
@@ -127,12 +169,21 @@ export const auth = betterAuth({
                     isInvitedUser: true,
                     pendingInvitationId: pendingInvitation._id.toString(),
                     onboardingStep: "completed",
+                    // Rattachement professionnel hérité de l'organisation
+                    // invitante, tracé pour être auditable au même titre
+                    // qu'une déclaration signée.
+                    professionalUseBasis: {
+                      type: "invitation",
+                      organizationId: pendingInvitation.organizationId,
+                      organizationSiret: invitingOrg.siret,
+                      recordedAt: new Date(),
+                    },
                   },
                 },
               );
 
               console.log(
-                `✅ [USER CREATE] Utilisateur ${user.email} marqué comme invité (onboardingStep: completed)`,
+                `✅ [USER CREATE] Utilisateur ${user.email} marqué comme invité (onboardingStep: completed, org SIRET ${invitingOrg.siret})`,
               );
               return user;
             }
@@ -178,11 +229,16 @@ export const auth = betterAuth({
                     orgName: user.name || "Mon entreprise",
                     orgType: "business",
                   },
-                  appTrialDays: 30,
+                  // Pas d'essai ici : il est accordé par
+                  // PATCH /api/onboarding/step une fois le SIRET vérifié au
+                  // registre et la déclaration d'usage professionnel signée.
+                  // Le démarrer au signup donnait 30 jours d'accès à un compte
+                  // dont rien n'établissait le caractère professionnel.
+                  appTrialDays: null,
                   markOnboardingComplete: false, // workspace step still pending
                 });
                 console.log(
-                  `✅ [USER CREATE] Org placeholder + trial app 30j créés pour ${user.email}`,
+                  `✅ [USER CREATE] Org placeholder créée pour ${user.email} (essai accordé après vérification SIRET)`,
                 );
               } catch (trialError) {
                 // Non-fatal: better-auth ne bloque pas le signup si la création
