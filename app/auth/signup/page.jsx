@@ -191,24 +191,33 @@ function SignUpPageContent() {
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [isCheckingSiret, setIsCheckingSiret] = useState(false);
   const [siretError, setSiretError] = useState(null);
+  // Déclaration sur l'honneur d'usage professionnel — obligatoire pour
+  // terminer l'inscription (le serveur la réexige de son côté).
+  const [honorAccepted, setHonorAccepted] = useState(false);
   const [billingCountry, setBillingCountry] = useState("FR");
   const contentRef = useRef(null);
 
   // Persist onboarding step + data to DB via API, then refetch session
   const { refetch: refetchSession } = useSession();
   const updateOnboardingStep = useCallback(
-    async (step, data) => {
+    async (step, data, extra) => {
       setIsSavingStep(true);
       try {
         const res = await fetch("/api/onboarding/step", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ step, data: data || undefined }),
+          body: JSON.stringify({ step, data: data || undefined, ...extra }),
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
           console.error("❌ [ONBOARDING] PATCH failed:", err);
-          toast.error("Erreur lors de la sauvegarde, veuillez réessayer");
+          // Le refus de vérification SIRET porte un message précis (SIRET
+          // introuvable, établissement radié, registre indisponible) : le
+          // masquer derrière un toast générique laisse l'utilisateur sans
+          // moyen de comprendre ce qu'il doit corriger.
+          toast.error(
+            err?.error || "Erreur lors de la sauvegarde, veuillez réessayer",
+          );
           return false;
         }
         // Re-sync session so other tabs / next reload see the new step
@@ -291,6 +300,9 @@ function SignUpPageContent() {
 
   const handleSelectCompany = async (company) => {
     setSiretError(null);
+    // La déclaration nomme une entreprise précise : changer de société la
+    // rend caduque, elle doit être re-cochée.
+    setHonorAccepted(false);
     const siege = company.siege || {};
     const siret = siege.siret || "";
     if (!siret) {
@@ -356,6 +368,7 @@ function SignUpPageContent() {
   const handleWorkspaceSubmit = async (e) => {
     e.preventDefault();
     if (!selectedCompany || isSavingStep) return;
+    if (appTrialEnabled && !honorAccepted) return;
     const siege = selectedCompany.siege || {};
     // L'API recherche-entreprises renvoie la chaîne littérale "[NON-DIFFUSIBLE]"
     // (et non null) pour les champs masqués des entreprises non-diffusibles.
@@ -388,10 +401,11 @@ function SignUpPageContent() {
     // a no-store getSession, the /onboarding/success page (and downstream
     // /dashboard) can briefly target the wrong org.
     if (appTrialEnabled) {
-      const ok = await updateOnboardingStep("completed", {
-        ...newCompanyData,
-        billingCountry,
-      });
+      const ok = await updateOnboardingStep(
+        "completed",
+        { ...newCompanyData, billingCountry },
+        { honorDeclarationAccepted: honorAccepted },
+      );
       if (ok) {
         try {
           const { authClient } = await import("@/src/lib/auth-client");
@@ -799,13 +813,41 @@ function SignUpPageContent() {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {/* Déclaration sur l'honneur : elle nomme l'entreprise
+                      sélectionnée et exclut explicitement l'usage personnel. */}
+                  {appTrialEnabled && selectedCompany && (
+                    <label className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 p-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={honorAccepted}
+                        onChange={(e) => setHonorAccepted(e.target.checked)}
+                        className="mt-0.5 size-4 shrink-0 accent-[#5A50FF] cursor-pointer"
+                      />
+                      <span className="text-[13px] leading-5 text-muted-foreground">
+                        Je certifie sur l'honneur être le représentant légal, le
+                        mandataire ou un collaborateur habilité de{" "}
+                        <span className="font-medium text-foreground">
+                          {selectedCompany.nom_complet ||
+                            selectedCompany.nom_raison_sociale}
+                        </span>
+                        , et utiliser Newbi à des fins strictement
+                        professionnelles dans le cadre de cette activité
+                        déclarée.
+                      </span>
+                    </label>
+                  )}
                 </CardContent>
               </Card>
 
               <div className="flex justify-center mt-6">
                 <Button
                   type="submit"
-                  disabled={!selectedCompany || isSavingStep}
+                  disabled={
+                    !selectedCompany ||
+                    isSavingStep ||
+                    (appTrialEnabled && !honorAccepted)
+                  }
                   className="h-9 px-16 bg-[#5A50FF]/90 hover:bg-[#5A50FF] text-white cursor-pointer border-0 [box-shadow:none] rounded-lg disabled:opacity-40"
                 >
                   {isSavingStep ? (
