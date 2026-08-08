@@ -13,6 +13,12 @@ const ANDROID_STORE_URL =
 const DISMISS_KEY = "app_install_banner_dismissed";
 const DISMISS_DURATION = 14 * 24 * 60 * 60 * 1000; // 14 jours
 
+// Routes où le banner n'a pas lieu d'être :
+// - /pdf-generator/* : rendu de document, affiché dans une iframe d'aperçu web
+//   ou dans la WebView de l'app mobile — le banner recouvrait le document.
+// - /mobile-non-disponible : déjà un CTA de téléchargement plein écran.
+const EXCLUDED_PREFIXES = ["/pdf-generator", "/mobile-non-disponible"];
+
 /**
  * Banner d'installation de l'app mobile, façon "Smart App Banner" iOS.
  *
@@ -37,6 +43,15 @@ export function AppInstallBanner() {
 
     // Ni téléphone ni tablette mobile → pas de banner.
     if (!isIOS && !isAndroid) return;
+
+    // Page embarquée (iframe d'aperçu web, WebView de l'app mobile) : ce n'est
+    // pas de la navigation, le banner recouvrirait le contenu rendu.
+    try {
+      if (window.self !== window.top) return;
+    } catch {
+      // Accès cross-origin refusé → on est bien dans une iframe.
+      return;
+    }
 
     // Déjà installé / lancé en standalone (PWA ou app) → inutile.
     if (
@@ -77,8 +92,11 @@ export function AppInstallBanner() {
     setVisible(false);
   };
 
-  // La page /mobile-non-disponible est déjà un CTA de téléchargement plein écran.
-  const shown = visible && !!platform && pathname !== "/mobile-non-disponible";
+  const isExcludedPath = EXCLUDED_PREFIXES.some(
+    (prefix) =>
+      pathname === prefix || (pathname || "").startsWith(`${prefix}/`),
+  );
+  const shown = visible && !!platform && !isExcludedPath;
 
   // Expose la hauteur du banner via --app-banner-h pour que la navbar (fixed)
   // et le contenu (body) se décalent en dessous (voir globals.css + navbar).
