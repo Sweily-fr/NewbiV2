@@ -476,8 +476,14 @@ function SignUpPageContent() {
       });
     } catch {}
 
+    // `requestSignUp: true` est indispensable ici : les providers sociaux sont
+    // configurés en `disableImplicitSignUp` (cf. src/lib/auth.js), donc une
+    // connexion sociale ne crée plus de compte à moins de le demander. C'est
+    // cet écran — et lui seul — qui a le droit d'inscrire. La page de login et
+    // l'app mobile ne passent pas ce drapeau, et ne peuvent donc que connecter
+    // des comptes existants.
     await signIn.social(
-      { provider, callbackURL: "/dashboard" },
+      { provider, callbackURL: "/dashboard", requestSignUp: true },
       {
         onSuccess: () => {},
         onError: () => {
