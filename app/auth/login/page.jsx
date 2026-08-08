@@ -33,6 +33,16 @@ const GoogleIcon = (props) => (
   </svg>
 );
 
+// Logo Apple officiel (pomme pleine), tracé monochrome piloté par currentColor.
+const AppleIcon = (props) => (
+  <svg viewBox="0 0 24 24" {...props}>
+    <path
+      d="M16.365 1.43c0 1.14-.42 2.2-1.12 3.01-.85.98-2.24 1.74-3.4 1.65a3.4 3.4 0 0 1-.03-.41c0-1.1.5-2.26 1.24-3.02.75-.79 2.02-1.38 3.09-1.42.01.06.02.13.02.19zM20.9 17.2c-.55 1.27-.82 1.84-1.53 2.96-.99 1.57-2.39 3.53-4.12 3.54-1.54.02-1.94-1-4.03-.99-2.09.01-2.52 1.01-4.06.99-1.73-.02-3.06-1.78-4.05-3.35C.34 15.97-.06 10.83 1.87 8.1c1.12-1.6 2.9-2.53 4.57-2.53 1.7 0 2.77 1 4.18 1 1.36 0 2.19-1 4.16-1 1.49 0 3.07.81 4.19 2.21-3.68 2.02-3.08 7.27.93 8.42z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
 const signInWithProvider = async (provider) => {
   try {
     clearSessionStorage();
@@ -133,6 +143,17 @@ function LoginPageContent() {
                 >
                   <GoogleIcon className="size-4 mr-2" aria-hidden />
                   Continuer avec Google
+                </Button>
+                {/* Apple : pendant du bouton présent dans l'app iOS. Cette page
+                    ne passe pas `requestSignUp`, elle ne connecte donc que des
+                    comptes existants — l'inscription se fait sur /auth/signup. */}
+                <Button
+                  variant="outline"
+                  className="w-full h-11 cursor-pointer bg-white rounded-lg"
+                  onClick={() => signInWithProvider("apple")}
+                >
+                  <AppleIcon className="size-4 mr-2" aria-hidden />
+                  Continuer avec Apple
                 </Button>
                 <Button
                   variant="outline"
