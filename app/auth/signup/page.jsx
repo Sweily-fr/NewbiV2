@@ -57,6 +57,19 @@ const GoogleIcon = (props) => (
   </svg>
 );
 
+// Le provider Apple exige un Services ID et un client secret signé (le flux web
+// n'est PAS celui du mobile, qui valide un idToken natif). Sans eux, Better
+// Auth renvoie CLIENT_ID_AND_SECRET_REQUIRED et le bouton échoue en 500.
+//
+// On l'affiche donc uniquement quand la configuration est déclarée présente.
+// Par défaut désactivé : mieux vaut un bouton absent qu'un bouton cassé —
+// c'est précisément ce que sanctionne la règle Apple 2.1.
+//
+// À activer (NEXT_PUBLIC_APPLE_AUTH_ENABLED=true) une fois APPLE_CLIENT_ID et
+// APPLE_CLIENT_SECRET renseignés côté serveur.
+const APPLE_AUTH_ENABLED =
+  process.env.NEXT_PUBLIC_APPLE_AUTH_ENABLED === "true";
+
 // Logo Apple officiel (pomme pleine), tracé monochrome piloté par currentColor
 // pour suivre la couleur du bouton.
 const AppleIcon = (props) => (
@@ -669,14 +682,16 @@ function SignUpPageContent() {
                 <GoogleIcon className="size-4 mr-2" aria-hidden />
                 Continuer avec Google
               </Button>
-              <Button
-                variant="outline"
-                className="w-full h-11 cursor-pointer bg-white rounded-lg"
-                onClick={() => signInWithProvider("apple")}
-              >
-                <AppleIcon className="size-4 mr-2" aria-hidden />
-                Continuer avec Apple
-              </Button>
+              {APPLE_AUTH_ENABLED && (
+                <Button
+                  variant="outline"
+                  className="w-full h-11 cursor-pointer bg-white rounded-lg"
+                  onClick={() => signInWithProvider("apple")}
+                >
+                  <AppleIcon className="size-4 mr-2" aria-hidden />
+                  Continuer avec Apple
+                </Button>
+              )}
               <Button
                 variant="outline"
                 className="w-full h-11 cursor-pointer bg-white rounded-lg"
