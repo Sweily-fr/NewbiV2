@@ -33,13 +33,6 @@ const GoogleIcon = (props) => (
   </svg>
 );
 
-// Affiché seulement si le provider Apple est réellement configuré côté serveur
-// (Services ID + client secret signé). Sans eux, Better Auth renvoie
-// CLIENT_ID_AND_SECRET_REQUIRED et le bouton échoue en 500. Voir le commentaire
-// détaillé dans app/auth/signup/page.jsx.
-const APPLE_AUTH_ENABLED =
-  process.env.NEXT_PUBLIC_APPLE_AUTH_ENABLED === "true";
-
 // Logo Apple officiel (pomme pleine), tracé monochrome piloté par currentColor.
 const AppleIcon = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
@@ -154,16 +147,14 @@ function LoginPageContent() {
                 {/* Apple : pendant du bouton présent dans l'app iOS. Cette page
                     ne passe pas `requestSignUp`, elle ne connecte donc que des
                     comptes existants — l'inscription se fait sur /auth/signup. */}
-                {APPLE_AUTH_ENABLED && (
-                  <Button
-                    variant="outline"
-                    className="w-full h-11 cursor-pointer bg-white rounded-lg"
-                    onClick={() => signInWithProvider("apple")}
-                  >
-                    <AppleIcon className="size-4 mr-2" aria-hidden />
-                    Continuer avec Apple
-                  </Button>
-                )}
+                <Button
+                  variant="outline"
+                  className="w-full h-11 cursor-pointer bg-white rounded-lg"
+                  onClick={() => signInWithProvider("apple")}
+                >
+                  <AppleIcon className="size-4 mr-2" aria-hidden />
+                  Continuer avec Apple
+                </Button>
                 <Button
                   variant="outline"
                   className="w-full h-11 cursor-pointer bg-white rounded-lg"

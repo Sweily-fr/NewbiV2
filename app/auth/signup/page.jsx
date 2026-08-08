@@ -57,18 +57,14 @@ const GoogleIcon = (props) => (
   </svg>
 );
 
-// Le provider Apple exige un Services ID et un client secret signé (le flux web
-// n'est PAS celui du mobile, qui valide un idToken natif). Sans eux, Better
-// Auth renvoie CLIENT_ID_AND_SECRET_REQUIRED et le bouton échoue en 500.
+// Le provider Apple exige un Services ID (`fr.newbi.web`) et un client secret
+// signé — le flux web n'est PAS celui du mobile, qui valide un idToken natif.
+// Ces valeurs vivent dans APPLE_CLIENT_ID / APPLE_CLIENT_SECRET côté serveur.
 //
-// On l'affiche donc uniquement quand la configuration est déclarée présente.
-// Par défaut désactivé : mieux vaut un bouton absent qu'un bouton cassé —
-// c'est précisément ce que sanctionne la règle Apple 2.1.
-//
-// À activer (NEXT_PUBLIC_APPLE_AUTH_ENABLED=true) une fois APPLE_CLIENT_ID et
-// APPLE_CLIENT_SECRET renseignés côté serveur.
-const APPLE_AUTH_ENABLED =
-  process.env.NEXT_PUBLIC_APPLE_AUTH_ENABLED === "true";
+// ⚠️ Le client secret est un JWT qui EXPIRE (6 mois max, échéance actuelle :
+// février 2027). Passé ce délai, Better Auth cesse d'initialiser le provider et
+// ce bouton renvoie 500 — sur le web comme dans l'app mobile. Régénérer avec
+// `node scripts/generate-apple-client-secret.js`.
 
 // Logo Apple officiel (pomme pleine), tracé monochrome piloté par currentColor
 // pour suivre la couleur du bouton.
@@ -682,16 +678,14 @@ function SignUpPageContent() {
                 <GoogleIcon className="size-4 mr-2" aria-hidden />
                 Continuer avec Google
               </Button>
-              {APPLE_AUTH_ENABLED && (
-                <Button
-                  variant="outline"
-                  className="w-full h-11 cursor-pointer bg-white rounded-lg"
-                  onClick={() => signInWithProvider("apple")}
-                >
-                  <AppleIcon className="size-4 mr-2" aria-hidden />
-                  Continuer avec Apple
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                className="w-full h-11 cursor-pointer bg-white rounded-lg"
+                onClick={() => signInWithProvider("apple")}
+              >
+                <AppleIcon className="size-4 mr-2" aria-hidden />
+                Continuer avec Apple
+              </Button>
               <Button
                 variant="outline"
                 className="w-full h-11 cursor-pointer bg-white rounded-lg"
