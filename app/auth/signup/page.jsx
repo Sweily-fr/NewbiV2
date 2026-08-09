@@ -502,8 +502,20 @@ function SignUpPageContent() {
     // cet écran — et lui seul — qui a le droit d'inscrire. La page de login et
     // l'app mobile ne passent pas ce drapeau, et ne peuvent donc que connecter
     // des comptes existants.
+    //
+    // Le retour se fait ICI, pas sur /dashboard. Un compte fraîchement créé
+    // n'a ni abonnement ni essai — l'essai n'est accordé qu'à la fin de
+    // l'onboarding — donc le garde de app/dashboard/layout.jsx, qui ne
+    // connaît que l'abonnement et ignore l'onboarding, le renvoyait aussitôt
+    // sur /auth/signup. Ce rebond faisait perdre l'étape « workspace » :
+    // l'utilisateur retombait sur le formulaire d'inscription au lieu de
+    // continuer sa configuration.
+    //
+    // En revenant directement ici, l'effet d'hydratation lit onboardingStep
+    // et ouvre la bonne étape. Ne pas remettre /dashboard : le détour est le
+    // bug, pas la destination.
     await signIn.social(
-      { provider, callbackURL: "/dashboard", requestSignUp: true },
+      { provider, callbackURL: "/auth/signup", requestSignUp: true },
       {
         onSuccess: () => {},
         onError: () => {
