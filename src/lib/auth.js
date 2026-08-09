@@ -592,20 +592,34 @@ export const auth = betterAuth({
     },
   },
 
+  // `disableImplicitSignUp` : une connexion sociale ne CRÉE plus de compte par
+  // défaut ; il faut le demander explicitement avec `requestSignUp: true`.
+  //
+  // Sans ça, l'app iOS gardait une porte d'inscription dérobée : « Se connecter
+  // avec Apple » créait le compte d'un inconnu sans jamais afficher de
+  // formulaire. Or l'app ne doit plus acquérir d'utilisateur — c'est le fond du
+  // rejet App Store 3.1.1 / 3.1.3(c) (cf. app-newbi, welcome.jsx).
+  //
+  // Le web conserve son inscription sociale en passant `requestSignUp: true`
+  // sur ses écrans d'inscription ; le mobile ne le passe jamais, donc il ne
+  // peut que connecter des comptes existants.
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      disableImplicitSignUp: true,
     },
     github: {
       clientId: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
+      disableImplicitSignUp: true,
     },
     apple: {
       clientId: process.env.APPLE_CLIENT_ID,
       clientSecret: process.env.APPLE_CLIENT_SECRET || "placeholder",
       appBundleIdentifier:
         process.env.APPLE_APP_BUNDLE_IDENTIFIER || "fr.newbi.app",
+      disableImplicitSignUp: true,
     },
   },
 

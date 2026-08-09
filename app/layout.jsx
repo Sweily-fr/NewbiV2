@@ -82,6 +82,12 @@ export const metadata = {
       "max-snippet": -1,
     },
   },
+  // Smart App Banner natif iOS (Safari). Déclaré ici plutôt qu'en dur dans
+  // <head> pour que les segments enfants puissent le neutraliser
+  // (cf. app/pdf-generator/layout.jsx).
+  other: {
+    "apple-itunes-app": "app-id=6772126520",
+  },
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "48x48" },
@@ -109,9 +115,6 @@ export default function RootLayout({ children }) {
           content="black-translucent"
         />
         <meta name="apple-mobile-web-app-title" content="Newbi" />
-        {/* Smart App Banner natif iOS (Safari) — pointe vers l'app App Store.
-            Le fallback custom (Android / iOS hors-Safari) est <AppInstallBanner />. */}
-        <meta name="apple-itunes-app" content="app-id=6772126520" />
         <meta name="theme-color" content="#5b4fff" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <script

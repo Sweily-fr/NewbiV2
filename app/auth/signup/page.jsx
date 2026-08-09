@@ -57,6 +57,26 @@ const GoogleIcon = (props) => (
   </svg>
 );
 
+// Le provider Apple exige un Services ID (`fr.newbi.web`) et un client secret
+// signé — le flux web n'est PAS celui du mobile, qui valide un idToken natif.
+// Ces valeurs vivent dans APPLE_CLIENT_ID / APPLE_CLIENT_SECRET côté serveur.
+//
+// ⚠️ Le client secret est un JWT qui EXPIRE (6 mois max, échéance actuelle :
+// février 2027). Passé ce délai, Better Auth cesse d'initialiser le provider et
+// ce bouton renvoie 500 — sur le web comme dans l'app mobile. Régénérer avec
+// `node scripts/generate-apple-client-secret.js`.
+
+// Logo Apple officiel (pomme pleine), tracé monochrome piloté par currentColor
+// pour suivre la couleur du bouton.
+const AppleIcon = (props) => (
+  <svg viewBox="0 0 24 24" {...props}>
+    <path
+      d="M16.365 1.43c0 1.14-.42 2.2-1.12 3.01-.85.98-2.24 1.74-3.4 1.65a3.4 3.4 0 0 1-.03-.41c0-1.1.5-2.26 1.24-3.02.75-.79 2.02-1.38 3.09-1.42.01.06.02.13.02.19zM20.9 17.2c-.55 1.27-.82 1.84-1.53 2.96-.99 1.57-2.39 3.53-4.12 3.54-1.54.02-1.94-1-4.03-.99-2.09.01-2.52 1.01-4.06.99-1.73-.02-3.06-1.78-4.05-3.35C.34 15.97-.06 10.83 1.87 8.1c1.12-1.6 2.9-2.53 4.57-2.53 1.7 0 2.77 1 4.18 1 1.36 0 2.19-1 4.16-1 1.49 0 3.07.81 4.19 2.21-3.68 2.02-3.08 7.27.93 8.42z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
 // Views: "signup" → "email" → "workspace"
 export default function SignUpPage() {
   return (
@@ -476,8 +496,26 @@ function SignUpPageContent() {
       });
     } catch {}
 
+    // `requestSignUp: true` est indispensable ici : les providers sociaux sont
+    // configurés en `disableImplicitSignUp` (cf. src/lib/auth.js), donc une
+    // connexion sociale ne crée plus de compte à moins de le demander. C'est
+    // cet écran — et lui seul — qui a le droit d'inscrire. La page de login et
+    // l'app mobile ne passent pas ce drapeau, et ne peuvent donc que connecter
+    // des comptes existants.
+    //
+    // Le retour se fait ICI, pas sur /dashboard. Un compte fraîchement créé
+    // n'a ni abonnement ni essai — l'essai n'est accordé qu'à la fin de
+    // l'onboarding — donc le garde de app/dashboard/layout.jsx, qui ne
+    // connaît que l'abonnement et ignore l'onboarding, le renvoyait aussitôt
+    // sur /auth/signup. Ce rebond faisait perdre l'étape « workspace » :
+    // l'utilisateur retombait sur le formulaire d'inscription au lieu de
+    // continuer sa configuration.
+    //
+    // En revenant directement ici, l'effet d'hydratation lit onboardingStep
+    // et ouvre la bonne étape. Ne pas remettre /dashboard : le détour est le
+    // bug, pas la destination.
     await signIn.social(
-      { provider, callbackURL: "/dashboard" },
+      { provider, callbackURL: "/auth/signup", requestSignUp: true },
       {
         onSuccess: () => {},
         onError: () => {
@@ -637,7 +675,12 @@ function SignUpPageContent() {
             <div className="mb-6" />
           )}
 
-          {/* ─── View: Signup (Google + Email buttons) ─── */}
+          {/* ─── View: Signup (Google + Apple + Email buttons) ───
+              Apple est proposé ici parce que l'app iOS offre « Se connecter
+              avec Apple » : la règle Apple 4.8 exige que ce soit une option
+              ÉQUIVALENTE aux autres connexions sociales. Sans inscription
+              Apple quelque part, aucun compte ne serait jamais lié à Apple et
+              le bouton mobile échouerait systématiquement. */}
           {view === "signup" && (
             <div className="w-full max-w-[320px] space-y-4">
               <Button
@@ -646,6 +689,14 @@ function SignUpPageContent() {
               >
                 <GoogleIcon className="size-4 mr-2" aria-hidden />
                 Continuer avec Google
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full h-11 cursor-pointer bg-white rounded-lg"
+                onClick={() => signInWithProvider("apple")}
+              >
+                <AppleIcon className="size-4 mr-2" aria-hidden />
+                Continuer avec Apple
               </Button>
               <Button
                 variant="outline"
