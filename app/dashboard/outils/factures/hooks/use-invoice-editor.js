@@ -2178,6 +2178,19 @@ export function useInvoiceEditor({
         toast.error(
           "Le montant total des factures de situation dépasserait le montant du contrat",
         );
+      } else if (
+        errorMessage.includes("dans la séquence") ||
+        errorMessage.includes("prochain numéro doit être")
+      ) {
+        // Numérotation : le message de l'API dit déjà quel est le dernier
+        // numéro utilisé et lequel est attendu, on le relaie tel quel et on
+        // pointe le champ concerné.
+        setValidationErrors({
+          invoiceNumber: { message: errorMessage, canEdit: true },
+        });
+        toast.error("Numéro de facture invalide", {
+          description: errorMessage,
+        });
       } else if (errorMessage.includes("erreurs de validation")) {
         // Erreur de validation Mongoose - afficher les détails
         const details =
@@ -2599,6 +2612,19 @@ export function useInvoiceEditor({
         toast.error(
           "Le montant total des factures de situation dépasserait le montant du contrat",
         );
+      } else if (
+        errorMessage.includes("dans la séquence") ||
+        errorMessage.includes("prochain numéro doit être")
+      ) {
+        // Numérotation : le message de l'API dit déjà quel est le dernier
+        // numéro utilisé et lequel est attendu, on le relaie tel quel et on
+        // pointe le champ concerné.
+        setValidationErrors({
+          invoiceNumber: { message: errorMessage, canEdit: true },
+        });
+        toast.error("Numéro de facture invalide", {
+          description: errorMessage,
+        });
       } else if (errorMessage.includes("erreurs de validation")) {
         // Erreur de validation Mongoose - afficher les détails des champs qui ont échoué
         const details =
