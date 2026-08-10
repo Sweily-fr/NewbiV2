@@ -488,7 +488,7 @@ export default function InvoiceTable({
           <p className="text-muted-foreground mb-4">
             Impossible de charger les factures
           </p>
-          <Button onClick={refetch}>Réessayer</Button>
+          <Button onClick={() => refetch()}>Réessayer</Button>
         </div>
       </div>
     );
