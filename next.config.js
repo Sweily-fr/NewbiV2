@@ -1,5 +1,38 @@
 const isDev = process.env.NODE_ENV === "development";
 
+// La barre de feedback Vercel (vercel.live) n'est injectée que sur les
+// déploiements non-production : elle n'existait pas lors du balayage du
+// 30/07/2026 fait sur la prod, d'où son blocage constaté sur staging.
+const isVercelToolbar = process.env.VERCEL_ENV !== "production";
+
+// Origine de l'API dérivée des variables d'environnement plutôt que codée en
+// dur : staging pointe vers staging-api.newbi.fr et se faisait bloquer par une
+// connect-src figée sur la prod (incident du 10/08/2026, toutes les requêtes
+// GraphQL refusées). Les domaines de prod restent listés en dur comme filet de
+// sécurité si la variable manque au moment du build.
+const toOrigin = (value) => {
+  try {
+    return new URL(value).origin;
+  } catch {
+    return null;
+  }
+};
+const apiOrigin = toOrigin(process.env.NEXT_PUBLIC_API_URL);
+const apiOrigins = [
+  ...new Set(
+    [
+      apiOrigin,
+      // NEXT_PUBLIC_WS_URL peut manquer sur un environnement : on dérive aussi
+      // l'origine WebSocket de l'API pour que les subscriptions passent quand
+      // même (https://x → wss://x).
+      apiOrigin && apiOrigin.replace(/^http/, "ws"),
+      toOrigin(process.env.NEXT_PUBLIC_WS_URL),
+      "https://api.newbi.fr",
+      "wss://api.newbi.fr",
+    ].filter(Boolean),
+  ),
+];
+
 // CSP stricte en prod, Report-Only en dev (les violations restent visibles en
 // console sans gêner le développement). Policy validée le 30/07/2026 par
 // balayage Playwright : 16 pages publiques + 19 pages dashboard authentifiées,
@@ -14,20 +47,21 @@ const cspHeaderKey = isDev
   : "Content-Security-Policy";
 const cspValue = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://www.googletagmanager.com https://*.googletagmanager.com https://connect.facebook.net https://challenges.cloudflare.com`,
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}${isVercelToolbar ? " https://vercel.live" : ""} https://www.googletagmanager.com https://*.googletagmanager.com https://connect.facebook.net https://challenges.cloudflare.com`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
-  "font-src 'self' data:",
+  `font-src 'self' data:${isVercelToolbar ? " https://vercel.live https://assets.vercel.com" : ""}`,
   // *.google-analytics.com : GA4 utilise des endpoints régionaux (region1.…).
   // *.r2.cloudflarestorage.com : URLs présignées d'upload des transferts de fichiers.
-  `connect-src 'self'${isDev ? " http://localhost:* ws://localhost:*" : ""} https://api.newbi.fr wss://api.newbi.fr https://*.r2.dev https://*.r2.cloudflarestorage.com https://api.cloudinary.com https://*.google-analytics.com https://*.googletagmanager.com https://www.facebook.com https://www.googleapis.com https://challenges.cloudflare.com`,
+  // *.pusher.com : temps réel de la barre de feedback Vercel (non-production).
+  `connect-src 'self'${isDev ? " http://localhost:* ws://localhost:*" : ""} ${apiOrigins.join(" ")}${isVercelToolbar ? " https://vercel.live https://*.pusher.com wss://*.pusher.com" : ""} https://*.r2.dev https://*.r2.cloudflarestorage.com https://api.cloudinary.com https://*.google-analytics.com https://*.googletagmanager.com https://www.facebook.com https://www.googleapis.com https://challenges.cloudflare.com`,
   // Les aperçus PDF des documents archivés (factures, avoirs, BC) et des
   // documents importés passent par le proxy same-origin /api/document-preview
   // ('self') : le cookie de session host-only ne part jamais vers api.newbi.fr
   // depuis une iframe (incident ERR_BLOCKED_BY_CSP puis ERR_BLOCKED_BY_RESPONSE
   // du 30/07/2026). blob: couvre les aperçus locaux de fichiers en cours
   // d'upload (factures d'achat) ; un blob URL est lié à notre origine.
-  "frame-src 'self' blob: https://www.googletagmanager.com https://www.facebook.com https://challenges.cloudflare.com",
+  `frame-src 'self' blob:${isVercelToolbar ? " https://vercel.live" : ""} https://www.googletagmanager.com https://www.facebook.com https://challenges.cloudflare.com`,
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",
