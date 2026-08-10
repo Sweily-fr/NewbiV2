@@ -15,8 +15,30 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
+// Description du toast, rendue DANS la boîte sombre.
+// Sonner affiche sinon `description` dans son propre div, après notre JSX :
+// sur un toast custom le <li> n'est pas stylé (data-styled=false), donc le
+// texte débordait hors du fond noir, sans style. On la rend nous-mêmes et on
+// retire l'option des données passées à sonner (cf. buildToastProps).
+// Le padding gauche aligne la description sur le titre, dont l'icône est en
+// inline-flex avec me-3 : largeur de l'icône + 0.75rem.
+const ToastDescription = ({ description, isMobile }) => {
+  if (!description) return null;
+  return (
+    <p
+      className="mt-1.5 text-xs leading-5 whitespace-pre-line break-words"
+      style={{
+        color: "rgba(255, 255, 255, 0.65)",
+        paddingLeft: isMobile ? 30 : 28,
+      }}
+    >
+      {description}
+    </p>
+  );
+};
+
 // Composant de notification de succès
-const SuccessToast = ({ message, isMobile }) => (
+const SuccessToast = ({ message, isMobile, description }) => (
   <div
     className={`max-w-[400px] shadow-lg ${isMobile ? "rounded-2xl px-4 py-4" : "rounded-lg px-4 py-3"}`}
     style={{ backgroundColor: "#202020" }}
@@ -47,11 +69,12 @@ const SuccessToast = ({ message, isMobile }) => (
         />
       </Button>
     </div>
+    <ToastDescription description={description} isMobile={isMobile} />
   </div>
 );
 
 // Composant de notification d'erreur avec détails techniques optionnels
-const ErrorToast = ({ message, isMobile, details }) => {
+const ErrorToast = ({ message, isMobile, details, description }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -129,6 +152,7 @@ const ErrorToast = ({ message, isMobile, details }) => {
           </Button>
         </div>
       </div>
+      <ToastDescription description={description} isMobile={isMobile} />
       {details && showDetails && (
         <div className="mt-2 pt-2 border-t border-white/10">
           <div className="flex items-center justify-between mb-1">
@@ -178,7 +202,7 @@ const ErrorToast = ({ message, isMobile, details }) => {
 };
 
 // Composant de notification d'information
-const InfoToast = ({ message, isMobile }) => (
+const InfoToast = ({ message, isMobile, description }) => (
   <div
     className={`max-w-[400px] shadow-lg ${isMobile ? "rounded-2xl px-4 py-4" : "rounded-lg px-4 py-3"}`}
     style={{ backgroundColor: "#202020" }}
@@ -209,11 +233,12 @@ const InfoToast = ({ message, isMobile }) => (
         />
       </Button>
     </div>
+    <ToastDescription description={description} isMobile={isMobile} />
   </div>
 );
 
 // Composant de notification de chargement
-const LoadingToast = ({ message, isMobile }) => (
+const LoadingToast = ({ message, isMobile, description }) => (
   <div
     className={`max-w-[400px] shadow-lg ${isMobile ? "rounded-2xl px-4 py-4" : "rounded-lg px-4 py-3"}`}
     style={{ backgroundColor: "#202020" }}
@@ -231,6 +256,7 @@ const LoadingToast = ({ message, isMobile }) => (
         {message}
       </p>
     </div>
+    <ToastDescription description={description} isMobile={isMobile} />
   </div>
 );
 
@@ -238,36 +264,84 @@ const LoadingToast = ({ message, isMobile }) => (
 const checkIsMobile = () =>
   typeof window !== "undefined" && window.innerWidth < 768;
 
+// Sépare ce qui est rendu par nos composants (description, details) de ce qui
+// reste à sonner (duration, id, onDismiss...). `description` DOIT être retiré :
+// laissée dans les données, sonner la rendrait une seconde fois hors de la
+// boîte. `details` est propre à ErrorToast et n'a rien à faire côté sonner.
+const buildToastProps = (options) => {
+  const { description, details, ...sonnerOptions } = options || {};
+  return { description, details, sonnerOptions };
+};
+
 // Fonctions de toast personnalisées
 const toast = {
-  success: (message) =>
-    sonnerToast.custom(() => (
-      <SuccessToast message={message} isMobile={checkIsMobile()} />
-    )),
-  error: (message, options) =>
-    sonnerToast.custom(
+  success: (message, options) => {
+    const { description, sonnerOptions } = buildToastProps(options);
+    return sonnerToast.custom(
+      () => (
+        <SuccessToast
+          message={message}
+          isMobile={checkIsMobile()}
+          description={description}
+        />
+      ),
+      sonnerOptions,
+    );
+  },
+  error: (message, options) => {
+    const { description, details, sonnerOptions } = buildToastProps(options);
+    return sonnerToast.custom(
       () => (
         <ErrorToast
           message={message}
           isMobile={checkIsMobile()}
-          details={options?.details}
+          details={details}
+          description={description}
         />
       ),
-      options,
-    ),
-  info: (message) =>
-    sonnerToast.custom(() => (
-      <InfoToast message={message} isMobile={checkIsMobile()} />
-    )),
-  warning: (message) =>
-    sonnerToast.custom(() => (
-      <InfoToast message={message} isMobile={checkIsMobile()} />
-    )), // Utilise InfoToast pour les warnings
-  loading: (message) =>
-    sonnerToast.custom(
-      () => <LoadingToast message={message} isMobile={checkIsMobile()} />,
-      { duration: Infinity },
-    ),
+      sonnerOptions,
+    );
+  },
+  info: (message, options) => {
+    const { description, sonnerOptions } = buildToastProps(options);
+    return sonnerToast.custom(
+      () => (
+        <InfoToast
+          message={message}
+          isMobile={checkIsMobile()}
+          description={description}
+        />
+      ),
+      sonnerOptions,
+    );
+  },
+  // Utilise InfoToast pour les warnings
+  warning: (message, options) => {
+    const { description, sonnerOptions } = buildToastProps(options);
+    return sonnerToast.custom(
+      () => (
+        <InfoToast
+          message={message}
+          isMobile={checkIsMobile()}
+          description={description}
+        />
+      ),
+      sonnerOptions,
+    );
+  },
+  loading: (message, options) => {
+    const { description, sonnerOptions } = buildToastProps(options);
+    return sonnerToast.custom(
+      () => (
+        <LoadingToast
+          message={message}
+          isMobile={checkIsMobile()}
+          description={description}
+        />
+      ),
+      { duration: Infinity, ...sonnerOptions },
+    );
+  },
   // Conserver les méthodes originales de sonner si nécessaire
   dismiss: sonnerToast.dismiss,
   promise: sonnerToast.promise,
