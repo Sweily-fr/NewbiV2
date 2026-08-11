@@ -14,7 +14,17 @@ export function isNumberSequenceError(message) {
   if (!message) return false;
   return (
     message.includes("dans la séquence") ||
-    message.includes("prochain numéro doit être")
+    message.includes("prochain numéro doit être") ||
+    // Doublon de numéro : « Le numéro de bon de commande "0007" est déjà
+    // utilisé », « Le numéro de facture F-082026 0001 existe déjà ». Le
+    // message est tout aussi actionnable, il doit aller sur le champ Numéro
+    // plutôt que dans le message d'erreur générique.
+    /numéro de (facture|devis|bon de commande|avoir)[^.!?]*?(est déjà utilisé|existe déjà)/i.test(
+      message,
+    ) ||
+    /^ce numéro de (facture|devis|bon de commande|avoir) est déjà utilisé/i.test(
+      message,
+    )
   );
 }
 
