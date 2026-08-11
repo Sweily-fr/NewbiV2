@@ -5,6 +5,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
 import { useErrorHandler } from "@/src/hooks/useErrorHandler";
+import { isNumberSequenceError } from "@/src/utils/numbering-errors";
 import { useArchiveDocumentPdf } from "@/src/hooks/useArchiveDocumentPdf";
 import {
   getActiveOrganization,
@@ -1880,7 +1881,19 @@ export function usePurchaseOrderEditor({
         }
       } catch (error) {
         if (!isAutoSave) {
-          handleError(error, "purchaseOrder");
+          // Numérotation : le message de l'API dit déjà quel est le dernier
+          // numéro utilisé et lequel est attendu, on le relaie tel quel.
+          // Pas de setValidationErrors : la clé purchaseOrderNumber n'est affichée
+          // nulle part, elle ne sert qu'à isStep1Valid() et désactiverait le
+          // bouton « Continuer » de l'étape 1 sans dire pourquoi.
+          const errorMessage = error?.message || String(error);
+          if (isNumberSequenceError(errorMessage)) {
+            toast.error("Numéro de bon de commande invalide", {
+              description: errorMessage,
+            });
+          } else {
+            handleError(error, "purchaseOrder");
+          }
         }
         return false;
       } finally {
@@ -2225,7 +2238,19 @@ export function usePurchaseOrderEditor({
         // Mutation résolue sans données : traiter comme un échec
         return { success: false };
       } catch (error) {
-        handleError(error, "purchaseOrder");
+        // Numérotation : le message de l'API dit déjà quel est le dernier
+        // numéro utilisé et lequel est attendu, on le relaie tel quel.
+        // Pas de setValidationErrors : la clé purchaseOrderNumber n'est affichée
+        // nulle part, elle ne sert qu'à isStep1Valid() et désactiverait le
+        // bouton « Continuer » de l'étape 1 sans dire pourquoi.
+        const errorMessage = error?.message || String(error);
+        if (isNumberSequenceError(errorMessage)) {
+          toast.error("Numéro de bon de commande invalide", {
+            description: errorMessage,
+          });
+        } else {
+          handleError(error, "purchaseOrder");
+        }
         return { success: false };
       } finally {
         setSaving(false);

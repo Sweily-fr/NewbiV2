@@ -5,6 +5,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
 import { useErrorHandler } from "@/src/hooks/useErrorHandler";
+import { isNumberSequenceError } from "@/src/utils/numbering-errors";
 import {
   useCreateInvoice,
   useUpdateInvoice,
@@ -2178,16 +2179,12 @@ export function useInvoiceEditor({
         toast.error(
           "Le montant total des factures de situation dépasserait le montant du contrat",
         );
-      } else if (
-        errorMessage.includes("dans la séquence") ||
-        errorMessage.includes("prochain numéro doit être")
-      ) {
+      } else if (isNumberSequenceError(errorMessage)) {
         // Numérotation : le message de l'API dit déjà quel est le dernier
-        // numéro utilisé et lequel est attendu, on le relaie tel quel et on
-        // pointe le champ concerné.
-        setValidationErrors({
-          invoiceNumber: { message: errorMessage, canEdit: true },
-        });
+        // numéro utilisé et lequel est attendu, on le relaie tel quel.
+        // Pas de setValidationErrors : la clé invoiceNumber n'est affichée
+        // nulle part, elle ne sert qu'à isStep1Valid() et désactiverait le
+        // bouton « Continuer » de l'étape 1 sans dire pourquoi.
         toast.error("Numéro de facture invalide", {
           description: errorMessage,
         });
@@ -2612,16 +2609,12 @@ export function useInvoiceEditor({
         toast.error(
           "Le montant total des factures de situation dépasserait le montant du contrat",
         );
-      } else if (
-        errorMessage.includes("dans la séquence") ||
-        errorMessage.includes("prochain numéro doit être")
-      ) {
+      } else if (isNumberSequenceError(errorMessage)) {
         // Numérotation : le message de l'API dit déjà quel est le dernier
-        // numéro utilisé et lequel est attendu, on le relaie tel quel et on
-        // pointe le champ concerné.
-        setValidationErrors({
-          invoiceNumber: { message: errorMessage, canEdit: true },
-        });
+        // numéro utilisé et lequel est attendu, on le relaie tel quel.
+        // Pas de setValidationErrors : la clé invoiceNumber n'est affichée
+        // nulle part, elle ne sert qu'à isStep1Valid() et désactiverait le
+        // bouton « Continuer » de l'étape 1 sans dire pourquoi.
         toast.error("Numéro de facture invalide", {
           description: errorMessage,
         });
