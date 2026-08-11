@@ -929,50 +929,17 @@ export default function QuoteSidebar({
                 </p>
               )}
 
-              {/* Boutons de création de factures liées */}
+              {/* Boutons de création de factures liées.
+                  Aucune limite de nombre : le popover s'affiche tant qu'il
+                  reste du montant à facturer (il se masque tout seul à 0). */}
               <div className="space-y-2">
-                {/* Afficher le popover seulement s'il y a moins de 2 factures liées */}
-                {!quote.hasPurchaseOrderInvoices &&
-                  (!quote.linkedInvoices ||
-                    quote.linkedInvoices.length < 2) && (
-                    <CreateLinkedInvoicePopover
-                      quote={quote}
-                      onCreateLinkedInvoice={handleCreateLinkedInvoice}
-                      isLoading={isLoading}
-                    />
-                  )}
-
-                {/* Bouton pour créer la facture finale quand il y a exactement 2 factures liées */}
-                {!quote.hasPurchaseOrderInvoices &&
-                  quote.linkedInvoices &&
-                  quote.linkedInvoices.length === 2 &&
-                  (() => {
-                    const totalInvoiced = quote.linkedInvoices.reduce(
-                      (sum, invoice) => sum + (invoice.finalTotalTTC || 0),
-                      0,
-                    );
-                    const remainingAmount =
-                      (quote.finalTotalTTC || 0) - totalInvoiced;
-                    return (
-                      remainingAmount > 0 && (
-                        <Button
-                          onClick={() =>
-                            handleCreateLinkedInvoice({
-                              quoteId: quote.id,
-                              amount: remainingAmount,
-                              isDeposit: false,
-                            })
-                          }
-                          disabled={isLoading}
-                          className="w-full font-normal"
-                        >
-                          <FileCheck className="h-4 w-4 mr-2" />
-                          Créer la facture finale (
-                          {formatCurrency(remainingAmount)})
-                        </Button>
-                      )
-                    );
-                  })()}
+                {!quote.hasPurchaseOrderInvoices && (
+                  <CreateLinkedInvoicePopover
+                    quote={quote}
+                    onCreateLinkedInvoice={handleCreateLinkedInvoice}
+                    isLoading={isLoading}
+                  />
+                )}
               </div>
 
               <div className="flex flex-col gap-2">

@@ -714,47 +714,15 @@ export default function QuoteMobileFullscreen({
                   </p>
                 )}
 
-                {!quote.hasPurchaseOrderInvoices &&
-                  (!quote.linkedInvoices ||
-                    quote.linkedInvoices.length < 2) && (
-                    <CreateLinkedInvoicePopover
-                      quote={quote}
-                      onCreateLinkedInvoice={handleCreateLinkedInvoice}
-                      isLoading={isLoading}
-                    />
-                  )}
-
-                {!quote.hasPurchaseOrderInvoices &&
-                  quote.linkedInvoices &&
-                  quote.linkedInvoices.length === 2 &&
-                  (() => {
-                    const totalInvoiced = quote.linkedInvoices.reduce(
-                      (sum, invoice) => sum + (invoice.finalTotalTTC || 0),
-                      0,
-                    );
-                    const remainingAmount =
-                      (quote.finalTotalTTC || 0) - totalInvoiced;
-                    return (
-                      remainingAmount > 0 && (
-                        <Button
-                          onClick={() =>
-                            handleCreateLinkedInvoice({
-                              quoteId: quote.id,
-                              amount: remainingAmount,
-                              isDeposit: false,
-                            })
-                          }
-                          disabled={isLoading}
-                          size="sm"
-                          className="w-full font-normal"
-                        >
-                          <FileCheck className="mr-2 h-4 w-4" />
-                          Créer la facture finale (
-                          {formatCurrency(remainingAmount)})
-                        </Button>
-                      )
-                    );
-                  })()}
+                {/* Aucune limite de nombre de factures liées : le popover
+                    s'affiche tant qu'il reste du montant à facturer. */}
+                {!quote.hasPurchaseOrderInvoices && (
+                  <CreateLinkedInvoicePopover
+                    quote={quote}
+                    onCreateLinkedInvoice={handleCreateLinkedInvoice}
+                    isLoading={isLoading}
+                  />
+                )}
 
                 {!quote.hasPurchaseOrderInvoices &&
                   (!quote.linkedInvoices ||
