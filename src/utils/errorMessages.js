@@ -174,8 +174,12 @@ const ERROR_PATTERNS = {
   // l'utilisateur (dernier numéro utilisé, trou dans la séquence, numéro
   // attendu). Sans ce pattern il retombait sur "Impossible de créer la
   // facture", qui masquait la vraie raison du refus.
+  // Le numéro peut être intercalé dans la phrase (« Le numéro de bon de
+  // commande "0007" est déjà utilisé », « Le numéro de facture F-082026 0001
+  // existe déjà ») : sans le segment souple, ces messages retombaient sur
+  // « Impossible de créer le document », qui masque la vraie raison.
   DOCUMENT_NUMBERING:
-    /dans la séquence|prochain numéro doit être|numérotation automatique|numéro de (facture|devis|bon de commande|avoir) est déjà utilisé/i,
+    /dans la séquence|prochain numéro doit être|numérotation automatique|numéro de (facture|devis|bon de commande|avoir)[^.!?]*?(est déjà utilisé|existe déjà)/i,
 };
 
 /**
