@@ -5,6 +5,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
 import { useErrorHandler } from "@/src/hooks/useErrorHandler";
+import { isNumberSequenceError } from "@/src/utils/numbering-errors";
 import { useArchiveDocumentPdf } from "@/src/hooks/useArchiveDocumentPdf";
 import {
   getActiveOrganization,
@@ -1869,7 +1870,19 @@ export function useQuoteEditor({
         }
       } catch (error) {
         if (!isAutoSave) {
-          handleError(error, "quote");
+          // Numérotation : le message de l'API dit déjà quel est le dernier
+          // numéro utilisé et lequel est attendu, on le relaie tel quel.
+          // Pas de setValidationErrors : la clé quoteNumber n'est affichée
+          // nulle part, elle ne sert qu'à isStep1Valid() et désactiverait le
+          // bouton « Continuer » de l'étape 1 sans dire pourquoi.
+          const errorMessage = error?.message || String(error);
+          if (isNumberSequenceError(errorMessage)) {
+            toast.error("Numéro de devis invalide", {
+              description: errorMessage,
+            });
+          } else {
+            handleError(error, "quote");
+          }
         }
         return false;
       } finally {
@@ -2214,7 +2227,19 @@ export function useQuoteEditor({
         // Mutation résolue sans données : traiter comme un échec
         return { success: false };
       } catch (error) {
-        handleError(error, "quote");
+        // Numérotation : le message de l'API dit déjà quel est le dernier
+        // numéro utilisé et lequel est attendu, on le relaie tel quel.
+        // Pas de setValidationErrors : la clé quoteNumber n'est affichée
+        // nulle part, elle ne sert qu'à isStep1Valid() et désactiverait le
+        // bouton « Continuer » de l'étape 1 sans dire pourquoi.
+        const errorMessage = error?.message || String(error);
+        if (isNumberSequenceError(errorMessage)) {
+          toast.error("Numéro de devis invalide", {
+            description: errorMessage,
+          });
+        } else {
+          handleError(error, "quote");
+        }
         return { success: false };
       } finally {
         setSaving(false);
