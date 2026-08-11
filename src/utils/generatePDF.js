@@ -47,6 +47,14 @@ export async function generatePDFFromElement(element) {
       requestInit: {
         mode: "cors",
         credentials: "omit",
+        // R2 ne renvoie `Access-Control-Allow-Origin` ni `Vary` que si la
+        // requête porte un en-tête `Origin`. L'<img> du logo dans l'aperçu
+        // n'en envoie pas (pas de `crossOrigin`, cf. UniversalPreviewPDF) :
+        // la réponse sans ACAO ni `Vary` qu'elle met en cache resservirait ce
+        // fetch CORS, qui échouerait le contrôle d'origine et laisserait le
+        // logo vide dans le PDF, silencieusement (placeholder transparent).
+        // `reload` force une requête réseau qui, elle, porte un `Origin`.
+        cache: "reload",
       },
     },
   });

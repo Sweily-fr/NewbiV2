@@ -1,44 +1,44 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { useParams } from 'next/navigation';
-import UniversalPreviewPDF from '@/src/components/pdf/UniversalPreviewPDF';
-import { domToJpeg } from 'modern-screenshot';
+import { useEffect, useRef, useState } from "react";
+import { useParams } from "next/navigation";
+import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
+import { domToJpeg } from "modern-screenshot";
 // jsPDF importé dynamiquement pour réduire la taille du bundle
 
 export default function PurchaseOrderPDFGeneratorPage() {
   const params = useParams();
   const [data, setData] = useState(null);
-  const [status, setStatus] = useState('loading');
+  const [status, setStatus] = useState("loading");
   const componentRef = useRef(null);
 
   useEffect(() => {
     async function fetchAndGenerate() {
       try {
-        console.log('🔍 Récupération bon de commande:', params.id);
+        console.log("🔍 Récupération bon de commande:", params.id);
 
         const response = await fetch(`/api/purchase-orders/data/${params.id}`);
-        console.log('📡 Réponse API:', response.status);
+        console.log("📡 Réponse API:", response.status);
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('❌ Erreur API:', errorText);
-          throw new Error('Bon de commande non trouvé');
+          console.error("❌ Erreur API:", errorText);
+          throw new Error("Bon de commande non trouvé");
         }
 
         const fetchedData = await response.json();
-        console.log('✅ Données reçues:', fetchedData);
+        console.log("✅ Données reçues:", fetchedData);
         setData(fetchedData);
-        setStatus('ready');
+        setStatus("ready");
 
-        console.log('⏳ Attente rendu composant...');
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        console.log("⏳ Attente rendu composant...");
+        await new Promise((resolve) => setTimeout(resolve, 3000));
 
-        console.log('📄 Début génération PDF...');
+        console.log("📄 Début génération PDF...");
         await generatePDF();
       } catch (error) {
-        console.error('❌ Erreur:', error);
-        setStatus('error');
+        console.error("❌ Erreur:", error);
+        setStatus("error");
         window.pdfGenerationResult = { error: error.message };
       }
     }
@@ -48,41 +48,45 @@ export default function PurchaseOrderPDFGeneratorPage() {
 
   async function generatePDF() {
     try {
-      console.log('🎨 Génération PDF - Étape 1: Vérification composant');
+      console.log("🎨 Génération PDF - Étape 1: Vérification composant");
       if (!componentRef.current) {
-        console.error('❌ componentRef.current est null');
-        throw new Error('Composant non trouvé');
+        console.error("❌ componentRef.current est null");
+        throw new Error("Composant non trouvé");
       }
-      console.log('✅ Composant trouvé');
+      console.log("✅ Composant trouvé");
 
-      console.log('🖼️ Génération PDF - Étape 2: Chargement images');
-      const images = componentRef.current.querySelectorAll('img');
+      console.log("🖼️ Génération PDF - Étape 2: Chargement images");
+      const images = componentRef.current.querySelectorAll("img");
       console.log(`📸 ${images.length} image(s) trouvée(s)`);
 
       await Promise.all(
-        Array.from(images).map(img => {
+        Array.from(images).map((img) => {
           if (img.complete) return Promise.resolve();
           return new Promise((resolve) => {
             img.onload = () => resolve();
             img.onerror = () => resolve();
             setTimeout(() => resolve(), 3000);
           });
-        })
+        }),
       );
 
-      console.log('✅ Images chargées');
-      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log("✅ Images chargées");
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-      console.log('📷 Génération PDF - Étape 3: Capture screenshot');
+      console.log("📷 Génération PDF - Étape 3: Capture screenshot");
       const dataUrl = await domToJpeg(componentRef.current, {
         quality: 0.95,
-        backgroundColor: '#ffffff',
+        backgroundColor: "#ffffff",
         width: 794,
         scale: 2,
         fetch: {
           requestInit: {
-            mode: 'cors',
-            credentials: 'omit',
+            mode: "cors",
+            credentials: "omit",
+            // Sans `reload`, la réponse sans en-tête CORS mise en cache par
+            // l'<img> du logo resservirait ce fetch et le logo serait absent
+            // du PDF, silencieusement (cf. src/utils/generatePDF.js).
+            cache: "reload",
           },
         },
       });
@@ -94,11 +98,11 @@ export default function PurchaseOrderPDFGeneratorPage() {
         img.src = dataUrl;
       });
 
-      const { default: jsPDF } = await import('jspdf');
+      const { default: jsPDF } = await import("jspdf");
       const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
         compress: true,
       });
 
@@ -110,12 +114,14 @@ export default function PurchaseOrderPDFGeneratorPage() {
       const fitsOnOnePage = imgHeightMM <= pdfHeight + 1;
 
       if (!fitsOnOnePage) {
-        console.log('📄 Document multi-pages détecté');
+        console.log("📄 Document multi-pages détecté");
 
-        const footerElement = componentRef.current.querySelector('[data-pdf-section="footer"]');
+        const footerElement = componentRef.current.querySelector(
+          '[data-pdf-section="footer"]',
+        );
         let footerHeight = 0;
         let footerPositionY = img.height;
-        let footerBgColor = 'rgb(232, 232, 232)';
+        let footerBgColor = "rgb(232, 232, 232)";
 
         if (footerElement) {
           const containerRect = componentRef.current.getBoundingClientRect();
@@ -123,13 +129,15 @@ export default function PurchaseOrderPDFGeneratorPage() {
           footerHeight = footerRect.height * 2;
           footerPositionY = (footerRect.top - containerRect.top) * 2;
 
-          console.log(`🔖 Footer détecté: hauteur=${footerHeight}px, position=${footerPositionY}px`);
+          console.log(
+            `🔖 Footer détecté: hauteur=${footerHeight}px, position=${footerPositionY}px`,
+          );
         }
 
-        const colorCanvas = document.createElement('canvas');
+        const colorCanvas = document.createElement("canvas");
         colorCanvas.width = img.width;
         colorCanvas.height = img.height;
-        const colorCtx = colorCanvas.getContext('2d');
+        const colorCtx = colorCanvas.getContext("2d");
         colorCtx.drawImage(img, 0, 0);
 
         if (footerPositionY < img.height) {
@@ -141,10 +149,11 @@ export default function PurchaseOrderPDFGeneratorPage() {
         }
 
         const paginationBannerHeightMM = 12;
-        const paginationBannerHeightPx = paginationBannerHeightMM * (img.width / pdfWidth);
+        const paginationBannerHeightPx =
+          paginationBannerHeightMM * (img.width / pdfWidth);
 
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
         const canvasWidth = img.width;
         const pixelsPerMM = img.width / pdfWidth;
         const pageHeightPixels = pdfHeight * pixelsPerMM;
@@ -165,11 +174,11 @@ export default function PurchaseOrderPDFGeneratorPage() {
 
           const isLastPage = targetY >= img.height;
 
-          ctx.fillStyle = '#ffffff';
+          ctx.fillStyle = "#ffffff";
           ctx.fillRect(0, 0, canvas.width, canvas.height);
 
           if (isLastPage && footerElement && footerHeight > 0) {
-            console.log('📄 Dernière page - repositionnement du footer');
+            console.log("📄 Dernière page - repositionnement du footer");
 
             const topMarginPx = pageNumber > 0 ? 15 * pixelsPerMM : 0;
             const contentWithoutFooter = footerPositionY - currentY;
@@ -177,27 +186,42 @@ export default function PurchaseOrderPDFGeneratorPage() {
             if (contentWithoutFooter > 0) {
               ctx.drawImage(
                 img,
-                0, currentY,
-                canvasWidth, contentWithoutFooter,
-                0, topMarginPx,
-                canvasWidth, contentWithoutFooter
+                0,
+                currentY,
+                canvasWidth,
+                contentWithoutFooter,
+                0,
+                topMarginPx,
+                canvasWidth,
+                contentWithoutFooter,
               );
             }
 
             ctx.fillStyle = footerBgColor;
-            ctx.fillRect(0, pageHeightPixels - paginationBannerHeightPx, canvasWidth, paginationBannerHeightPx);
+            ctx.fillRect(
+              0,
+              pageHeightPixels - paginationBannerHeightPx,
+              canvasWidth,
+              paginationBannerHeightPx,
+            );
 
-            const footerDestY = pageHeightPixels - footerHeight - paginationBannerHeightPx;
+            const footerDestY =
+              pageHeightPixels - footerHeight - paginationBannerHeightPx;
             ctx.drawImage(
               img,
-              0, footerPositionY,
-              canvasWidth, footerHeight,
-              0, footerDestY,
-              canvasWidth, footerHeight
+              0,
+              footerPositionY,
+              canvasWidth,
+              footerHeight,
+              0,
+              footerDestY,
+              canvasWidth,
+              footerHeight,
             );
           } else {
             const topMarginPx = pageNumber > 0 ? 15 * pixelsPerMM : 0;
-            const availableContentHeight = pageHeightPixels - paginationBannerHeightPx - topMarginPx;
+            const availableContentHeight =
+              pageHeightPixels - paginationBannerHeightPx - topMarginPx;
             let contentToDraw = availableContentHeight;
 
             if (footerElement && footerPositionY > 0) {
@@ -210,24 +234,33 @@ export default function PurchaseOrderPDFGeneratorPage() {
             if (contentToDraw > 0) {
               ctx.drawImage(
                 img,
-                0, currentY,
-                canvasWidth, contentToDraw,
-                0, topMarginPx,
-                canvasWidth, contentToDraw
+                0,
+                currentY,
+                canvasWidth,
+                contentToDraw,
+                0,
+                topMarginPx,
+                canvasWidth,
+                contentToDraw,
               );
             }
 
             ctx.fillStyle = footerBgColor;
-            ctx.fillRect(0, pageHeightPixels - paginationBannerHeightPx, canvasWidth, paginationBannerHeightPx);
+            ctx.fillRect(
+              0,
+              pageHeightPixels - paginationBannerHeightPx,
+              canvasWidth,
+              paginationBannerHeightPx,
+            );
           }
 
-          const pageImageData = canvas.toDataURL('image/jpeg', 0.95);
+          const pageImageData = canvas.toDataURL("image/jpeg", 0.95);
           const pageHeightMM = pdfHeight;
 
           pages.push({
             imageData: pageImageData,
             heightMM: pageHeightMM,
-            isLastPage: isLastPage
+            isLastPage: isLastPage,
           });
 
           console.log(`✅ Page ${pageNumber + 1} générée`);
@@ -235,8 +268,12 @@ export default function PurchaseOrderPDFGeneratorPage() {
           if (isLastPage) {
             currentY = targetY;
           } else {
-            const availableContentHeight = pageHeightPixels - paginationBannerHeightPx;
-            if (footerElement && currentY + availableContentHeight > footerPositionY) {
+            const availableContentHeight =
+              pageHeightPixels - paginationBannerHeightPx;
+            if (
+              footerElement &&
+              currentY + availableContentHeight > footerPositionY
+            ) {
               currentY = footerPositionY;
             } else {
               currentY += availableContentHeight;
@@ -245,7 +282,7 @@ export default function PurchaseOrderPDFGeneratorPage() {
           pageNumber++;
 
           if (pageNumber > 50) {
-            console.error('⚠️ Trop de pages, arrêt');
+            console.error("⚠️ Trop de pages, arrêt");
             break;
           }
         }
@@ -260,13 +297,13 @@ export default function PurchaseOrderPDFGeneratorPage() {
 
           pdf.addImage(
             page.imageData,
-            'JPEG',
+            "JPEG",
             0,
             0,
             pdfWidth,
             page.heightMM,
             undefined,
-            'FAST'
+            "FAST",
           );
 
           pdf.setFontSize(9);
@@ -278,25 +315,34 @@ export default function PurchaseOrderPDFGeneratorPage() {
           pdf.text(pageText, pdfWidth - textWidth - 10, bannerY);
         });
       } else {
-        console.log('📄 Document sur une seule page');
-        pdf.addImage(dataUrl, 'JPEG', 0, 0, imgWidthMM, imgHeightMM, undefined, 'FAST');
+        console.log("📄 Document sur une seule page");
+        pdf.addImage(
+          dataUrl,
+          "JPEG",
+          0,
+          0,
+          imgWidthMM,
+          imgHeightMM,
+          undefined,
+          "FAST",
+        );
       }
 
-      const arrayBuffer = pdf.output('arraybuffer');
+      const arrayBuffer = pdf.output("arraybuffer");
       window.pdfGenerationResult = {
         success: true,
-        buffer: Array.from(new Uint8Array(arrayBuffer))
+        buffer: Array.from(new Uint8Array(arrayBuffer)),
       };
 
-      setStatus('complete');
+      setStatus("complete");
     } catch (error) {
-      console.error('Erreur génération PDF:', error);
+      console.error("Erreur génération PDF:", error);
       window.pdfGenerationResult = { error: error.message };
-      setStatus('error');
+      setStatus("error");
     }
   }
 
-  if (status === 'loading') {
+  if (status === "loading") {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white">
         <div className="text-center">
@@ -307,7 +353,7 @@ export default function PurchaseOrderPDFGeneratorPage() {
     );
   }
 
-  if (status === 'error') {
+  if (status === "error") {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white">
         <div className="text-center text-red-600">
@@ -319,12 +365,12 @@ export default function PurchaseOrderPDFGeneratorPage() {
 
   return (
     <div className="bg-white min-h-screen p-4">
-      {status === 'complete' && (
+      {status === "complete" && (
         <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded z-50">
           PDF généré avec succès
         </div>
       )}
-      {status === 'ready' && (
+      {status === "ready" && (
         <div className="fixed top-4 right-4 bg-yellow-500 text-white px-4 py-2 rounded z-50">
           Génération en cours...
         </div>
@@ -332,17 +378,13 @@ export default function PurchaseOrderPDFGeneratorPage() {
       <div
         ref={componentRef}
         style={{
-          width: '794px',
-          backgroundColor: '#ffffff',
-          margin: '0 auto',
+          width: "794px",
+          backgroundColor: "#ffffff",
+          margin: "0 auto",
         }}
       >
         {data && (
-          <UniversalPreviewPDF
-            data={data}
-            type="purchaseOrder"
-            forPDF={true}
-          />
+          <UniversalPreviewPDF data={data} type="purchaseOrder" forPDF={true} />
         )}
       </div>
     </div>

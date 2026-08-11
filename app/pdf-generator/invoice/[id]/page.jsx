@@ -103,6 +103,10 @@ export default function PDFGeneratorPage() {
           requestInit: {
             mode: "cors",
             credentials: "omit",
+            // Sans `reload`, la réponse sans en-tête CORS mise en cache par
+            // l'<img> du logo resservirait ce fetch et le logo serait absent
+            // du PDF, silencieusement (cf. src/utils/generatePDF.js).
+            cache: "reload",
           },
         },
       });
