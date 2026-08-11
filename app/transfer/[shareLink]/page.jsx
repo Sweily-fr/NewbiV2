@@ -156,14 +156,25 @@ export default function TransferPage() {
 
   // 🔐 Query d'autorisation pour les routes /api/files (secret de partage +
   // mot de passe éventuel) — remplace le simple transferId devinable.
-  const buildFileAuthQuery = () => {
+  // `session` identifie le téléchargement en cours : un même clic traverse
+  // plusieurs endpoints (un appel proxy par fichier, puis le marquage de fin),
+  // et le backend s'en sert pour ne compter et ne notifier qu'une seule fois.
+  const buildFileAuthQuery = (downloadSessionId) => {
     const p = new URLSearchParams();
     if (shareLink) p.set("link", shareLink);
     if (accessKey) p.set("key", accessKey);
     if (verifiedPassword) p.set("password", verifiedPassword);
+    if (downloadSessionId) p.set("session", downloadSessionId);
     const qs = p.toString();
     return qs ? `?${qs}` : "";
   };
+
+  // Un identifiant par clic de téléchargement : deux téléchargements
+  // successifs doivent bien compter pour deux
+  const newDownloadSessionId = () =>
+    typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `dl-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
   const [isDownloading, setIsDownloading] = useState(false);
   const [isBulkDownloading, setIsBulkDownloading] = useState(false);
@@ -299,10 +310,15 @@ export default function TransferPage() {
   // Streame un fichier via l'endpoint backend stable en mettant à jour la
   // progression de sa ligne. Retourne { blob, size, crc } (CRC calculé au
   // fil de l'eau pour l'assemblage ZIP éventuel).
-  const streamFileWithProgress = async (fileId, fileSize, signal) => {
+  const streamFileWithProgress = async (
+    fileId,
+    fileSize,
+    signal,
+    downloadSessionId,
+  ) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
     const response = await fetch(
-      `${apiUrl}api/files/download/${transfer?.fileTransfer?.id}/${fileId}${buildFileAuthQuery()}`,
+      `${apiUrl}api/files/download/${transfer?.fileTransfer?.id}/${fileId}${buildFileAuthQuery(downloadSessionId)}`,
       { signal },
     );
 
@@ -353,7 +369,12 @@ export default function TransferPage() {
   };
 
   // Marque un événement de téléchargement comme terminé (fire and forget)
-  const completeDownloadEvent = (downloadEventId, startTime, isLastFile) => {
+  const completeDownloadEvent = (
+    downloadEventId,
+    startTime,
+    isLastFile,
+    downloadSessionId,
+  ) => {
     if (!downloadEventId) return;
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
     fetch(`${apiUrl}api/transfers/download-event/${downloadEventId}/complete`, {
@@ -365,6 +386,7 @@ export default function TransferPage() {
         isLastFile,
         link: shareLink,
         key: accessKey,
+        downloadSessionId,
       }),
     }).catch(() => {});
   };
@@ -382,6 +404,7 @@ export default function TransferPage() {
       setFileProgress(fileId, 0);
     }
     const startTime = Date.now();
+    const downloadSessionId = newDownloadSessionId();
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
@@ -426,12 +449,17 @@ export default function TransferPage() {
       if (willUseNativeDownload) {
         // Marquer le téléchargement comme terminé AVANT la redirection :
         // la navigation annule les fetch en cours sur mobile
-        completeDownloadEvent(downloadInfo.downloadEventId, startTime, true);
+        completeDownloadEvent(
+          downloadInfo.downloadEventId,
+          startTime,
+          true,
+          downloadSessionId,
+        );
 
         // Laisser le navigateur mobile gérer le téléchargement nativement,
         // sans quitter la page de transfert
         triggerMobileDownload(
-          `${apiUrl}api/files/download/${transfer?.fileTransfer?.id}/${fileId}${buildFileAuthQuery()}`,
+          `${apiUrl}api/files/download/${transfer?.fileTransfer?.id}/${fileId}${buildFileAuthQuery(downloadSessionId)}`,
         );
         toast.info(
           "Acceptez le téléchargement — la progression s'affiche dans les téléchargements de votre navigateur",
@@ -443,10 +471,16 @@ export default function TransferPage() {
         fileId,
         fileSize,
         abortController.signal,
+        downloadSessionId,
       );
       saveBlobAsFile(blob, fileName);
 
-      completeDownloadEvent(downloadInfo.downloadEventId, startTime, true);
+      completeDownloadEvent(
+        downloadInfo.downloadEventId,
+        startTime,
+        true,
+        downloadSessionId,
+      );
 
       // Notification de fin (sur iOS, la fenêtre d'enregistrement apparaît
       // au même moment : le contenu est déjà téléchargé)
@@ -487,6 +521,9 @@ export default function TransferPage() {
     const abortController = beginDownloadActivity();
     setIsBulkDownloading(true);
     const startTime = Date.now();
+    // Une seule session pour tous les fichiers de ce clic : le propriétaire
+    // reçoit une notification, pas une par fichier
+    const downloadSessionId = newDownloadSessionId();
     // Les IDs dont on a affiché la progression (à nettoyer à la fin)
     const startedFileIds = [];
 
@@ -555,7 +592,7 @@ export default function TransferPage() {
         transferFilesList.some((f) => (f.size || 0) > ZIP32_LIMIT)
       ) {
         triggerMobileDownload(
-          `${apiUrl}file-transfer/download-all?link=${shareLink}&key=${accessKey}`,
+          `${apiUrl}file-transfer/download-all?link=${shareLink}&key=${accessKey}&session=${downloadSessionId}`,
         );
         toast.info(
           "Acceptez le téléchargement — la progression s'affiche dans les téléchargements de votre navigateur",
@@ -588,6 +625,7 @@ export default function TransferPage() {
               downloadInfo.fileId,
               file?.size || 0,
               abortController.signal,
+              downloadSessionId,
             );
             zipEntries[i] = {
               name:
@@ -600,6 +638,7 @@ export default function TransferPage() {
               downloadInfo.downloadEventId,
               startTime,
               i === filteredDownloads.length - 1,
+              downloadSessionId,
             );
           } catch (fileError) {
             if (fileError.name === "AbortError") throw fileError;

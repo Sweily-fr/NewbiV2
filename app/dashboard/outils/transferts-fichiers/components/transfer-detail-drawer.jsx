@@ -131,12 +131,26 @@ function formatFileSize(bytes) {
 }
 
 // 🔐 Query d'autorisation pour /api/files : secret de partage du transfert.
-function transferAuthQuery(transfer) {
+// `session` identifie un téléchargement (le backend ne le comptabilise
+// qu'une fois) et `ownerToken` atteste que c'est le propriétaire qui
+// télécharge : ni compteur, ni notification pour ses propres téléchargements.
+function transferAuthQuery(transfer, { downloadSessionId, asOwner } = {}) {
   const p = new URLSearchParams();
   if (transfer?.shareLink) p.set("link", transfer.shareLink);
   if (transfer?.accessKey) p.set("key", transfer.accessKey);
+  if (downloadSessionId) p.set("session", downloadSessionId);
+  if (asOwner && transfer?.ownerDownloadToken) {
+    p.set("ownerToken", transfer.ownerDownloadToken);
+  }
   const qs = p.toString();
   return qs ? `?${qs}` : "";
+}
+
+// Un identifiant par clic de téléchargement
+function newDownloadSessionId() {
+  return typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `dl-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 // Construire l'URL de preview
@@ -300,7 +314,10 @@ export function TransferDetailDrawer({
       const apiUrl = (
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
       ).replace(/\/$/, "");
-      const downloadUrl = `${apiUrl}/api/files/download/${transfer.id}/${file.fileId || file.id}${transferAuthQuery(transfer)}`;
+      const downloadUrl = `${apiUrl}/api/files/download/${transfer.id}/${file.fileId || file.id}${transferAuthQuery(
+        transfer,
+        { downloadSessionId: newDownloadSessionId(), asOwner: true },
+      )}`;
 
       // Créer un lien temporaire pour déclencher le téléchargement
       const link = document.createElement("a");
@@ -311,12 +328,11 @@ export function TransferDetailDrawer({
       link.click();
       document.body.removeChild(link);
 
-      // Incrémenter le compteur local immédiatement
-      setLocalDownloadCount((prev) => prev + 1);
+      // Pas d'incrément local : le compteur mesure les téléchargements des
+      // destinataires, et le backend ignore désormais ceux du propriétaire.
+      // On resynchronise quand même l'affichage avec le serveur.
       toast.success("Téléchargement démarré");
 
-      // Rafraîchir les données serveur après un court délai
-      // pour que le backend ait le temps d'incrémenter le compteur
       setTimeout(() => {
         onRefresh?.();
       }, 2000);
