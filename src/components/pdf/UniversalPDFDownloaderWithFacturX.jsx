@@ -584,6 +584,17 @@ const UniversalPDFDownloaderWithFacturX = ({
           backgroundColor: "#ffffff", // Toujours blanc pour que les rgba transparents soient visibles
           scale: 2,
           pixelRatio: 2,
+          // Sans `cache: "reload"`, la réponse sans en-tête CORS mise en cache
+          // par l'<img> du logo (chargée sans `crossOrigin`) resservirait ce
+          // fetch et laisserait le logo vide (cf. generatePDF.js). La
+          // bibliothèque applique `force-cache` par défaut, pire encore.
+          fetch: {
+            requestInit: {
+              mode: "cors",
+              credentials: "omit",
+              cache: "reload",
+            },
+          },
           ...options.captureOptions,
         });
 

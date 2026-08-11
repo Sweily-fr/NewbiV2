@@ -131,8 +131,11 @@ async function generatePdfBase64FromRef(componentRef) {
     backgroundColor: "#ffffff",
     width: 794,
     scale: 2,
+    // `cache: "reload"` : sans lui, la réponse sans en-tête CORS mise en cache
+    // par l'<img> du logo (chargée sans `crossOrigin`) resservirait ce fetch et
+    // le logo serait absent du PDF envoyé en signature (cf. generatePDF.js).
     fetch: {
-      requestInit: { mode: "cors", credentials: "omit" },
+      requestInit: { mode: "cors", credentials: "omit", cache: "reload" },
     },
   });
 
