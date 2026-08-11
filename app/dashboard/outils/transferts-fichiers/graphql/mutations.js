@@ -312,6 +312,7 @@ export const GET_MY_TRANSFERS = gql`
         totalSize
         shareLink
         accessKey
+        ownerDownloadToken
         expiryDate
         downloadCount
         passwordProtected
