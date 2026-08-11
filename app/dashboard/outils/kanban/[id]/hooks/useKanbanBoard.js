@@ -32,6 +32,23 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
   // Vérifier directement si la session est prête (sans état intermédiaire)
   const isSessionReady = !sessionLoading && !!session?.user;
 
+  // ── Verrou d'organisation ──────────────────────────────────────────────
+  // Le boardId de l'URL appartient à l'organisation active au moment du mount.
+  // Quand l'utilisateur change d'espace depuis le tableau, le store Better Auth
+  // est réactif : `workspaceId` change dès le render suivant, alors que la
+  // redirection vers la liste passe par un effet, donc APRÈS. Sans ce verrou,
+  // Apollo relance GET_BOARD pendant ce render avec l'ancien id et la nouvelle
+  // org : le serveur ne trouve rien, répond "Board not found", et l'erreur part
+  // dans l'alerting alors que c'est un simple changement d'espace.
+  const mountedWorkspaceIdRef = useRef(null);
+  if (workspaceId && !mountedWorkspaceIdRef.current) {
+    mountedWorkspaceIdRef.current = workspaceId;
+  }
+  const hasSwitchedWorkspace =
+    !!workspaceId &&
+    !!mountedWorkspaceIdRef.current &&
+    workspaceId !== mountedWorkspaceIdRef.current;
+
   // ── Redémarrage des subscriptions après erreur ─────────────────────────
   // Une erreur reçue par useSubscription TERMINE l'observable Apollo : même
   // si le WebSocket est réparé ensuite (forceWsReconnect), le transport
@@ -70,7 +87,7 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
       workspaceId,
     },
     errorPolicy: "all",
-    skip: !workspaceId || isRedirecting,
+    skip: !workspaceId || isRedirecting || hasSwitchedWorkspace,
     // 1er mount : cache + refresh réseau en background.
     // Re-mount / navigation : cache only (les subscriptions gardent le cache
     // frais en temps réel, pas besoin de re-fetch tout le board).
@@ -260,7 +277,13 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
   // Subscription pour les mises à jour temps réel des tâches
   useSubscription(TASK_UPDATED_SUBSCRIPTION, {
     variables: { boardId: id, workspaceId },
-    skip: !workspaceId || !id || !isSessionReady || isRedirecting || wsRestartPause,
+    skip:
+      !workspaceId ||
+      !id ||
+      !isSessionReady ||
+      isRedirecting ||
+      wsRestartPause ||
+      hasSwitchedWorkspace,
     onData: ({ data: subscriptionData }) => {
       const event = subscriptionData?.data?.taskUpdated;
       if (!event) return;
@@ -305,7 +328,13 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
   // Subscription pour les mises à jour temps réel des colonnes
   useSubscription(COLUMN_UPDATED_SUBSCRIPTION, {
     variables: { boardId: id, workspaceId },
-    skip: !workspaceId || !id || !isSessionReady || isRedirecting || wsRestartPause,
+    skip:
+      !workspaceId ||
+      !id ||
+      !isSessionReady ||
+      isRedirecting ||
+      wsRestartPause ||
+      hasSwitchedWorkspace,
     onData: ({ data: subscriptionData }) => {
       const event = subscriptionData?.data?.columnUpdated;
       if (!event) return;
@@ -370,5 +399,6 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
     getTasksByColumn,
     workspaceId,
     markReorderAction,
+    hasSwitchedWorkspace,
   };
 };
