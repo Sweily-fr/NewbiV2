@@ -67,7 +67,7 @@ const UniversalPDFDownloader = ({
               resolve();
             }, 3000);
           });
-        })
+        }),
       );
 
       // Attendre un peu supplémentaire pour s'assurer que le composant est bien rendu
@@ -79,11 +79,15 @@ const UniversalPDFDownloader = ({
         backgroundColor: "#ffffff",
         width: 794, // Largeur A4 en pixels
         scale: 2,
-        // Activer le mode CORS anonyme pour les images externes
+        // Activer le mode CORS anonyme pour les images externes.
+        // `cache: "reload"` : sans lui, la réponse sans en-tête CORS mise en
+        // cache par l'<img> du logo (chargée sans `crossOrigin`) resservirait
+        // ce fetch et laisserait le logo vide dans le PDF (cf. generatePDF.js).
         fetch: {
           requestInit: {
             mode: "cors",
             credentials: "omit",
+            cache: "reload",
           },
         },
       });
@@ -122,7 +126,7 @@ const UniversalPDFDownloader = ({
         imgWidthMM,
         "x",
         imgHeightMM,
-        "mm"
+        "mm",
       );
 
       // ===== DÉCOUPAGE INTELLIGENT =====
@@ -131,7 +135,7 @@ const UniversalPDFDownloader = ({
 
         // Récupérer les positions des éléments à ne pas couper
         const protectedElements = componentRef.current.querySelectorAll(
-          'tr[data-no-break], .no-break, .invoice-line, [data-no-break="true"], [data-pdf-item], [data-pdf-section="header"], [data-pdf-section="info"], [data-pdf-section="header-notes"], [data-pdf-section="totals"], [data-pdf-section="terms"], [data-pdf-section="vat-exemption"], [data-pdf-section="footer-notes"], [data-critical]'
+          'tr[data-no-break], .no-break, .invoice-line, [data-no-break="true"], [data-pdf-item], [data-pdf-section="header"], [data-pdf-section="info"], [data-pdf-section="header-notes"], [data-pdf-section="totals"], [data-pdf-section="terms"], [data-pdf-section="vat-exemption"], [data-pdf-section="footer-notes"], [data-critical]',
         );
 
         const rowPositions = [];
@@ -149,7 +153,7 @@ const UniversalPDFDownloader = ({
         console.log(`🔍 ${rowPositions.length} éléments protégés détectés`);
         rowPositions.forEach((row, i) => {
           console.log(
-            `  Élément ${i + 1}: top=${(row.top / 2).toFixed(0)}px, bottom=${(row.bottom / 2).toFixed(0)}px, height=${(row.height / 2).toFixed(0)}px`
+            `  Élément ${i + 1}: top=${(row.top / 2).toFixed(0)}px, bottom=${(row.bottom / 2).toFixed(0)}px, height=${(row.height / 2).toFixed(0)}px`,
           );
         });
 
@@ -189,7 +193,7 @@ const UniversalPDFDownloader = ({
           console.log(`  Position actuelle: ${currentY.toFixed(0)}px`);
           console.log(`  Cible initiale: ${targetY.toFixed(0)}px`);
           console.log(
-            `  Hauteur page: ${(targetY - currentY).toFixed(0)}px (${((targetY - currentY) / pixelsPerMM).toFixed(1)}mm)`
+            `  Hauteur page: ${(targetY - currentY).toFixed(0)}px (${((targetY - currentY) / pixelsPerMM).toFixed(1)}mm)`,
           );
 
           // Trouver les éléments dans cette plage
@@ -197,7 +201,7 @@ const UniversalPDFDownloader = ({
             (row) =>
               (row.top >= currentY && row.top < targetY) || // Commence dans la plage
               (row.bottom > currentY && row.bottom <= targetY) || // Finit dans la plage
-              (row.top < currentY && row.bottom > targetY) // Chevauche la plage
+              (row.top < currentY && row.bottom > targetY), // Chevauche la plage
           );
 
           console.log(`  ${elementsInRange.length} éléments dans cette plage`);
@@ -211,10 +215,10 @@ const UniversalPDFDownloader = ({
               targetY = row.top;
               needsAdjustment = true;
               console.log(
-                `  ✂️ Élément coupé détecté ! Ajustement à ${targetY.toFixed(0)}px`
+                `  ✂️ Élément coupé détecté ! Ajustement à ${targetY.toFixed(0)}px`,
               );
               console.log(
-                `     (Élément: top=${row.top.toFixed(0)}px, bottom=${row.bottom.toFixed(0)}px)`
+                `     (Élément: top=${row.top.toFixed(0)}px, bottom=${row.bottom.toFixed(0)}px)`,
               );
               break;
             }
@@ -222,13 +226,13 @@ const UniversalPDFDownloader = ({
 
           if (!needsAdjustment) {
             console.log(
-              `  ✅ Aucune coupure détectée, on utilise toute la page`
+              `  ✅ Aucune coupure détectée, on utilise toute la page`,
             );
           }
 
           const sliceHeight = targetY - currentY;
           console.log(
-            `  Hauteur finale: ${sliceHeight.toFixed(0)}px (${(sliceHeight / pixelsPerMM).toFixed(1)}mm)`
+            `  Hauteur finale: ${sliceHeight.toFixed(0)}px (${(sliceHeight / pixelsPerMM).toFixed(1)}mm)`,
           );
 
           // Remplir le canvas avec du blanc
@@ -245,7 +249,7 @@ const UniversalPDFDownloader = ({
             0,
             0, // Position destination
             canvasWidth,
-            sliceHeight // Dimensions destination
+            sliceHeight, // Dimensions destination
           );
 
           // Convertir le canvas en image
@@ -287,7 +291,7 @@ const UniversalPDFDownloader = ({
             pdfWidth,
             page.heightMM,
             undefined,
-            "FAST"
+            "FAST",
           );
 
           // Ajouter la numérotation en bas de page à droite
@@ -298,7 +302,7 @@ const UniversalPDFDownloader = ({
           pdf.text(pageText, pdfWidth - textWidth - 10, pdfHeight - 5); // À droite, 10mm de marge, 5mm du bas
 
           console.log(
-            `✅ Page ${index + 1}/${totalPages} ajoutée au PDF (hauteur: ${page.heightMM.toFixed(1)}mm)`
+            `✅ Page ${index + 1}/${totalPages} ajoutée au PDF (hauteur: ${page.heightMM.toFixed(1)}mm)`,
           );
         });
       } else {
@@ -312,7 +316,7 @@ const UniversalPDFDownloader = ({
           imgWidthMM,
           imgHeightMM,
           undefined,
-          "FAST"
+          "FAST",
         );
       }
 

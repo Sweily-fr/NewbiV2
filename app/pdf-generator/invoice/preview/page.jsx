@@ -91,8 +91,11 @@ export default function PDFPreviewPage() {
         backgroundColor: "#ffffff",
         width: 794,
         scale: 2,
+        // `cache: "reload"` : sans lui, la réponse sans en-tête CORS mise en
+        // cache par l'<img> du logo resservirait ce fetch et le logo serait
+        // absent du PDF (cf. src/utils/generatePDF.js).
         fetch: {
-          requestInit: { mode: "cors", credentials: "omit" },
+          requestInit: { mode: "cors", credentials: "omit", cache: "reload" },
         },
       });
 
