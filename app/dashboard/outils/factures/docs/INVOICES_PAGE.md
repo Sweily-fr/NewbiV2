@@ -1748,29 +1748,30 @@ Convertir un devis accepté en une (ou plusieurs) facture(s). Permet :
 
 - Émission d'un acompte (`isDeposit: true`)
 - Émission de factures partielles successives (nombre illimité)
-- Émission d'une facture finale du solde
+- Émission du solde : c'est une facture partielle comme les autres, il n'y a pas
+  de « facture finale » traitée à part. La création reste possible tant que
+  le reste à facturer est supérieur à 0.
 
 ### 30.2 Logique (`invoice.js:2645-2890`)
 
 ```js
 1. Valide que quoteId existe et appartient au workspace
 2. Valide que le devis est en status COMPLETED (accepté)
-3. Vérifie que le nombre de factures liées < 3 (max imposé)
+3. Aucune limite sur le nombre de factures liées
 4. Calcule totalInvoiced = somme des finalTotalTTC des factures déjà liées
 5. Vérifie qu'il n'y a pas déjà un acompte si isDeposit: true
-6. Calcule remainingAmount = quote.finalTotalTTC - totalInvoiced
-7. Vérifie que amount ≤ remainingAmount
-8. Si c'est la 3ème facture (linkedInvoicesCount === 2), amount doit être EXACTEMENT remainingAmount
-9. Génère prefix et numéro (préfixe FACTURE pas devis)
-10. Calcule unitPriceHT = amount / 1.20 (TVA fixée à 20%)
-11. Crée la facture en DRAFT avec :
+6. Calcule remainingAmount = quote.finalTotalTTC - totalInvoiced (arrondi au centime)
+7. Vérifie que amount ≤ remainingAmount (comparaison en centimes)
+8. Génère prefix et numéro (préfixe FACTURE pas devis)
+9. Calcule unitPriceHT = amount / 1.20 (TVA fixée à 20%)
+10. Crée la facture en DRAFT avec :
     - 1 seul item "Acompte sur devis X" ou "Facture sur devis X" ou "Facture partielle sur devis X"
     - quantity: 1, unitPrice: unitPriceHT, vatRate: 20%
     - sourceQuote: quote._id
     - purchaseOrderNumber: ${quote.prefix}-${quote.number}
     - dueDate: now + 30 jours
     - Apparence et notes héritées de l'organisation (PAS du devis)
-12. Calcule totaux et sauvegarde
+11. Calcule totaux et sauvegarde
 ```
 
 ### 30.3 Limites
