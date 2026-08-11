@@ -1,67 +1,79 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { authClient } from "@/src/lib/auth-client";
 
 /**
- * Hook pour gérer les changements d'organisation
- * Redirige IMMÉDIATEMENT vers la liste lors d'un changement d'organisation
+ * Hook pour les pages de détail (URL contenant un id de ressource).
+ *
+ * Un id de ressource appartient à une organisation. Dès que l'utilisateur
+ * change d'espace, cet id n'existe plus : il faut quitter la page avant que la
+ * moindre requête ne parte avec l'ancien id et la nouvelle organisation, sinon
+ * le serveur répond "ressource introuvable" et l'erreur remonte dans
+ * l'alerting alors que c'est un cas nominal.
+ *
+ * Deux signaux, avec deux effets distincts :
+ *  1. l'événement `organizationChanged`, émis par les switchers AVANT
+ *     `setActive()` : la page gèle son rendu et ses requêtes, mais ne navigue
+ *     pas — c'est le switcher qui redirige, une fois le cache Apollo vidé,
+ *     pour que la page liste ne se monte pas sur l'ancienne organisation.
+ *     `organizationChangeAborted` dégèle si le changement a échoué ;
+ *  2. la divergence entre l'organisation active et celle du mount : filet de
+ *     sécurité pour les bascules qui ne passent pas par un switcher (2e
+ *     onglet, refresh de session). Là, la page redirige elle-même.
+ *
+ * `resourceExists`, passé par certains appelants, n'est pas utilisé : la sortie
+ * ne dépend que du changement d'espace.
  */
-export function useOrganizationChange({ 
-  resourceId, 
-  listUrl,
-  enabled = true 
-}) {
+export function useOrganizationChange({ resourceId, listUrl, enabled = true }) {
   const router = useRouter();
-  const pathname = usePathname();
   const { data: activeOrganization } = authClient.useActiveOrganization();
-  const previousOrgIdRef = useRef(null);
-  const isInitializedRef = useRef(false);
+  const organizationId = activeOrganization?.id;
 
-  // Écouter l'événement custom de changement d'organisation
+  // Organisation verrouillée au premier render utile : c'est celle à laquelle
+  // appartient l'id présent dans l'URL.
+  const mountedOrgIdRef = useRef(null);
+  if (organizationId && !mountedOrgIdRef.current) {
+    mountedOrgIdRef.current = organizationId;
+  }
+
+  const [switchAnnounced, setSwitchAnnounced] = useState(false);
+
+  const isActive = enabled && !!resourceId;
+  const hasDivergedFromMount =
+    !!organizationId &&
+    !!mountedOrgIdRef.current &&
+    organizationId !== mountedOrgIdRef.current;
+
+  // Vrai dès l'annonce : la page doit cesser de rendre et de requêter.
+  const hasChangedOrganization =
+    isActive && (switchAnnounced || hasDivergedFromMount);
+
+  const handleAnnounce = useCallback(() => setSwitchAnnounced(true), []);
+  const handleAbort = useCallback(() => setSwitchAnnounced(false), []);
+
   useEffect(() => {
-    if (!enabled || !resourceId) return;
-
-    // Initialiser avec l'organisation actuelle
-    const currentOrgId = activeOrganization?.id;
-    if (currentOrgId && !isInitializedRef.current) {
-      previousOrgIdRef.current = currentOrgId;
-      isInitializedRef.current = true;
-      console.log("[useOrganizationChange] 🎯 Initialisation avec organisation:", currentOrgId);
-    }
-
-    // Écouter l'événement custom de changement d'organisation
-    const handleOrganizationChange = (event) => {
-      const { previousOrgId, newOrgId } = event.detail;
-      
-      console.log("[useOrganizationChange] 📢 Événement organizationChanged reçu", {
-        previousOrgId,
-        newOrgId,
-        resourceId,
-        pathname,
-      });
-
-      // Si on est sur une page de détail (avec resourceId), rediriger IMMÉDIATEMENT
-      if (resourceId) {
-        console.log("[useOrganizationChange] ➡️ REDIRECTION IMMEDIATE vers", listUrl);
-        router.push(listUrl);
-      }
-
-      // Mettre à jour la référence
-      previousOrgIdRef.current = newOrgId;
-    };
-
-    window.addEventListener('organizationChanged', handleOrganizationChange);
-
+    if (!isActive) return;
+    window.addEventListener("organizationChanged", handleAnnounce);
+    window.addEventListener("organizationChangeAborted", handleAbort);
     return () => {
-      window.removeEventListener('organizationChanged', handleOrganizationChange);
+      window.removeEventListener("organizationChanged", handleAnnounce);
+      window.removeEventListener("organizationChangeAborted", handleAbort);
     };
-  }, [resourceId, listUrl, router, pathname, enabled, activeOrganization?.id]);
+  }, [isActive, handleAnnounce, handleAbort]);
+
+  // Redirection seulement sur divergence réelle : sur simple annonce, c'est le
+  // switcher qui navigue après avoir vidé le cache Apollo.
+  useEffect(() => {
+    if (isActive && hasDivergedFromMount && listUrl) {
+      router.replace(listUrl);
+    }
+  }, [isActive, hasDivergedFromMount, listUrl, router]);
 
   return {
-    hasChangedOrganization: isInitializedRef.current && previousOrgIdRef.current !== activeOrganization?.id,
-    currentOrganizationId: activeOrganization?.id,
-    previousOrganizationId: previousOrgIdRef.current,
+    hasChangedOrganization,
+    currentOrganizationId: organizationId,
+    previousOrganizationId: mountedOrgIdRef.current,
   };
 }

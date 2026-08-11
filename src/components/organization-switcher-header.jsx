@@ -228,6 +228,20 @@ export function OrganizationSwitcherHeader() {
       setIsChangingOrg(true);
       const oldWorkspaceId = activeOrganization?.id;
 
+      // 1. Prévenir les pages de détail AVANT setActive() : le store Better
+      //    Auth est réactif, donc dès qu'il bascule, une page encore montée
+      //    relance ses queries avec l'ancien id de ressource et la nouvelle
+      //    organisation — le serveur répond "ressource introuvable" et
+      //    l'erreur part dans l'alerting. Prévenues, elles gèlent leur rendu
+      //    et leurs requêtes ; la sortie vers la liste se fait plus bas, une
+      //    fois le cache vidé.
+      window.dispatchEvent(
+        new CustomEvent("organizationChanged", {
+          detail: { previousOrgId: oldWorkspaceId, newOrgId: organizationId },
+        }),
+      );
+
+      // 2. Changer d'organisation côté serveur avec Better Auth
       await authClient.organization.setActive({
         organizationId,
       });
@@ -235,17 +249,17 @@ export function OrganizationSwitcherHeader() {
       // Si l'org n'a pas d'abonnement actif, on laisse l'utilisateur y accéder
       // Le banner "Renouveler l'abonnement" dans le site-header s'affichera automatiquement
 
-      // 1. Mettre à jour l'org ID immédiatement pour Apollo (sans attendre useWorkspace)
+      // 3. Mettre à jour l'org ID immédiatement pour Apollo (sans attendre useWorkspace)
       setOrganizationIdForApollo(organizationId);
       localStorage.setItem("active_organization_id", organizationId);
 
-      // 2. Vider les caches subscription localStorage (ancien + nouveau)
+      // 4. Vider les caches subscription localStorage (ancien + nouveau)
       if (oldWorkspaceId) {
         localStorage.removeItem(`subscription-${oldWorkspaceId}`);
       }
       localStorage.removeItem(`subscription-${organizationId}`);
 
-      // 3. Vider TOUT le cache Apollo — évite les données stale de l'ancienne org
+      // 5. Vider TOUT le cache Apollo — évite les données stale de l'ancienne org
       await apolloClient.clearStore();
 
       const newOrg = sortedOrganizations.find(
@@ -256,7 +270,7 @@ export function OrganizationSwitcherHeader() {
       );
       setIsOpen(false);
 
-      // 4. Si on est sur une page de détail (URL avec un ID de ressource),
+      // 6. Si on est sur une page de détail (URL avec un ID de ressource),
       //    rediriger vers la page liste : l'ID n'existe pas dans la nouvelle org.
       //    Sinon, forcer le refresh SSR pour que layout.jsx re-vérifie la session.
       const safePath = stripIdFromPathname(pathname);
@@ -268,6 +282,9 @@ export function OrganizationSwitcherHeader() {
     } catch (error) {
       console.error("Erreur changement d'organisation:", error);
       toast.error("Erreur lors du changement d'organisation");
+      // Le changement a échoué : dégeler les pages de détail prévenues à
+      // l'étape 1, sinon elles resteraient bloquées sur un écran vide.
+      window.dispatchEvent(new CustomEvent("organizationChangeAborted"));
     } finally {
       setIsChangingOrg(false);
     }
