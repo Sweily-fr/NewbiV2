@@ -1,5 +1,16 @@
 import { gql } from "@apollo/client";
 
+// Noms des queries de liste de transactions à refetcher après toute mutation
+// qui change le rapprochement (link/unlink/reconcile/unignore) : leurs
+// agrégats (tabCounts, totalCount, appartenance aux onglets) sont calculés
+// serveur sur un type non normalisable par Apollo. Constante partagée pour
+// qu'un renommage d'opération ne laisse pas un site de mutation avec un
+// refetch silencieusement cassé.
+export const TRANSACTION_LIST_REFETCH_QUERIES = [
+  "GetTransactionsPage",
+  "GetTransactions",
+];
+
 // ==================== QUERIES ====================
 
 /**
@@ -91,6 +102,7 @@ export const GET_TRANSACTIONS = gql`
       amount
       currency
       description
+      reference
       category
       expenseCategory
       pcgAccount {
@@ -191,6 +203,7 @@ export const GET_TRANSACTIONS_PAGE = gql`
         amount
         currency
         description
+        reference
         category
         expenseCategory
         pcgAccount {
@@ -269,6 +282,7 @@ export const GET_TRANSACTION = gql`
       amount
       currency
       description
+      reference
       category
       expenseCategory
       pcgAccount {
@@ -362,6 +376,7 @@ export const GET_TRANSACTION_HISTORY = gql`
       amount
       currency
       description
+      reference
       category
       expenseCategory
       fromAccount

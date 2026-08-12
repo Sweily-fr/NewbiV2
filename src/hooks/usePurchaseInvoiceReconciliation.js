@@ -3,6 +3,7 @@ import { toast } from "@/src/components/ui/sonner";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { GET_PURCHASE_INVOICE_RECONCILIATION_SUGGESTIONS } from "@/src/graphql/queries/purchaseInvoiceReconciliation";
 import { RECONCILE_PURCHASE_INVOICE } from "@/src/graphql/mutations/purchaseInvoices";
+import { TRANSACTION_LIST_REFETCH_QUERIES } from "@/src/graphql/queries/banking";
 
 /**
  * Suggestions de rapprochement facture d'achat ↔ transaction (débit).
@@ -47,11 +48,16 @@ export const useLinkPurchaseInvoiceToTransaction = () => {
   const [reconcileMutation, { loading }] = useMutation(
     RECONCILE_PURCHASE_INVOICE,
     {
+      // La mutation ne renvoie que la PurchaseInvoice (aucun champ Transaction),
+      // alors que le backend modifie la transaction (receiptFiles copiés,
+      // statut) : sans refetch de la liste, l'icône de facture liée n'apparaît
+      // qu'au rechargement de la page. Aligné sur usePurchaseInvoices.js.
       refetchQueries: [
         {
           query: GET_PURCHASE_INVOICE_RECONCILIATION_SUGGESTIONS,
           variables: { workspaceId },
         },
+        ...TRANSACTION_LIST_REFETCH_QUERIES,
       ],
       awaitRefetchQueries: true,
       onError: (error) => {

@@ -54,7 +54,8 @@ export const GET_TRANSACTIONS_FOR_INVOICE = gql`
 `;
 
 /**
- * Récupérer les factures PENDING rattachables à une transaction
+ * Récupérer les factures rattachables à une transaction : PENDING, ou
+ * COMPLETED sans transaction liée (marquée payée à la main).
  * (rattachement manuel depuis le drawer transaction)
  */
 export const GET_INVOICES_FOR_TRANSACTION = gql`
@@ -148,6 +149,18 @@ export const UNLINK_TRANSACTION_FROM_INVOICE = gql`
 export const IGNORE_TRANSACTION = gql`
   mutation IgnoreTransaction($input: ReconciliationIgnoreInput!) {
     ignoreTransaction(input: $input) {
+      success
+      message
+    }
+  }
+`;
+
+/**
+ * Réintégrer au rapprochement une transaction ignorée
+ */
+export const UNIGNORE_TRANSACTION = gql`
+  mutation UnignoreTransaction($input: ReconciliationIgnoreInput!) {
+    unignoreTransaction(input: $input) {
       success
       message
     }

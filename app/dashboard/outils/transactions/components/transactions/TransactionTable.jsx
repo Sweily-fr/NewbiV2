@@ -168,6 +168,8 @@ const mapExpenseToRow = (expense) => {
     amount: expense.amount,
     currency: expense.currency || "EUR",
     description: expense.description || expense.title,
+    // Libellé bancaire brut (références de virement non tronquées par Bridge)
+    reference: expense.reference || null,
     paymentMethod: expense.paymentMethod,
     vendor: expense.vendor,
     invoiceNumber: expense.invoiceNumber,
