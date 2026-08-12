@@ -140,6 +140,9 @@ export const mapTransactionToExpense = (tx) => ({
   source: tx.provider === "manual" ? "MANUAL" : "BANK",
   title: tx.description,
   description: tx.description,
+  // Libellé bancaire brut (conserve les références de virement que la
+  // description Bridge tronque)
+  reference: tx.reference || null,
   amount: tx.amount,
   currency: tx.currency,
   date: tx.processedAt || tx.date || tx.createdAt,

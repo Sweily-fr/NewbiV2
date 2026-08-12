@@ -361,6 +361,8 @@ export function TransactionDetailDrawer({
     suggestions: reconciliationSuggestions,
     linkTransaction,
     isLinking,
+    unignoreTransaction,
+    isUnignoring,
     fetchInvoicesForTransaction,
   } = useReconciliationGraphQL();
   const matchingInvoices =
@@ -406,6 +408,8 @@ export function TransactionDetailDrawer({
     }
   }, [open]);
 
+  // Pas d'onRefresh ici : le hook refetch déjà GetTransactionsPage /
+  // GetTransactions (agrégats serveur), un refetch de plus serait un doublon.
   const handleReconcileInvoice = async (invoiceId) => {
     if (!transaction?.id || !invoiceId) return;
     const result = await linkTransaction(transaction.id, invoiceId);
@@ -413,7 +417,6 @@ export function TransactionDetailDrawer({
       setShowInvoicePicker(false);
       setInvoiceSearch("");
     }
-    onRefresh?.();
   };
 
   // État du formulaire pour création/édition
@@ -449,6 +452,18 @@ export function TransactionDetailDrawer({
   const canPickInvoice =
     transaction?.amount > 0 &&
     (!isManualTransaction || transaction?.type === "INCOME");
+  // Transaction exclue du rapprochement par une action "ignorer" : proposer
+  // d'annuler ce choix (le statut n'était pas réversible dans l'UI avant).
+  const isIgnoredReconciliation =
+    isBankTransaction &&
+    String(transaction?.reconciliationStatus || "").toUpperCase() === "IGNORED";
+
+  // Pas d'onRefresh ici : le hook refetch déjà GetTransactionsPage /
+  // GetTransactions (agrégats serveur), un refetch de plus serait un doublon.
+  const handleUnignoreReconciliation = async () => {
+    if (!transaction?.id) return;
+    await unignoreTransaction(transaction.id);
+  };
 
   // Initialiser le formulaire uniquement quand le drawer s'ouvre (transition false → true)
   useEffect(() => {
@@ -1403,6 +1418,23 @@ export function TransactionDetailDrawer({
               </div>
             )}
 
+            {/* Référence bancaire brute (Bridge provider_description) :
+                conserve les références de virement (ex. numéros de facture)
+                que la description nettoyée par Bridge tronque. Lecture seule. */}
+            {!isCreateMode &&
+              isBankTransaction &&
+              transaction?.reference &&
+              transaction.reference !== transaction.description && (
+                <div className="space-y-3">
+                  <p className="text-sm font-normal text-muted-foreground">
+                    Référence bancaire
+                  </p>
+                  <p className="text-sm text-foreground break-words rounded-xl border p-3 bg-muted/30">
+                    {transaction.reference}
+                  </p>
+                </div>
+              )}
+
             {/* Description (mode création/édition) */}
             {isEditingForm && (
               <div className="space-y-3">
@@ -1811,6 +1843,34 @@ export function TransactionDetailDrawer({
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Rapprochement ignoré : la transaction a été volontairement
+                exclue des suggestions (action "ignorer"). On propose d'annuler
+                ce choix, sinon le statut est irréversible côté UI. */}
+            {!isCreateMode && !linkedInvoice && isIgnoredReconciliation && (
+              <div className="flex items-center justify-between gap-3 p-3 border rounded-lg bg-muted/30">
+                <div className="flex items-center gap-2 min-w-0">
+                  <AlertCircle className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <p className="text-sm text-muted-foreground">
+                    Rapprochement ignoré pour cette transaction
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-2 text-xs shrink-0"
+                  onClick={handleUnignoreReconciliation}
+                  disabled={isReadOnly || isUnignoring}
+                  title={readOnlyTooltip}
+                >
+                  {isUnignoring ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    "Réactiver"
+                  )}
+                </Button>
               </div>
             )}
 

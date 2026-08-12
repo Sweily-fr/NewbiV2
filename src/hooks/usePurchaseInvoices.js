@@ -1,4 +1,5 @@
 import { useQuery, useMutation } from "@apollo/client";
+import { TRANSACTION_LIST_REFETCH_QUERIES } from "@/src/graphql/queries/banking";
 import {
   GET_PURCHASE_INVOICES,
   GET_PURCHASE_INVOICE,
@@ -342,8 +343,7 @@ export const useReconcilePurchaseInvoice = () => {
         { query: GET_PURCHASE_INVOICE_STATS, variables: { workspaceId } },
         "GetPurchaseInvoiceReconciliationSuggestions",
         "GetPurchaseInvoiceReconciliationMatches",
-        "GetTransactions",
-        "GetTransactionsPage",
+        ...TRANSACTION_LIST_REFETCH_QUERIES,
       ],
       awaitRefetchQueries: false,
       onCompleted: () => toast.success("Rapprochement effectué"),
@@ -374,8 +374,7 @@ export const useUnreconcilePurchaseInvoice = () => {
         { query: GET_PURCHASE_INVOICE_STATS, variables: { workspaceId } },
         "GetPurchaseInvoiceReconciliationSuggestions",
         "GetPurchaseInvoiceReconciliationMatches",
-        "GetTransactions",
-        "GetTransactionsPage",
+        ...TRANSACTION_LIST_REFETCH_QUERIES,
       ],
       awaitRefetchQueries: false,
       onError: (error) =>
