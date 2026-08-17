@@ -140,6 +140,35 @@ const UniversalPreviewPDF = ({
   const [scale, setScale] = useState(1);
   const [containerHeight, setContainerHeight] = useState("auto");
 
+  // Mention légale « EI » (art. R. 526-27 du Code de commerce) : la
+  // dénomination d'un entrepreneur individuel est son nom et prénom, précédés
+  // ou suivis de « EI », sur tous ses documents commerciaux (devis, factures,
+  // bons de commande, avoirs).
+  // legalForm vient du formulaire (éditeur), companyStatus du document
+  // persisté (génération PDF headless, sans session/organisation).
+  const sellerLegalForm =
+    data.companyInfo?.legalForm ||
+    data.companyInfo?.companyStatus ||
+    organization?.legalForm ||
+    "";
+  const isEntrepreneurIndividuel = [
+    "EI",
+    "Auto-entrepreneur",
+    "AUTO_ENTREPRENEUR",
+  ].includes(sellerLegalForm);
+
+  // Nom imprimé dans le bloc entreprise en tête du document : pour un
+  // entrepreneur individuel, la dénomination sociale est le nom de
+  // l'entrepreneur, auquel on ajoute « EI » s'il ne le porte pas déjà
+  // (l'utilisateur a pu le saisir lui-même dans ses paramètres).
+  const displayedCompanyName = (() => {
+    const name = data.companyInfo?.name || "";
+    if (isEntrepreneurIndividuel && name && !/^EI\b/.test(name.trim())) {
+      return `EI ${name}`;
+    }
+    return name;
+  })();
+
   // Résoudre le nom du bénéficiaire selon le paramètre de l'organisation
   const resolvedBeneficiaryName = (() => {
     // Déterminer le type depuis les données ou l'organisation
@@ -151,35 +180,9 @@ const UniversalPreviewPDF = ({
         : "companyName");
     // Déterminer le nom complet de l'utilisateur
     const fullName = data.userName || session?.user?.name || "";
-    const showsEntrepreneurName = nameType === "fullName" && !!fullName;
-    const baseName = showsEntrepreneurName
+    return nameType === "fullName" && fullName
       ? fullName
       : data.companyInfo?.name || "";
-
-    // Mention légale « EI » sur les factures (art. R. 526-27 du Code de
-    // commerce) : uniquement devant le nom et prénom de l'entrepreneur, pas
-    // devant un nom d'entreprise ou commercial.
-    // legalForm vient du formulaire (éditeur), companyStatus du document
-    // persisté (génération PDF headless, sans session/organisation).
-    const sellerLegalForm =
-      data.companyInfo?.legalForm ||
-      data.companyInfo?.companyStatus ||
-      organization?.legalForm ||
-      "";
-    const isEntrepreneurIndividuel = [
-      "EI",
-      "Auto-entrepreneur",
-      "AUTO_ENTREPRENEUR",
-    ].includes(sellerLegalForm);
-    if (
-      type === "invoice" &&
-      showsEntrepreneurName &&
-      isEntrepreneurIndividuel &&
-      !/^EI\b/.test(baseName.trim())
-    ) {
-      return `EI ${baseName}`;
-    }
-    return baseName;
   })();
 
   // Franchise en base de TVA (mention « art. 293 B du CGI » en pied de page).
@@ -928,7 +931,7 @@ const UniversalPreviewPDF = ({
                 className="font-medium mb-2 dark:text-[#0A0A0A]"
                 style={{ fontSize: "10px" }}
               >
-                {data.companyInfo?.name || ""}
+                {displayedCompanyName}
                 {/* Nom commercial (si l'affichage est activé dans les paramètres) */}
                 {data.companyInfo?.commercialName && (
                   <div className="font-normal dark:text-[#0A0A0A]">
