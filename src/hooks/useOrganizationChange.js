@@ -20,8 +20,11 @@ import { authClient } from "@/src/lib/auth-client";
  *     pour que la page liste ne se monte pas sur l'ancienne organisation.
  *     `organizationChangeAborted` dégèle si le changement a échoué ;
  *  2. la divergence entre l'organisation active et celle du mount : filet de
- *     sécurité pour les bascules qui ne passent pas par un switcher (2e
- *     onglet, refresh de session). Là, la page redirige elle-même.
+ *     sécurité pour les bascules qui ne passent pas par un switcher (refresh
+ *     de session). Là, la page redirige elle-même. Le cas du switch depuis un
+ *     AUTRE onglet est couvert en amont par OrgChangeCrossTabDetector (layout
+ *     dashboard), qui réagit à l'événement `storage` avant que ce filet ne
+ *     voie la divergence.
  *
  * `resourceExists`, passé par certains appelants, n'est pas utilisé : la sortie
  * ne dépend que du changement d'espace.
