@@ -20,6 +20,7 @@ const IMPORTED_INVOICE_FRAGMENT = gql`
       phone
     }
     client {
+      id
       name
       address
       city
