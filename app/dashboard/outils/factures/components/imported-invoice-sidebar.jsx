@@ -64,6 +64,7 @@ import {
   useValidateImportedInvoice,
 } from "@/src/graphql/importedInvoiceQueries";
 import { toast } from "@/src/components/ui/sonner";
+import { ClientCombobox } from "./client-combobox";
 
 const formatDateForInput = (dateValue) => {
   if (!dateValue) return "";
@@ -138,6 +139,7 @@ export function ImportedInvoiceSidebar({
   const handleEdit = () => {
     setEditData({
       originalInvoiceNumber: invoice.originalInvoiceNumber || "",
+      clientId: invoice.client?.id || null,
       clientName: invoice.client?.name || invoice.vendor?.name || "",
       clientSiret: invoice.client?.siret || invoice.vendor?.siret || "",
       invoiceDate: formatDateForInput(invoice.invoiceDate),
@@ -394,6 +396,22 @@ export function ImportedInvoiceSidebar({
               </div>
               <div className="space-y-2">
                 <Label>Client</Label>
+                {/* Association à un client existant : corrige un mauvais
+                    rapprochement automatique ou un client non détecté */}
+                <ClientCombobox
+                  value={editData.clientId}
+                  onChange={(client) =>
+                    setEditData({
+                      ...editData,
+                      clientId: client ? client.id : null,
+                      clientName: client
+                        ? client.type === "INDIVIDUAL"
+                          ? `${client.firstName || ""} ${client.lastName || ""}`.trim()
+                          : client.name || editData.clientName
+                        : editData.clientName,
+                    })
+                  }
+                />
                 <Input
                   value={editData.clientName}
                   onChange={(e) =>
@@ -537,7 +555,7 @@ export function ImportedInvoiceSidebar({
                 <div className="flex items-center gap-2">
                   <Building className="h-4 w-4 text-muted-foreground" />
                   <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                    Fournisseur
+                    Client
                   </p>
                 </div>
                 <div className="space-y-1">
@@ -549,6 +567,16 @@ export function ImportedInvoiceSidebar({
                   {(invoice.client?.siret || invoice.vendor?.siret) && (
                     <p className="text-xs text-muted-foreground">
                       SIRET : {invoice.client?.siret || invoice.vendor?.siret}
+                    </p>
+                  )}
+                  {invoice.client?.id ? (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <CheckCircle className="h-3 w-3 text-green-600" />
+                      Associé à un client existant
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Non associé à un client - modifiable via Modifier
                     </p>
                   )}
                 </div>
