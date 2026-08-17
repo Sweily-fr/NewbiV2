@@ -192,7 +192,6 @@ export function NotificationsSection({ onClose }) {
     loading: activityLoading,
     markAsRead: markActivityAsRead,
     markAllAsRead: markAllActivityAsRead,
-    deleteNotification: deleteActivityNotification,
   } = useActivityNotifications();
 
   // Récupérer les invitations reçues par l'utilisateur via Better Auth
@@ -717,7 +716,9 @@ export function NotificationsSection({ onClose }) {
                     className={`group flex items-center gap-3 hover:bg-[#f9f9f9] dark:hover:bg-[#1a1a1a] hover:rounded-lg cursor-pointer transition-all duration-75 ${!isLast ? "border-b border-[#eeeff1] dark:border-[#232323]" : ""}`}
                     style={{ padding: "12px 16px 12px 12px" }}
                     onClick={() => {
-                      deleteActivityNotification(notification.id);
+                      if (!notification.read) {
+                        markActivityAsRead(notification.id);
+                      }
                       if (notification.data?.url) {
                         if (onClose) onClose();
                         try {
